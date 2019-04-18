@@ -16,39 +16,39 @@ Create, Build and Deploy Cloud Native Applications
 <!-- usage -->
 ```sh-session
 $ npm install -g @io-dev-tools/aio-cli-plugin-cna
-$ oclif-example COMMAND
+$ @io-dev-tools/aio-cli-plugin-cna COMMAND
 running command...
-$ oclif-example (-v|--version|version)
-@io-dev-tools/aio-cli-plugin-cna/0.0.1 darwin-x64 node-v8.9.4
-$ oclif-example --help [COMMAND]
+$ @io-dev-tools/aio-cli-plugin-cna (-v|--version|version)
+@io-dev-tools/aio-cli-plugin-cna/0.0.2 darwin-x64 node-v8.14.0
+$ @io-dev-tools/aio-cli-plugin-cna --help [COMMAND]
 USAGE
-  $ oclif-example COMMAND
+  $ @io-dev-tools/aio-cli-plugin-cna COMMAND
 ...
 ```
 <!-- usagestop -->
 # Commands
 <!-- commands -->
-* [`oclif-example cna:create [PATH] [NAME]`](#oclif-example-cnacreate-path-name)
+* [`@io-dev-tools/aio-cli-plugin-cna cna:create [PATH]`](#io-dev-toolsaio-cli-plugin-cna-cnacreate-path)
 
-## `oclif-example cna:create [PATH] [NAME]`
+## `@io-dev-tools/aio-cli-plugin-cna cna:create [PATH]`
 
 Create a new Cloud Native Application
 
 ```
 USAGE
-  $ oclif-example cna:create [PATH] [NAME]
+  $ @io-dev-tools/aio-cli-plugin-cna cna:create [PATH]
 
 ARGUMENTS
   PATH  [default: .] Directory to create the app in
-  NAME  [default: MyApp]
 
 OPTIONS
-  -t, --template=template  Template starter path, or id
+  -d, --verbose            Show verbose/debug output
+  -h, --help               Show help
+  -r, --registry=registry  Alternate registry to use. Passed into npm as environmental variable `npm_config_registry`
 
-DESCRIPTION
-  ...
-  Select options, and go
+  -t, --template=template  [default: @io-dev-tools/runtime-cna-starter] Template starter filepath, git-url or published
+                           id/name.
 ```
 
-_See code: [src/commands/cna/create.js](https://github.com/purplecabbage/aio-cli-plugin-cna/blob/v0.0.1/src/commands/cna/create.js)_
+_See code: [src/commands/cna/create.js](https://github.com/io-dev-tools/aio-cli-plugin-cna/blob/v0.0.2/src/commands/cna/create.js)_
 <!-- commandsstop -->
