@@ -5,12 +5,11 @@ const path = require('path')
 const fs = require('fs-extra')
 const tmp = require('tmp')
 const spawn = require('cross-spawn')
-// const which = require('which')
+const which = require('which')
 const npa = require('npm-package-arg')
-// const fetch = require('../../util/fetch')
 
 // 'https://registry.npmjs.org/' // <= this is the normal default
-const defaultRegistry = 'https://artifactory.corp.adobe.com/artifactory/api/npm/npm-adobe-release/'
+const DEFAULT_REGISTRY = 'https://artifactory.corp.adobe.com/artifactory/api/npm/npm-adobe-release/'
 
 // Creates temp dir that is deleted on process exit
 // returns name of dir
@@ -21,21 +20,21 @@ function getSelfDestructingTempDir () {
   }).name
 }
 
+function isNpmInstalled() {
+  return which.sync('npm', {nothrow: true}) !== null
+}
+
 class CNACreate extends Command {
   async run() {
-
     const {args, flags} = this.parse(CNACreate)
 
     // 1. make path absolute
     let destDir = path.resolve(args.path)
 
     // 2. Make sure we have npm, fatal otherwise
-    // if (!isNpmInstalled()) {
-    //   this.error("oops, npm is required.")
-    // }
-
-    // let result = npa('git+https://git.corp.adobe.com:CNA/runtime-cna-starter.git')
-    // console.log('result : ', result)
+    if (!isNpmInstalled()) {
+      this.error("oops, npm is required.")
+    }
 
     // 3. create destination if not there
     if (!fs.existsSync(destDir)) {
@@ -50,21 +49,15 @@ class CNACreate extends Command {
     // 5 get and copy our template files over
     // 5a create a temp directory
     let tmpDest = getSelfDestructingTempDir()
-    console.log('tmpDest = ' + tmpDest)
-
 
     // 5b call npm i with spec+temp temp destination
     fs.ensureDirSync(path.join(tmpDest,'node_modules'))
-    let res = this.npmInstall(flags.template, tmpDest, flags.registry || defaultRegistry)
+    let res = this.npmInstall(flags.template, tmpDest, flags.registry || DEFAULT_REGISTRY)
     res.then( () => {
-      console.log('success ... ' + tmpDest)
+      // console.log('success ... ' + tmpDest)
       // 5c copy files from temp to dest 
-      // let srcPath = require.resolve(flags.template, {paths: [tmpDest]})
-      // let srcDir = path.dirname(srcPath)
 
       let srcDir = path.join(tmpDest,'node_modules',flags.template)
-     
-      console.log('srcDir = ' + srcDir)
       fs.copySync(srcDir, destDir)
 
       cli.action.start('installing dependencies')
@@ -78,45 +71,15 @@ class CNACreate extends Command {
         console.log('error ' + error)
       })
       child.on('close', (code, sig) => {
-        console.log('close : ', code, sig)
         if (code !== 0) {
           cli.action.stop('failed') 
         } else {
           cli.action.stop('good') 
         }
       })
-
-
-
     }).catch(err => {
       console.log('it threw .. ', err)
     })
-
-
-
-
-
-    
-
-    // // fetch the template to temp
-    // let res = fetch('cordova-app-hello-world', tmpDest)
-    // console.log('got res ... ', res)
-
-    // res.then(res => {
-    //   console.log('res .. ', res)
-    // })
-    // res.catch(err => {
-    //   console.log('err .. ', err)
-    // })
-
-    
-    // return res
-
-    // let template = '/repos/adobe/cna/runtime-cna-starter' //require.resolve('/repos/adobe/cna/runtime-cna-starter')
-    // console.log('template = ' + template)
-
-    // let templateDir = template // getSelfDestructingTempDir()
-    // //this.copyTemplateFiles(templateDir, dir)
   }
 
   async npmInstall(spec, dest, registry) {
@@ -135,13 +98,13 @@ class CNACreate extends Command {
       })
       child.on('error', err => {
         cli.action.stop('failed') 
-        reject({ command: `${cmd} ${args.join(' ')}`})
+        reject({ command: `${cmd} ${spec}`})
       })
       child.on('close', (code, sig) => {
-        console.log('close : ', code, sig)
+        // console.log('close : ', code, sig)
         if (code !== 0) {
           cli.action.stop('failed') 
-          reject({ command: `${cmd} ${args.join(' ')}`})
+          reject({ command: `${cmd} install ${spec}`})
         } else {
           cli.action.stop() 
           resolve()
@@ -151,15 +114,13 @@ class CNACreate extends Command {
     return result
   }
 
+  // todo: use this to do the copy so we can ignore some stuff, especially relevant when we support creating
+  // from templates on the local filesystem
   async copyTemplateFiles(templateDir, projectDir) {
     const dirList = fs.readdirSync(templateDir)
-    console.log('dirList = ', dirList)
     // skip directories, and files that are unwanted
     let excludes = ['.git', 'NOTICE', 'LICENSE', 'COPYRIGHT', '.npmignore', '.gitignore', 'node_modules']
-
     let templateFiles = dirList.filter(value => excludes.indexOf(value) < 0)
-
-    console.log('templateFiles =', templateFiles)
     // Copy each template file after filter
     templateFiles.forEach(f => {
       let srcPath = path.resolve(templateDir, f)
@@ -170,8 +131,6 @@ class CNACreate extends Command {
 }
 
 CNACreate.description = `Create a new Cloud Native Application
-...
-Select options, and go
 `
 
 CNACreate.args = [
@@ -180,25 +139,25 @@ CNACreate.args = [
     description: 'Directory to create the app in',
     default: '.',
   },
-  {
-    name: 'name',
-    default: 'MyApp',
-  },
+  // todo: support a specified name that is used to populate package.json ...
+  // { 
+  //   name: 'name',
+  //   default: 'MyApp',
+  // },
 ]
 
 CNACreate.flags = {
   template: flags.string({
     char: 't',
-    description: 'Template starter path, or id',
+    description: 'Template starter filepath, git-url or published id/name.',
     default: '@io-dev-tools/runtime-cna-starter'
   }),
   registry: flags.string({
     char:'r',
-    description:'Alternate registry to use. Passed into npm as environmental var `npm_config_registry`'
+    description:'Alternate registry to use. Passed into npm as environmental variable `npm_config_registry`'
   }),
-  verbose: flags.boolean({ char: 'v', description: 'Verbose output' }),
+  verbose: flags.boolean({ char: 'd', description: 'Show verbose/debug output' }),
   help: flags.boolean({ char: 'h', description: 'Show help' })
-  
 }
 
 module.exports = CNACreate
