@@ -67,22 +67,24 @@ class CNACreate extends Command {
       console.log('srcDir = ' + srcDir)
       fs.copySync(srcDir, destDir)
 
-      // const child = spawn('npm', ['install'], { 
-      //   cwd: destDir, 
-      //   stdio: 'inherit',
-      //   env: process.env
-      // })
-      // child.on('error', err => {
-      //   console.log('error ' + error)
-      // })
-      // child.on('close', (code, sig) => {
-      //   console.log('close : ', code, sig)
-      //   if (code !== 0) {
-
-      //   } else {
-
-      //   }
-      // })
+      cli.action.start('installing dependencies')
+      const child = spawn('npm', ['install'], { 
+        cwd: destDir, 
+        stdio: 'inherit',
+        env: process.env
+      })
+      child.on('error', err => {
+        cli.action.stop('failed') 
+        console.log('error ' + error)
+      })
+      child.on('close', (code, sig) => {
+        console.log('close : ', code, sig)
+        if (code !== 0) {
+          cli.action.stop('failed') 
+        } else {
+          cli.action.stop('good') 
+        }
+      })
 
 
 
