@@ -15,11 +15,11 @@ Create, Build and Deploy Cloud Native Applications
 # Usage
 <!-- usage -->
 ```sh-session
-$ npm install -g aio-cli-plugin-cna
+$ npm install -g @io-dev-tools/aio-cli-plugin-cna
 $ oclif-example COMMAND
 running command...
 $ oclif-example (-v|--version|version)
-aio-cli-plugin-cna/0.0.0 darwin-x64 node-v8.9.4
+@io-dev-tools/aio-cli-plugin-cna/0.0.1 darwin-x64 node-v8.9.4
 $ oclif-example --help [COMMAND]
 USAGE
   $ oclif-example COMMAND
@@ -28,23 +28,27 @@ USAGE
 <!-- usagestop -->
 # Commands
 <!-- commands -->
-* [`oclif-example hello`](#oclif-example-hello)
+* [`oclif-example cna:create [PATH] [NAME]`](#oclif-example-cnacreate-path-name)
 
-## `oclif-example hello`
+## `oclif-example cna:create [PATH] [NAME]`
 
-Describe the command here
+Create a new Cloud Native Application
 
 ```
 USAGE
-  $ oclif-example hello
+  $ oclif-example cna:create [PATH] [NAME]
+
+ARGUMENTS
+  PATH  [default: .] Directory to create the app in
+  NAME  [default: MyApp]
 
 OPTIONS
-  -n, --name=name  name to print
+  -t, --template=template  Template starter path, or id
 
 DESCRIPTION
   ...
-  Extra documentation goes here
+  Select options, and go
 ```
 
-_See code: [src/commands/hello.js](https://github.com/purplecabbage/aio-cli-plugin-cna/blob/v0.0.0/src/commands/hello.js)_
+_See code: [src/commands/cna/create.js](https://github.com/purplecabbage/aio-cli-plugin-cna/blob/v0.0.1/src/commands/cna/create.js)_
 <!-- commandsstop -->
