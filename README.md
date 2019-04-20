@@ -19,7 +19,7 @@ $ npm install -g @io-dev-tools/aio-cli-plugin-cna
 $ @io-dev-tools/aio-cli-plugin-cna COMMAND
 running command...
 $ @io-dev-tools/aio-cli-plugin-cna (-v|--version|version)
-@io-dev-tools/aio-cli-plugin-cna/0.0.2 darwin-x64 node-v8.14.0
+@io-dev-tools/aio-cli-plugin-cna/0.0.2 darwin-x64 node-v8.9.4
 $ @io-dev-tools/aio-cli-plugin-cna --help [COMMAND]
 USAGE
   $ @io-dev-tools/aio-cli-plugin-cna COMMAND
