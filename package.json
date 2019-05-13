@@ -10,6 +10,7 @@
     "cross-spawn": "^6.0.5",
     "fs-extra": "^7.0.1",
     "ignore-walk": "^3.0.1",
+    "inquirer": "^6.3.1",
     "npm-package-arg": "^6.1.0",
     "resolve": "^1.10.0",
     "semver": "^5.6.0",
