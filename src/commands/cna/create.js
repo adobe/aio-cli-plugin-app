@@ -23,7 +23,6 @@ function isNpmInstalled () {
 }
 
 function installTemplate (destDir) {
-
   // todo: apply name from flags to package.json
 
   cli.action.start('installing dependencies')
