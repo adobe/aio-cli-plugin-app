@@ -1,5 +1,5 @@
 /**
- * Test action
+ * main action
  * @param args
  * @returns {{body: string}}
  */

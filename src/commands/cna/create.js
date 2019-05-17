@@ -24,7 +24,6 @@ function isNpmInstalled () {
 
 function installTemplate (destDir) {
   // todo: apply name from flags to package.json
-
   cli.action.start('installing dependencies')
   const child = spawn('npm', ['install'], {
     cwd: destDir,
@@ -67,7 +66,7 @@ class CNACreate extends Command {
     }
 
     // 5. use templateMap
-    let template = templateMap[flags.template]
+    let template = templateMap.createTemplates[flags.template]
     if (template != null) {
       // 6. try to get the template src from this repos templates folder
       let srcDir = path.resolve(__dirname, '../../templates/', template.path)
@@ -88,7 +87,7 @@ class CNACreate extends Command {
 
 CNACreate.description = `Create a new Cloud Native Application
 
-Valid template names are ${Object.keys(templateMap).join(', ')}
+Valid template names are ${Object.keys(templateMap.createTemplates).join(', ')}
 `
 
 CNACreate.args = [
