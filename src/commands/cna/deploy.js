@@ -11,12 +11,13 @@ governing permissions and limitations under the License.
 */
 
 const path = require('path')
-const { Command, flags } = require('@oclif/command')
+const CNABaseCommand = require('../../CNABaseCommand')
+const { flags } = require('@oclif/command')
 const ora = require('ora')
 const open = require('open')
 const chalk = require('chalk')
 
-class CNADeploy extends Command {
+class CNADeploy extends CNABaseCommand {
   async run () {
     // cli input
     const { args, flags } = this.parse(CNADeploy)

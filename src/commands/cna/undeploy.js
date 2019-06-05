@@ -11,11 +11,12 @@ governing permissions and limitations under the License.
 */
 
 const path = require('path')
-const { Command, flags } = require('@oclif/command')
+const { flags } = require('@oclif/command')
+const CNABaseCommand = require('../../CNABaseCommand')
 const ora = require('ora')
 const chalk = require('chalk')
 
-class CNAUndeploy extends Command {
+class CNAUndeploy extends CNABaseCommand {
   async run () {
     // cli input
     const { args, flags } = this.parse(CNAUndeploy)
@@ -75,10 +76,7 @@ CNAUndeploy.args = [
 ]
 CNAUndeploy.flags = {
   static: flags.boolean({ char: 's', description: 'Only deploy static files.' }),
-  actions: flags.boolean({ char: 'a', description: 'Only deploy actions.' }),
-
-  verbose: flags.boolean({ char: 'd', description: 'Show verbose/debug output' }),
-  help: flags.boolean({ char: 'h', description: 'Show help' })
+  actions: flags.boolean({ char: 'a', description: 'Only deploy actions.' })
 }
 
 module.exports = CNAUndeploy
