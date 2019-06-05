@@ -10,7 +10,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { Command, flags } = require('@oclif/command')
+const { Command } = require('@oclif/command')
 // const { cli } = require('cli-ux')
 const inquirer = require('inquirer')
 const path = require('path')
@@ -22,8 +22,8 @@ const GetInitMessage = cwd => {
 You are about to initialize a project in this directory:
 
   ${cwd}
-  
-Which CNA features do you want to enable for this project? 
+
+Which CNA features do you want to enable for this project?
 `
   return message
 }
@@ -77,7 +77,7 @@ class CNAInit extends Command {
     }
 
     // finalize configuration data
-    // 
+    //
     this.log(`✔ CNA initialization finished!`)
   }
 
