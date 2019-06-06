@@ -13,6 +13,10 @@ governing permissions and limitations under the License.
 const TheCommand = require('../../../src/commands/cna/undeploy')
 const CNABaseCommand = require('../../../src/CNABaseCommand')
 
+// mocks
+const mockScripts = require('@adobe/io-cna-scripts')()
+// jest.mock('ora') // mock spinner
+
 test('exports', async () => {
   expect(typeof TheCommand).toEqual('function')
   expect(TheCommand.prototype instanceof CNABaseCommand).toBeTruthy()
@@ -29,7 +33,59 @@ test('aliases', async () => {
 test('flags', async () => {
   expect(typeof TheCommand.flags.actions).toBe('object')
   expect(TheCommand.flags.actions.char).toBe('a')
+  expect(typeof TheCommand.flags.actions.description).toBe('string')
+  expect(TheCommand.flags.actions.exclusive).toEqual(['static'])
 
   expect(typeof TheCommand.flags.static).toBe('object')
   expect(TheCommand.flags.static.char).toBe('s')
+  expect(typeof TheCommand.flags.static.description).toBe('string')
+  expect(TheCommand.flags.static.exclusive).toEqual(['actions'])
+})
+
+describe('run', () => {
+  let command
+  beforeEach(() => {
+    jest.resetAllMocks()
+    command = new TheCommand([])
+    command.error = jest.fn()
+  })
+
+  test('undeploy a CNA with no flags', async () => {
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.undeployActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
+  })
+
+  test('undeploy only actions', async () => {
+    command.argv = ['-a']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.undeployActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(0)
+  })
+
+  test('undeploy only static files', async () => {
+    command.argv = ['-s']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.undeployActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
+  })
+
+  test('should fail if scripts.undeployActions fails', async () => {
+    const error = new Error('mock failure')
+    mockScripts.undeployActions.mockRejectedValue(error)
+    await command.run()
+    expect(command.error).toHaveBeenCalledWith(error.message)
+    expect(mockScripts.undeployActions).toHaveBeenCalledTimes(1)
+  })
+
+  test('should fail if scripts.undeployUI fails', async () => {
+    const error = new Error('mock failure')
+    mockScripts.undeployUI.mockRejectedValue(error)
+    await command.run()
+    expect(command.error).toHaveBeenCalledWith(error.message)
+    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
+  })
 })

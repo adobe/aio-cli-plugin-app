@@ -67,16 +67,12 @@ class CNAUndeploy extends CNABaseCommand {
 CNAUndeploy.description = `Builds and deploys a Cloud Native Application
 `
 
-CNAUndeploy.args = [
-  {
-    name: 'path',
-    description: 'App Directory',
-    default: '.'
-  }
-]
 CNAUndeploy.flags = {
-  static: flags.boolean({ char: 's', description: 'Only deploy static files.' }),
-  actions: flags.boolean({ char: 'a', description: 'Only deploy actions.' })
+  ...CNABaseCommand.flags,
+  static: flags.boolean({ char: 's', description: 'Only deploy static files.', exclusive: ['actions'] }),
+  actions: flags.boolean({ char: 'a', description: 'Only deploy actions.', exclusive: ['static'] })
 }
+
+CNAUndeploy.args = CNABaseCommand.args
 
 module.exports = CNAUndeploy

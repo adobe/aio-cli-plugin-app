@@ -86,24 +86,17 @@ class CNADeploy extends CNABaseCommand {
 CNADeploy.description = `Builds and deploys a Cloud Native Application
 `
 
-CNADeploy.args = [
-  {
-    name: 'path',
-    description: 'App Directory',
-    default: '.'
-  }
-]
 CNADeploy.flags = {
+  ...CNABaseCommand.flags,
   build: flags.boolean({ char: 'b', description: 'Only build, don\'t deploy.' }),
   // todo remove these 2 options and autodetect UI/action dir + ui/actions changes
-  static: flags.boolean({ char: 's', description: 'Only deploy static files.' }),
-  actions: flags.boolean({ char: 'a', description: 'Only deploy actions.' }),
-
-  verbose: flags.boolean({ char: 'd', description: 'Show verbose/debug output' }),
-  help: flags.boolean({ char: 'h', description: 'Show help' })
+  static: flags.boolean({ char: 's', description: 'Only deploy static files.', exclusive: ['actions'] }),
+  actions: flags.boolean({ char: 'a', description: 'Only deploy actions.', exclusive: ['static'] })
 
   // todo no color/spinner/open output
   // 'no-fancy': flags.boolean({ description: 'Simple output and no url open' }),
 }
+
+CNADeploy.args = CNABaseCommand.args
 
 module.exports = CNADeploy

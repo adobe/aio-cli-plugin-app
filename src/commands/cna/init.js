@@ -157,16 +157,10 @@ package pre-configured.
 CNAInit.description = `Initialize a Cloud Native Application
 `
 
-CNAInit.args = [
-  {
-    name: 'path',
-    description: 'Directory to create the app in',
-    default: '.'
-  }
-]
-
 CNAInit.flags = {
-
+  ...CNABaseCommand.flags
 }
+
+CNAInit.args = CNABaseCommand.args
 
 module.exports = CNAInit

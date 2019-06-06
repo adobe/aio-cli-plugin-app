@@ -13,6 +13,12 @@ governing permissions and limitations under the License.
 const TheCommand = require('../../../src/commands/cna/deploy')
 const CNABaseCommand = require('../../../src/CNABaseCommand')
 
+// mocks
+const mockOpen = require('open')
+jest.mock('open', () => jest.fn())
+const mockScripts = require('@adobe/io-cna-scripts')()
+// jest.mock('ora')
+
 test('exports', async () => {
   expect(typeof TheCommand).toEqual('function')
   expect(TheCommand.prototype instanceof CNABaseCommand).toBeTruthy()
@@ -29,10 +35,121 @@ test('aliases', async () => {
 test('flags', async () => {
   expect(typeof TheCommand.flags.actions).toBe('object')
   expect(TheCommand.flags.actions.char).toBe('a')
+  expect(typeof TheCommand.flags.actions.description).toBe('string')
+  expect(TheCommand.flags.actions.exclusive).toEqual(['static'])
 
   expect(typeof TheCommand.flags.static).toBe('object')
   expect(TheCommand.flags.static.char).toBe('s')
+  expect(typeof TheCommand.flags.static.description).toBe('string')
+  expect(TheCommand.flags.static.exclusive).toEqual(['actions'])
 
   expect(typeof TheCommand.flags.build).toBe('object')
   expect(TheCommand.flags.build.char).toBe('b')
+  expect(typeof TheCommand.flags.build.description).toBe('string')
+})
+
+describe('run', () => {
+  let command
+  beforeEach(() => {
+    jest.resetAllMocks()
+
+    command = new TheCommand([])
+    command.error = jest.fn()
+  })
+
+  test('build & deploy a CNA with no flags', async () => {
+    mockScripts.deployUI.mockResolvedValue('https://example.com')
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.deployUI).toHaveBeenCalledTimes(1)
+    expect(mockScripts.buildActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.buildUI).toHaveBeenCalledTimes(1)
+    expect(mockOpen).toHaveBeenCalledWith('https://example.com')
+  })
+
+  test('build & deploy a CNA verbose', async () => {
+    command.argv = ['-v']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.deployUI).toHaveBeenCalledTimes(1)
+    expect(mockScripts.buildActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.buildUI).toHaveBeenCalledTimes(1)
+    expect(mockOpen).toHaveBeenCalledTimes(0) // with verbose no open
+  })
+
+  test('build & deploy only actions', async () => {
+    command.argv = ['-a']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.deployUI).toHaveBeenCalledTimes(0)
+    expect(mockScripts.buildActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.buildUI).toHaveBeenCalledTimes(0)
+    expect(mockOpen).toHaveBeenCalledTimes(0)
+  })
+
+  test('build & deploy only static files', async () => {
+    command.argv = ['-s']
+    mockScripts.deployUI.mockResolvedValue('https://example.com')
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployUI).toHaveBeenCalledTimes(1)
+    expect(mockScripts.buildActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.buildUI).toHaveBeenCalledTimes(1)
+    expect(mockOpen).toHaveBeenCalledWith('https://example.com')
+  })
+
+  test('build only', async () => {
+    command.argv = ['-b']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployUI).toHaveBeenCalledTimes(0)
+    expect(mockScripts.buildActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.buildUI).toHaveBeenCalledTimes(1)
+    expect(mockOpen).toHaveBeenCalledTimes(0)
+  })
+
+  test('build only static files', async () => {
+    command.argv = ['-bs']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployUI).toHaveBeenCalledTimes(0)
+    expect(mockScripts.buildActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.buildUI).toHaveBeenCalledTimes(1)
+    expect(mockOpen).toHaveBeenCalledTimes(0)
+  })
+
+  test('build only actions', async () => {
+    command.argv = ['-ba']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployUI).toHaveBeenCalledTimes(0)
+    expect(mockScripts.buildActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.buildUI).toHaveBeenCalledTimes(0)
+    expect(mockOpen).toHaveBeenCalledTimes(0)
+  })
+
+  test('should fail if scripts.deployActions fails', async () => {
+    const error = new Error('mock failure')
+    mockScripts.deployActions.mockRejectedValue(error)
+    await command.run()
+    expect(command.error).toHaveBeenCalledWith(error.message)
+    expect(mockScripts.buildActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.buildUI).toHaveBeenCalledTimes(1)
+    expect(mockScripts.deployActions).toHaveBeenCalledTimes(1)
+  })
+
+  test('should fail if scripts.deployUI fails', async () => {
+    const error = new Error('mock failure')
+    mockScripts.deployUI.mockRejectedValue(error)
+    await command.run()
+    expect(command.error).toHaveBeenCalledWith(error.message)
+    expect(mockScripts.deployUI).toHaveBeenCalledTimes(1)
+  })
 })

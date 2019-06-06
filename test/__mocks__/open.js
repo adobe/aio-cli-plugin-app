@@ -10,15 +10,5 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { stdout, stderr } = require('stdout-stderr')
-
-// trap console log
-beforeEach(() => { stdout.start(); stderr.start() })
-afterEach(() => { stdout.stop(); stderr.stop() })
-
-process.on('unhandledRejection', error => {
-  throw error
-})
-
-// make sure we mock the cna scripts
-jest.mock('@adobe/io-cna-scripts')
+const mockOpen = jest.fn()
+module.exports = () => mockOpen

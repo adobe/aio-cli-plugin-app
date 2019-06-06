@@ -8,4 +8,12 @@ CNABaseCommand.flags = {
   help: flags.boolean({ char: 'h', description: 'Show help' })
 }
 
+CNABaseCommand.args = [
+  {
+    name: 'path',
+    description: 'Path to the app directory',
+    default: '.'
+  }
+]
+
 module.exports = CNABaseCommand

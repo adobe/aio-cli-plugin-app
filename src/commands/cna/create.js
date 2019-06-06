@@ -91,15 +91,8 @@ CNACreate.description = `Create a new Cloud Native Application
 Valid template names are ${Object.keys(templateMap.createTemplates).join(', ')}
 `
 
-CNACreate.args = [
-  {
-    name: 'path',
-    description: 'Directory to create the app in',
-    default: '.'
-  }
-]
-
 CNACreate.flags = {
+  ...CNABaseCommand.flags,
   template: flags.string({
     char: 't',
     // description: 'Template starter filepath, git-url or published id/name.',
@@ -117,5 +110,7 @@ CNACreate.flags = {
   //   description: 'Specify a name for your app'
   // }),
 }
+
+CNACreate.args = CNABaseCommand.args
 
 module.exports = CNACreate
