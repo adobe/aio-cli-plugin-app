@@ -10,18 +10,18 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { Command, flags } = require('@oclif/command')
+const { Command } = require('@oclif/command')
 // const { cli } = require('cli-ux')
 const inquirer = require('inquirer')
 const path = require('path')
 const fs = require('fs-extra')
 const templateMap = require('../../templates')
 
-const GetInitMessage = cwd => {
+const GetInitMessage = selectedDir => {
   let message = `Project setup
 You are about to initialize a project in this directory:
 
-  ${cwd}
+  ${selectedDir}
   
 Which CNA features do you want to enable for this project? 
 `
@@ -34,10 +34,14 @@ class CNAInit extends Command {
 
     // can we specify a location other than cwd?
     let destDir = path.resolve(args.path)
+    this.log(GetInitMessage(destDir))
+
+    fs.ensureDirSync(destDir)
+    
 
     // 1. does the target contain a cna.json, if not create it
 
-    this.log(GetInitMessage(destDir))
+    
 
     let responses = await inquirer.prompt([{
       name: 'components',
@@ -77,7 +81,7 @@ class CNAInit extends Command {
     }
 
     // finalize configuration data
-    // 
+    //
     this.log(`✔ CNA initialization finished!`)
   }
 
@@ -87,9 +91,11 @@ class CNAInit extends Command {
   async createAssetsFromTemplate () {
     let message = `
 /* Web Assets Setup */
+
 The public directory is the folder (inside your project directory) that
 will contain static assets to be uploaded to cloud storage. If you
 have a build process use your build's output directory.
+
 `
 
     this.log(message)
@@ -100,7 +106,7 @@ have a build process use your build's output directory.
 
     let templateAssets = templateMap.assets
     let srcDir = path.resolve(__dirname, '../../templates/', templateAssets.path)
-    this.log('templateAssets.srcDir = ' + srcDir)
+    // this.log('templateAssets.srcDir = ' + srcDir)
 
     let assetQ = await inquirer.prompt([{
       name: 'assetDest',
@@ -109,8 +115,19 @@ have a build process use your build's output directory.
       default: 'web-assets'
     }])
 
-    console.log('assetQ ', assetQ)
+    // console.log('assetQ ', assetQ)
     // todo: copy assets
+
+    let destDir = path.resolve(assetQ.assetDest)
+    if (fs.existsSync(destDir)) {
+      this.log('`assets` directory already exists --- skipping')
+    } else if (fs.existsSync(srcDir)) {
+      this.log(`Copying assets to ${destDir}`)
+      fs.copySync(srcDir, destDir)
+      this.log('')
+    } else {
+      // error in template ?
+    }
   }
 
   /**
@@ -122,8 +139,10 @@ have a build process use your build's output directory.
   async createActionsFromTemplate () {
     let message = `
 /* Actions Setup */
+
 An actions directory will be created in your project with a Node.js
 package pre-configured.
+
 `
     this.log(message)
 
@@ -134,8 +153,7 @@ package pre-configured.
       default: 'actions'
     }])
 
-    this.log('actionQ', actionQ)
-
+    // this.log('actionQ', actionQ)
     // write a json fragment to cna.json
     // copy files listed in templates/functions
     let templateActions = templateMap.actions
@@ -165,8 +183,6 @@ CNAInit.args = [
   }
 ]
 
-CNAInit.flags = {
-
-}
+CNAInit.flags = { }
 
 module.exports = CNAInit
