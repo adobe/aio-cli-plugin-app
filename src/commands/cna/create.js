@@ -9,7 +9,8 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { Command, flags } = require('@oclif/command')
+const { flags } = require('@oclif/command')
+const CNABaseCommand = require('../../CNABaseCommand')
 const { cli } = require('cli-ux')
 const path = require('path')
 const fs = require('fs-extra')
@@ -43,7 +44,7 @@ function installTemplate (destDir) {
   })
 }
 
-class CNACreate extends Command {
+class CNACreate extends CNABaseCommand {
   async run () {
     const { args, flags } = this.parse(CNACreate)
 
@@ -90,15 +91,8 @@ CNACreate.description = `Create a new Cloud Native Application
 Valid template names are ${Object.keys(templateMap.createTemplates).join(', ')}
 `
 
-CNACreate.args = [
-  {
-    name: 'path',
-    description: 'Directory to create the app in',
-    default: '.'
-  }
-]
-
 CNACreate.flags = {
+  ...CNABaseCommand.flags,
   template: flags.string({
     char: 't',
     // description: 'Template starter filepath, git-url or published id/name.',
@@ -109,14 +103,14 @@ CNACreate.flags = {
     description: 'Install dependencies by running `npm install` in the target directory',
     default: true,
     allowNo: true
-  }),
+  })
   // todo:
   // name: flags.string( {
   //   char: 'n',
   //   description: 'Specify a name for your app'
   // }),
-  verbose: flags.boolean({ char: 'd', description: 'Show verbose/debug output' }),
-  help: flags.boolean({ char: 'h', description: 'Show help' })
 }
+
+CNACreate.args = CNABaseCommand.args
 
 module.exports = CNACreate

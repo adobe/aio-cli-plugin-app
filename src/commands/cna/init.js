@@ -10,7 +10,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { Command, flags } = require('@oclif/command')
+const CNABaseCommand = require('../../CNABaseCommand')
 // const { cli } = require('cli-ux')
 const inquirer = require('inquirer')
 const path = require('path')
@@ -22,13 +22,13 @@ const GetInitMessage = cwd => {
 You are about to initialize a project in this directory:
 
   ${cwd}
-  
-Which CNA features do you want to enable for this project? 
+
+Which CNA features do you want to enable for this project?
 `
   return message
 }
 
-class CNAInit extends Command {
+class CNAInit extends CNABaseCommand {
   async run () {
     const { args } = this.parse(CNAInit)
 
@@ -77,7 +77,7 @@ class CNAInit extends Command {
     }
 
     // finalize configuration data
-    // 
+    //
     this.log(`✔ CNA initialization finished!`)
   }
 
@@ -157,16 +157,10 @@ package pre-configured.
 CNAInit.description = `Initialize a Cloud Native Application
 `
 
-CNAInit.args = [
-  {
-    name: 'path',
-    description: 'Directory to create the app in',
-    default: '.'
-  }
-]
-
 CNAInit.flags = {
-
+  ...CNABaseCommand.flags
 }
+
+CNAInit.args = CNABaseCommand.args
 
 module.exports = CNAInit

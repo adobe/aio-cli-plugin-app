@@ -1,0 +1,15 @@
+language: node_js
+os:
+  - windows
+  - linux
+node_js:
+  - "10"
+  - "12"
+env:
+  global:
+    - CXX=g++-4.8
+install:
+  - npm version
+  - npm ci
+script:
+  - npm test
