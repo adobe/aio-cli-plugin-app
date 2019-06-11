@@ -35,6 +35,8 @@ class CNAInit extends CNABaseCommand {
     // can we specify a location other than cwd?
     let destDir = path.resolve(args.path)
 
+    fs.ensureDirSync(destDir)
+
     // 1. does the target contain a cna.json, if not create it
 
     this.log(GetInitMessage(destDir))
@@ -64,34 +66,48 @@ class CNAInit extends CNABaseCommand {
       ]
     }])
 
+    await this.copyBaseFiles(destDir)
+
     if (responses.components.indexOf('database') > -1) {
       this.log('/* Database Setup */')
       this.log('more questions here')
       // todo: this.createDBFromTemplate
     }
     if (responses.components.indexOf('actions') > -1) {
-      await this.createActionsFromTemplate()
+      await this.createActionsFromTemplate(destDir)
     }
     if (responses.components.indexOf('assets') > -1) {
-      await this.createAssetsFromTemplate()
+      await this.createAssetsFromTemplate(destDir)
     }
 
     // finalize configuration data
-    //
     this.log(`✔ CNA initialization finished!`)
+  }
+
+  async copyBaseFiles (dest) {
+    let templateBase = templateMap.base
+    let srcDir = path.resolve(__dirname, '../../templates/', templateBase.path)
+
+    let destDir = path.resolve(dest)
+    if (fs.existsSync(srcDir)) {
+      this.log(`Copying starter files to ${destDir}`)
+      fs.copySync(srcDir, destDir)
+      this.log('')
+    } else {
+      // error in template ?
+    }
   }
 
   /**
   *  Web Assets
   * ***************************************************************************/
-  async createAssetsFromTemplate () {
+  async createAssetsFromTemplate (dest) {
     let message = `
 /* Web Assets Setup */
 The public directory is the folder (inside your project directory) that
 will contain static assets to be uploaded to cloud storage. If you
 have a build process use your build's output directory.
 `
-
     this.log(message)
 
     // todo: write a json fragment to cna.json
@@ -106,11 +122,22 @@ have a build process use your build's output directory.
       name: 'assetDest',
       message: 'What folder do you want to use as your public directory?',
       type: 'string',
-      default: 'web-assets'
+      default: 'web-src'
     }])
 
-    console.log('assetQ ', assetQ)
+    // console.log('assetQ ', assetQ)
     // todo: copy assets
+
+    let destDir = path.resolve(dest, assetQ.assetDest)
+    if (fs.existsSync(destDir)) {
+      this.log('`public` directory already exists --- skipping')
+    } else if (fs.existsSync(srcDir)) {
+      this.log(`Copying actions to ${destDir}`)
+      fs.copySync(srcDir, destDir)
+      this.log('')
+    } else {
+      // error in template ?
+    }
   }
 
   /**
@@ -119,7 +146,7 @@ have a build process use your build's output directory.
    *    todo: add option install deps?
    *    todo: add option to overwrite files?
    * ***************************************************************************/
-  async createActionsFromTemplate () {
+  async createActionsFromTemplate (dest) {
     let message = `
 /* Actions Setup */
 An actions directory will be created in your project with a Node.js
@@ -139,9 +166,10 @@ package pre-configured.
     // write a json fragment to cna.json
     // copy files listed in templates/functions
     let templateActions = templateMap.actions
+    console.log('templateActions = ' + templateActions)
     let srcDir = path.resolve(__dirname, '../../templates/', templateActions.path)
 
-    let destDir = path.resolve(actionQ.actionDest)
+    let destDir = path.resolve(dest, actionQ.actionDest)
     if (fs.existsSync(destDir)) {
       this.log('`actions` directory already exists --- skipping')
     } else if (fs.existsSync(srcDir)) {
