@@ -1,0 +1,23 @@
+
+# package directories
+node_modules
+jspm_packages
+
+# build
+dist
+.manifest-dist.yml
+
+# Config
+config.json
+.env
+
+# IDE & Temp
+.cache
+.idea
+.nyc_output
+.vscode
+coverage
+.aws.tmp.creds.json
+
+# OSX
+.DS_Store

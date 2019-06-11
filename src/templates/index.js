@@ -31,8 +31,11 @@ module.exports = {
       path: 'basic-action-view-app'
     }
   },
+  base: {
+    path: 'base'
+  },
   assets: {
-    path: 'web-assets'
+    path: 'web-src'
   },
   actions: {
     path: 'actions'
