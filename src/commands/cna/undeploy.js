@@ -22,6 +22,9 @@ class CNAUndeploy extends CNABaseCommand {
     const { args, flags } = this.parse(CNAUndeploy)
     const appDir = path.resolve(args.path)
 
+    const currDir = process.cwd()
+    process.chdir(appDir)
+
     // setup scripts, events and spinner
     // todo modularize (same for all cna-scripts wrappers)
     const spinner = ora()
@@ -57,8 +60,10 @@ class CNAUndeploy extends CNABaseCommand {
       }
       // final message
       this.log(chalk.green(chalk.bold('Undeploy done !')))
+      process.chdir(currDir)
     } catch (error) {
       spinner.fail()
+      process.chdir(currDir)
       this.error(error.message)
     }
   }
