@@ -23,6 +23,9 @@ class CNADeploy extends CNABaseCommand {
     const { args, flags } = this.parse(CNADeploy)
     const appDir = path.resolve(args.path)
 
+    const currDir = process.cwd()
+    process.chdir(appDir)
+
     // setup scripts, events and spinner
     // todo modularize (same for all cna-scripts wrappers)
     const spinner = ora()
@@ -76,8 +79,10 @@ class CNADeploy extends CNABaseCommand {
       } else {
         this.log(chalk.green(chalk.bold('Well done, your app is now online 🏄')))
       }
+      process.chdir(currDir)
     } catch (error) {
       spinner.fail()
+      process.chdir(currDir)
       this.error(error.message)
     }
   }
