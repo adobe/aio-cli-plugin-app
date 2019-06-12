@@ -30,7 +30,7 @@ Which CNA features do you want to enable for this project?
 }
 
 class CNAInit extends CNABaseCommand {
-  async run() {
+  async run () {
     const { args, flags } = this.parse(CNAInit)
 
     // can we specify a location other than cwd?
@@ -85,8 +85,7 @@ class CNAInit extends CNABaseCommand {
     this.log(`✔ CNA initialization finished!`)
   }
 
-  async copyBaseFiles(dest, name, bSkipPrompt) {
-
+  async copyBaseFiles (dest, name, bSkipPrompt) {
     let templateBase = templateMap.base
     let srcDir = path.resolve(__dirname, '../../templates/', templateBase.path)
 
@@ -118,7 +117,7 @@ class CNAInit extends CNABaseCommand {
   /**
   *  Web Assets
   * ***************************************************************************/
-  async createAssetsFromTemplate(dest, bSkipPrompt) {
+  async createAssetsFromTemplate (dest, bSkipPrompt) {
     let message = `
 /* Web Assets Setup */
 The public directory is the folder (inside your project directory) that
@@ -163,7 +162,7 @@ have a build process use your build's output directory.
    *    todo: add option install deps?
    *    todo: add option to overwrite files?
    * ***************************************************************************/
-  async createActionsFromTemplate(dest, bSkipPrompt) {
+  async createActionsFromTemplate (dest, bSkipPrompt) {
     let message = `
 /* Actions Setup */
 An actions directory will be created in your project with a Node.js
