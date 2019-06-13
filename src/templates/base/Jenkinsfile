@@ -1,6 +1,8 @@
+@Library(value="spapipe@hackathon-io-runtime", changelog=true) _
 spapipe('''
 attributes:
     defaultBranch: "master"
+    outputFilesPath: "./dist/ui-remote"
+    customTestCmd: "echo run tests"
     customBuildCmd: "npm run build"
-    buildsToRetain: 5
 ''')
