@@ -1,0 +1,6 @@
+spapipe('''
+attributes:
+    defaultBranch: "master"
+    customBuildCmd: "npm run build"
+    buildsToRetain: 5
+''')
