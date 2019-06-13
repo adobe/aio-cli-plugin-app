@@ -10,7 +10,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const path = require('path')
+// const path = require('path')
 const CNABaseCommand = require('../../CNABaseCommand')
 const { flags } = require('@oclif/command')
 const ora = require('ora')
@@ -20,11 +20,11 @@ const chalk = require('chalk')
 class CNADeploy extends CNABaseCommand {
   async run () {
     // cli input
-    const { args, flags } = this.parse(CNADeploy)
-    const appDir = path.resolve(args.path)
+    const { flags } = this.parse(CNADeploy)
 
-    const currDir = process.cwd()
-    process.chdir(appDir)
+    // const appDir = path.resolve(args.path)
+    // const currDir = process.cwd()
+    // process.chdir(appDir)
 
     // setup scripts, events and spinner
     // todo modularize (same for all cna-scripts wrappers)
@@ -50,7 +50,7 @@ class CNADeploy extends CNABaseCommand {
           spinner.start()
         }
       }
-      const scripts = require('@adobe/io-cna-scripts')({ appDir, listeners })
+      const scripts = require('@adobe/io-cna-scripts')({ listeners })
 
       // build phase
       if (!flags.static) {
@@ -79,10 +79,10 @@ class CNADeploy extends CNABaseCommand {
       } else {
         this.log(chalk.green(chalk.bold('Well done, your app is now online 🏄')))
       }
-      process.chdir(currDir)
+      // process.chdir(currDir)
     } catch (error) {
       spinner.fail()
-      process.chdir(currDir)
+      // process.chdir(currDir)
       this.error(error.message)
     }
   }
@@ -102,6 +102,8 @@ CNADeploy.flags = {
   // 'no-fancy': flags.boolean({ description: 'Simple output and no url open' }),
 }
 
-CNADeploy.args = CNABaseCommand.args
+// for now we remove support for path arg
+// until https://github.com/adobe/aio-cli-plugin-config/issues/44 is resolved
+CNADeploy.args = [] // CNABaseCommand.args
 
 module.exports = CNADeploy

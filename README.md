@@ -22,7 +22,7 @@ $ npm install -g @adobe/aio-cli-plugin-cna
 $ @adobe/aio-cli-plugin-cna COMMAND
 running command...
 $ @adobe/aio-cli-plugin-cna (-v|--version|version)
-@adobe/aio-cli-plugin-cna/0.0.2 darwin-x64 node-v10.16.0
+@adobe/aio-cli-plugin-cna/0.0.2 darwin-x64 node-v10.15.3
 $ @adobe/aio-cli-plugin-cna --help [COMMAND]
 USAGE
   $ @adobe/aio-cli-plugin-cna COMMAND
@@ -32,7 +32,7 @@ USAGE
 # Commands
 <!-- commands -->
 * [`@adobe/aio-cli-plugin-cna cna:create [PATH]`](#adobeaio-cli-plugin-cna-cnacreate-path)
-* [`@adobe/aio-cli-plugin-cna cna:deploy [PATH]`](#adobeaio-cli-plugin-cna-cnadeploy-path)
+* [`@adobe/aio-cli-plugin-cna cna:deploy`](#adobeaio-cli-plugin-cna-cnadeploy)
 * [`@adobe/aio-cli-plugin-cna cna:init [PATH]`](#adobeaio-cli-plugin-cna-cnainit-path)
 * [`@adobe/aio-cli-plugin-cna cna:undeploy [PATH]`](#adobeaio-cli-plugin-cna-cnaundeploy-path)
 
@@ -48,7 +48,6 @@ ARGUMENTS
   PATH  [default: .] Path to the app directory
 
 OPTIONS
-  -h, --help               Show help
   -t, --template=template  [default: basic-action-view-app] template name to use
   -v, --verbose            Verbose output
   --[no-]deps              Install dependencies by running `npm install` in the target directory
@@ -60,21 +59,17 @@ DESCRIPTION
 
 _See code: [src/commands/cna/create.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.0.2/src/commands/cna/create.js)_
 
-## `@adobe/aio-cli-plugin-cna cna:deploy [PATH]`
+## `@adobe/aio-cli-plugin-cna cna:deploy`
 
 Builds and deploys a Cloud Native Application
 
 ```
 USAGE
-  $ @adobe/aio-cli-plugin-cna cna:deploy [PATH]
-
-ARGUMENTS
-  PATH  [default: .] Path to the app directory
+  $ @adobe/aio-cli-plugin-cna cna:deploy
 
 OPTIONS
   -a, --actions  Only deploy actions.
   -b, --build    Only build, don't deploy.
-  -h, --help     Show help
   -s, --static   Only deploy static files.
   -v, --verbose  Verbose output
   --version      Show version
@@ -94,7 +89,6 @@ ARGUMENTS
   PATH  [default: .] Path to the app directory
 
 OPTIONS
-  -h, --help     Show help
   -v, --verbose  Verbose output
   -y, --yes      Skip questiong
   --version      Show version
@@ -115,7 +109,6 @@ ARGUMENTS
 
 OPTIONS
   -a, --actions  Only deploy actions.
-  -h, --help     Show help
   -s, --static   Only deploy static files.
   -v, --verbose  Verbose output
   --version      Show version
