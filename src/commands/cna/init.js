@@ -105,10 +105,14 @@ class CNAInit extends CNABaseCommand {
           default: name
         }])
       }
+      // write package.json
       let pjPath = path.resolve(destDir, 'package.json')
       let pjson = require(pjPath)
       pjson.name = namePrompt.name
       fs.outputJson(pjPath, pjson)
+      // rename dotenv => .env
+      fs.renameSync(path.resolve(destDir, 'dotenv'),
+        path.resolve(destDir, '.env'))
     } else {
       // error in template ?
     }

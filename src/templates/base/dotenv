@@ -1,0 +1,8 @@
+
+# Specify your secrets here
+# This file should not be committed to source control
+
+AIO__RUNTIME_APIHOST=
+AIO__RUNTIME_AUTH=
+AIO__RUNTIME_NAMESPACE=
+AIO__CNA_TVMURL=
