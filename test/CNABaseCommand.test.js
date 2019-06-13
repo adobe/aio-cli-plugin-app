@@ -25,10 +25,6 @@ test('flags', async () => {
   expect(typeof TheCommand.flags.verbose).toBe('object')
   expect(TheCommand.flags.verbose.char).toBe('v')
   expect(typeof TheCommand.flags.verbose.description).toBe('string')
-
-  expect(typeof TheCommand.flags.help).toBe('object')
-  expect(TheCommand.flags.help.char).toBe('h')
-  expect(typeof TheCommand.flags.help.description).toBe('string')
 })
 
 test('args', async () => {
