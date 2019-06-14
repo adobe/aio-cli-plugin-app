@@ -16,14 +16,9 @@ const path = require('path')
 const fs = require('fs-extra')
 const spawn = require('cross-spawn')
 const which = require('which')
+const InitCommand = require('./init')
 
-const templateMap = require('../../templates')
-
-function isNpmInstalled () {
-  return which.sync('npm', { nothrow: true }) !== null
-}
-
-function installTemplate (destDir) {
+function npmInstall (destDir) {
   // todo: apply name from flags to package.json
   cli.action.start('installing dependencies')
   const child = spawn('npm', ['install'], {
@@ -46,69 +41,21 @@ function installTemplate (destDir) {
 
 class CNACreate extends CNABaseCommand {
   async run () {
-    const { args, flags } = this.parse(CNACreate)
+    const { args } = this.parse(CNACreate)
 
     // 1. make path absolute
-    let destDir = path.resolve(args.path)
+    // let destDir = path.resolve(args.path)
 
-    // 2. Make sure we have npm, fatal otherwise
-    if (!isNpmInstalled()) { // todo: better error message
-      this.error('npm is required.')
-    }
-
-    // 3. create destination if not there
-    if (!fs.existsSync(destDir)) {
-      this.log('Creating dir for app: ', destDir)
-      fs.mkdirSync(destDir)
-    }
-    // 4. fail if destination is not empty
-    if (fs.readdirSync(destDir).length > 0) {
-      this.error('Expected destination path to be empty: ' + destDir)
-    }
-
-    // 5. use templateMap
-    let template = templateMap.createTemplates[flags.template]
-    if (template != null) {
-      // 6. try to get the template src from this repos templates folder
-      let srcDir = path.resolve(__dirname, '../../templates/', template.path)
-      if (fs.existsSync(srcDir)) {
-        fs.copySync(srcDir, destDir)
-        if (flags.deps) {
-          installTemplate(destDir)
-        } else {
-          this.log(`Dependencies were not installed.  Be sure to run 'npm install' inside ${destDir}`)
-        }
-      }
-    } else {
-      // todo: could try a fetch from npm
-      this.error(`'${flags.template}' does not appear to be a valid template name`)
-    }
+    return InitCommand.run([args.path, '-y'])
+    // installTemplate(destDir)
   }
 }
 
 CNACreate.description = `Create a new Cloud Native Application
-
-Valid template names are ${Object.keys(templateMap.createTemplates).join(', ')}
 `
 
 CNACreate.flags = {
-  ...CNABaseCommand.flags,
-  template: flags.string({
-    char: 't',
-    // description: 'Template starter filepath, git-url or published id/name.',
-    description: 'template name to use',
-    default: 'basic-action-view-app'
-  }),
-  deps: flags.boolean({
-    description: 'Install dependencies by running `npm install` in the target directory',
-    default: true,
-    allowNo: true
-  })
-  // todo:
-  // name: flags.string( {
-  //   char: 'n',
-  //   description: 'Specify a name for your app'
-  // }),
+  ...CNABaseCommand.flags
 }
 
 CNACreate.args = CNABaseCommand.args
