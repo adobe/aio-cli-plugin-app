@@ -11,6 +11,9 @@ dist
 config.json
 .env
 
+# Test output
+junit.xml
+
 # IDE & Temp
 .cache
 .idea
