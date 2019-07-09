@@ -66,7 +66,7 @@ class CNAInit extends CNABaseCommand {
         ]
       }])
     }
-    
+
     let packageName = destDir.substr(destDir.lastIndexOf('/') + 1)
     await this.copyBaseFiles(destDir, packageName, flags.yes)
 
