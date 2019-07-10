@@ -67,7 +67,8 @@ class CNAInit extends CNABaseCommand {
       }])
     }
 
-    await this.copyBaseFiles(destDir, args.path, flags.yes)
+    let packageName = destDir.substr(destDir.lastIndexOf('/') + 1)
+    await this.copyBaseFiles(destDir, packageName, flags.yes)
 
     // if (responses.components.indexOf('database') > -1) {
     //   this.log('/* Database Setup */')
