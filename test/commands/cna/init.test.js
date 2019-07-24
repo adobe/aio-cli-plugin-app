@@ -20,3 +20,16 @@ describe('Command Prototype', () => {
     expect(typeof TheCommand.description).toBe('string')
   })
 })
+
+describe('bad flags', () => {
+  test('unknown', async (done) => {
+    let result = TheCommand.run(['.', '--wtf'])
+    expect(result instanceof Promise).toBeTruthy()
+    return result
+      .then(() => done.fail())
+      .catch(res => {
+        expect(res).toEqual(new Error('Unexpected argument: --wtf\nSee more help with --help'))
+        done()
+      })
+  })
+})

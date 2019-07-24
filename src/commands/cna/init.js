@@ -209,13 +209,15 @@ CNAInit.description = `Initialize a Cloud Native Application
 
 CNAInit.flags = {
   'yes': flags.boolean({
-    description: 'Skip questiong',
+    description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
   }),
   ...CNABaseCommand.flags
 }
 
-CNAInit.args = CNABaseCommand.args
+CNAInit.args = [
+  ...CNABaseCommand.args
+]
 
 module.exports = CNAInit
