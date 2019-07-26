@@ -22,7 +22,7 @@ $ npm install -g @adobe/aio-cli-plugin-cna
 $ @adobe/aio-cli-plugin-cna COMMAND
 running command...
 $ @adobe/aio-cli-plugin-cna (-v|--version|version)
-@adobe/aio-cli-plugin-cna/0.0.3-pre darwin-x64 node-v10.16.0
+@adobe/aio-cli-plugin-cna/0.0.3-pre.2 darwin-x64 node-v10.16.0
 $ @adobe/aio-cli-plugin-cna --help [COMMAND]
 USAGE
   $ @adobe/aio-cli-plugin-cna COMMAND
@@ -58,7 +58,7 @@ DESCRIPTION
   Valid template names are basic-action-view-app, basic-action-view-app2, basic-action-view-app3
 ```
 
-_See code: [src/commands/cna/create.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.0.3-pre/src/commands/cna/create.js)_
+_See code: [src/commands/cna/create.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.0.3-pre.2/src/commands/cna/create.js)_
 
 ## `@adobe/aio-cli-plugin-cna cna:deploy`
 
@@ -76,7 +76,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/cna/deploy.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.0.3-pre/src/commands/cna/deploy.js)_
+_See code: [src/commands/cna/deploy.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.0.3-pre.2/src/commands/cna/deploy.js)_
 
 ## `@adobe/aio-cli-plugin-cna cna:init [PATH]`
 
@@ -95,7 +95,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/cna/init.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.0.3-pre/src/commands/cna/init.js)_
+_See code: [src/commands/cna/init.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.0.3-pre.2/src/commands/cna/init.js)_
 
 ## `@adobe/aio-cli-plugin-cna cna:run [PATH]`
 
@@ -114,7 +114,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/cna/run.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.0.3-pre/src/commands/cna/run.js)_
+_See code: [src/commands/cna/run.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.0.3-pre.2/src/commands/cna/run.js)_
 
 ## `@adobe/aio-cli-plugin-cna cna:undeploy [PATH]`
 
@@ -134,5 +134,5 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/cna/undeploy.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.0.3-pre/src/commands/cna/undeploy.js)_
+_See code: [src/commands/cna/undeploy.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.0.3-pre.2/src/commands/cna/undeploy.js)_
 <!-- commandsstop -->
