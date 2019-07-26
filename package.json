@@ -39,10 +39,8 @@
     "node": ">=8.0.0"
   },
   "files": [
-    "/npm-shrinkwrap.json",
     "/oclif.manifest.json",
-    "/src",
-    "/yarn.lock"
+    "/src"
   ],
   "homepage": "https://github.com/adobe/aio-cli-plugin-cna",
   "keywords": [
