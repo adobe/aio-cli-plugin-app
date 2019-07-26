@@ -22,7 +22,7 @@ $ npm install -g @adobe/aio-cli-plugin-cna
 $ @adobe/aio-cli-plugin-cna COMMAND
 running command...
 $ @adobe/aio-cli-plugin-cna (-v|--version|version)
-@adobe/aio-cli-plugin-cna/0.0.2 darwin-x64 node-v10.15.3
+@adobe/aio-cli-plugin-cna/0.0.3-pre darwin-x64 node-v10.16.0
 $ @adobe/aio-cli-plugin-cna --help [COMMAND]
 USAGE
   $ @adobe/aio-cli-plugin-cna COMMAND
@@ -34,6 +34,7 @@ USAGE
 * [`@adobe/aio-cli-plugin-cna cna:create [PATH]`](#adobeaio-cli-plugin-cna-cnacreate-path)
 * [`@adobe/aio-cli-plugin-cna cna:deploy`](#adobeaio-cli-plugin-cna-cnadeploy)
 * [`@adobe/aio-cli-plugin-cna cna:init [PATH]`](#adobeaio-cli-plugin-cna-cnainit-path)
+* [`@adobe/aio-cli-plugin-cna cna:run [PATH]`](#adobeaio-cli-plugin-cna-cnarun-path)
 * [`@adobe/aio-cli-plugin-cna cna:undeploy [PATH]`](#adobeaio-cli-plugin-cna-cnaundeploy-path)
 
 ## `@adobe/aio-cli-plugin-cna cna:create [PATH]`
@@ -57,7 +58,7 @@ DESCRIPTION
   Valid template names are basic-action-view-app, basic-action-view-app2, basic-action-view-app3
 ```
 
-_See code: [src/commands/cna/create.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.0.2/src/commands/cna/create.js)_
+_See code: [src/commands/cna/create.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.0.3-pre/src/commands/cna/create.js)_
 
 ## `@adobe/aio-cli-plugin-cna cna:deploy`
 
@@ -75,7 +76,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/cna/deploy.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.0.2/src/commands/cna/deploy.js)_
+_See code: [src/commands/cna/deploy.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.0.3-pre/src/commands/cna/deploy.js)_
 
 ## `@adobe/aio-cli-plugin-cna cna:init [PATH]`
 
@@ -90,11 +91,30 @@ ARGUMENTS
 
 OPTIONS
   -v, --verbose  Verbose output
-  -y, --yes      Skip questiong
+  -y, --yes      Skip questions, and use all default values
   --version      Show version
 ```
 
-_See code: [src/commands/cna/init.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.0.2/src/commands/cna/init.js)_
+_See code: [src/commands/cna/init.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.0.3-pre/src/commands/cna/init.js)_
+
+## `@adobe/aio-cli-plugin-cna cna:run [PATH]`
+
+Run a Cloud Native Application
+
+```
+USAGE
+  $ @adobe/aio-cli-plugin-cna cna:run [PATH]
+
+ARGUMENTS
+  PATH  [default: .] Path to the app directory
+
+OPTIONS
+  -v, --verbose  Verbose output
+  --local        run/debug actions locally
+  --version      Show version
+```
+
+_See code: [src/commands/cna/run.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.0.3-pre/src/commands/cna/run.js)_
 
 ## `@adobe/aio-cli-plugin-cna cna:undeploy [PATH]`
 
@@ -114,5 +134,5 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/cna/undeploy.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.0.2/src/commands/cna/undeploy.js)_
+_See code: [src/commands/cna/undeploy.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.0.3-pre/src/commands/cna/undeploy.js)_
 <!-- commandsstop -->
