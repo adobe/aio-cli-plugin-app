@@ -59,8 +59,8 @@ CNARun.flags = {
   ...CNABaseCommand.flags
 }
 
-CNARun.args = [
-  ...CNABaseCommand.args
-]
+// CNARun.args = [
+//   ...CNABaseCommand.args
+// ]
 
 module.exports = CNARun
