@@ -32,6 +32,10 @@ class CNARun extends CNABaseCommand {
       onWarning: warning => {
         spinner.warn(chalk.dim(chalk.yellow(warning)))
         spinner.start()
+      },
+      onProgress: info => {
+        spinner.info(chalk.dim(info))
+        spinner.start()
       }
     }
     if (flags.verbose) {
