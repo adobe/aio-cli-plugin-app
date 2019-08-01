@@ -9,45 +9,36 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { flags } = require('@oclif/command')
 const CNABaseCommand = require('../../CNABaseCommand')
-const { cli } = require('cli-ux')
-const path = require('path')
-const fs = require('fs-extra')
-const spawn = require('cross-spawn')
-const which = require('which')
 const InitCommand = require('./init')
 
-function npmInstall (destDir) {
-  // todo: apply name from flags to package.json
-  cli.action.start('installing dependencies')
-  const child = spawn('npm', ['install'], {
-    cwd: destDir,
-    stdio: 'inherit',
-    env: process.env
-  })
-  child.on('error', err => {
-    cli.action.stop('failed')
-    console.log('error ' + err)
-  })
-  child.on('close', (code, sig) => {
-    if (code !== 0) {
-      cli.action.stop('failed')
-    } else {
-      cli.action.stop('good')
-    }
-  })
-}
+// const { cli } = require('cli-ux')
+// const spawn = require('cross-spawn')
+// function npmInstall (destDir) {
+//   // todo: apply name from flags to package.json
+//   cli.action.start('installing dependencies')
+//   const child = spawn('npm', ['install'], {
+//     cwd: destDir,
+//     stdio: 'inherit',
+//     env: process.env
+//   })
+//   child.on('error', err => {
+//     cli.action.stop('failed')
+//     console.log('error ' + err)
+//   })
+//   child.on('close', (code, sig) => {
+//     if (code !== 0) {
+//       cli.action.stop('failed')
+//     } else {
+//       cli.action.stop('good')
+//     }
+//   })
+// }
 
 class CNACreate extends CNABaseCommand {
   async run () {
     const { args } = this.parse(CNACreate)
-
-    // 1. make path absolute
-    // let destDir = path.resolve(args.path)
-
     return InitCommand.run([args.path, '-y'])
-    // installTemplate(destDir)
   }
 }
 
