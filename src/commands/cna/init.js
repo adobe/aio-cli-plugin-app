@@ -109,7 +109,7 @@ class CNAInit extends CNABaseCommand {
       let pjPath = path.resolve(destDir, 'package.json')
       let pjson = await fs.readJSON(pjPath)
       pjson.name = namePrompt.name
-      fs.writeJSON(pjPath, pjson)
+      fs.outputJSON(pjPath, pjson, { spaces:2 })
 
       // rename dotenv => .env
       fs.renameSync(path.resolve(destDir, 'dotenv'),

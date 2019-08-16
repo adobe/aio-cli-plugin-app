@@ -82,7 +82,7 @@ describe('api', () => {
     fs.existsSync.mockReturnValueOnce(true)
     await command.copyBaseFiles('some-dest1', 'name-me', true)
     expect(fs.copySync).toHaveBeenCalled()
-    expect(fs.writeJSON).toHaveBeenCalledWith(expect.any(String), { name: 'name-me' })
+    expect(fs.outputJSON).toHaveBeenCalledWith(expect.any(String), { name: 'name-me' }, expect.objectContaining({ spaces: 2 }))
   })
 
   test('copyBaseFiles does NOT call through to copySync files if dest exists', async () => {
