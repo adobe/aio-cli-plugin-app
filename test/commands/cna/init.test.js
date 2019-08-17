@@ -78,11 +78,11 @@ describe('api', () => {
 
   test('copyBaseFiles calls through to copySync files', async () => {
     let command = new TheCommand()
-    fs.readJSON.mockResolvedValue({ name: 'Bonita' })
+    fs.readJson.mockResolvedValue({ name: 'Bonita' })
     fs.existsSync.mockReturnValueOnce(true)
     await command.copyBaseFiles('some-dest1', 'name-me', true)
     expect(fs.copySync).toHaveBeenCalled()
-    expect(fs.outputJSON).toHaveBeenCalledWith(expect.any(String), { name: 'name-me' }, expect.objectContaining({ spaces: 2 }))
+    expect(fs.outputJson).toHaveBeenCalledWith(expect.any(String), { name: 'name-me' }, expect.objectContaining({ spaces: 2 }))
   })
 
   test('copyBaseFiles does NOT call through to copySync files if dest exists', async () => {
