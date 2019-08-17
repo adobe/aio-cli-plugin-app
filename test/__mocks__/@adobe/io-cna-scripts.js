@@ -16,7 +16,8 @@ const mockScripts = {
   deployUI: jest.fn(),
   deployActions: jest.fn(),
   undeployUI: jest.fn(),
-  undeployActions: jest.fn()
+  undeployActions: jest.fn(),
+  addAuth: jest.fn()
 }
 
 module.exports = () => mockScripts

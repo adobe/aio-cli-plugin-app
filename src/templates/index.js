@@ -17,20 +17,6 @@ governing permissions and limitations under the License.
   to point towards a relative folder containing the template files
 */
 module.exports = {
-  createTemplates: {
-    'basic-action-view-app': {
-      description: 'the most basic of the basics',
-      path: 'basic-action-view-app'
-    },
-    'basic-action-view-app2': {
-      description: 'the 2nd most basic of the basics',
-      path: 'basic-action-view-app'
-    },
-    'basic-action-view-app3': {
-      description: 'the 3rd most basic of the basics',
-      path: 'basic-action-view-app'
-    }
-  },
   base: {
     path: 'base'
   },
