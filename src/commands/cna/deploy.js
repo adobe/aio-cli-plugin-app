@@ -42,11 +42,13 @@ class CNADeploy extends CNABaseCommand {
         onWarning: warning => {
           spinner.warn(chalk.dim(chalk.yellow(warning)))
           spinner.start()
-        }
-      }
-      if (flags.verbose) {
-        listeners.onProgress = item => {
-          spinner.stopAndPersist({ text: chalk.dim(` > ${item}`) })
+        },
+        onProgress: info => {
+          if (flags.verbose) {
+            spinner.stopAndPersist({ text: chalk.dim(` > ${info}`) })
+          } else {
+            spinner.info(chalk.dim(info))
+          }
           spinner.start()
         }
       }

@@ -17,7 +17,10 @@ const CNABaseCommand = require('../../../src/CNABaseCommand')
 const mockOpen = require('open')
 jest.mock('open', () => jest.fn())
 const mockScripts = require('@adobe/io-cna-scripts')()
-// jest.mock('ora')
+
+beforeEach(() => {
+  jest.restoreAllMocks()
+})
 
 test('exports', async () => {
   expect(typeof TheCommand).toEqual('function')
@@ -51,10 +54,12 @@ test('flags', async () => {
 describe('run', () => {
   let command
   beforeEach(() => {
-    jest.resetAllMocks()
-
     command = new TheCommand([])
     command.error = jest.fn()
+  })
+
+  afterEach(() => {
+    jest.clearAllMocks()
   })
 
   test('build & deploy a CNA with no flags', async () => {
@@ -113,6 +118,17 @@ describe('run', () => {
     expect(mockOpen).toHaveBeenCalledTimes(0)
   })
 
+  test('build only --verbose', async () => {
+    command.argv = ['-b', '--verbose']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployUI).toHaveBeenCalledTimes(0)
+    expect(mockScripts.buildActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.buildUI).toHaveBeenCalledTimes(1)
+    expect(mockOpen).toHaveBeenCalledTimes(0)
+  })
+
   test('build only static files', async () => {
     command.argv = ['-bs']
     await command.run()
@@ -147,6 +163,7 @@ describe('run', () => {
 
   test('should fail if scripts.deployUI fails', async () => {
     const error = new Error('mock failure')
+    mockScripts.deployActions.mockResolvedValue('ok')
     mockScripts.deployUI.mockRejectedValue(error)
     await command.run()
     expect(command.error).toHaveBeenCalledWith(error.message)

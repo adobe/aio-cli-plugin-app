@@ -11,6 +11,7 @@ governing permissions and limitations under the License.
 */
 
 const mockScripts = {
+<<<<<<< HEAD
   buildUI: jest.fn(),
   buildActions: jest.fn(),
   deployUI: jest.fn(),
@@ -18,6 +19,37 @@ const mockScripts = {
   undeployUI: jest.fn(),
   undeployActions: jest.fn(),
   addAuth: jest.fn()
+=======
+  listeners: null,
+  buildUI: jest.fn(() => mockWithCallbacks()),
+  buildActions: jest.fn(() => mockWithCallbacks()),
+  deployUI: jest.fn(() => mockWithCallbacks()),
+  deployActions: jest.fn(() => mockWithCallbacks()),
+  undeployUI: jest.fn(() => mockWithCallbacks()),
+  undeployActions: jest.fn(() => mockWithCallbacks()),
+  runDev: jest.fn(() => mockWithCallbacks()),
+  addAuth: jest.fn(() => mockWithCallbacks())
+>>>>>>> more mocks, more coverage. deploy+run
 }
 
-module.exports = () => mockScripts
+let mockWithCallbacks = () => {
+  let lnr = mockScripts.listeners
+  if (lnr.onStart) {
+    lnr.onStart('run:start')
+  }
+  if (lnr.onProgress) {
+    lnr.onProgress('gettin stuff done')
+  }
+  if (lnr.onWarning) {
+    lnr.onWarning('you have been warned')
+  }
+  if (lnr.onEnd) {
+    lnr.onEnd('run:end')
+  }
+}
+
+module.exports = (arg) => {
+  arg = arg || { listeners: null }
+  mockScripts.listeners = arg.listeners
+  return mockScripts
+}

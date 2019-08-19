@@ -10,22 +10,24 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { stdout, stderr } = require('stdout-stderr')
-
-// trap console log
-beforeEach(() => { stdout.start(); stderr.start() })
-afterEach(() => { stdout.stop(); stderr.stop() })
-
-process.on('unhandledRejection', error => {
-  throw error
-})
-
-// const fs = require.requireActual('fs-extra')
-// dont touch the real fs
-jest.mock('fs-extra')
-// don't wait for user input in tests
-jest.mock('inquirer')
-// make sure we mock the cna scripts
-jest.mock('@adobe/io-cna-scripts')
-//
-jest.mock('ora')
+module.exports = () => {
+  const spinner = {
+    stopAndPersist: jest.fn(() => {
+      // console.error('stopAndPersist')
+    }),
+    start: jest.fn(() => {
+      // console.error('start')
+    }),
+    warn: jest.fn(() => {
+      // console.error('warn')
+    }),
+    info: jest.fn(() => {
+      // console.error('info')
+    }),
+    fail: jest.fn(),
+    succeed: jest.fn(() => {
+      // console.error('succeed')
+    })
+  }
+  return spinner
+}

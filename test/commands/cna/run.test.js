@@ -10,54 +10,97 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../src/commands/cna/run')
+const RunCommand = require('../../../src/commands/cna/run')
 const CNABaseCommand = require('../../../src/CNABaseCommand')
 
 // mocks
-// const mockOpen = require('open')
 jest.mock('open', () => jest.fn())
-// const mockScripts = require('@adobe/io-cna-scripts')()
-jest.mock('ora')
+const mockScripts = require('@adobe/io-cna-scripts')()
 
-test('exports', async () => {
-  expect(typeof TheCommand).toEqual('function')
-  expect(TheCommand.prototype instanceof CNABaseCommand).toBeTruthy()
+beforeEach(() => {
+  jest.restoreAllMocks()
 })
 
-test('description', async () => {
-  expect(TheCommand.description).toBeDefined()
+afterAll(() => {
+  jest.restoreAllMocks()
 })
 
-test('aliases', async () => {
-  expect(TheCommand.aliases).toEqual([])
-})
+describe('run command definition', () => {
+  test('exports', async () => {
+    expect(typeof RunCommand).toEqual('function')
+    expect(RunCommand.prototype instanceof CNABaseCommand).toBeTruthy()
+  })
 
-test('flags', async () => {
-  expect(typeof TheCommand.flags.local).toBe('object')
-  expect(typeof TheCommand.flags.local.description).toBe('string')
+  test('description', async () => {
+    expect(RunCommand.description).toBeDefined()
+  })
+
+  test('aliases', async () => {
+    expect(RunCommand.aliases).toEqual([])
+  })
+
+  test('flags', async () => {
+    expect(typeof RunCommand.flags.local).toBe('object')
+    expect(typeof RunCommand.flags.local.description).toBe('string')
+  })
 })
 
 describe('run', () => {
-  let command
-  beforeEach(() => {
-    jest.resetAllMocks()
-
-    command = new TheCommand([])
-    command.error = jest.fn()
-  })
-
-  // console.log('mockScripts', mockScripts)
-
   test('cna:run with no flags', async () => {
-    // mockScripts.runDev.mockResolvedValue('https://example.com')
+    delete process.env['REMOTE_ACTIONS']
+    let command = new RunCommand([])
+    command.error = jest.fn()
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    // expect(mockScripts.run).toHaveBeenCalledTimes(1)
-    
-    // expect(mockScripts.deployUI).toHaveBeenCalledTimes(1)
-    // expect(mockScripts.buildActions).toHaveBeenCalledTimes(1)
-    // expect(mockScripts.buildUI).toHaveBeenCalledTimes(1)
-
+    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
+    expect(process.env['REMOTE_ACTIONS']).toBe('true')
   })
 
+  test('cna:run with --verbose', async () => {
+    delete process.env['REMOTE_ACTIONS']
+    let command = new RunCommand(['--verbose'])
+    command.error = jest.fn(['--verbose'])
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
+    expect(process.env['REMOTE_ACTIONS']).toBe('true')
+  })
+
+  test('cna:run with --no-local', async () => {
+    delete process.env['REMOTE_ACTIONS']
+    let mySpy = jest.spyOn(mockScripts, 'runDev')
+    mySpy.mockReset()
+    let command = new RunCommand(['--no-local'])
+    command.error = jest.fn()
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mySpy).toHaveBeenCalledTimes(1)
+    expect(process.env['REMOTE_ACTIONS']).toBe('true')
+  })
+
+  test('cna:run with --local', async () => {
+    delete process.env['REMOTE_ACTIONS']
+    let mySpy = jest.spyOn(mockScripts, 'runDev')
+    mySpy.mockReset()
+    let command = new RunCommand(['--local'])
+    command.error = jest.fn()
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mySpy).toHaveBeenCalledTimes(1)
+    expect(process.env['REMOTE_ACTIONS']).toBe('false')
+  })
+
+  test('cna:run with --local --verbose', async () => {
+    delete process.env['REMOTE_ACTIONS']
+    let mySpy = jest.spyOn(mockScripts, 'runDev')
+    mySpy.mockReset()
+    let command = new RunCommand(['--local', '--verbose'])
+    command.error = jest.fn()
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mySpy).toHaveBeenCalledTimes(1)
+    expect(process.env['REMOTE_ACTIONS']).toBe('false')
+  })
+
+  // TODO: should add a test for a eventlistener that throws an exception, which will break things
 })

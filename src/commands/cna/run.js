@@ -27,20 +27,17 @@ class CNARun extends CNABaseCommand {
       },
       onEnd: taskName => {
         spinner.succeed(chalk.green(taskName))
-        this.log()
       },
       onWarning: warning => {
         spinner.warn(chalk.dim(chalk.yellow(warning)))
         spinner.start()
       },
       onProgress: info => {
-        spinner.info(chalk.dim(info))
-        spinner.start()
-      }
-    }
-    if (flags.verbose) {
-      listeners.onProgress = item => {
-        spinner.stopAndPersist({ text: chalk.dim(` > ${item}`) })
+        if (flags.verbose) {
+          spinner.stopAndPersist({ text: chalk.dim(` > ${info}`) })
+        } else {
+          spinner.info(chalk.dim(info))
+        }
         spinner.start()
       }
     }
@@ -48,7 +45,7 @@ class CNARun extends CNABaseCommand {
     process.env['REMOTE_ACTIONS'] = !flags.local
 
     const scripts = require('@adobe/io-cna-scripts')({ listeners })
-    scripts.runDev()
+    return scripts.runDev()
   }
 }
 
@@ -58,6 +55,7 @@ CNARun.description = `Run a Cloud Native Application
 CNARun.flags = {
   'local': flags.boolean({
     description: 'run/debug actions locally',
+    allowNo: true,
     default: false
   }),
   ...CNABaseCommand.flags
