@@ -17,6 +17,10 @@ const CNABaseCommand = require('../../../src/CNABaseCommand')
 const mockScripts = require('@adobe/io-cna-scripts')()
 // jest.mock('ora') // mock spinner
 
+beforeEach(() => {
+  jest.resetAllMocks()
+})
+
 test('exports', async () => {
   expect(typeof TheCommand).toEqual('function')
   expect(TheCommand.prototype instanceof CNABaseCommand).toBeTruthy()
@@ -45,7 +49,6 @@ test('flags', async () => {
 describe('run', () => {
   let command
   beforeEach(() => {
-    jest.resetAllMocks()
     command = new TheCommand([])
     command.error = jest.fn()
   })
@@ -65,8 +68,24 @@ describe('run', () => {
     expect(mockScripts.undeployUI).toHaveBeenCalledTimes(0)
   })
 
+  test('undeploy only actions --verbose', async () => {
+    command.argv = ['-a']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.undeployActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(0)
+  })
+
   test('undeploy only static files', async () => {
     command.argv = ['-s']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.undeployActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
+  })
+
+  test('undeploy only static files --verbose', async () => {
+    command.argv = ['-s', '--verbose']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.undeployActions).toHaveBeenCalledTimes(0)
