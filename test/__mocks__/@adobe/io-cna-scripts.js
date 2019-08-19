@@ -11,15 +11,6 @@ governing permissions and limitations under the License.
 */
 
 const mockScripts = {
-<<<<<<< HEAD
-  buildUI: jest.fn(),
-  buildActions: jest.fn(),
-  deployUI: jest.fn(),
-  deployActions: jest.fn(),
-  undeployUI: jest.fn(),
-  undeployActions: jest.fn(),
-  addAuth: jest.fn()
-=======
   listeners: null,
   buildUI: jest.fn(() => mockWithCallbacks()),
   buildActions: jest.fn(() => mockWithCallbacks()),
@@ -29,7 +20,6 @@ const mockScripts = {
   undeployActions: jest.fn(() => mockWithCallbacks()),
   runDev: jest.fn(() => mockWithCallbacks()),
   addAuth: jest.fn(() => mockWithCallbacks())
->>>>>>> more mocks, more coverage. deploy+run
 }
 
 let mockWithCallbacks = () => {
