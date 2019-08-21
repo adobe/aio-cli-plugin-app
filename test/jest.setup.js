@@ -29,3 +29,7 @@ jest.mock('inquirer')
 jest.mock('@adobe/io-cna-scripts')
 //
 jest.mock('ora')
+//
+jest.mock('which')
+//
+jest.mock('execa')
