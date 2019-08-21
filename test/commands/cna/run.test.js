@@ -46,13 +46,14 @@ describe('run command definition', () => {
 })
 
 describe('run', () => {
+  let runCount = 1
   test('cna:run with no flags', async () => {
     delete process.env['REMOTE_ACTIONS']
     let command = new RunCommand([])
     command.error = jest.fn()
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
+    expect(mockScripts.runDev).toHaveBeenCalledTimes(runCount++)
     expect(process.env['REMOTE_ACTIONS']).toBe('true')
   })
 
@@ -62,43 +63,37 @@ describe('run', () => {
     command.error = jest.fn(['--verbose'])
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
+    expect(mockScripts.runDev).toHaveBeenCalledTimes(runCount++)
     expect(process.env['REMOTE_ACTIONS']).toBe('true')
   })
 
   test('cna:run with --no-local', async () => {
     delete process.env['REMOTE_ACTIONS']
-    let mySpy = jest.spyOn(mockScripts, 'runDev')
-    mySpy.mockReset()
     let command = new RunCommand(['--no-local'])
     command.error = jest.fn()
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mySpy).toHaveBeenCalledTimes(1)
+    expect(mockScripts.runDev).toHaveBeenCalledTimes(runCount++)
     expect(process.env['REMOTE_ACTIONS']).toBe('true')
   })
 
   test('cna:run with --local', async () => {
     delete process.env['REMOTE_ACTIONS']
-    let mySpy = jest.spyOn(mockScripts, 'runDev')
-    mySpy.mockReset()
     let command = new RunCommand(['--local'])
     command.error = jest.fn()
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mySpy).toHaveBeenCalledTimes(1)
+    expect(mockScripts.runDev).toHaveBeenCalledTimes(runCount++)
     expect(process.env['REMOTE_ACTIONS']).toBe('false')
   })
 
   test('cna:run with --local --verbose', async () => {
     delete process.env['REMOTE_ACTIONS']
-    let mySpy = jest.spyOn(mockScripts, 'runDev')
-    mySpy.mockReset()
     let command = new RunCommand(['--local', '--verbose'])
     command.error = jest.fn()
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mySpy).toHaveBeenCalledTimes(1)
+    expect(mockScripts.runDev).toHaveBeenCalledTimes(runCount++)
     expect(process.env['REMOTE_ACTIONS']).toBe('false')
   })
 

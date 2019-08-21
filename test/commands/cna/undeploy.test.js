@@ -60,6 +60,13 @@ describe('run', () => {
     expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
   })
 
+  test('undeploy a CNA with --verbose', async () => {
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.undeployActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
+  })
+
   test('undeploy only actions', async () => {
     command.argv = ['-a']
     await command.run()

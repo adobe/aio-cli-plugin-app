@@ -14,6 +14,7 @@ const { flags } = require('@oclif/command')
 const CNABaseCommand = require('../../CNABaseCommand')
 const ora = require('ora')
 const chalk = require('chalk')
+const CNAScripts = require('@adobe/io-cna-scripts')
 
 class CNARun extends CNABaseCommand {
   async run () {
@@ -44,7 +45,7 @@ class CNARun extends CNABaseCommand {
 
     process.env['REMOTE_ACTIONS'] = !flags.local
 
-    const scripts = require('@adobe/io-cna-scripts')({ listeners })
+    const scripts = CNAScripts({ listeners })
     return scripts.runDev()
   }
 }
