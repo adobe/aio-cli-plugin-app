@@ -15,7 +15,6 @@ const execa = require('execa')
 const cnaHelper = require('../../../src/lib/cna-helper')
 
 describe('exports helper methods', () => {
-
   test('isNpmInstalled', () => {
     expect(cnaHelper.isNpmInstalled).toBeDefined()
     expect(cnaHelper.isNpmInstalled).toBeInstanceOf(Function)

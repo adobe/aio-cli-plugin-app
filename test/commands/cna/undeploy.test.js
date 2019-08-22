@@ -15,10 +15,9 @@ const CNABaseCommand = require('../../../src/CNABaseCommand')
 
 // mocks
 const mockScripts = require('@adobe/io-cna-scripts')()
-// jest.mock('ora') // mock spinner
 
 beforeEach(() => {
-  jest.resetAllMocks()
+  jest.restoreAllMocks()
 })
 
 test('exports', async () => {
@@ -53,6 +52,10 @@ describe('run', () => {
     command.error = jest.fn()
   })
 
+  afterEach(() => {
+    jest.clearAllMocks()
+  })
+
   test('undeploy a CNA with no flags', async () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -61,6 +64,7 @@ describe('run', () => {
   })
 
   test('undeploy a CNA with --verbose', async () => {
+    command.argv = ['-v']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.undeployActions).toHaveBeenCalledTimes(1)
@@ -112,6 +116,6 @@ describe('run', () => {
     mockScripts.undeployUI.mockRejectedValue(error)
     await command.run()
     expect(command.error).toHaveBeenCalledWith(error.message)
-    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
+    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(0)
   })
 })
