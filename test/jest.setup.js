@@ -20,5 +20,16 @@ process.on('unhandledRejection', error => {
   throw error
 })
 
+// const fs = require.requireActual('fs-extra')
+// dont touch the real fs
+jest.mock('fs-extra')
+// don't wait for user input in tests
+jest.mock('inquirer')
 // make sure we mock the cna scripts
 jest.mock('@adobe/io-cna-scripts')
+//
+jest.mock('ora')
+//
+jest.mock('which')
+//
+jest.mock('execa')

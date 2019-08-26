@@ -12,29 +12,6 @@ governing permissions and limitations under the License.
 const CNABaseCommand = require('../../CNABaseCommand')
 const InitCommand = require('./init')
 
-// const { cli } = require('cli-ux')
-// const spawn = require('cross-spawn')
-// function npmInstall (destDir) {
-//   // todo: apply name from flags to package.json
-//   cli.action.start('installing dependencies')
-//   const child = spawn('npm', ['install'], {
-//     cwd: destDir,
-//     stdio: 'inherit',
-//     env: process.env
-//   })
-//   child.on('error', err => {
-//     cli.action.stop('failed')
-//     console.log('error ' + err)
-//   })
-//   child.on('close', (code, sig) => {
-//     if (code !== 0) {
-//       cli.action.stop('failed')
-//     } else {
-//       cli.action.stop('good')
-//     }
-//   })
-// }
-
 class CNACreate extends CNABaseCommand {
   async run () {
     const { args } = this.parse(CNACreate)

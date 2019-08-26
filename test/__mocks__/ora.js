@@ -10,13 +10,24 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-module.exports = {
-  testEnvironment: 'node',
-  verbose: true,
-  setupFilesAfterEnv: ['./test/jest.setup.js'],
-  collectCoverage: true,
-  collectCoverageFrom: [
-    'src/commands/**/*.js',
-    'src/lib/*.js'
-  ]
+module.exports = () => {
+  const spinner = {
+    stopAndPersist: jest.fn(() => {
+      // console.error('stopAndPersist')
+    }),
+    start: jest.fn(() => {
+      // console.error('start')
+    }),
+    warn: jest.fn(() => {
+      // console.error('warn')
+    }),
+    info: jest.fn(() => {
+      // console.error('info')
+    }),
+    fail: jest.fn(),
+    succeed: jest.fn(() => {
+      // console.error('succeed')
+    })
+  }
+  return spinner
 }

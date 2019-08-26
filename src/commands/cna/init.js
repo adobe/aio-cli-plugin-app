@@ -18,6 +18,8 @@ const path = require('path')
 const fs = require('fs-extra')
 const templateMap = require('../../templates')
 
+const debug = require('debug')('aio-cli-plugin-cna:CNAInit')
+
 const GetInitMessage = cwd => {
   let message = `Project setup
 You are about to initialize a project in this directory:
@@ -32,14 +34,11 @@ Which CNA features do you want to enable for this project?
 class CNAInit extends CNABaseCommand {
   async run () {
     const { args, flags } = this.parse(CNAInit)
-
     // can we specify a location other than cwd?
     let destDir = path.resolve(args.path)
-
     fs.ensureDirSync(destDir)
-
     this.log(GetInitMessage(destDir))
-    let responses = ['actions', 'assets', 'database']
+    let responses = { components: ['actions', 'assets', 'database'] }
     if (!flags.yes) {
       responses = await inquirer.prompt([{
         name: 'components',
@@ -91,10 +90,10 @@ class CNAInit extends CNABaseCommand {
     let srcDir = path.resolve(__dirname, '../../templates/', templateBase.path)
 
     let destDir = path.resolve(dest)
+
     if (fs.existsSync(srcDir)) {
-      this.log(`Copying starter files to ${destDir}`)
+      this.log(`Copying starter files to ${destDir}\n`)
       fs.copySync(srcDir, destDir)
-      this.log('')
 
       let namePrompt = { name: name }
 
@@ -111,6 +110,7 @@ class CNAInit extends CNABaseCommand {
       let pjson = await fs.readJson(pjPath)
       pjson.name = namePrompt.name
       fs.outputJson(pjPath, pjson, { spaces: 2 })
+
       // rename dotenv => .env
       fs.renameSync(path.resolve(destDir, 'dotenv'),
         path.resolve(destDir, '.env'))
@@ -190,7 +190,6 @@ package pre-configured.
     let templateActions = templateMap.actions
     console.log('templateActions = ' + templateActions)
     let srcDir = path.resolve(__dirname, '../../templates/', templateActions.path)
-
     let destDir = path.resolve(dest, actionQ.actionDest)
     if (fs.existsSync(destDir)) {
       this.log('`actions` directory already exists --- skipping')
@@ -199,6 +198,7 @@ package pre-configured.
       fs.copySync(srcDir, destDir)
       this.log('')
     } else {
+      debug('edge case, template appears to be missing source dir')
       // error in template ?
     }
   }

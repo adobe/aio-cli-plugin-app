@@ -9,34 +9,26 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const spawn = require('cross-spawn')
+const execa = require('execa')
+const fs = require('fs-extra')
 const which = require('which')
 
 function isNpmInstalled () {
-  return which.sync('npm', { nothrow: true }) !== null
+  let result = which.sync('npm', { nothrow: true })
+  return result !== null
 }
 
 function isGitInstalled () {
   return which.sync('git', { nothrow: true }) !== null
 }
 
-async function installPackage () {
-  return new Promise(function (resolve, reject) {
-    const child = spawn('npm', ['install'], {
-      stdio: 'inherit',
-      env: process.env
-    })
-    child.on('error', err => {
-      reject(err)
-    })
-    child.on('close', (code /* ,sig */) => {
-      if (code !== 0) {
-        reject(new Error(`Failed with code ${code}`))
-      } else {
-        resolve('Success')
-      }
-    })
-  })
+async function installPackage (dir) {
+  if (!fs.statSync(dir).isDirectory() ||
+      !(fs.readdirSync(dir)).includes('package.json')) {
+    throw new Error(`${dir} is not a valid directory with a package.json file.`)
+  }
+  // npm install
+  await execa('npm', ['install', '--no-package-lock'], { cwd: dir })
 }
 
 module.exports = {
