@@ -12,10 +12,11 @@ governing permissions and limitations under the License.
 const CNABaseCommand = require('../../CNABaseCommand')
 const path = require('path')
 const fs = require('fs-extra')
-const scripts = require('@adobe/io-cna-scripts')({})
+const CNAScripts = require('@adobe/io-cna-scripts')
 
 class CNAAddAuthCommand extends CNABaseCommand {
   async run () {
+    const scripts = CNAScripts({})
     let manifestFile = path.resolve('./manifest.yml')
     if (!fs.existsSync(manifestFile)) {
       this.error('No manifest found in current folder')
