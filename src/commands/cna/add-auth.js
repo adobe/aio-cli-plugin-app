@@ -9,9 +9,10 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const CNABaseCommand = require('../../CNABaseCommand')
 const path = require('path')
 const fs = require('fs-extra')
+
+const CNABaseCommand = require('../../CNABaseCommand')
 const CNAScripts = require('@adobe/io-cna-scripts')
 
 class CNAAddAuthCommand extends CNABaseCommand {

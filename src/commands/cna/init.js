@@ -10,15 +10,16 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { flags } = require('@oclif/command')
-const CNABaseCommand = require('../../CNABaseCommand')
-// const { cli } = require('cli-ux')
 const inquirer = require('inquirer')
 const path = require('path')
 const fs = require('fs-extra')
-const templateMap = require('../../templates')
-
 const debug = require('debug')('aio-cli-plugin-cna:CNAInit')
+
+const { flags } = require('@oclif/command')
+// const { cli } = require('cli-ux')
+
+const CNABaseCommand = require('../../CNABaseCommand')
+const templateMap = require('../../templates')
 
 const GetInitMessage = cwd => {
   let message = `Project setup

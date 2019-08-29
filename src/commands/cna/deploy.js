@@ -10,12 +10,14 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-// const path = require('path')
-const CNABaseCommand = require('../../CNABaseCommand')
-const { flags } = require('@oclif/command')
 const ora = require('ora')
 const open = require('open')
 const chalk = require('chalk')
+// const path = require('path')
+
+const CNABaseCommand = require('../../CNABaseCommand')
+const CNAScripts = require('@adobe/io-cna-scripts')
+const { flags } = require('@oclif/command')
 
 class CNADeploy extends CNABaseCommand {
   async run () {
@@ -52,7 +54,7 @@ class CNADeploy extends CNABaseCommand {
           spinner.start()
         }
       }
-      const scripts = require('@adobe/io-cna-scripts')({ listeners })
+      const scripts = CNAScripts({ listeners })
 
       // build phase
       if (!flags.static) {

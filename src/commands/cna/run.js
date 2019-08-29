@@ -10,10 +10,12 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { flags } = require('@oclif/command')
-const CNABaseCommand = require('../../CNABaseCommand')
 const ora = require('ora')
 const chalk = require('chalk')
+
+const { flags } = require('@oclif/command')
+
+const CNABaseCommand = require('../../CNABaseCommand')
 const CNAScripts = require('@adobe/io-cna-scripts')
 
 class CNARun extends CNABaseCommand {

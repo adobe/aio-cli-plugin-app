@@ -19,7 +19,7 @@ class CNACreate extends CNABaseCommand {
   }
 }
 
-CNACreate.description = `Create a new Cloud Native Application
+CNACreate.description = `Create a new Cloud Native Application with default parameters
 `
 
 CNACreate.flags = {
