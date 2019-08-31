@@ -13,6 +13,8 @@ governing permissions and limitations under the License.
 const inquirer = require('inquirer')
 const path = require('path')
 const fs = require('fs-extra')
+const ora = require('ora')
+const execa = require('execa')
 const debug = require('debug')('aio-cli-plugin-cna:CNAInit')
 
 const { flags } = require('@oclif/command')
@@ -32,9 +34,22 @@ Which CNA features do you want to enable for this project?
   return message
 }
 
+// TODO: move to common module, or utils class
+async function npmInstall (dir) {
+  if (!(fs.statSync(dir).isDirectory())) {
+    throw new Error(`${dir} is not a directory`)
+  }
+  if (!fs.readdirSync(dir).includes('package.json')) {
+    throw new Error(`${dir} does not contain a package.json file.`)
+  }
+  // npm install
+  await execa('npm', ['install'], { cwd: dir })
+}
+
 class CNAInit extends CNABaseCommand {
   async run () {
     const { args, flags } = this.parse(CNAInit)
+
     // can we specify a location other than cwd?
     let destDir = path.resolve(args.path)
     fs.ensureDirSync(destDir)
@@ -67,7 +82,11 @@ class CNAInit extends CNABaseCommand {
       }])
     }
 
-    let packageName = destDir.substr(destDir.lastIndexOf('/') + 1)
+    console.warn('destDir = ' + destDir)
+    console.warn('path.dirname returns:' + path.dirname(destDir))
+    // let packageName = destDir.substr(destDir.lastIndexOf('/') + 1)
+    let packageName = path.parse(destDir).name
+  
     await this.copyBaseFiles(destDir, packageName, flags.yes)
 
     // if (responses.components.indexOf('database') > -1) {
@@ -80,6 +99,23 @@ class CNAInit extends CNABaseCommand {
     }
     if (responses.components.indexOf('assets') > -1) {
       await this.createAssetsFromTemplate(destDir, flags.yes)
+    }
+
+    let npmPromptRes = { npmInstall: true }
+    if (!flags.yes) {
+      npmPromptRes = await inquirer.prompt({
+        name: 'npmInstall',
+        message: 'npm install dependencies now?',
+        type: 'confirm',
+        default: true
+      })
+    }
+
+    if (npmPromptRes.npmInstall) {
+      const spinner = ora() // { spinner: 'weather' } //?
+      spinner.start(`running npm install in ${destDir}`)
+      await npmInstall(destDir)
+      spinner.succeed()
     }
 
     // finalize configuration data
@@ -107,6 +143,7 @@ class CNAInit extends CNABaseCommand {
         }])
       }
       // write package.json
+      // TODO: consider using read-pkg & write-pkg -jm
       let pjPath = path.resolve(destDir, 'package.json')
       let pjson = await fs.readJson(pjPath)
       pjson.name = namePrompt.name
