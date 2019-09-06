@@ -12,6 +12,7 @@ governing permissions and limitations under the License.
 const execa = require('execa')
 const fs = require('fs-extra')
 const which = require('which')
+const debug = require('debug')('aio-cli-plugin-cna:cna-helper')
 
 function isNpmInstalled () {
   let result = which.sync('npm', { nothrow: true })
@@ -23,12 +24,17 @@ function isGitInstalled () {
 }
 
 async function installPackage (dir) {
-  if (!fs.statSync(dir).isDirectory() ||
-      !(fs.readdirSync(dir)).includes('package.json')) {
-    throw new Error(`${dir} is not a valid directory with a package.json file.`)
+  debug(`running npm install : ${dir}`)
+  if (!(fs.statSync(dir).isDirectory())) {
+    debug(`${dir}  is not a directory`)
+    throw new Error(`${dir} is not a directory`)
+  }
+  if (!fs.readdirSync(dir).includes('package.json')) {
+    debug(`${dir} does not contain a package.json file.`)
+    throw new Error(`${dir} does not contain a package.json file.`)
   }
   // npm install
-  await execa('npm', ['install', '--no-package-lock'], { cwd: dir })
+  await execa('npm', ['install'], { cwd: dir })
 }
 
 module.exports = {

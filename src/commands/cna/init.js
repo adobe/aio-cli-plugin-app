@@ -14,12 +14,12 @@ const inquirer = require('inquirer')
 const path = require('path')
 const fs = require('fs-extra')
 const ora = require('ora')
-const execa = require('execa')
 const debug = require('debug')('aio-cli-plugin-cna:CNAInit')
 
 const { flags } = require('@oclif/command')
 // const { cli } = require('cli-ux')
 
+const cnaHelper = require('../../lib/cna-helper')
 const CNABaseCommand = require('../../CNABaseCommand')
 const templateMap = require('../../templates')
 
@@ -34,16 +34,14 @@ Which CNA features do you want to enable for this project?
   return message
 }
 
-// TODO: move to common module, or utils class
-async function npmInstall (dir) {
-  if (!(fs.statSync(dir).isDirectory())) {
-    throw new Error(`${dir} is not a directory`)
+function isValidPackageName (str) {
+  // validate name for invalid chars, it is also used for S3 url
+  let valid = /^[a-zA-Z0-9_-]*$/
+  if (valid.test(str)) {
+    return true
+  } else {
+    return `'${str}' contains invalid characters and is not a valid package name`
   }
-  if (!fs.readdirSync(dir).includes('package.json')) {
-    throw new Error(`${dir} does not contain a package.json file.`)
-  }
-  // npm install
-  await execa('npm', ['install'], { cwd: dir })
 }
 
 class CNAInit extends CNABaseCommand {
@@ -82,12 +80,7 @@ class CNAInit extends CNABaseCommand {
       }])
     }
 
-    console.warn('destDir = ' + destDir)
-    console.warn('path.dirname returns:' + path.dirname(destDir))
-    // let packageName = destDir.substr(destDir.lastIndexOf('/') + 1)
-    let packageName = path.parse(destDir).name
-  
-    await this.copyBaseFiles(destDir, packageName, flags.yes)
+    await this.copyBaseFiles(destDir, flags.yes)
 
     // if (responses.components.indexOf('database') > -1) {
     //   this.log('/* Database Setup */')
@@ -114,15 +107,20 @@ class CNAInit extends CNABaseCommand {
     if (npmPromptRes.npmInstall) {
       const spinner = ora() // { spinner: 'weather' } //?
       spinner.start(`running npm install in ${destDir}`)
-      await npmInstall(destDir)
-      spinner.succeed()
+      try {
+        await cnaHelper.installPackage(destDir)
+        spinner.succeed()
+      } catch (err) {
+        spinner.error(err)
+      }
     }
-
     // finalize configuration data
     this.log(`✔ CNA initialization finished!`)
   }
 
-  async copyBaseFiles (dest, name, bSkipPrompt) {
+  async copyBaseFiles (dest, bSkipPrompt) {
+    // first create a packageName based on the dest directory
+    let name = path.parse(dest).name
     let templateBase = templateMap.base
     let srcDir = path.resolve(__dirname, '../../templates/', templateBase.path)
 
@@ -139,9 +137,16 @@ class CNAInit extends CNABaseCommand {
           name: 'name',
           message: 'package name',
           type: 'string',
-          default: name
+          default: name,
+          validate: isValidPackageName
         }])
+      } else {
+        let isValidRes = isValidPackageName(name)
+        if (isValidRes !== true) {
+          throw new Error(isValidRes)
+        }
       }
+
       // write package.json
       // TODO: consider using read-pkg & write-pkg -jm
       let pjPath = path.resolve(destDir, 'package.json')
@@ -154,6 +159,7 @@ class CNAInit extends CNABaseCommand {
         path.resolve(destDir, '.env'))
     } else {
       // error in template ?
+      console.error('error in template ... ' + srcDir)
     }
   }
 
@@ -196,6 +202,7 @@ have a build process use your build's output directory.
       this.log('')
     } else {
       // error in template ?
+      debug('edge case, asset template appears to be missing source dir')
     }
   }
 
@@ -226,17 +233,17 @@ package pre-configured.
     // write a json fragment to cna.json
     // copy files listed in templates/functions
     let templateActions = templateMap.actions
-    console.log('templateActions = ' + templateActions)
     let srcDir = path.resolve(__dirname, '../../templates/', templateActions.path)
     let destDir = path.resolve(dest, actionQ.actionDest)
     if (fs.existsSync(destDir)) {
+      // question: should we be doing an overwrite? or a merge, or clobber?
       this.log('`actions` directory already exists --- skipping')
     } else if (fs.existsSync(srcDir)) {
       this.log(`Copying actions to ${destDir}`)
       fs.copySync(srcDir, destDir)
       this.log('')
     } else {
-      debug('edge case, template appears to be missing source dir')
+      debug('edge case, action template appears to be missing source dir')
       // error in template ?
     }
   }
