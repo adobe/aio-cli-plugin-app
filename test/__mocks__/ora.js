@@ -24,6 +24,7 @@ module.exports = () => {
     info: jest.fn(() => {
       // console.error('info')
     }),
+    error: jest.fn(),
     fail: jest.fn(),
     succeed: jest.fn(() => {
       // console.error('succeed')

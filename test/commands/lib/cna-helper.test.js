@@ -42,7 +42,7 @@ describe('exports helper methods', () => {
       isDirectory: () => false
     })
     expect(cnaHelper.installPackage('does-not-exist'))
-      .rejects.toThrow(/does-not-exist is not a valid directory with a package.json file./)
+      .rejects.toThrow(/does-not-exist is not a directory/)
 
     // throws error if dir does not contain a package.json
     fs.statSync.mockReturnValue({
@@ -50,11 +50,11 @@ describe('exports helper methods', () => {
     })
     fs.readdirSync.mockReturnValue([])
     expect(cnaHelper.installPackage('does-not-exist'))
-      .rejects.toThrow(/does-not-exist is not a valid directory with a package.json file./)
+      .rejects.toThrow(/does-not-exist does not contain a package.json file./)
 
     // succeeds if npm install returns success
     fs.readdirSync.mockReturnValue(['package.json'])
     cnaHelper.installPackage('does-not-exist')
-    expect(execa).toHaveBeenCalledWith('npm', ['install', '--no-package-lock'], { 'cwd': 'does-not-exist' })
+    expect(execa).toHaveBeenCalledWith('npm', ['install'], { 'cwd': 'does-not-exist' })
   })
 })

@@ -14,12 +14,12 @@ const inquirer = require('inquirer')
 
 const TheCommand = require('../../../src/commands/cna/init')
 const CNABaseCommand = require('../../../src/CNABaseCommand')
+const execa = require('execa')
 
 describe('Command Prototype', () => {
   test('exports', async () => {
     expect(typeof TheCommand).toEqual('function')
     expect(TheCommand.prototype instanceof CNABaseCommand).toBeTruthy()
-    expect(typeof TheCommand.description).toBe('string')
     expect(typeof TheCommand.flags).toBe('object')
   })
 })
@@ -38,20 +38,58 @@ describe('bad flags', () => {
 })
 
 describe('good flags', () => {
+  beforeEach(() => {
+    jest.resetAllMocks()
+  })
+
   test('--yes', async () => {
+    // skip action install, then for web-src install
     fs.existsSync.mockReturnValueOnce(true)
+      .mockReturnValueOnce(true)
     fs.readJSON.mockResolvedValue({ name: 'bonita' })
+    fs.statSync.mockReturnValueOnce({ isDirectory: () => true })
+    fs.readdirSync.mockReturnValueOnce({ includes: () => true })
+
     await TheCommand.run(['new-folder', '--yes'])
     expect(fs.existsSync).toHaveBeenCalled()
+    expect(execa).toHaveBeenCalled()
+  })
+
+  test('--yes with missing package.json', async () => {
+    // skip action install, then for web-src install
+    fs.existsSync.mockReturnValueOnce(true)
+      .mockReturnValueOnce(true)
+    fs.readJSON.mockResolvedValue({ name: 'bonita' })
+    fs.statSync.mockReturnValueOnce({ isDirectory: () => true })
+    fs.readdirSync.mockReturnValueOnce({ includes: () => false })
+    await TheCommand.run(['new-folder', '--yes'])
+    expect(execa).not.toHaveBeenCalled()
+  })
+
+  test('--no-yes user says no to npmInstall', async () => {
+    fs.existsSync.mockReturnValueOnce(true)
+    fs.readJSON.mockResolvedValue({ name: 'Bonita' })
+    fs.statSync.mockReturnValueOnce({ isDirectory: () => true })
+    fs.readdirSync.mockReturnValueOnce({ includes: () => true })
+    inquirer.prompt.mockResolvedValueOnce({ components: [] })
+      .mockResolvedValueOnce({ name: 'Juanita' })
+      .mockResolvedValueOnce({ npmInstall: false })
+    await TheCommand.run(['new-folder'])
+    expect(fs.existsSync).toHaveBeenCalled()
+    expect(execa).not.toHaveBeenCalled()
   })
 
   test('--no-yes', async () => {
     fs.existsSync.mockReturnValueOnce(true)
     fs.readJSON.mockResolvedValue({ name: 'Bonita' })
+    fs.statSync.mockReturnValueOnce({ isDirectory: () => true })
+    fs.readdirSync.mockReturnValueOnce({ includes: () => true })
     inquirer.prompt.mockResolvedValueOnce({ components: [] })
       .mockResolvedValueOnce({ name: 'Juanita' })
+      .mockResolvedValueOnce({ npmInstall: true })
     await TheCommand.run(['new-folder'])
     expect(fs.existsSync).toHaveBeenCalled()
+    expect(execa).toHaveBeenCalled()
   })
 })
 
@@ -80,9 +118,9 @@ describe('api', () => {
     let command = new TheCommand()
     fs.readJson.mockResolvedValue({ name: 'Bonita' })
     fs.existsSync.mockReturnValueOnce(true)
-    await command.copyBaseFiles('some-dest1', 'name-me', true)
+    await command.copyBaseFiles('some-dest1', true)
     expect(fs.copySync).toHaveBeenCalled()
-    expect(fs.outputJson).toHaveBeenCalledWith(expect.any(String), { name: 'name-me' }, expect.objectContaining({ spaces: 2 }))
+    expect(fs.outputJson).toHaveBeenCalledWith(expect.any(String), { name: 'some-dest1' }, expect.objectContaining({ spaces: 2 }))
   })
 
   test('copyBaseFiles does NOT call through to copySync files if dest exists', async () => {
@@ -90,6 +128,13 @@ describe('api', () => {
     fs.existsSync.mockReturnValueOnce(false)
     await command.copyBaseFiles('some-dest2', 'name-me', true)
     expect(fs.copySync).not.toHaveBeenCalled()
+  })
+
+  test('copyBaseFiles throws on invalid name contains space', async () => {
+    let command = new TheCommand()
+    fs.existsSync.mockReturnValueOnce(true)
+    let result = command.copyBaseFiles('name this', true)
+    expect(result).rejects.toThrow('contains invalid characters and is not a valid package name')
   })
 
   // createAssetsFromTemplate
@@ -114,6 +159,15 @@ describe('api', () => {
   test('createAssetsFromTemplate does NOT call through to copySync files if dest exists', async () => {
     let command = new TheCommand()
     fs.existsSync = jest.fn().mockReturnValueOnce(true)
+    await command.createAssetsFromTemplate('some-dest2', true)
+    expect(fs.copySync).not.toHaveBeenCalled()
+    expect(inquirer.prompt).not.toHaveBeenCalled()
+  })
+
+  test('createAssetsFromTemplate does NOT call through to copySync files if template src is missing', async () => {
+    let command = new TheCommand()
+    fs.existsSync = jest.fn().mockReturnValueOnce(false)
+      .mockReturnValueOnce(false)
     await command.createAssetsFromTemplate('some-dest2', true)
     expect(fs.copySync).not.toHaveBeenCalled()
     expect(inquirer.prompt).not.toHaveBeenCalled()
@@ -161,6 +215,15 @@ describe('api', () => {
   test('createActionsFromTemplate does NOT call through to copySync files if dest exists', async () => {
     let command = new TheCommand()
     fs.existsSync = jest.fn().mockReturnValueOnce(true)
+    await command.createActionsFromTemplate('some-dest2', true)
+    expect(fs.copySync).not.toHaveBeenCalled()
+    expect(inquirer.prompt).not.toHaveBeenCalled()
+  })
+
+  test('createActionsFromTemplate does NOT call through to copySync files if template src is missing', async () => {
+    let command = new TheCommand()
+    fs.existsSync = jest.fn().mockReturnValueOnce(false)
+      .mockReturnValueOnce(false)
     await command.createActionsFromTemplate('some-dest2', true)
     expect(fs.copySync).not.toHaveBeenCalled()
     expect(inquirer.prompt).not.toHaveBeenCalled()
