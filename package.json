@@ -1,11 +1,11 @@
 {
   "name": "@adobe/aio-cli-plugin-cna",
   "description": "Create, Build and Deploy Cloud Native Applications",
-  "version": "0.2.0-pre",
+  "version": "0.2.1",
   "author": "Adobe Inc.",
   "bugs": "https://github.com/adobe/aio-cli-plugin-cna/issues",
   "dependencies": {
-    "@adobe/aio-cna-core-config": "^1.0.14",
+    "@adobe/aio-lib-core-config": "1.0.15",
     "@adobe/io-cna-scripts": "^0.2.0-dev",
     "@oclif/command": "^1.5.11",
     "@oclif/config": "^1.12.9",
