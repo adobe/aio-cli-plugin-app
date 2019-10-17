@@ -11,3 +11,4 @@ coverage
 .vscode/
 
 oclif.manifest.json
+package-lock.json
