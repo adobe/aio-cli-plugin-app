@@ -10,6 +10,7 @@ env:
     - CXX=g++-4.8
 install:
   - npm version
+  - npm i --package-lock --package-lock-only
   - npm ci
 script:
   - npm test
