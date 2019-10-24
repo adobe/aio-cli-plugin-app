@@ -134,7 +134,7 @@ describe('api', () => {
     let command = new TheCommand()
     fs.existsSync.mockReturnValueOnce(true)
     let result = command.copyBaseFiles('name this', true)
-    expect(result).rejects.toThrow('contains invalid characters and is not a valid package name')
+    return expect(result).rejects.toThrow('contains invalid characters and is not a valid package name')
   })
 
   // createAssetsFromTemplate
