@@ -224,7 +224,7 @@ package pre-configured.
     if (!bSkipPrompt) {
       actionQ = await inquirer.prompt([{
         name: 'actionDest',
-        message: 'What folder do you want to use as your public directory?',
+        message: 'What folder do you want to use as your actions directory?',
         type: 'string',
         default: 'actions'
       }])
