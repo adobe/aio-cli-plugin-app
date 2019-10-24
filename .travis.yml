@@ -3,6 +3,7 @@ os:
   - windows
   - linux
 node_js:
+  - "8"
   - "10"
   - "12"
 env:
@@ -10,6 +11,7 @@ env:
     - CXX=g++-4.8
 install:
   - npm version
+  - npm i --package-lock --package-lock-only
   - npm ci
 script:
   - npm test
