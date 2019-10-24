@@ -19,8 +19,8 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - name: npm install, build, and test
       run: |
-        npm ci
         npm i --package-lock --package-lock-only
+        npm ci
         npm test
       env:
         CI: true
