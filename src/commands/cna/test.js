@@ -35,7 +35,7 @@ class CNARun extends CNABaseCommand {
     const packagedotjson = JSON.parse(fs.readFileSync('package.json').toString())
     if (!packagedotjson.scripts || !packagedotjson.scripts[command]) {
       spinner.fail(chalk.bold(chalk.red(`cannot run tests, please add a "scripts.${command}" command in package.json`)))
-      this.exit(1)
+      return this.exit(1)
     }
 
     const options = { stdio: 'inherit', env: true }
@@ -44,7 +44,7 @@ class CNARun extends CNABaseCommand {
     } catch (e) {
       this.log()
       spinner.fail(chalk.bold(chalk.red(`${taskName} failed !`)))
-      this.exit(e.exitCode)
+      return this.exit(e.exitCode)
     }
 
     this.log()
@@ -57,7 +57,7 @@ CNARun.description = `Run a Cloud Native Application
 
 CNARun.flags = {
   ...CNABaseCommand.flags,
-  unit: flags.boolean({ char: 'u', description: 'runs unit tests (default).', default: true }),
-  e2e: flags.boolean({ char: 'e', description: 'runs e2e tests.' })
+  unit: flags.boolean({ char: 'u', description: 'runs unit tests (default).', default: true, exclusive: ['e2e'] }),
+  e2e: flags.boolean({ char: 'e', description: 'runs e2e tests.', exclusive: ['unit'] })
 }
 module.exports = CNARun
