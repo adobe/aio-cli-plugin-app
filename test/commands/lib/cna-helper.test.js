@@ -57,4 +57,47 @@ describe('exports helper methods', () => {
     cnaHelper.installPackage('does-not-exist')
     expect(execa).toHaveBeenCalledWith('npm', ['install'], { 'cwd': 'does-not-exist' })
   })
+
+  test('runPackageScript', async () => {
+    expect(cnaHelper.runPackageScript).toBeDefined()
+    expect(cnaHelper.runPackageScript).toBeInstanceOf(Function)
+  })
+
+  test('runPackageScript called without valid dir', async () => {
+    // throws error if dir dne => // fs.statSync(dir).isDirectory()
+    fs.statSync.mockReturnValue({
+      isDirectory: () => false
+    })
+    await expect(cnaHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
+      .rejects.toThrow(/does-not-exist is not a directory/)
+  })
+
+  test('runPackageScript missing package.json', async () => {
+    // throws error if dir does not contain a package.json
+    fs.statSync.mockReturnValue({
+      isDirectory: () => true
+    })
+    fs.readdirSync.mockReturnValue([])
+    await expect(cnaHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
+      .rejects.toThrow(/does-not-exist does not contain a package.json file./)
+  })
+
+  test('runPackageScript success', async () => {
+    // succeeds if npm run-script returns success
+    fs.statSync.mockReturnValue({
+      isDirectory: () => true
+    })
+    fs.readdirSync.mockReturnValue(['package.json'])
+    fs.readJSONSync.mockReturnValue({ scripts: { test: 'some-value' } })
+
+    await cnaHelper.runPackageScript('test', '')
+    expect(execa).toHaveBeenCalledWith('npm', ['run-script', 'test'], expect.any(Object))
+  })
+
+  test('runPackageScript rejects if package.json does not have matching script', async () => {
+    fs.readdirSync.mockReturnValue(['package.json'])
+    fs.readJSONSync.mockReturnValue({ scripts: { notest: 'some-value' } })
+    await expect(cnaHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
+      .rejects.toThrow(/does-not-exist/)
+  })
 })
