@@ -56,12 +56,14 @@ class CNADeploy extends CNABaseCommand {
       }
       const scripts = CNAScripts({ listeners })
 
-      // build phase
-      if (!flags.static) {
-        await scripts.buildActions()
-      }
-      if (!flags.actions) {
-        await scripts.buildUI()
+      if (!flags.deploy) {
+        // build phase
+        if (!flags.static) {
+          await scripts.buildActions()
+        }
+        if (!flags.actions) {
+          await scripts.buildUI()
+        }
       }
       // deploy phase
       if (!flags.build) {
@@ -92,15 +94,16 @@ class CNADeploy extends CNABaseCommand {
   }
 }
 
-CNADeploy.description = `Builds and deploys a Cloud Native Application
+CNADeploy.description = `Build and deploy a Cloud Native Application
 `
 
 CNADeploy.flags = {
   ...CNABaseCommand.flags,
-  build: flags.boolean({ char: 'b', description: 'Only build, don\'t deploy.' }),
+  build: flags.boolean({ char: 'b', description: 'Only build, don\'t deploy' }),
+  deploy: flags.boolean({ char: 'd', description: 'Only deploy, don\'t build' }),
   // todo remove these 2 options and autodetect UI/action dir + ui/actions changes
-  static: flags.boolean({ char: 's', description: 'Only deploy static files.', exclusive: ['actions'] }),
-  actions: flags.boolean({ char: 'a', description: 'Only deploy actions.', exclusive: ['static'] })
+  static: flags.boolean({ char: 's', description: 'Only build & deploy static files', exclusive: ['actions'] }),
+  actions: flags.boolean({ char: 'a', description: 'Only build & deploy actions', exclusive: ['static'] })
 
   // todo no color/spinner/open output
   // 'no-fancy': flags.boolean({ description: 'Simple output and no url open' }),
