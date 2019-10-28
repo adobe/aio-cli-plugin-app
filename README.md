@@ -77,16 +77,17 @@ _See code: [src/commands/cna/create.js](https://github.com/adobe/aio-cli-plugin-
 
 ## `@adobe/aio-cli-plugin-cna cna:deploy`
 
-Builds and deploys a Cloud Native Application
+Build and deploy a Cloud Native Application
 
 ```
 USAGE
   $ @adobe/aio-cli-plugin-cna cna:deploy
 
 OPTIONS
-  -a, --actions  Only deploy actions.
-  -b, --build    Only build, don't deploy.
-  -s, --static   Only deploy static files.
+  -a, --actions  Only build & deploy actions
+  -b, --build    Only build, don't deploy
+  -d, --deploy   Only deploy, don't build
+  -s, --static   Only build & deploy static files
   -v, --verbose  Verbose output
   --version      Show version
 ```
