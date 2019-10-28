@@ -134,7 +134,7 @@ _See code: [src/commands/cna/run.js](https://github.com/adobe/aio-cli-plugin-cna
 
 ## `@adobe/aio-cli-plugin-cna cna:test [PATH]`
 
-Run tests
+Tests a Cloud Native Application
 
 ```
 USAGE
@@ -144,6 +144,8 @@ ARGUMENTS
   PATH  [default: .] Path to the app directory
 
 OPTIONS
+  -e, --e2e      runs e2e tests.
+  -u, --unit     runs unit tests (default).
   -v, --verbose  Verbose output
   --version      Show version
 ```
