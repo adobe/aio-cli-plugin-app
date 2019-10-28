@@ -49,6 +49,12 @@ test('flags', async () => {
   expect(typeof TheCommand.flags.build).toBe('object')
   expect(TheCommand.flags.build.char).toBe('b')
   expect(typeof TheCommand.flags.build.description).toBe('string')
+  expect(TheCommand.flags.build.exclusive).toEqual(['deploy'])
+
+  expect(typeof TheCommand.flags.deploy).toBe('object')
+  expect(TheCommand.flags.deploy.char).toBe('d')
+  expect(typeof TheCommand.flags.deploy.description).toBe('string')
+  expect(TheCommand.flags.deploy.exclusive).toEqual(['build'])
 })
 
 describe('run', () => {
@@ -141,6 +147,50 @@ describe('run', () => {
   })
 
   test('build only actions', async () => {
+    command.argv = ['-ba']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployUI).toHaveBeenCalledTimes(0)
+    expect(mockScripts.buildActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.buildUI).toHaveBeenCalledTimes(0)
+    expect(mockOpen).toHaveBeenCalledTimes(0)
+  })
+
+  test('deploy only', async () => {
+    command.argv = ['-d']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.deployUI).toHaveBeenCalledTimes(1)
+    expect(mockScripts.buildActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.buildUI).toHaveBeenCalledTimes(0)
+    expect(mockOpen).toHaveBeenCalledTimes(1)
+  })
+
+  test('deploy only --verbose', async () => {
+    command.argv = ['-d', '--verbose']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.deployUI).toHaveBeenCalledTimes(1)
+    expect(mockScripts.buildActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.buildUI).toHaveBeenCalledTimes(0)
+    expect(mockOpen).toHaveBeenCalledTimes(0)
+  })
+
+  test('deploy only static files', async () => {
+    command.argv = ['-ds']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployUI).toHaveBeenCalledTimes(1)
+    expect(mockScripts.buildActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.buildUI).toHaveBeenCalledTimes(0)
+    expect(mockOpen).toHaveBeenCalledTimes(1)
+  })
+
+  test('deploy only actions', async () => {
     command.argv = ['-ba']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
