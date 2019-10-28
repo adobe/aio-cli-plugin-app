@@ -46,7 +46,6 @@ class CNARun extends CNABaseCommand {
     }
 
     process.env['REMOTE_ACTIONS'] = !flags.local
-
     const scripts = CNAScripts({ listeners })
     return scripts.runDev()
   }
@@ -57,9 +56,7 @@ CNARun.description = `Run a Cloud Native Application
 
 CNARun.flags = {
   'local': flags.boolean({
-    description: 'run/debug actions locally',
-    allowNo: true,
-    default: false
+    description: 'run/debug actions locally'
   }),
   ...CNABaseCommand.flags
 }

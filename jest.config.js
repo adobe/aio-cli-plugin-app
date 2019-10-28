@@ -15,6 +15,9 @@ module.exports = {
   verbose: true,
   setupFilesAfterEnv: ['./test/jest.setup.js'],
   collectCoverage: true,
+  testPathIgnorePatterns: [
+    '<rootDir>/src/*'
+  ],
   collectCoverageFrom: [
     'src/commands/**/*.js',
     'src/lib/*.js'

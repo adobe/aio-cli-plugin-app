@@ -22,7 +22,7 @@ $ npm install -g @adobe/aio-cli-plugin-cna
 $ @adobe/aio-cli-plugin-cna COMMAND
 running command...
 $ @adobe/aio-cli-plugin-cna (-v|--version|version)
-@adobe/aio-cli-plugin-cna/0.2.1-dev darwin-x64 node-v10.11.0
+@adobe/aio-cli-plugin-cna/0.2.1-dev darwin-x64 node-v10.16.1
 $ @adobe/aio-cli-plugin-cna --help [COMMAND]
 USAGE
   $ @adobe/aio-cli-plugin-cna COMMAND
@@ -36,6 +36,7 @@ USAGE
 * [`@adobe/aio-cli-plugin-cna cna:deploy`](#adobeaio-cli-plugin-cna-cnadeploy)
 * [`@adobe/aio-cli-plugin-cna cna:init [PATH]`](#adobeaio-cli-plugin-cna-cnainit-path)
 * [`@adobe/aio-cli-plugin-cna cna:run [PATH]`](#adobeaio-cli-plugin-cna-cnarun-path)
+* [`@adobe/aio-cli-plugin-cna cna:test [PATH]`](#adobeaio-cli-plugin-cna-cnatest-path)
 * [`@adobe/aio-cli-plugin-cna cna:undeploy [PATH]`](#adobeaio-cli-plugin-cna-cnaundeploy-path)
 
 ## `@adobe/aio-cli-plugin-cna cna:add-auth [PATH]`
@@ -125,11 +126,29 @@ ARGUMENTS
 
 OPTIONS
   -v, --verbose  Verbose output
-  --[no-]local   run/debug actions locally
+  --local        run/debug actions locally
   --version      Show version
 ```
 
 _See code: [src/commands/cna/run.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.2.1-dev/src/commands/cna/run.js)_
+
+## `@adobe/aio-cli-plugin-cna cna:test [PATH]`
+
+Run tests
+
+```
+USAGE
+  $ @adobe/aio-cli-plugin-cna cna:test [PATH]
+
+ARGUMENTS
+  PATH  [default: .] Path to the app directory
+
+OPTIONS
+  -v, --verbose  Verbose output
+  --version      Show version
+```
+
+_See code: [src/commands/cna/test.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.2.1-dev/src/commands/cna/test.js)_
 
 ## `@adobe/aio-cli-plugin-cna cna:undeploy [PATH]`
 
