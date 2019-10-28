@@ -99,8 +99,8 @@ CNADeploy.description = `Build and deploy a Cloud Native Application
 
 CNADeploy.flags = {
   ...CNABaseCommand.flags,
-  build: flags.boolean({ char: 'b', description: 'Only build, don\'t deploy' }),
-  deploy: flags.boolean({ char: 'd', description: 'Only deploy, don\'t build' }),
+  build: flags.boolean({ char: 'b', description: 'Only build, don\'t deploy', exclusive: ['deploy'] }),
+  deploy: flags.boolean({ char: 'd', description: 'Only deploy, don\'t build', exclusive: ['build'] }),
   // todo remove these 2 options and autodetect UI/action dir + ui/actions changes
   static: flags.boolean({ char: 's', description: 'Only build & deploy static files', exclusive: ['actions'] }),
   actions: flags.boolean({ char: 'a', description: 'Only build & deploy actions', exclusive: ['static'] })

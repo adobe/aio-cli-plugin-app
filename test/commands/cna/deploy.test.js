@@ -49,10 +49,12 @@ test('flags', async () => {
   expect(typeof TheCommand.flags.build).toBe('object')
   expect(TheCommand.flags.build.char).toBe('b')
   expect(typeof TheCommand.flags.build.description).toBe('string')
+  expect(TheCommand.flags.build.exclusive).toEqual(['deploy'])
 
   expect(typeof TheCommand.flags.deploy).toBe('object')
   expect(TheCommand.flags.deploy.char).toBe('d')
   expect(typeof TheCommand.flags.deploy.description).toBe('string')
+  expect(TheCommand.flags.deploy.exclusive).toEqual(['build'])
 })
 
 describe('run', () => {
