@@ -22,7 +22,7 @@ $ npm install -g @adobe/aio-cli-plugin-cna
 $ @adobe/aio-cli-plugin-cna COMMAND
 running command...
 $ @adobe/aio-cli-plugin-cna (-v|--version|version)
-@adobe/aio-cli-plugin-cna/0.2.1 darwin-x64 node-v10.16.1
+@adobe/aio-cli-plugin-cna/0.2.1-dev darwin-x64 node-v10.15.3
 $ @adobe/aio-cli-plugin-cna --help [COMMAND]
 USAGE
   $ @adobe/aio-cli-plugin-cna COMMAND
@@ -36,6 +36,7 @@ USAGE
 * [`@adobe/aio-cli-plugin-cna cna:deploy`](#adobeaio-cli-plugin-cna-cnadeploy)
 * [`@adobe/aio-cli-plugin-cna cna:init [PATH]`](#adobeaio-cli-plugin-cna-cnainit-path)
 * [`@adobe/aio-cli-plugin-cna cna:run [PATH]`](#adobeaio-cli-plugin-cna-cnarun-path)
+* [`@adobe/aio-cli-plugin-cna cna:test [PATH]`](#adobeaio-cli-plugin-cna-cnatest-path)
 * [`@adobe/aio-cli-plugin-cna cna:undeploy [PATH]`](#adobeaio-cli-plugin-cna-cnaundeploy-path)
 
 ## `@adobe/aio-cli-plugin-cna cna:add-auth [PATH]`
@@ -54,7 +55,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/cna/add-auth.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.2.1/src/commands/cna/add-auth.js)_
+_See code: [src/commands/cna/add-auth.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.2.1-dev/src/commands/cna/add-auth.js)_
 
 ## `@adobe/aio-cli-plugin-cna cna:create [PATH]`
 
@@ -72,7 +73,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/cna/create.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.2.1/src/commands/cna/create.js)_
+_See code: [src/commands/cna/create.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.2.1-dev/src/commands/cna/create.js)_
 
 ## `@adobe/aio-cli-plugin-cna cna:deploy`
 
@@ -90,7 +91,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/cna/deploy.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.2.1/src/commands/cna/deploy.js)_
+_See code: [src/commands/cna/deploy.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.2.1-dev/src/commands/cna/deploy.js)_
 
 ## `@adobe/aio-cli-plugin-cna cna:init [PATH]`
 
@@ -109,7 +110,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/cna/init.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.2.1/src/commands/cna/init.js)_
+_See code: [src/commands/cna/init.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.2.1-dev/src/commands/cna/init.js)_
 
 ## `@adobe/aio-cli-plugin-cna cna:run [PATH]`
 
@@ -128,7 +129,27 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/cna/run.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.2.1/src/commands/cna/run.js)_
+_See code: [src/commands/cna/run.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.2.1-dev/src/commands/cna/run.js)_
+
+## `@adobe/aio-cli-plugin-cna cna:test [PATH]`
+
+Run a Cloud Native Application
+
+```
+USAGE
+  $ @adobe/aio-cli-plugin-cna cna:test [PATH]
+
+ARGUMENTS
+  PATH  [default: .] Path to the app directory
+
+OPTIONS
+  -e, --e2e      runs e2e tests.
+  -u, --unit     runs unit tests (default).
+  -v, --verbose  Verbose output
+  --version      Show version
+```
+
+_See code: [src/commands/cna/test.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.2.1-dev/src/commands/cna/test.js)_
 
 ## `@adobe/aio-cli-plugin-cna cna:undeploy [PATH]`
 
@@ -148,5 +169,5 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/cna/undeploy.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.2.1/src/commands/cna/undeploy.js)_
+_See code: [src/commands/cna/undeploy.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.2.1-dev/src/commands/cna/undeploy.js)_
 <!-- commandsstop -->
