@@ -22,7 +22,7 @@ $ npm install -g @adobe/aio-cli-plugin-cna
 $ @adobe/aio-cli-plugin-cna COMMAND
 running command...
 $ @adobe/aio-cli-plugin-cna (-v|--version|version)
-@adobe/aio-cli-plugin-cna/0.2.1-dev darwin-x64 node-v10.15.3
+@adobe/aio-cli-plugin-cna/0.2.1-dev darwin-x64 node-v10.11.0
 $ @adobe/aio-cli-plugin-cna --help [COMMAND]
 USAGE
   $ @adobe/aio-cli-plugin-cna COMMAND
@@ -133,7 +133,7 @@ _See code: [src/commands/cna/run.js](https://github.com/adobe/aio-cli-plugin-cna
 
 ## `@adobe/aio-cli-plugin-cna cna:test [PATH]`
 
-Run a Cloud Native Application
+Tests a Cloud Native Application
 
 ```
 USAGE
