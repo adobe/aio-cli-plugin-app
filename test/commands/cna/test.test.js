@@ -100,4 +100,42 @@ describe('run', () => {
     execa.mockRejectedValue({ exitCode: 42 })
     await expectErrors(42)
   })
+
+// jest.mock('../../../src/lib/cna-helper', () => {
+//   return { runPackageScript: jest.fn() }
+// })
+// const cnaHelper = require('../../../src/lib/cna-helper')
+
+// beforeEach(() => {
+//   jest.resetAllMocks()
+// })
+
+// describe('Command Prototype', () => {
+//   test('exports', async () => {
+//     expect(typeof TheCommand).toEqual('function')
+//     expect(TheCommand.prototype instanceof CNABaseCommand).toBeTruthy()
+//     expect(typeof TheCommand.flags).toBe('object')
+//   })
+// })
+
+// describe('bad flags', () => {
+//   test('unknown', async (done) => {
+//     let result = TheCommand.run(['.', '--wtf'])
+//     expect(result instanceof Promise).toBeTruthy()
+//     return result
+//       .then(() => done.fail())
+//       .catch(res => {
+//         expect(res).toEqual(new Error('Unexpected argument: --wtf\nSee more help with --help'))
+//         done()
+//       })
+//   })
+// })
+
+// describe('no flags', () => {
+//   test('run tests', async () => {
+//     let result = await TheCommand.run([])
+//     expect(cnaHelper.runPackageScript).toHaveBeenCalled()
+//     return result
+// })
+
 })

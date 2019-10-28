@@ -19,6 +19,7 @@ const mockScripts = require('@adobe/io-cna-scripts')()
 
 beforeEach(() => {
   jest.restoreAllMocks()
+  mockScripts.runDev.mock.calls = []
 })
 
 afterAll(() => {
@@ -46,34 +47,33 @@ describe('run command definition', () => {
 })
 
 describe('run', () => {
-  let runCount = 1
   test('cna:run with no flags', async () => {
     delete process.env['REMOTE_ACTIONS']
     let command = new RunCommand([])
     command.error = jest.fn()
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(runCount++)
+    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
     expect(process.env['REMOTE_ACTIONS']).toBe('true')
   })
 
-  test('cna:run with --verbose', async () => {
+  test('cna:run with -verbose', async () => {
     delete process.env['REMOTE_ACTIONS']
     let command = new RunCommand(['--verbose'])
     command.error = jest.fn(['--verbose'])
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(runCount++)
+    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
     expect(process.env['REMOTE_ACTIONS']).toBe('true')
   })
 
-  test('cna:run with --no-local', async () => {
+  test('cna:run without --local', async () => {
     delete process.env['REMOTE_ACTIONS']
-    let command = new RunCommand(['--no-local'])
+    let command = new RunCommand([])
     command.error = jest.fn()
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(runCount++)
+    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
     expect(process.env['REMOTE_ACTIONS']).toBe('true')
   })
 
@@ -83,7 +83,7 @@ describe('run', () => {
     command.error = jest.fn()
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(runCount++)
+    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
     expect(process.env['REMOTE_ACTIONS']).toBe('false')
   })
 
@@ -93,7 +93,7 @@ describe('run', () => {
     command.error = jest.fn()
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(runCount++)
+    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
     expect(process.env['REMOTE_ACTIONS']).toBe('false')
   })
 

@@ -11,6 +11,7 @@ governing permissions and limitations under the License.
 
 const execa = require('execa')
 const fs = require('fs-extra')
+const path = require('path')
 const which = require('which')
 const debug = require('debug')('aio-cli-plugin-cna:cna-helper')
 
@@ -37,8 +38,27 @@ async function installPackage (dir) {
   await execa('npm', ['install'], { cwd: dir })
 }
 
+async function runPackageScript (scriptName, dir) {
+  debug(`running npm run-script ${scriptName} in dir: ${dir}`)
+  if (!(fs.statSync(dir).isDirectory())) {
+    debug(`${dir}  is not a directory`)
+    throw new Error(`${dir} is not a directory`)
+  }
+  if (!fs.readdirSync(dir).includes('package.json')) {
+    debug(`${dir} does not contain a package.json file.`)
+    throw new Error(`${dir} does not contain a package.json file.`)
+  }
+  if (!fs.readJSONSync(path.join(dir, 'package.json')).scripts[scriptName]) {
+    debug(`${dir} package scripts does not contain ${scriptName}`)
+    throw new Error(`${dir} package scripts does not contain ${scriptName}`)
+  }
+  // npm run-script test
+  return execa('npm', ['run-script', scriptName], { cwd: dir, stdio: 'inherit' })
+}
+
 module.exports = {
   isNpmInstalled,
   isGitInstalled,
-  installPackage
+  installPackage,
+  runPackageScript
 }

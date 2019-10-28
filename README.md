@@ -22,7 +22,7 @@ $ npm install -g @adobe/aio-cli-plugin-cna
 $ @adobe/aio-cli-plugin-cna COMMAND
 running command...
 $ @adobe/aio-cli-plugin-cna (-v|--version|version)
-@adobe/aio-cli-plugin-cna/0.2.1-dev darwin-x64 node-v10.11.0
+@adobe/aio-cli-plugin-cna/0.2.1-dev darwin-x64 node-v10.16.1
 $ @adobe/aio-cli-plugin-cna --help [COMMAND]
 USAGE
   $ @adobe/aio-cli-plugin-cna COMMAND
@@ -126,7 +126,7 @@ ARGUMENTS
 
 OPTIONS
   -v, --verbose  Verbose output
-  --[no-]local   run/debug actions locally
+  --local        run/debug actions locally
   --version      Show version
 ```
 

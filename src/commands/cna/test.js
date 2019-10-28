@@ -17,12 +17,17 @@ const fs = require('fs')
 const execa = require('execa')
 
 const { flags } = require('@oclif/command')
+const cnaHelper = require('../../lib/cna-helper')
 
 const CNABaseCommand = require('../../CNABaseCommand')
 
-class CNATest extends CNABaseCommand {
+class CNACommand extends CNABaseCommand {
   async run () {
     const { flags } = this.parse(CNATest)
+    // some things we could do here:
+    // test configurations, ie remote-actions deployed and called from local
+    // this just runs package.json scripts.test, we could also check that this is in fact a cna project
+    // return cnaHelper.runPackageScript('test', process.cwd())
 
     const spinner = ora()
 
@@ -52,12 +57,12 @@ class CNATest extends CNABaseCommand {
   }
 }
 
-CNATest.description = `Tests a Cloud Native Application
+CNACommand.description = `Tests a Cloud Native Application
 `
 
-CNATest.flags = {
+CNACommand.flags = {
   ...CNABaseCommand.flags,
   unit: flags.boolean({ char: 'u', description: 'runs unit tests (default).', default: true, exclusive: ['e2e'] }),
   e2e: flags.boolean({ char: 'e', description: 'runs e2e tests.', exclusive: ['unit'] })
 }
-module.exports = CNATest
+module.exports = CNACommand
