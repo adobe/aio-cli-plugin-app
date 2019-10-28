@@ -36,7 +36,6 @@ USAGE
 * [`@adobe/aio-cli-plugin-cna cna:deploy`](#adobeaio-cli-plugin-cna-cnadeploy)
 * [`@adobe/aio-cli-plugin-cna cna:init [PATH]`](#adobeaio-cli-plugin-cna-cnainit-path)
 * [`@adobe/aio-cli-plugin-cna cna:run [PATH]`](#adobeaio-cli-plugin-cna-cnarun-path)
-* [`@adobe/aio-cli-plugin-cna cna:test [PATH]`](#adobeaio-cli-plugin-cna-cnatest-path)
 * [`@adobe/aio-cli-plugin-cna cna:undeploy [PATH]`](#adobeaio-cli-plugin-cna-cnaundeploy-path)
 
 ## `@adobe/aio-cli-plugin-cna cna:add-auth [PATH]`
@@ -77,16 +76,17 @@ _See code: [src/commands/cna/create.js](https://github.com/adobe/aio-cli-plugin-
 
 ## `@adobe/aio-cli-plugin-cna cna:deploy`
 
-Builds and deploys a Cloud Native Application
+Build and deploy a Cloud Native Application
 
 ```
 USAGE
   $ @adobe/aio-cli-plugin-cna cna:deploy
 
 OPTIONS
-  -a, --actions  Only deploy actions.
-  -b, --build    Only build, don't deploy.
-  -s, --static   Only deploy static files.
+  -a, --actions  Only build & deploy actions
+  -b, --build    Only build, don't deploy
+  -d, --deploy   Only deploy, don't build
+  -s, --static   Only build & deploy static files
   -v, --verbose  Verbose output
   --version      Show version
 ```
@@ -130,24 +130,6 @@ OPTIONS
 ```
 
 _See code: [src/commands/cna/run.js](https://github.com/adobe/aio-cli-plugin-cna/blob/v0.2.1-dev/src/commands/cna/run.js)_
-
-## `@adobe/aio-cli-plugin-cna cna:test [PATH]`
-
-Run a Cloud Native Application
-
-```
-USAGE
-  $ @adobe/aio-cli-plugin-cna cna:test [PATH]
-
-ARGUMENTS
-  PATH  [default: .] Path to the app directory
-
-OPTIONS
-  -e, --e2e      runs e2e tests.
-  -u, --unit     runs unit tests (default).
-  -v, --verbose  Verbose output
-  --version      Show version
-```
 
 ## `@adobe/aio-cli-plugin-cna cna:undeploy [PATH]`
 
