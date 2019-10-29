@@ -21,6 +21,5 @@ module.exports = {
   collectCoverageFrom: [
     'src/commands/**/*.js',
     'src/lib/*.js'
-  ],
-  testPathIgnorePatterns: ['src']
+  ]
 }

@@ -27,7 +27,7 @@ function isGitInstalled () {
 async function installPackage (dir) {
   debug(`running npm install : ${dir}`)
   if (!(fs.statSync(dir).isDirectory())) {
-    debug(`${dir}  is not a directory`)
+    debug(`${dir} is not a directory`)
     throw new Error(`${dir} is not a directory`)
   }
   if (!fs.readdirSync(dir).includes('package.json')) {
@@ -35,13 +35,13 @@ async function installPackage (dir) {
     throw new Error(`${dir} does not contain a package.json file.`)
   }
   // npm install
-  await execa('npm', ['install'], { cwd: dir })
+  return execa('npm', ['install'], { cwd: dir })
 }
 
-async function runPackageScript (scriptName, dir) {
+async function runPackageScript (scriptName, dir, options = {}) {
   debug(`running npm run-script ${scriptName} in dir: ${dir}`)
   if (!(fs.statSync(dir).isDirectory())) {
-    debug(`${dir}  is not a directory`)
+    debug(`${dir} is not a directory`)
     throw new Error(`${dir} is not a directory`)
   }
   if (!fs.readdirSync(dir).includes('package.json')) {
@@ -52,8 +52,13 @@ async function runPackageScript (scriptName, dir) {
     debug(`${dir} package scripts does not contain ${scriptName}`)
     throw new Error(`${dir} package scripts does not contain ${scriptName}`)
   }
+
+  // optional cmd args
+  const cmdArgs = []
+  if (options.silent) cmdArgs.push('--silent')
+
   // npm run-script test
-  return execa('npm', ['run-script', scriptName], { cwd: dir, stdio: 'inherit' })
+  return execa('npm', ['run-script', scriptName].concat(cmdArgs), { cwd: dir, stdio: 'inherit' })
 }
 
 module.exports = {

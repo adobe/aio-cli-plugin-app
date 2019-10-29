@@ -94,6 +94,18 @@ describe('exports helper methods', () => {
     expect(execa).toHaveBeenCalledWith('npm', ['run-script', 'test'], expect.any(Object))
   })
 
+  test('runPackageScript success with silent option', async () => {
+    // succeeds if npm run-script returns success
+    fs.statSync.mockReturnValue({
+      isDirectory: () => true
+    })
+    fs.readdirSync.mockReturnValue(['package.json'])
+    fs.readJSONSync.mockReturnValue({ scripts: { cmd: 'some-value' } })
+
+    await cnaHelper.runPackageScript('cmd', '', { silent: true })
+    expect(execa).toHaveBeenCalledWith('npm', ['run-script', 'cmd', '--silent'], expect.any(Object))
+  })
+
   test('runPackageScript rejects if package.json does not have matching script', async () => {
     fs.readdirSync.mockReturnValue(['package.json'])
     fs.readJSONSync.mockReturnValue({ scripts: { notest: 'some-value' } })
