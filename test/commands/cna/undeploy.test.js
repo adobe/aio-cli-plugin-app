@@ -107,7 +107,7 @@ describe('run', () => {
     const error = new Error('mock failure')
     mockScripts.undeployActions.mockRejectedValue(error)
     await command.run()
-    expect(command.error).toHaveBeenCalledWith(error.message)
+    expect(command.error).toHaveBeenCalledWith(error)
     expect(mockScripts.undeployActions).toHaveBeenCalledTimes(1)
   })
 
@@ -115,7 +115,7 @@ describe('run', () => {
     const error = new Error('mock failure')
     mockScripts.undeployUI.mockRejectedValue(error)
     await command.run()
-    expect(command.error).toHaveBeenCalledWith(error.message)
+    expect(command.error).toHaveBeenCalledWith(error)
     expect(mockScripts.undeployUI).toHaveBeenCalledTimes(0)
   })
 })

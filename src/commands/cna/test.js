@@ -37,7 +37,7 @@ class CNATest extends CNABaseCommand {
     } catch (e) {
       this.log()
       spinner.fail(chalk.bold(chalk.red(`${taskName} failed !`)))
-      return this.error(e.message, { exit: e.exitCode })
+      return this.error(e, { exit: e.exitCode })
     }
 
     this.log()

@@ -84,10 +84,12 @@ describe('run', () => {
     expect(cnaHelper.runPackageScript).toHaveBeenCalledWith(testCmd, expect.any(String), { silent: true })
   }
   const expectErrors = async (argv, errorCode) => {
-    cnaHelper.runPackageScript.mockRejectedValue({ message: 'fake error', exitCode: 42 })
+    const error = new Error('fake error')
+    error.exitCode = 42
+    cnaHelper.runPackageScript.mockRejectedValue(error)
     command.argv = argv
     await command.run()
-    expect(command.error).toHaveBeenCalledWith('fake error', { exit: 42 })
+    expect(command.error).toHaveBeenCalledWith(error, { exit: error.exitCode })
   }
 
   test('no flags', () => expectNoErrors([], 'test'))
