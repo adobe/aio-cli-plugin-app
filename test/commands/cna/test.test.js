@@ -22,6 +22,8 @@ describe('Command Prototype', () => {
   test('exports', async () => {
     expect(typeof TheCommand).toEqual('function')
     expect(TheCommand.prototype instanceof CNABaseCommand).toBeTruthy()
+    expect(typeof TheCommand.flags).toBe('object')
+    expect(TheCommand.description).toBeDefined()
   })
 
   test('description', async () => {
@@ -45,18 +47,31 @@ describe('Command Prototype', () => {
     expect(TheCommand.flags.e2e.exclusive).toEqual(['unit'])
   })
   describe('bad flags', () => {
-    test('unknown', async () => {
+    const expectFlagError = async (argv, message) => {
       const command = new TheCommand([])
       command.exit = jest.fn()
-      command.argv = ['--wtf']
+      command.argv = argv
       let err
       try {
         await command.run()
       } catch (e) {
         err = e
-        expect(e.message).toEqual('Unexpected argument: --wtf\nSee more help with --help')
+        expect(e.message).toEqual(expect.stringContaining(message))
       }
       expect(err).toBeInstanceOf(Error)
+    }
+
+    test('unknown', async () => expectFlagError(['--wtf'], 'Unexpected argument: --wtf\nSee more help with --help'))
+    test('-e,-u should fail if both flags are present', async () => {
+      const errMsg = 'cannot also be provided when using'
+      await expectFlagError(['-e', '-u'], errMsg)
+      await expectFlagError(['--e2e', '-u'], errMsg)
+      await expectFlagError(['-e', '--unit'], errMsg)
+      await expectFlagError(['--e2e', '--unit'], errMsg)
+      await expectFlagError(['-u', '-e'], errMsg)
+      await expectFlagError(['-u', '--e2e'], errMsg)
+      await expectFlagError(['--unit', '-e'], errMsg)
+      await expectFlagError(['--unit', '--e2e'], errMsg)
     })
   })
 })
@@ -71,34 +86,26 @@ describe('run', () => {
     cnaHelper.runPackageScript.mockResolvedValue({ exitCode: 0 })
   })
 
-  const expectNoErrors = async testCmd => {
+  const expectNoErrors = async (argv, testCmd) => {
+    command.argv = argv
     await command.run()
-    expect(cnaHelper.runPackageScript).toHaveBeenCalledWith(testCmd, process.cwd(), { silent: true })
+    expect(cnaHelper.runPackageScript).toHaveBeenCalledWith(testCmd, expect.any(String), { silent: true })
   }
-  const expectErrors = async errorCode => {
+  const expectErrors = async (argv, errorCode) => {
+    cnaHelper.runPackageScript.mockRejectedValue({ exitCode: errorCode })
+    command.argv = argv
     await command.run()
     expect(command.exit).toHaveBeenCalledWith(errorCode)
   }
 
-  test('unit tests - no flag', async () => {
-    await expectNoErrors('test')
-  })
-  test('unit tests - with --unit flag', async () => {
-    command.argv = ['--unit']
-    await expectNoErrors('test')
-  })
-  test('unit tests - test fails', async () => {
-    cnaHelper.runPackageScript.mockRejectedValue({ exitCode: 42 })
-    await expectErrors(42)
-  })
+  test('no flags', () => expectNoErrors([], 'test'))
+  test('--unit', () => expectNoErrors(['--unit'], 'test'))
+  test('-u', () => expectNoErrors(['-u'], 'test'))
+  test('--e2e', () => expectNoErrors(['--e2e'], 'e2e'))
+  test('-e', () => expectNoErrors(['-e'], 'e2e'))
 
-  test('e2e tests - with --e2e flag', async () => {
-    command.argv = ['--e2e']
-    await expectNoErrors('e2e')
-  })
-  test('e2e tests - test fails', async () => {
-    command.argv = ['--e2e']
-    cnaHelper.runPackageScript.mockRejectedValue({ exitCode: 42 })
-    await expectErrors(42)
-  })
+  test('--e2e fails', () => expectErrors(['--e2e'], 42))
+  test('-e fails', () => expectErrors(['-e'], 42))
+  test('--unit fails', () => expectErrors(['--unit'], 42))
+  test('-u fails', () => expectErrors(['-u'], 42))
 })
