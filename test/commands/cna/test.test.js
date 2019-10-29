@@ -49,16 +49,8 @@ describe('Command Prototype', () => {
   describe('bad flags', () => {
     const expectFlagError = async (argv, message) => {
       const command = new TheCommand([])
-      command.exit = jest.fn()
       command.argv = argv
-      let err
-      try {
-        await command.run()
-      } catch (e) {
-        err = e
-        expect(e.message).toEqual(expect.stringContaining(message))
-      }
-      expect(err).toBeInstanceOf(Error)
+      await expect(command.run()).rejects.toEqual(expect.objectContaining({ message: expect.stringContaining(message) }))
     }
 
     test('unknown', async () => expectFlagError(['--wtf'], 'Unexpected argument: --wtf\nSee more help with --help'))
