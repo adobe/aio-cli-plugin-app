@@ -49,16 +49,8 @@ describe('Command Prototype', () => {
   describe('bad flags', () => {
     const expectFlagError = async (argv, message) => {
       const command = new TheCommand([])
-      command.exit = jest.fn()
       command.argv = argv
-      let err
-      try {
-        await command.run()
-      } catch (e) {
-        err = e
-        expect(e.message).toEqual(expect.stringContaining(message))
-      }
-      expect(err).toBeInstanceOf(Error)
+      await expect(command.run()).rejects.toEqual(expect.objectContaining({ message: expect.stringContaining(message) }))
     }
 
     test('unknown', async () => expectFlagError(['--wtf'], 'Unexpected argument: --wtf\nSee more help with --help'))
@@ -80,7 +72,7 @@ describe('run', () => {
   let command
   beforeEach(() => {
     command = new TheCommand([])
-    command.exit = jest.fn()
+    command.error = jest.fn()
 
     cnaHelper.runPackageScript.mockReset()
     cnaHelper.runPackageScript.mockResolvedValue({ exitCode: 0 })
@@ -92,10 +84,10 @@ describe('run', () => {
     expect(cnaHelper.runPackageScript).toHaveBeenCalledWith(testCmd, expect.any(String), { silent: true })
   }
   const expectErrors = async (argv, errorCode) => {
-    cnaHelper.runPackageScript.mockRejectedValue({ exitCode: errorCode })
+    cnaHelper.runPackageScript.mockRejectedValue({ message: 'fake error', exitCode: 42 })
     command.argv = argv
     await command.run()
-    expect(command.exit).toHaveBeenCalledWith(errorCode)
+    expect(command.error).toHaveBeenCalledWith('fake error', { exit: 42 })
   }
 
   test('no flags', () => expectNoErrors([], 'test'))
@@ -104,8 +96,8 @@ describe('run', () => {
   test('--e2e', () => expectNoErrors(['--e2e'], 'e2e'))
   test('-e', () => expectNoErrors(['-e'], 'e2e'))
 
-  test('--e2e fails', () => expectErrors(['--e2e'], 42))
-  test('-e fails', () => expectErrors(['-e'], 42))
-  test('--unit fails', () => expectErrors(['--unit'], 42))
-  test('-u fails', () => expectErrors(['-u'], 42))
+  test('--e2e fails', () => expectErrors(['--e2e']))
+  test('-e fails', () => expectErrors(['-e']))
+  test('--unit fails', () => expectErrors(['--unit']))
+  test('-u fails', () => expectErrors(['-u']))
 })
