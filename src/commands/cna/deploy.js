@@ -89,7 +89,7 @@ class CNADeploy extends CNABaseCommand {
     } catch (error) {
       spinner.fail()
       // process.chdir(currDir)
-      this.error(error.message)
+      this.error(error)
     }
   }
 }
