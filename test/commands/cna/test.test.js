@@ -80,7 +80,7 @@ describe('run', () => {
   let command
   beforeEach(() => {
     command = new TheCommand([])
-    command.exit = jest.fn()
+    command.error = jest.fn()
 
     cnaHelper.runPackageScript.mockReset()
     cnaHelper.runPackageScript.mockResolvedValue({ exitCode: 0 })
@@ -92,10 +92,10 @@ describe('run', () => {
     expect(cnaHelper.runPackageScript).toHaveBeenCalledWith(testCmd, expect.any(String), { silent: true })
   }
   const expectErrors = async (argv, errorCode) => {
-    cnaHelper.runPackageScript.mockRejectedValue({ exitCode: errorCode })
+    cnaHelper.runPackageScript.mockRejectedValue({ message: 'fake error', exitCode: 42 })
     command.argv = argv
     await command.run()
-    expect(command.exit).toHaveBeenCalledWith(errorCode)
+    expect(command.error).toHaveBeenCalledWith('fake error', { exit: 42 })
   }
 
   test('no flags', () => expectNoErrors([], 'test'))
@@ -104,8 +104,8 @@ describe('run', () => {
   test('--e2e', () => expectNoErrors(['--e2e'], 'e2e'))
   test('-e', () => expectNoErrors(['-e'], 'e2e'))
 
-  test('--e2e fails', () => expectErrors(['--e2e'], 42))
-  test('-e fails', () => expectErrors(['-e'], 42))
-  test('--unit fails', () => expectErrors(['--unit'], 42))
-  test('-u fails', () => expectErrors(['-u'], 42))
+  test('--e2e fails', () => expectErrors(['--e2e']))
+  test('-e fails', () => expectErrors(['-e']))
+  test('--unit fails', () => expectErrors(['--unit']))
+  test('-u fails', () => expectErrors(['-u']))
 })

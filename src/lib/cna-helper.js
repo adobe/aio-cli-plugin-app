@@ -49,8 +49,8 @@ async function runPackageScript (scriptName, dir, options = {}) {
     throw new Error(`${dir} does not contain a package.json file.`)
   }
   if (!fs.readJSONSync(path.join(dir, 'package.json')).scripts[scriptName]) {
-    debug(`${dir} package scripts does not contain ${scriptName}`)
-    throw new Error(`${dir} package scripts does not contain ${scriptName}`)
+    debug(`${dir} package.json scripts does not contain ${scriptName}`)
+    throw new Error(`${dir} package.json scripts does not contain ${scriptName}`)
   }
 
   // optional cmd args
