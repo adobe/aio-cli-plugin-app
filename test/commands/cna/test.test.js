@@ -12,37 +12,53 @@ governing permissions and limitations under the License.
 
 const TheCommand = require('../../../src/commands/cna/test')
 const CNABaseCommand = require('../../../src/CNABaseCommand')
+const cnaHelper = require('../../../src/lib/cna-helper')
 
 // mocks
-jest.mock('execa')
+cnaHelper.runPackageScript = jest.fn()
 jest.mock('fs')
-const execa = require('execa')
-const fs = require('fs')
 
-test('exports', async () => {
-  expect(typeof TheCommand).toEqual('function')
-  expect(TheCommand.prototype instanceof CNABaseCommand).toBeTruthy()
-})
+describe('Command Prototype', () => {
+  test('exports', async () => {
+    expect(typeof TheCommand).toEqual('function')
+    expect(TheCommand.prototype instanceof CNABaseCommand).toBeTruthy()
+  })
 
-test('description', async () => {
-  expect(TheCommand.description).toBeDefined()
-})
+  test('description', async () => {
+    expect(TheCommand.description).toBeDefined()
+  })
 
-test('aliases', async () => {
-  expect(TheCommand.aliases).toEqual([])
-})
+  test('aliases', async () => {
+    expect(TheCommand.aliases).toEqual([])
+  })
 
-test('flags', async () => {
-  expect(typeof TheCommand.flags.unit).toBe('object')
-  expect(TheCommand.flags.unit.char).toBe('u')
-  expect(typeof TheCommand.flags.unit.description).toBe('string')
-  expect(TheCommand.flags.unit.exclusive).toEqual(['e2e'])
-  expect(TheCommand.flags.unit.default).toEqual(true)
+  test('flags', async () => {
+    expect(typeof TheCommand.flags.unit).toBe('object')
+    expect(TheCommand.flags.unit.char).toBe('u')
+    expect(typeof TheCommand.flags.unit.description).toBe('string')
+    expect(TheCommand.flags.unit.exclusive).toEqual(['e2e'])
+    expect(TheCommand.flags.unit.default).toEqual(true)
 
-  expect(typeof TheCommand.flags.e2e).toBe('object')
-  expect(TheCommand.flags.e2e.char).toBe('e')
-  expect(typeof TheCommand.flags.e2e.description).toBe('string')
-  expect(TheCommand.flags.e2e.exclusive).toEqual(['unit'])
+    expect(typeof TheCommand.flags.e2e).toBe('object')
+    expect(TheCommand.flags.e2e.char).toBe('e')
+    expect(typeof TheCommand.flags.e2e.description).toBe('string')
+    expect(TheCommand.flags.e2e.exclusive).toEqual(['unit'])
+  })
+  describe('bad flags', () => {
+    test('unknown', async () => {
+      const command = new TheCommand([])
+      command.exit = jest.fn()
+      command.argv = ['--wtf']
+      let err
+      try {
+        await command.run()
+      } catch (e) {
+        err = e
+        expect(e.message).toEqual('Unexpected argument: --wtf\nSee more help with --help')
+      }
+      expect(err).toBeInstanceOf(Error)
+    })
+  })
 })
 
 describe('run', () => {
@@ -50,24 +66,20 @@ describe('run', () => {
   beforeEach(() => {
     command = new TheCommand([])
     command.exit = jest.fn()
-    // reset mocks
-    fs.readFileSync.mockReset()
-    execa.mockReset()
 
-    // defaults that work
-    fs.readFileSync.mockReturnValue(JSON.stringify({ scripts: { test: 'fake test', e2e: 'fake e2e' } }))
-    execa.mockResolvedValue({ exitCode: 0 })
+    cnaHelper.runPackageScript.mockReset()
+    cnaHelper.runPackageScript.mockResolvedValue({ exitCode: 0 })
   })
 
   const expectNoErrors = async testCmd => {
     await command.run()
-    expect(execa).toHaveBeenCalledWith('npm', ['run', testCmd, '--silent'], expect.any(Object))
-    expect(fs.readFileSync).toHaveBeenCalledWith('package.json')
+    expect(cnaHelper.runPackageScript).toHaveBeenCalledWith(testCmd, process.cwd(), { silent: true })
   }
   const expectErrors = async errorCode => {
     await command.run()
     expect(command.exit).toHaveBeenCalledWith(errorCode)
   }
+
   test('unit tests - no flag', async () => {
     await expectNoErrors('test')
   })
@@ -75,13 +87,8 @@ describe('run', () => {
     command.argv = ['--unit']
     await expectNoErrors('test')
   })
-  test('unit tests - missing package.json scripts.test', async () => {
-    fs.readFileSync.mockReturnValue(JSON.stringify({ scripts: { e2e: 'fake e2e' } }))
-    await expectErrors(1)
-    expect(execa).toHaveBeenCalledTimes(0)
-  })
   test('unit tests - test fails', async () => {
-    execa.mockRejectedValue({ exitCode: 42 })
+    cnaHelper.runPackageScript.mockRejectedValue({ exitCode: 42 })
     await expectErrors(42)
   })
 
@@ -89,53 +96,9 @@ describe('run', () => {
     command.argv = ['--e2e']
     await expectNoErrors('e2e')
   })
-  test('e2e tests - missing package.json scripts.test', async () => {
-    command.argv = ['--e2e']
-    fs.readFileSync.mockReturnValue(JSON.stringify({ scripts: { test: 'fake unit' } }))
-    await expectErrors(1)
-    expect(execa).toHaveBeenCalledTimes(0)
-  })
   test('e2e tests - test fails', async () => {
     command.argv = ['--e2e']
-    execa.mockRejectedValue({ exitCode: 42 })
+    cnaHelper.runPackageScript.mockRejectedValue({ exitCode: 42 })
     await expectErrors(42)
   })
-
-// jest.mock('../../../src/lib/cna-helper', () => {
-//   return { runPackageScript: jest.fn() }
-// })
-// const cnaHelper = require('../../../src/lib/cna-helper')
-
-// beforeEach(() => {
-//   jest.resetAllMocks()
-// })
-
-// describe('Command Prototype', () => {
-//   test('exports', async () => {
-//     expect(typeof TheCommand).toEqual('function')
-//     expect(TheCommand.prototype instanceof CNABaseCommand).toBeTruthy()
-//     expect(typeof TheCommand.flags).toBe('object')
-//   })
-// })
-
-// describe('bad flags', () => {
-//   test('unknown', async (done) => {
-//     let result = TheCommand.run(['.', '--wtf'])
-//     expect(result instanceof Promise).toBeTruthy()
-//     return result
-//       .then(() => done.fail())
-//       .catch(res => {
-//         expect(res).toEqual(new Error('Unexpected argument: --wtf\nSee more help with --help'))
-//         done()
-//       })
-//   })
-// })
-
-// describe('no flags', () => {
-//   test('run tests', async () => {
-//     let result = await TheCommand.run([])
-//     expect(cnaHelper.runPackageScript).toHaveBeenCalled()
-//     return result
-// })
-
 })

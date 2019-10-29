@@ -13,21 +13,17 @@ governing permissions and limitations under the License.
 const ora = require('ora')
 const chalk = require('chalk')
 
-const fs = require('fs')
-const execa = require('execa')
-
 const { flags } = require('@oclif/command')
 const cnaHelper = require('../../lib/cna-helper')
 
 const CNABaseCommand = require('../../CNABaseCommand')
 
-class CNACommand extends CNABaseCommand {
+class CNATest extends CNABaseCommand {
   async run () {
     const { flags } = this.parse(CNATest)
     // some things we could do here:
     // test configurations, ie remote-actions deployed and called from local
     // this just runs package.json scripts.test, we could also check that this is in fact a cna project
-    // return cnaHelper.runPackageScript('test', process.cwd())
 
     const spinner = ora()
 
@@ -37,15 +33,8 @@ class CNACommand extends CNABaseCommand {
     this.log(chalk.bold(`> ${taskName}`))
     spinner.start(taskName)
 
-    const packagedotjson = JSON.parse(fs.readFileSync('package.json').toString())
-    if (!packagedotjson.scripts || !packagedotjson.scripts[command]) {
-      spinner.fail(chalk.bold(chalk.red(`cannot run tests, please add a "scripts.${command}" command in package.json`)))
-      return this.exit(1)
-    }
-
-    const options = { stdio: 'inherit', env: true }
     try {
-      await execa('npm', ['run', command, '--silent'], options)
+      await cnaHelper.runPackageScript(command, process.cwd(), { silent: true })
     } catch (e) {
       this.log()
       spinner.fail(chalk.bold(chalk.red(`${taskName} failed !`)))
@@ -57,12 +46,12 @@ class CNACommand extends CNABaseCommand {
   }
 }
 
-CNACommand.description = `Tests a Cloud Native Application
+CNATest.description = `Tests a Cloud Native Application
 `
 
-CNACommand.flags = {
+CNATest.flags = {
   ...CNABaseCommand.flags,
   unit: flags.boolean({ char: 'u', description: 'runs unit tests (default).', default: true, exclusive: ['e2e'] }),
   e2e: flags.boolean({ char: 'e', description: 'runs e2e tests.', exclusive: ['unit'] })
 }
-module.exports = CNACommand
+module.exports = CNATest
