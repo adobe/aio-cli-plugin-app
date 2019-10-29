@@ -15,7 +15,6 @@ const chalk = require('chalk')
 
 const { flags } = require('@oclif/command')
 const cnaHelper = require('../../lib/cna-helper')
-
 const CNABaseCommand = require('../../CNABaseCommand')
 
 class CNATest extends CNABaseCommand {
@@ -51,7 +50,16 @@ CNATest.description = `Tests a Cloud Native Application
 
 CNATest.flags = {
   ...CNABaseCommand.flags,
-  unit: flags.boolean({ char: 'u', description: 'runs unit tests (default).', default: true, exclusive: ['e2e'] }),
-  e2e: flags.boolean({ char: 'e', description: 'runs e2e tests.', exclusive: ['unit'] })
+  unit: flags.boolean({
+    char: 'u',
+    description: 'runs unit tests (default).',
+    default: true,
+    exclusive: ['e2e']
+  }),
+  e2e: flags.boolean({
+    char: 'e',
+    description: 'runs e2e tests.',
+    exclusive: ['unit']
+  })
 }
 module.exports = CNATest
