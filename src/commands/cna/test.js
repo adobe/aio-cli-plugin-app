@@ -10,9 +10,6 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const ora = require('ora')
-const chalk = require('chalk')
-
 const { flags } = require('@oclif/command')
 const cnaHelper = require('../../lib/cna-helper')
 const CNABaseCommand = require('../../CNABaseCommand')
@@ -23,25 +20,12 @@ class CNATest extends CNABaseCommand {
     // some things we could do here:
     // test configurations, ie remote-actions deployed and called from local
     // this just runs package.json scripts.test, we could also check that this is in fact a cna project
-
-    const spinner = ora()
-
-    const taskName = flags.e2e ? 'e2e tests' : 'unit tests'
     const command = flags.e2e ? 'e2e' : 'test'
-
-    this.log(chalk.bold(`> ${taskName}`))
-    spinner.start(taskName)
-
     try {
-      await cnaHelper.runPackageScript(command, process.cwd(), { silent: true })
+      await cnaHelper.runPackageScript(command, process.cwd(), { silent: !flags.verbose })
     } catch (e) {
-      this.log()
-      spinner.fail(chalk.bold(chalk.red(`${taskName} failed !`)))
-      return this.error(e, { exit: e.exitCode })
+      return this.error(e.message, { exit: e.exitCode })
     }
-
-    this.log()
-    spinner.succeed(chalk.bold(chalk.green(`${taskName} executed successfully 👌`)))
   }
 }
 
