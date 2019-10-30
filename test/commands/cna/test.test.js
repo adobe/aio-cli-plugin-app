@@ -46,6 +46,7 @@ describe('Command Prototype', () => {
     expect(typeof TheCommand.flags.e2e.description).toBe('string')
     expect(TheCommand.flags.e2e.exclusive).toEqual(['unit'])
   })
+
   describe('bad flags', () => {
     const expectFlagError = async (argv, message) => {
       const command = new TheCommand([])
@@ -102,4 +103,40 @@ describe('run', () => {
   test('-e fails', () => expectErrors(['-e']))
   test('--unit fails', () => expectErrors(['--unit']))
   test('-u fails', () => expectErrors(['-u']))
+
+  test('verbose flag', async () => {
+    command.argv = ['--verbose']
+    await command.run()
+    expect(cnaHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String), { silent: false })
+  })
+
+  test('-v flag', async () => {
+    command.argv = ['-v']
+    await command.run()
+    expect(cnaHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String), { silent: false })
+  })
+
+  test('--verbose --unit flag', async () => {
+    command.argv = ['--verbose', '--unit']
+    await command.run()
+    expect(cnaHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String), { silent: false })
+  })
+
+  test('-v -u flags', async () => {
+    command.argv = ['-v', '-u']
+    await command.run()
+    expect(cnaHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String), { silent: false })
+  })
+
+  test('--verbose --e2e flag', async () => {
+    command.argv = ['--verbose', '--e2e']
+    await command.run()
+    expect(cnaHelper.runPackageScript).toHaveBeenCalledWith('e2e', expect.any(String), { silent: false })
+  })
+
+  test('-v -e flags', async () => {
+    command.argv = ['-v', '-e']
+    await command.run()
+    expect(cnaHelper.runPackageScript).toHaveBeenCalledWith('e2e', expect.any(String), { silent: false })
+  })
 })
