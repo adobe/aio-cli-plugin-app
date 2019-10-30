@@ -90,7 +90,7 @@ describe('run', () => {
     cnaHelper.runPackageScript.mockRejectedValue(error)
     command.argv = argv
     await command.run()
-    expect(command.error).toHaveBeenCalledWith(error, { exit: error.exitCode })
+    expect(command.error).toHaveBeenCalledWith(error.message, { exit: error.exitCode })
   }
 
   test('no flags', () => expectNoErrors([], 'test'))
