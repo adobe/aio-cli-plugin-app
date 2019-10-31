@@ -31,9 +31,31 @@ USAGE
 <!-- usagestop -->
 # Commands
 <!-- commands -->
+* [`@adobe/aio-cli-plugin-app app:add-auth [PATH]`](#adobeaio-cli-plugin-app-appadd-auth-path)
 * [`@adobe/aio-cli-plugin-app app:create [PATH]`](#adobeaio-cli-plugin-app-appcreate-path)
+* [`@adobe/aio-cli-plugin-app app:deploy`](#adobeaio-cli-plugin-app-appdeploy)
 * [`@adobe/aio-cli-plugin-app app:init [PATH]`](#adobeaio-cli-plugin-app-appinit-path)
+* [`@adobe/aio-cli-plugin-app app:run [PATH]`](#adobeaio-cli-plugin-app-apprun-path)
 * [`@adobe/aio-cli-plugin-app app:test [PATH]`](#adobeaio-cli-plugin-app-apptest-path)
+* [`@adobe/aio-cli-plugin-app app:undeploy [PATH]`](#adobeaio-cli-plugin-app-appundeploy-path)
+
+## `@adobe/aio-cli-plugin-app app:add-auth [PATH]`
+
+Add auth actions to the manifest of a Cloud Native Application
+
+```
+USAGE
+  $ @adobe/aio-cli-plugin-app app:add-auth [PATH]
+
+ARGUMENTS
+  PATH  [default: .] Path to the app directory
+
+OPTIONS
+  -v, --verbose  Verbose output
+  --version      Show version
+```
+
+_See code: [src/commands/app/add-auth.js](https://github.com/adobe/aio-cli-plugin-app/blob/v0.2.1-dev/src/commands/app/add-auth.js)_
 
 ## `@adobe/aio-cli-plugin-app app:create [PATH]`
 
@@ -52,6 +74,25 @@ OPTIONS
 ```
 
 _See code: [src/commands/app/create.js](https://github.com/adobe/aio-cli-plugin-app/blob/v0.2.1-dev/src/commands/app/create.js)_
+
+## `@adobe/aio-cli-plugin-app app:deploy`
+
+Build and deploy a Cloud Native Application
+
+```
+USAGE
+  $ @adobe/aio-cli-plugin-app app:deploy
+
+OPTIONS
+  -a, --actions  Only build & deploy actions
+  -b, --build    Only build, don't deploy
+  -d, --deploy   Only deploy, don't build
+  -s, --static   Only build & deploy static files
+  -v, --verbose  Verbose output
+  --version      Show version
+```
+
+_See code: [src/commands/app/deploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/v0.2.1-dev/src/commands/app/deploy.js)_
 
 ## `@adobe/aio-cli-plugin-app app:init [PATH]`
 
@@ -72,6 +113,25 @@ OPTIONS
 
 _See code: [src/commands/app/init.js](https://github.com/adobe/aio-cli-plugin-app/blob/v0.2.1-dev/src/commands/app/init.js)_
 
+## `@adobe/aio-cli-plugin-app app:run [PATH]`
+
+Run a Cloud Native Application
+
+```
+USAGE
+  $ @adobe/aio-cli-plugin-app app:run [PATH]
+
+ARGUMENTS
+  PATH  [default: .] Path to the app directory
+
+OPTIONS
+  -v, --verbose  Verbose output
+  --local        run/debug actions locally
+  --version      Show version
+```
+
+_See code: [src/commands/app/run.js](https://github.com/adobe/aio-cli-plugin-app/blob/v0.2.1-dev/src/commands/app/run.js)_
+
 ## `@adobe/aio-cli-plugin-app app:test [PATH]`
 
 Tests a Cloud Native Application
@@ -91,4 +151,24 @@ OPTIONS
 ```
 
 _See code: [src/commands/app/test.js](https://github.com/adobe/aio-cli-plugin-app/blob/v0.2.1-dev/src/commands/app/test.js)_
+
+## `@adobe/aio-cli-plugin-app app:undeploy [PATH]`
+
+Builds and deploys a Cloud Native Application
+
+```
+USAGE
+  $ @adobe/aio-cli-plugin-app app:undeploy [PATH]
+
+ARGUMENTS
+  PATH  [default: .] Path to the app directory
+
+OPTIONS
+  -a, --actions  Only deploy actions.
+  -s, --static   Only deploy static files.
+  -v, --verbose  Verbose output
+  --version      Show version
+```
+
+_See code: [src/commands/app/undeploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/v0.2.1-dev/src/commands/app/undeploy.js)_
 <!-- commandsstop -->
