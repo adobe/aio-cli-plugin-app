@@ -1,0 +1,13 @@
+
+# Specify your secrets here
+# This file should not be committed to source control
+
+# AIO_RUNTIME_APIHOST=
+# AIO_RUNTIME_AUTH=
+# AIO_RUNTIME_NAMESPACE=
+
+AIO_CNA_TVMURL=https://adobeioruntime.net/api/v1/web/adobeio/tvm/get-s3-upload-token
+
+# AIO_CNA_AWSACCESSKEYID=
+# AIO_CNA_AWSSECRETACCESSKEY=
+# AIO_CNA_S3BUCKET=
