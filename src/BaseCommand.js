@@ -1,13 +1,13 @@
 const { Command, flags } = require('@oclif/command')
 
-class CNABaseCommand extends Command {}
+class BaseCommand extends Command {}
 
-CNABaseCommand.flags = {
+BaseCommand.flags = {
   verbose: flags.boolean({ char: 'v', description: 'Verbose output' }),
   version: flags.boolean({ description: 'Show version' })
 }
 
-CNABaseCommand.args = [
+BaseCommand.args = [
   {
     name: 'path',
     description: 'Path to the app directory',
@@ -15,4 +15,4 @@ CNABaseCommand.args = [
   }
 ]
 
-module.exports = CNABaseCommand
+module.exports = BaseCommand

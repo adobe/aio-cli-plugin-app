@@ -10,17 +10,17 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../src/commands/cna/add-auth')
-const CNABaseCommand = require('../../../src/CNABaseCommand')
+const TheCommand = require('../../../src/commands/app/add-auth')
+const BaseCommand = require('../../../src/BaseCommand')
 
 // mocks
 const mockFs = require('fs-extra')
 jest.mock('fs-extra')
-const mockScripts = require('@adobe/io-cna-scripts')()
+const mockScripts = require('@adobe/aio-app-scripts')()
 
 test('exports', async () => {
   expect(typeof TheCommand).toEqual('function')
-  expect(TheCommand.prototype instanceof CNABaseCommand).toBeTruthy()
+  expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
   expect(typeof TheCommand.description).toBeDefined()
 })
 

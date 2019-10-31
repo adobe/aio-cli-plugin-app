@@ -12,12 +12,12 @@ governing permissions and limitations under the License.
 const path = require('path')
 const fs = require('fs-extra')
 
-const CNABaseCommand = require('../../CNABaseCommand')
-const CNAScripts = require('@adobe/io-cna-scripts')
+const BaseCommand = require('../../BaseCommand')
+const AppScripts = require('@adobe/aio-app-scripts')
 
-class CNAAddAuthCommand extends CNABaseCommand {
+class AddAuthCommand extends BaseCommand {
   async run () {
-    const scripts = CNAScripts({})
+    const scripts = AppScripts({})
     let manifestFile = path.resolve('./manifest.yml')
     if (!fs.existsSync(manifestFile)) {
       this.error('No manifest found in current folder')
@@ -27,13 +27,13 @@ class CNAAddAuthCommand extends CNABaseCommand {
   }
 }
 
-CNAAddAuthCommand.description = `Add auth actions to the manifest of a Cloud Native Application
+AddAuthCommand.description = `Add auth actions to the manifest of a Cloud Native Application
 `
 
-CNAAddAuthCommand.flags = {
-  ...CNABaseCommand.flags
+AddAuthCommand.flags = {
+  ...BaseCommand.flags
 }
 
-CNAAddAuthCommand.args = CNABaseCommand.args
+AddAuthCommand.args = BaseCommand.args
 
-module.exports = CNAAddAuthCommand
+module.exports = AddAuthCommand

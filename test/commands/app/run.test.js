@@ -10,12 +10,12 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const RunCommand = require('../../../src/commands/cna/run')
-const CNABaseCommand = require('../../../src/CNABaseCommand')
+const RunCommand = require('../../../src/commands/app/run')
+const BaseCommand = require('../../../src/BaseCommand')
 
 // mocks
 jest.mock('open', () => jest.fn())
-const mockScripts = require('@adobe/io-cna-scripts')()
+const mockScripts = require('@adobe/aio-app-scripts')()
 
 beforeEach(() => {
   jest.restoreAllMocks()
@@ -29,7 +29,7 @@ afterAll(() => {
 describe('run command definition', () => {
   test('exports', async () => {
     expect(typeof RunCommand).toEqual('function')
-    expect(RunCommand.prototype instanceof CNABaseCommand).toBeTruthy()
+    expect(RunCommand.prototype instanceof BaseCommand).toBeTruthy()
   })
 
   test('description', async () => {
@@ -47,7 +47,7 @@ describe('run command definition', () => {
 })
 
 describe('run', () => {
-  test('cna:run with no flags', async () => {
+  test('app:run with no flags', async () => {
     delete process.env['REMOTE_ACTIONS']
     let command = new RunCommand([])
     command.error = jest.fn()
@@ -57,7 +57,7 @@ describe('run', () => {
     expect(process.env['REMOTE_ACTIONS']).toBe('true')
   })
 
-  test('cna:run with -verbose', async () => {
+  test('app:run with -verbose', async () => {
     delete process.env['REMOTE_ACTIONS']
     let command = new RunCommand(['--verbose'])
     command.error = jest.fn(['--verbose'])
@@ -67,7 +67,7 @@ describe('run', () => {
     expect(process.env['REMOTE_ACTIONS']).toBe('true')
   })
 
-  test('cna:run without --local', async () => {
+  test('app:run without --local', async () => {
     delete process.env['REMOTE_ACTIONS']
     let command = new RunCommand([])
     command.error = jest.fn()
@@ -77,7 +77,7 @@ describe('run', () => {
     expect(process.env['REMOTE_ACTIONS']).toBe('true')
   })
 
-  test('cna:run with --local', async () => {
+  test('app:run with --local', async () => {
     delete process.env['REMOTE_ACTIONS']
     let command = new RunCommand(['--local'])
     command.error = jest.fn()
@@ -87,7 +87,7 @@ describe('run', () => {
     expect(process.env['REMOTE_ACTIONS']).toBe('false')
   })
 
-  test('cna:run with --local --verbose', async () => {
+  test('app:run with --local --verbose', async () => {
     delete process.env['REMOTE_ACTIONS']
     let command = new RunCommand(['--local', '--verbose'])
     command.error = jest.fn()

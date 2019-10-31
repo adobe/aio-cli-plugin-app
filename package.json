@@ -1,12 +1,11 @@
 {
-  "name": "@adobe/aio-cli-plugin-cna",
-  "description": "Create, Build and Deploy Cloud Native Applications",
+  "name": "@adobe/aio-cli-plugin-app",
+  "description": "Create, Build and Deploy Adobe I/O Applications",
   "version": "0.2.1-dev",
   "author": "Adobe Inc.",
-  "bugs": "https://github.com/adobe/aio-cli-plugin-cna/issues",
+  "bugs": "https://github.com/adobe/aio-cli-plugin-app/issues",
   "dependencies": {
     "@adobe/aio-lib-core-config": "^1.0.15",
-    "@adobe/io-cna-scripts": "^0.4.0-dev",
     "@oclif/command": "^1.5.11",
     "@oclif/config": "^1.12.9",
     "chalk": "^2.4.2",
@@ -45,7 +44,7 @@
     "/oclif.manifest.json",
     "/src"
   ],
-  "homepage": "https://github.com/adobe/aio-cli-plugin-cna",
+  "homepage": "https://github.com/adobe/aio-cli-plugin-app",
   "keywords": [
     "oclif-plugin"
   ],
@@ -57,7 +56,7 @@
       "@oclif/plugin-help"
     ]
   },
-  "repository": "adobe/aio-cli-plugin-cna",
+  "repository": "adobe/aio-cli-plugin-app",
   "scripts": {
     "postpack": "rm -f oclif.manifest.json",
     "posttest": "eslint .",

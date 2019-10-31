@@ -12,36 +12,36 @@ governing permissions and limitations under the License.
 const which = require('which')
 const fs = require('fs-extra')
 const execa = require('execa')
-const cnaHelper = require('../../../src/lib/cna-helper')
+const appHelper = require('../../../src/lib/app-helper')
 
 describe('exports helper methods', () => {
   test('isNpmInstalled', () => {
-    expect(cnaHelper.isNpmInstalled).toBeDefined()
-    expect(cnaHelper.isNpmInstalled).toBeInstanceOf(Function)
+    expect(appHelper.isNpmInstalled).toBeDefined()
+    expect(appHelper.isNpmInstalled).toBeInstanceOf(Function)
     which.sync.mockReturnValue('not-null')
-    expect(cnaHelper.isNpmInstalled()).toBeTruthy()
+    expect(appHelper.isNpmInstalled()).toBeTruthy()
     which.sync.mockReturnValue(null)
-    expect(cnaHelper.isNpmInstalled()).toBeFalsy()
+    expect(appHelper.isNpmInstalled()).toBeFalsy()
   })
 
   test('isGitInstalled', () => {
-    expect(cnaHelper.isGitInstalled).toBeDefined()
-    expect(cnaHelper.isGitInstalled).toBeInstanceOf(Function)
+    expect(appHelper.isGitInstalled).toBeDefined()
+    expect(appHelper.isGitInstalled).toBeInstanceOf(Function)
     which.sync.mockReturnValue('not-null')
-    expect(cnaHelper.isGitInstalled()).toBeTruthy()
+    expect(appHelper.isGitInstalled()).toBeTruthy()
     which.sync.mockReturnValue(null)
-    expect(cnaHelper.isGitInstalled()).toBeFalsy()
+    expect(appHelper.isGitInstalled()).toBeFalsy()
   })
 
   test('installPackage', async () => {
-    expect(cnaHelper.installPackage).toBeDefined()
-    expect(cnaHelper.installPackage).toBeInstanceOf(Function)
+    expect(appHelper.installPackage).toBeDefined()
+    expect(appHelper.installPackage).toBeInstanceOf(Function)
 
     // throws error if dir dne => // fs.statSync(dir).isDirectory()
     fs.statSync.mockReturnValue({
       isDirectory: () => false
     })
-    await expect(cnaHelper.installPackage('does-not-exist'))
+    await expect(appHelper.installPackage('does-not-exist'))
       .rejects.toThrow(/does-not-exist is not a directory/)
 
     // throws error if dir does not contain a package.json
@@ -49,18 +49,18 @@ describe('exports helper methods', () => {
       isDirectory: () => true
     })
     fs.readdirSync.mockReturnValue([])
-    await expect(cnaHelper.installPackage('does-not-exist'))
+    await expect(appHelper.installPackage('does-not-exist'))
       .rejects.toThrow(/does-not-exist does not contain a package.json file./)
 
     // succeeds if npm install returns success
     fs.readdirSync.mockReturnValue(['package.json'])
-    cnaHelper.installPackage('does-not-exist')
+    appHelper.installPackage('does-not-exist')
     expect(execa).toHaveBeenCalledWith('npm', ['install'], { 'cwd': 'does-not-exist' })
   })
 
   test('runPackageScript', async () => {
-    expect(cnaHelper.runPackageScript).toBeDefined()
-    expect(cnaHelper.runPackageScript).toBeInstanceOf(Function)
+    expect(appHelper.runPackageScript).toBeDefined()
+    expect(appHelper.runPackageScript).toBeInstanceOf(Function)
   })
 
   test('runPackageScript called without valid dir', async () => {
@@ -68,7 +68,7 @@ describe('exports helper methods', () => {
     fs.statSync.mockReturnValue({
       isDirectory: () => false
     })
-    await expect(cnaHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
+    await expect(appHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
       .rejects.toThrow(/does-not-exist is not a directory/)
   })
 
@@ -78,7 +78,7 @@ describe('exports helper methods', () => {
       isDirectory: () => true
     })
     fs.readdirSync.mockReturnValue([])
-    await expect(cnaHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
+    await expect(appHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
       .rejects.toThrow(/does-not-exist does not contain a package.json file./)
   })
 
@@ -90,7 +90,7 @@ describe('exports helper methods', () => {
     fs.readdirSync.mockReturnValue(['package.json'])
     fs.readJSONSync.mockReturnValue({ scripts: { test: 'some-value' } })
 
-    await cnaHelper.runPackageScript('test', '')
+    await appHelper.runPackageScript('test', '')
     expect(execa).toHaveBeenCalledWith('npm', ['run-script', 'test'], expect.any(Object))
   })
 
@@ -102,14 +102,14 @@ describe('exports helper methods', () => {
     fs.readdirSync.mockReturnValue(['package.json'])
     fs.readJSONSync.mockReturnValue({ scripts: { cmd: 'some-value' } })
 
-    await cnaHelper.runPackageScript('cmd', '', { silent: true })
+    await appHelper.runPackageScript('cmd', '', { silent: true })
     expect(execa).toHaveBeenCalledWith('npm', ['run-script', 'cmd', '--silent'], expect.any(Object))
   })
 
   test('runPackageScript rejects if package.json does not have matching script', async () => {
     fs.readdirSync.mockReturnValue(['package.json'])
     fs.readJSONSync.mockReturnValue({ scripts: { notest: 'some-value' } })
-    await expect(cnaHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
+    await expect(appHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
       .rejects.toThrow(/does-not-exist/)
   })
 })

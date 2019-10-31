@@ -10,9 +10,9 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../src/commands/cna/create')
-const CNABaseCommand = require('../../../src/CNABaseCommand')
-const InitCommand = require('../../../src/commands/cna/init')
+const TheCommand = require('../../../src/commands/app/create')
+const BaseCommand = require('../../../src/BaseCommand')
+const InitCommand = require('../../../src/commands/app/init')
 
 beforeEach(() => {
   jest.restoreAllMocks()
@@ -21,7 +21,7 @@ beforeEach(() => {
 describe('Command Prototype', () => {
   test('exports', async () => {
     expect(typeof TheCommand).toEqual('function')
-    expect(TheCommand.prototype instanceof CNABaseCommand).toBeTruthy()
+    expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
     expect(typeof TheCommand.description).toBe('string')
   })
 })
@@ -43,7 +43,7 @@ describe('runs', () => {
   test('Calls to InitCommand with -y', async () => {
     // console.error('icm.run = ' + )
     let mySpy = jest.spyOn(InitCommand, 'run').mockImplementation(jest.fn())
-    await TheCommand.run(['new-cna-project'])
-    expect(mySpy).toHaveBeenCalledWith(['new-cna-project', '-y'])
+    await TheCommand.run(['new-project'])
+    expect(mySpy).toHaveBeenCalledWith(['new-project', '-y'])
   })
 })

@@ -15,12 +15,12 @@ const chalk = require('chalk')
 
 const { flags } = require('@oclif/command')
 
-const CNABaseCommand = require('../../CNABaseCommand')
-const CNAScripts = require('@adobe/io-cna-scripts')
+const BaseCommand = require('../../BaseCommand')
+const AppScripts = require('@adobe/aio-app-scripts')
 
-class CNARun extends CNABaseCommand {
+class Run extends BaseCommand {
   async run () {
-    const { flags } = this.parse(CNARun)
+    const { flags } = this.parse(Run)
 
     const spinner = ora()
     const listeners = {
@@ -46,23 +46,23 @@ class CNARun extends CNABaseCommand {
     }
 
     process.env['REMOTE_ACTIONS'] = !flags.local
-    const scripts = CNAScripts({ listeners })
+    const scripts = AppScripts({ listeners })
     return scripts.runDev()
   }
 }
 
-CNARun.description = `Run a Cloud Native Application
+Run.description = `Run a Cloud Native Application
 `
 
-CNARun.flags = {
+Run.flags = {
   'local': flags.boolean({
     description: 'run/debug actions locally'
   }),
-  ...CNABaseCommand.flags
+  ...BaseCommand.flags
 }
 
-// CNARun.args = [
-//   ...CNABaseCommand.args
+// Run.args = [
+//   ...BaseCommand.args
 // ]
 
-module.exports = CNARun
+module.exports = Run

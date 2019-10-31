@@ -16,20 +16,20 @@ const chalk = require('chalk')
 
 const { flags } = require('@oclif/command')
 
-const CNABaseCommand = require('../../CNABaseCommand')
-const CNAScripts = require('@adobe/io-cna-scripts')
+const BaseCommand = require('../../BaseCommand')
+const AppScripts = require('@adobe/aio-app-scripts')
 
-class CNAUndeploy extends CNABaseCommand {
+class Undeploy extends BaseCommand {
   async run () {
     // cli input
-    const { flags } = this.parse(CNAUndeploy)
+    const { flags } = this.parse(Undeploy)
 
     // const appDir = path.resolve(args.path)
     // const currDir = process.cwd()
     // process.chdir(appDir)
 
     // setup scripts, events and spinner
-    // todo modularize (same for all cna-scripts wrappers)
+    // todo modularize (same for all app-scripts wrappers)
     const spinner = ora()
     try {
       const listeners = {
@@ -54,7 +54,7 @@ class CNAUndeploy extends CNABaseCommand {
           spinner.start()
         }
       }
-      const scripts = CNAScripts({ listeners })
+      const scripts = AppScripts({ listeners })
 
       // undeploy
       if (!flags.static) {
@@ -74,17 +74,17 @@ class CNAUndeploy extends CNABaseCommand {
   }
 }
 
-CNAUndeploy.description = `Builds and deploys a Cloud Native Application
+Undeploy.description = `Builds and deploys a Cloud Native Application
 `
 
-CNAUndeploy.flags = {
-  ...CNABaseCommand.flags,
+Undeploy.flags = {
+  ...BaseCommand.flags,
   static: flags.boolean({ char: 's', description: 'Only deploy static files.', exclusive: ['actions'] }),
   actions: flags.boolean({ char: 'a', description: 'Only deploy actions.', exclusive: ['static'] })
 }
 
 // for now we remove support for path arg
 // until https://github.com/adobe/aio-cli-plugin-config/issues/44 is resolved
-// CNADeploy.args = CNABaseCommand.args
+// Deploy.args = BaseCommand.args
 
-module.exports = CNAUndeploy
+module.exports = Undeploy

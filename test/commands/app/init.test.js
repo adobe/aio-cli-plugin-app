@@ -12,14 +12,14 @@ governing permissions and limitations under the License.
 const fs = require('fs-extra')
 const inquirer = require('inquirer')
 
-const TheCommand = require('../../../src/commands/cna/init')
-const CNABaseCommand = require('../../../src/CNABaseCommand')
+const TheCommand = require('../../../src/commands/app/init')
+const BaseCommand = require('../../../src/BaseCommand')
 const execa = require('execa')
 
 describe('Command Prototype', () => {
   test('exports', async () => {
     expect(typeof TheCommand).toEqual('function')
-    expect(TheCommand.prototype instanceof CNABaseCommand).toBeTruthy()
+    expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
     expect(typeof TheCommand.flags).toBe('object')
   })
 })
