@@ -10,18 +10,18 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../src/commands/cna/test')
-const CNABaseCommand = require('../../../src/CNABaseCommand')
-const cnaHelper = require('../../../src/lib/cna-helper')
+const TheCommand = require('../../../src/commands/app/test')
+const BaseCommand = require('../../../src/BaseCommand')
+const appHelper = require('../../../src/lib/app-helper')
 
 // mocks
-cnaHelper.runPackageScript = jest.fn()
+appHelper.runPackageScript = jest.fn()
 jest.mock('fs')
 
 describe('Command Prototype', () => {
   test('exports', async () => {
     expect(typeof TheCommand).toEqual('function')
-    expect(TheCommand.prototype instanceof CNABaseCommand).toBeTruthy()
+    expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
     expect(typeof TheCommand.flags).toBe('object')
     expect(TheCommand.description).toBeDefined()
   })
@@ -75,19 +75,19 @@ describe('run', () => {
     command = new TheCommand([])
     command.error = jest.fn()
 
-    cnaHelper.runPackageScript.mockReset()
-    cnaHelper.runPackageScript.mockResolvedValue({ exitCode: 0 })
+    appHelper.runPackageScript.mockReset()
+    appHelper.runPackageScript.mockResolvedValue({ exitCode: 0 })
   })
 
   const expectNoErrors = async (argv, testCmd) => {
     command.argv = argv
     await command.run()
-    expect(cnaHelper.runPackageScript).toHaveBeenCalledWith(testCmd, expect.any(String), { silent: true })
+    expect(appHelper.runPackageScript).toHaveBeenCalledWith(testCmd, expect.any(String), { silent: true })
   }
   const expectErrors = async (argv, errorCode) => {
     const error = new Error('fake error')
     error.exitCode = 42
-    cnaHelper.runPackageScript.mockRejectedValue(error)
+    appHelper.runPackageScript.mockRejectedValue(error)
     command.argv = argv
     await command.run()
     expect(command.error).toHaveBeenCalledWith(error.message, { exit: error.exitCode })
@@ -107,36 +107,36 @@ describe('run', () => {
   test('verbose flag', async () => {
     command.argv = ['--verbose']
     await command.run()
-    expect(cnaHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String), { silent: false })
+    expect(appHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String), { silent: false })
   })
 
   test('-v flag', async () => {
     command.argv = ['-v']
     await command.run()
-    expect(cnaHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String), { silent: false })
+    expect(appHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String), { silent: false })
   })
 
   test('--verbose --unit flag', async () => {
     command.argv = ['--verbose', '--unit']
     await command.run()
-    expect(cnaHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String), { silent: false })
+    expect(appHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String), { silent: false })
   })
 
   test('-v -u flags', async () => {
     command.argv = ['-v', '-u']
     await command.run()
-    expect(cnaHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String), { silent: false })
+    expect(appHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String), { silent: false })
   })
 
   test('--verbose --e2e flag', async () => {
     command.argv = ['--verbose', '--e2e']
     await command.run()
-    expect(cnaHelper.runPackageScript).toHaveBeenCalledWith('e2e', expect.any(String), { silent: false })
+    expect(appHelper.runPackageScript).toHaveBeenCalledWith('e2e', expect.any(String), { silent: false })
   })
 
   test('-v -e flags', async () => {
     command.argv = ['-v', '-e']
     await command.run()
-    expect(cnaHelper.runPackageScript).toHaveBeenCalledWith('e2e', expect.any(String), { silent: false })
+    expect(appHelper.runPackageScript).toHaveBeenCalledWith('e2e', expect.any(String), { silent: false })
   })
 })

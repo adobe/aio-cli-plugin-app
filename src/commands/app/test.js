@@ -11,29 +11,29 @@ governing permissions and limitations under the License.
 */
 
 const { flags } = require('@oclif/command')
-const cnaHelper = require('../../lib/cna-helper')
-const CNABaseCommand = require('../../CNABaseCommand')
+const appHelper = require('../../lib/app-helper')
+const BaseCommand = require('../../BaseCommand')
 
-class CNATest extends CNABaseCommand {
+class Test extends BaseCommand {
   async run () {
-    const { flags } = this.parse(CNATest)
+    const { flags } = this.parse(Test)
     // some things we could do here:
     // test configurations, ie remote-actions deployed and called from local
-    // this just runs package.json scripts.test, we could also check that this is in fact a cna project
+    // this just runs package.json scripts.test, we could also check that this is in fact an aio app project
     const command = flags.e2e ? 'e2e' : 'test'
     try {
-      await cnaHelper.runPackageScript(command, process.cwd(), { silent: !flags.verbose })
+      await appHelper.runPackageScript(command, process.cwd(), { silent: !flags.verbose })
     } catch (e) {
       return this.error(e.message, { exit: e.exitCode })
     }
   }
 }
 
-CNATest.description = `Tests a Cloud Native Application
+Test.description = `Tests a Cloud Native Application
 `
 
-CNATest.flags = {
-  ...CNABaseCommand.flags,
+Test.flags = {
+  ...BaseCommand.flags,
   unit: flags.boolean({
     char: 'u',
     description: 'runs unit tests (default).',
@@ -46,4 +46,4 @@ CNATest.flags = {
     exclusive: ['unit']
   })
 }
-module.exports = CNATest
+module.exports = Test

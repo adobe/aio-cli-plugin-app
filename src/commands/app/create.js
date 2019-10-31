@@ -9,23 +9,23 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const CNABaseCommand = require('../../CNABaseCommand')
+const BaseCommand = require('../../BaseCommand')
 const InitCommand = require('./init')
 
-class CNACreate extends CNABaseCommand {
+class Create extends BaseCommand {
   async run () {
-    const { args } = this.parse(CNACreate)
+    const { args } = this.parse(Create)
     return InitCommand.run([args.path, '-y'])
   }
 }
 
-CNACreate.description = `Create a new Cloud Native Application with default parameters
+Create.description = `Create a new Cloud Native Application with default parameters
 `
 
-CNACreate.flags = {
-  ...CNABaseCommand.flags
+Create.flags = {
+  ...BaseCommand.flags
 }
 
-CNACreate.args = CNABaseCommand.args
+Create.args = BaseCommand.args
 
-module.exports = CNACreate
+module.exports = Create

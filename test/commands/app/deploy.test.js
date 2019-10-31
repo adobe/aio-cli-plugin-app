@@ -10,13 +10,13 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../src/commands/cna/deploy')
-const CNABaseCommand = require('../../../src/CNABaseCommand')
+const TheCommand = require('../../../src/commands/app/deploy')
+const BaseCommand = require('../../../src/BaseCommand')
 
 // mocks
 const mockOpen = require('open')
 jest.mock('open', () => jest.fn())
-const mockScripts = require('@adobe/io-cna-scripts')()
+const mockScripts = require('@adobe/aio-app-scripts')()
 
 beforeEach(() => {
   jest.restoreAllMocks()
@@ -24,7 +24,7 @@ beforeEach(() => {
 
 test('exports', async () => {
   expect(typeof TheCommand).toEqual('function')
-  expect(TheCommand.prototype instanceof CNABaseCommand).toBeTruthy()
+  expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
 })
 
 test('description', async () => {
@@ -68,7 +68,7 @@ describe('run', () => {
     jest.clearAllMocks()
   })
 
-  test('build & deploy a CNA with no flags', async () => {
+  test('build & deploy an App with no flags', async () => {
     mockScripts.deployUI.mockResolvedValue('https://example.com')
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -79,7 +79,7 @@ describe('run', () => {
     expect(mockOpen).toHaveBeenCalledWith('https://example.com')
   })
 
-  test('build & deploy a CNA verbose', async () => {
+  test('build & deploy an App verbose', async () => {
     command.argv = ['-v']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)

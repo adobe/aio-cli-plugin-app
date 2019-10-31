@@ -13,7 +13,7 @@ const execa = require('execa')
 const fs = require('fs-extra')
 const path = require('path')
 const which = require('which')
-const debug = require('debug')('aio-cli-plugin-cna:cna-helper')
+const debug = require('debug')('aio-cli-plugin-app:app-helper')
 
 function isNpmInstalled () {
   let result = which.sync('npm', { nothrow: true })

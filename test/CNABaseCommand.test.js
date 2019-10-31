@@ -11,7 +11,7 @@ governing permissions and limitations under the License.
 */
 
 const { Command } = require('@oclif/command')
-const TheCommand = require('../src/CNABaseCommand')
+const TheCommand = require('../src/BaseCommand')
 
 test('exports', async () => {
   expect(typeof TheCommand).toEqual('function')

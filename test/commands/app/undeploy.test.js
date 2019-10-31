@@ -10,11 +10,11 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../src/commands/cna/undeploy')
-const CNABaseCommand = require('../../../src/CNABaseCommand')
+const TheCommand = require('../../../src/commands/app/undeploy')
+const BaseCommand = require('../../../src/BaseCommand')
 
 // mocks
-const mockScripts = require('@adobe/io-cna-scripts')()
+const mockScripts = require('@adobe/aio-app-scripts')()
 
 beforeEach(() => {
   jest.restoreAllMocks()
@@ -22,7 +22,7 @@ beforeEach(() => {
 
 test('exports', async () => {
   expect(typeof TheCommand).toEqual('function')
-  expect(TheCommand.prototype instanceof CNABaseCommand).toBeTruthy()
+  expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
 })
 
 test('description', async () => {
@@ -56,14 +56,14 @@ describe('run', () => {
     jest.clearAllMocks()
   })
 
-  test('undeploy a CNA with no flags', async () => {
+  test('undeploy an App with no flags', async () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.undeployActions).toHaveBeenCalledTimes(1)
     expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
   })
 
-  test('undeploy a CNA with --verbose', async () => {
+  test('undeploy an App with --verbose', async () => {
     command.argv = ['-v']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)

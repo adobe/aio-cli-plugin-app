@@ -15,21 +15,21 @@ const open = require('open')
 const chalk = require('chalk')
 // const path = require('path')
 
-const CNABaseCommand = require('../../CNABaseCommand')
-const CNAScripts = require('@adobe/io-cna-scripts')
+const BaseCommand = require('../../BaseCommand')
+const AppScripts = require('@adobe/aio-app-scripts')
 const { flags } = require('@oclif/command')
 
-class CNADeploy extends CNABaseCommand {
+class Deploy extends BaseCommand {
   async run () {
     // cli input
-    const { flags } = this.parse(CNADeploy)
+    const { flags } = this.parse(Deploy)
 
     // const appDir = path.resolve(args.path)
     // const currDir = process.cwd()
     // process.chdir(appDir)
 
     // setup scripts, events and spinner
-    // todo modularize (same for all cna-scripts wrappers)
+    // todo modularize (same for all app-scripts wrappers)
     const spinner = ora()
     try {
       const listeners = {
@@ -54,7 +54,7 @@ class CNADeploy extends CNABaseCommand {
           spinner.start()
         }
       }
-      const scripts = CNAScripts({ listeners })
+      const scripts = AppScripts({ listeners })
 
       if (!flags.deploy) {
         // build phase
@@ -94,11 +94,11 @@ class CNADeploy extends CNABaseCommand {
   }
 }
 
-CNADeploy.description = `Build and deploy a Cloud Native Application
+Deploy.description = `Build and deploy a Cloud Native Application
 `
 
-CNADeploy.flags = {
-  ...CNABaseCommand.flags,
+Deploy.flags = {
+  ...BaseCommand.flags,
   build: flags.boolean({ char: 'b', description: 'Only build, don\'t deploy', exclusive: ['deploy'] }),
   deploy: flags.boolean({ char: 'd', description: 'Only deploy, don\'t build', exclusive: ['build'] }),
   // todo remove these 2 options and autodetect UI/action dir + ui/actions changes
@@ -111,6 +111,6 @@ CNADeploy.flags = {
 
 // for now we remove support for path arg
 // until https://github.com/adobe/aio-cli-plugin-config/issues/44 is resolved
-CNADeploy.args = [] // CNABaseCommand.args
+Deploy.args = [] // BaseCommand.args
 
-module.exports = CNADeploy
+module.exports = Deploy

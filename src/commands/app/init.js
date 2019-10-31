@@ -14,13 +14,13 @@ const inquirer = require('inquirer')
 const path = require('path')
 const fs = require('fs-extra')
 const ora = require('ora')
-const debug = require('debug')('aio-cli-plugin-cna:CNAInit')
+const debug = require('debug')('aio-cli-plugin-app:Init')
 
 const { flags } = require('@oclif/command')
 // const { cli } = require('cli-ux')
 
-const cnaHelper = require('../../lib/cna-helper')
-const CNABaseCommand = require('../../CNABaseCommand')
+const appHelper = require('../../lib/app-helper')
+const BaseCommand = require('../../BaseCommand')
 const templateMap = require('../../templates')
 
 const GetInitMessage = cwd => {
@@ -29,7 +29,7 @@ You are about to initialize a project in this directory:
 
   ${cwd}
 
-Which CNA features do you want to enable for this project?
+Which Adobe I/O app features do you want to enable for this project?
 `
   return message
 }
@@ -44,9 +44,9 @@ function isValidPackageName (str) {
   }
 }
 
-class CNAInit extends CNABaseCommand {
+class Init extends BaseCommand {
   async run () {
-    const { args, flags } = this.parse(CNAInit)
+    const { args, flags } = this.parse(Init)
 
     // can we specify a location other than cwd?
     let destDir = path.resolve(args.path)
@@ -108,14 +108,14 @@ class CNAInit extends CNABaseCommand {
       const spinner = ora() // { spinner: 'weather' } //?
       spinner.start(`running npm install in ${destDir}`)
       try {
-        await cnaHelper.installPackage(destDir)
+        await appHelper.installPackage(destDir)
         spinner.succeed()
       } catch (err) {
         spinner.error(err)
       }
     }
     // finalize configuration data
-    this.log(`✔ CNA initialization finished!`)
+    this.log(`✔ App initialization finished!`)
   }
 
   async copyBaseFiles (dest, bSkipPrompt) {
@@ -175,7 +175,7 @@ have a build process use your build's output directory.
 `
     this.log(message)
 
-    // todo: write a json fragment to cna.json
+    // todo: write a json fragment to app.json
     // todo: single page app? all urls to /index.html
     // copy files listed in templates/functions
 
@@ -230,7 +230,7 @@ package pre-configured.
       }])
     }
 
-    // write a json fragment to cna.json
+    // write a json fragment to app.json
     // copy files listed in templates/functions
     let templateActions = templateMap.actions
     let srcDir = path.resolve(__dirname, '../../templates/', templateActions.path)
@@ -249,20 +249,20 @@ package pre-configured.
   }
 }
 
-CNAInit.description = `Initialize a Cloud Native Application
+Init.description = `Initialize a Cloud Native Application
 `
 
-CNAInit.flags = {
+Init.flags = {
   'yes': flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
   }),
-  ...CNABaseCommand.flags
+  ...BaseCommand.flags
 }
 
-CNAInit.args = [
-  ...CNABaseCommand.args
+Init.args = [
+  ...BaseCommand.args
 ]
 
-module.exports = CNAInit
+module.exports = Init
