@@ -32,7 +32,7 @@ What folder do you want to use as your public web assets directory?
     const prompts = [
       {
         type: 'checkbox',
-        name: 'componets',
+        name: 'components',
         message: 'select components to include',
         choices: [
           {
@@ -71,38 +71,39 @@ What folder do you want to use as your public web assets directory?
           name: 'actionSetup',
           message: actionSetupMessage,
           default: 'actions',
-          when: props.componets.indexOf('actions') !== -1
+          when: props.components.indexOf('actions') !== -1
         },
         {
           type: 'input',
           name: 'webAssetSetup',
           message: webAssetSetupMessage,
           default: 'web-src',
-          when: props.componets.indexOf('webAssets') !== -1
+          when: props.components.indexOf('webAssets') !== -1
         }
       ]
       this.props = props
       return this.prompt(prompts).then(props => {
-        this.componetsProps = props
+        this.componentsProps = props
       })
     })
   }
 
   writing () {
-    this.sourceRoot('../templates')
+    this.sourceRoot(path.join(__dirname, '../templates'))
+    console.log('sourceRoot = ' + this.sourceRoot())
     this.fs.copy(this.templatePath('base'), this.destinationPath())
     this.fs.copy(this.templatePath('base/.*'), this.destinationPath())
-    if (this.props.componets.indexOf('actions') !== -1) {
+    if (this.props.components.indexOf('actions') !== -1) {
       this.fs.copy(
         this.templatePath('actions'),
-        this.destinationPath(this.componetsProps.actionSetup)
+        this.destinationPath(this.componentsProps.actionSetup)
       )
     }
 
-    if (this.props.componets.indexOf('webAssets') !== -1) {
+    if (this.props.components.indexOf('webAssets') !== -1) {
       this.fs.copy(
         this.templatePath('actions'),
-        this.destinationPath(this.componetsProps.webAssetSetup)
+        this.destinationPath(this.componentsProps.webAssetSetup)
       )
     }
   }
