@@ -90,7 +90,6 @@ What folder do you want to use as your public web assets directory?
 
   writing () {
     this.sourceRoot(path.join(__dirname, '../templates'))
-    console.log('sourceRoot = ' + this.sourceRoot())
     this.fs.copy(this.templatePath('base'), this.destinationPath())
     this.fs.copy(this.templatePath('base/.*'), this.destinationPath())
     if (this.props.components.indexOf('actions') !== -1) {
