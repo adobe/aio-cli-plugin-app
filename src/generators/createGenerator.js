@@ -12,7 +12,6 @@ Which CNA features do you want to enable for this project?
 }
 
 class createGenerator extends Generator {
-
   prompting () {
     let dest = process.cwd()
     this.log(getInitMessage(dest))
@@ -58,7 +57,6 @@ What folder do you want to use as your public web assets directory?
           if (valid.test(input)) {
             return true
           }
-
           return `'${input}' contains invalid characters and is not a valid package name`
         }
       }
@@ -90,36 +88,42 @@ What folder do you want to use as your public web assets directory?
 
   writing () {
     this.sourceRoot(path.join(__dirname, '../templates'))
-    this.fs.copy(this.templatePath('base'), this.destinationPath())
-    this.fs.copy(this.templatePath('base/.*'), this.destinationPath())
+
+    // copy everything that does not start with an _
+    this.fs.copyTpl(`${this.templatePath()}/base/**/!(_)*/`,
+      this.destinationPath(),
+      this.props)
+
+    // the above excluded our strangely named .env file, lets fix it
+    this.fs.copyTpl(this.templatePath('base/_dot.env'),
+      this.destinationPath('.env'),
+      this.props)
+
     if (this.props.components.indexOf('actions') !== -1) {
-      this.fs.copy(
+      this.fs.copyTpl(
         this.templatePath('actions'),
-        this.destinationPath(this.componentsProps.actionSetup)
-      )
+        this.destinationPath(this.componentsProps.actionSetup),
+        this.props)
     }
 
     if (this.props.components.indexOf('webAssets') !== -1) {
-      this.fs.copy(
-        this.templatePath('actions'),
-        this.destinationPath(this.componentsProps.webAssetSetup)
-      )
+      this.fs.copyTpl(
+        this.templatePath('web-src'),
+        this.destinationPath(this.componentsProps.webAssetSetup),
+        this.props)
     }
   }
 
   async install () {
-    const prompts = [
-      {
-        name: 'installDependency',
-        message: 'npm install dependencies now?',
-        type: 'confirm',
-        default: true
-      }
-    ]
-
-    await this.prompt(prompts).then(props => {
-      if (props.installDependency) {
-        this.installDependencies()
+    const prompts = [{
+      name: 'installDeps',
+      message: 'npm install dependencies now?',
+      type: 'confirm',
+      default: true
+    }]
+    return this.prompt(prompts).then(props => {
+      if (props.installDeps) {
+        return this.installDependencies({ bower: false })
       }
     })
   }
