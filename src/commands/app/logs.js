@@ -10,17 +10,17 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const rp = require('request-promise')
+const openwhisk = require('openwhisk');
 const aioConfig = require('@adobe/aio-lib-core-config')
 
 const { flags } = require('@oclif/command')
 // const { cli } = require('cli-ux')
-
 const BaseCommand = require('../../BaseCommand')
-const baseURL = 'https://runtime.adobe.io/api/v1/namespaces/'
 
 class Logs extends BaseCommand {
   async run () {
+    const { flags } = this.parse(Logs)
+
     this.aioConfig = aioConfig.get() || {}
     await this.getLogs(flags.limit)
     this.log(`✔ Finished fetching logs!`)
@@ -28,36 +28,31 @@ class Logs extends BaseCommand {
 
   async getLogs (limit) {
     const auth = Buffer.from(this.aioConfig.runtime.auth).toString('base64')
-    let options = { method: 'GET',
-      url: baseURL + this.aioConfig.runtime.namespace + '/activations',
-      qs: { limit: limit, skip: '0' },
-      headers:
-       {
-         authorization: 'Basic ' + auth
-       },
-      json: true
+    const authHandler = {
+      getAuthHeader: ()=>{
+        return Promise.resolve('Basic ' + auth)
+      }
     }
     // get activations
-    let activations = await rp(options)
+    const options = {apihost: 'runtime.adobe.io',
+    auth_handler: authHandler,
+    namespace: this.aioConfig.runtime.namespace
+  };
+    const ow = openwhisk(options);
+    const listOptions = {limit: limit, skip: 0}
+    let activations = await ow.activations.list(listOptions)
     for (let i = 0; i < activations.length; i++) {
-      await this.getActivationLogs(activations[i], options)
+      await this.getActivationLogs(activations[i], ow)
     }
   }
 
-  async getActivationLogs (activation, options) {
-    let args = {
-      url: options.url + '/' + activation.activationId + '/logs',
-      headers:
-       {
-         authorization: options.headers.authorization
-       },
-      json: true
-    }
-    let results = await rp(args)
+  async getActivationLogs (activation, ow) {
+    const logOptions = {activationId: activation.activationId}
+    let results = await ow.activations.logs(logOptions)
     // send fetched logs to console
     if (results.logs) {
       results.logs.forEach(function (log) {
-        console.log(log)
+        console.log(log + " - " + activation.name)
       })
     }
   }
@@ -68,7 +63,7 @@ Logs.description = `Fetch logs for application
 
 Logs.flags = {
   'limit': flags.integer({
-    description: 'limit number of activations to fetch logs from',
+    description: 'Limit number of activations to fetch logs from',
     default: 1,
     char: 'l'
   }),
