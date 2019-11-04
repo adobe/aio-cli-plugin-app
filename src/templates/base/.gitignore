@@ -21,6 +21,7 @@ junit.xml
 .vscode
 coverage
 .aws.tmp.creds.json
+.wskdebug.props.tmp
 
 # OSX
 .DS_Store
