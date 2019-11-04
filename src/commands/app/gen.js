@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 /*
 Copyright 2019 Adobe. All rights reserved.
 This file is licensed to you under the Apache License, Version 2.0 (the "License");
@@ -17,11 +18,22 @@ const { flags } = require('@oclif/command')
 
 class Gen extends BaseCommand {
   async run () {
-    // const { args } = this.parse(Gen)
+    const { args, flags } = this.parse(Gen)
     debug('creating new app with gen command')
+    let skip_prompt = false
+    if (flags.yes) {
+      skip_prompt = true
+    }
+    let skip_install = false
+    if (flags.skill_install) {
+      skip_install = true
+    }
     const env = yeoman.createEnv()
     env.register(require.resolve('../../generators/createGenerator'), 'createGenerator')
-    return env.run('createGenerator')
+
+    await new Promise((resolve, reject) => {
+      env.run('createGenerator', { 'skip_install': skip_install, 'skip_prompt': skip_prompt })
+    })
   }
 }
 
@@ -33,6 +45,11 @@ Gen.flags = {
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
+  }),
+  'skill_install': flags.boolean({
+    description: 'Skip dependencies installation',
+    default: false,
+    char: 's'
   }),
   ...BaseCommand.flags
 }
