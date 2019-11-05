@@ -1,18 +1,10 @@
 
 
-# ${Project Name}
+# <%= package_name %>
 
 ## Readme for overall project, what does the developer need to do to get started here?
 
 ## TODO: Poplulate this file with helpful info
-
-### Getting Started
-
-[![Build Status](https://travis-ci.com/adobe/adobeio-cna-starter-project.svg?branch=master)](https://travis-ci.com/adobe/adobeio-cna-starter-project)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-
-<!-- [![Version](https://img.shields.io/npm/v/@adobe/adobeio-cna-starter-project.svg)](https://npmjs.org/package/@adobe/adobeio-cna-starter-project) -->
-
 
 # Runtime CNA Starter
 
@@ -24,25 +16,25 @@ A starter project for building a cloud native app (CNA) on top of Adobe I/O Runt
 
 ## Local Dev
 
-- `aio cna run` to start your local Dev server
+- `aio app run` to start your local Dev server
 - App will run on `localhost:9080` by default
 - Local dev server uses an expressJS proxy to invoke action code.
 
 By default the UI will be served locally but actions will be deployed and served from Adobe I/O Runtime. To start a
-local serverless stack and also run your actions locally use the `aio cna run --local` option.
+local serverless stack and also run your actions locally use the `aio app run --local` option.
 
 ## Test & Coverage
 
-- Run `aio cna test` to run unit tests for ui and actions
-- Run `aio cna test -e` to run e2e tests
+- Run `aio app test` to run unit tests for ui and actions
+- Run `aio app test -e` to run e2e tests
 
 ## Deploy & Cleanup
 
-- `aio cna deploy` to build and deploy all actions on Runtime and static files to S3
-- `aio cna undeploy` to undeploy the app
+- `aio app deploy` to build and deploy all actions on Runtime and static files to S3
+- `aio app undeploy` to undeploy the app
 
 Each of the above commands can either be run for actions or static files, append `-s` or `-a`, for
-example `aio cna deploy -s` will only build and deploy static files.
+example `aio app deploy -s` will only build and deploy static files.
 
 ## Config
 
@@ -115,7 +107,7 @@ code.
 
 ## Debugging in VS Code
 
-While running your local server (`aio cna run`), both UI and actions can be debugged, to do so open the vscode debugger
+While running your local server (`aio app run`), both UI and actions can be debugged, to do so open the vscode debugger
 and select the debugging configuration called `WebAndActions`.
 Alternatively, there are also debug configs for only UI and each separate action.
 

@@ -10,7 +10,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const openwhisk = require('openwhisk');
+const openwhisk = require('openwhisk')
 const aioConfig = require('@adobe/aio-lib-core-config')
 
 const { flags } = require('@oclif/command')
@@ -20,26 +20,21 @@ const BaseCommand = require('../../BaseCommand')
 class Logs extends BaseCommand {
   async run () {
     const { flags } = this.parse(Logs)
-
+    this.foundLogs = false
     this.aioConfig = aioConfig.get() || {}
+    this.validateConfig()
     await this.getLogs(flags.limit)
-    this.log(`✔ Finished fetching logs!`)
+    if (this.foundLogs) { this.log(`✔ Finished fetching logs!`) } else { this.log('No Logs Found') }
   }
 
   async getLogs (limit) {
-    const auth = Buffer.from(this.aioConfig.runtime.auth).toString('base64')
-    const authHandler = {
-      getAuthHeader: ()=>{
-        return Promise.resolve('Basic ' + auth)
-      }
+    const options = { apihost: 'runtime.adobe.io',
+      api_key: this.aioConfig.runtime.auth,
+      namespace: this.aioConfig.runtime.namespace
     }
+    const ow = openwhisk(options)
     // get activations
-    const options = {apihost: 'runtime.adobe.io',
-    auth_handler: authHandler,
-    namespace: this.aioConfig.runtime.namespace
-  };
-    const ow = openwhisk(options);
-    const listOptions = {limit: limit, skip: 0}
+    const listOptions = { limit: limit, skip: 0 }
     let activations = await ow.activations.list(listOptions)
     for (let i = 0; i < activations.length; i++) {
       await this.getActivationLogs(activations[i], ow)
@@ -47,14 +42,21 @@ class Logs extends BaseCommand {
   }
 
   async getActivationLogs (activation, ow) {
-    const logOptions = {activationId: activation.activationId}
+    const logOptions = { activationId: activation.activationId }
     let results = await ow.activations.logs(logOptions)
     // send fetched logs to console
-    if (results.logs) {
+    if (results.logs && results.logs.length > 0) {
+      this.foundLogs = true
+      const logger = this.log
+      logger(activation.name + ':' + activation.activationId)
       results.logs.forEach(function (log) {
-        console.log(log + " - " + activation.name)
+        logger(log)
       })
     }
+  }
+
+  validateConfig () {
+    if (!this.aioConfig) { throw new Error('Missing aio config') } else if (!this.aioConfig.runtime || !this.aioConfig.runtime.auth || !this.aioConfig.runtime.namespace) { throw new Error('Missing aio runtime config') }
   }
 }
 

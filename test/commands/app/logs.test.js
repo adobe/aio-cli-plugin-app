@@ -29,3 +29,10 @@ test('description', async () => {
 test('aliases', async () => {
   expect(TheCommand.aliases).toEqual([])
 })
+
+test('flags', async () => {
+  expect(typeof TheCommand.flags.limit).toBe('object')
+  expect(TheCommand.flags.limit.char).toBe('l')
+  expect(typeof TheCommand.flags.limit.description).toBe('string')
+  expect(TheCommand.flags.limit.default).toEqual(1)
+})
