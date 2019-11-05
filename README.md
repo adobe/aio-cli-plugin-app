@@ -8,7 +8,7 @@ Create, Build and Deploy Cloud Native Applications
 [![Downloads/week](https://img.shields.io/npm/dw/aio-cli-plugin-app.svg)](https://npmjs.org/package/@adobe/aio-cli-plugin-app)
 [![Build Status](https://travis-ci.org/adobe/aio-cli-plugin-app.svg?branch=master)](https://travis-ci.org/adobe/aio-cli-plugin-app)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Codecov Coverage](https://img.shields.io/codecov/c/github/adobe/aio-cli-plugin-app/master.svg?style=flat-square)](https://codecov.io/gh/adobe/aio-cli-plugin-app/) 
+[![Codecov Coverage](https://img.shields.io/codecov/c/github/adobe/aio-cli-plugin-app/master.svg?style=flat-square)](https://codecov.io/gh/adobe/aio-cli-plugin-app/)
 [![Greenkeeper badge](https://badges.greenkeeper.io/adobe/aio-cli-plugin-app.svg)](https://greenkeeper.io/)
 
 <!-- toc -->
@@ -38,6 +38,7 @@ USAGE
 * [`@adobe/aio-cli-plugin-app app:run [PATH]`](#adobeaio-cli-plugin-app-apprun-path)
 * [`@adobe/aio-cli-plugin-app app:test [PATH]`](#adobeaio-cli-plugin-app-apptest-path)
 * [`@adobe/aio-cli-plugin-app app:undeploy [PATH]`](#adobeaio-cli-plugin-app-appundeploy-path)
+* [`@adobe/aio-cli-plugin-app app:logs
 
 ## `@adobe/aio-cli-plugin-app app:add-auth [PATH]`
 
@@ -171,4 +172,19 @@ OPTIONS
 ```
 
 _See code: [src/commands/app/undeploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/v0.2.1-dev/src/commands/app/undeploy.js)_
+
+## `@adobe/aio-cli-plugin-app app:logs
+
+Get actions logs of Cloud Native Application
+
+```
+USAGE
+  $ @adobe/aio-cli-plugin-app app:logs
+
+OPTIONS
+  -l, --limit  limit number of activations to fetch logs from.
+```
+
+_See code: [src/commands/app/logs.js](https://github.com/adobe/aio-cli-plugin-app/blob/v0.2.1-dev/src/commands/app/logs.js)_
+
 <!-- commandsstop -->
