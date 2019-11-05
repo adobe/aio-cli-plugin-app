@@ -16,7 +16,6 @@ class createGenerator extends Generator {
     super(args, opts)
 
     this.option('skip_prompt')
-    this.option('skip_install')
   }
 
   prompting () {
@@ -35,11 +34,7 @@ will contain static assets to be uploaded to cloud storage. If you
 have a build process use your build's output directory.
 What folder do you want to use as your public web assets directory?
 `
-    let showPrompt = true
-    if (this.options.skip_prompt) {
-      showPrompt = false
-    }
-
+    const showPrompt = !this.options.skip_prompt
     const prompts = [
       {
         type: 'checkbox',
@@ -140,8 +135,8 @@ What folder do you want to use as your public web assets directory?
   }
 
   async install () {
-    if (this.options.skip_install) {
-      return
+    if (this.options.skip_prompt) {
+      return this.installDependencies({ bower: false })
     }
     const prompts = [{
       name: 'installDeps',
