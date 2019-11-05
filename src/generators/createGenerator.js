@@ -2,31 +2,27 @@
 const Generator = require('yeoman-generator')
 const path = require('path')
 
-const getInitMessage = cwd => {
-  let message = `Project setup
-You are about to initialize a project in this directory:
-  ${cwd}
-Which CNA features do you want to enable for this project?
-`
-  return message
-}
 
 class createGenerator extends Generator {
   constructor (args, opts) {
     super(args, opts)
-
     this.option('skip_prompt')
   }
 
   prompting () {
     let dest = process.cwd()
-    this.log(getInitMessage(dest))
+    const showPrompt = !this.options.skip_prompt
+    this.log(`Project setup
+You are about to initialize a project in this directory:
+  ${dest}`)
+
     let actionSetupMessage = `
 /* Actions Setup */
 An actions directory will be created in your project with a Node.js
 package pre-configured.
 What folder do you want to use as your public action directory?
 `
+
     let webAssetSetupMessage = `
 /* Web Assets Setup */
 The public directory is the folder (inside your project directory) that
@@ -34,12 +30,12 @@ will contain static assets to be uploaded to cloud storage. If you
 have a build process use your build's output directory.
 What folder do you want to use as your public web assets directory?
 `
-    const showPrompt = !this.options.skip_prompt
+
     const prompts = [
       {
         type: 'checkbox',
         name: 'components',
-        message: 'select components to include',
+        message: 'Which CNA features do you want to enable for this project?\nselect components to include',
         choices: [
           {
             name: 'Actions: Deploy Runtime actions',
