@@ -12,6 +12,12 @@ Which CNA features do you want to enable for this project?
 }
 
 class createGenerator extends Generator {
+  constructor (args, opts) {
+    super(args, opts)
+
+    this.option('skip_prompt')
+  }
+
   prompting () {
     let dest = process.cwd()
     this.log(getInitMessage(dest))
@@ -28,6 +34,7 @@ will contain static assets to be uploaded to cloud storage. If you
 have a build process use your build's output directory.
 What folder do you want to use as your public web assets directory?
 `
+    const showPrompt = !this.options.skip_prompt
     const prompts = [
       {
         type: 'checkbox',
@@ -44,7 +51,8 @@ What folder do you want to use as your public web assets directory?
             value: 'webAssets',
             checked: true
           }
-        ]
+        ],
+        when: showPrompt
       },
       {
         type: 'input',
@@ -58,31 +66,43 @@ What folder do you want to use as your public web assets directory?
             return true
           }
           return `'${input}' contains invalid characters and is not a valid package name`
-        }
+        },
+        when: showPrompt
       }
     ]
 
     return this.prompt(prompts).then(props => {
-      const prompts = [
-        {
-          type: 'input',
-          name: 'actionSetup',
-          message: actionSetupMessage,
-          default: 'actions',
-          when: props.components.indexOf('actions') !== -1
-        },
-        {
-          type: 'input',
-          name: 'webAssetSetup',
-          message: webAssetSetupMessage,
-          default: 'web-src',
-          when: props.components.indexOf('webAssets') !== -1
-        }
-      ]
-      this.props = props
-      return this.prompt(prompts).then(props => {
-        this.componentsProps = props
-      })
+      if (showPrompt) {
+        const prompts = [
+          {
+            type: 'input',
+            name: 'actionSetup',
+            message: actionSetupMessage,
+            default: 'actions',
+            when: props.components.indexOf('actions') !== -1
+          },
+          {
+            type: 'input',
+            name: 'webAssetSetup',
+            message: webAssetSetupMessage,
+            default: 'web-src',
+            when: props.components.indexOf('webAssets') !== -1
+          }
+        ]
+        this.props = props
+        return this.prompt(prompts).then(props => {
+          this.componentsProps = props
+        })
+      } else {
+        this.props = Object.assign({}, this.options, props, {
+          components: ['actions', 'webAssets'],
+          package_name: path.parse(dest).name
+        })
+        this.componentsProps = Object.assign({}, this.options, props, {
+          actionSetup: 'actions',
+          webAssetSetup: 'web-src'
+        })
+      }
     })
   }
 
@@ -115,6 +135,9 @@ What folder do you want to use as your public web assets directory?
   }
 
   async install () {
+    if (this.options.skip_prompt) {
+      return this.installDependencies({ bower: false })
+    }
     const prompts = [{
       name: 'installDeps',
       message: 'npm install dependencies now?',
