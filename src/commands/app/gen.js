@@ -12,24 +12,26 @@ governing permissions and limitations under the License.
 
 const BaseCommand = require('../../BaseCommand')
 const yeoman = require('yeoman-environment')
+const path = require('path')
+const fs = require('fs-extra')
 const debug = require('debug')('aio-cli-plugin-app:gen')
 const { flags } = require('@oclif/command')
 
 class Gen extends BaseCommand {
   async run () {
-    const { flags } = this.parse(Gen)
-    debug('creating new app with gen command')
-    let skip_prompt = false
-    if (flags.yes) {
-      skip_prompt = true
+
+    const { args, flags } = this.parse(Gen)
+    if (args.path != null) {
+      let destDir = path.resolve(args.path)
+      fs.ensureDirSync(destDir)
+      process.chdir(destDir)
     }
+    debug('creating new app with gen command')
 
     const env = yeoman.createEnv()
     env.register(require.resolve('../../generators/createGenerator'), 'createGenerator')
 
-    await new Promise((resolve, reject) => {
-      env.run('createGenerator', { 'skip_prompt': skip_prompt })
-    })
+    return env.run('createGenerator', { 'skip_prompt': flags.yes })
   }
 }
 
@@ -42,8 +44,11 @@ Gen.flags = {
     default: false,
     char: 'y'
   }),
-
   ...BaseCommand.flags
 }
+
+Gen.args = [
+  ...BaseCommand.args
+]
 
 module.exports = Gen
