@@ -1,6 +1,6 @@
 
-# ${Project Name} - Web Src
+# <%= package_name %> - web-src
 
 ## Readme for Web-Src, what does the developer need to do to get started here?
 
-## TODO: Poplulate this file
+## TODO: Populate this file
