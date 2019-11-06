@@ -94,7 +94,7 @@ class Deploy extends BaseCommand {
   }
 }
 
-Deploy.description = `Build and deploy a Cloud Native Application
+Deploy.description = `Build and deploy an Adobe I/O App
 `
 
 Deploy.flags = {

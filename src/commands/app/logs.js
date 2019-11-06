@@ -60,7 +60,7 @@ class Logs extends BaseCommand {
   }
 }
 
-Logs.description = `Fetch logs for application
+Logs.description = `Fetch logs for an Adobe I/O App
 `
 
 Logs.flags = {
@@ -72,8 +72,8 @@ Logs.flags = {
   ...BaseCommand.flags
 }
 
-Logs.args = [
-  ...BaseCommand.args
-]
+// Logs.args = [
+//   ...BaseCommand.args
+// ]
 
 module.exports = Logs

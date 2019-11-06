@@ -74,7 +74,7 @@ class Undeploy extends BaseCommand {
   }
 }
 
-Undeploy.description = `Builds and deploys a Cloud Native Application
+Undeploy.description = `Undeploys an Adobe I/O App
 `
 
 Undeploy.flags = {
