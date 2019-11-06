@@ -40,7 +40,7 @@ class ActionGenerator extends Generator {
 
     // todo: read package_name from root package.json name
     // todo: load action output folder from aio config, as actionSetup
-    // todo: if action output folder (actionSetup) dne, prompt for a name, default: actions 
+    // todo: if action output folder (actionSetup) dne, prompt for a name, default: actions
   }
 
   writing () {
