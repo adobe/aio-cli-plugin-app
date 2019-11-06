@@ -12,7 +12,7 @@ governing permissions and limitations under the License.
 const Generator = require('yeoman-generator')
 const path = require('path')
 
-class createGenerator extends Generator {
+class CreateGenerator extends Generator {
   constructor (args, opts) {
     super(args, opts)
     this.option('skip_prompt')
@@ -112,7 +112,7 @@ What folder do you want to use as your public web assets directory?
   }
 
   writing () {
-    this.sourceRoot(path.join(__dirname, '../templates'))
+    this.sourceRoot(path.join(__dirname, '../templates/hello'))
 
     // copy everything that does not start with an _
     this.fs.copyTpl(`${this.templatePath()}/base/**/!(_)*/`,
@@ -157,4 +157,4 @@ What folder do you want to use as your public web assets directory?
   }
 }
 
-module.exports = createGenerator
+module.exports = CreateGenerator
