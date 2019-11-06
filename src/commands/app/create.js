@@ -19,7 +19,7 @@ class Create extends BaseCommand {
   }
 }
 
-Create.description = `Create a new Cloud Native Application with default parameters
+Create.description = `Create a new Adobe I/O App with default parameters
 `
 
 Create.flags = {

@@ -51,7 +51,7 @@ class Run extends BaseCommand {
   }
 }
 
-Run.description = `Run a Cloud Native Application
+Run.description = `Run an Adobe I/O App
 `
 
 Run.flags = {
