@@ -24,12 +24,16 @@ class InitCommand extends BaseCommand {
       fs.ensureDirSync(destDir)
       process.chdir(destDir)
     }
-    debug('creating new app with init command')
+    debug('creating new app with init command ', flags)
 
     const env = yeoman.createEnv()
-    env.register(require.resolve('../../generators/create-hello'), 'createGenerator')
+    try {
+      env.register(require.resolve('../../generators/create-' + flags.template), 'gen')
+    } catch (err) {
+      this.error(`the '${flags.template}' template is not available.`)
+    }
 
-    let res = await env.run('createGenerator', { 'skip_prompt': flags.yes })
+    let res = await env.run('gen', { 'skip_prompt': flags.yes })
     // finalize configuration data
     this.log(`✔ App initialization finished!`)
     return res
@@ -44,6 +48,12 @@ InitCommand.flags = {
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
+  }),
+  'template': flags.string({
+    description: 'Adobe I/O App starter template',
+    char: 't',
+    options: ['hello', 'target', 'campaign', 'analytics'],
+    default: 'hello'
   }),
   ...BaseCommand.flags
 }
