@@ -27,7 +27,7 @@ class InitCommand extends BaseCommand {
     debug('creating new app with init command')
 
     const env = yeoman.createEnv()
-    env.register(require.resolve('../../generators/createGenerator'), 'createGenerator')
+    env.register(require.resolve('../../generators/create-hello'), 'createGenerator')
 
     let res = await env.run('createGenerator', { 'skip_prompt': flags.yes })
     // finalize configuration data
