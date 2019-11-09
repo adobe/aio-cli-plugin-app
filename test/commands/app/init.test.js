@@ -15,6 +15,7 @@ const TheCommand = require('../../../src/commands/app/init')
 const BaseCommand = require('../../../src/BaseCommand')
 
 const yeoman = require('yeoman-environment')
+const inquirer = require('inquirer')
 
 describe('Command Prototype', () => {
   test('exports', async () => {
@@ -45,6 +46,20 @@ describe('bad flags', () => {
         done()
       })
   })
+
+  test('prompt returns bad template', async (done) => {
+    jest.spyOn(inquirer, 'prompt').mockImplementation(() => {
+      return { template: 'doesnotexist' }
+    })
+    let result = TheCommand.run(['.'])
+    expect(result instanceof Promise).toBeTruthy()
+    return result
+      .then(() => done.fail())
+      .catch(res => {
+        expect(res.message).toMatch('Expected --template=doesnotexist to be one of: hello, target, campaign, analytics')
+        done()
+      })
+  })
 })
 
 describe('template not found', () => {
@@ -56,7 +71,7 @@ describe('template not found', () => {
         })
       }
     })
-    let result = TheCommand.run(['.'])
+    let result = TheCommand.run(['.', '-t=hello'])
     expect(result instanceof Promise).toBeTruthy()
     return result
       .then(() => done.fail())

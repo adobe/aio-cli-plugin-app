@@ -15,6 +15,7 @@ const path = require('path')
 const fs = require('fs-extra')
 const debug = require('debug')('aio-cli-plugin-app:init')
 const { flags } = require('@oclif/command')
+const inquirer = require('inquirer')
 
 class InitCommand extends BaseCommand {
   async run () {
@@ -26,9 +27,26 @@ class InitCommand extends BaseCommand {
     }
     debug('creating new app with init command ', flags)
 
+    let template = flags.template
+    if (!template) {
+      if (flags.yes) {
+        template = 'hello'
+      } else {
+        let responses = await inquirer.prompt([{
+          name: 'template',
+          message: 'select a starter template',
+          type: 'list',
+          choices: [{ name: 'hello' }, { name: 'target' }, { name: 'campaign' }, { name: 'analytics' }]
+        }])
+        template = responses.template
+      }
+    }
+    if (!InitCommand.flags.template.options.includes(template)) {
+      this.error(`Expected --template=${template} to be one of: hello, target, campaign, analytics`)
+    }
     const env = yeoman.createEnv()
     try {
-      env.register(require.resolve('../../generators/create-' + flags.template), 'gen')
+      env.register(require.resolve('../../generators/create-' + template), 'gen')
     } catch (err) {
       this.error(`the '${flags.template}' template is not available.`)
     }
@@ -52,8 +70,7 @@ InitCommand.flags = {
   'template': flags.string({
     description: 'Adobe I/O App starter template',
     char: 't',
-    options: ['hello', 'target', 'campaign', 'analytics'],
-    default: 'hello'
+    options: ['hello', 'target', 'campaign', 'analytics']
   }),
   ...BaseCommand.flags
 }
