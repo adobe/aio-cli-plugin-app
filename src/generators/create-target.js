@@ -44,7 +44,7 @@ What folder do you want to use as your public web assets directory?
       {
         type: 'checkbox',
         name: 'components',
-        message: 'Which CNA features do you want to enable for this project?\nselect components to include',
+        message: 'Which Adobe I/O App features do you want to enable for this project?\nselect components to include',
         choices: [
           {
             name: 'Actions: Deploy Runtime actions',

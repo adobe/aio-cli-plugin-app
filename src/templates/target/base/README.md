@@ -6,9 +6,9 @@
 
 ## TODO: Poplulate this file with helpful info
 
-# Runtime CNA Starter
+# Adobe I/O Target App Starter
 
-A starter project for building a cloud native app (CNA) on top of Adobe I/O Runtime.
+A starter project for building an Adobe I/O app using Adobe Target apis in Adobe I/O Runtime.
 
 ## Setup
 
@@ -60,7 +60,7 @@ AIO_CNA_TVMURL=https://adobeio.adobeioruntime.net/apis/tvm/
 
 ### S3 Credentials
 
-- Set the `TVM_URL` variable in `.env` to point to a deployed [CNA token vending
+- Set the `TVM_URL` variable in `.env` to point to a deployed [Adobe I/O token vending
   machine](https://github.com/adobe/aio-tvm). It
   allows you to download temporary and restricted credentials to upload your
   static files to S3. Credentials will be cached in `.aws.tmp.creds.json`. Users
