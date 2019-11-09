@@ -31,7 +31,37 @@ describe('bad flags', () => {
     return result
       .then(() => done.fail())
       .catch(res => {
-        expect(res).toEqual(new Error('Unexpected argument: --wtf\nSee more help with --help'))
+        expect(res.message).toMatch('Unexpected argument')
+        done()
+      })
+  })
+  test('bad template', async (done) => {
+    let result = TheCommand.run(['.', '-t=chimeric'])
+    expect(result instanceof Promise).toBeTruthy()
+    return result
+      .then(() => done.fail())
+      .catch(res => {
+        expect(res.message).toMatch('Expected --template=chimeric to be one of: hello, target, campaign, analytics')
+        done()
+      })
+  })
+})
+
+describe('template not found', () => {
+  test('unknown', async (done) => {
+    jest.spyOn(yeoman, 'createEnv').mockImplementation(() => {
+      return {
+        register: jest.fn(() => {
+          throw new Error('some error')
+        })
+      }
+    })
+    let result = TheCommand.run(['.'])
+    expect(result instanceof Promise).toBeTruthy()
+    return result
+      .then(() => done.fail())
+      .catch(res => {
+        expect(res.message).toMatch('the \'hello\' template is not available.')
         done()
       })
   })
