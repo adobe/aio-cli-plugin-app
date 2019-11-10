@@ -65,7 +65,7 @@ What folder do you want to use as your public web assets directory?
           {
             name: 'Web Assets: Deploy hosted static assets',
             value: 'webAssets',
-            checked: true
+            checked: false
           }
         ],
         when: showPrompt
