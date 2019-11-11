@@ -1,6 +1,7 @@
 
 # <%= package_name %> - web-src
 
-## Readme for Web-Src, what does the developer need to do to get started here?
+## TODO
 
-## TODO: Populate this file
+This folder contains the static web source files for your project.
+You will need to implement the user interface here.
