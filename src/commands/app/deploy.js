@@ -13,6 +13,7 @@ governing permissions and limitations under the License.
 const ora = require('ora')
 const open = require('open')
 const chalk = require('chalk')
+const fs = require('fs-extra')
 // const path = require('path')
 
 const BaseCommand = require('../../BaseCommand')
@@ -59,21 +60,37 @@ class Deploy extends BaseCommand {
       if (!flags.deploy) {
         // build phase
         if (!flags.static) {
-          await scripts.buildActions()
+          if (fs.existsSync('actions/')) {
+            await scripts.buildActions()
+          } else {
+            console.log('no action src, skipping build')
+          }
         }
         if (!flags.actions) {
-          await scripts.buildUI()
+          if (fs.existsSync('web-src/')) {
+            await scripts.buildUI()
+          } else {
+            console.log('no web-src, skipping build')
+          }
         }
       }
       // deploy phase
       if (!flags.build) {
-        if (!flags.static) {
+        if (fs.existsSync('actions/')) {
           await scripts.deployActions()
+        } else {
+          console.log('no action src, skipping deploy')
         }
         if (!flags.actions) {
-          const url = await scripts.deployUI()
-          if (flags.verbose) this.log(chalk.blue(url))
-          else open(url) // do not open if verbose as the user probably wants to look at the console
+          if (fs.existsSync('web-src/')) {
+            const url = await scripts.deployUI()
+            if (flags.verbose) this.log(chalk.blue(url))
+            else open(url) // do not open if verbose as the user probably wants to look at the console
+          } else {
+            console.log('no web-src, skipping deploy')
+          }
+
+
         }
       }
 
