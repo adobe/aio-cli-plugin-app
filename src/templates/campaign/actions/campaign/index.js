@@ -2,7 +2,7 @@
  * main action
  */
 
-const { CampaignStandard } = require('@adobe/aio-sdk')
+const CampaignStandard = require('@adobe/aio-lib-campaign-standard')
 
 async function main (params) {
   // initialize sdk

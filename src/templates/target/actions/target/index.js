@@ -2,7 +2,7 @@
  * main action
  */
 
-const { Target } = require('@adobe/aio-sdk')
+const Target = require('@adobe/aio-lib-target')
 
 async function main (params) {
   // initialize sdk

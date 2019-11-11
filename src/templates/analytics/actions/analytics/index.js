@@ -2,7 +2,7 @@
  * main action
  */
 
-const { Analytics } = require('@adobe/aio-sdk')
+const Analytics = require('@adobe/aio-lib-analytics')
 
 async function main (params) {
   // Analytics example
