@@ -1,8 +1,8 @@
 packages:
-  __CNA_PACKAGE__:
+  __APP_PACKAGE__:
     license: Apache-2.0
     actions:
       hello:
-        function: actions/hello/index.js
+        function: actions/analytics/index.js
         web: yes
         runtime: 'nodejs:10'
