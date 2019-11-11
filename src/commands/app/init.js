@@ -39,7 +39,7 @@ class InitCommand extends BaseCommand {
           choices: [{ name: 'hello - a basic empty application' },
             { name: 'target - use runtime functions to access the target api' },
             { name: 'campaign - use runtime functions to access the campaign api' },
-            { name: 'analytics- use runtime functions to access the analytics api' }],
+            { name: 'analytics - use runtime functions to access the analytics api' }],
           filter: (sel) => sel.split(' ')[0]
         }])
         console.log('response = ' + responses.template)
