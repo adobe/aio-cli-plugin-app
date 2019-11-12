@@ -47,7 +47,12 @@ class Run extends BaseCommand {
 
     process.env['REMOTE_ACTIONS'] = !flags.local
     const scripts = AppScripts({ listeners })
-    return scripts.runDev()
+    try {
+      await scripts.runDev()
+    } catch (error) {
+      spinner.fail()
+      this.error(error)
+    }
   }
 }
 
