@@ -42,7 +42,6 @@ class InitCommand extends BaseCommand {
             { name: 'analytics - use runtime functions to access the analytics api' }],
           filter: (sel) => sel.split(' ')[0]
         }])
-        console.log('response = ' + responses.template)
         template = responses.template
       }
     }
