@@ -36,21 +36,6 @@ class CreateGenerator extends Generator {
 You are about to initialize a project in this directory:
   ${dest}`)
 
-    let actionSetupMessage = `
-/* Actions Setup */
-An actions directory will be created in your project with a Node.js
-package pre-configured.
-What folder do you want to use as your public action directory?
-`
-
-    let webAssetSetupMessage = `
-/* Web Assets Setup */
-The public directory is the folder (inside your project directory) that
-will contain static assets to be uploaded to cloud storage. If you
-have a build process use your build's output directory.
-What folder do you want to use as your public web assets directory?
-`
-
     const prompts = [
       {
         type: 'checkbox',
