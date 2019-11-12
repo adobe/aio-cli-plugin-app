@@ -1,0 +1,8 @@
+packages:
+  __APP_PACKAGE__:
+    license: Apache-2.0
+    actions:
+      hello:
+        function: actions/hello/index.js
+        web: yes
+        runtime: 'nodejs:10'

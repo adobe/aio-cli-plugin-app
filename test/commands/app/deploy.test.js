@@ -16,6 +16,9 @@ const BaseCommand = require('../../../src/BaseCommand')
 // mocks
 const mockOpen = require('open')
 jest.mock('open', () => jest.fn())
+
+const mockFS = require('fs-extra')
+
 const mockScripts = require('@adobe/aio-app-scripts')()
 
 beforeEach(() => {
@@ -39,12 +42,10 @@ test('flags', async () => {
   expect(typeof TheCommand.flags.actions).toBe('object')
   expect(TheCommand.flags.actions.char).toBe('a')
   expect(typeof TheCommand.flags.actions.description).toBe('string')
-  expect(TheCommand.flags.actions.exclusive).toEqual(['static'])
 
   expect(typeof TheCommand.flags.static).toBe('object')
   expect(TheCommand.flags.static.char).toBe('s')
   expect(typeof TheCommand.flags.static.description).toBe('string')
-  expect(TheCommand.flags.static.exclusive).toEqual(['actions'])
 
   expect(typeof TheCommand.flags.build).toBe('object')
   expect(TheCommand.flags.build.char).toBe('b')
@@ -70,6 +71,7 @@ describe('run', () => {
 
   test('build & deploy an App with no flags', async () => {
     mockScripts.deployUI.mockResolvedValue('https://example.com')
+    mockFS.existsSync.mockResolvedValue(true)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(1)
@@ -104,6 +106,7 @@ describe('run', () => {
   test('build & deploy only static files', async () => {
     command.argv = ['-s']
     mockScripts.deployUI.mockResolvedValue('https://example.com')
+    mockFS.existsSync.mockResolvedValue(true)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)

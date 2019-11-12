@@ -29,7 +29,7 @@ class Test extends BaseCommand {
   }
 }
 
-Test.description = `Tests a Cloud Native Application
+Test.description = `Run tests for an Adobe I/O App
 `
 
 Test.flags = {

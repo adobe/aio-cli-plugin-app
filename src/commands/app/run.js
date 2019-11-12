@@ -47,11 +47,16 @@ class Run extends BaseCommand {
 
     process.env['REMOTE_ACTIONS'] = !flags.local
     const scripts = AppScripts({ listeners })
-    return scripts.runDev()
+    try {
+      await scripts.runDev()
+    } catch (error) {
+      spinner.fail()
+      this.error(error)
+    }
   }
 }
 
-Run.description = `Run a Cloud Native Application
+Run.description = `Run an Adobe I/O App
 `
 
 Run.flags = {

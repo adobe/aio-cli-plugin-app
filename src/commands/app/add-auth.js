@@ -27,13 +27,11 @@ class AddAuthCommand extends BaseCommand {
   }
 }
 
-AddAuthCommand.description = `Add auth actions to the manifest of a Cloud Native Application
+AddAuthCommand.description = `Add auth actions to the manifest of an Adobe I/O App
 `
 
 AddAuthCommand.flags = {
   ...BaseCommand.flags
 }
-
-AddAuthCommand.args = BaseCommand.args
 
 module.exports = AddAuthCommand

@@ -13,7 +13,7 @@ governing permissions and limitations under the License.
 const { stdout, stderr } = require('stdout-stderr')
 
 // trap console log
-beforeEach(() => { stdout.start(); stderr.start() })
+beforeEach(() => { stdout.start(); stderr.start(); stdout.print = true })
 afterEach(() => { stdout.stop(); stderr.stop() })
 
 process.on('unhandledRejection', error => {
