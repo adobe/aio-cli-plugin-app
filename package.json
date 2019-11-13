@@ -60,7 +60,8 @@
     "bin": "",
     "devPlugins": [
       "@oclif/plugin-help"
-    ]
+    ],
+    "repositoryPrefix": "<%- repo %>/blob/<%- version %>/<%- commandPath %>"
   },
   "repository": "adobe/aio-cli-plugin-app",
   "scripts": {
