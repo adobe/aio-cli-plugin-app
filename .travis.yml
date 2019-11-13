@@ -15,3 +15,5 @@ install:
   - npm ci
 script:
   - npm test
+after_success:
+  - ./node_modules/.bin/codecov
