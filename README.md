@@ -22,7 +22,7 @@ $ npm install -g @adobe/aio-cli-plugin-app
 $ @adobe/aio-cli-plugin-app COMMAND
 running command...
 $ @adobe/aio-cli-plugin-app (-v|--version|version)
-@adobe/aio-cli-plugin-app/0.3.1 darwin-x64 node-v8.16.0
+@adobe/aio-cli-plugin-app/0.3.2 darwin-x64 node-v10.15.3
 $ @adobe/aio-cli-plugin-app --help [COMMAND]
 USAGE
   $ @adobe/aio-cli-plugin-app COMMAND

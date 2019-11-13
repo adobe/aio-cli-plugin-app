@@ -3,6 +3,6 @@ packages:
     license: Apache-2.0
     actions:
       hello:
-        function: actions/hello/index.js
+        function: actions/target/index.js
         web: yes
         runtime: 'nodejs:10'
