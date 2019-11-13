@@ -2,7 +2,7 @@
     "name": "<%= package_name %>",
     "version": "0.0.1",
     "dependencies": {  
-        "@adobe/aio-lib-target": "^1.0.1"
+        "@adobe/aio-sdk": "^1.0.2"
     },
     "devDependencies": {
         "jest": "^24.8.0",
