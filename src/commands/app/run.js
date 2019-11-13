@@ -45,7 +45,7 @@ class Run extends BaseCommand {
       }
     }
 
-    process.env['REMOTE_ACTIONS'] = !flags.local
+    process.env.REMOTE_ACTIONS = !flags.local
     const scripts = AppScripts({ listeners })
     try {
       await scripts.runDev()
@@ -60,7 +60,7 @@ Run.description = `Run an Adobe I/O App
 `
 
 Run.flags = {
-  'local': flags.boolean({
+  local: flags.boolean({
     description: 'run/debug actions locally'
   }),
   ...BaseCommand.flags

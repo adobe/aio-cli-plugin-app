@@ -55,7 +55,7 @@ describe('exports helper methods', () => {
     // succeeds if npm install returns success
     fs.readdirSync.mockReturnValue(['package.json'])
     appHelper.installPackage('does-not-exist')
-    expect(execa).toHaveBeenCalledWith('npm', ['install'], { 'cwd': 'does-not-exist' })
+    expect(execa).toHaveBeenCalledWith('npm', ['install'], { cwd: 'does-not-exist' })
   })
 
   test('runPackageScript', async () => {

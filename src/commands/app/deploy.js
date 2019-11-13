@@ -118,11 +118,13 @@ Deploy.flags = {
   build: flags.boolean({
     char: 'b',
     description: 'Only build, don\'t deploy',
-    exclusive: ['deploy'] }),
+    exclusive: ['deploy']
+  }),
   deploy: flags.boolean({
     char: 'd',
     description: 'Only deploy, don\'t build',
-    exclusive: ['build'] }),
+    exclusive: ['build']
+  }),
   static: flags.boolean({
     char: 's',
     description: 'Only build & deploy static files'

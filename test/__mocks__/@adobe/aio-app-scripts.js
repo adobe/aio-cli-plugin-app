@@ -22,8 +22,8 @@ const mockScripts = {
   addAuth: jest.fn(() => mockWithCallbacks())
 }
 
-let mockWithCallbacks = () => {
-  let lnr = mockScripts.listeners
+const mockWithCallbacks = () => {
+  const lnr = mockScripts.listeners
   if (lnr.onStart) {
     lnr.onStart('run:start')
   }

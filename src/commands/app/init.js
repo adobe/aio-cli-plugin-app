@@ -21,7 +21,7 @@ class InitCommand extends BaseCommand {
   async run () {
     const { args, flags } = this.parse(InitCommand)
     if (args.path !== '.') {
-      let destDir = path.resolve(args.path)
+      const destDir = path.resolve(args.path)
       fs.ensureDirSync(destDir)
       process.chdir(destDir)
     }
@@ -32,7 +32,7 @@ class InitCommand extends BaseCommand {
       if (flags.yes) {
         template = 'hello'
       } else {
-        let responses = await inquirer.prompt([{
+        const responses = await inquirer.prompt([{
           name: 'template',
           message: 'select a starter template',
           type: 'list',
@@ -55,9 +55,9 @@ class InitCommand extends BaseCommand {
       this.error(`the '${flags.template}' template is not available.`)
     }
 
-    let res = await env.run('gen', { 'skip_prompt': flags.yes })
+    const res = await env.run('gen', { skip_prompt: flags.yes })
     // finalize configuration data
-    this.log(`✔ App initialization finished!`)
+    this.log('✔ App initialization finished!')
     return res
   }
 }
@@ -66,12 +66,12 @@ InitCommand.description = `Create a new Adobe I/O App
 `
 
 InitCommand.flags = {
-  'yes': flags.boolean({
+  yes: flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
   }),
-  'template': flags.string({
+  template: flags.string({
     description: 'Adobe I/O App starter template',
     char: 't',
     options: ['hello', 'target', 'campaign', 'analytics']
