@@ -26,44 +26,50 @@ describe('Command Prototype', () => {
 })
 
 describe('bad flags', () => {
-  test('unknown', async (done) => {
-    let result = TheCommand.run(['.', '--wtf'])
+  test('unknown', async () => {
+    const result = TheCommand.run(['.', '--wtf'])
     expect(result instanceof Promise).toBeTruthy()
-    return result
-      .then(() => done.fail())
-      .catch(res => {
-        expect(res.message).toMatch('Unexpected argument')
-        done()
-      })
+    return new Promise((resolve, reject) => {
+      return result
+        .then(() => reject(new Error()))
+        .catch(res => {
+          expect(res.message).toMatch('Unexpected argument')
+          resolve()
+        })
+    })
   })
-  test('bad template', async (done) => {
-    let result = TheCommand.run(['.', '-t=chimeric'])
+  test('bad template', async () => {
+    const result = TheCommand.run(['.', '-t=chimeric'])
     expect(result instanceof Promise).toBeTruthy()
-    return result
-      .then(() => done.fail())
-      .catch(res => {
-        expect(res.message).toMatch('Expected --template=chimeric to be one of: hello, target, campaign, analytics')
-        done()
-      })
+    return new Promise((resolve, reject) => {
+      return result
+        .then(() => reject(new Error()))
+        .catch(res => {
+          expect(res.message).toMatch('Expected --template=chimeric to be one of: hello, target, campaign, analytics')
+          resolve()
+        })
+    })
   })
 
-  test('prompt returns bad template', async (done) => {
+  test('prompt returns bad template', async () => {
     jest.spyOn(inquirer, 'prompt').mockImplementation(() => {
       return { template: 'doesnotexist' }
     })
-    let result = TheCommand.run(['.'])
+    const result = TheCommand.run(['.'])
     expect(result instanceof Promise).toBeTruthy()
-    return result
-      .then(() => done.fail())
-      .catch(res => {
-        expect(res.message).toMatch('Expected --template=doesnotexist to be one of: hello, target, campaign, analytics')
-        done()
-      })
+    return new Promise((resolve, reject) => {
+      return result
+        .then(() => reject(new Error()))
+        .catch(res => {
+          expect(res.message).toMatch('Expected --template=doesnotexist to be one of: hello, target, campaign, analytics')
+          resolve()
+        })
+    })
   })
 })
 
 describe('template not found', () => {
-  test('unknown', async (done) => {
+  test('unknown', async () => {
     jest.spyOn(yeoman, 'createEnv').mockImplementation(() => {
       return {
         register: jest.fn(() => {
@@ -71,14 +77,16 @@ describe('template not found', () => {
         })
       }
     })
-    let result = TheCommand.run(['.', '-t=hello'])
+    const result = TheCommand.run(['.', '-t=hello'])
     expect(result instanceof Promise).toBeTruthy()
-    return result
-      .then(() => done.fail())
-      .catch(res => {
-        expect(res.message).toMatch('the \'hello\' template is not available.')
-        done()
-      })
+    return new Promise((resolve, reject) => {
+      return result
+        .then(() => reject(new Error()))
+        .catch(res => {
+          expect(res.message).toMatch('the \'hello\' template is not available.')
+          resolve()
+        })
+    })
   })
 })
 

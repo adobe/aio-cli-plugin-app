@@ -30,7 +30,7 @@ class CreateGenerator extends Generator {
   }
 
   prompting () {
-    let dest = process.cwd()
+    const dest = process.cwd()
     const showPrompt = !this.options.skip_prompt
     this.log(`Project setup
 You are about to initialize a project in this directory:
@@ -62,7 +62,7 @@ You are about to initialize a project in this directory:
         default: path.parse(dest).name,
         validate (input) {
           // Validate name for invalid chars, it is also used for S3 url
-          let valid = /^[a-zA-Z0-9_-]*$/
+          const valid = /^[a-zA-Z0-9_-]*$/
           if (valid.test(input)) {
             return true
           }
