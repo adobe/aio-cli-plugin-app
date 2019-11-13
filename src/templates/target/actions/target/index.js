@@ -41,4 +41,3 @@ async function main (params) {
 }
 
 exports.main = main
-
