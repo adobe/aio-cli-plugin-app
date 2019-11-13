@@ -15,6 +15,7 @@ const TheCommand = require('../../../src/commands/app/init')
 const BaseCommand = require('../../../src/BaseCommand')
 
 const yeoman = require('yeoman-environment')
+const inquirer = require('inquirer')
 
 describe('Command Prototype', () => {
   test('exports', async () => {
@@ -25,15 +26,67 @@ describe('Command Prototype', () => {
 })
 
 describe('bad flags', () => {
-  test('unknown', async (done) => {
-    let result = TheCommand.run(['.', '--wtf'])
+  test('unknown', async () => {
+    const result = TheCommand.run(['.', '--wtf'])
     expect(result instanceof Promise).toBeTruthy()
-    return result
-      .then(() => done.fail())
-      .catch(res => {
-        expect(res).toEqual(new Error('Unexpected argument: --wtf\nSee more help with --help'))
-        done()
-      })
+    return new Promise((resolve, reject) => {
+      return result
+        .then(() => reject(new Error()))
+        .catch(res => {
+          expect(res.message).toMatch('Unexpected argument')
+          resolve()
+        })
+    })
+  })
+  test('bad template', async () => {
+    const result = TheCommand.run(['.', '-t=chimeric'])
+    expect(result instanceof Promise).toBeTruthy()
+    return new Promise((resolve, reject) => {
+      return result
+        .then(() => reject(new Error()))
+        .catch(res => {
+          expect(res.message).toMatch('Expected --template=chimeric to be one of: hello, target, campaign, analytics')
+          resolve()
+        })
+    })
+  })
+
+  test('prompt returns bad template', async () => {
+    jest.spyOn(inquirer, 'prompt').mockImplementation(() => {
+      return { template: 'doesnotexist' }
+    })
+    const result = TheCommand.run(['.'])
+    expect(result instanceof Promise).toBeTruthy()
+    return new Promise((resolve, reject) => {
+      return result
+        .then(() => reject(new Error()))
+        .catch(res => {
+          expect(res.message).toMatch('Expected --template=doesnotexist to be one of: hello, target, campaign, analytics')
+          resolve()
+        })
+    })
+  })
+})
+
+describe('template not found', () => {
+  test('unknown', async () => {
+    jest.spyOn(yeoman, 'createEnv').mockImplementation(() => {
+      return {
+        register: jest.fn(() => {
+          throw new Error('some error')
+        })
+      }
+    })
+    const result = TheCommand.run(['.', '-t=hello'])
+    expect(result instanceof Promise).toBeTruthy()
+    return new Promise((resolve, reject) => {
+      return result
+        .then(() => reject(new Error()))
+        .catch(res => {
+          expect(res.message).toMatch('the \'hello\' template is not available.')
+          resolve()
+        })
+    })
   })
 })
 

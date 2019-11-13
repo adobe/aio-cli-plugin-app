@@ -24,18 +24,19 @@ class Logs extends BaseCommand {
     this.aioConfig = aioConfig.get() || {}
     this.validateConfig()
     await this.getLogs(flags.limit)
-    if (this.foundLogs) { this.log(`✔ Finished fetching logs!`) } else { this.log('No Logs Found') }
+    if (this.foundLogs) { this.log('✔ Finished fetching logs!') } else { this.log('No Logs Found') }
   }
 
   async getLogs (limit) {
-    const options = { apihost: 'runtime.adobe.io',
+    const options = {
+      apihost: 'runtime.adobe.io',
       api_key: this.aioConfig.runtime.auth,
       namespace: this.aioConfig.runtime.namespace
     }
     const ow = openwhisk(options)
     // get activations
     const listOptions = { limit: limit, skip: 0 }
-    let activations = await ow.activations.list(listOptions)
+    const activations = await ow.activations.list(listOptions)
     for (let i = 0; i < activations.length; i++) {
       await this.getActivationLogs(activations[i], ow)
     }
@@ -43,7 +44,7 @@ class Logs extends BaseCommand {
 
   async getActivationLogs (activation, ow) {
     const logOptions = { activationId: activation.activationId }
-    let results = await ow.activations.logs(logOptions)
+    const results = await ow.activations.logs(logOptions)
     // send fetched logs to console
     if (results.logs && results.logs.length > 0) {
       this.foundLogs = true
@@ -64,7 +65,7 @@ Logs.description = `Fetch logs for an Adobe I/O App
 `
 
 Logs.flags = {
-  'limit': flags.integer({
+  limit: flags.integer({
     description: 'Limit number of activations to fetch logs from',
     default: 1,
     char: 'l'

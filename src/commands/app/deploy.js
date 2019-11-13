@@ -13,6 +13,7 @@ governing permissions and limitations under the License.
 const ora = require('ora')
 const open = require('open')
 const chalk = require('chalk')
+const fs = require('fs-extra')
 // const path = require('path')
 
 const BaseCommand = require('../../BaseCommand')
@@ -55,25 +56,40 @@ class Deploy extends BaseCommand {
         }
       }
       const scripts = AppScripts({ listeners })
-
+      // build phase
       if (!flags.deploy) {
-        // build phase
         if (!flags.static) {
-          await scripts.buildActions()
+          if (fs.existsSync('actions/')) {
+            await scripts.buildActions()
+          } else {
+            this.log('no action src, skipping action build')
+          }
         }
         if (!flags.actions) {
-          await scripts.buildUI()
+          if (fs.existsSync('web-src/')) {
+            await scripts.buildUI()
+          } else {
+            this.log('no web-src, skipping web-src build')
+          }
         }
       }
       // deploy phase
       if (!flags.build) {
         if (!flags.static) {
-          await scripts.deployActions()
+          if (fs.existsSync('actions/')) {
+            await scripts.deployActions()
+          } else {
+            this.log('no action src, skipping action deploy')
+          }
         }
         if (!flags.actions) {
-          const url = await scripts.deployUI()
-          if (flags.verbose) this.log(chalk.blue(url))
-          else open(url) // do not open if verbose as the user probably wants to look at the console
+          if (fs.existsSync('web-src/')) {
+            const url = await scripts.deployUI()
+            if (flags.verbose) this.log(chalk.blue(url))
+            else open(url) // do not open if verbose as the user probably wants to look at the console
+          } else {
+            this.log('no web-src, skipping web-src deploy')
+          }
         }
       }
 
@@ -99,11 +115,24 @@ Deploy.description = `Build and deploy an Adobe I/O App
 
 Deploy.flags = {
   ...BaseCommand.flags,
-  build: flags.boolean({ char: 'b', description: 'Only build, don\'t deploy', exclusive: ['deploy'] }),
-  deploy: flags.boolean({ char: 'd', description: 'Only deploy, don\'t build', exclusive: ['build'] }),
-  // todo remove these 2 options and autodetect UI/action dir + ui/actions changes
-  static: flags.boolean({ char: 's', description: 'Only build & deploy static files', exclusive: ['actions'] }),
-  actions: flags.boolean({ char: 'a', description: 'Only build & deploy actions', exclusive: ['static'] })
+  build: flags.boolean({
+    char: 'b',
+    description: 'Only build, don\'t deploy',
+    exclusive: ['deploy']
+  }),
+  deploy: flags.boolean({
+    char: 'd',
+    description: 'Only deploy, don\'t build',
+    exclusive: ['build']
+  }),
+  static: flags.boolean({
+    char: 's',
+    description: 'Only build & deploy static files'
+  }),
+  actions: flags.boolean({
+    char: 'a',
+    description: 'Only build & deploy actions'
+  })
 
   // todo no color/spinner/open output
   // 'no-fancy': flags.boolean({ description: 'Simple output and no url open' }),

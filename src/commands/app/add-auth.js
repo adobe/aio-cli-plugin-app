@@ -18,7 +18,7 @@ const AppScripts = require('@adobe/aio-app-scripts')
 class AddAuthCommand extends BaseCommand {
   async run () {
     const scripts = AppScripts({})
-    let manifestFile = path.resolve('./manifest.yml')
+    const manifestFile = path.resolve('./manifest.yml')
     if (!fs.existsSync(manifestFile)) {
       this.error('No manifest found in current folder')
     } else {
