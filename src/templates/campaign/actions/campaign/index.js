@@ -10,7 +10,7 @@
  * To show debug logging for this function, you can add the LOG_LEVEL parameter as well:
  *     aio rt:action:invoke <action_path> -p tenant '<tenant_id>' -p apiKey '<api_key>' -p token '<access_token>' -p LOG_LEVEL '<log_level>'
  * ... where LOG_LEVEL can be one of [ error, warn, info, verbose, debug, silly ]
- * 
+ *
  * Then, you can view your app logs:
  *     aio app:logs
  */
