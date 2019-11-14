@@ -22,7 +22,7 @@ A starter project for building an app that uses Adobe Campaign API in Adobe Runt
 By default the UI will be served locally but actions will be deployed and served from Adobe I/O Runtime. To start a
 local serverless stack and also run your actions locally use the `aio app run --local` option.
 
-## Analytic Credential 
+## Campaign Credential 
 
 In all the code examples, you must pass in the {tenant} variable with your tenant value, your-bearer-token with the access token that you generate with your JWT and your-api-key with your API key from the Adobe I/O console.
 
