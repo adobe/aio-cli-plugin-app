@@ -2,13 +2,13 @@
  * Main action
  *
  * You can invoke this function via:
- *     aio rt:action:invoke <action_path> -p tenant '<tenant_id>' -p apiKey '<api_key>' -p token '<access_token>'
+ *     aio rt:action:invoke <action_path> -p companyId '<company_id>' -p apiKey '<api_key>' -p token '<access_token>'
  *
  * To find your <action_path>, run this command:
  *     aio rt:ls
  *
  * To show debug logging for this function, you can add the LOG_LEVEL parameter as well:
- *     aio rt:action:invoke <action_path> -p tenant '<tenant_id>' -p apiKey '<api_key>' -p token '<access_token>' -p LOG_LEVEL '<log_level>'
+ *     aio rt:action:invoke <action_path> -p companyId '<company_id>' -p apiKey '<api_key>' -p token '<access_token>' -p LOG_LEVEL '<log_level>'
  * ... where LOG_LEVEL can be one of [ error, warn, info, verbose, debug, silly ]
  *
  * Then, you can view your app logs:
@@ -30,7 +30,7 @@ async function main (params) {
     // initialize the sdk
     const analyticsClient = await Analytics.init(params.companyId, params.apiKey, params.token)
 
-    // get profiles from Campaign Standard
+    // get collections from analytic Standard
     const collections = await analyticsClient.getCollections({ limit: 5, page: 0 })
     myAppLogger.debug(`profiles = ${JSON.stringify(collections, null, 2)}`)
 

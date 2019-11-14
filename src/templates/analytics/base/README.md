@@ -24,9 +24,9 @@ local serverless stack and also run your actions locally use the `aio app run --
 
 ## Analytic Credential 
 
-In all the code examples, you must pass in the {tenant} variable with your tenant value, your-bearer-token with the access token that you generate with your JWT and your-api-key with your API key from the Adobe I/O console.
+In all the code examples, you must pass in the {companyId} variable with your companyId value, your-bearer-token with the access token that you generate with your JWT and your-api-key with your API key from the Adobe I/O console.
 
-- `aio rt action invoke /<your-namespace>/<package>/<action> -p tenant <your-tenant> -p apiKey <your-api-key> -p token <your-bearer-token>` 
+- `aio rt action invoke /<your-namespace>/<package>/<action> -p companyId <your-companyId> -p apiKey <your-api-key> -p token <your-bearer-token>` 
 
 for more information about how to get analytic credentail through Adobe I/O
 [here](https://medium.com/adobetech/how-to-call-an-adobe-api-using-adobe-i-o-cdc8a46354fc)
