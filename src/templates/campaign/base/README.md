@@ -4,7 +4,6 @@
 
 ## Readme for overall project, what does the developer need to do to get started here?
 
-## TODO: Poplulate this file with helpful info
 
 # Adobe I/O Campaign App Starter
 
@@ -22,6 +21,15 @@ A starter project for building an app that uses Adobe Campaign API in Adobe Runt
 
 By default the UI will be served locally but actions will be deployed and served from Adobe I/O Runtime. To start a
 local serverless stack and also run your actions locally use the `aio app run --local` option.
+
+## Analytic Credential 
+
+In all the code examples, you must pass in the {tenant} variable with your tenant value, your-bearer-token with the access token that you generate with your JWT and your-api-key with your API key from the Adobe I/O console.
+
+- `aio rt action invoke /<your-namespace>/<package>/<action> -p tenant <your-tenant> -p apiKey <your-api-key> -p token <your-bearer-token>` 
+
+for more information about how to get analytic credentail through Adobe I/O
+[here](https://medium.com/adobetech/how-to-call-an-adobe-api-using-adobe-i-o-cdc8a46354fc)
 
 ## Test & Coverage
 
