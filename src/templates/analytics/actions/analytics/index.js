@@ -30,9 +30,9 @@ async function main (params) {
     // initialize the sdk
     const analyticsClient = await Analytics.init(params.companyId, params.apiKey, params.token)
 
-    // get collections from analytic Standard
+    // get collections from analytic API
     const collections = await analyticsClient.getCollections({ limit: 5, page: 0 })
-    myAppLogger.debug(`profiles = ${JSON.stringify(collections, null, 2)}`)
+    myAppLogger.debug(`collections = ${JSON.stringify(collections, null, 2)}`)
 
     return collections
   } catch (error) {
