@@ -85,8 +85,10 @@ class Deploy extends BaseCommand {
         if (!flags.actions) {
           if (fs.existsSync('web-src/')) {
             const url = await scripts.deployUI()
-            this.log(chalk.green(chalk.bold(`url: ${url}`)))
-            open(url) // do not open if verbose as the user probably wants to look at the console
+            this.log(chalk.green(chalk.bold(`url: ${url}`))) // always log the url
+            if (!flags.verbose) {
+              open(url) // do not open if verbose as the user probably wants to look at the console
+            }
           } else {
             this.log('no web-src, skipping web-src deploy')
           }
