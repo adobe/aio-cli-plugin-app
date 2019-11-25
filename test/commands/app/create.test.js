@@ -27,22 +27,24 @@ describe('Command Prototype', () => {
 })
 
 describe('bad flags', () => {
-  test('unknown', async (done) => {
-    let result = TheCommand.run(['.', '--wtf'])
+  test('unknown', async () => {
+    const result = TheCommand.run(['.', '--wtf'])
     expect(result instanceof Promise).toBeTruthy()
-    return result
-      .then(() => done.fail())
-      .catch(res => {
-        expect(res).toEqual(new Error('Unexpected argument: --wtf\nSee more help with --help'))
-        done()
-      })
+    return new Promise((resolve, reject) => {
+      return result
+        .then(() => reject(new Error()))
+        .catch(res => {
+          expect(res).toEqual(new Error('Unexpected argument: --wtf\nSee more help with --help'))
+          resolve()
+        })
+    })
   })
 })
 
 describe('runs', () => {
   test('Calls to InitCommand with -y', async () => {
     // console.error('icm.run = ' + )
-    let mySpy = jest.spyOn(InitCommand, 'run').mockImplementation(jest.fn())
+    const mySpy = jest.spyOn(InitCommand, 'run').mockImplementation(jest.fn())
     await TheCommand.run(['new-project'])
     expect(mySpy).toHaveBeenCalledWith(['new-project', '-y'])
   })

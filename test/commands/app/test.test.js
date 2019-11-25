@@ -54,7 +54,12 @@ describe('Command Prototype', () => {
       await expect(command.run()).rejects.toEqual(expect.objectContaining({ message: expect.stringContaining(message) }))
     }
 
-    test('unknown', async () => expectFlagError(['--wtf'], 'Unexpected argument: --wtf\nSee more help with --help'))
+    // eslint-disable-next-line jest/expect-expect
+    test('unknown', async () => {
+      expectFlagError(['--wtf'], 'Unexpected argument: --wtf\nSee more help with --help')
+    })
+
+    // eslint-disable-next-line jest/expect-expect
     test('-e,-u should fail if both flags are present', async () => {
       const errMsg = 'cannot also be provided when using'
       await expectFlagError(['-e', '-u'], errMsg)
@@ -93,16 +98,16 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledWith(error.message, { exit: error.exitCode })
   }
 
-  test('no flags', () => expectNoErrors([], 'test'))
-  test('--unit', () => expectNoErrors(['--unit'], 'test'))
-  test('-u', () => expectNoErrors(['-u'], 'test'))
-  test('--e2e', () => expectNoErrors(['--e2e'], 'e2e'))
-  test('-e', () => expectNoErrors(['-e'], 'e2e'))
+  test('no flags', () => expectNoErrors([], 'test')) // eslint-disable-line jest/expect-expect
+  test('--unit', () => expectNoErrors(['--unit'], 'test')) // eslint-disable-line jest/expect-expect
+  test('-u', () => expectNoErrors(['-u'], 'test')) // eslint-disable-line jest/expect-expect
+  test('--e2e', () => expectNoErrors(['--e2e'], 'e2e')) // eslint-disable-line jest/expect-expect
+  test('-e', () => expectNoErrors(['-e'], 'e2e')) // eslint-disable-line jest/expect-expect
 
-  test('--e2e fails', () => expectErrors(['--e2e']))
-  test('-e fails', () => expectErrors(['-e']))
-  test('--unit fails', () => expectErrors(['--unit']))
-  test('-u fails', () => expectErrors(['-u']))
+  test('--e2e fails', () => expectErrors(['--e2e'])) // eslint-disable-line jest/expect-expect
+  test('-e fails', () => expectErrors(['-e'])) // eslint-disable-line jest/expect-expect
+  test('--unit fails', () => expectErrors(['--unit'])) // eslint-disable-line jest/expect-expect
+  test('-u fails', () => expectErrors(['-u'])) // eslint-disable-line jest/expect-expect
 
   test('verbose flag', async () => {
     command.argv = ['--verbose']

@@ -48,53 +48,53 @@ describe('run command definition', () => {
 
 describe('run', () => {
   test('app:run with no flags', async () => {
-    delete process.env['REMOTE_ACTIONS']
-    let command = new RunCommand([])
+    delete process.env.REMOTE_ACTIONS
+    const command = new RunCommand([])
     command.error = jest.fn()
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
-    expect(process.env['REMOTE_ACTIONS']).toBe('true')
+    expect(process.env.REMOTE_ACTIONS).toBe('true')
   })
 
   test('app:run with -verbose', async () => {
-    delete process.env['REMOTE_ACTIONS']
-    let command = new RunCommand(['--verbose'])
+    delete process.env.REMOTE_ACTIONS
+    const command = new RunCommand(['--verbose'])
     command.error = jest.fn(['--verbose'])
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
-    expect(process.env['REMOTE_ACTIONS']).toBe('true')
+    expect(process.env.REMOTE_ACTIONS).toBe('true')
   })
 
   test('app:run without --local', async () => {
-    delete process.env['REMOTE_ACTIONS']
-    let command = new RunCommand([])
+    delete process.env.REMOTE_ACTIONS
+    const command = new RunCommand([])
     command.error = jest.fn()
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
-    expect(process.env['REMOTE_ACTIONS']).toBe('true')
+    expect(process.env.REMOTE_ACTIONS).toBe('true')
   })
 
   test('app:run with --local', async () => {
-    delete process.env['REMOTE_ACTIONS']
-    let command = new RunCommand(['--local'])
+    delete process.env.REMOTE_ACTIONS
+    const command = new RunCommand(['--local'])
     command.error = jest.fn()
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
-    expect(process.env['REMOTE_ACTIONS']).toBe('false')
+    expect(process.env.REMOTE_ACTIONS).toBe('false')
   })
 
   test('app:run with --local --verbose', async () => {
-    delete process.env['REMOTE_ACTIONS']
-    let command = new RunCommand(['--local', '--verbose'])
+    delete process.env.REMOTE_ACTIONS
+    const command = new RunCommand(['--local', '--verbose'])
     command.error = jest.fn()
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
-    expect(process.env['REMOTE_ACTIONS']).toBe('false')
+    expect(process.env.REMOTE_ACTIONS).toBe('false')
   })
 
   // TODO: should add a test for a eventlistener that throws an exception, which will break things

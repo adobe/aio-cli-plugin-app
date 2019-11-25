@@ -1,0 +1,13 @@
+{
+  "groups": {
+    "default": {
+      "packages": [
+        "package.json",
+        "src/templates/analytics/base/package.json",
+        "src/templates/campaign/base/package.json",
+        "src/templates/hello/base/package.json",
+        "src/templates/target/base/package.json"
+      ]
+    }
+  }
+}

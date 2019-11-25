@@ -16,7 +16,7 @@ const which = require('which')
 const debug = require('debug')('aio-cli-plugin-app:app-helper')
 
 function isNpmInstalled () {
-  let result = which.sync('npm', { nothrow: true })
+  const result = which.sync('npm', { nothrow: true })
   return result !== null
 }
 

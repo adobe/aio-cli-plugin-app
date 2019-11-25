@@ -2,11 +2,11 @@
     "name": "<%= package_name %>",
     "version": "0.0.1",
     "dependencies": {
-        "@adobe/aio-lib-campaign-standard": "^2.0.0"
+        "@adobe/aio-sdk": "^1.0.2"
     },
     "devDependencies": {
         "jest": "^24.8.0",
-        "jest-junit": "^6.4.0",
+        "jest-junit": "^9.0.0",
         "@adobe/wskdebug": "^1.0.10"
     },
     "scripts": {
