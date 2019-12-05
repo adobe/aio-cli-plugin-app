@@ -22,7 +22,7 @@ A starter project for building an Adobe I/O App with Adobe Runtime serverless ac
 By default the UI will be served locally but actions will be deployed and served from Adobe I/O Runtime. To start a
 local serverless stack and also run your actions locally use the `aio app run --local` option.
 
-## Analytic Credential 
+## Adobe Analytics Credentials
 
 In all the code examples, you must pass in the {companyId} variable with your companyId value, your-bearer-token with the access token that you generate with your JWT and your-api-key with your API key from the Adobe I/O console.
 
@@ -38,7 +38,7 @@ for more information about how to get analytic credentail through Adobe I/O
 
 ## Deploy & Cleanup
 
-- `aio app deploy` to build and deploy all actions on Runtime and static files to S3
+- `aio app deploy` to build and deploy all actions on Runtime and static files to CDN
 - `aio app undeploy` to undeploy the app
 
 Each of the above commands can either be run for actions or static files, append `-s` or `-a`, for
@@ -52,32 +52,10 @@ example `aio app deploy -s` will only build and deploy static files.
 # This file should not be committed to source control
 
 ## please provide your Adobe I/O Runtime credentials
-# AIO_RUNTIME_APIHOST=https://adobeioruntime.net
 # AIO_RUNTIME_AUTH=
 # AIO_RUNTIME_NAMESPACE=
 
-## setting AIO_CNA_TVMURL will use adobeio provided hosting storage
-AIO_CNA_TVMURL=https://adobeio.adobeioruntime.net/apis/tvm/
-
-## [optional] alternatively you can comment out AIO_CNA_TVMURL and provide your
-## s3 credentials to deploy your app's static files into your own storage
-# AIO_CNA_AWSACCESSKEYID=
-# AIO_CNA_AWSSECRETACCESSKEY=
-# AIO_CNA_S3BUCKET=
 ```
-
-### S3 Credentials
-
-- Set the `TVM_URL` variable in `.env` to point to a deployed [Adobe I/O token vending
-  machine](https://github.com/adobe/aio-tvm). It
-  allows you to download temporary and restricted credentials to upload your
-  static files to S3. Credentials will be cached in `.aws.tmp.creds.json`. Users
-  with a valid namespace for Adobe I/O Runtime can simply use
-  `https://adobeio.adobeioruntime.net/apis/tvm/`.
-
-- Alternatively, you can bring your own AWS credentials by defining
-  `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_BUCKET` vars in your `.env`
-  file. In that case make sure to create the bucket beforehand.
 
 ### `package.json`
 
