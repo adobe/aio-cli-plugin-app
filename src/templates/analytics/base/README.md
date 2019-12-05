@@ -28,7 +28,7 @@ In all the code examples, you must pass in the {companyId} variable with your co
 
 - `aio rt action invoke /<your-namespace>/<package>/<action> -p companyId <your-companyId> -p apiKey <your-api-key> -p token <your-bearer-token>` 
 
-for more information about how to get analytic credentail through Adobe I/O
+for more information about how to get Analytics credentials through Adobe I/O
 [here](https://medium.com/adobetech/how-to-call-an-adobe-api-using-adobe-i-o-cdc8a46354fc)
 
 ## Test & Coverage
@@ -54,7 +54,6 @@ example `aio app deploy -s` will only build and deploy static files.
 ## please provide your Adobe I/O Runtime credentials
 # AIO_RUNTIME_AUTH=
 # AIO_RUNTIME_NAMESPACE=
-
 ```
 
 ### `package.json`
