@@ -4,7 +4,7 @@
 
 ## Readme for overall project, what does the developer need to do to get started here?
 
-## TODO: Poplulate this file with helpful info
+## TODO: Populate this file with helpful info
 
 # Adobe I/O Generic App Template
 
