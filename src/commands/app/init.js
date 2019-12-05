@@ -27,6 +27,25 @@ class InitCommand extends BaseCommand {
     }
     debug('creating new app with init command ', flags)
 
+    const env = yeoman.createEnv()
+
+    // finds and loads all installed generators into yeoman environment
+    // > at first glance there doesn't seem to be a way to load all generators within a single module, would be great to
+    // > avoid traversing all fs
+    await new Promise((resolve, reject) => env.lookup(err => {
+      if (err) reject(err)
+      resolve()
+    }))
+
+    const aioGenerators = Object.keys(env.getGeneratorsMeta())
+      .filter(key => key.startsWith('aio-app-base:')) // filter out all yeoman generators which are not from us
+      .map(key => key.split('aio-app-base:')[1]) // cleanup the name
+
+    if (aioGenerators.length === 0) {
+      this.error('cannot load templates, \'@adobe/generator-aio-app-base\' is not installed')
+    }
+    env.alias(/^([a-zA-Z0-9:*]+)$/, 'aio-app-base:$1') // allow env to load a generator by its "clean" name
+
     let template = flags.template
     if (!template) {
       if (flags.yes) {
@@ -36,26 +55,16 @@ class InitCommand extends BaseCommand {
           name: 'template',
           message: 'select a starter template',
           type: 'list',
-          choices: [{ name: 'hello - a basic empty application' },
-            { name: 'target - use runtime functions to access the target api' },
-            { name: 'campaign - use runtime functions to access the campaign api' },
-            { name: 'analytics - use runtime functions to access the analytics api' }],
-          filter: (sel) => sel.split(' ')[0]
+          choices: aioGenerators
         }])
         template = responses.template
       }
     }
-    if (!InitCommand.flags.template.options.includes(template)) {
-      this.error(`Expected --template=${template} to be one of: hello, target, campaign, analytics`)
-    }
-    const env = yeoman.createEnv()
-    try {
-      env.register(require.resolve('../../generators/create-' + template), 'gen')
-    } catch (err) {
-      this.error(`the '${flags.template}' template is not available.`)
+    if (!aioGenerators.includes(template)) {
+      this.error(`Expected --template=${template} to be one of: ${aioGenerators}`)
     }
 
-    const res = await env.run('gen', { skip_prompt: flags.yes })
+    const res = await env.run(template, { skip_prompt: flags.yes })
     // finalize configuration data
     this.log('✔ App initialization finished!')
     return res
@@ -73,8 +82,7 @@ InitCommand.flags = {
   }),
   template: flags.string({
     description: 'Adobe I/O App starter template',
-    char: 't',
-    options: ['hello', 'target', 'campaign', 'analytics']
+    char: 't'
   }),
   ...BaseCommand.flags
 }
