@@ -29,7 +29,7 @@ class Logs extends BaseCommand {
 
   async getLogs (limit) {
     const options = {
-      apihost: 'runtime.adobe.io',
+      apihost: this.aioConfig.runtime.apihost,
       api_key: this.aioConfig.runtime.auth,
       namespace: this.aioConfig.runtime.namespace
     }
