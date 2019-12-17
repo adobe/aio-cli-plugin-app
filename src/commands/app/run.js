@@ -48,7 +48,14 @@ class Run extends BaseCommand {
     process.env.REMOTE_ACTIONS = !flags.local
     const scripts = AppScripts({ listeners })
     try {
-      await scripts.runDev()
+      const options = {
+        https: {
+          cert: './dist/dev-keys/dev-cert-pub.crt', // Path to custom certificate
+          key: './dist/dev-keys/dev-private.key' // Path to custom key
+        },
+        logLevel: flags.verbose ? 4 : 3
+      }
+      await scripts.runDev([], options)
     } catch (error) {
       spinner.fail()
       this.error(error)
