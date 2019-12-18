@@ -37,6 +37,7 @@ class InitCommand extends BaseCommand {
           message: 'select a starter template',
           type: 'list',
           choices: [{ name: 'hello - a basic empty application' },
+            { name: 'exc-react - a react based app to be loaded in Experience Cloud' },
             { name: 'target - use runtime functions to access the target api' },
             { name: 'campaign - use runtime functions to access the campaign api' },
             { name: 'analytics - use runtime functions to access the analytics api' }],
@@ -74,7 +75,7 @@ InitCommand.flags = {
   template: flags.string({
     description: 'Adobe I/O App starter template',
     char: 't',
-    options: ['hello', 'target', 'campaign', 'analytics']
+    options: ['hello', 'exc-react', 'target', 'campaign', 'analytics']
   }),
   ...BaseCommand.flags
 }
