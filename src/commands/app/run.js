@@ -13,6 +13,7 @@ governing permissions and limitations under the License.
 const ora = require('ora')
 const chalk = require('chalk')
 const fs = require('fs-extra')
+const path = require('path')
 
 const { flags } = require('@oclif/command')
 
@@ -28,7 +29,7 @@ class Run extends BaseCommand {
 
     /* check if there are certificates available, and generate them if not ... */
     try {
-      fs.ensureDirSync('dist/dev-keys/')
+      fs.ensureDirSync(path.dirname(PRIVATE_KEY_PATH))
       if (!fs.existsSync(PRIVATE_KEY_PATH) && !fs.existsSync(PUB_CERT_PATH)) {
         const CertCmd = this.config.findCommand('certificate:generate')
         const Instance = CertCmd.load()
