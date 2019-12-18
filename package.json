@@ -15,7 +15,7 @@
     "fs-extra": "^8.1.0",
     "ignore-walk": "^3.0.1",
     "inquirer": "^7.0.0",
-    "npm-package-arg": "^7.0.0",
+    "npm-package-arg": "^8.0.0",
     "open": "^7.0.0",
     "openwhisk": "^3.20.0",
     "ora": "^4.0.3",
