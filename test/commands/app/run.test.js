@@ -16,14 +16,26 @@ const BaseCommand = require('../../../src/BaseCommand')
 // mocks
 jest.mock('open', () => jest.fn())
 const mockScripts = require('@adobe/aio-app-scripts')()
+let command
 
 beforeEach(() => {
   jest.restoreAllMocks()
   mockScripts.runDev.mock.calls = []
+  command = new RunCommand()
+  command.error = jest.fn()
+  command.config = {
+    findCommand: () => {
+      return {
+        load: () => {
+          return { run: jest.fn() }
+        }
+      }
+    }
+  }
 })
 
-afterAll(() => {
-  jest.restoreAllMocks()
+afterEach(() => {
+  jest.clearAllMocks()
 })
 
 describe('run command definition', () => {
@@ -49,9 +61,7 @@ describe('run command definition', () => {
 describe('run', () => {
   test('app:run with no flags', async () => {
     delete process.env.REMOTE_ACTIONS
-    const command = new RunCommand([])
-    command.error = jest.fn()
-    await command.run()
+    await RunCommand.run([])
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
     expect(process.env.REMOTE_ACTIONS).toBe('true')
@@ -59,9 +69,7 @@ describe('run', () => {
 
   test('app:run with -verbose', async () => {
     delete process.env.REMOTE_ACTIONS
-    const command = new RunCommand(['--verbose'])
-    command.error = jest.fn(['--verbose'])
-    await command.run()
+    await RunCommand.run(['--verbose'])
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
     expect(process.env.REMOTE_ACTIONS).toBe('true')
@@ -69,9 +77,7 @@ describe('run', () => {
 
   test('app:run without --local', async () => {
     delete process.env.REMOTE_ACTIONS
-    const command = new RunCommand([])
-    command.error = jest.fn()
-    await command.run()
+    await RunCommand.run([])
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
     expect(process.env.REMOTE_ACTIONS).toBe('true')
@@ -79,9 +85,7 @@ describe('run', () => {
 
   test('app:run with --local', async () => {
     delete process.env.REMOTE_ACTIONS
-    const command = new RunCommand(['--local'])
-    command.error = jest.fn()
-    await command.run()
+    await RunCommand.run(['--local'])
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
     expect(process.env.REMOTE_ACTIONS).toBe('false')
@@ -89,9 +93,7 @@ describe('run', () => {
 
   test('app:run with --local --verbose', async () => {
     delete process.env.REMOTE_ACTIONS
-    const command = new RunCommand(['--local', '--verbose'])
-    command.error = jest.fn()
-    await command.run()
+    await RunCommand.run(['--local', '--verbose'])
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
     expect(process.env.REMOTE_ACTIONS).toBe('false')
