@@ -37,7 +37,7 @@ class InitCommand extends BaseCommand {
     const res = await env.run('gen', {
       'skip-prompt': flags.yes,
       'project-name': projectName,
-      'adobe-services': 'target,analytics,campaign-standard' // todo those are fake for now, get real service sdk codes from console
+      'adobe-services': 'target,analytics,campaign-standard' // todo update with real service sdk codes from console later
     })
     // finalize configuration data
     this.log('✔ App initialization finished!')

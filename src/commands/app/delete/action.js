@@ -16,9 +16,14 @@ const { flags } = require('@oclif/command')
 
 class DeleteActionCommand extends BaseCommand {
   async run () {
-    const { flags } = this.parse(DeleteActionCommand)
+    const { args, flags } = this.parse(DeleteActionCommand)
 
-    debug('deleting an action from the project, using flags: ', flags)
+    debug('deleting an action from the project, with args', args, 'and flags:', flags)
+
+    // is there an oclif mechanism for flag depends on arg?
+    if (flags.yes && !args['action-name']) {
+      this.error('<action-name> must also be provided when using --yes=')
+    }
 
     // todo should undeploy specific action ?
 
@@ -28,7 +33,7 @@ class DeleteActionCommand extends BaseCommand {
     env.register(require.resolve(generator), 'gen')
     const res = await env.run('gen', {
       'skip-prompt': flags.yes,
-      'action-name': flags['action-name']
+      'action-name': args['action-name']
     })
 
     this.log('✔ An action was deleted locally, run `aio app deploy -a` to sync your current actions deployment')
@@ -44,16 +49,18 @@ DeleteActionCommand.flags = {
   yes: flags.boolean({
     description: 'Skip questions, and use all default values',
     char: 'y',
-    dependsOn: ['action-name']
-  }),
-  'action-name': flags.boolean({
-    description: 'Action name to delete, if not specified you will choose from a list of actions',
-    default: '',
-    char: 'a'
+    default: false
   }),
   ...BaseCommand.flags
 }
 
-DeleteActionCommand.args = []
+DeleteActionCommand.args = [
+  {
+    name: 'action-name',
+    description: 'Action name to delete, if not specified you will choose from a list of actions',
+    default: '',
+    required: false
+  }
+]
 
 module.exports = DeleteActionCommand

@@ -10,8 +10,8 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../src/commands/app/add-auth')
-const BaseCommand = require('../../../src/BaseCommand')
+const TheCommand = require('../../../../src/commands/app/add/auth')
+const BaseCommand = require('../../../../src/BaseCommand')
 
 // mocks
 const mockFs = require('fs-extra')
@@ -32,15 +32,10 @@ describe('run', () => {
     command.error = jest.fn()
   })
 
-  test('with manifest', async () => {
+  test('runs aio auth script', async () => {
     mockFs.existsSync.mockResolvedValue(true)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.addAuth).toHaveBeenCalledTimes(1)
-  })
-  test('without manifest', async () => {
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(1)
-    expect(mockScripts.addAuth).toHaveBeenCalledTimes(0)
   })
 })

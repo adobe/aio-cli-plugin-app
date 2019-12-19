@@ -25,7 +25,7 @@ class AddActionCommand extends BaseCommand {
     env.register(require.resolve(generator), 'gen')
     const res = await env.run('gen', {
       'skip-prompt': flags.yes,
-      'adobe-services': 'target,analytics,campaign-standard' // todo those are fake for now, get real service sdk codes from console
+      'adobe-services': 'target,analytics,campaign-standard' // todo update with real sdk codes from console later
     })
     return res
   }
