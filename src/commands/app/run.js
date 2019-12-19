@@ -12,15 +12,44 @@ governing permissions and limitations under the License.
 
 const ora = require('ora')
 const chalk = require('chalk')
+const fs = require('fs-extra')
+const path = require('path')
 
 const { flags } = require('@oclif/command')
 
 const BaseCommand = require('../../BaseCommand')
 const AppScripts = require('@adobe/aio-app-scripts')
 
+const PRIVATE_KEY_PATH = 'dist/dev-keys/private.key'
+const PUB_CERT_PATH = 'dist/dev-keys/cert-pub.crt'
+
 class Run extends BaseCommand {
   async run () {
     const { flags } = this.parse(Run)
+    const runOptions = {
+      logLevel: flags.verbose ? 4 : 2
+    }
+    /* check if there are certificates available, and generate them if not ... */
+    try {
+      fs.ensureDirSync(path.dirname(PRIVATE_KEY_PATH))
+      // if they do not exists, attempt to create them
+      if (!fs.existsSync(PRIVATE_KEY_PATH) && !fs.existsSync(PUB_CERT_PATH)) {
+        const CertCmd = this.config.findCommand('certificate:generate')
+        if (CertCmd) {
+          const Instance = CertCmd.load()
+          await Instance.run([`--keyout=${PRIVATE_KEY_PATH}`, `--out=${PUB_CERT_PATH}`, `-n=${this.appName}.cert`])
+        }
+      }
+      // if they now exist ... use them in the options
+      if (fs.existsSync(PRIVATE_KEY_PATH) && fs.existsSync(PUB_CERT_PATH)) {
+        runOptions.https = {
+          cert: PUB_CERT_PATH, // Path to custom certificate
+          key: PRIVATE_KEY_PATH // Path to custom key
+        }
+      }
+    } catch (error) {
+      this.error(error)
+    }
 
     const spinner = ora()
     const listeners = {
@@ -48,7 +77,7 @@ class Run extends BaseCommand {
     process.env.REMOTE_ACTIONS = !flags.local
     const scripts = AppScripts({ listeners })
     try {
-      await scripts.runDev()
+      return await scripts.runDev([], runOptions)
     } catch (error) {
       spinner.fail()
       this.error(error)
