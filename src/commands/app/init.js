@@ -33,8 +33,8 @@ class InitCommand extends BaseCommand {
     this.log(`You are about to initialize the project '${projectName}'`)
 
     // call code generator
-    env.register(require.resolve('@adobe/generator-aio-app'), 'aio-app')
-    const res = await env.run('aio-app', {
+    env.register(require.resolve('@adobe/generator-aio-app'), 'gen')
+    const res = await env.run('gen', {
       'skip-prompt': flags.yes,
       'project-name': projectName,
       'adobe-services': 'target,analytics,campaign-standard' // todo those are fake for now, get real service sdk codes from console
