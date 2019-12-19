@@ -27,7 +27,7 @@ class Run extends BaseCommand {
   async run () {
     const { flags } = this.parse(Run)
     const runOptions = {
-      logLevel: flags.verbose ? 4 : 3
+      logLevel: flags.verbose ? 4 : 2
     }
     /* check if there are certificates available, and generate them if not ... */
     try {
