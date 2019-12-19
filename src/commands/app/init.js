@@ -15,7 +15,6 @@ const path = require('path')
 const fs = require('fs-extra')
 const debug = require('debug')('aio-cli-plugin-app:init')
 const { flags } = require('@oclif/command')
-const inquirer = require('inquirer')
 
 class InitCommand extends BaseCommand {
   async run () {
@@ -29,42 +28,17 @@ class InitCommand extends BaseCommand {
 
     const env = yeoman.createEnv()
 
-    // finds and loads all installed generators into yeoman environment
-    // > at first glance there doesn't seem to be a way to load all generators within a single module, would be great to
-    // > avoid traversing all fs
-    await new Promise((resolve, reject) => env.lookup(err => {
-      if (err) reject(err)
-      resolve()
-    }))
+    // todo integrate with console project generator to get/generate projectname, service-integrations, ..
+    const projectName = path.basename(process.cwd())
+    this.log(`You are about to initialize the project '${projectName}'`)
 
-    const aioGenerators = Object.keys(env.getGeneratorsMeta())
-      .filter(key => key.startsWith('aio-app-base:')) // filter out all yeoman generators which are not from us
-      .map(key => key.split('aio-app-base:')[1]) // cleanup the name
-
-    if (aioGenerators.length === 0) {
-      this.error('cannot load templates, \'@adobe/generator-aio-app-base\' is not installed')
-    }
-    env.alias(/^([a-zA-Z0-9:*]+)$/, 'aio-app-base:$1') // allow env to load a generator by its "clean" name
-
-    let template = flags.template
-    if (!template) {
-      if (flags.yes) {
-        template = 'hello'
-      } else {
-        const responses = await inquirer.prompt([{
-          name: 'template',
-          message: 'select a starter template',
-          type: 'list',
-          choices: aioGenerators
-        }])
-        template = responses.template
-      }
-    }
-    if (!aioGenerators.includes(template)) {
-      this.error(`Expected --template=${template} to be one of: ${aioGenerators}`)
-    }
-
-    const res = await env.run(template, { skip_prompt: flags.yes })
+    // call code generator
+    env.register(require.resolve('@adobe/generator-aio-app'), 'aio-app')
+    const res = await env.run('aio-app', {
+      'skip-prompt': flags.yes,
+      'project-name': projectName,
+      'adobe-services': 'target,analytics,campaign-standard' // todo those are fake for now, get real service sdk codes from console
+    })
     // finalize configuration data
     this.log('✔ App initialization finished!')
     return res
@@ -80,15 +54,15 @@ InitCommand.flags = {
     default: false,
     char: 'y'
   }),
-  template: flags.string({
-    description: 'Adobe I/O App starter template',
-    char: 't'
-  }),
   ...BaseCommand.flags
 }
 
 InitCommand.args = [
-  ...BaseCommand.args
+  {
+    name: 'path',
+    description: 'Path to the app directory',
+    default: '.'
+  }
 ]
 
 module.exports = InitCommand

@@ -26,6 +26,12 @@ Create.flags = {
   ...BaseCommand.flags
 }
 
-Create.args = BaseCommand.args
+Create.args = [
+  {
+    name: 'path',
+    description: 'Path to the app directory',
+    default: '.'
+  }
+]
 
 module.exports = Create

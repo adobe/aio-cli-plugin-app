@@ -7,6 +7,7 @@
   "dependencies": {
     "@adobe/aio-app-scripts": "^0.6.6",
     "@adobe/aio-lib-core-config": "^1.0.15",
+    "@adobe/generator-aio-app": "file:../generator-aio-app",
     "@oclif/command": "^1.5.11",
     "@oclif/config": "^1.12.9",
     "chalk": "^3.0.0",
@@ -23,9 +24,7 @@
     "resolve": "^1.10.0",
     "semver": "^7.0.0",
     "which": "^2.0.1",
-    "yeoman-environment": "^2.5.0",
-    "yeoman-generator": "^4.1.0",
-    "yosay": "^2.0.1"
+    "yeoman-environment": "^2.5.0"
   },
   "devDependencies": {
     "@oclif/dev-cli": "^1.21.3",

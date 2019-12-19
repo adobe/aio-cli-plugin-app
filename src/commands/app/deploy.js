@@ -140,8 +140,6 @@ Deploy.flags = {
   // 'no-fancy': flags.boolean({ description: 'Simple output and no url open' }),
 }
 
-// for now we remove support for path arg
-// until https://github.com/adobe/aio-cli-plugin-config/issues/44 is resolved
-Deploy.args = [] // BaseCommand.args
+Deploy.args = []
 
 module.exports = Deploy

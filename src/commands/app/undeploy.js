@@ -83,8 +83,6 @@ Undeploy.flags = {
   actions: flags.boolean({ char: 'a', description: 'Only deploy actions.', exclusive: ['static'] })
 }
 
-// for now we remove support for path arg
-// until https://github.com/adobe/aio-cli-plugin-config/issues/44 is resolved
-// Deploy.args = BaseCommand.args
+Undeploy.args = []
 
 module.exports = Undeploy
