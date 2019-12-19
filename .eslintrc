@@ -12,7 +12,8 @@
     ],
     "extends": [
         "plugin:jest/recommended",
-        "standard"
+        "standard",
+        "plugin:react/recommended"
     ],
     "rules": {
         "no-var": 2

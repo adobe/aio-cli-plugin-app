@@ -1,4 +1,5 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import ErrorBoundary from 'react-error-boundary'
 
 import actions from './config.json'
@@ -20,6 +21,12 @@ export default class App extends React.Component {
         <pre>{ componentStack + '\n' + error.message }</pre>
       </React.Fragment>
     )
+  }
+
+  static get propTypes () {
+    return {
+      runtime: PropTypes.any
+    }
   }
 
   render () {

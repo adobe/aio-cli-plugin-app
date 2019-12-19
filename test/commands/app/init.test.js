@@ -45,7 +45,7 @@ describe('bad flags', () => {
       return result
         .then(() => reject(new Error()))
         .catch(res => {
-          expect(res.message).toMatch('Expected --template=chimeric to be one of: hello, target, campaign, analytics')
+          expect(res.message).toMatch('Expected --template=chimeric to be one of: hello, exc-react, target, campaign, analytics')
           resolve()
         })
     })
