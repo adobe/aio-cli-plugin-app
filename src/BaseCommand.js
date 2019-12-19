@@ -14,7 +14,6 @@ const { Command, flags } = require('@oclif/command')
 const fs = require('fs-extra')
 
 class BaseCommand extends Command {
-
   get pjson () {
     if (!this._pjson) {
       this._pjson = fs.readJSONSync('package.json')
@@ -29,7 +28,6 @@ class BaseCommand extends Command {
   get appVersion () {
     return this.pjson.version
   }
-
 }
 
 BaseCommand.flags = {
