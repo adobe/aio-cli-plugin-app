@@ -24,6 +24,7 @@ class AddWebAssetsCommand extends BaseCommand {
     const env = yeoman.createEnv()
     env.register(require.resolve(generator), 'gen')
     const res = await env.run('gen', {
+      'skip-install': flags['skip-install'],
       'skip-prompt': flags.yes,
       'adobe-services': 'target,analytics,campaign-standard' // todo update with real service sdk codes from console later
     })
@@ -39,6 +40,10 @@ AddWebAssetsCommand.flags = {
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
+  }),
+  'skip-install': flags.boolean({
+    description: 'Skip npm installation after files are created',
+    default: false
   }),
   ...BaseCommand.flags
 }

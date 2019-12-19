@@ -63,10 +63,36 @@ describe('good flags', () => {
     const genName = mockRegister.mock.calls[0][1]
     expect(mockRun).toHaveBeenCalledWith(genName, {
       'skip-prompt': true,
+      'skip-install': false,
       'adobe-services': 'target,analytics,campaign-standard'
     })
   })
 
+  test('--yes --skip-install', async () => {
+    await TheCommand.run(['--yes', '--skip-install'])
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genName = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenCalledWith(genName, {
+      'skip-prompt': true,
+      'skip-install': true,
+      'adobe-services': 'target,analytics,campaign-standard'
+    })
+  })
+
+  test('--skip-install', async () => {
+    await TheCommand.run(['--skip-install'])
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genName = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenCalledWith(genName, {
+      'skip-prompt': false,
+      'skip-install': true,
+      'adobe-services': 'target,analytics,campaign-standard'
+    })
+  })
   test('no flags', async () => {
     await TheCommand.run([])
 
@@ -75,6 +101,7 @@ describe('good flags', () => {
     const genName = mockRegister.mock.calls[0][1]
     expect(mockRun).toHaveBeenCalledWith(genName, {
       'skip-prompt': false,
+      'skip-install': false,
       'adobe-services': 'target,analytics,campaign-standard'
     })
   })

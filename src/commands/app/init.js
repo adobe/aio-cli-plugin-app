@@ -35,6 +35,7 @@ class InitCommand extends BaseCommand {
     // call code generator
     env.register(require.resolve('@adobe/generator-aio-app'), 'gen')
     const res = await env.run('gen', {
+      'skip-install': flags['skip-install'],
       'skip-prompt': flags.yes,
       'project-name': projectName,
       'adobe-services': 'target,analytics,campaign-standard' // todo update with real service sdk codes from console later
@@ -53,6 +54,10 @@ InitCommand.flags = {
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
+  }),
+  'skip-install': flags.boolean({
+    description: 'Skip npm installation after files are created',
+    default: false
   }),
   ...BaseCommand.flags
 }
