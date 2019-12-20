@@ -32,7 +32,8 @@ export default class App extends React.Component {
   render () {
     return (
       <ErrorBoundary onError={this.onError} FallbackComponent={this.fallbackComponent} >
-        <pre>{JSON.stringify(this.props.runtime, 0, '\t')}</pre>
+        <h1><%= package_name %></h1>
+        <pre>this.props.runtime &eq;{JSON.stringify(this.props.runtime, 0, '\t')}</pre>
       </ErrorBoundary>
     )
   }
