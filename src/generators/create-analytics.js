@@ -73,37 +73,13 @@ You are about to initialize a project in this directory:
     ]
 
     return this.prompt(prompts).then(props => {
-      // if (showPrompt) {
-      //   const prompts = [
-      //     {
-      //       type: 'input',
-      //       name: 'actionSetup',
-      //       message: actionSetupMessage,
-      //       default: 'actions',
-      //       when: props.components.indexOf('actions') !== -1
-      //     },
-      //     {
-      //       type: 'input',
-      //       name: 'webAssetSetup',
-      //       message: webAssetSetupMessage,
-      //       default: 'web-src',
-      //       when: props.components.indexOf('webAssets') !== -1
-      //     }
-      //   ]
-      //   this.props = props
-      //   return this.prompt(prompts).then(props => {
-      //     this.componentsProps = props
-      //   })
-      // } else {
       this.props = Object.assign({}, this.options, props, {
-        components: ['actions', 'webAssets'],
-        package_name: path.parse(dest).name
+        components: ['actions', 'webAssets']
       })
       this.componentsProps = Object.assign({}, this.options, props, {
         actionSetup: 'actions',
         webAssetSetup: 'web-src'
       })
-      // }
     })
   }
 
