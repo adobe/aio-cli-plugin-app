@@ -11,9 +11,7 @@ governing permissions and limitations under the License.
 
 const debug = require('debug')('aio-cli-plugin-app:import')
 const path = require('path')
-const fs = require('fs')
-const util = require('util')
-const fsWriteFile = util.promisify(fs.writeFile)
+const fs = require('fs-extra')
 
 const AIO_FILE = '.aio'
 const ENV_FILE = '.env'
@@ -82,7 +80,7 @@ async function writeEnv (json, parentFolder, overwrite = false) {
 
   debug(`writeEnv - data: ${data}`)
 
-  return fsWriteFile(destination, data, {
+  return fs.writeFile(destination, data, {
     flag: overwrite ? 'w' : 'wx'
   })
 }
@@ -95,13 +93,13 @@ async function writeEnv (json, parentFolder, overwrite = false) {
  * @param {boolean} [overwrite=false] set to true to overwrite the existing .aio file
  */
 async function writeAio (json, parentFolder, overwrite = false) {
-  const data = JSON.stringify(json, null, 2)
-  debug(`writeAio - json: ${data} parentFolder:${parentFolder} overwrite:${overwrite}`)
+  debug(`writeAio - json: ${JSON.stringify(json, null, 2)} parentFolder:${parentFolder} overwrite:${overwrite}`)
 
   const destination = path.join(parentFolder, AIO_FILE)
   debug(`writeAio - destination: ${destination}`)
 
-  return fsWriteFile(destination, data, {
+  return fs.writeJson(destination, json, {
+    spaces: 2,
     flag: overwrite ? 'w' : 'wx'
   })
 }
