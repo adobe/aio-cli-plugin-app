@@ -107,14 +107,14 @@ async function writeAio (json, parentFolder, overwrite = false) {
 /**
  * Import a downloadable config and write to the appropriate .env (credentials) and .aio (non-credentials) files.
  *
- * @param {*} configFileLocation the path to the config file to import
- * @param {*} [writeToFolder=the current working directory] the path to the folder to write the .env and .aio files to
+ * @param {string} configFileLocation the path to the config file to import
+ * @param {string} [writeToFolder=the current working directory] the path to the folder to write the .env and .aio files to
   * @param {boolean} [overwrite=false] set to true to overwrite any existing files
 */
 async function importConfigJson (configFileLocation, writeToFolder = process.cwd(), overwrite = false) {
   debug(`importConfigJson - configFileLocation: ${configFileLocation} writeToFolder:${writeToFolder} overwrite:${overwrite}`)
 
-  const config = require(configFileLocation)
+  const config = fs.readJson(configFileLocation)
   const { runtime, credentials } = config
 
   debug(`importConfigJson - config:${JSON.stringify(config, null, 2)} `)
