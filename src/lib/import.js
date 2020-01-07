@@ -114,18 +114,18 @@ async function writeAio (json, parentFolder, overwrite = false) {
 async function importConfigJson (configFileLocation, writeToFolder = process.cwd(), overwrite = false) {
   debug(`importConfigJson - configFileLocation: ${configFileLocation} writeToFolder:${writeToFolder} overwrite:${overwrite}`)
 
-  const config = fs.readJson(configFileLocation)
+  const config = await fs.readJson(configFileLocation)
   const { runtime, credentials } = config
 
   debug(`importConfigJson - config:${JSON.stringify(config, null, 2)} `)
 
-  writeEnv({ runtime, credentials }, writeToFolder, overwrite)
+  await writeEnv({ runtime, credentials }, writeToFolder, overwrite)
 
   // remove the credentials
   delete config.runtime
   delete config.credentials
 
-  await writeAio(config, writeToFolder, overwrite)
+  return writeAio(config, writeToFolder, overwrite)
 }
 
 module.exports = {

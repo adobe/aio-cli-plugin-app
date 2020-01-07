@@ -68,7 +68,10 @@ test('writeAio', async () => {
   writeAio(json, parentFolder, false)
   await expect(fs.writeJson).toHaveBeenCalledWith(aioPath, json, expect.any(Object))
 
-  return expect(fs.writeJson).toHaveBeenCalledTimes(2)
+  writeAio(json, parentFolder) // for coverage
+  await expect(fs.writeJson).toHaveBeenCalledWith(aioPath, json, expect.any(Object))
+
+  return expect(fs.writeJson).toHaveBeenCalledTimes(3)
 })
 
 test('writeEnv', async () => {
@@ -89,7 +92,10 @@ test('writeEnv', async () => {
   writeEnv(json, parentFolder, false)
   await expect(fs.writeFile).toHaveBeenCalledWith(envPath, envData, expect.any(Object))
 
-  return expect(fs.writeFile).toHaveBeenCalledTimes(2)
+  writeEnv(json, parentFolder) // for coverage
+  await expect(fs.writeFile).toHaveBeenCalledWith(envPath, envData, expect.any(Object))
+
+  return expect(fs.writeFile).toHaveBeenCalledTimes(3)
 })
 
 test('importConfigJson', async () => {
@@ -146,13 +152,18 @@ AIO_credentials_jwt_private_key_1=XXXX...XXX
 AIO_credentials_jwt_private_key_2=-----END PRIVATE KEY-----`
 
   fs.readJson.mockReturnValueOnce(configJson)
-
   await importConfigJson('/some/config/path', workingFolder, true)
 
   await expect(fs.writeJson).toHaveBeenCalledWith(aioPath, configJson, expect.any(Object))
-  await expect(fs.writeJson).toHaveBeenCalledTimes(1)
-
-  // TODO: the flatten function is not working properly, note the Array flattening
   await expect(fs.writeFile).toHaveBeenCalledWith(envPath, envData, expect.any(Object))
-  await expect(fs.writeFile).toHaveBeenCalledTimes(1)
+
+  fs.readJson.mockReturnValueOnce(configJson)
+  await importConfigJson('/some/config/path') // for coverage
+
+  await expect(fs.writeJson).toHaveBeenCalledTimes(2)
+  await expect(fs.writeFile).toHaveBeenCalledTimes(2)
+
+  // empty config
+  fs.readJson.mockReturnValueOnce({})
+  await importConfigJson('/some/config/path')
 })
