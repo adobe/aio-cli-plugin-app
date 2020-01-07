@@ -11,8 +11,24 @@ governing permissions and limitations under the License.
 */
 
 const { Command, flags } = require('@oclif/command')
+const fs = require('fs-extra')
 
-class BaseCommand extends Command {}
+class BaseCommand extends Command {
+  get pjson () {
+    if (!this._pjson) {
+      this._pjson = fs.readJSONSync('package.json')
+    }
+    return this._pjson
+  }
+
+  get appName () {
+    return this.pjson.name
+  }
+
+  get appVersion () {
+    return this.pjson.version
+  }
+}
 
 BaseCommand.flags = {
   verbose: flags.boolean({ char: 'v', description: 'Verbose output' }),
