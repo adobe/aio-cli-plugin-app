@@ -48,7 +48,7 @@ test('flattenObjectWithSeparator', () => {
   const result = flattenObjectWithSeparator(json, {})
   expect(result).toEqual({
     AIO_bar_baz_faz: 'b',
-    AIO_bar_baz_jumping__jacks: 'c', // the
+    AIO_bar_baz_jumping__jacks: 'c', // the key when flattened converts any underscore to double underscores
     AIO_foo: 'a'
   })
 })
