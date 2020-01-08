@@ -37,7 +37,8 @@ test('flattenObjectWithSeparator', () => {
     foo: 'a',
     bar: {
       baz: {
-        faz: 'b'
+        faz: 'b',
+        jumping_jacks: 'c' // underscore in name
       },
       raz: {
       }
@@ -47,6 +48,7 @@ test('flattenObjectWithSeparator', () => {
   const result = flattenObjectWithSeparator(json, {})
   expect(result).toEqual({
     AIO_bar_baz_faz: 'b',
+    AIO_bar_baz_jumping__jacks: 'c', // the
     AIO_foo: 'a'
   })
 })
@@ -104,21 +106,27 @@ test('importConfigJson', async () => {
   const workingFolder = 'my-working-folder'
   const aioPath = path.join(workingFolder, '.aio')
   const envPath = path.join(workingFolder, '.env')
-  const envData = fixtureFile('config.1.env')
 
   fs.readJson.mockReturnValueOnce(configJson)
-  await importConfigJson('/some/config/path', workingFolder, true)
+  await importConfigJson('/some/config/path', workingFolder, true) // first call. overwrite
 
-  await expect(fs.writeJson).toHaveBeenCalledWith(aioPath, configJson, expect.any(Object))
-  await expect(fs.writeFile).toHaveBeenCalledWith(envPath, envData, expect.any(Object))
+  await expect(fs.writeJson.mock.calls[0][0]).toMatch(aioPath)
+  await expect(fs.writeJson.mock.calls[0][1]).toMatchFixtureJson('config.1.aio')
+  await expect(fs.writeJson.mock.calls[0][2]).toMatchObject({ flag: 'w' })
+
+  await expect(fs.writeFile.mock.calls[0][0]).toMatch(envPath)
+  await expect(fs.writeFile.mock.calls[0][1]).toMatchFixture('config.1.env')
+  await expect(fs.writeJson.mock.calls[0][2]).toMatchObject({ flag: 'w' })
 
   fs.readJson.mockReturnValueOnce(configJson)
-  await importConfigJson('/some/config/path') // for coverage
-
-  await expect(fs.writeJson).toHaveBeenCalledTimes(2)
-  await expect(fs.writeFile).toHaveBeenCalledTimes(2)
+  await importConfigJson('/some/config/path') // for coverage (defaults), second call. no overwrite
+  await expect(fs.writeJson.mock.calls[1][2]).toMatchObject({ flag: 'wx' })
+  await expect(fs.writeFile.mock.calls[1][2]).toMatchObject({ flag: 'wx' })
 
   // empty config
   fs.readJson.mockReturnValueOnce({})
-  await importConfigJson('/some/config/path')
+  await importConfigJson('/some/config/path') // third call
+
+  await expect(fs.writeJson).toHaveBeenCalledTimes(3)
+  await expect(fs.writeFile).toHaveBeenCalledTimes(3)
 })

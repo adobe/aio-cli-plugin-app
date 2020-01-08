@@ -46,13 +46,15 @@ function flattenObjectWithSeparator (json, result = {}, prefix = AIO_ENV_PREFIX,
   Object
     .keys(json)
     .forEach(key => {
+      const _key = key.replace('_', '__') // replace any underscores in key with double underscores
+
       if (Array.isArray(json[key])) {
-        result[`${prefix}${key}`] = JSON.stringify(json[key])
+        result[`${prefix}${_key}`] = JSON.stringify(json[key])
         return result
       } else if (typeof (json[key]) === 'object') {
-        flattenObjectWithSeparator(json[key], result, `${prefix}${key}${separator}`)
+        flattenObjectWithSeparator(json[key], result, `${prefix}${_key}${separator}`)
       } else {
-        result[`${prefix}${key}`] = json[key]
+        result[`${prefix}${_key}`] = json[key]
         return result
       }
     })
