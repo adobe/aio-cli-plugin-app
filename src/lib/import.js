@@ -46,7 +46,10 @@ function flattenObjectWithSeparator (json, result = {}, prefix = AIO_ENV_PREFIX,
   Object
     .keys(json)
     .forEach(key => {
-      if (typeof (json[key]) === 'object') {
+      if (Array.isArray(json[key])) {
+        result[`${prefix}${key}`] = JSON.stringify(json[key])
+        return result
+      } else if (typeof (json[key]) === 'object') {
         flattenObjectWithSeparator(json[key], result, `${prefix}${key}${separator}`)
       } else {
         result[`${prefix}${key}`] = json[key]

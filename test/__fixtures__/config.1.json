@@ -1,0 +1,29 @@
+{
+  "id": "this is some data",
+  "name": "my-name",
+  "runtime": {
+    "namespace": "my-namespace",
+    "credentials": "my-runtime-credentials"
+  },
+  "credentials": {
+    "apikey": {
+      "client_id": "83723cc8e25e455fb5db1ad12cbf16e9"
+    },
+    "oauth2": {
+      "client_id": "83723cc8e25e455fb5db1ad12cbf16e9",
+      "client_secret": "XXXXXX",
+      "redirect_uri": "https://www.adobe.com"
+    },
+    "jwt": {
+      "client_id": "568430a7b22e4a1f993d03ed8283bb26",
+      "client_secret": "XXXXX",
+      "techacct": "E03445FF5D81F8EA0A494034@techacct.adobe.com",
+      "meta_scopes": ["ent_partners_sdk"],
+      "private_key": [
+        "-----BEGIN PRIVATE KEY-----",
+        "XXXX...XXX",
+        "-----END PRIVATE KEY-----"
+      ]
+    }
+  }
+}
