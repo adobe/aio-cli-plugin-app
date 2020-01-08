@@ -33,6 +33,7 @@
     "@types/jest": "^24.0.13",
     "acorn": "^7.1.0",
     "codecov": "^3.6.1",
+    "eol": "^0.9.1",
     "eslint": "^6.6.0",
     "eslint-config-oclif": "^3.1.0",
     "eslint-config-standard": "^14.1.0",
