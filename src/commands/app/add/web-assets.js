@@ -9,47 +9,33 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('../../BaseCommand')
+const BaseCommand = require('../../../BaseCommand')
 const yeoman = require('yeoman-environment')
-const path = require('path')
-const fs = require('fs-extra')
 const debug = require('debug')('aio-cli-plugin-app:init')
 const { flags } = require('@oclif/command')
 
-class InitCommand extends BaseCommand {
+class AddWebAssetsCommand extends BaseCommand {
   async run () {
-    const { args, flags } = this.parse(InitCommand)
-    if (args.path !== '.') {
-      const destDir = path.resolve(args.path)
-      fs.ensureDirSync(destDir)
-      process.chdir(destDir)
-    }
-    debug('creating new app with init command ', flags)
+    const { args, flags } = this.parse(AddWebAssetsCommand)
 
+    debug(`adding component ${args.component} to the project, using flags: `, flags)
+
+    const generator = '@adobe/generator-aio-app/generators/add-web-assets'
     const env = yeoman.createEnv()
-
-    // todo integrate with console project generator to get/generate projectname, service-integrations, ..
-    const projectName = path.basename(process.cwd())
-    this.log(`You are about to initialize the project '${projectName}'`)
-
-    // call code generator
-    env.register(require.resolve('@adobe/generator-aio-app'), 'gen')
+    env.register(require.resolve(generator), 'gen')
     const res = await env.run('gen', {
       'skip-install': flags['skip-install'],
       'skip-prompt': flags.yes,
-      'project-name': projectName,
       'adobe-services': 'target,analytics,campaign-standard' // todo update with real service sdk codes from console later
     })
-    // finalize configuration data
-    this.log('✔ App initialization finished!')
     return res
   }
 }
 
-InitCommand.description = `Create a new Adobe I/O App
+AddWebAssetsCommand.description = `Add web assets to an existing Adobe I/O App
 `
 
-InitCommand.flags = {
+AddWebAssetsCommand.flags = {
   yes: flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
@@ -62,12 +48,6 @@ InitCommand.flags = {
   ...BaseCommand.flags
 }
 
-InitCommand.args = [
-  {
-    name: 'path',
-    description: 'Path to the app directory',
-    default: '.'
-  }
-]
+AddWebAssetsCommand.args = []
 
-module.exports = InitCommand
+module.exports = AddWebAssetsCommand

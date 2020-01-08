@@ -9,29 +9,30 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('../../BaseCommand')
-const InitCommand = require('./init')
+const BaseCommand = require('../../../BaseCommand')
+const debug = require('debug')('aio-cli-plugin-app:init')
 
-class Create extends BaseCommand {
+const AppScripts = require('@adobe/aio-app-scripts')
+
+class AddAuthCommand extends BaseCommand {
   async run () {
-    const { args } = this.parse(Create)
-    return InitCommand.run([args.path, '-y'])
+    const { flags } = this.parse(AddAuthCommand)
+
+    debug('add auth to the project, using flags:', flags)
+
+    const scripts = AppScripts({})
+    const res = await scripts.addAuth()
+    return res
   }
 }
 
-Create.description = `Create a new Adobe I/O App with default parameters
+AddAuthCommand.description = `Add auth support to the project
 `
 
-Create.flags = {
+AddAuthCommand.flags = {
   ...BaseCommand.flags
 }
 
-Create.args = [
-  {
-    name: 'path',
-    description: 'Path to the app directory',
-    default: '.'
-  }
-]
+AddAuthCommand.args = []
 
-module.exports = Create
+module.exports = AddAuthCommand

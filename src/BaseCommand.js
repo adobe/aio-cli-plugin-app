@@ -35,12 +35,6 @@ BaseCommand.flags = {
   version: flags.boolean({ description: 'Show version' })
 }
 
-BaseCommand.args = [
-  {
-    name: 'path',
-    description: 'Path to the app directory',
-    default: '.'
-  }
-]
+BaseCommand.args = []
 
 module.exports = BaseCommand

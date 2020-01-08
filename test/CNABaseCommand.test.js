@@ -28,8 +28,5 @@ test('flags', async () => {
 })
 
 test('args', async () => {
-  expect(typeof TheCommand.args[0]).toBe('object')
-  expect(TheCommand.args[0].name).toBe('path')
-  expect(typeof TheCommand.args[0].description).toBe('string')
-  expect(TheCommand.args[0].default).toBe('.')
+  expect(TheCommand.args).toEqual([])
 })
