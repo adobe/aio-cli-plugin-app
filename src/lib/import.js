@@ -12,11 +12,33 @@ governing permissions and limitations under the License.
 const debug = require('debug')('aio-cli-plugin-app:import')
 const path = require('path')
 const fs = require('fs-extra')
+const inquirer = require('inquirer')
 
 const AIO_FILE = '.aio'
 const ENV_FILE = '.env'
 const AIO_ENV_PREFIX = 'AIO_'
 const AIO_ENV_SEPARATOR = '_'
+
+/**
+ * Confirmation prompt for overwriting a file if it already exists.
+ *
+ * @param {string} filePath the file to ovewrite
+ * @return {boolean} true if confirm overwrite, false if not
+ */
+async function confirmOverwrite (filePath) {
+  if (fs.existsSync(filePath)) {
+    return inquirer
+      .prompt({
+        name: 'confirm',
+        type: 'confirm',
+        message: `The file ${filePath} already exists. Overwrite? (y/N)`,
+        default: false
+      })
+      .then(answers => answers.confirm)
+  } else {
+    return true
+  }
+}
 
 /**
  * Transform a json object to a flattened version. Any nesting is separated by the `separator` string.
@@ -67,10 +89,12 @@ function flattenObjectWithSeparator (json, result = {}, prefix = AIO_ENV_PREFIX,
  *
  * @param {object} json the json object to transform and write to disk
  * @param {string} parentFolder the parent folder to write the .env file to
- * @param {boolean} [overwrite=false] set to true to overwrite the existing .env file
+ * @param {object} flags] flags for file writing
+ * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
+ * @param {boolean} [flags.interactive=false] set to true to prompt the user for file overwrite
  */
-async function writeEnv (json, parentFolder, overwrite = false) {
-  debug(`writeEnv - json: ${JSON.stringify(json)} parentFolder:${parentFolder} overwrite:${overwrite}`)
+async function writeEnv (json, parentFolder, { overwrite = false, interactive = false } = {}) {
+  debug(`writeEnv - json: ${JSON.stringify(json)} parentFolder:${parentFolder} overwrite:${overwrite} interactive:${interactive}`)
 
   const destination = path.join(parentFolder, ENV_FILE)
   debug(`writeEnv - destination: ${destination}`)
@@ -85,6 +109,15 @@ async function writeEnv (json, parentFolder, overwrite = false) {
 
   debug(`writeEnv - data: ${data}`)
 
+  if (interactive) {
+    overwrite = await confirmOverwrite(destination)
+    debug(`writeEnv - confirmOverwrite: ${overwrite}`)
+
+    if (!overwrite) {
+      return
+    }
+  }
+
   return fs.writeFile(destination, data, {
     flag: overwrite ? 'w' : 'wx'
   })
@@ -95,13 +128,24 @@ async function writeEnv (json, parentFolder, overwrite = false) {
  *
  * @param {object} json the json object to write to disk
  * @param {string} parentFolder the parent folder to write the .aio file to
- * @param {boolean} [overwrite=false] set to true to overwrite the existing .aio file
+ * @param {object} flags] flags for file writing
+ * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
+ * @param {boolean} [flags.interactive=false] set to true to prompt the user for file overwrite
  */
-async function writeAio (json, parentFolder, overwrite = false) {
-  debug(`writeAio - json: ${JSON.stringify(json, null, 2)} parentFolder:${parentFolder} overwrite:${overwrite}`)
+async function writeAio (json, parentFolder, { overwrite = false, interactive = false } = {}) {
+  debug(`writeAio - json: ${JSON.stringify(json, null, 2)} parentFolder:${parentFolder} overwrite:${overwrite} interactive:${interactive}`)
 
   const destination = path.join(parentFolder, AIO_FILE)
   debug(`writeAio - destination: ${destination}`)
+
+  if (interactive) {
+    overwrite = await confirmOverwrite(destination)
+    debug(`writeAio - confirmOverwrite: ${overwrite}`)
+
+    if (!overwrite) {
+      return
+    }
+  }
 
   return fs.writeJson(destination, json, {
     spaces: 2,
@@ -116,21 +160,21 @@ async function writeAio (json, parentFolder, overwrite = false) {
  * @param {string} [writeToFolder=the current working directory] the path to the folder to write the .env and .aio files to
   * @param {boolean} [overwrite=false] set to true to overwrite any existing files
 */
-async function importConfigJson (configFileLocation, writeToFolder = process.cwd(), overwrite = false) {
-  debug(`importConfigJson - configFileLocation: ${configFileLocation} writeToFolder:${writeToFolder} overwrite:${overwrite}`)
+async function importConfigJson (configFileLocation, writeToFolder = process.cwd(), { overwrite = false, interactive = false } = {}) {
+  debug(`importConfigJson - configFileLocation: ${configFileLocation} writeToFolder:${writeToFolder} overwrite:${overwrite} interactive:${interactive}`)
 
   const config = await fs.readJson(configFileLocation)
   const { runtime, credentials } = config
 
   debug(`importConfigJson - config:${JSON.stringify(config, null, 2)} `)
 
-  await writeEnv({ runtime, credentials }, writeToFolder, overwrite)
+  await writeEnv({ runtime, credentials }, writeToFolder, { overwrite, interactive })
 
   // remove the credentials
   delete config.runtime
   delete config.credentials
 
-  return writeAio(config, writeToFolder, overwrite)
+  return writeAio(config, writeToFolder, { overwrite, interactive })
 }
 
 module.exports = {
