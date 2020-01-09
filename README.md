@@ -44,6 +44,7 @@ USAGE
 * [`@adobe/aio-cli-plugin-app app:run`](#adobeaio-cli-plugin-app-apprun)
 * [`@adobe/aio-cli-plugin-app app:test`](#adobeaio-cli-plugin-app-apptest)
 * [`@adobe/aio-cli-plugin-app app:undeploy`](#adobeaio-cli-plugin-app-appundeploy)
+* [`@adobe/aio-cli-plugin-app app:use CONFIG_FILE_PATH`](#adobeaio-cli-plugin-app-appuse-config_file_path)
 
 ## `@adobe/aio-cli-plugin-app app`
 
@@ -121,8 +122,9 @@ ARGUMENTS
   PATH  [default: .] Path to the app directory
 
 OPTIONS
-  -v, --verbose  Verbose output
-  --version      Show version
+  -i, --import=import  Import an Adobe I/O Developer Console configuration file
+  -v, --verbose        Verbose output
+  --version            Show version
 ```
 
 _See code: [src/commands/app/create.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.4.0/src/commands/app/create.js)_
@@ -266,4 +268,23 @@ OPTIONS
 ```
 
 _See code: [src/commands/app/undeploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.4.0/src/commands/app/undeploy.js)_
+
+## `@adobe/aio-cli-plugin-app app:use CONFIG_FILE_PATH`
+
+Import an Adobe I/O Developer Console configuration file
+
+```
+USAGE
+  $ @adobe/aio-cli-plugin-app app:use CONFIG_FILE_PATH
+
+ARGUMENTS
+  CONFIG_FILE_PATH  path to an Adobe I/O Developer Console configuration file
+
+OPTIONS
+  -v, --verbose    Verbose output
+  -w, --overwrite  Overwrite any .aio and .env files during import of the Adobe I/O Developer Console configuration file
+  --version        Show version
+```
+
+_See code: [src/commands/app/use.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.4.0/src/commands/app/use.js)_
 <!-- commandsstop -->
