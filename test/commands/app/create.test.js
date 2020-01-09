@@ -13,6 +13,9 @@ governing permissions and limitations under the License.
 const TheCommand = require('../../../src/commands/app/create')
 const BaseCommand = require('../../../src/BaseCommand')
 const InitCommand = require('../../../src/commands/app/init')
+const importLib = require('../../../src/lib/import')
+
+jest.mock('../../../src/lib/import')
 
 beforeEach(() => {
   jest.restoreAllMocks()
@@ -43,9 +46,14 @@ describe('bad flags', () => {
 
 describe('runs', () => {
   test('Calls to InitCommand with -y', async () => {
-    // console.error('icm.run = ' + )
     const mySpy = jest.spyOn(InitCommand, 'run').mockImplementation(jest.fn())
     await TheCommand.run(['new-project'])
     expect(mySpy).toHaveBeenCalledWith(['new-project', '-y'])
+  })
+
+  test('import', async () => {
+    jest.spyOn(InitCommand, 'run').mockImplementation(jest.fn())
+    await TheCommand.run(['new-project', '--import', 'config-file'])
+    await expect(importLib.importConfigJson).toHaveBeenCalled()
   })
 })
