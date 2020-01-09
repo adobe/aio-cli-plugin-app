@@ -93,7 +93,7 @@ function flattenObjectWithSeparator (json, result = {}, prefix = AIO_ENV_PREFIX,
  * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
  * @param {boolean} [flags.interactive=false] set to true to prompt the user for file overwrite
  */
-async function writeEnv (json, parentFolder, { overwrite = false, interactive = false }) {
+async function writeEnv (json, parentFolder, { overwrite = false, interactive = false } = {}) {
   debug(`writeEnv - json: ${JSON.stringify(json)} parentFolder:${parentFolder} overwrite:${overwrite} interactive:${interactive}`)
 
   const destination = path.join(parentFolder, ENV_FILE)
@@ -132,7 +132,7 @@ async function writeEnv (json, parentFolder, { overwrite = false, interactive = 
  * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
  * @param {boolean} [flags.interactive=false] set to true to prompt the user for file overwrite
  */
-async function writeAio (json, parentFolder, { overwrite = false, interactive = false }) {
+async function writeAio (json, parentFolder, { overwrite = false, interactive = false } = {}) {
   debug(`writeAio - json: ${JSON.stringify(json, null, 2)} parentFolder:${parentFolder} overwrite:${overwrite} interactive:${interactive}`)
 
   const destination = path.join(parentFolder, AIO_FILE)
@@ -160,7 +160,7 @@ async function writeAio (json, parentFolder, { overwrite = false, interactive = 
  * @param {string} [writeToFolder=the current working directory] the path to the folder to write the .env and .aio files to
   * @param {boolean} [overwrite=false] set to true to overwrite any existing files
 */
-async function importConfigJson (configFileLocation, writeToFolder = process.cwd(), { overwrite = false, interactive = false }) {
+async function importConfigJson (configFileLocation, writeToFolder = process.cwd(), { overwrite = false, interactive = false } = {}) {
   debug(`importConfigJson - configFileLocation: ${configFileLocation} writeToFolder:${writeToFolder} overwrite:${overwrite} interactive:${interactive}`)
 
   const config = await fs.readJson(configFileLocation)

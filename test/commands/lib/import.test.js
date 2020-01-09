@@ -13,6 +13,7 @@ governing permissions and limitations under the License.
 const { importConfigJson, writeAio, writeEnv, flattenObjectWithSeparator } = require('../../../src/lib/import')
 const fs = require('fs-extra')
 const path = require('path')
+const inquirer = require('inquirer')
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -108,7 +109,7 @@ test('importConfigJson', async () => {
   const envPath = path.join(workingFolder, '.env')
 
   fs.readJson.mockReturnValueOnce(configJson)
-  await importConfigJson('/some/config/path', workingFolder, true) // first call. overwrite
+  await importConfigJson('/some/config/path', workingFolder, { overwrite: true }) // first call. overwrite
 
   await expect(fs.writeJson.mock.calls[0][0]).toMatch(aioPath)
   await expect(fs.writeJson.mock.calls[0][1]).toMatchFixtureJson('config.1.aio')
@@ -129,4 +130,31 @@ test('importConfigJson', async () => {
 
   await expect(fs.writeJson).toHaveBeenCalledTimes(3)
   await expect(fs.writeFile).toHaveBeenCalledTimes(3)
+})
+
+test('importConfigJson - interactive', async () => {
+  const configJson = fixtureJson('config.1.json')
+
+  const workingFolder = 'my-working-folder'
+  const aioPath = path.join(workingFolder, '.aio')
+  const envPath = path.join(workingFolder, '.env')
+
+  fs.readJson.mockReturnValueOnce(configJson)
+  await importConfigJson('/some/config/path', workingFolder, { interactive: true }) // first call. overwrite
+
+  await expect(fs.writeJson.mock.calls[0][0]).toMatch(aioPath)
+  await expect(fs.writeJson.mock.calls[0][1]).toMatchFixtureJson('config.1.aio')
+  await expect(fs.writeJson.mock.calls[0][2]).toMatchObject({ flag: 'w' })
+
+  await expect(fs.writeFile.mock.calls[0][0]).toMatch(envPath)
+  await expect(fs.writeFile.mock.calls[0][1]).toMatchFixture('config.1.env')
+  await expect(fs.writeJson.mock.calls[0][2]).toMatchObject({ flag: 'w' })
+
+  fs.readJson.mockReturnValueOnce(configJson)
+  fs.existsSync.mockReturnValue(true)
+  inquirer.prompt.mockResolvedValue({ confirm: false }) // no writes
+  await importConfigJson('/some/config/path', workingFolder, { interactive: true }) // for coverage (defaults), second call. no overwrite
+
+  await expect(fs.writeJson).toHaveBeenCalledTimes(1)
+  await expect(fs.writeFile).toHaveBeenCalledTimes(1)
 })
