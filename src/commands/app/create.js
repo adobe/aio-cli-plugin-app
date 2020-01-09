@@ -31,7 +31,7 @@ class Create extends BaseCommand {
     // note that the CWD has been changed by the init command above (to a resolved args.path),
     // thus we install the config into the CWD
     if (flags.import) {
-      await importConfigJson(configFilePath, process.cwd(), true)
+      await importConfigJson(configFilePath, process.cwd(), { interactive: true })
     }
   }
 }

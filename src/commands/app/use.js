@@ -17,7 +17,7 @@ class Use extends BaseCommand {
   async run () {
     const { args, flags } = this.parse(Use)
 
-    return importConfigJson(args.config_file_path, process.cwd(), flags.overwrite)
+    return importConfigJson(args.config_file_path, process.cwd(), { overwrite: flags.overwrite })
   }
 }
 
