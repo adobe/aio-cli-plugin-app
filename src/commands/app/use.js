@@ -16,8 +16,14 @@ const { flags } = require('@oclif/command')
 class Use extends BaseCommand {
   async run () {
     const { args, flags } = this.parse(Use)
+    const overwrite = flags.overwrite
+    let interactive = true
 
-    return importConfigJson(args.config_file_path, process.cwd(), { overwrite: flags.overwrite })
+    if (overwrite) {
+      interactive = false
+    }
+
+    return importConfigJson(args.config_file_path, process.cwd(), { interactive, overwrite })
   }
 }
 
