@@ -19,7 +19,8 @@ const mockScripts = {
   undeployUI: jest.fn(() => mockWithCallbacks()),
   undeployActions: jest.fn(() => mockWithCallbacks()),
   runDev: jest.fn(() => mockWithCallbacks()),
-  addAuth: jest.fn(() => mockWithCallbacks())
+  addAuth: jest.fn(() => mockWithCallbacks()),
+  logs: jest.fn(() => mockWithCallbacks())
 }
 
 const mockWithCallbacks = () => {
