@@ -13,11 +13,45 @@ const debug = require('debug')('aio-cli-plugin-app:import')
 const path = require('path')
 const fs = require('fs-extra')
 const inquirer = require('inquirer')
+const configUtil = require('@adobe/aio-lib-core-config/src/util')
 
 const AIO_FILE = '.aio'
 const ENV_FILE = '.env'
 const AIO_ENV_PREFIX = 'AIO_'
 const AIO_ENV_SEPARATOR = '_'
+
+const gRules = [
+  { key: 'name', rule: '^[a-zA-Z0-9]+$' },
+  { key: 'project.name', rule: '^[a-zA-Z0-9]+$' },
+  { key: 'project.org.name', rule: '^[a-zA-Z0-9]+$' }
+]
+
+/**
+ * Validate the config.json.
+ * Throws an Error if any rules are not fulfilled.
+ *
+ * (future: use JSON schema)
+ *
+ * @param {object} json the json to validate
+ */
+function checkRules (json, rules = gRules) {
+  const invalid = rules.filter(item => {
+    const regexp = new RegExp(item.rule)
+    const value = configUtil.getValue(json, item.key) || ''
+
+    return (value.match(regexp) === null)
+  })
+
+  if (invalid.length) {
+    const explanations = invalid.map(item => {
+      item.value = configUtil.getValue(json, item.key) || '<undefined>'
+      return item
+    })
+
+    const message = `Missing or invalid keys in config: ${JSON.stringify(explanations)}`
+    throw new Error(message)
+  }
+}
 
 /**
  * Confirmation prompt for overwriting a file if it already exists.
@@ -167,6 +201,8 @@ async function importConfigJson (configFileLocation, writeToFolder = process.cwd
   const { runtime, credentials } = config
 
   debug(`importConfigJson - config:${JSON.stringify(config, null, 2)} `)
+
+  checkRules(config)
 
   await writeEnv({ runtime, credentials }, writeToFolder, { overwrite, interactive })
 

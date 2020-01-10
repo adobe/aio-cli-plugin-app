@@ -1,11 +1,11 @@
 {
   "id": "this is some data",
-  "name": "myname",
+  "name": "invalid-workspace-name",
   "project": {
-    "name": "projectname",
-    "org": {
-        "name": "orgname"
-    }
+      "name": "invalid-project-name",
+      "org": {
+          "name": "invalid-org-name"
+      }
   },
   "runtime": {
     "namespace": "my-namespace",

@@ -124,12 +124,8 @@ test('importConfigJson', async () => {
   await expect(fs.writeJson.mock.calls[1][2]).toMatchObject({ flag: 'wx' })
   await expect(fs.writeFile.mock.calls[1][2]).toMatchObject({ flag: 'wx' })
 
-  // empty config
-  fs.readJson.mockReturnValueOnce({})
-  await importConfigJson('/some/config/path') // third call
-
-  await expect(fs.writeJson).toHaveBeenCalledTimes(3)
-  await expect(fs.writeFile).toHaveBeenCalledTimes(3)
+  await expect(fs.writeJson).toHaveBeenCalledTimes(2)
+  await expect(fs.writeFile).toHaveBeenCalledTimes(2)
 })
 
 test('importConfigJson - interactive', async () => {
@@ -157,4 +153,15 @@ test('importConfigJson - interactive', async () => {
 
   await expect(fs.writeJson).toHaveBeenCalledTimes(1)
   await expect(fs.writeFile).toHaveBeenCalledTimes(1)
+})
+
+test('enforce alphanumeric content rules', async () => {
+  fs.readJson.mockReturnValueOnce(fixtureJson('config.2.json'))
+  await expect(importConfigJson('/some/config/path')).rejects.toThrow('Missing or invalid keys in config:')
+
+  fs.readJson.mockReturnValueOnce(fixtureJson('config.3.json')) // for coverage (missing keys)
+  await expect(importConfigJson('/some/config/path')).rejects.toThrow('Missing or invalid keys in config:')
+
+  await expect(fs.writeJson).toHaveBeenCalledTimes(0)
+  await expect(fs.writeFile).toHaveBeenCalledTimes(0)
 })
