@@ -1,4 +1,10 @@
 {
   "id": "this is some data",
-  "name": "my-name"
+  "name": "myname",
+  "project": {
+    "name": "projectname",
+    "org": {
+        "name": "orgname"
+    }
+  }
 }
