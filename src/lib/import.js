@@ -221,7 +221,7 @@ async function importConfigJson (configFileLocation, writeToFolder = process.cwd
 
   checkRules(config)
 
-  await writeEnv({ runtime, credentials }, writeToFolder, { overwrite, interactive })
+  await writeEnv({ runtime, $ims: credentials }, writeToFolder, { overwrite, interactive })
 
   // remove the credentials
   delete config.runtime
