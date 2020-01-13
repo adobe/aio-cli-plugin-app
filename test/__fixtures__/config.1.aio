@@ -1,4 +1,12 @@
 {
   "id": "this is some data",
-  "name": "my-name"
+  "name": "myname",
+  "app_url": "https://my.app.url/foo/bar",
+  "action_url": "https://my.action.url/foo/bar",  
+  "project": {
+    "name": "projectname",
+    "org": {
+        "name": "orgname"
+    }
+  }
 }

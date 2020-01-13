@@ -13,11 +13,61 @@ const debug = require('debug')('aio-cli-plugin-app:import')
 const path = require('path')
 const fs = require('fs-extra')
 const inquirer = require('inquirer')
+const configUtil = require('@adobe/aio-lib-core-config/src/util')
+const validator = require('validator')
+const hjson = require('hjson')
 
 const AIO_FILE = '.aio'
 const ENV_FILE = '.env'
 const AIO_ENV_PREFIX = 'AIO_'
 const AIO_ENV_SEPARATOR = '_'
+
+// by default, all rules are required
+//     set `notRequired` if a rule is not required (key does not have to exist)
+//     `rule` can be a regex string or a function that returns a boolean, and takes one input
+const gRules = [
+  { key: 'name', rule: '^[a-zA-Z0-9]+$' },
+  { key: 'project.name', rule: '^[a-zA-Z0-9]+$' },
+  { key: 'project.org.name', rule: '^[a-zA-Z0-9]+$' },
+  { key: 'app_url', rule: validator.isURL },
+  { key: 'action_url', rule: validator.isURL },
+  { key: 'credentials.oauth2.redirect_uri', rule: validator.isURL, notRequired: true }
+]
+
+/**
+ * Validate the config.json.
+ * Throws an Error if any rules are not fulfilled.
+ *
+ * (future: use JSON schema)
+ *
+ * @param {object} json the json to validate
+ */
+function checkRules (json, rules = gRules) {
+  const invalid = rules.filter(item => {
+    let value = configUtil.getValue(json, item.key)
+
+    if (!value && item.notRequired) {
+      return false
+    }
+    value = value || ''
+
+    if (typeof (item.rule) === 'function') {
+      return !item.rule(value)
+    } else {
+      return (value.match(new RegExp(item.rule)) === null)
+    }
+  })
+
+  if (invalid.length) {
+    const explanations = invalid.map(item => {
+      item.value = configUtil.getValue(json, item.key) || '<undefined>'
+      return { ...item, rule: undefined }
+    })
+
+    const message = `Missing or invalid keys in config: ${JSON.stringify(explanations)}`
+    throw new Error(message)
+  }
+}
 
 /**
  * Confirmation prompt for overwriting a file if it already exists.
@@ -163,12 +213,15 @@ async function writeAio (json, parentFolder, { overwrite = false, interactive = 
 async function importConfigJson (configFileLocation, writeToFolder = process.cwd(), { overwrite = false, interactive = false } = {}) {
   debug(`importConfigJson - configFileLocation: ${configFileLocation} writeToFolder:${writeToFolder} overwrite:${overwrite} interactive:${interactive}`)
 
-  const config = await fs.readJson(configFileLocation)
+  const configContents = fs.readFileSync(configFileLocation, 'utf-8')
+  const config = hjson.parse(configContents.trim())
   const { runtime, credentials } = config
 
   debug(`importConfigJson - config:${JSON.stringify(config, null, 2)} `)
 
-  await writeEnv({ runtime, credentials }, writeToFolder, { overwrite, interactive })
+  checkRules(config)
+
+  await writeEnv({ runtime, $ims: credentials }, writeToFolder, { overwrite, interactive })
 
   // remove the credentials
   delete config.runtime

@@ -1,0 +1,7 @@
+[
+  {
+    key: 'credentials.oauth2.redirect_uri',
+    notRequired: true,
+    value: 'bad://url'
+  }
+]

@@ -6,7 +6,7 @@
   "bugs": "https://github.com/adobe/aio-cli-plugin-app/issues",
   "dependencies": {
     "@adobe/aio-app-scripts": "^0.7.0",
-    "@adobe/aio-lib-core-config": "^1.1.0",
+    "@adobe/aio-lib-core-config": ">=1.2.2",
     "@adobe/generator-aio-app": "^0.2.0",
     "@oclif/command": "^1.5.11",
     "@oclif/config": "^1.12.9",
@@ -14,6 +14,7 @@
     "cross-spawn": "^7.0.1",
     "execa": "^4.0.0",
     "fs-extra": "^8.1.0",
+    "hjson": "^3.2.1",
     "ignore-walk": "^3.0.1",
     "inquirer": "^7.0.0",
     "npm-package-arg": "^8.0.0",
@@ -23,6 +24,7 @@
     "request-promise": "^4.2.4",
     "resolve": "^1.10.0",
     "semver": "^7.0.0",
+    "validator": "^12.1.0",
     "which": "^2.0.1",
     "yeoman-environment": "^2.5.0"
   },

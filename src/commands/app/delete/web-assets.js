@@ -36,7 +36,7 @@ class DeleteWebAssetsCommand extends BaseCommand {
   }
 }
 
-DeleteWebAssetsCommand.description = `Delete web assets from an existing Adobe I/O App
+DeleteWebAssetsCommand.description = `Delete existing web assets
 `
 
 DeleteWebAssetsCommand.flags = {
