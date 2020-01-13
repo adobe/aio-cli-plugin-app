@@ -79,18 +79,20 @@ test('writeAio', async () => {
 
 test('writeEnv', async () => {
   const hjson = fixtureHjson('writeenv.hjson')
-  const envData = fixtureFile('writeenv.env')
   const parentFolder = 'my-parent-folder'
   const envPath = path.join(parentFolder, '.env')
 
   writeEnv(hjson, parentFolder, true)
-  await expect(fs.writeFile).toHaveBeenCalledWith(envPath, envData, expect.any(Object))
+  await expect(fs.writeFile.mock.calls[0][0]).toMatch(envPath)
+  await expect(fs.writeFile.mock.calls[0][1]).toMatchFixture('writeenv.env')
 
   writeEnv(hjson, parentFolder, false)
-  await expect(fs.writeFile).toHaveBeenCalledWith(envPath, envData, expect.any(Object))
+  await expect(fs.writeFile.mock.calls[1][0]).toMatch(envPath)
+  await expect(fs.writeFile.mock.calls[1][1]).toMatchFixture('writeenv.env')
 
   writeEnv(hjson, parentFolder) // for coverage
-  await expect(fs.writeFile).toHaveBeenCalledWith(envPath, envData, expect.any(Object))
+  await expect(fs.writeFile.mock.calls[2][0]).toMatch(envPath)
+  await expect(fs.writeFile.mock.calls[2][1]).toMatchFixture('writeenv.env')
 
   return expect(fs.writeFile).toHaveBeenCalledTimes(3)
 })
