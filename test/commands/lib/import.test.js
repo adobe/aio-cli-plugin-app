@@ -78,24 +78,18 @@ test('writeAio', async () => {
 })
 
 test('writeEnv', async () => {
-  const json = {
-    a: 'b',
-    c: {
-      d: 'e'
-    }
-  }
-
+  const hjson = fixtureHjson('writeenv.hjson')
+  const envData = fixtureFile('writeenv.env')
   const parentFolder = 'my-parent-folder'
   const envPath = path.join(parentFolder, '.env')
-  const envData = 'AIO_a=b\nAIO_c_d=e'
 
-  writeEnv(json, parentFolder, true)
+  writeEnv(hjson, parentFolder, true)
   await expect(fs.writeFile).toHaveBeenCalledWith(envPath, envData, expect.any(Object))
 
-  writeEnv(json, parentFolder, false)
+  writeEnv(hjson, parentFolder, false)
   await expect(fs.writeFile).toHaveBeenCalledWith(envPath, envData, expect.any(Object))
 
-  writeEnv(json, parentFolder) // for coverage
+  writeEnv(hjson, parentFolder) // for coverage
   await expect(fs.writeFile).toHaveBeenCalledWith(envPath, envData, expect.any(Object))
 
   return expect(fs.writeFile).toHaveBeenCalledTimes(3)

@@ -118,7 +118,7 @@ function flattenObjectWithSeparator (json, result = {}, prefix = AIO_ENV_PREFIX,
   Object
     .keys(json)
     .forEach(key => {
-      const _key = key.replace('_', '__') // replace any underscores in key with double underscores
+      const _key = key.replace(/_/gi, '__') // replace any underscores in key with double underscores
 
       if (Array.isArray(json[key])) {
         result[`${prefix}${_key}`] = JSON.stringify(json[key])
