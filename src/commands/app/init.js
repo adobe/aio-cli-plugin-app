@@ -13,7 +13,7 @@ const BaseCommand = require('../../BaseCommand')
 const yeoman = require('yeoman-environment')
 const path = require('path')
 const fs = require('fs-extra')
-const debug = require('debug')('aio-cli-plugin-app:init')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 
 class InitCommand extends BaseCommand {
@@ -24,7 +24,7 @@ class InitCommand extends BaseCommand {
       fs.ensureDirSync(destDir)
       process.chdir(destDir)
     }
-    debug('creating new app with init command ', flags)
+    aioLogger.debug('creating new app with init command ', flags)
 
     const env = yeoman.createEnv()
 
