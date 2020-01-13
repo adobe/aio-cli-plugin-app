@@ -15,6 +15,7 @@ const path = require('path')
 const fs = require('fs-extra')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
+const { importConfigJson } = require('../../lib/import')
 
 class InitCommand extends BaseCommand {
   async run () {
@@ -24,12 +25,21 @@ class InitCommand extends BaseCommand {
       fs.ensureDirSync(destDir)
       process.chdir(destDir)
     }
+
     aioLogger.debug('creating new app with init command ', flags)
+
+    let projectName = path.basename(process.cwd())
+    let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK' // todo fetch those from console when no --import
+
+    if (args.import) {
+      const config = fs.readJSONSync(args.import)
+
+      projectName = config.name
+      services = config.services.map(s => s.sdkCode).join(',')
+    }
 
     const env = yeoman.createEnv()
 
-    // todo integrate with console project generator to get/generate projectname, service-integrations, ..
-    const projectName = path.basename(process.cwd())
     this.log(`You are about to initialize the project '${projectName}'`)
 
     // call code generator
@@ -38,8 +48,17 @@ class InitCommand extends BaseCommand {
       'skip-install': flags['skip-install'],
       'skip-prompt': flags.yes,
       'project-name': projectName,
-      'adobe-services': 'target,analytics,campaign-standard' // todo update with real service sdk codes from console later
+      'adobe-services': services
     })
+
+    // config import
+    // todo do also when fetching from console
+    if (args.import) {
+      const interactive = false
+      const overwrite = true
+      return importConfigJson(args.config_file_path, process.cwd(), { interactive, overwrite })
+    }
+
     // finalize configuration data
     this.log('✔ App initialization finished!')
     return res
@@ -58,6 +77,11 @@ InitCommand.flags = {
   'skip-install': flags.boolean({
     description: 'Skip npm installation after files are created',
     default: false
+  }),
+  import: flags.boolean({
+    description: 'Import an Adobe I/O Console config file',
+    default: '',
+    type: String
   }),
   ...BaseCommand.flags
 }

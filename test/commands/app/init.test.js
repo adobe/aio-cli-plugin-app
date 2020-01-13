@@ -54,7 +54,7 @@ describe('template module cannot be registered', () => {
   })
 })
 
-describe('good flags', () => {
+describe('run', () => {
   const spyChdir = jest.spyOn(process, 'chdir')
   const spyCwd = jest.spyOn(process, 'cwd')
   let fakeCwd
@@ -80,7 +80,7 @@ describe('good flags', () => {
       'skip-prompt': true,
       'skip-install': false,
       'project-name': 'some-path',
-      'adobe-services': 'target,analytics,campaign-standard'
+      'adobe-services': 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK'
     })
     expect(fs.ensureDirSync).toHaveBeenCalled()
     expect(spyChdir).toHaveBeenCalled()
@@ -96,7 +96,7 @@ describe('good flags', () => {
       'skip-prompt': true,
       'skip-install': true,
       'project-name': 'some-path',
-      'adobe-services': 'target,analytics,campaign-standard'
+      'adobe-services': 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK'
     })
     expect(fs.ensureDirSync).toHaveBeenCalled()
     expect(spyChdir).toHaveBeenCalled()
@@ -112,7 +112,7 @@ describe('good flags', () => {
       'skip-prompt': true,
       'skip-install': false,
       'project-name': 'yolo',
-      'adobe-services': 'target,analytics,campaign-standard'
+      'adobe-services': 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK'
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
     expect(spyChdir).not.toHaveBeenCalled()
@@ -128,7 +128,7 @@ describe('good flags', () => {
       'skip-prompt': true,
       'skip-install': true,
       'project-name': 'yolo',
-      'adobe-services': 'target,analytics,campaign-standard'
+      'adobe-services': 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK'
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
     expect(spyChdir).not.toHaveBeenCalled()
@@ -144,7 +144,7 @@ describe('good flags', () => {
       'skip-prompt': false,
       'skip-install': true,
       'project-name': 'yolo',
-      'adobe-services': 'target,analytics,campaign-standard'
+      'adobe-services': 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK'
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
     expect(spyChdir).not.toHaveBeenCalled()
@@ -160,7 +160,7 @@ describe('good flags', () => {
       'skip-prompt': false,
       'skip-install': false,
       'project-name': 'yolo',
-      'adobe-services': 'target,analytics,campaign-standard'
+      'adobe-services': 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK'
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
     expect(spyChdir).not.toHaveBeenCalled()
