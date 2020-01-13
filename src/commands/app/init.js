@@ -13,7 +13,7 @@ const BaseCommand = require('../../BaseCommand')
 const yeoman = require('yeoman-environment')
 const path = require('path')
 const fs = require('fs-extra')
-const aioLogger = require('@adobe/aio-lib-core-logging')('aio-cli-plugin-app:init', { provider: 'debug' })
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 
 class InitCommand extends BaseCommand {
