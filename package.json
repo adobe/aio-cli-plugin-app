@@ -6,7 +6,7 @@
   "bugs": "https://github.com/adobe/aio-cli-plugin-app/issues",
   "dependencies": {
     "@adobe/aio-app-scripts": "^0.7.0",
-    "@adobe/aio-lib-core-config": "^1.1.0",
+    "@adobe/aio-lib-core-config": ">=1.2.2",
     "@adobe/generator-aio-app": "^0.2.0",
     "@oclif/command": "^1.5.11",
     "@oclif/config": "^1.12.9",
