@@ -102,24 +102,22 @@ test('writeEnv', async () => {
 })
 
 test('importConfigJson', async () => {
-  const configJson = fixtureJson('config.1.json')
-
   const workingFolder = 'my-working-folder'
   const aioPath = path.join(workingFolder, '.aio')
   const envPath = path.join(workingFolder, '.env')
 
-  fs.readJson.mockReturnValueOnce(configJson)
+  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.1.hjson'))
   await importConfigJson('/some/config/path', workingFolder, { overwrite: true }) // first call. overwrite
 
   await expect(fs.writeJson.mock.calls[0][0]).toMatch(aioPath)
-  await expect(fs.writeJson.mock.calls[0][1]).toMatchFixtureJson('config.1.aio')
+  await expect(fs.writeJson.mock.calls[0][1]).toMatchFixtureHjson('config.1.aio')
   await expect(fs.writeJson.mock.calls[0][2]).toMatchObject({ flag: 'w' })
 
   await expect(fs.writeFile.mock.calls[0][0]).toMatch(envPath)
   await expect(fs.writeFile.mock.calls[0][1]).toMatchFixture('config.1.env')
   await expect(fs.writeJson.mock.calls[0][2]).toMatchObject({ flag: 'w' })
 
-  fs.readJson.mockReturnValueOnce(configJson)
+  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.1.hjson'))
   await importConfigJson('/some/config/path') // for coverage (defaults), second call. no overwrite
   await expect(fs.writeJson.mock.calls[1][2]).toMatchObject({ flag: 'wx' })
   await expect(fs.writeFile.mock.calls[1][2]).toMatchObject({ flag: 'wx' })
@@ -129,24 +127,22 @@ test('importConfigJson', async () => {
 })
 
 test('importConfigJson - interactive', async () => {
-  const configJson = fixtureJson('config.1.json')
-
   const workingFolder = 'my-working-folder'
   const aioPath = path.join(workingFolder, '.aio')
   const envPath = path.join(workingFolder, '.env')
 
-  fs.readJson.mockReturnValueOnce(configJson)
+  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.1.hjson'))
   await importConfigJson('/some/config/path', workingFolder, { interactive: true }) // first call. overwrite
 
   await expect(fs.writeJson.mock.calls[0][0]).toMatch(aioPath)
-  await expect(fs.writeJson.mock.calls[0][1]).toMatchFixtureJson('config.1.aio')
+  await expect(fs.writeJson.mock.calls[0][1]).toMatchFixtureHjson('config.1.aio')
   await expect(fs.writeJson.mock.calls[0][2]).toMatchObject({ flag: 'w' })
 
   await expect(fs.writeFile.mock.calls[0][0]).toMatch(envPath)
   await expect(fs.writeFile.mock.calls[0][1]).toMatchFixture('config.1.env')
   await expect(fs.writeJson.mock.calls[0][2]).toMatchObject({ flag: 'w' })
 
-  fs.readJson.mockReturnValueOnce(configJson)
+  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.1.hjson'))
   fs.existsSync.mockReturnValue(true)
   inquirer.prompt.mockResolvedValue({ confirm: false }) // no writes
   await importConfigJson('/some/config/path', workingFolder, { interactive: true }) // for coverage (defaults), second call. no overwrite
@@ -155,12 +151,37 @@ test('importConfigJson - interactive', async () => {
   await expect(fs.writeFile).toHaveBeenCalledTimes(1)
 })
 
-test('enforce alphanumeric content rules', async () => {
-  fs.readJson.mockReturnValueOnce(fixtureJson('config.2.json'))
-  await expect(importConfigJson('/some/config/path')).rejects.toThrow('Missing or invalid keys in config:')
+test('enforce alphanumeric content rule - name, project.name, project.org.name invalid', async () => {
+  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.2.hjson'))
+  const invalid = fixtureHjson('config.2.error.hjson')
+  await expect(importConfigJson('/some/config/path')).rejects.toThrow(`Missing or invalid keys in config: ${JSON.stringify(invalid)}`)
 
-  fs.readJson.mockReturnValueOnce(fixtureJson('config.3.json')) // for coverage (missing keys)
-  await expect(importConfigJson('/some/config/path')).rejects.toThrow('Missing or invalid keys in config:')
+  await expect(fs.writeJson).toHaveBeenCalledTimes(0)
+  await expect(fs.writeFile).toHaveBeenCalledTimes(0)
+})
+
+test('enforce alphanumeric content rule - missing all keys (undefined)', async () => {
+  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.3.hjson')) // for coverage (missing keys)
+  const invalid = fixtureHjson('config.3.error.hjson')
+  await expect(importConfigJson('/some/config/path')).rejects.toThrow(`Missing or invalid keys in config: ${JSON.stringify(invalid)}`)
+
+  await expect(fs.writeJson).toHaveBeenCalledTimes(0)
+  await expect(fs.writeFile).toHaveBeenCalledTimes(0)
+})
+
+test('enforce alphanumeric content rule - app_url, action_url are both invalid', async () => {
+  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.4.hjson')) // invalid urls
+  const invalid = fixtureHjson('config.4.error.hjson')
+  await expect(importConfigJson('/some/config/path')).rejects.toThrow(`Missing or invalid keys in config: ${JSON.stringify(invalid)}`)
+
+  await expect(fs.writeJson).toHaveBeenCalledTimes(0)
+  await expect(fs.writeFile).toHaveBeenCalledTimes(0)
+})
+
+test('enforce alphanumeric content rule - credentials.oauth2.redirect_uri set and invalid', async () => {
+  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.5.hjson')) // invalid url (credentials.oauth2.redirect_uri)
+  const invalid = fixtureHjson('config.5.error.hjson')
+  await expect(importConfigJson('/some/config/path')).rejects.toThrow(`Missing or invalid keys in config: ${JSON.stringify(invalid)}`)
 
   await expect(fs.writeJson).toHaveBeenCalledTimes(0)
   await expect(fs.writeFile).toHaveBeenCalledTimes(0)
