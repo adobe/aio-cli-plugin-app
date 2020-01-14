@@ -1,5 +1,5 @@
-// This is a hjson config file that is entirely valid
 {
+  // This is a hjson config file that is entirely valid
   "id": "this is some data",
   "name": "myname",
   "app_url": "https://my.app.url/foo/bar",

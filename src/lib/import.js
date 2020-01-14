@@ -15,7 +15,6 @@ const fs = require('fs-extra')
 const inquirer = require('inquirer')
 const configUtil = require('@adobe/aio-lib-core-config/src/util')
 const validator = require('validator')
-const hjson = require('hjson')
 
 const AIO_FILE = '.aio'
 const ENV_FILE = '.env'
@@ -213,11 +212,12 @@ async function writeAio (json, parentFolder, { overwrite = false, interactive = 
 async function importConfigJson (configFileLocation, writeToFolder = process.cwd(), { overwrite = false, interactive = false } = {}) {
   debug(`importConfigJson - configFileLocation: ${configFileLocation} writeToFolder:${writeToFolder} overwrite:${overwrite} interactive:${interactive}`)
 
-  const configContents = fs.readFileSync(configFileLocation, 'utf-8')
-  const config = hjson.parse(configContents.trim())
+  // const configContents = fs.readFileSync(configFileLocation, 'utf-8')
+  // const config = hjson.parse(configContents.trim())
+  const { values: config, format } = configUtil.loadFile(configFileLocation)
   const { runtime, credentials } = config
 
-  debug(`importConfigJson - config:${JSON.stringify(config, null, 2)} `)
+  debug(`importConfigJson - format: ${format} config:${JSON.stringify(config, null, 2)} `)
 
   checkRules(config)
 

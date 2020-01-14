@@ -12,8 +12,11 @@ governing permissions and limitations under the License.
 
 const { importConfigJson, writeAio, writeEnv, flattenObjectWithSeparator } = require('../../../src/lib/import')
 const fs = require('fs-extra')
+const fs0 = require('fs')
 const path = require('path')
 const inquirer = require('inquirer')
+
+jest.mock('fs')
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -102,7 +105,7 @@ test('importConfigJson', async () => {
   const aioPath = path.join(workingFolder, '.aio')
   const envPath = path.join(workingFolder, '.env')
 
-  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.1.hjson'))
+  fs0.readFileSync.mockReturnValueOnce(fixtureFile('config.1.hjson'))
   await importConfigJson('/some/config/path', workingFolder, { overwrite: true }) // first call. overwrite
 
   await expect(fs.writeJson.mock.calls[0][0]).toMatch(aioPath)
@@ -113,7 +116,7 @@ test('importConfigJson', async () => {
   await expect(fs.writeFile.mock.calls[0][1]).toMatchFixture('config.1.env')
   await expect(fs.writeJson.mock.calls[0][2]).toMatchObject({ flag: 'w' })
 
-  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.1.hjson'))
+  fs0.readFileSync.mockReturnValueOnce(fixtureFile('config.1.hjson'))
   await importConfigJson('/some/config/path') // for coverage (defaults), second call. no overwrite
   await expect(fs.writeJson.mock.calls[1][2]).toMatchObject({ flag: 'wx' })
   await expect(fs.writeFile.mock.calls[1][2]).toMatchObject({ flag: 'wx' })
@@ -127,7 +130,7 @@ test('importConfigJson - interactive', async () => {
   const aioPath = path.join(workingFolder, '.aio')
   const envPath = path.join(workingFolder, '.env')
 
-  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.1.hjson'))
+  fs0.readFileSync.mockReturnValueOnce(fixtureFile('config.1.hjson'))
   await importConfigJson('/some/config/path', workingFolder, { interactive: true }) // first call. overwrite
 
   await expect(fs.writeJson.mock.calls[0][0]).toMatch(aioPath)
@@ -138,7 +141,7 @@ test('importConfigJson - interactive', async () => {
   await expect(fs.writeFile.mock.calls[0][1]).toMatchFixture('config.1.env')
   await expect(fs.writeJson.mock.calls[0][2]).toMatchObject({ flag: 'w' })
 
-  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.1.hjson'))
+  fs0.readFileSync.mockReturnValueOnce(fixtureFile('config.1.hjson'))
   fs.existsSync.mockReturnValue(true)
   inquirer.prompt.mockResolvedValue({ confirm: false }) // no writes
   await importConfigJson('/some/config/path', workingFolder, { interactive: true }) // for coverage (defaults), second call. no overwrite
@@ -148,7 +151,7 @@ test('importConfigJson - interactive', async () => {
 })
 
 test('enforce alphanumeric content rule - name, project.name, project.org.name invalid', async () => {
-  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.2.hjson'))
+  fs0.readFileSync.mockReturnValueOnce(fixtureFile('config.2.hjson'))
   const invalid = fixtureHjson('config.2.error.hjson')
   await expect(importConfigJson('/some/config/path')).rejects.toThrow(`Missing or invalid keys in config: ${JSON.stringify(invalid)}`)
 
@@ -157,7 +160,7 @@ test('enforce alphanumeric content rule - name, project.name, project.org.name i
 })
 
 test('enforce alphanumeric content rule - missing all keys (undefined)', async () => {
-  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.3.hjson')) // for coverage (missing keys)
+  fs0.readFileSync.mockReturnValueOnce(fixtureFile('config.3.hjson')) // for coverage (missing keys)
   const invalid = fixtureHjson('config.3.error.hjson')
   await expect(importConfigJson('/some/config/path')).rejects.toThrow(`Missing or invalid keys in config: ${JSON.stringify(invalid)}`)
 
@@ -166,7 +169,7 @@ test('enforce alphanumeric content rule - missing all keys (undefined)', async (
 })
 
 test('enforce alphanumeric content rule - app_url, action_url are both invalid', async () => {
-  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.4.hjson')) // invalid urls
+  fs0.readFileSync.mockReturnValueOnce(fixtureFile('config.4.hjson')) // invalid urls
   const invalid = fixtureHjson('config.4.error.hjson')
   await expect(importConfigJson('/some/config/path')).rejects.toThrow(`Missing or invalid keys in config: ${JSON.stringify(invalid)}`)
 
@@ -175,7 +178,7 @@ test('enforce alphanumeric content rule - app_url, action_url are both invalid',
 })
 
 test('enforce alphanumeric content rule - credentials.oauth2.redirect_uri set and invalid', async () => {
-  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.5.hjson')) // invalid url (credentials.oauth2.redirect_uri)
+  fs0.readFileSync.mockReturnValueOnce(fixtureFile('config.5.hjson')) // invalid url (credentials.oauth2.redirect_uri)
   const invalid = fixtureHjson('config.5.error.hjson')
   await expect(importConfigJson('/some/config/path')).rejects.toThrow(`Missing or invalid keys in config: ${JSON.stringify(invalid)}`)
 
