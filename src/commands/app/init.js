@@ -31,8 +31,8 @@ class InitCommand extends BaseCommand {
     let projectName = path.basename(process.cwd())
     let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK' // todo fetch those from console when no --import
 
-    if (args.import) {
-      const config = fs.readJSONSync(args.import)
+    if (flags.import) {
+      const config = fs.readJSONSync(flags.import)
 
       projectName = config.name // must be defined
       services = (config.services && config.services.map(s => s.sdkCode).join(',')) || ''
@@ -53,9 +53,9 @@ class InitCommand extends BaseCommand {
 
     // config import
     // todo do also when fetching from console
-    if (args.import) {
+    if (flags.import) {
       const interactive = !!flags.yes
-      return importConfigJson(args.config_file_path, process.cwd(), { interactive })
+      return importConfigJson(flags.import, process.cwd(), { interactive })
     }
 
     // finalize configuration data
