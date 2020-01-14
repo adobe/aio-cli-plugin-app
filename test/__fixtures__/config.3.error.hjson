@@ -1,0 +1,22 @@
+[
+  {
+    key: 'name',
+    value: '<undefined>'
+  },
+  {
+    key: 'project.name',
+    value: '<undefined>'
+  },
+  {
+    key: 'project.org.name',
+    value: '<undefined>'
+  },
+  {
+    key: 'app_url',
+    value: '<undefined>'
+  },
+  {
+    key: 'action_url',
+    value: '<undefined>'
+  }
+]

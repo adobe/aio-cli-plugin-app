@@ -19,6 +19,7 @@
     },
     "globals": {
       "fixtureFile": true,
-      "fixtureJson": true
+      "fixtureJson": true,
+      "fixtureHjson": true
     }
 }
