@@ -25,6 +25,10 @@ class Deploy extends BaseCommand {
     // cli input
     const { flags } = this.parse(Deploy)
 
+    let actionFilter
+    if (flags.actions) {
+      actionFilter = flags.actions.split(',')
+    }
     // const appDir = path.resolve(args.path)
     // const currDir = process.cwd()
     // process.chdir(appDir)
@@ -60,7 +64,7 @@ class Deploy extends BaseCommand {
       if (!flags.deploy) {
         if (!flags.static) {
           if (fs.existsSync('actions/')) {
-            await scripts.buildActions()
+            await scripts.buildActions([], { actionFilter })
           } else {
             this.log('no action src, skipping action build')
           }
@@ -77,7 +81,9 @@ class Deploy extends BaseCommand {
       if (!flags.build) {
         if (!flags.static) {
           if (fs.existsSync('actions/')) {
-            await scripts.deployActions(flags)
+            let entityFilters
+            if (actionFilter) entityFilters = { actions: actionFilter }
+            await scripts.deployActions([], { entityFilters })
           } else {
             this.log('no action src, skipping action deploy')
           }
@@ -133,7 +139,8 @@ Deploy.flags = {
   }),
   actions: flags.string({
     char: 'a',
-    description: 'Only build & deploy all or single action. Use "all" or <action name> to control action deployment.'
+    description: 'Only build & deploy actions. To deploy only a subset of actions, specify a comma separated action list of values.',
+    default: ''
   })
 
   // todo no color/spinner/open output
