@@ -29,11 +29,7 @@ class Logs extends BaseCommand {
 
     try {
       const foundLogs = await scripts.logs([], logOptions)
-      if (foundLogs) {
-        this.log('✔ Finished fetching logs!')
-      } else {
-        this.log('No logs found')
-      }
+      return foundLogs
     } catch (error) {
       this.error(error)
     }

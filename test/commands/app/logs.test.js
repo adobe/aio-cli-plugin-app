@@ -61,10 +61,10 @@ describe('run', () => {
     command.log = jest.fn()
 
     mockScripts.logs.mockResolvedValue(false)
-    await command.run()
+    const foundLogs = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.logs).toBeCalledWith([], { logger: command.log, limit: 1 })
-    expect(command.log).toHaveBeenCalledWith('No logs found')
+    expect(foundLogs).toBe(false)
   })
 
   test('when there are logs, no flags', async () => {
@@ -73,10 +73,10 @@ describe('run', () => {
     command.log = jest.fn()
 
     mockScripts.logs.mockResolvedValue(true)
-    await command.run()
+    const foundLogs = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.logs).toBeCalledWith([], { logger: command.log, limit: 1 })
-    expect(command.log).toHaveBeenCalledWith('✔ Finished fetching logs!')
+    expect(foundLogs).toBe(true)
   })
 
   test('when there are logs, -l 2', async () => {
@@ -85,10 +85,10 @@ describe('run', () => {
     command.log = jest.fn()
 
     mockScripts.logs.mockResolvedValue(true)
-    await command.run()
+    const foundLogs = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.logs).toBeCalledWith([], { logger: command.log, limit: 2 })
-    expect(command.log).toHaveBeenCalledWith('✔ Finished fetching logs!')
+    expect(foundLogs).toBe(true)
   })
 
   test('when there are logs, --limit 2', async () => {
@@ -97,9 +97,9 @@ describe('run', () => {
     command.log = jest.fn()
 
     mockScripts.logs.mockResolvedValue(true)
-    await command.run()
+    const foundLogs = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.logs).toBeCalledWith([], { logger: command.log, limit: 2 })
-    expect(command.log).toHaveBeenCalledWith('✔ Finished fetching logs!')
+    expect(foundLogs).toBe(true)
   })
 })
