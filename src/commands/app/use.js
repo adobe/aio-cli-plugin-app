@@ -17,13 +17,14 @@ class Use extends BaseCommand {
   async run () {
     const { args, flags } = this.parse(Use)
     const overwrite = flags.overwrite
+    const merge = flags.merge
     let interactive = true
 
-    if (overwrite) {
+    if (overwrite || merge) {
       interactive = false
     }
 
-    return importConfigJson(args.config_file_path, process.cwd(), { interactive, overwrite })
+    return importConfigJson(args.config_file_path, process.cwd(), { interactive, overwrite, merge })
   }
 }
 
@@ -35,6 +36,11 @@ Use.flags = {
   overwrite: flags.boolean({
     description: 'Overwrite any .aio and .env files during import of the Adobe I/O Developer Console configuration file',
     char: 'w',
+    default: false
+  }),
+  merge: flags.boolean({
+    description: 'Merge any .aio and .env files during import of the Adobe I/O Developer Console configuration file',
+    char: 'm',
     default: false
   })
 }
