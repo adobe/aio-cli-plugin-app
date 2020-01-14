@@ -20,9 +20,6 @@
     "globals": {
       "fixtureFile": true,
       "fixtureJson": true,
-      "fixtureZip": true,
-      "fakeFileSystem": true,
-      "createTestBaseFlagsFunction": true,
-      "createTestFlagsFunction": true
+      "fixtureHjson": true
     }
 }

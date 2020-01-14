@@ -1,0 +1,12 @@
+{
+  "id": "this is some data",
+  "name": "myname", // valid
+  "app_url": "xhttps://my.app.url/foo/bar",   // invalid
+  "action_url": "http://a/s", // invalid
+  "project": {
+    "name": "projectname", // valid
+    "org": {
+        "name": "orgname" // valid
+    }
+  }
+}

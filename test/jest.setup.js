@@ -12,6 +12,11 @@ governing permissions and limitations under the License.
 
 const { stdout, stderr } = require('stdout-stderr')
 
+const eol = require('eol')
+const fs = require('fs')
+const path = require('path')
+const hjson = require('hjson')
+
 // trap console log
 beforeEach(() => { stdout.start(); stderr.start(); stdout.print = true })
 afterEach(() => { stdout.stop(); stderr.stop() })
@@ -20,7 +25,6 @@ process.on('unhandledRejection', error => {
   throw error
 })
 
-// const fs = require.requireActual('fs-extra')
 // dont touch the real fs
 jest.mock('fs-extra')
 // don't wait for user input in tests
@@ -33,3 +37,50 @@ jest.mock('ora')
 jest.mock('which')
 //
 jest.mock('execa')
+
+/* global fixtureFile, fixtureJson */
+
+const fixturesFolder = path.join(__dirname, '__fixtures__')
+
+// helper for fixtures
+global.fixtureFile = (output) => {
+  return fs.readFileSync(`${fixturesFolder}/${output}`).toString()
+}
+
+// helper for fixtures
+global.fixtureJson = (output) => {
+  return JSON.parse(fs.readFileSync(`${fixturesFolder}/${output}`).toString())
+}
+
+// helper for fixtures
+global.fixtureHjson = (output) => {
+  return hjson.parse(fs.readFileSync(`${fixturesFolder}/${output}`).toString())
+}
+
+// fixture matcher
+expect.extend({
+  toMatchFixture (received, argument) {
+    const val = fixtureFile(argument)
+    // eslint-disable-next-line jest/no-standalone-expect
+    expect(eol.auto(received)).toEqual(eol.auto(val))
+    return { pass: true }
+  }
+})
+
+expect.extend({
+  toMatchFixtureJson (received, argument) {
+    const val = fixtureJson(argument)
+    // eslint-disable-next-line jest/no-standalone-expect
+    expect(received).toEqual(val)
+    return { pass: true }
+  }
+})
+
+expect.extend({
+  toMatchFixtureHjson (received, argument) {
+    const val = fixtureHjson(argument)
+    // eslint-disable-next-line jest/no-standalone-expect
+    expect(received).toEqual(val)
+    return { pass: true }
+  }
+})

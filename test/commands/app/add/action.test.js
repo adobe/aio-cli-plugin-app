@@ -11,8 +11,8 @@ governing permissions and limitations under the License.
 */
 const fs = require('fs-extra')
 
-const TheCommand = require('../../../src/commands/app/init')
-const BaseCommand = require('../../../src/BaseCommand')
+const TheCommand = require('../../../../src/commands/app/add/action')
+const BaseCommand = require('../../../../src/BaseCommand')
 
 jest.mock('fs-extra')
 
@@ -43,66 +43,19 @@ describe('Command Prototype', () => {
 
 describe('bad flags', () => {
   test('unknown', async () => {
-    await expect(TheCommand.run(['.', '--wtf'])).rejects.toThrow('Unexpected argument')
+    await expect(TheCommand.run(['--wtf'])).rejects.toThrow('Unexpected argument')
   })
 })
 
 describe('template module cannot be registered', () => {
   test('unknown error', async () => {
     mockRegister.mockImplementation(() => { throw new Error('some error') })
-    await expect(TheCommand.run(['.'])).rejects.toThrow('some error')
+    await expect(TheCommand.run([])).rejects.toThrow('some error')
   })
 })
 
 describe('good flags', () => {
-  const spyChdir = jest.spyOn(process, 'chdir')
-  const spyCwd = jest.spyOn(process, 'cwd')
-  let fakeCwd
-  beforeEach(() => {
-    fakeCwd = 'yolo'
-    spyChdir.mockClear()
-    spyCwd.mockClear()
-    spyChdir.mockImplementation(dir => { fakeCwd = dir })
-    spyCwd.mockImplementation(() => fakeCwd)
-  })
-  afterAll(() => {
-    spyChdir.mockRestore()
-    spyCwd.mockRestore()
-  })
-
-  test('some-path, --yes', async () => {
-    await TheCommand.run(['some-path', '--yes'])
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': true,
-      'skip-install': false,
-      'project-name': 'some-path',
-      'adobe-services': 'target,analytics,campaign-standard'
-    })
-    expect(fs.ensureDirSync).toHaveBeenCalled()
-    expect(spyChdir).toHaveBeenCalled()
-  })
-
-  test('some-path, --yes --skip-install', async () => {
-    await TheCommand.run(['some-path', '--yes', '--skip-install'])
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': true,
-      'skip-install': true,
-      'project-name': 'some-path',
-      'adobe-services': 'target,analytics,campaign-standard'
-    })
-    expect(fs.ensureDirSync).toHaveBeenCalled()
-    expect(spyChdir).toHaveBeenCalled()
-  })
-
-  test('no-path, --yes', async () => {
+  test('--yes', async () => {
     await TheCommand.run(['--yes'])
 
     expect(yeoman.createEnv).toHaveBeenCalled()
@@ -111,14 +64,11 @@ describe('good flags', () => {
     expect(mockRun).toHaveBeenCalledWith(genName, {
       'skip-prompt': true,
       'skip-install': false,
-      'project-name': 'yolo',
       'adobe-services': 'target,analytics,campaign-standard'
     })
-    expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
   })
 
-  test('no-path, --yes --skip-install', async () => {
+  test('--yes --skip-install', async () => {
     await TheCommand.run(['--yes', '--skip-install'])
 
     expect(yeoman.createEnv).toHaveBeenCalled()
@@ -127,14 +77,11 @@ describe('good flags', () => {
     expect(mockRun).toHaveBeenCalledWith(genName, {
       'skip-prompt': true,
       'skip-install': true,
-      'project-name': 'yolo',
       'adobe-services': 'target,analytics,campaign-standard'
     })
-    expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
   })
 
-  test('no-path, --skip-install', async () => {
+  test('--skip-install', async () => {
     await TheCommand.run(['--skip-install'])
 
     expect(yeoman.createEnv).toHaveBeenCalled()
@@ -143,14 +90,10 @@ describe('good flags', () => {
     expect(mockRun).toHaveBeenCalledWith(genName, {
       'skip-prompt': false,
       'skip-install': true,
-      'project-name': 'yolo',
       'adobe-services': 'target,analytics,campaign-standard'
     })
-    expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
   })
-
-  test('no-path', async () => {
+  test('no flags', async () => {
     await TheCommand.run([])
 
     expect(yeoman.createEnv).toHaveBeenCalled()
@@ -159,10 +102,7 @@ describe('good flags', () => {
     expect(mockRun).toHaveBeenCalledWith(genName, {
       'skip-prompt': false,
       'skip-install': false,
-      'project-name': 'yolo',
       'adobe-services': 'target,analytics,campaign-standard'
     })
-    expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
   })
 })

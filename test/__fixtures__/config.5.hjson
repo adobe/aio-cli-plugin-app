@@ -1,0 +1,19 @@
+{
+  "id": "this is some data",
+  "name": "myname", // valid
+  "app_url": "https://my.app.url/foo/bar",  // valid
+  "action_url": "http://foo.bar", // valid
+  "project": {
+    "name": "projectname", // valid
+    "org": {
+        "name": "orgname" // valid
+    }
+  },
+   "credentials": {
+    "oauth2": {
+      "client_id": "83723cc8e25e455fb5db1ad12cbf16e9",
+      "client_secret": "XXXXXX",
+      "redirect_uri": "bad://url" // invalid credentials.oauth2.redirect_uri, since it is set, we validate it
+    }
+  }
+}
