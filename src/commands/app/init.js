@@ -54,9 +54,8 @@ class InitCommand extends BaseCommand {
     // config import
     // todo do also when fetching from console
     if (args.import) {
-      const interactive = false
-      const overwrite = true
-      return importConfigJson(args.config_file_path, process.cwd(), { interactive, overwrite })
+      const interactive = !!flags.yes
+      return importConfigJson(args.config_file_path, process.cwd(), { interactive })
     }
 
     // finalize configuration data
