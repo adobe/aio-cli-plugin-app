@@ -34,8 +34,8 @@ class InitCommand extends BaseCommand {
     if (args.import) {
       const config = fs.readJSONSync(args.import)
 
-      projectName = config.name
-      services = config.services.map(s => s.sdkCode).join(',')
+      projectName = config.name // must be defined
+      services = (config.services && config.services.map(s => s.sdkCode).join(',')) || ''
     }
 
     const env = yeoman.createEnv()
