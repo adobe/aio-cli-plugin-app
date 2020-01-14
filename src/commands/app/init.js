@@ -55,7 +55,8 @@ class InitCommand extends BaseCommand {
     // todo do also when fetching from console
     if (flags.import) {
       const interactive = !!flags.yes
-      return importConfigJson(flags.import, process.cwd(), { interactive })
+      const merge = true
+      return importConfigJson(flags.import, process.cwd(), { interactive, merge })
     }
 
     // finalize configuration data
