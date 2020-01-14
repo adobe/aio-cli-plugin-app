@@ -13,6 +13,9 @@ governing permissions and limitations under the License.
 const TheCommand = require('../../../src/commands/app/logs')
 const BaseCommand = require('../../../src/BaseCommand')
 
+jest.mock('@adobe/aio-app-scripts')
+const mockScripts = require('@adobe/aio-app-scripts')()
+
 beforeEach(() => {
   jest.restoreAllMocks()
 })
@@ -35,4 +38,68 @@ test('flags', async () => {
   expect(TheCommand.flags.limit.char).toBe('l')
   expect(typeof TheCommand.flags.limit.description).toBe('string')
   expect(TheCommand.flags.limit.default).toEqual(1)
+})
+
+describe('run', () => {
+  beforeEach(() => {
+    mockScripts.logs.mockReset()
+  })
+
+  test('when there is an error in app scripts', async () => {
+    const command = new TheCommand([])
+    command.error = jest.fn()
+    command.log = jest.fn()
+
+    mockScripts.logs.mockRejectedValue('error')
+    await command.run()
+    expect(command.error).toHaveBeenCalledWith('error')
+  })
+
+  test('when there are no logs, no flags', async () => {
+    const command = new TheCommand([])
+    command.error = jest.fn()
+    command.log = jest.fn()
+
+    mockScripts.logs.mockResolvedValue(false)
+    const foundLogs = await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.logs).toBeCalledWith([], { logger: command.log, limit: 1 })
+    expect(foundLogs).toBe(false)
+  })
+
+  test('when there are logs, no flags', async () => {
+    const command = new TheCommand([])
+    command.error = jest.fn()
+    command.log = jest.fn()
+
+    mockScripts.logs.mockResolvedValue(true)
+    const foundLogs = await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.logs).toBeCalledWith([], { logger: command.log, limit: 1 })
+    expect(foundLogs).toBe(true)
+  })
+
+  test('when there are logs, -l 2', async () => {
+    const command = new TheCommand(['-l', '2'])
+    command.error = jest.fn()
+    command.log = jest.fn()
+
+    mockScripts.logs.mockResolvedValue(true)
+    const foundLogs = await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.logs).toBeCalledWith([], { logger: command.log, limit: 2 })
+    expect(foundLogs).toBe(true)
+  })
+
+  test('when there are logs, --limit 2', async () => {
+    const command = new TheCommand(['--limit', '2'])
+    command.error = jest.fn()
+    command.log = jest.fn()
+
+    mockScripts.logs.mockResolvedValue(true)
+    const foundLogs = await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.logs).toBeCalledWith([], { logger: command.log, limit: 2 })
+    expect(foundLogs).toBe(true)
+  })
 })

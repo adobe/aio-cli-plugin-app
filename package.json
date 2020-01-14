@@ -5,7 +5,7 @@
   "author": "Adobe Inc.",
   "bugs": "https://github.com/adobe/aio-cli-plugin-app/issues",
   "dependencies": {
-    "@adobe/aio-app-scripts": "^0.7.0",
+    "@adobe/aio-app-scripts": "^0.8.0",
     "@adobe/aio-lib-core-config": ">=1.2.4",
     "@adobe/generator-aio-app": "^0.2.0",
     "@oclif/command": "^1.5.11",
@@ -20,7 +20,6 @@
     "js-yaml": "^3.13.1",
     "npm-package-arg": "^8.0.0",
     "open": "^7.0.0",
-    "openwhisk": "^3.20.0",
     "ora": "^4.0.3",
     "request-promise": "^4.2.4",
     "resolve": "^1.10.0",
