@@ -77,7 +77,7 @@ class Deploy extends BaseCommand {
       if (!flags.build) {
         if (!flags.static) {
           if (fs.existsSync('actions/')) {
-            await scripts.deployActions()
+            await scripts.deployActions(flags)
           } else {
             this.log('no action src, skipping action deploy')
           }
@@ -131,9 +131,9 @@ Deploy.flags = {
     char: 's',
     description: 'Only build & deploy static files'
   }),
-  actions: flags.boolean({
+  actions: flags.string({
     char: 'a',
-    description: 'Only build & deploy actions'
+    description: 'Only build & deploy all or single action. Use "all" or <action name> to control action deployment.'
   })
 
   // todo no color/spinner/open output
