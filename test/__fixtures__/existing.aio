@@ -1,0 +1,15 @@
+{
+  "id": "this should be overwritten",
+  "this_is_a_merged_key": "this is a merged value",
+  "some": {
+    "data1": "value1",
+    "data2": {
+      "subdata2": "value2"
+    }
+  },
+  "project": {
+    "org": {
+      "name": "this should be overwritten"
+    }
+  }
+}

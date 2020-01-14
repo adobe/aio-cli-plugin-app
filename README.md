@@ -22,7 +22,7 @@ $ npm install -g @adobe/aio-cli-plugin-app
 $ @adobe/aio-cli-plugin-app COMMAND
 running command...
 $ @adobe/aio-cli-plugin-app (-v|--version|version)
-@adobe/aio-cli-plugin-app/0.5.0 darwin-x64 node-v10.16.1
+@adobe/aio-cli-plugin-app/0.5.0 darwin-x64 node-v10.18.0
 $ @adobe/aio-cli-plugin-app --help [COMMAND]
 USAGE
   $ @adobe/aio-cli-plugin-app COMMAND
@@ -32,10 +32,12 @@ USAGE
 # Commands
 <!-- commands -->
 * [`@adobe/aio-cli-plugin-app app`](#adobeaio-cli-plugin-app-app)
+* [`@adobe/aio-cli-plugin-app app:add`](#adobeaio-cli-plugin-app-appadd)
 * [`@adobe/aio-cli-plugin-app app:add:action`](#adobeaio-cli-plugin-app-appaddaction)
 * [`@adobe/aio-cli-plugin-app app:add:auth`](#adobeaio-cli-plugin-app-appaddauth)
 * [`@adobe/aio-cli-plugin-app app:add:web-assets`](#adobeaio-cli-plugin-app-appaddweb-assets)
 * [`@adobe/aio-cli-plugin-app app:create [PATH]`](#adobeaio-cli-plugin-app-appcreate-path)
+* [`@adobe/aio-cli-plugin-app app:delete`](#adobeaio-cli-plugin-app-appdelete)
 * [`@adobe/aio-cli-plugin-app app:delete:action [ACTION-NAME]`](#adobeaio-cli-plugin-app-appdeleteaction-action-name)
 * [`@adobe/aio-cli-plugin-app app:delete:web-assets`](#adobeaio-cli-plugin-app-appdeleteweb-assets)
 * [`@adobe/aio-cli-plugin-app app:deploy`](#adobeaio-cli-plugin-app-appdeploy)
@@ -61,9 +63,24 @@ OPTIONS
 
 _See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.5.0/src/commands/app/index.js)_
 
+## `@adobe/aio-cli-plugin-app app:add`
+
+Add a new component to an existing Adobe I/O App
+
+```
+USAGE
+  $ @adobe/aio-cli-plugin-app app:add
+
+OPTIONS
+  -v, --verbose  Verbose output
+  --version      Show version
+```
+
+_See code: [src/commands/app/add/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.5.0/src/commands/app/add/index.js)_
+
 ## `@adobe/aio-cli-plugin-app app:add:action`
 
-Add an action to an existing Adobe I/O App
+Add a new action
 
 ```
 USAGE
@@ -80,7 +97,7 @@ _See code: [src/commands/app/add/action.js](https://github.com/adobe/aio-cli-plu
 
 ## `@adobe/aio-cli-plugin-app app:add:auth`
 
-Add auth support to the project
+Add auth support
 
 ```
 USAGE
@@ -95,7 +112,7 @@ _See code: [src/commands/app/add/auth.js](https://github.com/adobe/aio-cli-plugi
 
 ## `@adobe/aio-cli-plugin-app app:add:web-assets`
 
-Add web assets to an existing Adobe I/O App
+Add web assets support
 
 ```
 USAGE
@@ -129,9 +146,24 @@ OPTIONS
 
 _See code: [src/commands/app/create.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.5.0/src/commands/app/create.js)_
 
+## `@adobe/aio-cli-plugin-app app:delete`
+
+Delete a component from an existing Adobe I/O App
+
+```
+USAGE
+  $ @adobe/aio-cli-plugin-app app:delete
+
+OPTIONS
+  -v, --verbose  Verbose output
+  --version      Show version
+```
+
+_See code: [src/commands/app/delete/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.5.0/src/commands/app/delete/index.js)_
+
 ## `@adobe/aio-cli-plugin-app app:delete:action [ACTION-NAME]`
 
-Delete an action from an existing Adobe I/O App
+Delete an existing action
 
 ```
 USAGE
@@ -150,7 +182,7 @@ _See code: [src/commands/app/delete/action.js](https://github.com/adobe/aio-cli-
 
 ## `@adobe/aio-cli-plugin-app app:delete:web-assets`
 
-Delete web assets from an existing Adobe I/O App
+Delete existing web assets
 
 ```
 USAGE
@@ -281,6 +313,7 @@ ARGUMENTS
   CONFIG_FILE_PATH  path to an Adobe I/O Developer Console configuration file
 
 OPTIONS
+  -m, --merge      Merge any .aio and .env files during import of the Adobe I/O Developer Console configuration file
   -v, --verbose    Verbose output
   -w, --overwrite  Overwrite any .aio and .env files during import of the Adobe I/O Developer Console configuration file
   --version        Show version
