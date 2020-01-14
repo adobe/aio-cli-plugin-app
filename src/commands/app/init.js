@@ -15,7 +15,7 @@ const path = require('path')
 const fs = require('fs-extra')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
-const { importConfigJson } = require('../../lib/import')
+const { importConfigJson, loadConfigFile } = require('../../lib/import')
 
 class InitCommand extends BaseCommand {
   async run () {
@@ -32,10 +32,10 @@ class InitCommand extends BaseCommand {
     let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK' // todo fetch those from console when no --import
 
     if (flags.import) {
-      const config = fs.readJSONSync(flags.import)
+      const config = loadConfigFile(flags.import).values
 
       projectName = config.name // must be defined
-      services = (config.services && config.services.map(s => s.sdkCode).join(',')) || ''
+      services = (config.services && config.services.map(s => s.code).join(',')) || ''
     }
 
     const env = yeoman.createEnv()
@@ -54,7 +54,7 @@ class InitCommand extends BaseCommand {
     // config import
     // todo do also when fetching from console
     if (flags.import) {
-      const interactive = !!flags.yes
+      const interactive = !flags.yes
       const merge = true
       return importConfigJson(flags.import, process.cwd(), { interactive, merge })
     }
@@ -69,6 +69,7 @@ InitCommand.description = `Create a new Adobe I/O App
 `
 
 InitCommand.flags = {
+  ...BaseCommand.flags,
   yes: flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
@@ -76,14 +77,13 @@ InitCommand.flags = {
   }),
   'skip-install': flags.boolean({
     description: 'Skip npm installation after files are created',
+    char: 's',
     default: false
   }),
-  import: flags.boolean({
-    description: 'Import an Adobe I/O Console config file',
-    default: '',
-    type: String
-  }),
-  ...BaseCommand.flags
+  import: flags.string({
+    description: 'Import an Adobe I/O Developer Console configuration file',
+    char: 'i'
+  })
 }
 
 InitCommand.args = [
