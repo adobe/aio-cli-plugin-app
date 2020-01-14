@@ -93,7 +93,7 @@ describe('run', () => {
   })
 
   test('build & deploy only actions', async () => {
-    command.argv = ['-a']
+    command.argv = ['-a all']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(1)
@@ -150,7 +150,7 @@ describe('run', () => {
   })
 
   test('build only actions', async () => {
-    command.argv = ['-ba']
+    command.argv = ['-ba all']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
@@ -194,7 +194,7 @@ describe('run', () => {
   })
 
   test('deploy only actions', async () => {
-    command.argv = ['-ba']
+    command.argv = ['-ba all']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
