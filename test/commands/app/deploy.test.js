@@ -103,6 +103,29 @@ describe('run', () => {
     expect(mockOpen).toHaveBeenCalledTimes(0)
   })
 
+  test('build & deploy only single action ', async () => {
+    command.argv = ['-a test']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.deployUI).toHaveBeenCalledTimes(0)
+    expect(mockScripts.buildActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.buildUI).toHaveBeenCalledTimes(0)
+    expect(mockOpen).toHaveBeenCalledTimes(0)
+  })
+
+  test('build & deploy actions with no actions folder ', async () => {
+    command.argv = ['-ba all']
+    mockFS.existsSync.mockResolvedValue(false)
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployUI).toHaveBeenCalledTimes(0)
+    expect(mockScripts.buildActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.buildUI).toHaveBeenCalledTimes(0)
+    expect(mockOpen).toHaveBeenCalledTimes(0)
+  })
+
   test('build & deploy only static files', async () => {
     command.argv = ['-s']
     mockScripts.deployUI.mockResolvedValue('https://example.com')
