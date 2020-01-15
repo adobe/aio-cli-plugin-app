@@ -25,13 +25,14 @@ class Deploy extends BaseCommand {
     // cli input
     const { flags } = this.parse(Deploy)
 
-    let actionFilter
-    if (flags.actions) {
-      actionFilter = flags.actions.split(',')
-    }
     // const appDir = path.resolve(args.path)
     // const currDir = process.cwd()
     // process.chdir(appDir)
+
+    let filterActions
+    if (flags['filter-actions']) {
+      filterActions = flags['filter-actions'].split(',')
+    }
 
     // setup scripts, events and spinner
     // todo modularize (same for all app-scripts wrappers)
@@ -60,11 +61,12 @@ class Deploy extends BaseCommand {
         }
       }
       const scripts = AppScripts({ listeners })
+
       // build phase
       if (!flags.deploy) {
         if (!flags.static) {
           if (fs.existsSync('actions/')) {
-            await scripts.buildActions([], { actionFilter })
+            await scripts.buildActions([], { filterActions })
           } else {
             this.log('no action src, skipping action build')
           }
@@ -81,9 +83,9 @@ class Deploy extends BaseCommand {
       if (!flags.build) {
         if (!flags.static) {
           if (fs.existsSync('actions/')) {
-            let entityFilters
-            if (actionFilter) entityFilters = { actions: actionFilter }
-            await scripts.deployActions([], { entityFilters })
+            let filterEntities
+            if (filterActions) filterEntities = { actions: filterActions }
+            await scripts.deployActions([], { filterEntities })
           } else {
             this.log('no action src, skipping action deploy')
           }
@@ -137,10 +139,16 @@ Deploy.flags = {
     char: 's',
     description: 'Only build & deploy static files'
   }),
-  actions: flags.string({
+  actions: flags.boolean({
     char: 'a',
-    description: 'Only build & deploy actions. To deploy only a subset of actions, specify a comma separated action list of values.',
+    description: 'Only build & deploy actions',
     default: ''
+  }),
+  'filter-actions': flags.string({
+    description: 'To deploy only a subset of actions, specify a comma separated action list of values.',
+    default: '',
+    exclusive: ['static'],
+    char: 'f'
   })
 
   // todo no color/spinner/open output

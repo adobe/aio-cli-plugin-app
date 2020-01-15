@@ -56,6 +56,11 @@ test('flags', async () => {
   expect(TheCommand.flags.deploy.char).toBe('d')
   expect(typeof TheCommand.flags.deploy.description).toBe('string')
   expect(TheCommand.flags.deploy.exclusive).toEqual(['build'])
+
+  expect(typeof TheCommand.flags['filter-actions']).toBe('object')
+  expect(TheCommand.flags['filter-actions'].char).toBe('f')
+  expect(typeof TheCommand.flags['filter-actions'].description).toBe('string')
+  expect(TheCommand.flags['filter-actions'].exclusive).toEqual(['static'])
 })
 
 describe('run', () => {
@@ -93,7 +98,7 @@ describe('run', () => {
   })
 
   test('build & deploy only actions', async () => {
-    command.argv = ['-a all']
+    command.argv = ['-a']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(1)
@@ -103,8 +108,8 @@ describe('run', () => {
     expect(mockOpen).toHaveBeenCalledTimes(0)
   })
 
-  test('build & deploy only single action ', async () => {
-    command.argv = ['-a test']
+  test('build & deploy only some actions using --action-filter', async () => {
+    command.argv = ['-a', '--filter-actions', 'a,b,c']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(1)
@@ -112,11 +117,18 @@ describe('run', () => {
     expect(mockScripts.buildActions).toHaveBeenCalledTimes(1)
     expect(mockScripts.buildUI).toHaveBeenCalledTimes(0)
     expect(mockOpen).toHaveBeenCalledTimes(0)
+
+    expect(mockScripts.buildActions).toHaveBeenCalledWith([], {
+      filterActions: ['a', 'b', 'c']
+    })
+    expect(mockScripts.deployActions).toHaveBeenCalledWith([], {
+      filterEntities: { actions: ['a', 'b', 'c'] }
+    })
   })
 
   test('build & deploy actions with no actions folder ', async () => {
-    command.argv = ['-ba all']
-    mockFS.existsSync.mockResolvedValue(false)
+    command.argv = ['-a']
+    mockFS.existsSync.mockReturnValue(false)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
@@ -173,7 +185,7 @@ describe('run', () => {
   })
 
   test('build only actions', async () => {
-    command.argv = ['-ba all']
+    command.argv = ['-ba']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
@@ -217,7 +229,7 @@ describe('run', () => {
   })
 
   test('deploy only actions', async () => {
-    command.argv = ['-ba all']
+    command.argv = ['-ba']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
