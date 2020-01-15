@@ -39,28 +39,24 @@ test('aliases', async () => {
 })
 
 test('flags', async () => {
-  expect(typeof TheCommand.flags.actions).toBe('object')
-  expect(TheCommand.flags.actions.char).toBe('a')
-  expect(typeof TheCommand.flags.actions.description).toBe('string')
+  expect(typeof TheCommand.flags.action).toBe('object')
+  expect(TheCommand.flags.action.char).toBe('a')
+  expect(typeof TheCommand.flags.action.description).toBe('string')
+  expect(TheCommand.flags.action.exclusive).toEqual(['skip-actions'])
 
-  expect(typeof TheCommand.flags.static).toBe('object')
-  expect(TheCommand.flags.static.char).toBe('s')
-  expect(typeof TheCommand.flags.static.description).toBe('string')
+  expect(typeof TheCommand.flags['skip-actions']).toBe('object')
+  expect(typeof TheCommand.flags['skip-actions'].description).toBe('string')
 
-  expect(typeof TheCommand.flags.build).toBe('object')
-  expect(TheCommand.flags.build.char).toBe('b')
-  expect(typeof TheCommand.flags.build.description).toBe('string')
-  expect(TheCommand.flags.build.exclusive).toEqual(['deploy'])
+  expect(typeof TheCommand.flags['skip-static']).toBe('object')
+  expect(typeof TheCommand.flags['skip-static'].description).toBe('string')
 
-  expect(typeof TheCommand.flags.deploy).toBe('object')
-  expect(TheCommand.flags.deploy.char).toBe('d')
-  expect(typeof TheCommand.flags.deploy.description).toBe('string')
-  expect(TheCommand.flags.deploy.exclusive).toEqual(['build'])
+  expect(typeof TheCommand.flags['skip-deploy']).toBe('object')
+  expect(typeof TheCommand.flags['skip-deploy'].description).toBe('string')
+  expect(TheCommand.flags['skip-deploy'].exclusive).toEqual(['skip-build'])
 
-  expect(typeof TheCommand.flags['filter-actions']).toBe('object')
-  expect(TheCommand.flags['filter-actions'].char).toBe('f')
-  expect(typeof TheCommand.flags['filter-actions'].description).toBe('string')
-  expect(TheCommand.flags['filter-actions'].exclusive).toEqual(['static'])
+  expect(typeof TheCommand.flags['skip-build']).toBe('object')
+  expect(typeof TheCommand.flags['skip-build'].description).toBe('string')
+  expect(TheCommand.flags['skip-build'].exclusive).toEqual(['skip-deploy'])
 })
 
 describe('run', () => {
@@ -97,8 +93,8 @@ describe('run', () => {
     expect(mockOpen).toHaveBeenCalledTimes(0) // with verbose no open
   })
 
-  test('build & deploy only actions', async () => {
-    command.argv = ['-a']
+  test('build & deploy --skip-static', async () => {
+    command.argv = ['--skip-static']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(1)
@@ -108,8 +104,8 @@ describe('run', () => {
     expect(mockOpen).toHaveBeenCalledTimes(0)
   })
 
-  test('build & deploy only some actions using --action-filter', async () => {
-    command.argv = ['-a', '--filter-actions', 'a,b,c']
+  test('build & deploy only some actions using --action', async () => {
+    command.argv = ['--skip-static', '-a', 'a', '-a', 'b', '--action', 'c']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(1)
@@ -127,7 +123,7 @@ describe('run', () => {
   })
 
   test('build & deploy actions with no actions folder ', async () => {
-    command.argv = ['-a']
+    command.argv = ['--skip-static']
     mockFS.existsSync.mockReturnValue(false)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -138,8 +134,8 @@ describe('run', () => {
     expect(mockOpen).toHaveBeenCalledTimes(0)
   })
 
-  test('build & deploy only static files', async () => {
-    command.argv = ['-s']
+  test('build & deploy with --skip-actions', async () => {
+    command.argv = ['--skip-actions']
     mockScripts.deployUI.mockResolvedValue('https://example.com')
     mockFS.existsSync.mockResolvedValue(true)
     await command.run()
@@ -151,8 +147,8 @@ describe('run', () => {
     expect(mockOpen).toHaveBeenCalledWith('https://example.com')
   })
 
-  test('build only', async () => {
-    command.argv = ['-b']
+  test('--skip-deploy', async () => {
+    command.argv = ['--skip-deploy']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
@@ -162,8 +158,8 @@ describe('run', () => {
     expect(mockOpen).toHaveBeenCalledTimes(0)
   })
 
-  test('build only --verbose', async () => {
-    command.argv = ['-b', '--verbose']
+  test('--skip-deploy --verbose', async () => {
+    command.argv = ['--skip-deploy', '--verbose']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
@@ -173,8 +169,8 @@ describe('run', () => {
     expect(mockOpen).toHaveBeenCalledTimes(0)
   })
 
-  test('build only static files', async () => {
-    command.argv = ['-bs']
+  test('--skip-deploy --skip-actions', async () => {
+    command.argv = ['--skip-deploy', '--skip-actions']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
@@ -184,8 +180,8 @@ describe('run', () => {
     expect(mockOpen).toHaveBeenCalledTimes(0)
   })
 
-  test('build only actions', async () => {
-    command.argv = ['-ba']
+  test('--skip-deploy --skip-static', async () => {
+    command.argv = ['--skip-deploy', '--skip-static']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
@@ -195,8 +191,8 @@ describe('run', () => {
     expect(mockOpen).toHaveBeenCalledTimes(0)
   })
 
-  test('deploy only', async () => {
-    command.argv = ['-d']
+  test('--skip-build', async () => {
+    command.argv = ['--skip-build']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(1)
@@ -206,8 +202,8 @@ describe('run', () => {
     expect(mockOpen).toHaveBeenCalledTimes(1)
   })
 
-  test('deploy only --verbose', async () => {
-    command.argv = ['-d', '--verbose']
+  test('--skip-build --verbose', async () => {
+    command.argv = ['--skip-build', '--verbose']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(1)
@@ -217,8 +213,8 @@ describe('run', () => {
     expect(mockOpen).toHaveBeenCalledTimes(0)
   })
 
-  test('deploy only static files', async () => {
-    command.argv = ['-ds']
+  test('--skip-build --skip-actions', async () => {
+    command.argv = ['--skip-build', '--skip-actions']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
@@ -228,13 +224,13 @@ describe('run', () => {
     expect(mockOpen).toHaveBeenCalledTimes(1)
   })
 
-  test('deploy only actions', async () => {
-    command.argv = ['-ba']
+  test('--skip-build --skip-static', async () => {
+    command.argv = ['--skip-build', '--skip-static']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployActions).toHaveBeenCalledTimes(1)
     expect(mockScripts.deployUI).toHaveBeenCalledTimes(0)
-    expect(mockScripts.buildActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.buildActions).toHaveBeenCalledTimes(0)
     expect(mockScripts.buildUI).toHaveBeenCalledTimes(0)
     expect(mockOpen).toHaveBeenCalledTimes(0)
   })
