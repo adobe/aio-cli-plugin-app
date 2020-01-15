@@ -14,6 +14,9 @@ const fs = require('fs-extra')
 const TheCommand = require('../../../../src/commands/app/add/action')
 const BaseCommand = require('../../../../src/BaseCommand')
 
+const config = require('@adobe/aio-lib-core-config')
+jest.mock('@adobe/aio-lib-core-config')
+
 jest.mock('fs-extra')
 
 jest.mock('yeoman-environment')
@@ -31,6 +34,7 @@ beforeEach(() => {
   mockRun.mockReset()
   yeoman.createEnv.mockClear()
   fs.ensureDirSync.mockClear()
+  config.get.mockReset()
 })
 
 describe('Command Prototype', () => {
@@ -64,7 +68,7 @@ describe('good flags', () => {
     expect(mockRun).toHaveBeenCalledWith(genName, {
       'skip-prompt': true,
       'skip-install': false,
-      'adobe-services': 'target,analytics,campaign-standard'
+      'adobe-services': ''
     })
   })
 
@@ -77,7 +81,7 @@ describe('good flags', () => {
     expect(mockRun).toHaveBeenCalledWith(genName, {
       'skip-prompt': true,
       'skip-install': true,
-      'adobe-services': 'target,analytics,campaign-standard'
+      'adobe-services': ''
     })
   })
 
@@ -90,7 +94,7 @@ describe('good flags', () => {
     expect(mockRun).toHaveBeenCalledWith(genName, {
       'skip-prompt': false,
       'skip-install': true,
-      'adobe-services': 'target,analytics,campaign-standard'
+      'adobe-services': ''
     })
   })
   test('no flags', async () => {
@@ -102,7 +106,22 @@ describe('good flags', () => {
     expect(mockRun).toHaveBeenCalledWith(genName, {
       'skip-prompt': false,
       'skip-install': false,
-      'adobe-services': 'target,analytics,campaign-standard'
+      'adobe-services': ''
+    })
+  })
+
+  test('pass services config codes to generator-aio-app', async () => {
+    config.get.mockReturnValue([{ code: 'CampaignSDK' }, { code: 'AdobeAnalyticsSDK' }])
+
+    await TheCommand.run([])
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genName = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenCalledWith(genName, {
+      'skip-prompt': false,
+      'skip-install': false,
+      'adobe-services': 'CampaignSDK,AdobeAnalyticsSDK'
     })
   })
 })

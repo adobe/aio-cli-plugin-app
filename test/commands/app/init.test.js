@@ -33,6 +33,8 @@ beforeEach(() => {
   mockRun.mockReset()
   yeoman.createEnv.mockClear()
   fs.ensureDirSync.mockClear()
+  importLib.importConfigJson.mockReset()
+  importLib.writeAio.mockReset()
 })
 
 describe('Command Prototype', () => {
@@ -191,6 +193,28 @@ describe('run', () => {
     })
   })
 
+  test('no imports should write aio config', async () => {
+    await TheCommand.run([])
+
+    expect(fs.ensureDirSync).not.toHaveBeenCalled()
+    expect(spyChdir).not.toHaveBeenCalled()
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genName = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenCalledWith(genName, {
+      'skip-prompt': false,
+      'skip-install': false,
+      'project-name': 'yolo',
+      'adobe-services': 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK'
+    })
+    expect(importLib.writeAio).toHaveBeenCalledWith(
+      { services: [{ code: 'AdobeTargetSDK' }, { code: 'AdobeAnalyticsSDK' }, { code: 'CampaignSDK' }] },
+      process.cwd(),
+      { interactive: false, merge: true }
+    )
+  })
+
   test('no-path --import file={name: yolo, services:AdobeTargetSDK,CampaignSDK}', async () => {
     // mock config file
     importLib.loadConfigFile.mockReturnValueOnce({
@@ -215,7 +239,7 @@ describe('run', () => {
       'adobe-services': 'AdobeTargetSDK,CampaignSDK'
     })
 
-    expect(importLib.importConfigJson).toHaveBeenCalledWith('config.json', process.cwd(), { interactive: true, merge: true })
+    expect(importLib.importConfigJson).toHaveBeenCalledWith('config.json', process.cwd(), { interactive: false, merge: true })
   })
 
   test('no-path --yes --import file={name: yolo, services:AdobeTargetSDK,CampaignSDK}', async () => {
@@ -268,6 +292,6 @@ describe('run', () => {
       'adobe-services': ''
     })
 
-    expect(importLib.importConfigJson).toHaveBeenCalledWith('config.json', process.cwd(), { interactive: true, merge: true })
+    expect(importLib.importConfigJson).toHaveBeenCalledWith('config.json', process.cwd(), { interactive: false, merge: true })
   })
 })
