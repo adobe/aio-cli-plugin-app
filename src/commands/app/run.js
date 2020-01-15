@@ -14,6 +14,7 @@ const ora = require('ora')
 const chalk = require('chalk')
 const fs = require('fs-extra')
 const path = require('path')
+const { cli } = require('cli-ux')
 
 const { flags } = require('@oclif/command')
 
@@ -34,6 +35,8 @@ class Run extends BaseCommand {
       fs.ensureDirSync(path.dirname(PRIVATE_KEY_PATH))
       // if they do not exists, attempt to create them
       if (!fs.existsSync(PRIVATE_KEY_PATH) && !fs.existsSync(PUB_CERT_PATH)) {
+        // todo: store them in global config when we generate them, so we don't need
+        // to repeatedly accept them
         const CertCmd = this.config.findCommand('certificate:generate')
         if (CertCmd) {
           const Instance = CertCmd.load()
@@ -77,7 +80,14 @@ class Run extends BaseCommand {
     process.env.REMOTE_ACTIONS = !flags.local
     const scripts = AppScripts({ listeners })
     try {
-      return await scripts.runDev([], runOptions)
+      const result = await scripts.runDev([], runOptions)
+      if (result) {
+        if (process.env.AIO_LAUNCH_URL_PREFIX) {
+          const launchUrl = process.env.AIO_LAUNCH_URL_PREFIX + result
+          cli.open(launchUrl)
+        }
+      }
+      return result
     } catch (error) {
       spinner.fail()
       this.error(error)
