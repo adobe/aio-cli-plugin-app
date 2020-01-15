@@ -10,8 +10,8 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../src/commands/app/index.js')
-const BaseCommand = require('../../../src/BaseCommand.js')
+const TheCommand = require('../../../../src/commands/app/add/index.js')
+const BaseCommand = require('../../../../src/BaseCommand.js')
 const HHelp = require('@oclif/plugin-help').default
 
 test('exports', async () => {
@@ -44,10 +44,10 @@ describe('instance methods', () => {
       expect(command.run).toBeInstanceOf(Function)
     })
 
-    test('returns help file for app command', () => {
+    test('returns help file for app:add command', () => {
       const spy = jest.spyOn(HHelp.prototype, 'showHelp').mockReturnValue(true)
       return command.run().then(() => {
-        expect(spy).toHaveBeenCalledWith(['app', '--help'])
+        expect(spy).toHaveBeenCalledWith(['app:add', '--help'])
       })
     })
   })

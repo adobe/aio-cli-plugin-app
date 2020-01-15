@@ -1,0 +1,14 @@
+[
+  {
+    key: 'name',
+    value: 'invalid-workspace-name'
+  },
+  {
+    key: 'project.name',
+    value: 'invalid-project-name'
+  },
+  {
+    key: 'project.org.name',
+    value: 'invalid-org-name'
+  }
+]

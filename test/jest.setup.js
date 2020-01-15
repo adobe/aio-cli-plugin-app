@@ -15,6 +15,7 @@ const { stdout, stderr } = require('stdout-stderr')
 const eol = require('eol')
 const fs = require('fs')
 const path = require('path')
+const hjson = require('hjson')
 
 // trap console log
 beforeEach(() => { stdout.start(); stderr.start(); stdout.print = true })
@@ -51,6 +52,11 @@ global.fixtureJson = (output) => {
   return JSON.parse(fs.readFileSync(`${fixturesFolder}/${output}`).toString())
 }
 
+// helper for fixtures
+global.fixtureHjson = (output) => {
+  return hjson.parse(fs.readFileSync(`${fixturesFolder}/${output}`).toString())
+}
+
 // fixture matcher
 expect.extend({
   toMatchFixture (received, argument) {
@@ -64,6 +70,15 @@ expect.extend({
 expect.extend({
   toMatchFixtureJson (received, argument) {
     const val = fixtureJson(argument)
+    // eslint-disable-next-line jest/no-standalone-expect
+    expect(received).toEqual(val)
+    return { pass: true }
+  }
+})
+
+expect.extend({
+  toMatchFixtureHjson (received, argument) {
+    const val = fixtureHjson(argument)
     // eslint-disable-next-line jest/no-standalone-expect
     expect(received).toEqual(val)
     return { pass: true }
