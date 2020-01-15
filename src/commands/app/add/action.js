@@ -14,11 +14,15 @@ const yeoman = require('yeoman-environment')
 const debug = require('debug')('aio-cli-plugin-app:init')
 const { flags } = require('@oclif/command')
 
+const config = require('@adobe/aio-lib-core-config')
+
 class AddActionCommand extends BaseCommand {
   async run () {
     const { args, flags } = this.parse(AddActionCommand)
 
     debug(`adding component ${args.component} to the project, using flags: `, flags)
+
+    const services = config.get('services').map(s => s.code).join(',')
 
     const generator = '@adobe/generator-aio-app/generators/add-action'
     const env = yeoman.createEnv()
@@ -26,7 +30,7 @@ class AddActionCommand extends BaseCommand {
     const res = await env.run('gen', {
       'skip-install': flags['skip-install'],
       'skip-prompt': flags.yes,
-      'adobe-services': 'target,analytics,campaign-standard' // todo update with real sdk codes from console later
+      'adobe-services': services
     })
     return res
   }
