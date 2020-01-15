@@ -22,7 +22,7 @@ $ npm install -g @adobe/aio-cli-plugin-app
 $ @adobe/aio-cli-plugin-app COMMAND
 running command...
 $ @adobe/aio-cli-plugin-app (-v|--version|version)
-@adobe/aio-cli-plugin-app/0.3.5 darwin-x64 node-v10.15.3
+@adobe/aio-cli-plugin-app/0.5.0 darwin-x64 node-v10.18.0
 $ @adobe/aio-cli-plugin-app --help [COMMAND]
 USAGE
   $ @adobe/aio-cli-plugin-app COMMAND
@@ -32,14 +32,21 @@ USAGE
 # Commands
 <!-- commands -->
 * [`@adobe/aio-cli-plugin-app app`](#adobeaio-cli-plugin-app-app)
-* [`@adobe/aio-cli-plugin-app app:add-auth [PATH]`](#adobeaio-cli-plugin-app-appadd-auth-path)
+* [`@adobe/aio-cli-plugin-app app:add`](#adobeaio-cli-plugin-app-appadd)
+* [`@adobe/aio-cli-plugin-app app:add:action`](#adobeaio-cli-plugin-app-appaddaction)
+* [`@adobe/aio-cli-plugin-app app:add:auth`](#adobeaio-cli-plugin-app-appaddauth)
+* [`@adobe/aio-cli-plugin-app app:add:web-assets`](#adobeaio-cli-plugin-app-appaddweb-assets)
 * [`@adobe/aio-cli-plugin-app app:create [PATH]`](#adobeaio-cli-plugin-app-appcreate-path)
+* [`@adobe/aio-cli-plugin-app app:delete`](#adobeaio-cli-plugin-app-appdelete)
+* [`@adobe/aio-cli-plugin-app app:delete:action [ACTION-NAME]`](#adobeaio-cli-plugin-app-appdeleteaction-action-name)
+* [`@adobe/aio-cli-plugin-app app:delete:web-assets`](#adobeaio-cli-plugin-app-appdeleteweb-assets)
 * [`@adobe/aio-cli-plugin-app app:deploy`](#adobeaio-cli-plugin-app-appdeploy)
 * [`@adobe/aio-cli-plugin-app app:init [PATH]`](#adobeaio-cli-plugin-app-appinit-path)
-* [`@adobe/aio-cli-plugin-app app:logs [PATH]`](#adobeaio-cli-plugin-app-applogs-path)
-* [`@adobe/aio-cli-plugin-app app:run [PATH]`](#adobeaio-cli-plugin-app-apprun-path)
-* [`@adobe/aio-cli-plugin-app app:test [PATH]`](#adobeaio-cli-plugin-app-apptest-path)
-* [`@adobe/aio-cli-plugin-app app:undeploy [PATH]`](#adobeaio-cli-plugin-app-appundeploy-path)
+* [`@adobe/aio-cli-plugin-app app:logs`](#adobeaio-cli-plugin-app-applogs)
+* [`@adobe/aio-cli-plugin-app app:run`](#adobeaio-cli-plugin-app-apprun)
+* [`@adobe/aio-cli-plugin-app app:test`](#adobeaio-cli-plugin-app-apptest)
+* [`@adobe/aio-cli-plugin-app app:undeploy`](#adobeaio-cli-plugin-app-appundeploy)
+* [`@adobe/aio-cli-plugin-app app:use CONFIG_FILE_PATH`](#adobeaio-cli-plugin-app-appuse-config_file_path)
 
 ## `@adobe/aio-cli-plugin-app app`
 
@@ -54,25 +61,73 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.3.5/src/commands/app/index.js)_
+_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.5.0/src/commands/app/index.js)_
 
-## `@adobe/aio-cli-plugin-app app:add-auth [PATH]`
+## `@adobe/aio-cli-plugin-app app:add`
 
-Add auth actions to the manifest of an Adobe I/O App
+Add a new component to an existing Adobe I/O App
 
 ```
 USAGE
-  $ @adobe/aio-cli-plugin-app app:add-auth [PATH]
-
-ARGUMENTS
-  PATH  [default: .] Path to the app directory
+  $ @adobe/aio-cli-plugin-app app:add
 
 OPTIONS
   -v, --verbose  Verbose output
   --version      Show version
 ```
 
-_See code: [src/commands/app/add-auth.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.3.5/src/commands/app/add-auth.js)_
+_See code: [src/commands/app/add/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.5.0/src/commands/app/add/index.js)_
+
+## `@adobe/aio-cli-plugin-app app:add:action`
+
+Add a new action
+
+```
+USAGE
+  $ @adobe/aio-cli-plugin-app app:add:action
+
+OPTIONS
+  -v, --verbose   Verbose output
+  -y, --yes       Skip questions, and use all default values
+  --skip-install  Skip npm installation after files are created
+  --version       Show version
+```
+
+_See code: [src/commands/app/add/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.5.0/src/commands/app/add/action.js)_
+
+## `@adobe/aio-cli-plugin-app app:add:auth`
+
+Add auth support
+
+```
+USAGE
+  $ @adobe/aio-cli-plugin-app app:add:auth
+
+OPTIONS
+  -v, --verbose  Verbose output
+  --version      Show version
+```
+
+_See Documentation: [Add Auth Documentation](https://github.com/adobe/aio-app-scripts/blob/master/doc/add-auth.md)_
+
+_See code: [src/commands/app/add/auth.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.5.0/src/commands/app/add/auth.js)_
+
+## `@adobe/aio-cli-plugin-app app:add:web-assets`
+
+Add web assets support
+
+```
+USAGE
+  $ @adobe/aio-cli-plugin-app app:add:web-assets
+
+OPTIONS
+  -v, --verbose   Verbose output
+  -y, --yes       Skip questions, and use all default values
+  --skip-install  Skip npm installation after files are created
+  --version       Show version
+```
+
+_See code: [src/commands/app/add/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.5.0/src/commands/app/add/web-assets.js)_
 
 ## `@adobe/aio-cli-plugin-app app:create [PATH]`
 
@@ -86,11 +141,62 @@ ARGUMENTS
   PATH  [default: .] Path to the app directory
 
 OPTIONS
+  -i, --import=import  Import an Adobe I/O Developer Console configuration file
+  -v, --verbose        Verbose output
+  --version            Show version
+```
+
+_See code: [src/commands/app/create.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.5.0/src/commands/app/create.js)_
+
+## `@adobe/aio-cli-plugin-app app:delete`
+
+Delete a component from an existing Adobe I/O App
+
+```
+USAGE
+  $ @adobe/aio-cli-plugin-app app:delete
+
+OPTIONS
   -v, --verbose  Verbose output
   --version      Show version
 ```
 
-_See code: [src/commands/app/create.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.3.5/src/commands/app/create.js)_
+_See code: [src/commands/app/delete/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.5.0/src/commands/app/delete/index.js)_
+
+## `@adobe/aio-cli-plugin-app app:delete:action [ACTION-NAME]`
+
+Delete an existing action
+
+```
+USAGE
+  $ @adobe/aio-cli-plugin-app app:delete:action [ACTION-NAME]
+
+ARGUMENTS
+  ACTION-NAME  Action name to delete, if not specified you will choose from a list of actions
+
+OPTIONS
+  -v, --verbose  Verbose output
+  -y, --yes      Skip questions, and use all default values
+  --version      Show version
+```
+
+_See code: [src/commands/app/delete/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.5.0/src/commands/app/delete/action.js)_
+
+## `@adobe/aio-cli-plugin-app app:delete:web-assets`
+
+Delete existing web assets
+
+```
+USAGE
+  $ @adobe/aio-cli-plugin-app app:delete:web-assets
+
+OPTIONS
+  -v, --verbose  Verbose output
+  -y, --yes      Skip questions, and use all default values
+  --version      Show version
+```
+
+_See code: [src/commands/app/delete/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.5.0/src/commands/app/delete/web-assets.js)_
 
 ## `@adobe/aio-cli-plugin-app app:deploy`
 
@@ -109,7 +215,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/deploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.3.5/src/commands/app/deploy.js)_
+_See code: [src/commands/app/deploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.5.0/src/commands/app/deploy.js)_
 
 ## `@adobe/aio-cli-plugin-app app:init [PATH]`
 
@@ -123,24 +229,21 @@ ARGUMENTS
   PATH  [default: .] Path to the app directory
 
 OPTIONS
-  -t, --template=hello|target|campaign|analytics  Adobe I/O App starter template
-  -v, --verbose                                   Verbose output
-  -y, --yes                                       Skip questions, and use all default values
-  --version                                       Show version
+  -v, --verbose   Verbose output
+  -y, --yes       Skip questions, and use all default values
+  --skip-install  Skip npm installation after files are created
+  --version       Show version
 ```
 
-_See code: [src/commands/app/init.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.3.5/src/commands/app/init.js)_
+_See code: [src/commands/app/init.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.5.0/src/commands/app/init.js)_
 
-## `@adobe/aio-cli-plugin-app app:logs [PATH]`
+## `@adobe/aio-cli-plugin-app app:logs`
 
 Fetch logs for an Adobe I/O App
 
 ```
 USAGE
-  $ @adobe/aio-cli-plugin-app app:logs [PATH]
-
-ARGUMENTS
-  PATH  [default: .] Path to the app directory
+  $ @adobe/aio-cli-plugin-app app:logs
 
 OPTIONS
   -l, --limit=limit  [default: 1] Limit number of activations to fetch logs from
@@ -148,18 +251,15 @@ OPTIONS
   --version          Show version
 ```
 
-_See code: [src/commands/app/logs.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.3.5/src/commands/app/logs.js)_
+_See code: [src/commands/app/logs.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.5.0/src/commands/app/logs.js)_
 
-## `@adobe/aio-cli-plugin-app app:run [PATH]`
+## `@adobe/aio-cli-plugin-app app:run`
 
 Run an Adobe I/O App
 
 ```
 USAGE
-  $ @adobe/aio-cli-plugin-app app:run [PATH]
-
-ARGUMENTS
-  PATH  [default: .] Path to the app directory
+  $ @adobe/aio-cli-plugin-app app:run
 
 OPTIONS
   -v, --verbose  Verbose output
@@ -167,18 +267,15 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/run.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.3.5/src/commands/app/run.js)_
+_See code: [src/commands/app/run.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.5.0/src/commands/app/run.js)_
 
-## `@adobe/aio-cli-plugin-app app:test [PATH]`
+## `@adobe/aio-cli-plugin-app app:test`
 
 Run tests for an Adobe I/O App
 
 ```
 USAGE
-  $ @adobe/aio-cli-plugin-app app:test [PATH]
-
-ARGUMENTS
-  PATH  [default: .] Path to the app directory
+  $ @adobe/aio-cli-plugin-app app:test
 
 OPTIONS
   -e, --e2e      runs e2e tests.
@@ -187,18 +284,15 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/test.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.3.5/src/commands/app/test.js)_
+_See code: [src/commands/app/test.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.5.0/src/commands/app/test.js)_
 
-## `@adobe/aio-cli-plugin-app app:undeploy [PATH]`
+## `@adobe/aio-cli-plugin-app app:undeploy`
 
 Undeploys an Adobe I/O App
 
 ```
 USAGE
-  $ @adobe/aio-cli-plugin-app app:undeploy [PATH]
-
-ARGUMENTS
-  PATH  [default: .] Path to the app directory
+  $ @adobe/aio-cli-plugin-app app:undeploy
 
 OPTIONS
   -a, --actions  Only deploy actions.
@@ -207,5 +301,25 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/undeploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.3.5/src/commands/app/undeploy.js)_
+_See code: [src/commands/app/undeploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.5.0/src/commands/app/undeploy.js)_
+
+## `@adobe/aio-cli-plugin-app app:use CONFIG_FILE_PATH`
+
+Import an Adobe I/O Developer Console configuration file
+
+```
+USAGE
+  $ @adobe/aio-cli-plugin-app app:use CONFIG_FILE_PATH
+
+ARGUMENTS
+  CONFIG_FILE_PATH  path to an Adobe I/O Developer Console configuration file
+
+OPTIONS
+  -m, --merge      Merge any .aio and .env files during import of the Adobe I/O Developer Console configuration file
+  -v, --verbose    Verbose output
+  -w, --overwrite  Overwrite any .aio and .env files during import of the Adobe I/O Developer Console configuration file
+  --version        Show version
+```
+
+_See code: [src/commands/app/use.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.5.0/src/commands/app/use.js)_
 <!-- commandsstop -->

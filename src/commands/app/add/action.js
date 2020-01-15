@@ -32,7 +32,7 @@ class AddActionCommand extends BaseCommand {
   }
 }
 
-AddActionCommand.description = `Add an action to an existing Adobe I/O App
+AddActionCommand.description = `Add a new action
 `
 
 AddActionCommand.flags = {

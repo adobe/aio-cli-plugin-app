@@ -13,8 +13,9 @@ const BaseCommand = require('../../BaseCommand')
 const yeoman = require('yeoman-environment')
 const path = require('path')
 const fs = require('fs-extra')
-const debug = require('debug')('aio-cli-plugin-app:init')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
+const { importConfigJson, loadConfigFile } = require('../../lib/import')
 
 class InitCommand extends BaseCommand {
   async run () {
@@ -24,12 +25,21 @@ class InitCommand extends BaseCommand {
       fs.ensureDirSync(destDir)
       process.chdir(destDir)
     }
-    debug('creating new app with init command ', flags)
+
+    aioLogger.debug('creating new app with init command ', flags)
+
+    let projectName = path.basename(process.cwd())
+    let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK' // todo fetch those from console when no --import
+
+    if (flags.import) {
+      const config = loadConfigFile(flags.import).values
+
+      projectName = config.name // must be defined
+      services = (config.services && config.services.map(s => s.code).join(',')) || ''
+    }
 
     const env = yeoman.createEnv()
 
-    // todo integrate with console project generator to get/generate projectname, service-integrations, ..
-    const projectName = path.basename(process.cwd())
     this.log(`You are about to initialize the project '${projectName}'`)
 
     // call code generator
@@ -38,8 +48,17 @@ class InitCommand extends BaseCommand {
       'skip-install': flags['skip-install'],
       'skip-prompt': flags.yes,
       'project-name': projectName,
-      'adobe-services': 'target,analytics,campaign-standard' // todo update with real service sdk codes from console later
+      'adobe-services': services
     })
+
+    // config import
+    // todo do also when fetching from console
+    if (flags.import) {
+      const interactive = !flags.yes
+      const merge = true
+      return importConfigJson(flags.import, process.cwd(), { interactive, merge })
+    }
+
     // finalize configuration data
     this.log('✔ App initialization finished!')
     return res
@@ -50,6 +69,7 @@ InitCommand.description = `Create a new Adobe I/O App
 `
 
 InitCommand.flags = {
+  ...BaseCommand.flags,
   yes: flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
@@ -57,9 +77,13 @@ InitCommand.flags = {
   }),
   'skip-install': flags.boolean({
     description: 'Skip npm installation after files are created',
+    char: 's',
     default: false
   }),
-  ...BaseCommand.flags
+  import: flags.string({
+    description: 'Import an Adobe I/O Developer Console configuration file',
+    char: 'i'
+  })
 }
 
 InitCommand.args = [

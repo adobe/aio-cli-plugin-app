@@ -11,10 +11,15 @@ governing permissions and limitations under the License.
 
 const BaseCommand = require('../../BaseCommand')
 const InitCommand = require('./init')
+const { flags } = require('@oclif/command')
 
 class Create extends BaseCommand {
   async run () {
-    const { args } = this.parse(Create)
+    const { args, flags } = this.parse(Create)
+
+    if (flags.import) {
+      return InitCommand.run([args.path, '-y', '--import', flags.import])
+    }
     return InitCommand.run([args.path, '-y'])
   }
 }
@@ -23,7 +28,11 @@ Create.description = `Create a new Adobe I/O App with default parameters
 `
 
 Create.flags = {
-  ...BaseCommand.flags
+  ...BaseCommand.flags,
+  import: flags.string({
+    description: 'Import an Adobe I/O Developer Console configuration file',
+    char: 'i'
+  })
 }
 
 Create.args = [

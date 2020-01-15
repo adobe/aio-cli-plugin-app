@@ -1,5 +1,5 @@
 /*
-Copyright 2019 Adobe. All rights reserved.
+Copyright 2020 Adobe. All rights reserved.
 This file is licensed to you under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License. You may obtain a copy
 of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -10,9 +10,11 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../src/commands/app/create')
+const TheCommand = require('../../../src/commands/app/use')
 const BaseCommand = require('../../../src/BaseCommand')
-const InitCommand = require('../../../src/commands/app/init')
+const importLib = require('../../../src/lib/import')
+
+jest.mock('../../../src/lib/import')
 
 beforeEach(() => {
   jest.restoreAllMocks()
@@ -23,21 +25,6 @@ describe('Command Prototype', () => {
     expect(typeof TheCommand).toEqual('function')
     expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
     expect(typeof TheCommand.description).toBe('string')
-  })
-
-  test('flags', async () => {
-    expect(TheCommand.flags).toEqual(expect.objectContaining(BaseCommand.flags))
-
-    expect(typeof TheCommand.flags.import).toBe('object')
-    expect(TheCommand.flags.import.char).toBe('i')
-  })
-
-  test('args', async () => {
-    expect(TheCommand.args).toEqual(expect.arrayContaining([{
-      name: 'path',
-      description: 'Path to the app directory',
-      default: '.'
-    }]))
   })
 })
 
@@ -56,16 +43,10 @@ describe('bad flags', () => {
   })
 })
 
-describe('runs', () => {
-  test('Calls to InitCommand with -y', async () => {
-    const mySpy = jest.spyOn(InitCommand, 'run').mockImplementation(jest.fn())
-    await TheCommand.run(['new-project'])
-    expect(mySpy).toHaveBeenCalledWith(['new-project', '-y'])
-  })
+test('runs', async () => {
+  await TheCommand.run(['config-file'])
+  await TheCommand.run(['config-file', '--overwrite'])
+  await TheCommand.run(['config-file', '--merge'])
 
-  test('import', async () => {
-    const mySpy = jest.spyOn(InitCommand, 'run').mockImplementation(jest.fn())
-    await TheCommand.run(['new-project', '--import', 'config-file'])
-    expect(mySpy).toHaveBeenCalledWith(['new-project', '-y', '--import', 'config-file'])
-  })
+  expect(importLib.importConfigJson).toHaveBeenCalledTimes(3)
 })
