@@ -108,6 +108,8 @@ OPTIONS
   --version      Show version
 ```
 
+_See Documentation: [Add Auth Documentation](https://github.com/adobe/aio-app-scripts/blob/master/doc/add-auth.md)_
+
 _See code: [src/commands/app/add/auth.js](https://github.com/adobe/aio-cli-plugin-app/blob/0.5.0/src/commands/app/add/auth.js)_
 
 ## `@adobe/aio-cli-plugin-app app:add:web-assets`
