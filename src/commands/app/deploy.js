@@ -81,7 +81,9 @@ class Deploy extends BaseCommand {
         if (!flags['skip-actions']) {
           if (fs.existsSync('actions/')) {
             let filterEntities
-            if (filterActions) filterEntities = { actions: filterActions }
+            if (filterActions) {
+              filterEntities = { actions: filterActions }
+            }
             await scripts.deployActions([], { filterEntities })
           } else {
             this.log('no action src, skipping action deploy')
