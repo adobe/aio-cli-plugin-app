@@ -11,28 +11,16 @@ governing permissions and limitations under the License.
 
 const BaseCommand = require('../../BaseCommand')
 const InitCommand = require('./init')
-const { importConfigJson } = require('../../lib/import')
 const { flags } = require('@oclif/command')
-const path = require('path')
 
 class Create extends BaseCommand {
   async run () {
     const { args, flags } = this.parse(Create)
 
-    let configFilePath
     if (flags.import) {
-      // resolve it here since running the init command changes the CWD
-      configFilePath = path.resolve(flags.import)
+      return InitCommand.run([args.path, '-y', '--import', flags.import])
     }
-
-    // run the init command before possibly importing the config
-    await InitCommand.run([args.path, '-y'])
-
-    // note that the CWD has been changed by the init command above (to a resolved args.path),
-    // thus we install the config into the CWD
-    if (flags.import) {
-      await importConfigJson(configFilePath, process.cwd(), { interactive: true })
-    }
+    return InitCommand.run([args.path, '-y'])
   }
 }
 
