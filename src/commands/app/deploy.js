@@ -29,6 +29,8 @@ class Deploy extends BaseCommand {
     // const currDir = process.cwd()
     // process.chdir(appDir)
 
+    const filterActions = flags.action
+
     // setup scripts, events and spinner
     // todo modularize (same for all app-scripts wrappers)
     const spinner = ora()
@@ -56,16 +58,17 @@ class Deploy extends BaseCommand {
         }
       }
       const scripts = AppScripts({ listeners })
+
       // build phase
-      if (!flags.deploy) {
-        if (!flags.static) {
+      if (!flags['skip-build']) {
+        if (!flags['skip-actions']) {
           if (fs.existsSync('actions/')) {
-            await scripts.buildActions()
+            await scripts.buildActions([], { filterActions })
           } else {
             this.log('no action src, skipping action build')
           }
         }
-        if (!flags.actions) {
+        if (!flags['skip-static']) {
           if (fs.existsSync('web-src/')) {
             await scripts.buildUI()
           } else {
@@ -74,18 +77,23 @@ class Deploy extends BaseCommand {
         }
       }
       // deploy phase
-      if (!flags.build) {
-        if (!flags.static) {
+      if (!flags['skip-deploy']) {
+        if (!flags['skip-actions']) {
           if (fs.existsSync('actions/')) {
-            await scripts.deployActions()
+            let filterEntities
+            if (filterActions) {
+              filterEntities = { actions: filterActions }
+            }
+            await scripts.deployActions([], { filterEntities })
           } else {
             this.log('no action src, skipping action deploy')
           }
         }
-        if (!flags.actions) {
+        if (!flags['skip-static']) {
           if (fs.existsSync('web-src/')) {
             const url = await scripts.deployUI()
             this.log(chalk.green(chalk.bold(`url: ${url}`))) // always log the url
+            // todo show action urls !!
             if (!flags.verbose) {
               open(url) // do not open if verbose as the user probably wants to look at the console
             }
@@ -96,9 +104,9 @@ class Deploy extends BaseCommand {
       }
 
       // final message
-      if (flags.build) {
+      if (flags['skip-deploy']) {
         this.log(chalk.green(chalk.bold('Build success, your app is ready to be deployed 👌')))
-      } else if (flags.actions) {
+      } else if (flags['skip-static']) {
         this.log(chalk.green(chalk.bold('Well done, your actions are now online 🏄')))
       } else {
         this.log(chalk.green(chalk.bold('Well done, your app is now online 🏄')))
@@ -117,23 +125,26 @@ Deploy.description = `Build and deploy an Adobe I/O App
 
 Deploy.flags = {
   ...BaseCommand.flags,
-  build: flags.boolean({
-    char: 'b',
-    description: 'Only build, don\'t deploy',
-    exclusive: ['deploy']
+  'skip-build': flags.boolean({
+    description: 'Skip build phase',
+    exclusive: ['skip-deploy']
   }),
-  deploy: flags.boolean({
-    char: 'd',
-    description: 'Only deploy, don\'t build',
-    exclusive: ['build']
+  'skip-deploy': flags.boolean({
+    description: 'Skip deploy phase',
+    exclusive: ['skip-build']
   }),
-  static: flags.boolean({
-    char: 's',
-    description: 'Only build & deploy static files'
+  'skip-static': flags.boolean({
+    description: 'Skip build & deployment of static files'
   }),
-  actions: flags.boolean({
+  'skip-actions': flags.boolean({
+    description: 'Skip action build & deploy'
+  }),
+  action: flags.string({
+    description: 'Deploy only a specific action, the flags can be specified multiple times',
+    default: '',
+    exclusive: ['skip-actions'],
     char: 'a',
-    description: 'Only build & deploy actions'
+    multiple: true
   })
 
   // todo no color/spinner/open output
