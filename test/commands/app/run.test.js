@@ -15,6 +15,9 @@ const BaseCommand = require('../../../src/BaseCommand')
 
 // mocks
 jest.mock('open', () => jest.fn())
+jest.mock('cli-ux')
+const { cli } = require('cli-ux')
+const fs = require('fs-extra')
 const mockScripts = require('@adobe/aio-app-scripts')()
 let command
 
@@ -32,6 +35,7 @@ beforeEach(() => {
       }
     }
   }
+  cli.open = jest.fn()
 })
 
 afterEach(() => {
@@ -97,6 +101,34 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
     expect(process.env.REMOTE_ACTIONS).toBe('false')
+  })
+
+  test('app:run where scripts.runDev throws', async () => {
+    mockScripts.runDev.mockRejectedValue('error')
+    command.argv = []
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(2)
+    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
+  })
+
+  test('app:run with AIO_LAUNCH_URL_PREFIX', async () => {
+    process.env.AIO_LAUNCH_URL_PREFIX = 'some value:'
+    mockScripts.runDev.mockResolvedValue('mkay')
+    command.argv = []
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(1)
+    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
+    expect(cli.open).toHaveBeenCalledWith('some value:mkay')
+  })
+
+  test('app:run with certs', async () => {
+    mockScripts.runDev.mockResolvedValue('asd')
+    delete process.env.AIO_LAUNCH_URL_PREFIX
+    fs.existsSync.mockResolvedValue(true)
+    command.argv = []
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
   })
 
   // TODO: should add a test for a eventlistener that throws an exception, which will break things
