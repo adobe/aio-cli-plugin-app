@@ -15,7 +15,7 @@ const path = require('path')
 const fs = require('fs-extra')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
-const { importConfigJson, loadConfigFile } = require('../../lib/import')
+const { importConfigJson, loadConfigFile, writeAio } = require('../../lib/import')
 
 class InitCommand extends BaseCommand {
   async run () {
@@ -52,11 +52,17 @@ class InitCommand extends BaseCommand {
     })
 
     // config import
-    // todo do also when fetching from console
+    // always auto merge
+    const interactive = false
+    const merge = true
     if (flags.import) {
-      const interactive = !flags.yes
-      const merge = true
       return importConfigJson(flags.import, process.cwd(), { interactive, merge })
+    } else {
+      // write default services value to .aio
+      // todo use real imported values from console
+      writeAio({
+        services: services.split(',').map(code => ({ code }))
+      }, process.cwd(), { merge, interactive })
     }
 
     // finalize configuration data
