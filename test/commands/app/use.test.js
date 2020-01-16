@@ -46,6 +46,7 @@ describe('bad flags', () => {
 test('runs', async () => {
   await TheCommand.run(['config-file'])
   await TheCommand.run(['config-file', '--overwrite'])
+  await TheCommand.run(['config-file', '--merge'])
 
-  expect(importLib.importConfigJson).toHaveBeenCalledTimes(2)
+  expect(importLib.importConfigJson).toHaveBeenCalledTimes(3)
 })

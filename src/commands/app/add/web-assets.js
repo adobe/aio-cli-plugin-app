@@ -32,7 +32,7 @@ class AddWebAssetsCommand extends BaseCommand {
   }
 }
 
-AddWebAssetsCommand.description = `Add web assets to an existing Adobe I/O App
+AddWebAssetsCommand.description = `Add web assets support
 `
 
 AddWebAssetsCommand.flags = {

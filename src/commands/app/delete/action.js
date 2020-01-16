@@ -42,7 +42,7 @@ class DeleteActionCommand extends BaseCommand {
   }
 }
 
-DeleteActionCommand.description = `Delete an action from an existing Adobe I/O App
+DeleteActionCommand.description = `Delete an existing action
 `
 
 DeleteActionCommand.flags = {

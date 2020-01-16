@@ -13,9 +13,6 @@ governing permissions and limitations under the License.
 const TheCommand = require('../../../src/commands/app/create')
 const BaseCommand = require('../../../src/BaseCommand')
 const InitCommand = require('../../../src/commands/app/init')
-const importLib = require('../../../src/lib/import')
-
-jest.mock('../../../src/lib/import')
 
 beforeEach(() => {
   jest.restoreAllMocks()
@@ -26,6 +23,21 @@ describe('Command Prototype', () => {
     expect(typeof TheCommand).toEqual('function')
     expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
     expect(typeof TheCommand.description).toBe('string')
+  })
+
+  test('flags', async () => {
+    expect(TheCommand.flags).toEqual(expect.objectContaining(BaseCommand.flags))
+
+    expect(typeof TheCommand.flags.import).toBe('object')
+    expect(TheCommand.flags.import.char).toBe('i')
+  })
+
+  test('args', async () => {
+    expect(TheCommand.args).toEqual(expect.arrayContaining([{
+      name: 'path',
+      description: 'Path to the app directory',
+      default: '.'
+    }]))
   })
 })
 
@@ -52,8 +64,8 @@ describe('runs', () => {
   })
 
   test('import', async () => {
-    jest.spyOn(InitCommand, 'run').mockImplementation(jest.fn())
+    const mySpy = jest.spyOn(InitCommand, 'run').mockImplementation(jest.fn())
     await TheCommand.run(['new-project', '--import', 'config-file'])
-    await expect(importLib.importConfigJson).toHaveBeenCalled()
+    expect(mySpy).toHaveBeenCalledWith(['new-project', '-y', '--import', 'config-file'])
   })
 })
