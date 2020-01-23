@@ -19,15 +19,12 @@ const fs = require('fs-extra')
 const BaseCommand = require('../../BaseCommand')
 const AppScripts = require('@adobe/aio-app-scripts')
 const { flags } = require('@oclif/command')
+const { runPackageScript } = require('../../lib/app-helper')
 
 class Deploy extends BaseCommand {
   async run () {
     // cli input
     const { flags } = this.parse(Deploy)
-
-    // const appDir = path.resolve(args.path)
-    // const currDir = process.cwd()
-    // process.chdir(appDir)
 
     const filterActions = flags.action
 
@@ -61,6 +58,12 @@ class Deploy extends BaseCommand {
 
       // build phase
       if (!flags['skip-build']) {
+        try {
+          await runPackageScript('pre-app-build')
+        } catch (err) {
+          // this is assumed to be a missing script error
+        }
+
         if (!flags['skip-actions']) {
           if (fs.existsSync('actions/')) {
             await scripts.buildActions([], { filterActions })
@@ -75,9 +78,19 @@ class Deploy extends BaseCommand {
             this.log('no web-src, skipping web-src build')
           }
         }
+        try {
+          await runPackageScript('post-app-build')
+        } catch (err) {
+          // this is assumed to be a missing script error
+        }
       }
       // deploy phase
       if (!flags['skip-deploy']) {
+        try {
+          await runPackageScript('pre-app-deploy')
+        } catch (err) {
+          // this is assumed to be a missing script error
+        }
         if (!flags['skip-actions']) {
           if (fs.existsSync('actions/')) {
             let filterEntities
@@ -101,6 +114,11 @@ class Deploy extends BaseCommand {
             this.log('no web-src, skipping web-src deploy')
           }
         }
+        try {
+          await runPackageScript('post-app-deploy')
+        } catch (err) {
+          // this is assumed to be a missing script error
+        }
       }
 
       // final message
@@ -111,10 +129,8 @@ class Deploy extends BaseCommand {
       } else {
         this.log(chalk.green(chalk.bold('Well done, your app is now online 🏄')))
       }
-      // process.chdir(currDir)
     } catch (error) {
       spinner.fail()
-      // process.chdir(currDir)
       this.error(error)
     }
   }
