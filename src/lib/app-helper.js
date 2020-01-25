@@ -38,27 +38,17 @@ async function installPackage (dir) {
   return execa('npm', ['install'], { cwd: dir })
 }
 
-async function runPackageScript (scriptName, dir, options = {}) {
+async function runPackageScript (scriptName, dir, cmdArgs = []) {
+  if (!dir) {
+    dir = process.cwd()
+  }
   debug(`running npm run-script ${scriptName} in dir: ${dir}`)
-  if (!(fs.statSync(dir).isDirectory())) {
-    debug(`${dir} is not a directory`)
-    throw new Error(`${dir} is not a directory`)
+  const pkg = await fs.readJSON(path.join(dir, 'package.json'))
+  if (pkg && pkg.scripts && pkg.scripts[scriptName]) {
+    return execa('npm', ['run-script', scriptName].concat(cmdArgs), { cwd: dir, stdio: 'inherit' })
+  } else {
+    throw new Error(`${dir} does not contain a package.json or it does not contain a script named ${scriptName}`)
   }
-  if (!fs.readdirSync(dir).includes('package.json')) {
-    debug(`${dir} does not contain a package.json file.`)
-    throw new Error(`${dir} does not contain a package.json file.`)
-  }
-  if (!fs.readJSONSync(path.join(dir, 'package.json')).scripts[scriptName]) {
-    debug(`${dir} package.json scripts does not contain ${scriptName}`)
-    throw new Error(`${dir} package.json scripts does not contain ${scriptName}`)
-  }
-
-  // optional cmd args
-  const cmdArgs = []
-  if (options.silent) cmdArgs.push('--silent')
-
-  // npm run-script test
-  return execa('npm', ['run-script', scriptName].concat(cmdArgs), { cwd: dir, stdio: 'inherit' })
 }
 
 module.exports = {

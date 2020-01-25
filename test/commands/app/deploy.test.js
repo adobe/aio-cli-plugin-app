@@ -72,7 +72,7 @@ describe('run', () => {
 
   test('build & deploy an App with no flags', async () => {
     mockScripts.deployUI.mockResolvedValue('https://example.com')
-    mockFS.existsSync.mockResolvedValue(true)
+    mockFS.existsSync.mockReturnValue(true)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(1)
@@ -137,7 +137,7 @@ describe('run', () => {
   test('build & deploy with --skip-actions', async () => {
     command.argv = ['--skip-actions']
     mockScripts.deployUI.mockResolvedValue('https://example.com')
-    mockFS.existsSync.mockResolvedValue(true)
+    mockFS.existsSync.mockReturnValue(true)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
@@ -147,8 +147,22 @@ describe('run', () => {
     expect(mockOpen).toHaveBeenCalledWith('https://example.com')
   })
 
+  test('build & deploy with --skip-actions with no static folder', async () => {
+    command.argv = ['--skip-actions']
+    mockScripts.deployUI.mockResolvedValue('https://example.com')
+    mockFS.existsSync.mockReturnValue(false)
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployUI).toHaveBeenCalledTimes(0)
+    expect(mockScripts.buildActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.buildUI).toHaveBeenCalledTimes(0)
+    expect(mockOpen).toHaveBeenCalledTimes(0)
+  })
+
   test('--skip-deploy', async () => {
     command.argv = ['--skip-deploy']
+    mockFS.existsSync.mockReturnValue(true)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
