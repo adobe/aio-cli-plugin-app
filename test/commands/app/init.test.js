@@ -13,9 +13,29 @@ const fs = require('fs-extra')
 
 const TheCommand = require('../../../src/commands/app/init')
 const BaseCommand = require('../../../src/BaseCommand')
+const importLib = require('../../../src/lib/import')
+jest.mock('../../../src/lib/import')
 
+jest.mock('fs-extra')
+
+jest.mock('yeoman-environment')
 const yeoman = require('yeoman-environment')
-const inquirer = require('inquirer')
+
+const mockRegister = jest.fn()
+const mockRun = jest.fn()
+yeoman.createEnv.mockReturnValue({
+  register: mockRegister,
+  run: mockRun
+})
+
+beforeEach(() => {
+  mockRegister.mockReset()
+  mockRun.mockReset()
+  yeoman.createEnv.mockClear()
+  fs.ensureDirSync.mockClear()
+  importLib.importConfigJson.mockReset()
+  importLib.writeAio.mockReset()
+})
 
 describe('Command Prototype', () => {
   test('exports', async () => {
@@ -23,115 +43,255 @@ describe('Command Prototype', () => {
     expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
     expect(typeof TheCommand.flags).toBe('object')
   })
+  test('flags', async () => {
+    expect(TheCommand.flags).toEqual(expect.objectContaining(BaseCommand.flags))
+
+    expect(typeof TheCommand.flags.import).toBe('object')
+    expect(TheCommand.flags.import.char).toBe('i')
+
+    expect(typeof TheCommand.flags.yes).toBe('object')
+    expect(TheCommand.flags.yes.char).toBe('y')
+    expect(TheCommand.flags.yes.default).toBe(false)
+
+    expect(typeof TheCommand.flags['skip-install']).toBe('object')
+    expect(TheCommand.flags['skip-install'].char).toBe('s')
+    expect(TheCommand.flags['skip-install'].default).toBe(false)
+  })
+
+  test('args', async () => {
+    expect(TheCommand.args).toEqual(expect.arrayContaining([{
+      name: 'path',
+      description: 'Path to the app directory',
+      default: '.'
+    }]))
+  })
 })
 
-describe('bad flags', () => {
+describe('bad args/flags', () => {
   test('unknown', async () => {
-    const result = TheCommand.run(['.', '--wtf'])
-    expect(result instanceof Promise).toBeTruthy()
-    return new Promise((resolve, reject) => {
-      return result
-        .then(() => reject(new Error()))
-        .catch(res => {
-          expect(res.message).toMatch('Unexpected argument')
-          resolve()
-        })
-    })
-  })
-  test('bad template', async () => {
-    const result = TheCommand.run(['.', '-t=chimeric'])
-    expect(result instanceof Promise).toBeTruthy()
-    return new Promise((resolve, reject) => {
-      return result
-        .then(() => reject(new Error()))
-        .catch(res => {
-          expect(res.message).toMatch('Expected --template=chimeric to be one of: hello, target, campaign, analytics')
-          resolve()
-        })
-    })
-  })
-
-  test('prompt returns bad template', async () => {
-    jest.spyOn(inquirer, 'prompt').mockImplementation(() => {
-      return { template: 'doesnotexist' }
-    })
-    const result = TheCommand.run(['.'])
-    expect(result instanceof Promise).toBeTruthy()
-    return new Promise((resolve, reject) => {
-      return result
-        .then(() => reject(new Error()))
-        .catch(res => {
-          expect(res.message).toMatch('Expected --template=doesnotexist to be one of: hello, target, campaign, analytics')
-          resolve()
-        })
-    })
+    await expect(TheCommand.run(['.', '--wtf'])).rejects.toThrow('Unexpected argument')
   })
 })
 
-describe('template not found', () => {
-  test('unknown', async () => {
-    jest.spyOn(yeoman, 'createEnv').mockImplementation(() => {
-      return {
-        register: jest.fn(() => {
-          throw new Error('some error')
-        })
-      }
-    })
-    const result = TheCommand.run(['.', '-t=hello'])
-    expect(result instanceof Promise).toBeTruthy()
-    return new Promise((resolve, reject) => {
-      return result
-        .then(() => reject(new Error()))
-        .catch(res => {
-          expect(res.message).toMatch('the \'hello\' template is not available.')
-          resolve()
-        })
-    })
+describe('template module cannot be registered', () => {
+  test('unknown error', async () => {
+    mockRegister.mockImplementation(() => { throw new Error('some error') })
+    await expect(TheCommand.run(['.'])).rejects.toThrow('some error')
   })
 })
 
-describe('good flags', () => {
+describe('run', () => {
+  const spyChdir = jest.spyOn(process, 'chdir')
+  const spyCwd = jest.spyOn(process, 'cwd')
+  let fakeCwd
+  beforeEach(() => {
+    fakeCwd = 'yolo'
+    spyChdir.mockClear()
+    spyCwd.mockClear()
+    spyChdir.mockImplementation(dir => { fakeCwd = dir })
+    spyCwd.mockImplementation(() => fakeCwd)
+  })
+  afterAll(() => {
+    spyChdir.mockRestore()
+    spyCwd.mockRestore()
+  })
+
   test('some-path, --yes', async () => {
-    const mockChdir = jest.spyOn(process, 'chdir').mockImplementation(() => {})
-    let registerCalled = false
-    let runCalled = false
-    const mockYoCreate = jest.spyOn(yeoman, 'createEnv').mockImplementation(() => {
-      return {
-        register: jest.fn(() => {
-          registerCalled = true
-        }),
-        run: jest.fn(() => {
-          runCalled = true
-        })
-      }
-    })
     await TheCommand.run(['some-path', '--yes'])
-    expect(mockYoCreate).toHaveBeenCalled()
-    expect(registerCalled).toBe(true)
-    expect(runCalled).toBe(true)
-    expect(fs.ensureDirSync).toHaveBeenCalled()
-    expect(mockChdir).toHaveBeenCalled()
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genName = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenCalledWith(genName, {
+      'skip-prompt': true,
+      'skip-install': false,
+      'project-name': 'some-path',
+      'adobe-services': 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK'
+    })
+    expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+    expect(spyChdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+  })
+
+  test('some-path, --yes --skip-install', async () => {
+    await TheCommand.run(['some-path', '--yes', '--skip-install'])
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genName = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenCalledWith(genName, {
+      'skip-prompt': true,
+      'skip-install': true,
+      'project-name': 'some-path',
+      'adobe-services': 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK'
+    })
+    expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+    expect(spyChdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
   })
 
   test('no-path, --yes', async () => {
-    const mockChdir = jest.spyOn(process, 'chdir').mockImplementation(() => {})
-    let registerCalled = false
-    let runCalled = false
-    const mockYoCreate = jest.spyOn(yeoman, 'createEnv').mockImplementation(() => {
-      return {
-        register: jest.fn(() => {
-          registerCalled = true
-        }),
-        run: jest.fn(() => {
-          runCalled = true
-        })
+    await TheCommand.run(['--yes'])
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genName = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenCalledWith(genName, {
+      'skip-prompt': true,
+      'skip-install': false,
+      'project-name': 'yolo',
+      'adobe-services': 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK'
+    })
+    expect(fs.ensureDirSync).not.toHaveBeenCalled()
+    expect(spyChdir).not.toHaveBeenCalled()
+  })
+
+  test('no-path, --yes --skip-install', async () => {
+    await TheCommand.run(['--yes', '--skip-install'])
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genName = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenCalledWith(genName, {
+      'skip-prompt': true,
+      'skip-install': true,
+      'project-name': 'yolo',
+      'adobe-services': 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK'
+    })
+    expect(fs.ensureDirSync).not.toHaveBeenCalled()
+    expect(spyChdir).not.toHaveBeenCalled()
+  })
+
+  test('no-path, --skip-install', async () => {
+    await TheCommand.run(['--skip-install'])
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genName = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenCalledWith(genName, {
+      'skip-prompt': false,
+      'skip-install': true,
+      'project-name': 'yolo',
+      'adobe-services': 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK'
+    })
+    expect(fs.ensureDirSync).not.toHaveBeenCalled()
+    expect(spyChdir).not.toHaveBeenCalled()
+  })
+
+  test('no-path', async () => {
+    await TheCommand.run([])
+
+    expect(fs.ensureDirSync).not.toHaveBeenCalled()
+    expect(spyChdir).not.toHaveBeenCalled()
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genName = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenCalledWith(genName, {
+      'skip-prompt': false,
+      'skip-install': false,
+      'project-name': 'yolo',
+      'adobe-services': 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK'
+    })
+  })
+
+  test('no imports should write aio config', async () => {
+    await TheCommand.run([])
+
+    expect(fs.ensureDirSync).not.toHaveBeenCalled()
+    expect(spyChdir).not.toHaveBeenCalled()
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genName = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenCalledWith(genName, {
+      'skip-prompt': false,
+      'skip-install': false,
+      'project-name': 'yolo',
+      'adobe-services': 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK'
+    })
+    expect(importLib.writeAio).toHaveBeenCalledWith(
+      { services: [{ code: 'AdobeTargetSDK' }, { code: 'AdobeAnalyticsSDK' }, { code: 'CampaignSDK' }] },
+      process.cwd(),
+      { interactive: false, merge: true }
+    )
+  })
+
+  test('no-path --import file={name: yolo, services:AdobeTargetSDK,CampaignSDK}', async () => {
+    // mock config file
+    importLib.loadConfigFile.mockReturnValueOnce({
+      values: {
+        name: 'yolo',
+        services: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }]
       }
     })
-    await TheCommand.run(['--yes'])
-    expect(mockYoCreate).toHaveBeenCalled()
-    expect(registerCalled).toBe(true)
-    expect(runCalled).toBe(true)
-    expect(fs.ensureDirSync).toHaveBeenCalled()
-    expect(mockChdir).toHaveBeenCalled()
+    await TheCommand.run(['--import', 'config.json'])
+
+    // no args.path
+    expect(fs.ensureDirSync).not.toHaveBeenCalled()
+    expect(spyChdir).not.toHaveBeenCalled()
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genName = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenCalledWith(genName, {
+      'skip-prompt': false,
+      'skip-install': false,
+      'project-name': 'yolo',
+      'adobe-services': 'AdobeTargetSDK,CampaignSDK'
+    })
+
+    expect(importLib.importConfigJson).toHaveBeenCalledWith('config.json', process.cwd(), { interactive: false, merge: true })
+  })
+
+  test('no-path --yes --import file={name: yolo, services:AdobeTargetSDK,CampaignSDK}', async () => {
+    // mock config file
+    importLib.loadConfigFile.mockReturnValueOnce({
+      values: {
+        name: 'yolo',
+        services: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }]
+      }
+    })
+    await TheCommand.run(['--yes', '--import', 'config.json'])
+
+    // no args.path
+    expect(fs.ensureDirSync).not.toHaveBeenCalled()
+    expect(spyChdir).not.toHaveBeenCalled()
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genName = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenCalledWith(genName, {
+      'skip-prompt': true,
+      'skip-install': false,
+      'project-name': 'yolo',
+      'adobe-services': 'AdobeTargetSDK,CampaignSDK'
+    })
+
+    expect(importLib.importConfigJson).toHaveBeenCalledWith('config.json', process.cwd(), { interactive: false, merge: true })
+  })
+
+  test('some-path --import file={name: yolo, services:undefined}', async () => {
+    // mock config file
+    importLib.loadConfigFile.mockReturnValueOnce({
+      values: {
+        name: 'yolo'
+      }
+    })
+    await TheCommand.run(['some-path', '--import', 'config.json'])
+
+    // no args.path
+    expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+    expect(spyChdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genName = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenCalledWith(genName, {
+      'skip-prompt': false,
+      'skip-install': false,
+      'project-name': 'yolo',
+      'adobe-services': ''
+    })
+
+    expect(importLib.importConfigJson).toHaveBeenCalledWith('config.json', process.cwd(), { interactive: false, merge: true })
   })
 })

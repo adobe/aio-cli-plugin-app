@@ -24,6 +24,21 @@ describe('Command Prototype', () => {
     expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
     expect(typeof TheCommand.description).toBe('string')
   })
+
+  test('flags', async () => {
+    expect(TheCommand.flags).toEqual(expect.objectContaining(BaseCommand.flags))
+
+    expect(typeof TheCommand.flags.import).toBe('object')
+    expect(TheCommand.flags.import.char).toBe('i')
+  })
+
+  test('args', async () => {
+    expect(TheCommand.args).toEqual(expect.arrayContaining([{
+      name: 'path',
+      description: 'Path to the app directory',
+      default: '.'
+    }]))
+  })
 })
 
 describe('bad flags', () => {
@@ -43,9 +58,14 @@ describe('bad flags', () => {
 
 describe('runs', () => {
   test('Calls to InitCommand with -y', async () => {
-    // console.error('icm.run = ' + )
     const mySpy = jest.spyOn(InitCommand, 'run').mockImplementation(jest.fn())
     await TheCommand.run(['new-project'])
     expect(mySpy).toHaveBeenCalledWith(['new-project', '-y'])
+  })
+
+  test('import', async () => {
+    const mySpy = jest.spyOn(InitCommand, 'run').mockImplementation(jest.fn())
+    await TheCommand.run(['new-project', '--import', 'config-file'])
+    expect(mySpy).toHaveBeenCalledWith(['new-project', '-y', '--import', 'config-file'])
   })
 })

@@ -63,46 +63,23 @@ describe('exports helper methods', () => {
     expect(appHelper.runPackageScript).toBeInstanceOf(Function)
   })
 
-  test('runPackageScript called without valid dir', async () => {
-    // throws error if dir dne => // fs.statSync(dir).isDirectory()
-    fs.statSync.mockReturnValue({
-      isDirectory: () => false
-    })
-    await expect(appHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
-      .rejects.toThrow(/does-not-exist is not a directory/)
-  })
-
   test('runPackageScript missing package.json', async () => {
     // throws error if dir does not contain a package.json
-    fs.statSync.mockReturnValue({
-      isDirectory: () => true
-    })
-    fs.readdirSync.mockReturnValue([])
     await expect(appHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
-      .rejects.toThrow(/does-not-exist does not contain a package.json file./)
+      .rejects.toThrow(/does-not-exist does not contain a package.json/)
   })
 
   test('runPackageScript success', async () => {
-    // succeeds if npm run-script returns success
-    fs.statSync.mockReturnValue({
-      isDirectory: () => true
-    })
-    fs.readdirSync.mockReturnValue(['package.json'])
-    fs.readJSONSync.mockReturnValue({ scripts: { test: 'some-value' } })
-
+    fs.readJSON.mockReturnValue({ scripts: { test: 'some-value' } })
     await appHelper.runPackageScript('test', '')
     expect(execa).toHaveBeenCalledWith('npm', ['run-script', 'test'], expect.any(Object))
   })
 
   test('runPackageScript success with silent option', async () => {
     // succeeds if npm run-script returns success
-    fs.statSync.mockReturnValue({
-      isDirectory: () => true
-    })
-    fs.readdirSync.mockReturnValue(['package.json'])
-    fs.readJSONSync.mockReturnValue({ scripts: { cmd: 'some-value' } })
+    fs.readJSON.mockReturnValue({ scripts: { cmd: 'some-value' } })
 
-    await appHelper.runPackageScript('cmd', '', { silent: true })
+    await appHelper.runPackageScript('cmd', '', ['--silent'])
     expect(execa).toHaveBeenCalledWith('npm', ['run-script', 'cmd', '--silent'], expect.any(Object))
   })
 

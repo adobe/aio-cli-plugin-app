@@ -44,7 +44,7 @@ describe('instance methods', () => {
       expect(command.run).toBeInstanceOf(Function)
     })
 
-    test('returns help file for runtime command', () => {
+    test('returns help file for app command', () => {
       const spy = jest.spyOn(HHelp.prototype, 'showHelp').mockReturnValue(true)
       return command.run().then(() => {
         expect(spy).toHaveBeenCalledWith(['app', '--help'])

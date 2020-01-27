@@ -13,9 +13,9 @@ const BaseCommand = require('../../BaseCommand')
 const yeoman = require('yeoman-environment')
 const path = require('path')
 const fs = require('fs-extra')
-const debug = require('debug')('aio-cli-plugin-app:init')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
-const inquirer = require('inquirer')
+const { importConfigJson, loadConfigFile, writeAio } = require('../../lib/import')
 
 class InitCommand extends BaseCommand {
   async run () {
@@ -25,37 +25,46 @@ class InitCommand extends BaseCommand {
       fs.ensureDirSync(destDir)
       process.chdir(destDir)
     }
-    debug('creating new app with init command ', flags)
 
-    let template = flags.template
-    if (!template) {
-      if (flags.yes) {
-        template = 'hello'
-      } else {
-        const responses = await inquirer.prompt([{
-          name: 'template',
-          message: 'select a starter template',
-          type: 'list',
-          choices: [{ name: 'hello - a basic empty application' },
-            { name: 'target - use runtime functions to access the target api' },
-            { name: 'campaign - use runtime functions to access the campaign api' },
-            { name: 'analytics - use runtime functions to access the analytics api' }],
-          filter: (sel) => sel.split(' ')[0]
-        }])
-        template = responses.template
-      }
+    aioLogger.debug('creating new app with init command ', flags)
+
+    let projectName = path.basename(process.cwd())
+    let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK' // todo fetch those from console when no --import
+
+    if (flags.import) {
+      const config = loadConfigFile(flags.import).values
+
+      projectName = config.name // must be defined
+      services = (config.services && config.services.map(s => s.code).join(',')) || ''
     }
-    if (!InitCommand.flags.template.options.includes(template)) {
-      this.error(`Expected --template=${template} to be one of: hello, target, campaign, analytics`)
-    }
+
     const env = yeoman.createEnv()
-    try {
-      env.register(require.resolve('../../generators/create-' + template), 'gen')
-    } catch (err) {
-      this.error(`the '${flags.template}' template is not available.`)
+
+    this.log(`You are about to initialize the project '${projectName}'`)
+
+    // call code generator
+    env.register(require.resolve('@adobe/generator-aio-app'), 'gen')
+    const res = await env.run('gen', {
+      'skip-install': flags['skip-install'],
+      'skip-prompt': flags.yes,
+      'project-name': projectName,
+      'adobe-services': services
+    })
+
+    // config import
+    // always auto merge
+    const interactive = false
+    const merge = true
+    if (flags.import) {
+      return importConfigJson(flags.import, process.cwd(), { interactive, merge })
+    } else {
+      // write default services value to .aio
+      // todo use real imported values from console
+      writeAio({
+        services: services.split(',').map(code => ({ code }))
+      }, process.cwd(), { merge, interactive })
     }
 
-    const res = await env.run('gen', { skip_prompt: flags.yes })
     // finalize configuration data
     this.log('✔ App initialization finished!')
     return res
@@ -66,21 +75,29 @@ InitCommand.description = `Create a new Adobe I/O App
 `
 
 InitCommand.flags = {
+  ...BaseCommand.flags,
   yes: flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
   }),
-  template: flags.string({
-    description: 'Adobe I/O App starter template',
-    char: 't',
-    options: ['hello', 'target', 'campaign', 'analytics']
+  'skip-install': flags.boolean({
+    description: 'Skip npm installation after files are created',
+    char: 's',
+    default: false
   }),
-  ...BaseCommand.flags
+  import: flags.string({
+    description: 'Import an Adobe I/O Developer Console configuration file',
+    char: 'i'
+  })
 }
 
 InitCommand.args = [
-  ...BaseCommand.args
+  {
+    name: 'path',
+    description: 'Path to the app directory',
+    default: '.'
+  }
 ]
 
 module.exports = InitCommand
