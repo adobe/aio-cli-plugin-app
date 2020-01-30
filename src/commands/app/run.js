@@ -15,6 +15,7 @@ const chalk = require('chalk')
 const fs = require('fs-extra')
 const path = require('path')
 const https = require('https')
+const getPort = require('get-port')
 const { cli } = require('cli-ux')
 
 const { flags } = require('@oclif/command')
@@ -67,9 +68,11 @@ class Run extends BaseCommand {
             res.end('Congrats, you have accepted the certificate and can now use it for development on this machine.\n' +
             'You can close this window.')
           })
-          server.listen(9080)
+          const port = parseInt(process.env.PORT) || 9080
+          const actualPort = await getPort({ port: port })
+          server.listen(actualPort)
           this.log('A self signed development certificate has been generated, you will need to accept it in your browser in order to use it.')
-          cli.open('https://localhost:9080')
+          cli.open(`https://localhost:${actualPort}`)
           cli.action.start('Waiting for the certificate to be accepted.')
           // eslint-disable-next-line no-unmodified-loop-condition
           while (!certAccepted && Date.now() - startTime < 20000) {
