@@ -47,28 +47,21 @@ class Run extends BaseCommand {
           // 2. generate them
           const CertCmd = this.config.findCommand('certificate:generate')
           if (CertCmd) {
-            console.log('generating certificate')
             const Instance = CertCmd.load()
             await Instance.run([`--keyout=${PRIVATE_KEY_PATH}`, `--out=${PUB_CERT_PATH}`, '-n=DeveloperSelfSigned.cert'])
           } else {
             // could not find the cert command, not sure what we should do here
           }
-          // 3. store them globally
+          // 3. store them globally in config
           const privateKey = (await fs.readFile(PRIVATE_KEY_PATH)).toString()
           const publicCert = (await fs.readFile(PUB_CERT_PATH)).toString()
-          console.log('storing certificate')
           coreConfig.set('aio-dev.dev-keys.privateKey', privateKey)
           coreConfig.set('aio-dev.dev-keys.publicCert', publicCert)
 
           // 4. ask the developer to accept them
-          const options = {
-            key: privateKey,
-            cert: publicCert
-          }
-
           let certAccepted = false
           const startTime = Date.now()
-          const server = https.createServer(options, function (req, res) {
+          const server = https.createServer({ key: privateKey, cert: publicCert }, function (req, res) {
             certAccepted = true
             res.writeHead(200)
             res.end('Congrats, you have accepted the certificate and can now use it for development on this machine.\n' +
@@ -78,6 +71,7 @@ class Run extends BaseCommand {
           this.log('A self signed development certificate has been generated, you will need to accept it in your browser in order to use it.')
           cli.open('https://localhost:9080')
           cli.action.start('Waiting for the certificate to be accepted.')
+          // eslint-disable-next-line no-unmodified-loop-condition
           while (!certAccepted && Date.now() - startTime < 20000) {
             await cli.wait()
           }
