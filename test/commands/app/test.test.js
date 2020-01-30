@@ -87,7 +87,7 @@ describe('run', () => {
   const expectNoErrors = async (argv, testCmd) => {
     command.argv = argv
     await command.run()
-    expect(appHelper.runPackageScript).toHaveBeenCalledWith(testCmd, expect.any(String), { silent: true })
+    expect(appHelper.runPackageScript).toHaveBeenCalledWith(testCmd, expect.any(String))
   }
   const expectErrors = async (argv, errorCode) => {
     const error = new Error('fake error')
@@ -112,36 +112,36 @@ describe('run', () => {
   test('verbose flag', async () => {
     command.argv = ['--verbose']
     await command.run()
-    expect(appHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String), { silent: false })
+    expect(appHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String))
   })
 
   test('-v flag', async () => {
     command.argv = ['-v']
     await command.run()
-    expect(appHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String), { silent: false })
+    expect(appHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String))
   })
 
   test('--verbose --unit flag', async () => {
     command.argv = ['--verbose', '--unit']
     await command.run()
-    expect(appHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String), { silent: false })
+    expect(appHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String))
   })
 
   test('-v -u flags', async () => {
     command.argv = ['-v', '-u']
     await command.run()
-    expect(appHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String), { silent: false })
+    expect(appHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String))
   })
 
   test('--verbose --e2e flag', async () => {
     command.argv = ['--verbose', '--e2e']
     await command.run()
-    expect(appHelper.runPackageScript).toHaveBeenCalledWith('e2e', expect.any(String), { silent: false })
+    expect(appHelper.runPackageScript).toHaveBeenCalledWith('e2e', expect.any(String))
   })
 
   test('-v -e flags', async () => {
     command.argv = ['-v', '-e']
     await command.run()
-    expect(appHelper.runPackageScript).toHaveBeenCalledWith('e2e', expect.any(String), { silent: false })
+    expect(appHelper.runPackageScript).toHaveBeenCalledWith('e2e', expect.any(String))
   })
 })

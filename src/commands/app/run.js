@@ -23,6 +23,7 @@ const coreConfig = require('@adobe/aio-lib-core-config')
 
 const BaseCommand = require('../../BaseCommand')
 const AppScripts = require('@adobe/aio-app-scripts')
+const { runPackageScript } = require('../../lib/app-helper')
 
 const PRIVATE_KEY_PATH = 'dist/dev-keys/private.key'
 const PUB_CERT_PATH = 'dist/dev-keys/cert-pub.crt'
@@ -33,6 +34,13 @@ class Run extends BaseCommand {
     const runOptions = {
       logLevel: flags.verbose ? 4 : 2
     }
+
+    try {
+      await runPackageScript('pre-app-run')
+    } catch (err) {
+      // this is assumed to be a missing script error
+    }
+
     /* check if there are certificates available, and generate them if not ... */
     try {
       fs.ensureDirSync(path.dirname(PRIVATE_KEY_PATH))
@@ -128,6 +136,11 @@ class Run extends BaseCommand {
     const scripts = AppScripts({ listeners })
     try {
       const result = await scripts.runDev([], runOptions)
+      try {
+        await runPackageScript('post-app-run')
+      } catch (err) {
+        // this is assumed to be a missing script error
+      }
       if (result) {
         if (process.env.AIO_LAUNCH_URL_PREFIX) {
           const launchUrl = process.env.AIO_LAUNCH_URL_PREFIX + result
