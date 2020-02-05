@@ -23,7 +23,7 @@ const coreConfig = require('@adobe/aio-lib-core-config')
 
 const BaseCommand = require('../../BaseCommand')
 const AppScripts = require('@adobe/aio-app-scripts')
-const { runPackageScript } = require('../../lib/app-helper')
+const { runPackageScript, wrapError } = require('../../lib/app-helper')
 
 const PRIVATE_KEY_PATH = 'dist/dev-keys/private.key'
 const PUB_CERT_PATH = 'dist/dev-keys/cert-pub.crt'
@@ -59,8 +59,8 @@ class Run extends BaseCommand {
             const Instance = CertCmd.load()
             await Instance.run([`--keyout=${PRIVATE_KEY_PATH}`, `--out=${PUB_CERT_PATH}`, '-n=DeveloperSelfSigned.cert'])
           } else {
-            // could not find the cert command
-            this.error('error while generating certificate - no certificate:generate command found')
+            // could not find the cert command, error is caught below
+            throw new Error('error while generating certificate - no certificate:generate command found')
           }
           // 3. store them globally in config
           const privateKey = (await fs.readFile(PRIVATE_KEY_PATH)).toString()
@@ -106,7 +106,7 @@ class Run extends BaseCommand {
         // fatality?
       }
     } catch (error) {
-      this.error(error)
+      this.error(wrapError(error))
     }
 
     const spinner = ora()
@@ -150,7 +150,7 @@ class Run extends BaseCommand {
       return result
     } catch (error) {
       spinner.fail()
-      this.error(error)
+      this.error(wrapError(error))
     }
   }
 }

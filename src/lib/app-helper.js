@@ -51,9 +51,24 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
   }
 }
 
+function wrapError (err) {
+  let message = 'Unknown error'
+
+  if (err) {
+    if (err instanceof Error) {
+      return err
+    }
+
+    message = err.stack || err.message || err
+  }
+
+  return new Error(message)
+}
+
 module.exports = {
   isNpmInstalled,
   isGitInstalled,
   installPackage,
-  runPackageScript
+  runPackageScript,
+  wrapError
 }

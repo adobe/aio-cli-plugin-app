@@ -89,4 +89,29 @@ describe('exports helper methods', () => {
     await expect(appHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
       .rejects.toThrow(/does-not-exist/)
   })
+
+  test('wrapError returns an a Error in any case', async () => {
+    expect(appHelper.wrapError).toBeDefined()
+    expect(appHelper.wrapError).toBeInstanceOf(Function)
+
+    let error = appHelper.wrapError()
+    expect(error).toBeInstanceOf(Error)
+    expect(error.message).toEqual('Unknown error')
+    expect(error.stack).toBeDefined()
+
+    error = appHelper.wrapError({ message: 'yolo' })
+    expect(error).toBeInstanceOf(Error)
+    expect(error.message).toEqual('yolo')
+    expect(error.stack).toBeDefined()
+
+    error = appHelper.wrapError('yolo2')
+    expect(error).toBeInstanceOf(Error)
+    expect(error.message).toEqual('yolo2')
+    expect(error.stack).toBeDefined()
+
+    error = appHelper.wrapError(new Error('yolo3'))
+    expect(error).toBeInstanceOf(Error)
+    expect(error.message).toEqual('yolo3')
+    expect(error.stack).toBeDefined()
+  })
 })
