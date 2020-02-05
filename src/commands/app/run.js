@@ -59,8 +59,8 @@ class Run extends BaseCommand {
             const Instance = CertCmd.load()
             await Instance.run([`--keyout=${PRIVATE_KEY_PATH}`, `--out=${PUB_CERT_PATH}`, '-n=DeveloperSelfSigned.cert'])
           } else {
-            // could not find the cert command
-            this.error('error while generating certificate - no certificate:generate command found')
+            // could not find the cert command, error is caught below
+            throw new Error('error while generating certificate - no certificate:generate command found')
           }
           // 3. store them globally in config
           const privateKey = (await fs.readFile(PRIVATE_KEY_PATH)).toString()

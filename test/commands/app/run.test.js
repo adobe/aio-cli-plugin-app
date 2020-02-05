@@ -28,12 +28,16 @@ jest.mock('https')
 const mockScripts = require('@adobe/aio-app-scripts')()
 let command
 
+const mockFindCommandRun = jest.fn()
+const mockFindCommandLoad = jest.fn().mockReturnValue({
+  run: mockFindCommandRun
+})
+
 beforeEach(() => {
   jest.restoreAllMocks()
+  mockScripts.runDev.mockReset()
   mockScripts.runDev.mock.calls = []
-  mockConfig.get = jest.fn(() => {
-    return { globalConfig: 'seems-legit' }
-  })
+  mockConfig.get = jest.fn().mockReturnValue({ globalConfig: 'seems-legit' })
 
   cli.action = {
     stop: jest.fn(),
@@ -41,17 +45,17 @@ beforeEach(() => {
   }
   cli.wait = jest.fn() // .mockImplementation((ms = 1000) => { return new Promise(resolve => setTimeout(resolve, ms)) })
 
+  mockFindCommandLoad.mockClear()
+  mockFindCommandRun.mockReset()
+  fs.existsSync.mockReset()
+  fs.ensureDirSync.mockReset()
+
   command = new RunCommand()
   command.error = jest.fn()
   command.config = {
-    findCommand: () => {
-      console.log('returning a findCommand')
-      return {
-        load: () => {
-          return { run: jest.fn() }
-        }
-      }
-    }
+    findCommand: jest.fn().mockReturnValue({
+      load: mockFindCommandLoad
+    })
   }
   cli.open = jest.fn()
 })
@@ -150,25 +154,19 @@ describe('run', () => {
   })
 
   test('app:run throws error when certificate:generate command not found', async () => {
-    mockConfig.get.mockImplementation(() => {
-      console.log('test 1, returning nukll')
-      return null
+    fs.existsSync.mockReturnValue(false)
+    mockConfig.get.mockReturnValue(null)
+    const spy = jest.spyOn(command.config, 'findCommand').mockReturnValue(null)
+    command.error.mockImplementation((e) => {
+      throw new Error(e)
     })
-    command.config = {
-      findCommand: () => {
-        return null
-      }
-    }
-    command.error.mockImplementation(() => {
-      throw new Error('mock error')
-    })
+
     command.argv = []
-    const result = command.run()
-    result.catch(() => {
-      expect(command.error).toHaveBeenCalledTimes(1)
-      expect(mockScripts.runDev).toHaveBeenCalledTimes(0)
-    })
-    return result
+    await expect(command.run()).rejects.toThrow('error while generating certificate - no certificate:generate command found')
+
+    expect(command.error).toHaveBeenCalledTimes(1)
+    expect(mockScripts.runDev).toHaveBeenCalledTimes(0)
+    spy.mockRestore()
   })
 
   // test('app:run launches a server for the user to accept a newly created cert', async () => {
