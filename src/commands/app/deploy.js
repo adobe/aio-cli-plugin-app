@@ -19,7 +19,7 @@ const fs = require('fs-extra')
 const BaseCommand = require('../../BaseCommand')
 const AppScripts = require('@adobe/aio-app-scripts')
 const { flags } = require('@oclif/command')
-const { runPackageScript } = require('../../lib/app-helper')
+const { runPackageScript, wrapError } = require('../../lib/app-helper')
 
 class Deploy extends BaseCommand {
   async run () {
@@ -131,7 +131,7 @@ class Deploy extends BaseCommand {
       }
     } catch (error) {
       spinner.fail()
-      this.error(error)
+      this.error(wrapError(error))
     }
   }
 }

@@ -52,7 +52,7 @@ describe('run', () => {
 
     mockScripts.logs.mockRejectedValue('error')
     await command.run()
-    expect(command.error).toHaveBeenCalledWith('error')
+    expect(command.error).toHaveBeenCalledWith(expect.objectContaining({ message: 'error' }))
   })
 
   test('when there are no logs, no flags', async () => {
