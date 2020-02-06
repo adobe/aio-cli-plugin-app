@@ -396,6 +396,19 @@ async function importConfigJson (configFileLocation, destinationFolder = process
 
   checkRules(config)
 
+  // enrich credentials.jwt with ims org
+  if (typeof credentials.jwt === 'object' && !credentials.jwt.ims_org_id) {
+    // not checking for config.project && config.project.org as part of required rules
+    if (config.project.org.ims_org_id) {
+      debug('adding ims_org_id to $ims.jwt config')
+      credentials.jwt.ims_org_id = config.project.org.ims_org_id
+    } else {
+      const warning = 'missing project.org.ims_org_id, which is needed for ims jwt config'
+      debug('warn:', warning)
+      console.warn(warning)
+    }
+  }
+
   await writeEnv({ runtime, $ims: credentials }, destinationFolder, flags)
 
   // remove the credentials
