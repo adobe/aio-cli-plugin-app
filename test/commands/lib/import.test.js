@@ -243,3 +243,38 @@ test('enforce alphanumeric content rule - credentials.oauth2.redirect_uri set an
 
   await expect(fs.writeFile).toHaveBeenCalledTimes(0)
 })
+
+test('enrich $ims.jwt with project.org.ims_org_id', async () => {
+  const workingFolder = 'my-working-folder'
+  const aioPath = path.join(workingFolder, '.aio')
+  const envPath = path.join(workingFolder, '.env')
+  const configPath = '/some/config/path'
+
+  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.6.orgid.hjson'))
+  await importConfigJson(configPath, workingFolder, { overwrite: true })
+  await expect(fs.writeFile.mock.calls[0][0]).toMatch(envPath)
+  await expect(fs.writeFile.mock.calls[0][1]).toMatchFixture('config.6.orgid.env')
+  await expect(fs.writeFile.mock.calls[0][2]).toMatchObject({ flag: 'w' })
+  await expect(fs.writeFile.mock.calls[1][0]).toMatch(aioPath)
+  await expect(fs.writeFile.mock.calls[1][1]).toMatchFixture('config.6.orgid.aio')
+  await expect(fs.writeFile.mock.calls[1][2]).toMatchObject({ flag: 'w' })
+
+  expect(fs.writeFile).toHaveBeenCalledTimes(2)
+})
+
+test('do not enrich $ims.jwt with ims_org_id if no jwt credentials defined ', async () => {
+  const workingFolder = 'my-working-folder'
+  const aioPath = path.join(workingFolder, '.aio')
+  const envPath = path.join(workingFolder, '.env')
+  const configPath = '/some/config/path'
+
+  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.6.orgid.no.jwt.hjson'))
+  await importConfigJson(configPath, workingFolder, { overwrite: true })
+  await expect(fs.writeFile.mock.calls[0][0]).toMatch(envPath)
+  await expect(fs.writeFile.mock.calls[0][1]).toMatchFixture('config.6.orgid.no.jwt.env')
+  await expect(fs.writeFile.mock.calls[0][2]).toMatchObject({ flag: 'w' })
+  await expect(fs.writeFile.mock.calls[1][0]).toMatch(aioPath)
+  await expect(fs.writeFile.mock.calls[1][1]).toMatchFixture('config.6.orgid.no.jwt.aio')
+  await expect(fs.writeFile.mock.calls[1][2]).toMatchObject({ flag: 'w' })
+  expect(fs.writeFile).toHaveBeenCalledTimes(2)
+})
