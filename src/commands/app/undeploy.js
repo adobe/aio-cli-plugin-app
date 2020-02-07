@@ -18,6 +18,7 @@ const { flags } = require('@oclif/command')
 
 const BaseCommand = require('../../BaseCommand')
 const AppScripts = require('@adobe/aio-app-scripts')
+const { wrapError } = require('../../lib/app-helper')
 
 class Undeploy extends BaseCommand {
   async run () {
@@ -69,7 +70,7 @@ class Undeploy extends BaseCommand {
     } catch (error) {
       spinner.fail()
       // process.chdir(currDir)
-      this.error(error)
+      this.error(wrapError(error))
     }
   }
 }

@@ -14,13 +14,16 @@ const ora = require('ora')
 const chalk = require('chalk')
 const fs = require('fs-extra')
 const path = require('path')
+const https = require('https')
+const getPort = require('get-port')
 const { cli } = require('cli-ux')
 
 const { flags } = require('@oclif/command')
+const coreConfig = require('@adobe/aio-lib-core-config')
 
 const BaseCommand = require('../../BaseCommand')
 const AppScripts = require('@adobe/aio-app-scripts')
-const { runPackageScript } = require('../../lib/app-helper')
+const { runPackageScript, wrapError } = require('../../lib/app-helper')
 
 const PRIVATE_KEY_PATH = 'dist/dev-keys/private.key'
 const PUB_CERT_PATH = 'dist/dev-keys/cert-pub.crt'
@@ -43,12 +46,54 @@ class Run extends BaseCommand {
       fs.ensureDirSync(path.dirname(PRIVATE_KEY_PATH))
       // if they do not exists, attempt to create them
       if (!fs.existsSync(PRIVATE_KEY_PATH) && !fs.existsSync(PUB_CERT_PATH)) {
-        // todo: store them in global config when we generate them, so we don't need
-        // to repeatedly accept them
-        const CertCmd = this.config.findCommand('certificate:generate')
-        if (CertCmd) {
-          const Instance = CertCmd.load()
-          await Instance.run([`--keyout=${PRIVATE_KEY_PATH}`, `--out=${PUB_CERT_PATH}`, `-n=${this.appName}.cert`])
+        // 1. do they exist in global config?
+        const devConfig = coreConfig.get('aio-dev.dev-keys')
+        if (devConfig) {
+          // yes? write them to file
+          fs.writeFile(PRIVATE_KEY_PATH, devConfig.privateKey)
+          fs.writeFile(PUB_CERT_PATH, devConfig.publicCert)
+        } else {
+          // 2. generate them
+          const CertCmd = this.config.findCommand('certificate:generate')
+          if (CertCmd) {
+            const Instance = CertCmd.load()
+            await Instance.run([`--keyout=${PRIVATE_KEY_PATH}`, `--out=${PUB_CERT_PATH}`, '-n=DeveloperSelfSigned.cert'])
+          } else {
+            // could not find the cert command, error is caught below
+            throw new Error('error while generating certificate - no certificate:generate command found')
+          }
+          // 3. store them globally in config
+          const privateKey = (await fs.readFile(PRIVATE_KEY_PATH)).toString()
+          const publicCert = (await fs.readFile(PUB_CERT_PATH)).toString()
+          coreConfig.set('aio-dev.dev-keys.privateKey', privateKey)
+          coreConfig.set('aio-dev.dev-keys.publicCert', publicCert)
+
+          // 4. ask the developer to accept them
+          let certAccepted = false
+          const startTime = Date.now()
+          const server = https.createServer({ key: privateKey, cert: publicCert }, function (req, res) {
+            certAccepted = true
+            res.writeHead(200)
+            res.end('Congrats, you have accepted the certificate and can now use it for development on this machine.\n' +
+            'You can close this window.')
+          })
+          const port = parseInt(process.env.PORT) || 9080
+          const actualPort = await getPort({ port: port })
+          server.listen(actualPort)
+          this.log('A self signed development certificate has been generated, you will need to accept it in your browser in order to use it.')
+          cli.open(`https://localhost:${actualPort}`)
+          cli.action.start('Waiting for the certificate to be accepted.')
+          // eslint-disable-next-line no-unmodified-loop-condition
+          while (!certAccepted && Date.now() - startTime < 20000) {
+            await cli.wait()
+          }
+          if (certAccepted) {
+            cli.action.stop()
+            this.log('Great, you accepted the certificate!')
+          } else {
+            cli.action.stop('timed out')
+          }
+          server.close()
         }
       }
       // if they now exist ... use them in the options
@@ -57,9 +102,11 @@ class Run extends BaseCommand {
           cert: PUB_CERT_PATH, // Path to custom certificate
           key: PRIVATE_KEY_PATH // Path to custom key
         }
+      } else {
+        // fatality?
       }
     } catch (error) {
-      this.error(error)
+      this.error(wrapError(error))
     }
 
     const spinner = ora()
@@ -103,7 +150,7 @@ class Run extends BaseCommand {
       return result
     } catch (error) {
       spinner.fail()
-      this.error(error)
+      this.error(wrapError(error))
     }
   }
 }

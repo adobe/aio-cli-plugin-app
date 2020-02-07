@@ -14,26 +14,48 @@ const RunCommand = require('../../../src/commands/app/run')
 const BaseCommand = require('../../../src/BaseCommand')
 
 // mocks
-jest.mock('open', () => jest.fn())
+
+jest.mock('@adobe/aio-lib-core-config')
+const mockConfig = require('@adobe/aio-lib-core-config')
+
 jest.mock('cli-ux')
 const { cli } = require('cli-ux')
+
 const fs = require('fs-extra')
+
+jest.mock('https')
+// const https = require('https')
 const mockScripts = require('@adobe/aio-app-scripts')()
 let command
 
+const mockFindCommandRun = jest.fn()
+const mockFindCommandLoad = jest.fn().mockReturnValue({
+  run: mockFindCommandRun
+})
+
 beforeEach(() => {
   jest.restoreAllMocks()
+  mockScripts.runDev.mockReset()
   mockScripts.runDev.mock.calls = []
+  mockConfig.get = jest.fn().mockReturnValue({ globalConfig: 'seems-legit' })
+
+  cli.action = {
+    stop: jest.fn(),
+    start: jest.fn()
+  }
+  cli.wait = jest.fn() // .mockImplementation((ms = 1000) => { return new Promise(resolve => setTimeout(resolve, ms)) })
+
+  mockFindCommandLoad.mockClear()
+  mockFindCommandRun.mockReset()
+  fs.existsSync.mockReset()
+  fs.ensureDirSync.mockReset()
+
   command = new RunCommand()
   command.error = jest.fn()
   command.config = {
-    findCommand: () => {
-      return {
-        load: () => {
-          return { run: jest.fn() }
-        }
-      }
-    }
+    findCommand: jest.fn().mockReturnValue({
+      load: mockFindCommandLoad
+    })
   }
   cli.open = jest.fn()
 })
@@ -107,7 +129,7 @@ describe('run', () => {
     mockScripts.runDev.mockRejectedValue('error')
     command.argv = []
     await command.run()
-    expect(command.error).toHaveBeenCalledTimes(2)
+    expect(command.error).toHaveBeenCalledTimes(1)
     expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
   })
 
@@ -116,7 +138,7 @@ describe('run', () => {
     mockScripts.runDev.mockResolvedValue('mkay')
     command.argv = []
     await command.run()
-    expect(command.error).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
     expect(cli.open).toHaveBeenCalledWith('some value:mkay')
   })
@@ -131,5 +153,49 @@ describe('run', () => {
     expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
   })
 
+  test('app:run throws error when certificate:generate command not found', async () => {
+    fs.existsSync.mockReturnValue(false)
+    mockConfig.get.mockReturnValue(null)
+    const spy = jest.spyOn(command.config, 'findCommand').mockReturnValue(null)
+    command.error.mockImplementation((e) => {
+      throw new Error(e)
+    })
+
+    command.argv = []
+    await expect(command.run()).rejects.toThrow('error while generating certificate - no certificate:generate command found')
+
+    expect(command.error).toHaveBeenCalledTimes(1)
+    expect(mockScripts.runDev).toHaveBeenCalledTimes(0)
+    spy.mockRestore()
+  })
+
+  // test('app:run launches a server for the user to accept a newly created cert', async () => {
+  //   mockConfig.get.mockImplementation(() => {
+  //     console.log('test 2, returning null')
+  //     return null
+  //   })
+  //   command.error.mockImplementation((msg) => {
+  //     console.log('msg', msg)
+  //     throw new Error('mock error')
+  //   })
+  //   fs.existsSync.mockResolvedValue(true)
+  //     .mockResolvedValueOnce(false)
+  //     .mockResolvedValueOnce(false)
+  //   fs.readFile.mockResolvedValue('file-data')
+  //   const mockClose = jest.fn()
+  //   https.createServer.mockImplementation((conf, callback) => {
+  //     return {
+  //       listen: () => {
+  //         console.log('I am listening')
+  //         callback()
+  //       },
+  //       close: mockClose
+  //     }
+  //   })
+  //   command.argv = []
+  //   await command.run()
+  //   expect(mockClose).toHaveBeenCalled()
+  //   expect(cli.action.stop).toHaveBeenCalled()
+  // })
   // TODO: should add a test for a eventlistener that throws an exception, which will break things
 })

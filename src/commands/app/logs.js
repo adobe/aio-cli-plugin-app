@@ -16,6 +16,8 @@ const { flags } = require('@oclif/command')
 // const { cli } = require('cli-ux')
 const BaseCommand = require('../../BaseCommand')
 
+const { wrapError } = require('../../lib/app-helper')
+
 class Logs extends BaseCommand {
   async run () {
     const { flags } = this.parse(Logs)
@@ -31,7 +33,7 @@ class Logs extends BaseCommand {
       const foundLogs = await scripts.logs([], logOptions)
       return foundLogs
     } catch (error) {
-      this.error(error)
+      this.error(wrapError(error))
     }
   }
 }

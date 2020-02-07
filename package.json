@@ -1,11 +1,11 @@
 {
   "name": "@adobe/aio-cli-plugin-app",
   "description": "Create, Build and Deploy Adobe I/O Applications",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "author": "Adobe Inc.",
   "bugs": "https://github.com/adobe/aio-cli-plugin-app/issues",
   "dependencies": {
-    "@adobe/aio-app-scripts": "^0.9.0",
+    "@adobe/aio-app-scripts": "^0.10.0",
     "@adobe/aio-lib-core-config": ">=1.2.8",
     "@adobe/generator-aio-app": "^0.5.1",
     "@oclif/command": "^1.5.11",
@@ -14,6 +14,7 @@
     "cross-spawn": "^7.0.1",
     "execa": "^4.0.0",
     "fs-extra": "^8.1.0",
+    "get-port": "^5.1.1",
     "hjson": "^3.2.1",
     "ignore-walk": "^3.0.1",
     "inquirer": "^7.0.0",
@@ -31,7 +32,7 @@
   "devDependencies": {
     "@oclif/dev-cli": "^1.21.3",
     "@oclif/plugin-help": "^2.1.6",
-    "@types/jest": "^24.0.13",
+    "@types/jest": "^25.1.0",
     "acorn": "^7.1.0",
     "codecov": "^3.6.1",
     "eol": "^0.9.1",
