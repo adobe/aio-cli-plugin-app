@@ -1,0 +1,28 @@
+{
+  // This is a hjson config file that is entirely valid
+  "id": "this is some data",
+  "name": "myname",
+  "app_url": "https://my.app.url/foo/bar",
+  "action_url": "https://my.action.url/foo/bar",
+  "project": {
+    "name": "projectname",
+    "org": {
+        "name": "orgname",
+        "ims_org_id": "abcde@AdobeOrg"
+    }
+  },
+  "runtime": {
+    "namespace": "my-namespace",
+    "credentials": "my-runtime-credentials"
+  },
+  "credentials": {
+    "apikey": {
+      "client_id": "83723cc8e25e455fb5db1ad12cbf16e9"
+    },
+    "oauth2": {
+      "client_id": "83723cc8e25e455fb5db1ad12cbf16e9",
+      "client_secret": "XXXXXX",
+      "redirect_uri": "https://www.adobe.com"
+    }
+  }
+}
