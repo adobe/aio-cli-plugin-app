@@ -251,7 +251,7 @@ describe('run', () => {
   test('deploy should show ui and exc url if AIO_LAUNCH_PREFIX_URL is set', async () => {
     mockFS.existsSync.mockReturnValue(true)
     mockScripts.deployUI.mockResolvedValue('https://example.com')
-    process.env.AIO_LAUNCH_PREFIX_URL = 'http://prefix?fake='
+    process.env.AIO_LAUNCH_URL_PREFIX = 'http://prefix?fake='
     command.argv = []
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)

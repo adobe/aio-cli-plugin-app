@@ -105,10 +105,9 @@ class Deploy extends BaseCommand {
         if (!flags['skip-static']) {
           if (fs.existsSync('web-src/')) {
             const frontendUrl = await scripts.deployUI()
-            this.log()
             this.log(chalk.blue(chalk.bold(`To view your deployed application:\n  -> ${frontendUrl}`)))
-            if (process.env.AIO_LAUNCH_PREFIX_URL) {
-              const launchUrl = process.env.AIO_LAUNCH_PREFIX_URL + frontendUrl
+            if (process.env.AIO_LAUNCH_URL_PREFIX) {
+              const launchUrl = process.env.AIO_LAUNCH_URL_PREFIX + frontendUrl
               this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
             }
           } else {
