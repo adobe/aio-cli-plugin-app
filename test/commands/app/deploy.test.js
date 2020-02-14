@@ -62,6 +62,8 @@ describe('run', () => {
     command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
+
+    mockScripts.deployActions.mockResolvedValue({})
   })
 
   afterEach(() => {
@@ -258,6 +260,21 @@ describe('run', () => {
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('https://example.com'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://prefix?fake=https://example.com'))
     delete process.env.AIO_LAUNCH_PREFIX_URL
+  })
+
+  test('deploy should show action urls', async () => {
+    mockFS.existsSync.mockReturnValue(true)
+    mockScripts.deployActions.mockResolvedValue({
+      actions: [
+        { name: 'pkg/action', url: 'https://fake.com/action' },
+        { name: 'pkg/actionNoUrl' }
+      ]
+    })
+    command.argv = []
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('https://fake.com/action'))
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('pkg/actionNoUrl'))
   })
 
   test('should fail if scripts.deployActions fails', async () => {
