@@ -15,6 +15,8 @@ const chalk = require('chalk')
 const fs = require('fs-extra')
 // const path = require('path')
 
+const { cli } = require('cli-ux')
+
 const BaseCommand = require('../../BaseCommand')
 const AppScripts = require('@adobe/aio-app-scripts')
 const { flags } = require('@oclif/command')
@@ -109,6 +111,13 @@ class Deploy extends BaseCommand {
             if (process.env.AIO_LAUNCH_URL_PREFIX) {
               const launchUrl = process.env.AIO_LAUNCH_URL_PREFIX + frontendUrl
               this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
+              if (flags.launch) {
+                cli.open(launchUrl)
+              }
+            } else {
+              if (flags.launch) {
+                cli.open(frontendUrl)
+              }
             }
           } else {
             this.log('no web-src, skipping web-src deploy')
@@ -161,6 +170,10 @@ Deploy.flags = {
     exclusive: ['skip-actions'],
     char: 'a',
     multiple: true
+  }),
+  launch: flags.boolean({
+    description: 'Open a web browser after a successful deploy, only valid if your app has a front-end',
+    default: false
   })
 
   // todo no color/spinner/open output
