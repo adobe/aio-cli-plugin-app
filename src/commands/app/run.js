@@ -135,19 +135,20 @@ class Run extends BaseCommand {
     process.env.REMOTE_ACTIONS = !flags.local
     const scripts = AppScripts({ listeners })
     try {
-      const result = await scripts.runDev([], runOptions)
+      const frontendUrl = await scripts.runDev([], runOptions)
       try {
         await runPackageScript('post-app-run')
       } catch (err) {
         // this is assumed to be a missing script error
       }
-      if (result) {
+      if (frontendUrl) {
+        this.log()
+        this.log(chalk.blue(chalk.bold(`To view your local application:\n  -> ${frontendUrl}`)))
         if (process.env.AIO_LAUNCH_URL_PREFIX) {
-          const launchUrl = process.env.AIO_LAUNCH_URL_PREFIX + result
-          cli.open(launchUrl)
+          const launchUrl = process.env.AIO_LAUNCH_URL_PREFIX + frontendUrl
+          this.log(chalk.blue(chalk.bold(`To view your local application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
         }
       }
-      return result
     } catch (error) {
       spinner.fail()
       this.error(wrapError(error))

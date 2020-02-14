@@ -11,7 +11,6 @@ governing permissions and limitations under the License.
 */
 
 const ora = require('ora')
-const open = require('open')
 const chalk = require('chalk')
 const fs = require('fs-extra')
 // const path = require('path')
@@ -98,17 +97,18 @@ class Deploy extends BaseCommand {
               filterEntities = { actions: filterActions }
             }
             await scripts.deployActions([], { filterEntities })
+            // todo show action urls !!!
           } else {
             this.log('no action src, skipping action deploy')
           }
         }
         if (!flags['skip-static']) {
           if (fs.existsSync('web-src/')) {
-            const url = await scripts.deployUI()
-            this.log(chalk.green(chalk.bold(`url: ${url}`))) // always log the url
-            // todo show action urls !!
-            if (!flags.verbose) {
-              open(url) // do not open if verbose as the user probably wants to look at the console
+            const frontendUrl = await scripts.deployUI()
+            this.log(chalk.blue(chalk.bold(`To view your deployed application:\n  -> ${frontendUrl}`)))
+            if (process.env.AIO_LAUNCH_URL_PREFIX) {
+              const launchUrl = process.env.AIO_LAUNCH_URL_PREFIX + frontendUrl
+              this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
             }
           } else {
             this.log('no web-src, skipping web-src deploy')
