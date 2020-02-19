@@ -30,7 +30,7 @@ class DeleteWebAssetsCommand extends BaseCommand {
       'skip-prompt': flags.yes
     })
 
-    this.log('✔ Web assets deleted locally, run `aio app undeploy -s` to delete deployed web assets for the current app version')
+    this.log('✔ Web assets deleted locally, run `aio app undeploy --skip-actions` to delete deployed web assets for the current app version')
 
     return res
   }
