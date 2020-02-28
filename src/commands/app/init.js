@@ -56,11 +56,11 @@ class InitCommand extends BaseCommand {
     const interactive = false
     const merge = true
     if (flags.import) {
-      return importConfigJson(flags.import, process.cwd(), { interactive, merge })
+      await importConfigJson(flags.import, process.cwd(), { interactive, merge })
     } else {
       // write default services value to .aio
       // todo use real imported values from console
-      writeAio({
+      await writeAio({
         services: services.split(',').map(code => ({ code }))
       }, process.cwd(), { merge, interactive })
     }
