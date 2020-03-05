@@ -64,11 +64,7 @@ class Deploy extends BaseCommand {
         }
 
         if (!flags['skip-actions']) {
-          // if (fs.existsSync('actions/')) {
-            await scripts.buildActions([], { filterActions })
-          // } else {
-          //   this.log('no action src, skipping action build')
-          // }
+          await scripts.buildActions([], { filterActions })
         }
         if (!flags['skip-static']) {
           if (fs.existsSync('web-src/')) {
@@ -91,16 +87,11 @@ class Deploy extends BaseCommand {
           // this is assumed to be a missing script error
         }
         if (!flags['skip-actions']) {
-          // if (fs.existsSync('actions/')) {
-            let filterEntities
-            if (filterActions) {
-              filterEntities = { actions: filterActions }
-            }
-            await scripts.deployActions([], { filterEntities })
-            // todo show action urls !!!
-          // } else {
-          //   this.log('no action src, skipping action deploy')
-          // }
+          let filterEntities
+          if (filterActions) {
+            filterEntities = { actions: filterActions }
+          }
+          await scripts.deployActions([], { filterEntities })
         }
         if (!flags['skip-static']) {
           if (fs.existsSync('web-src/')) {
