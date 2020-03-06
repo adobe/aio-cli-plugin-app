@@ -12,7 +12,6 @@ governing permissions and limitations under the License.
 const BaseCommand = require('../../../BaseCommand')
 const yeoman = require('yeoman-environment')
 const debug = require('debug')('aio-cli-plugin-app:init')
-const { flags } = require('@oclif/command')
 
 class AddCICommand extends BaseCommand {
   async run () {
@@ -23,9 +22,7 @@ class AddCICommand extends BaseCommand {
     const generator = '@adobe/generator-aio-app/generators/add-ci'
     const env = yeoman.createEnv()
     env.register(require.resolve(generator), 'gen')
-    const res = await env.run('gen', {
-      'skip-prompt': flags.yes
-    })
+    const res = await env.run('gen')
     return res
   }
 }
@@ -34,15 +31,6 @@ AddCICommand.description = `Add CI files
 `
 
 AddCICommand.flags = {
-  yes: flags.boolean({
-    description: 'Skip questions, and use all default values',
-    default: false,
-    char: 'y'
-  }),
-  'skip-install': flags.boolean({
-    description: 'Skip npm installation after files are created',
-    default: false
-  }),
   ...BaseCommand.flags
 }
 

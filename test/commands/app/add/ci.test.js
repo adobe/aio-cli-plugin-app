@@ -54,48 +54,13 @@ describe('template module cannot be registered', () => {
   })
 })
 
-describe('good flags', () => {
-  test('--yes', async () => {
-    await TheCommand.run(['--yes'])
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': true
-    })
-  })
-
-  test('--yes --skip-install', async () => {
-    await TheCommand.run(['--yes', '--skip-install'])
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': true
-    })
-  })
-
-  test('--skip-install', async () => {
-    await TheCommand.run(['--skip-install'])
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': false
-    })
-  })
-
-  test('no flags', async () => {
+describe('no flags', () => {
+  test('should pass', async () => {
     await TheCommand.run([])
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(1)
     const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': false
-    })
+    expect(mockRun).toHaveBeenCalledWith(genName)
   })
 })

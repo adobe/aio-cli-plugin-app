@@ -7,7 +7,7 @@
   "dependencies": {
     "@adobe/aio-app-scripts": "^0.11.0",
     "@adobe/aio-lib-core-config": ">=1.2.8",
-    "@adobe/generator-aio-app": "^0.5.4",
+    "@adobe/generator-aio-app": "^0.5.5",
     "@oclif/command": "^1.5.11",
     "@oclif/config": "^1.12.9",
     "chalk": "^3.0.0",
