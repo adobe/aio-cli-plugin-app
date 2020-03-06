@@ -67,7 +67,7 @@ class Deploy extends BaseCommand {
           if (fs.existsSync('manifest.yml')) {
             await scripts.buildActions([], { filterActions })
           } else {
-            this.log('no action src, skipping action build')
+            this.log('no manifest.yml, skipping action build')
           }
         }
         if (!flags['skip-static']) {
@@ -99,7 +99,7 @@ class Deploy extends BaseCommand {
             await scripts.deployActions([], { filterEntities })
             // todo show action urls !!!
           } else {
-            this.log('no action src, skipping action deploy')
+            this.log('no manifest.yml, skipping action deploy')
           }
         }
         if (!flags['skip-static']) {
