@@ -12,6 +12,7 @@ governing permissions and limitations under the License.
 
 const ora = require('ora')
 const chalk = require('chalk')
+const fs = require('fs-extra')
 // const path = require('path')
 
 const { flags } = require('@oclif/command')
@@ -59,7 +60,11 @@ class Undeploy extends BaseCommand {
 
       // undeploy
       if (!flags.static) {
-        await scripts.undeployActions()
+        if (fs.existsSync('actions/')) {
+          await scripts.undeployActions()
+        } else {
+          this.log('no action src, skipping action undeploy')
+        }
       }
       if (!flags.actions) {
         await scripts.undeployUI()

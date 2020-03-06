@@ -13,10 +13,13 @@ governing permissions and limitations under the License.
 const TheCommand = require('../../../src/commands/app/undeploy')
 const BaseCommand = require('../../../src/BaseCommand')
 
+const mockFS = require('fs-extra')
+
 // mocks
 const mockScripts = require('@adobe/aio-app-scripts')()
 
 beforeEach(() => {
+  mockFS.existsSync.mockReset()
   jest.restoreAllMocks()
 })
 
@@ -48,6 +51,7 @@ test('flags', async () => {
 describe('run', () => {
   let command
   beforeEach(() => {
+    mockFS.existsSync.mockReset()
     command = new TheCommand([])
     command.error = jest.fn()
   })
@@ -57,6 +61,7 @@ describe('run', () => {
   })
 
   test('undeploy an App with no flags', async () => {
+    mockFS.existsSync.mockReturnValue(true)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.undeployActions).toHaveBeenCalledTimes(1)
@@ -64,6 +69,7 @@ describe('run', () => {
   })
 
   test('undeploy an App with --verbose', async () => {
+    mockFS.existsSync.mockReturnValue(true)
     command.argv = ['-v']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -72,6 +78,7 @@ describe('run', () => {
   })
 
   test('undeploy only actions', async () => {
+    mockFS.existsSync.mockReturnValue(true)
     command.argv = ['-a']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -80,6 +87,7 @@ describe('run', () => {
   })
 
   test('undeploy only actions --verbose', async () => {
+    mockFS.existsSync.mockReturnValue(true)
     command.argv = ['-a']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -104,11 +112,20 @@ describe('run', () => {
   })
 
   test('should fail if scripts.undeployActions fails', async () => {
+    mockFS.existsSync.mockReturnValue(true)
     const error = new Error('mock failure')
     mockScripts.undeployActions.mockRejectedValue(error)
     await command.run()
     expect(command.error).toHaveBeenCalledWith(error)
     expect(mockScripts.undeployActions).toHaveBeenCalledTimes(1)
+  })
+
+  test('undeploy an App with no backend', async () => {
+    mockFS.existsSync.mockReturnValue(false)
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.undeployActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
   })
 
   test('should fail if scripts.undeployUI fails', async () => {
