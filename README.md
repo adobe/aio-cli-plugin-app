@@ -131,7 +131,7 @@ _See code: [src/commands/app/add/web-assets.js](https://github.com/adobe/aio-cli
 
 ## `@adobe/aio-cli-plugin-app app:add:ci`
 
-Add CI files (github action workflows under .github folder)
+Add CI files (github action workflows under .github folder). Note that you would need to manually create github secrets that are used in the workflow files.
 
 ```
 USAGE
