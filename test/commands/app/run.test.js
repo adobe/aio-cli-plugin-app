@@ -52,6 +52,7 @@ beforeEach(() => {
 
   command = new RunCommand()
   command.error = jest.fn()
+  command.log = jest.fn()
   command.config = {
     findCommand: jest.fn().mockReturnValue({
       load: mockFindCommandLoad
@@ -140,7 +141,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
-    expect(cli.open).toHaveBeenCalledWith('some value:mkay')
+    // expect(cli.open).toHaveBeenCalledWith('some value:mkay')
   })
 
   test('app:run with certs', async () => {
@@ -167,6 +168,25 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(1)
     expect(mockScripts.runDev).toHaveBeenCalledTimes(0)
     spy.mockRestore()
+  })
+
+  test('run should show ui url', async () => {
+    mockScripts.runDev.mockResolvedValue('http://localhost:1111')
+    command.argv = []
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://localhost:1111'))
+  })
+
+  test('run should show ui and exc url if AIO_LAUNCH_PREFIX_URL is set', async () => {
+    process.env.AIO_LAUNCH_PREFIX_URL = 'http://prefix?fake='
+    mockScripts.runDev.mockResolvedValue('http://localhost:1111')
+    command.argv = []
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://localhost:1111'))
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://localhost:1111'))
+    delete process.env.AIO_LAUNCH_PREFIX_URL
   })
 
   // test('app:run launches a server for the user to accept a newly created cert', async () => {

@@ -43,15 +43,15 @@ class Run extends BaseCommand {
 
     /* check if there are certificates available, and generate them if not ... */
     try {
-      fs.ensureDirSync(path.dirname(PRIVATE_KEY_PATH))
+      await fs.ensureDir(path.dirname(PRIVATE_KEY_PATH))
       // if they do not exists, attempt to create them
-      if (!fs.existsSync(PRIVATE_KEY_PATH) && !fs.existsSync(PUB_CERT_PATH)) {
+      if (!await fs.exists(PRIVATE_KEY_PATH) && !await fs.exists(PUB_CERT_PATH)) {
         // 1. do they exist in global config?
         const devConfig = coreConfig.get('aio-dev.dev-keys')
         if (devConfig) {
           // yes? write them to file
-          fs.writeFile(PRIVATE_KEY_PATH, devConfig.privateKey)
-          fs.writeFile(PUB_CERT_PATH, devConfig.publicCert)
+          await fs.writeFile(PRIVATE_KEY_PATH, devConfig.privateKey)
+          await fs.writeFile(PUB_CERT_PATH, devConfig.publicCert)
         } else {
           // 2. generate them
           const CertCmd = this.config.findCommand('certificate:generate')
@@ -97,7 +97,7 @@ class Run extends BaseCommand {
         }
       }
       // if they now exist ... use them in the options
-      if (fs.existsSync(PRIVATE_KEY_PATH) && fs.existsSync(PUB_CERT_PATH)) {
+      if (await fs.exists(PRIVATE_KEY_PATH) && await fs.exists(PUB_CERT_PATH)) {
         runOptions.https = {
           cert: PUB_CERT_PATH, // Path to custom certificate
           key: PRIVATE_KEY_PATH // Path to custom key
@@ -135,19 +135,20 @@ class Run extends BaseCommand {
     process.env.REMOTE_ACTIONS = !flags.local
     const scripts = AppScripts({ listeners })
     try {
-      const result = await scripts.runDev([], runOptions)
+      const frontendUrl = await scripts.runDev([], runOptions)
       try {
         await runPackageScript('post-app-run')
       } catch (err) {
         // this is assumed to be a missing script error
       }
-      if (result) {
+      if (frontendUrl) {
+        this.log()
+        this.log(chalk.blue(chalk.bold(`To view your local application:\n  -> ${frontendUrl}`)))
         if (process.env.AIO_LAUNCH_URL_PREFIX) {
-          const launchUrl = process.env.AIO_LAUNCH_URL_PREFIX + result
-          cli.open(launchUrl)
+          const launchUrl = process.env.AIO_LAUNCH_URL_PREFIX + frontendUrl
+          this.log(chalk.blue(chalk.bold(`To view your local application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
         }
       }
-      return result
     } catch (error) {
       spinner.fail()
       this.error(wrapError(error))
