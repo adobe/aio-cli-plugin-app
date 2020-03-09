@@ -19,6 +19,8 @@ const mockFS = require('fs-extra')
 const mockScripts = require('@adobe/aio-app-scripts')()
 
 beforeEach(() => {
+  mockScripts.undeployActions.mockReset()
+  mockScripts.undeployUI.mockReset()
   mockFS.existsSync.mockReset()
   jest.restoreAllMocks()
 })
@@ -37,15 +39,11 @@ test('aliases', async () => {
 })
 
 test('flags', async () => {
-  expect(typeof TheCommand.flags.actions).toBe('object')
-  expect(TheCommand.flags.actions.char).toBe('a')
-  expect(typeof TheCommand.flags.actions.description).toBe('string')
-  expect(TheCommand.flags.actions.exclusive).toEqual(['static'])
+  expect(typeof TheCommand.flags['skip-actions']).toBe('object')
+  expect(typeof TheCommand.flags['skip-actions'].description).toBe('string')
 
-  expect(typeof TheCommand.flags.static).toBe('object')
-  expect(TheCommand.flags.static.char).toBe('s')
-  expect(typeof TheCommand.flags.static.description).toBe('string')
-  expect(TheCommand.flags.static.exclusive).toEqual(['actions'])
+  expect(typeof TheCommand.flags['skip-static']).toBe('object')
+  expect(typeof TheCommand.flags['skip-static'].description).toBe('string')
 })
 
 describe('run', () => {
@@ -54,6 +52,7 @@ describe('run', () => {
     mockFS.existsSync.mockReset()
     command = new TheCommand([])
     command.error = jest.fn()
+    command.log = jest.fn()
   })
 
   afterEach(() => {
@@ -77,54 +76,75 @@ describe('run', () => {
     expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
   })
 
-  test('undeploy only actions', async () => {
+  test('undeploy skip-actions', async () => {
     mockFS.existsSync.mockReturnValue(true)
-    command.argv = ['-a']
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.undeployActions).toHaveBeenCalledTimes(1)
-    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(0)
-  })
-
-  test('undeploy only actions --verbose', async () => {
-    mockFS.existsSync.mockReturnValue(true)
-    command.argv = ['-a']
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.undeployActions).toHaveBeenCalledTimes(1)
-    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(0)
-  })
-
-  test('undeploy only static files', async () => {
-    command.argv = ['-s']
+    command.argv = ['--skip-actions']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.undeployActions).toHaveBeenCalledTimes(0)
     expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
   })
 
-  test('undeploy only static files --verbose', async () => {
-    command.argv = ['-s', '--verbose']
+  test('undeploy skip-actions verbose', async () => {
+    mockFS.existsSync.mockReturnValue(true)
+    command.argv = ['--skip-actions', '-v']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.undeployActions).toHaveBeenCalledTimes(0)
     expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
+  })
+
+  test('undeploy skip static', async () => {
+    mockFS.existsSync.mockReturnValue(true)
+    command.argv = ['--skip-static']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.undeployActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(0)
+  })
+
+  test('undeploy skip static verbose', async () => {
+    mockFS.existsSync.mockReturnValue(true)
+    command.argv = ['--skip-static', '-v']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.undeployActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(0)
+  })
+
+  test('undeploy an app with no backend', async () => {
+    mockFS.existsSync.mockImplementation(f => !f.includes('manifest'))
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.undeployActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
+    expect(command.log).toHaveBeenCalledWith('no manifest file, skipping action undeploy')
+  })
+
+  test('undeploy an app with no frontend', async () => {
+    mockFS.existsSync.mockImplementation(f => !f.includes('web-src'))
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.undeployActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(0)
+    expect(command.log).toHaveBeenCalledWith('no web-src, skipping web-src undeploy')
   })
 
   test('should fail if scripts.undeployActions fails', async () => {
     mockFS.existsSync.mockReturnValue(true)
-    const error = new Error('mock failure')
+    const error = new Error('mock failure Actions')
     mockScripts.undeployActions.mockRejectedValue(error)
     await command.run()
     expect(command.error).toHaveBeenCalledWith(error)
     expect(mockScripts.undeployActions).toHaveBeenCalledTimes(1)
   })
 
-  test('undeploy an App with no backend', async () => {
-    mockFS.existsSync.mockReturnValue(false)
+  test('should fail if scripts.undeployUI fails', async () => {
+    mockFS.existsSync.mockReturnValue(true)
+    const error = new Error('mock failure UI')
+    mockScripts.undeployUI.mockRejectedValue(error)
     await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.undeployActions).toHaveBeenCalledTimes(0)
+    expect(command.error).toHaveBeenCalledWith(error)
     expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
   })
 })
