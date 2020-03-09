@@ -62,7 +62,11 @@ class Undeploy extends BaseCommand {
         }
       }
       if (!flags['skip-static']) {
-        await scripts.undeployUI()
+        if (fs.existsSync('web-src/')) {
+          await scripts.undeployUI()
+        } else {
+          this.log('no web-src, skipping web-src undeploy')
+        }
       }
 
       // final message
