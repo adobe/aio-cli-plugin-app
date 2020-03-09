@@ -120,14 +120,6 @@ describe('run', () => {
     expect(mockScripts.undeployActions).toHaveBeenCalledTimes(1)
   })
 
-  test('undeploy an App with no backend', async () => {
-    mockFS.existsSync.mockReturnValue(false)
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.undeployActions).toHaveBeenCalledTimes(0)
-    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
-  })
-
   test('should fail if scripts.undeployUI fails', async () => {
     const error = new Error('mock failure')
     mockScripts.undeployUI.mockRejectedValue(error)
