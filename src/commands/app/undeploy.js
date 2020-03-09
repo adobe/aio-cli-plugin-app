@@ -25,12 +25,7 @@ class Undeploy extends BaseCommand {
     // cli input
     const { flags } = this.parse(Undeploy)
 
-    // const appDir = path.resolve(args.path)
-    // const currDir = process.cwd()
-    // process.chdir(appDir)
-
     // setup scripts, events and spinner
-    // todo modularize (same for all app-scripts wrappers)
     const spinner = ora()
     try {
       const listeners = {
@@ -58,18 +53,17 @@ class Undeploy extends BaseCommand {
       const scripts = AppScripts({ listeners })
 
       // undeploy
-      if (!flags.static) {
+      if (!flags['skip-actions']) {
         await scripts.undeployActions()
       }
-      if (!flags.actions) {
+      if (!flags['skip-static']) {
         await scripts.undeployUI()
       }
+
       // final message
       this.log(chalk.green(chalk.bold('Undeploy done !')))
-      // process.chdir(currDir)
     } catch (error) {
       spinner.fail()
-      // process.chdir(currDir)
       this.error(wrapError(error))
     }
   }
@@ -80,8 +74,12 @@ Undeploy.description = `Undeploys an Adobe I/O App
 
 Undeploy.flags = {
   ...BaseCommand.flags,
-  static: flags.boolean({ char: 's', description: 'Only deploy static files.', exclusive: ['actions'] }),
-  actions: flags.boolean({ char: 'a', description: 'Only deploy actions.', exclusive: ['static'] })
+  'skip-static': flags.boolean({
+    description: 'Skip build & deployment of static files'
+  }),
+  'skip-actions': flags.boolean({
+    description: 'Skip action build & deploy'
+  })
 }
 
 Undeploy.args = []
