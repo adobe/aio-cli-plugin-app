@@ -60,7 +60,7 @@ class Undeploy extends BaseCommand {
 
       // undeploy
       if (!flags.static) {
-        if (fs.existsSync('actions/')) {
+        if (fs.existsSync('manifest.yml')) {
           await scripts.undeployActions()
         } else {
           this.log('no action src, skipping action undeploy')
