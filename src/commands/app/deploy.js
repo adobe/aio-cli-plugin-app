@@ -64,10 +64,10 @@ class Deploy extends BaseCommand {
         }
 
         if (!flags['skip-actions']) {
-          if (fs.existsSync('actions/')) {
+          if (fs.existsSync('manifest.yml')) {
             await scripts.buildActions([], { filterActions })
           } else {
-            this.log('no action src, skipping action build')
+            this.log('no manifest.yml, skipping action build')
           }
         }
         if (!flags['skip-static']) {
@@ -94,14 +94,14 @@ class Deploy extends BaseCommand {
           // this is assumed to be a missing script error
         }
         if (!flags['skip-actions']) {
-          if (fs.existsSync('actions/')) {
+          if (fs.existsSync('manifest.yml')) {
             let filterEntities
             if (filterActions) {
               filterEntities = { actions: filterActions }
             }
             deployedRuntimeEntities = { ...await scripts.deployActions([], { filterEntities }) }
           } else {
-            this.log('no action src, skipping action deploy')
+            this.log('no manifest.yml, skipping action deploy')
           }
         }
         if (!flags['skip-static']) {
