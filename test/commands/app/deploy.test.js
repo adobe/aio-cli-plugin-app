@@ -118,7 +118,7 @@ describe('run', () => {
     })
   })
 
-  test('build & deploy actions with no actions folder ', async () => {
+  test('build & deploy actions with no actions folder and no manifest', async () => {
     command.argv = ['--skip-static']
     mockFS.existsSync.mockReturnValue(false)
     await command.run()
@@ -126,6 +126,17 @@ describe('run', () => {
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployUI).toHaveBeenCalledTimes(0)
     expect(mockScripts.buildActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.buildUI).toHaveBeenCalledTimes(0)
+  })
+
+  test('build & deploy actions with no actions folder but with a manifest', async () => {
+    command.argv = ['--skip-static']
+    mockFS.existsSync.mockReturnValue(true)
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.deployUI).toHaveBeenCalledTimes(0)
+    expect(mockScripts.buildActions).toHaveBeenCalledTimes(1)
     expect(mockScripts.buildUI).toHaveBeenCalledTimes(0)
   })
 

@@ -36,10 +36,12 @@ USAGE
 * [`@adobe/aio-cli-plugin-app app:add:action`](#adobeaio-cli-plugin-app-appaddaction)
 * [`@adobe/aio-cli-plugin-app app:add:auth`](#adobeaio-cli-plugin-app-appaddauth)
 * [`@adobe/aio-cli-plugin-app app:add:web-assets`](#adobeaio-cli-plugin-app-appaddweb-assets)
+* [`@adobe/aio-cli-plugin-app app:add:ci`](#adobeaio-cli-plugin-app-appaddci)
 * [`@adobe/aio-cli-plugin-app app:create [PATH]`](#adobeaio-cli-plugin-app-appcreate-path)
 * [`@adobe/aio-cli-plugin-app app:delete`](#adobeaio-cli-plugin-app-appdelete)
 * [`@adobe/aio-cli-plugin-app app:delete:action [ACTION-NAME]`](#adobeaio-cli-plugin-app-appdeleteaction-action-name)
 * [`@adobe/aio-cli-plugin-app app:delete:web-assets`](#adobeaio-cli-plugin-app-appdeleteweb-assets)
+* [`@adobe/aio-cli-plugin-app app:delete:ci`](#adobeaio-cli-plugin-app-appdeleteci)
 * [`@adobe/aio-cli-plugin-app app:deploy`](#adobeaio-cli-plugin-app-appdeploy)
 * [`@adobe/aio-cli-plugin-app app:init [PATH]`](#adobeaio-cli-plugin-app-appinit-path)
 * [`@adobe/aio-cli-plugin-app app:logs`](#adobeaio-cli-plugin-app-applogs)
@@ -127,6 +129,21 @@ OPTIONS
 
 _See code: [src/commands/app/add/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/1.2.3/src/commands/app/add/web-assets.js)_
 
+## `@adobe/aio-cli-plugin-app app:add:ci`
+
+Add CI files (github action workflows under .github folder). Note that you would need to manually create github secrets that are used in the workflow files.
+
+```
+USAGE
+  $ @adobe/aio-cli-plugin-app app:add:ci
+
+OPTIONS
+  -v, --verbose   Verbose output
+  --version       Show version
+```
+
+_See code: [src/commands/app/add/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/1.2.3/src/commands/app/add/ci.js)_
+
 ## `@adobe/aio-cli-plugin-app app:create [PATH]`
 
 Create a new Adobe I/O App with default parameters
@@ -195,6 +212,22 @@ OPTIONS
 ```
 
 _See code: [src/commands/app/delete/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/1.2.3/src/commands/app/delete/web-assets.js)_
+
+## `@adobe/aio-cli-plugin-app app:delete:ci`
+
+Delete CI files
+
+```
+USAGE
+  $ @adobe/aio-cli-plugin-app app:delete:ci
+
+OPTIONS
+  -v, --verbose  Verbose output
+  -y, --yes      Skip questions, and use all default values
+  --version      Show version
+```
+
+_See code: [src/commands/app/delete/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/1.2.3/src/commands/app/delete/ci.js)_
 
 ## `@adobe/aio-cli-plugin-app app:deploy`
 
