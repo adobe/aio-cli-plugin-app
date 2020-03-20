@@ -13,7 +13,7 @@
     "chalk": "^3.0.0",
     "cross-spawn": "^7.0.1",
     "execa": "^4.0.0",
-    "fs-extra": "^8.1.0",
+    "fs-extra": "^9.0.0",
     "get-port": "^5.1.1",
     "hjson": "^3.2.1",
     "ignore-walk": "^3.0.1",
