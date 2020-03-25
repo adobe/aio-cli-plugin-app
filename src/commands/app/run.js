@@ -13,7 +13,6 @@ governing permissions and limitations under the License.
 const ora = require('ora')
 const chalk = require('chalk')
 const fs = require('fs-extra')
-const path = require('path')
 const https = require('https')
 const getPort = require('get-port')
 const { cli } = require('cli-ux')
@@ -25,8 +24,10 @@ const BaseCommand = require('../../BaseCommand')
 const AppScripts = require('@adobe/aio-app-scripts')
 const { runPackageScript, wrapError } = require('../../lib/app-helper')
 
-const PRIVATE_KEY_PATH = 'dist/dev-keys/private.key'
-const PUB_CERT_PATH = 'dist/dev-keys/cert-pub.crt'
+const DEV_KEYS_DIR = 'dist/dev-keys/'
+const PRIVATE_KEY_PATH = DEV_KEYS_DIR + 'private.key'
+const PUB_CERT_PATH = DEV_KEYS_DIR + 'cert-pub.crt'
+const CONFIG_KEY = 'aio-dev.dev-keys'
 
 class Run extends BaseCommand {
   async run () {
@@ -41,72 +42,14 @@ class Run extends BaseCommand {
       // this is assumed to be a missing script error
     }
 
-    /* check if there are certificates available, and generate them if not ... */
-    try {
-      await fs.ensureDir(path.dirname(PRIVATE_KEY_PATH))
-      // if they do not exists, attempt to create them
-      if (!await fs.exists(PRIVATE_KEY_PATH) && !await fs.exists(PUB_CERT_PATH)) {
-        // 1. do they exist in global config?
-        const devConfig = coreConfig.get('aio-dev.dev-keys')
-        if (devConfig) {
-          // yes? write them to file
-          await fs.writeFile(PRIVATE_KEY_PATH, devConfig.privateKey)
-          await fs.writeFile(PUB_CERT_PATH, devConfig.publicCert)
-        } else {
-          // 2. generate them
-          const CertCmd = this.config.findCommand('certificate:generate')
-          if (CertCmd) {
-            const Instance = CertCmd.load()
-            await Instance.run([`--keyout=${PRIVATE_KEY_PATH}`, `--out=${PUB_CERT_PATH}`, '-n=DeveloperSelfSigned.cert'])
-          } else {
-            // could not find the cert command, error is caught below
-            throw new Error('error while generating certificate - no certificate:generate command found')
-          }
-          // 3. store them globally in config
-          const privateKey = (await fs.readFile(PRIVATE_KEY_PATH)).toString()
-          const publicCert = (await fs.readFile(PUB_CERT_PATH)).toString()
-          coreConfig.set('aio-dev.dev-keys.privateKey', privateKey)
-          coreConfig.set('aio-dev.dev-keys.publicCert', publicCert)
-
-          // 4. ask the developer to accept them
-          let certAccepted = false
-          const startTime = Date.now()
-          const server = https.createServer({ key: privateKey, cert: publicCert }, function (req, res) {
-            certAccepted = true
-            res.writeHead(200)
-            res.end('Congrats, you have accepted the certificate and can now use it for development on this machine.\n' +
-            'You can close this window.')
-          })
-          const port = parseInt(process.env.PORT) || 9080
-          const actualPort = await getPort({ port: port })
-          server.listen(actualPort)
-          this.log('A self signed development certificate has been generated, you will need to accept it in your browser in order to use it.')
-          cli.open(`https://localhost:${actualPort}`)
-          cli.action.start('Waiting for the certificate to be accepted.')
-          // eslint-disable-next-line no-unmodified-loop-condition
-          while (!certAccepted && Date.now() - startTime < 20000) {
-            await cli.wait()
-          }
-          if (certAccepted) {
-            cli.action.stop()
-            this.log('Great, you accepted the certificate!')
-          } else {
-            cli.action.stop('timed out')
-          }
-          server.close()
-        }
+    // check if there are certificates available, and generate them if not ...
+    // only care about certificates if the application has a UI
+    if (await fs.exists('web-src/')) {
+      try {
+        runOptions.https = await this.getOrGenerateCertificates()
+      } catch (error) {
+        this.error(wrapError(error))
       }
-      // if they now exist ... use them in the options
-      if (await fs.exists(PRIVATE_KEY_PATH) && await fs.exists(PUB_CERT_PATH)) {
-        runOptions.https = {
-          cert: PUB_CERT_PATH, // Path to custom certificate
-          key: PRIVATE_KEY_PATH // Path to custom key
-        }
-      } else {
-        // fatality?
-      }
-    } catch (error) {
-      this.error(wrapError(error))
     }
 
     const spinner = ora()
@@ -153,6 +96,76 @@ class Run extends BaseCommand {
       spinner.fail()
       this.error(wrapError(error))
     }
+  }
+
+  async getOrGenerateCertificates () {
+    const certs = {
+      cert: PUB_CERT_PATH, // Path to custom certificate
+      key: PRIVATE_KEY_PATH // Path to custom key
+    }
+
+    /* get existing certificates from file.. */
+    if (await fs.exists(PRIVATE_KEY_PATH) && await fs.exists(PUB_CERT_PATH)) {
+      return certs
+    }
+
+    await fs.ensureDir(DEV_KEYS_DIR)
+
+    /* or get existing certificates from config.. */
+    const devConfig = coreConfig.get(CONFIG_KEY)
+    if (devConfig && devConfig.privateKey && devConfig.publicCert) {
+      // yes? write them to file
+      await fs.writeFile(PRIVATE_KEY_PATH, devConfig.privateKey)
+      await fs.writeFile(PUB_CERT_PATH, devConfig.publicCert)
+
+      return certs
+    }
+
+    /* or if they do not exists, attempt to create them */
+    // 1. generate them using aio certificate generate command
+    const CertCmd = this.config.findCommand('certificate:generate')
+    if (CertCmd) {
+      const Instance = CertCmd.load()
+      await Instance.run([`--keyout=${PRIVATE_KEY_PATH}`, `--out=${PUB_CERT_PATH}`, '-n=DeveloperSelfSigned.cert'])
+    } else {
+      // could not find the cert command, error is caught below
+      throw new Error('error while generating certificate - no certificate:generate command found')
+    }
+
+    // 2. store them globally in config
+    const privateKey = (await fs.readFile(PRIVATE_KEY_PATH)).toString()
+    const publicCert = (await fs.readFile(PUB_CERT_PATH)).toString()
+    coreConfig.set(CONFIG_KEY + '.privateKey', privateKey)
+    coreConfig.set(CONFIG_KEY + '.publicCert', publicCert)
+
+    // 3. ask the developer to accept them
+    let certAccepted = false
+    const startTime = Date.now()
+    const server = https.createServer({ key: privateKey, cert: publicCert }, function (req, res) {
+      certAccepted = true
+      res.writeHead(200)
+      res.end('Congrats, you have accepted the certificate and can now use it for development on this machine.\n' +
+      'You can close this window.')
+    })
+    const port = parseInt(process.env.PORT) || 9080
+    const actualPort = await getPort({ port: port })
+    server.listen(actualPort)
+    this.log('A self signed development certificate has been generated, you will need to accept it in your browser in order to use it.')
+    cli.open(`https://localhost:${actualPort}`)
+    cli.action.start('Waiting for the certificate to be accepted.')
+    // eslint-disable-next-line no-unmodified-loop-condition
+    while (!certAccepted && Date.now() - startTime < 20000) {
+      await cli.wait()
+    }
+    if (certAccepted) {
+      cli.action.stop()
+      this.log('Great, you accepted the certificate!')
+    } else {
+      cli.action.stop('timed out')
+    }
+    server.close()
+
+    return certs
   }
 }
 
