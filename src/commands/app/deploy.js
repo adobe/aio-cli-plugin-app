@@ -28,7 +28,6 @@ class Deploy extends BaseCommand {
     const filterActions = flags.action
 
     // setup scripts, events and spinner
-    // todo modularize (same for all app-scripts wrappers)
     const spinner = ora()
     try {
       const listeners = {
@@ -175,9 +174,6 @@ Deploy.flags = {
     char: 'a',
     multiple: true
   })
-
-  // todo no color/spinner/open output
-  // 'no-fancy': flags.boolean({ description: 'Simple output and no url open' }),
 }
 
 Deploy.args = []

@@ -19,8 +19,8 @@ const mockFS = require('fs-extra')
 const mockScripts = require('@adobe/aio-app-scripts')()
 
 beforeEach(() => {
-  mockScripts.undeployActions.mockReset()
-  mockScripts.undeployUI.mockReset()
+  mockScripts.mockReset('undeployActions')
+  mockScripts.mockReset('undeployUI')
   mockFS.existsSync.mockReset()
   jest.restoreAllMocks()
 })
@@ -133,7 +133,7 @@ describe('run', () => {
   test('should fail if scripts.undeployActions fails', async () => {
     mockFS.existsSync.mockReturnValue(true)
     const error = new Error('mock failure Actions')
-    mockScripts.undeployActions.mockRejectedValue(error)
+    mockScripts.mockRejectedValue('undeployActions', error)
     await command.run()
     expect(command.error).toHaveBeenCalledWith(error)
     expect(mockScripts.undeployActions).toHaveBeenCalledTimes(1)
@@ -142,7 +142,7 @@ describe('run', () => {
   test('should fail if scripts.undeployUI fails', async () => {
     mockFS.existsSync.mockReturnValue(true)
     const error = new Error('mock failure UI')
-    mockScripts.undeployUI.mockRejectedValue(error)
+    mockScripts.mockRejectedValue('undeployUI', error)
     await command.run()
     expect(command.error).toHaveBeenCalledWith(error)
     expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
