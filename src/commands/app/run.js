@@ -32,8 +32,20 @@ const CONFIG_KEY = 'aio-dev.dev-keys'
 class Run extends BaseCommand {
   async run () {
     const { flags } = this.parse(Run)
+
+    const hasFrontend = await fs.exists('web-src/')
+    const hasBackend = await fs.exists('manifest.yml')
+
+    if (!hasBackend && !hasFrontend) {
+      this.error(wrapError('nothing to run.. there is no web-src/ and no manifest.yml, are you in a valid app?'))
+    }
+    if (!!flags['skip-actions'] && !hasFrontend) {
+      this.error(wrapError('nothing to run.. there is no web-src/ and --skip-actions is set'))
+    }
+
     const runOptions = {
-      logLevel: flags.verbose ? 4 : 2
+      skipActions: !!flags['skip-actions'],
+      parcel: { logLevel: flags.verbose ? 4 : 2 }
     }
 
     try {
@@ -44,9 +56,9 @@ class Run extends BaseCommand {
 
     // check if there are certificates available, and generate them if not ...
     // only care about certificates if the application has a UI
-    if (await fs.exists('web-src/')) {
+    if (hasFrontend) {
       try {
-        runOptions.https = await this.getOrGenerateCertificates()
+        runOptions.parcel.https = await this.getOrGenerateCertificates()
       } catch (error) {
         this.error(wrapError(error))
       }
@@ -174,7 +186,12 @@ Run.description = `Run an Adobe I/O App
 
 Run.flags = {
   local: flags.boolean({
-    description: 'run/debug actions locally'
+    description: 'run/debug actions locally',
+    exclusive: ['skip-actions']
+  }),
+  'skip-actions': flags.boolean({
+    description: 'skip actions, only run the ui server',
+    exclusive: ['local']
   }),
   ...BaseCommand.flags
 }
