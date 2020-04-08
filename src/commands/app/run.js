@@ -113,10 +113,10 @@ class Run extends BaseCommand {
     const listeners = {
       onStart: taskName => {
         this.log(chalk.bold(`> ${taskName}`))
-        spinner.start(taskName)
+        spinner.start()
       },
       onEnd: taskName => {
-        spinner.succeed(chalk.green(taskName))
+        spinner.stop()
       },
       onWarning: warning => {
         spinner.warn(chalk.dim(chalk.yellow(warning)))
@@ -141,14 +141,16 @@ class Run extends BaseCommand {
       } catch (err) {
         // this is assumed to be a missing script error
       }
+      spinner.stop()
       if (frontendUrl) {
-        this.log()
         this.log(chalk.blue(chalk.bold(`To view your local application:\n  -> ${frontendUrl}`)))
         if (process.env.AIO_LAUNCH_URL_PREFIX) {
           const launchUrl = process.env.AIO_LAUNCH_URL_PREFIX + frontendUrl
           this.log(chalk.blue(chalk.bold(`To view your local application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
         }
       }
+      spinner.start('press CTRL+C to terminate dev environment')
+      // spinner.stop() called when script send onEnd event
     } catch (error) {
       spinner.fail()
       this.error(wrapError(error))

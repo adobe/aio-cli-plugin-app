@@ -12,6 +12,7 @@ governing permissions and limitations under the License.
 
 module.exports = () => {
   const spinner = {
+    stop: jest.fn(),
     stopAndPersist: jest.fn(() => {
       // console.error('stopAndPersist')
     }),
