@@ -64,10 +64,10 @@ class Deploy extends BaseCommand {
         }
 
         if (!flags['skip-actions']) {
-          if (fs.existsSync('actions/')) {
+          if (fs.existsSync('manifest.yml')) {
             await scripts.buildActions([], { filterActions })
           } else {
-            this.log('no action src, skipping action build')
+            this.log('no manifest.yml, skipping action build')
           }
         }
         if (!flags['skip-static']) {
@@ -83,7 +83,10 @@ class Deploy extends BaseCommand {
           // this is assumed to be a missing script error
         }
       }
+
       // deploy phase
+      let deployedRuntimeEntities = {}
+      let deployedFrontendUrl = ''
       if (!flags['skip-deploy']) {
         try {
           await runPackageScript('pre-app-deploy')
@@ -91,29 +94,39 @@ class Deploy extends BaseCommand {
           // this is assumed to be a missing script error
         }
         if (!flags['skip-actions']) {
-          if (fs.existsSync('actions/')) {
+          if (fs.existsSync('manifest.yml')) {
             let filterEntities
             if (filterActions) {
               filterEntities = { actions: filterActions }
             }
-            await scripts.deployActions([], { filterEntities })
-            // todo show action urls !!!
+            deployedRuntimeEntities = { ...await scripts.deployActions([], { filterEntities }) }
           } else {
-            this.log('no action src, skipping action deploy')
+            this.log('no manifest.yml, skipping action deploy')
           }
         }
         if (!flags['skip-static']) {
           if (fs.existsSync('web-src/')) {
-            const frontendUrl = await scripts.deployUI()
-            this.log(chalk.blue(chalk.bold(`To view your deployed application:\n  -> ${frontendUrl}`)))
-            if (process.env.AIO_LAUNCH_URL_PREFIX) {
-              const launchUrl = process.env.AIO_LAUNCH_URL_PREFIX + frontendUrl
-              this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
-            }
+            deployedFrontendUrl = await scripts.deployUI()
           } else {
             this.log('no web-src, skipping web-src deploy')
           }
         }
+
+        // log deployed resources
+        if (deployedRuntimeEntities.actions) {
+          this.log(chalk.blue(chalk.bold('Your deployed actions:')))
+          deployedRuntimeEntities.actions.forEach(a => {
+            this.log(chalk.blue(chalk.bold(`  -> ${a.url || a.name} `)))
+          })
+        }
+        if (deployedFrontendUrl) {
+          this.log(chalk.blue(chalk.bold(`To view your deployed application:\n  -> ${deployedFrontendUrl}`)))
+          if (process.env.AIO_LAUNCH_URL_PREFIX) {
+            const launchUrl = process.env.AIO_LAUNCH_URL_PREFIX + deployedFrontendUrl
+            this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
+          }
+        }
+
         try {
           await runPackageScript('post-app-deploy')
         } catch (err) {

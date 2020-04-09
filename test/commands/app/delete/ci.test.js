@@ -11,11 +11,8 @@ governing permissions and limitations under the License.
 */
 const fs = require('fs-extra')
 
-const TheCommand = require('../../../../src/commands/app/add/web-assets')
+const TheCommand = require('../../../../src/commands/app/delete/ci')
 const BaseCommand = require('../../../../src/BaseCommand')
-
-const config = require('@adobe/aio-lib-core-config')
-jest.mock('@adobe/aio-lib-core-config')
 
 jest.mock('fs-extra')
 
@@ -34,7 +31,6 @@ beforeEach(() => {
   mockRun.mockReset()
   yeoman.createEnv.mockClear()
   fs.ensureDirSync.mockClear()
-  config.get.mockReset()
 })
 
 describe('Command Prototype', () => {
@@ -66,35 +62,7 @@ describe('good flags', () => {
     expect(mockRegister).toHaveBeenCalledTimes(1)
     const genName = mockRegister.mock.calls[0][1]
     expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': true,
-      'skip-install': false,
-      'adobe-services': ''
-    })
-  })
-
-  test('--yes --skip-install', async () => {
-    await TheCommand.run(['--yes', '--skip-install'])
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': true,
-      'skip-install': true,
-      'adobe-services': ''
-    })
-  })
-
-  test('--skip-install', async () => {
-    await TheCommand.run(['--skip-install'])
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': false,
-      'skip-install': true,
-      'adobe-services': ''
+      'skip-prompt': true
     })
   })
 
@@ -105,23 +73,7 @@ describe('good flags', () => {
     expect(mockRegister).toHaveBeenCalledTimes(1)
     const genName = mockRegister.mock.calls[0][1]
     expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': false,
-      'skip-install': false,
-      'adobe-services': ''
-    })
-  })
-
-  test('no flags, service code defined in config', async () => {
-    config.get.mockReturnValue([{ code: 'CampaignSDK' }, { code: 'AdobeAnalyticsSDK' }])
-    await TheCommand.run([])
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': false,
-      'skip-install': false,
-      'adobe-services': 'CampaignSDK,AdobeAnalyticsSDK'
+      'skip-prompt': false
     })
   })
 })

@@ -62,6 +62,8 @@ describe('run', () => {
     command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
+
+    mockScripts.deployActions.mockResolvedValue({})
   })
 
   afterEach(() => {
@@ -118,7 +120,7 @@ describe('run', () => {
     })
   })
 
-  test('build & deploy actions with no actions folder ', async () => {
+  test('build & deploy actions with no actions folder and no manifest', async () => {
     command.argv = ['--skip-static']
     mockFS.existsSync.mockReturnValue(false)
     await command.run()
@@ -126,6 +128,17 @@ describe('run', () => {
     expect(mockScripts.deployActions).toHaveBeenCalledTimes(0)
     expect(mockScripts.deployUI).toHaveBeenCalledTimes(0)
     expect(mockScripts.buildActions).toHaveBeenCalledTimes(0)
+    expect(mockScripts.buildUI).toHaveBeenCalledTimes(0)
+  })
+
+  test('build & deploy actions with no actions folder but with a manifest', async () => {
+    command.argv = ['--skip-static']
+    mockFS.existsSync.mockReturnValue(true)
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockScripts.deployUI).toHaveBeenCalledTimes(0)
+    expect(mockScripts.buildActions).toHaveBeenCalledTimes(1)
     expect(mockScripts.buildUI).toHaveBeenCalledTimes(0)
   })
 
@@ -258,6 +271,21 @@ describe('run', () => {
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('https://example.com'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://prefix?fake=https://example.com'))
     delete process.env.AIO_LAUNCH_PREFIX_URL
+  })
+
+  test('deploy should show action urls', async () => {
+    mockFS.existsSync.mockReturnValue(true)
+    mockScripts.deployActions.mockResolvedValue({
+      actions: [
+        { name: 'pkg/action', url: 'https://fake.com/action' },
+        { name: 'pkg/actionNoUrl' }
+      ]
+    })
+    command.argv = []
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('https://fake.com/action'))
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('pkg/actionNoUrl'))
   })
 
   test('should fail if scripts.deployActions fails', async () => {

@@ -12,46 +12,28 @@ governing permissions and limitations under the License.
 const BaseCommand = require('../../../BaseCommand')
 const yeoman = require('yeoman-environment')
 const debug = require('debug')('aio-cli-plugin-app:init')
-const { flags } = require('@oclif/command')
 
-const config = require('@adobe/aio-lib-core-config')
-
-class AddWebAssetsCommand extends BaseCommand {
+class AddCICommand extends BaseCommand {
   async run () {
-    const { args, flags } = this.parse(AddWebAssetsCommand)
+    const { args, flags } = this.parse(AddCICommand)
 
     debug(`adding component ${args.component} to the project, using flags: `, flags)
 
-    const services = (config.get('services') || []).map(s => s.code).join(',')
-
-    const generator = '@adobe/generator-aio-app/generators/add-web-assets'
+    const generator = '@adobe/generator-aio-app/generators/add-ci'
     const env = yeoman.createEnv()
     env.register(require.resolve(generator), 'gen')
-    const res = await env.run('gen', {
-      'skip-install': flags['skip-install'],
-      'skip-prompt': flags.yes,
-      'adobe-services': services
-    })
+    const res = await env.run('gen')
     return res
   }
 }
 
-AddWebAssetsCommand.description = `Add web assets support
+AddCICommand.description = `Add CI files
 `
 
-AddWebAssetsCommand.flags = {
-  yes: flags.boolean({
-    description: 'Skip questions, and use all default values',
-    default: false,
-    char: 'y'
-  }),
-  'skip-install': flags.boolean({
-    description: 'Skip npm installation after files are created',
-    default: false
-  }),
+AddCICommand.flags = {
   ...BaseCommand.flags
 }
 
-AddWebAssetsCommand.args = []
+AddCICommand.args = []
 
-module.exports = AddWebAssetsCommand
+module.exports = AddCICommand
