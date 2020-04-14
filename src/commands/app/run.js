@@ -32,7 +32,9 @@ class Run extends BaseCommand {
   async run () {
     const { flags } = this.parse(Run)
     const runOptions = {
-      logLevel: flags.verbose ? 4 : 2
+      parcel: {
+        logLevel: flags.verbose ? 4 : 2
+      }
     }
 
     try {
