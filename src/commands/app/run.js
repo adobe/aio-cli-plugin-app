@@ -45,7 +45,9 @@ class Run extends BaseCommand {
 
     const runOptions = {
       skipActions: !!flags['skip-actions'],
-      parcel: { logLevel: flags.verbose ? 4 : 2 }
+      parcel: {
+        logLevel: flags.verbose ? 4 : 2
+      }
     }
 
     try {
