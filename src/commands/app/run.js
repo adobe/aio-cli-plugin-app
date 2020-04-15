@@ -32,7 +32,9 @@ class Run extends BaseCommand {
   async run () {
     const { flags } = this.parse(Run)
     const runOptions = {
-      logLevel: flags.verbose ? 4 : 2
+      parcel: {
+        logLevel: flags.verbose ? 4 : 2
+      }
     }
 
     try {
@@ -98,7 +100,7 @@ class Run extends BaseCommand {
       }
       // if they now exist ... use them in the options
       if (await fs.exists(PRIVATE_KEY_PATH) && await fs.exists(PUB_CERT_PATH)) {
-        runOptions.https = {
+        runOptions.parcel.https = {
           cert: PUB_CERT_PATH, // Path to custom certificate
           key: PRIVATE_KEY_PATH // Path to custom key
         }
