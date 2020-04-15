@@ -21,8 +21,7 @@ const { wrapError } = require('../../lib/app-helper')
 class GetUrlCommand extends BaseCommand {
   async run () {
     // cli input
-    const { args } = this.parse(GetUrlCommand)
-    const { flags } = this.parse(GetUrlCommand)
+    const { args, flags } = this.parse(GetUrlCommand)
     const scripts = AppScripts({ listeners: {} })
 
     try {
