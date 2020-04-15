@@ -58,6 +58,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.getUrls).toBeCalledWith({})
     expect(urls).toBe(retVal)
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.runtime.action))
   })
 
   test('get empty action urls', async () => {
@@ -89,6 +90,8 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.getUrls).toBeCalledWith({})
     expect(urls).toBe(retVal)
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.runtime.action))
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.cdn.action))
   })
 
   test('get single action url', async () => {
@@ -106,6 +109,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.getUrls).toBeCalledWith({})
     expect(urls).toBe(retVal)
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.runtime.action))
   })
 
   test('get single action url with cdn flag', async () => {
@@ -126,6 +130,8 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockScripts.getUrls).toBeCalledWith({})
     expect(urls).toBe(retVal)
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.runtime.action))
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.cdn.action))
   })
 
   test('get single action url with non existing action', async () => {

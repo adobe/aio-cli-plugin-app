@@ -50,7 +50,7 @@ class GetUrlCommand extends BaseCommand {
   }
 }
 
-GetUrlCommand.description = 'Get action URL'
+GetUrlCommand.description = 'Get action URLs'
 
 GetUrlCommand.flags = {
   ...BaseCommand.flags,
