@@ -36,6 +36,15 @@ test('aliases', async () => {
 test('flags', async () => {
   expect(typeof TheCommand.flags.cdn).toBe('object')
   expect(typeof TheCommand.flags.cdn.description).toBe('string')
+
+  expect(typeof TheCommand.flags.json).toBe('object')
+  expect(typeof TheCommand.flags.json.description).toBe('string')
+
+  expect(typeof TheCommand.flags.hson).toBe('object')
+  expect(typeof TheCommand.flags.hson.description).toBe('string')
+
+  expect(typeof TheCommand.flags.yml).toBe('object')
+  expect(typeof TheCommand.flags.yml.description).toBe('string')
 })
 
 describe('run', () => {
@@ -63,6 +72,42 @@ describe('run', () => {
 
   test('get empty action urls', async () => {
     const command = new TheCommand([])
+    command.error = jest.fn()
+    command.log = jest.fn()
+    const retVal = {}
+    mockScripts.getUrls.mockResolvedValue(retVal)
+    const urls = await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.getUrls).toBeCalledWith({})
+    expect(urls).toBe(retVal)
+  })
+
+  test('get empty action urls -j', async () => {
+    const command = new TheCommand(['--json'])
+    command.error = jest.fn()
+    command.log = jest.fn()
+    const retVal = {}
+    mockScripts.getUrls.mockResolvedValue(retVal)
+    const urls = await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.getUrls).toBeCalledWith({})
+    expect(urls).toBe(retVal)
+  })
+
+  test('get empty action urls -y', async () => {
+    const command = new TheCommand(['--yml'])
+    command.error = jest.fn()
+    command.log = jest.fn()
+    const retVal = {}
+    mockScripts.getUrls.mockResolvedValue(retVal)
+    const urls = await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockScripts.getUrls).toBeCalledWith({})
+    expect(urls).toBe(retVal)
+  })
+
+  test('get empty action urls -h', async () => {
+    const command = new TheCommand(['--hson'])
     command.error = jest.fn()
     command.log = jest.fn()
     const retVal = {}

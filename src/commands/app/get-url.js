@@ -17,6 +17,7 @@ const { flags } = require('@oclif/command')
 const BaseCommand = require('../../BaseCommand')
 const AppScripts = require('@adobe/aio-app-scripts')
 const { wrapError } = require('../../lib/app-helper')
+const yaml = require('js-yaml')
 
 class GetUrlCommand extends BaseCommand {
   async run () {
@@ -29,18 +30,27 @@ class GetUrlCommand extends BaseCommand {
       options.action = args.action
       options.cdn = flags.cdn
       const urls = await scripts.getUrls(options)
-      if (urls.runtime) {
-        this.log('Runtime URLs')
-        Object.entries(urls.runtime).forEach(([key, value]) => {
-          this.log(chalk.blue(chalk.bold(`${key} `)) + ' - ' + chalk.blue(chalk.bold(`${value} `)))
-        })
-      }
+      // console.log("received : ", urls)
+      if (flags.json) {
+        this.log(JSON.stringify(urls))
+      } else if (flags.yml) {
+        this.log(yaml.safeDump(urls))
+      } else if (flags.hson) {
+        this.log(urls)
+      } else {
+        if (urls.runtime) {
+          this.log('Runtime URLs')
+          Object.entries(urls.runtime).forEach(([key, value]) => {
+            this.log(chalk.blue(chalk.bold(`${key} `)) + ' - ' + chalk.blue(chalk.bold(`${value} `)))
+          })
+        }
 
-      if (urls.cdn) {
-        this.log('CDN URLs')
-        Object.entries(urls.cdn).forEach(([key, value]) => {
-          this.log(chalk.blue(chalk.bold(`${key} `)) + ' - ' + chalk.blue(chalk.bold(`${value} `)))
-        })
+        if (urls.cdn) {
+          this.log('CDN URLs')
+          Object.entries(urls.cdn).forEach(([key, value]) => {
+            this.log(chalk.blue(chalk.bold(`${key} `)) + ' - ' + chalk.blue(chalk.bold(`${value} `)))
+          })
+        }
       }
       return urls
     } catch (error) {
@@ -55,6 +65,18 @@ GetUrlCommand.flags = {
   ...BaseCommand.flags,
   cdn: flags.boolean({
     description: 'Display CDN based action URLs'
+  }),
+  json: flags.boolean({
+    description: 'Output json',
+    char: 'j'
+  }),
+  hson: flags.boolean({
+    description: 'Output human readable json',
+    char: 'h'
+  }),
+  yml: flags.boolean({
+    description: 'Output yml',
+    char: 'y'
   })
 }
 
