@@ -1,0 +1,75 @@
+{
+    "project": {
+        "id": "123",
+        "name": "TestProject",
+        "title": "Test Title",
+        "description": "My project description",
+        "org": {
+            "id": "25591412",
+            "ims_org_id": "XOXOXOXOXOXOX@AdobeOrg"
+        },
+        "workspace": {
+            "id": "1356",
+            "name": "TestWorkspace",
+            "title": "Test Title",
+            "description": "My workspace description",
+            "action_url": "https://ABCD-TestProject-TestWorkspace.adobeioruntime.net",
+            "app_url": "https://ABCD-TestProject-TestWorkspace.adobestatic.net",
+            "details": {
+                "credentials": [
+                    {
+                        "id": "17561142",
+                        "integration_type": "oauthweb",
+                        "oauth2": {
+                            "client_id": "XYXYXYXYXYXYXYXYX",
+                            "client_secret": "XYXYXYXYZZZZZZ",
+                            "redirect_uri": "https://test123"
+                        }
+                    },
+                    {
+                        "id": "17606512",
+                        "name": "Project 1583191213473J",
+                        "integration_type": "service",
+                        "jwt": {
+                            "client_id": "XUXUXUXUXUXUXUX",
+                            "client_secret": "XPXPXPXPXPXPXPXPX",
+                            "techacct": "XTXTXTXTXTX@techacct.adobe.com",
+                            "meta_scopes": [
+                                "ent_smartcontent_sdk",
+                                "ent_adobeio_sdk"
+                            ]
+                        }
+                    },
+                    {
+                        "id": "17950",
+                        "name": "NewTestIntegration8",
+                        "integration_type": "oauthandroid",
+                        "oauth2": {
+                            "client_id": "XRXRXRXRXRXRXRXRXR",
+                            "client_secret": "XRXRXRXRXRXRXRXRXRX",
+                            "redirect_uri": "ams:\\\\+TRTRTRTRTRTR://adobeid/XWXWXWXWXWXWXWX"
+                        }
+                    }
+                ],
+                "services": [
+                    {
+                        "code": "AdobeIOManagementAPISDK",
+                        "name": "I/O Management API"
+                    },
+                    {
+                        "code": "CC SDK",
+                        "name": "Creative SDK"
+                    }
+                ],
+                "runtime": {
+                    "namespaces": [
+                        {
+                            "name": "Name",
+                            "auth": "Auth"
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}

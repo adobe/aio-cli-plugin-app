@@ -13,10 +13,9 @@ const debug = require('debug')('aio-cli-plugin-app:import')
 const path = require('path')
 const fs = require('fs-extra')
 const inquirer = require('inquirer')
-const validator = require('validator')
 const yaml = require('js-yaml')
 const hjson = require('hjson')
-const configUtil = require('@adobe/aio-lib-core-config/src/util')
+const Ajv = require('ajv')
 
 const AIO_FILE = '.aio'
 const ENV_FILE = '.env'
@@ -25,17 +24,13 @@ const AIO_ENV_SEPARATOR = '_'
 const FILE_FORMAT_ENV = 'env'
 const FILE_FORMAT_JSON = 'json'
 
-// by default, all rules are required
-//     set `notRequired` if a rule is not required (key does not have to exist)
-//     `rule` can be a regex string or a function that returns a boolean, and takes one input
-const gRules = [
-  { key: 'name', rule: '^[a-zA-Z0-9]+$' },
-  { key: 'project.name', rule: '^[a-zA-Z0-9]+$' },
-  { key: 'project.org.name', rule: '^[a-zA-Z0-9]+$' },
-  { key: 'app_url', rule: validator.isURL },
-  { key: 'action_url', rule: validator.isURL },
-  { key: 'credentials.oauth2.redirect_uri', rule: validator.isURL, notRequired: true }
-]
+function validateConfig (configJson) {
+  const schema = require('../../schema/config.schema.json')
+  const ajv = new Ajv({ allErrors: true })
+  const validate = ajv.compile(schema)
+
+  return { valid: validate(configJson), errors: validate.errors }
+}
 
 /**
  * Load a config file
@@ -80,41 +75,6 @@ function loadConfigFile (fileOrBuffer) {
  */
 function prettyPrintJson (json) {
   return JSON.stringify(json, null, 2)
-}
-
-/**
- * Validate the config.json.
- * Throws an Error if any rules are not fulfilled.
- *
- * (future: use JSON schema)
- *
- * @param {object} json the json to validate
- */
-function checkRules (json, rules = gRules) {
-  const invalid = rules.filter(item => {
-    let value = configUtil.getValue(json, item.key)
-
-    if (!value && item.notRequired) {
-      return false
-    }
-    value = value || ''
-
-    if (typeof (item.rule) === 'function') {
-      return !item.rule(value)
-    } else {
-      return (value.match(new RegExp(item.rule)) === null)
-    }
-  })
-
-  if (invalid.length) {
-    const explanations = invalid.map(item => {
-      item.value = configUtil.getValue(json, item.key) || '<undefined>'
-      return { ...item, rule: undefined }
-    })
-
-    const message = `Missing or invalid keys in config: ${JSON.stringify(explanations)}`
-    throw new Error(message)
-  }
 }
 
 /**
@@ -390,18 +350,24 @@ async function importConfigJson (configFileLocation, destinationFolder = process
   debug(`importConfigJson - configFileLocation: ${configFileLocation} destinationFolder:${destinationFolder} flags:${flags}`)
 
   const { values: config, format } = loadConfigFile(configFileLocation)
-  const { runtime, credentials } = config
+  const { valid: configIsValid, errors: configErrors } = validateConfig(config)
+  const { runtime, credentials } = config.project.workspace.details
 
   debug(`importConfigJson - format: ${format} config:${prettyPrintJson(config)} `)
 
-  checkRules(config)
+  if (!configIsValid) {
+    const message = `Missing or invalid keys in config: ${JSON.stringify(configErrors, null, 2)}`
+    throw new Error(message)
+  }
 
-  // enrich credentials.jwt with ims org
-  if (typeof credentials.jwt === 'object' && !credentials.jwt.ims_org_id) {
-    // not checking for config.project && config.project.org as part of required rules
+  // find jwt credential
+  const credential = credentials.find(credential => typeof credential.jwt === 'object')
+
+  // enrich jwt credentials with ims org id
+  if (credential && credential.jwt && !credential.jwt.ims_org_id) {
     if (config.project.org.ims_org_id) {
       debug('adding ims_org_id to $ims.jwt config')
-      credentials.jwt.ims_org_id = config.project.org.ims_org_id
+      credential.jwt.ims_org_id = config.project.org.ims_org_id
     } else {
       const warning = 'missing project.org.ims_org_id, which is needed for ims jwt config'
       debug('warn:', warning)
@@ -409,16 +375,38 @@ async function importConfigJson (configFileLocation, destinationFolder = process
     }
   }
 
-  await writeEnv({ runtime, $ims: credentials }, destinationFolder, flags)
+  // transform runtime object value to what this plugin expects:
+  // from:
+  // {
+  //   "namespaces": [
+  //     {
+  //       "name": "abc",
+  //       "auth": "123"
+  //     }
+  //   ]
+  // }
+  // to:
+  // {
+  //   "namespace": "abc",
+  //   "auth": "123"
+  // }
+  const newRuntime = (runtime.namespaces.length > 0) ? runtime.namespaces[0] : {}
+  if (newRuntime.name) {
+    newRuntime.namespace = newRuntime.name
+    delete newRuntime.name
+  }
+
+  await writeEnv({ runtime: newRuntime, $ims: credentials }, destinationFolder, flags)
 
   // remove the credentials
-  delete config.runtime
-  delete config.credentials
+  delete config.project.workspace.details.runtime
+  delete config.project.workspace.details.credentials
 
   return writeAio(config, destinationFolder, flags)
 }
 
 module.exports = {
+  validateConfig,
   loadConfigFile,
   writeAio,
   writeEnv,

@@ -24,7 +24,6 @@
     "request-promise": "^4.2.4",
     "resolve": "^1.10.0",
     "semver": "^7.0.0",
-    "validator": "^13.0.0",
     "which": "^2.0.1",
     "yeoman-environment": "^2.5.0"
   },
@@ -33,6 +32,7 @@
     "@oclif/plugin-help": "^2.1.6",
     "@types/jest": "^25.1.0",
     "acorn": "^7.1.0",
+    "ajv": "^6.12.2",
     "codecov": "^3.6.1",
     "eol": "^0.9.1",
     "eslint": "^6.6.0",

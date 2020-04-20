@@ -1,0 +1,153 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://adobe.io/schemas/aio-cli-plugin-app.json",
+    "type": "object",
+    "properties": {
+        "project": { "$ref": "#/definitions/project" }
+    },
+    "required": [ "project"],
+    "definitions": {
+        "project": { 
+            "type": "object",
+            "properties": {
+                "id": { "type": "string" },
+                "name": { 
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9]+$"
+                },
+                "title": { "type": "string" },
+                "description": { "type": "string" },
+                "org": { "$ref": "#/definitions/org" },
+                "workspace": { "$ref": "#/definitions/workspace" }
+            },
+            "required": [ "id", "name", "title", "org", "workspace" ]
+        },
+        "workspace": {
+            "type": "object",
+            "properties": {
+                "id": { "type": "string" },
+                "name": { 
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9]+$"
+                },
+                "title": { "type": "string" },
+                "description": { "type": "string" },
+                "action_url": { 
+                    "type": "string",
+                    "format": "uri"
+                },
+                "app_url": { 
+                    "type": "string",
+                    "format": "uri"
+                },
+                "details": { "$ref": "#/definitions/details" }
+            },
+            "required": [ "id", "name", "title", "action_url", "app_url", "details" ]
+        },
+        "details": {
+            "type": "object",
+            "properties": {
+                "credentials": {
+                    "type": "array",
+                    "items": { "$ref": "#/definitions/credential" },
+                    "default": []
+                },
+                "services": {
+                    "type": "array",
+                    "items": { "$ref": "#/definitions/service" },
+                    "default": []
+                },
+                "runtime": {
+                    "type": "object",
+                    "properties": {
+                        "namespaces": {
+                            "type": "array",
+                            "items": { "$ref": "#/definitions/namespace" },
+                            "default": []
+                        }
+                    },
+                    "required": [ "namespaces" ]
+                }
+            },
+            "required": [ "credentials", "services", "runtime" ]
+        },
+        "org": {
+            "type": "object",
+            "properties": {
+                "id": { "type": "string" },
+                "name": { 
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9]+$"
+                },
+                "ims_org_id": { 
+                    "type": "string",
+                    "format": "email"
+                }
+            },
+            "required": [ "id", "name", "ims_org_id" ]
+        },
+        "credential": {
+            "type": "object",
+            "properties": {
+                "id": { "type": "string" },
+                "name": { "type": "string" },
+                "integration_type": {
+                    "type": "string",
+                    "enum": [ "oauthweb", "oauthios", "oauthandroid", "service", "apikey" ]
+                },
+                "oauth2": { "$ref": "#/definitions/oauth2" },
+                "jwt": { "$ref": "#/definitions/jwt" }
+            },
+            "required": [ "id", "name", "integration_type" ],
+            "oneOf": [
+                { "required": ["oauth2"] },
+                { "required": ["jwt"] }
+            ]
+        },
+        "service": {
+            "type": "object",
+            "properties": {
+                "code": { "type": "string" },
+                "name": { "type": "string" }
+            },
+            "required": [ "code", "name" ]
+        },
+        "namespace": {
+            "type": "object",
+            "properties": {
+                "name": { "type": "string" },
+                "auth": { "type": "string" }
+            },
+            "required": [ "name", "auth" ]
+        },
+        "oauth2": {
+            "type": "object",
+            "properties": {
+                "client_id": { "type": "string" },
+                "client_secret": { "type": "string" },
+                "redirect_uri": { 
+                    "type": "string",
+                    "format": "uri"
+                }
+            },
+            "required": [ "client_id", "client_secret", "redirect_uri" ]
+        }, 
+        "jwt": {
+            "type": "object",
+            "properties": {
+                "client_id": { "type": "string" },
+                "client_secret": { "type": "string" },
+                "techacct": { 
+                    "type": "string",
+                    "format": "email"
+                },
+                "meta_scopes": { 
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "default": []
+                }
+            },
+            "required": [ "client_id", "client_secret", "techacct", "meta_scopes" ]
+        }
+    }
+}
