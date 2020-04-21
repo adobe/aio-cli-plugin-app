@@ -20,7 +20,7 @@
                 "credentials": [
                     {
                         "id": "17561142",
-                        "name": "Project 1583120080066W",
+                        "name": "Project1583120080066W",
                         "integration_type": "oauthweb",
                         "oauth2": {
                             "client_id": "XYXYXYXYXYXYXYXYX",
@@ -30,7 +30,7 @@
                     },
                     {
                         "id": "17606512",
-                        "name": "Project 1583191213473J",
+                        "name": "Project1583191213473J",
                         "integration_type": "service",
                         "jwt": {
                             "client_id": "XUXUXUXUXUXUXUX",

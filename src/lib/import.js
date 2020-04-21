@@ -351,7 +351,6 @@ async function importConfigJson (configFileLocation, destinationFolder = process
 
   const { values: config, format } = loadConfigFile(configFileLocation)
   const { valid: configIsValid, errors: configErrors } = validateConfig(config)
-  const { runtime, credentials } = config.project.workspace.details
 
   debug(`importConfigJson - format: ${format} config:${prettyPrintJson(config)} `)
 
@@ -359,6 +358,8 @@ async function importConfigJson (configFileLocation, destinationFolder = process
     const message = `Missing or invalid keys in config: ${JSON.stringify(configErrors, null, 2)}`
     throw new Error(message)
   }
+
+  const { runtime, credentials } = config.project.workspace.details
 
   // find jwt credential
   const credential = credentials.find(credential => typeof credential.jwt === 'object')
@@ -396,7 +397,43 @@ async function importConfigJson (configFileLocation, destinationFolder = process
     delete newRuntime.name
   }
 
-  await writeEnv({ runtime: newRuntime, $ims: credentials }, destinationFolder, flags)
+  // transform credentials object value to what this plugin expects:
+  // from:
+  // [{
+  //   "id": "17561142",
+  //   "name": "Project Foo",
+  //   "integration_type": "oauthweb",
+  //   "oauth2": {
+  //       "client_id": "XYXYXYXYXYXYXYXYX",
+  //       "client_secret": "XYXYXYXYZZZZZZ",
+  //       "redirect_uri": "https://test123"
+  //   }
+  // }]
+  // to:
+  // {
+  //   "Project Foo": {
+  //       "client_id": "XYXYXYXYXYXYXYXYX",
+  //       "client_secret": "XYXYXYXYZZZZZZ",
+  //       "redirect_uri": "https://test123"
+  //   }
+  // }
+  const newCredentials = credentials.reduce((acc, credential) => {
+    let value = null
+    if (credential.oauth2) {
+      value = credential.oauth2
+    } else if (credential.jwt) {
+      value = credential.jwt
+    }
+
+    if (value) {
+      acc[credential.name] = value
+    } else {
+      debug.log(`credential '${credential.name}' is missing jwt or oauth2 keys`)
+    }
+    return acc
+  }, {})
+
+  await writeEnv({ runtime: newRuntime, $ims: newCredentials }, destinationFolder, flags)
 
   // remove the credentials
   delete config.project.workspace.details.runtime
