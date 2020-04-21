@@ -42,7 +42,7 @@
                 },
                 "details": { "$ref": "#/definitions/details" }
             },
-            "required": [ "id", "name", "title", "action_url", "app_url", "details" ]
+            "required": [ "id", "name", "action_url", "app_url", "details" ]
         },
         "details": {
             "type": "object",
@@ -90,7 +90,10 @@
             "type": "object",
             "properties": {
                 "id": { "type": "string" },
-                "name": { "type": "string" },
+                "name": { 
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9]+$"
+                },
                 "integration_type": {
                     "type": "string",
                     "enum": [ "oauthweb", "oauthios", "oauthandroid", "service", "apikey" ]
@@ -98,7 +101,7 @@
                 "oauth2": { "$ref": "#/definitions/oauth2" },
                 "jwt": { "$ref": "#/definitions/jwt" }
             },
-            "required": [ "id", "name", "integration_type" ],
+            "required": [ "id", "name" ],
             "oneOf": [
                 { "required": ["oauth2"] },
                 { "required": ["jwt"] }
