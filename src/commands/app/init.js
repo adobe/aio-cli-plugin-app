@@ -32,7 +32,7 @@ class InitCommand extends BaseCommand {
     let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk' // todo fetch those from console when no --import
 
     if (flags.import) {
-      const config = loadConfigFile(flags.import).values
+      const { values: config } = loadConfigFile(flags.import)
       const { valid: configIsValid, errors: configErrors } = validateConfig(config)
       if (!configIsValid) {
         const message = `Missing or invalid keys in config: ${JSON.stringify(configErrors, null, 2)}`

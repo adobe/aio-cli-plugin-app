@@ -9,7 +9,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const debug = require('debug')('aio-cli-plugin-app:import')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:import', { provider: 'debug' })
 const path = require('path')
 const fs = require('fs-extra')
 const inquirer = require('inquirer')
@@ -129,6 +129,7 @@ async function checkFileConflict (filePath) {
 /**
  * Transform a json object to a flattened version. Any nesting is separated by the `separator` string.
  * For example, if you have the `_` separator string, flattening this:
+ *
  * {
  *    foo: {
  *      bar: 'a',
@@ -144,6 +145,8 @@ async function checkFileConflict (filePath) {
  *    'foo_bar': 'a',
  *    'foo_baz_faz': 'b'
  * }
+ *
+ * Any underscores in the object key are escaped with an underscore.
  *
  * @param {object} json the json object to transform
  * @param {object} result the result object to initialize the function with
@@ -196,8 +199,8 @@ function mergeEnv (oldEnv, newEnv) {
     }
   }
 
-  debug(`mergeEnv - oldEnv:${oldEnv}`)
-  debug(`mergeEnv - newEnv:${newEnv}`)
+  aioLogger.debug(`mergeEnv - oldEnv:${oldEnv}`)
+  aioLogger.debug(`mergeEnv - newEnv:${newEnv}`)
 
   oldEnv.split(NEWLINES).forEach(splitLine)
   newEnv.split(NEWLINES).forEach(splitLine)
@@ -206,7 +209,7 @@ function mergeEnv (oldEnv, newEnv) {
     .keys(result)
     .map(key => `${key}=${result[key]}`)
     .join('\n')
-  debug(`mergeEnv - mergedEnv:${mergedEnv}`)
+  aioLogger.debug(`mergeEnv - mergedEnv:${mergedEnv}`)
 
   return mergedEnv
 }
@@ -221,11 +224,11 @@ function mergeJson (oldData, newData) {
   const { values: oldJson } = loadConfigFile(Buffer.from(oldData))
   const { values: newJson } = loadConfigFile(Buffer.from(newData))
 
-  debug(`mergeJson - oldJson:${prettyPrintJson(oldJson)}`)
-  debug(`mergeJson - newJson:${prettyPrintJson(newJson)}`)
+  aioLogger.debug(`mergeJson - oldJson:${prettyPrintJson(oldJson)}`)
+  aioLogger.debug(`mergeJson - newJson:${prettyPrintJson(newJson)}`)
 
   const mergedJson = prettyPrintJson({ ...oldJson, ...newJson })
-  debug(`mergeJson - mergedJson:${mergedJson}`)
+  aioLogger.debug(`mergeJson - mergedJson:${mergedJson}`)
 
   return mergedJson
 }
@@ -238,8 +241,8 @@ function mergeJson (oldData, newData) {
  * @param {*} fileFormat the file format of the data (env, json)
  */
 function mergeData (oldData, newData, fileFormat) {
-  debug(`mergeData - oldData: ${oldData}`)
-  debug(`mergeData - newData:${newData}`)
+  aioLogger.debug(`mergeData - oldData: ${oldData}`)
+  aioLogger.debug(`mergeData - newData:${newData}`)
 
   if (fileFormat === FILE_FORMAT_ENV) {
     return mergeEnv(oldData, newData)
@@ -262,14 +265,14 @@ function mergeData (oldData, newData, fileFormat) {
  */
 async function writeFile (destination, data, flags = {}) {
   const { overwrite = false, merge = false, fileFormat = FILE_FORMAT_JSON, interactive = false } = flags
-  debug(`writeFile - destination: ${destination} flags:${flags}`)
-  debug(`writeFile - data: ${data}`)
+  aioLogger.debug(`writeFile - destination: ${destination} flags:${flags}`)
+  aioLogger.debug(`writeFile - data: ${data}`)
 
   let answer = { overwrite, merge } // for non-interactive, get from the flags
 
   if (interactive) {
     answer = await checkFileConflict(destination)
-    debug(`writeEnv - answer (interactive): ${JSON.stringify(answer)}`)
+    aioLogger.debug(`writeEnv - answer (interactive): ${JSON.stringify(answer)}`)
   }
 
   if (answer.abort) {
@@ -299,19 +302,19 @@ async function writeFile (destination, data, flags = {}) {
  * @param {boolean} [flags.interactive=false] set to true to prompt the user for file overwrite
  */
 async function writeEnv (json, parentFolder, flags) {
-  debug(`writeEnv - json: ${JSON.stringify(json)} parentFolder:${parentFolder} flags:${flags}`)
+  aioLogger.debug(`writeEnv - json: ${JSON.stringify(json)} parentFolder:${parentFolder} flags:${flags}`)
 
   const destination = path.join(parentFolder, ENV_FILE)
-  debug(`writeEnv - destination: ${destination}`)
+  aioLogger.debug(`writeEnv - destination: ${destination}`)
 
   const resultObject = flattenObjectWithSeparator(json)
-  debug(`convertJsonToEnv - flattened and separated json: ${prettyPrintJson(resultObject)}`)
+  aioLogger.debug(`convertJsonToEnv - flattened and separated json: ${prettyPrintJson(resultObject)}`)
 
   const data = Object
     .keys(resultObject)
     .map(key => `${key}=${resultObject[key]}`)
     .join('\n')
-  debug(`writeEnv - data: ${data}`)
+  aioLogger.debug(`writeEnv - data: ${data}`)
 
   return writeFile(destination, data, { ...flags, fileFormat: FILE_FORMAT_ENV })
 }
@@ -327,14 +330,98 @@ async function writeEnv (json, parentFolder, flags) {
  * @param {boolean} [flags.interactive=false] set to true to prompt the user for file overwrite
  */
 async function writeAio (json, parentFolder, flags) {
-  debug(`writeAio - parentFolder:${parentFolder} flags:${flags}`)
-  debug(`writeAio - json: ${prettyPrintJson(json)}`)
+  aioLogger.debug(`writeAio - parentFolder:${parentFolder} flags:${flags}`)
+  aioLogger.debug(`writeAio - json: ${prettyPrintJson(json)}`)
 
   const destination = path.join(parentFolder, AIO_FILE)
-  debug(`writeAio - destination: ${destination}`)
+  aioLogger.debug(`writeAio - destination: ${destination}`)
 
   const data = prettyPrintJson(json)
   return writeFile(destination, data, flags)
+}
+
+/**
+ * Transform runtime object value to what this plugin expects (single runtime namespace).
+ *
+ * @example
+ * from:
+ * {
+ *   "namespaces": [
+ *     {
+ *       "name": "abc",
+ *       "auth": "123"
+ *     }
+ *   ]
+ * }
+ * to:
+ * {
+ *   "namespace": "abc",
+ *   "auth": "123"
+ * }
+ *
+ * @param {object} runtime the runtime value to transform
+ * @returns {object} the transformed runtime object
+ * @private
+ */
+function transformRuntime (runtime) {
+  const newRuntime = (runtime.namespaces.length > 0) ? runtime.namespaces[0] : {}
+  if (newRuntime.name) {
+    newRuntime.namespace = newRuntime.name
+    delete newRuntime.name
+  }
+
+  return newRuntime
+}
+
+/**
+ * Transforms a credentials array to an object, to what this plugin expects.
+ * Enrich with ims_org_id if it is a jwt credential.
+ *
+ * @example
+ * from:
+ * [{
+ *   "id": "17561142",
+ *   "name": "Project Foo",
+ *   "integration_type": "oauthweb",
+ *   "oauth2": {
+ *       "client_id": "XYXYXYXYXYXYXYXYX",
+ *       "client_secret": "XYXYXYXYZZZZZZ",
+ *       "redirect_uri": "https://test123"
+ *   }
+ * }]
+ * to:
+ * {
+ *   "Project Foo": {
+ *       "client_id": "XYXYXYXYXYXYXYXYX",
+ *       "client_secret": "XYXYXYXYZZZZZZ",
+ *       "redirect_uri": "https://test123"
+ *   }
+ * }
+ *
+ * @param {Array} credentials array from Downloadable File Format
+ * @returns {object} credentials object
+ * @private
+ */
+function transformCredentials (credentials, imsOrgId) {
+  // find jwt credential
+  const credential = credentials.find(credential => typeof credential.jwt === 'object')
+
+  // enrich jwt credentials with ims org id
+  if (credential && credential.jwt && !credential.jwt.ims_org_id) {
+    aioLogger.debug('adding ims_org_id to $ims.jwt config')
+    credential.jwt.ims_org_id = imsOrgId
+  }
+
+  return credentials.reduce((acc, credential) => {
+    // the json schema enforces either jwt OR oauth2 keys in a credential
+    let value = credential.oauth2
+    if (!value) {
+      value = credential.jwt
+    }
+    acc[credential.name] = value
+
+    return acc
+  }, {})
 }
 
 /**
@@ -347,12 +434,12 @@ async function writeAio (json, parentFolder, flags) {
  * @param {boolean} [flags.merge=false] set to true to merge in the existing .env file (takes precedence over overwrite)
 */
 async function importConfigJson (configFileLocation, destinationFolder = process.cwd(), flags = {}) {
-  debug(`importConfigJson - configFileLocation: ${configFileLocation} destinationFolder:${destinationFolder} flags:${flags}`)
+  aioLogger.debug(`importConfigJson - configFileLocation: ${configFileLocation} destinationFolder:${destinationFolder} flags:${flags}`)
 
   const { values: config, format } = loadConfigFile(configFileLocation)
   const { valid: configIsValid, errors: configErrors } = validateConfig(config)
 
-  debug(`importConfigJson - format: ${format} config:${prettyPrintJson(config)} `)
+  aioLogger.debug(`importConfigJson - format: ${format} config:${prettyPrintJson(config)} `)
 
   if (!configIsValid) {
     const message = `Missing or invalid keys in config: ${JSON.stringify(configErrors, null, 2)}`
@@ -361,79 +448,10 @@ async function importConfigJson (configFileLocation, destinationFolder = process
 
   const { runtime, credentials } = config.project.workspace.details
 
-  // find jwt credential
-  const credential = credentials.find(credential => typeof credential.jwt === 'object')
-
-  // enrich jwt credentials with ims org id
-  if (credential && credential.jwt && !credential.jwt.ims_org_id) {
-    if (config.project.org.ims_org_id) {
-      debug('adding ims_org_id to $ims.jwt config')
-      credential.jwt.ims_org_id = config.project.org.ims_org_id
-    } else {
-      const warning = 'missing project.org.ims_org_id, which is needed for ims jwt config'
-      debug('warn:', warning)
-      console.warn(warning)
-    }
-  }
-
-  // transform runtime object value to what this plugin expects:
-  // from:
-  // {
-  //   "namespaces": [
-  //     {
-  //       "name": "abc",
-  //       "auth": "123"
-  //     }
-  //   ]
-  // }
-  // to:
-  // {
-  //   "namespace": "abc",
-  //   "auth": "123"
-  // }
-  const newRuntime = (runtime.namespaces.length > 0) ? runtime.namespaces[0] : {}
-  if (newRuntime.name) {
-    newRuntime.namespace = newRuntime.name
-    delete newRuntime.name
-  }
-
-  // transform credentials object value to what this plugin expects:
-  // from:
-  // [{
-  //   "id": "17561142",
-  //   "name": "Project Foo",
-  //   "integration_type": "oauthweb",
-  //   "oauth2": {
-  //       "client_id": "XYXYXYXYXYXYXYXYX",
-  //       "client_secret": "XYXYXYXYZZZZZZ",
-  //       "redirect_uri": "https://test123"
-  //   }
-  // }]
-  // to:
-  // {
-  //   "Project Foo": {
-  //       "client_id": "XYXYXYXYXYXYXYXYX",
-  //       "client_secret": "XYXYXYXYZZZZZZ",
-  //       "redirect_uri": "https://test123"
-  //   }
-  // }
-  const newCredentials = credentials.reduce((acc, credential) => {
-    let value = null
-    if (credential.oauth2) {
-      value = credential.oauth2
-    } else if (credential.jwt) {
-      value = credential.jwt
-    }
-
-    if (value) {
-      acc[credential.name] = value
-    } else {
-      debug.log(`credential '${credential.name}' is missing jwt or oauth2 keys`)
-    }
-    return acc
-  }, {})
-
-  await writeEnv({ runtime: newRuntime, $ims: newCredentials }, destinationFolder, flags)
+  await writeEnv({
+    runtime: transformRuntime(runtime),
+    $ims: transformCredentials(credentials, config.project.org.ims_org_id)
+  }, destinationFolder, flags)
 
   // remove the credentials
   delete config.project.workspace.details.runtime

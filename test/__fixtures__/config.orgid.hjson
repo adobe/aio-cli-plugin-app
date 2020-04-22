@@ -19,16 +19,6 @@
             "details": {
                 "credentials": [
                     {
-                        "id": "17561142",
-                        "name": "ProjectA",
-                        "integration_type": "oauthweb",
-                        "oauth2": {
-                            "client_id": "XYXYXYXYXYXYXYXYX",
-                            "client_secret": "XYXYXYXYZZZZZZ",
-                            "redirect_uri": "https://test123"
-                        }
-                    },
-                    {
                         "id": "17606512",
                         "name": "ProjectB",
                         "integration_type": "service",
@@ -54,21 +44,9 @@
                     }
                 ],
                 "services": [
-                    {
-                        "code": "AdobeIOManagementAPISDK",
-                        "name": "I/O Management API"
-                    },
-                    {
-                        "code": "CC SDK",
-                        "name": "Creative SDK"
-                    }
                 ],
                 "runtime": {
                     "namespaces": [
-                        {
-                            "name": "Name",
-                            "auth": "Auth"
-                        }
                     ]
                 }
             }

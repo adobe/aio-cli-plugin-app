@@ -219,12 +219,22 @@ describe('run', () => {
 
   test('no-path --import file={name: yolo, services:AdobeTargetSDK,CampaignSDK}', async () => {
     // mock config file
-    importLib.loadConfigFile.mockReturnValueOnce({
+    importLib.loadConfigFile.mockReturnValue({
       values: {
-        name: 'yolo',
-        services: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }]
+        project: {
+          name: 'yolo',
+          workspace: {
+            details: {
+              services: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }]
+            }
+          }
+        }
       }
     })
+    importLib.validateConfig.mockReturnValue({
+      valid: true
+    })
+
     await TheCommand.run(['--import', 'config.json'])
 
     // no args.path
@@ -246,11 +256,20 @@ describe('run', () => {
 
   test('no-path --yes --import file={name: yolo, services:AdobeTargetSDK,CampaignSDK}', async () => {
     // mock config file
-    importLib.loadConfigFile.mockReturnValueOnce({
+    importLib.loadConfigFile.mockReturnValue({
       values: {
-        name: 'yolo',
-        services: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }]
+        project: {
+          name: 'yolo',
+          workspace: {
+            details: {
+              services: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }]
+            }
+          }
+        }
       }
+    })
+    importLib.validateConfig.mockReturnValue({
+      valid: true
     })
     await TheCommand.run(['--yes', '--import', 'config.json'])
 
@@ -273,10 +292,20 @@ describe('run', () => {
 
   test('some-path --import file={name: yolo, services:undefined}', async () => {
     // mock config file
-    importLib.loadConfigFile.mockReturnValueOnce({
+    importLib.loadConfigFile.mockReturnValue({
       values: {
-        name: 'yolo'
+        project: {
+          name: 'yolo',
+          workspace: {
+            details: {
+              services: []
+            }
+          }
+        }
       }
+    })
+    importLib.validateConfig.mockReturnValue({
+      valid: true
     })
     await TheCommand.run(['some-path', '--import', 'config.json'])
 
