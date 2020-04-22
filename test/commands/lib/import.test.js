@@ -94,24 +94,32 @@ test('writeEnv', async () => {
   return expect(fs.writeFile).toHaveBeenCalledTimes(2)
 })
 
+test('invalid config', async () => {
+  const workingFolder = 'my-working-folder'
+  const configPath = '/some/config/path'
+
+  fs.readFileSync.mockReturnValueOnce(fixtureFile('invalid.config.json'))
+  return expect(importConfigJson(configPath, workingFolder, { overwrite: true })).rejects.toThrow('Missing or invalid keys in config:')
+})
+
 test('importConfigJson', async () => {
   const workingFolder = 'my-working-folder'
   const aioPath = path.join(workingFolder, '.aio')
   const envPath = path.join(workingFolder, '.env')
   const configPath = '/some/config/path'
 
-  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.1.hjson'))
+  fs.readFileSync.mockReturnValueOnce(fixtureFile('valid.config.json'))
   await importConfigJson(configPath, workingFolder, { overwrite: true })
 
   await expect(fs.writeFile.mock.calls[0][0]).toMatch(envPath)
-  await expect(fs.writeFile.mock.calls[0][1]).toMatchFixture('config.1.env')
+  await expect(fs.writeFile.mock.calls[0][1]).toMatchFixture('valid.config.env')
   await expect(fs.writeFile.mock.calls[0][2]).toMatchObject({ flag: 'w' })
 
   await expect(fs.writeFile.mock.calls[1][0]).toMatch(aioPath)
-  await expect(fs.writeFile.mock.calls[1][1]).toMatchFixture('config.1.aio')
+  await expect(fs.writeFile.mock.calls[1][1]).toMatchFixture('valid.config.aio')
   await expect(fs.writeFile.mock.calls[1][2]).toMatchObject({ flag: 'w' })
 
-  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.1.hjson'))
+  fs.readFileSync.mockReturnValueOnce(fixtureFile('valid.config.json'))
   await importConfigJson(configPath) // for coverage (defaults), no overwrite
   await expect(fs.writeFile.mock.calls[2][2]).toMatchObject({ flag: 'wx' })
   await expect(fs.writeFile.mock.calls[3][2]).toMatchObject({ flag: 'wx' })
@@ -155,7 +163,7 @@ test('importConfigJson - interactive (merge)', async () => {
   fs.readFileSync.mockImplementation((source) => {
     switch (source) {
       case configPath:
-        return fixtureFile('config.1.hjson')
+        return fixtureFile('valid.config.json')
       case envPath:
         return fixtureFile('existing.env')
       case aioPath:
@@ -185,15 +193,24 @@ test('importConfigJson - interactive (merge)', async () => {
 test('importConfigJson - interactive', async () => {
   const workingFolder = 'my-working-folder'
   const configPath = '/some/config/path'
-  const configJson = fixtureFile('config.1.hjson')
+  const configJson = fixtureFile('valid.config.json')
 
   fs.existsSync.mockReturnValue(true) // there is a write conflict
 
-  fs.readFileSync.mockReturnValueOnce(configJson)
+  fs.readFileSync.mockImplementation((source) => {
+    switch (source) {
+      case configPath:
+        return configJson
+    }
+
+    throw new Error(`File ${source} not found.`)
+  })
+
+  fs.readFileSync.mockReturnValue(configJson)
+
   inquirer.prompt.mockResolvedValue({ conflict: 'abort' }) // no writes
   await importConfigJson(configPath, workingFolder, { interactive: true })
 
-  fs.readFileSync.mockReturnValueOnce(configJson)
   inquirer.prompt.mockResolvedValue({ conflict: 'merge' }) // two writes
   await importConfigJson(configPath, workingFolder, { interactive: true })
 
@@ -212,51 +229,19 @@ test('importConfigJson - interactive', async () => {
   await expect(fs.writeFile).toHaveBeenCalledTimes(8)
 })
 
-test('enforce alphanumeric content rule - name, project.name, project.org.name invalid', async () => {
-  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.2.hjson'))
-  const invalid = fixtureHjson('config.2.error.hjson')
-  await expect(importConfigJson('/some/config/path')).rejects.toThrow(`Missing or invalid keys in config: ${JSON.stringify(invalid)}`)
-
-  await expect(fs.writeFile).toHaveBeenCalledTimes(0)
-})
-
-test('enforce alphanumeric content rule - missing all keys (undefined)', async () => {
-  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.3.hjson')) // for coverage (missing keys)
-  const invalid = fixtureHjson('config.3.error.hjson')
-  await expect(importConfigJson('/some/config/path')).rejects.toThrow(`Missing or invalid keys in config: ${JSON.stringify(invalid)}`)
-
-  await expect(fs.writeFile).toHaveBeenCalledTimes(0)
-})
-
-test('enforce alphanumeric content rule - app_url, action_url are both invalid', async () => {
-  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.4.hjson')) // invalid urls
-  const invalid = fixtureHjson('config.4.error.hjson')
-  await expect(importConfigJson('/some/config/path')).rejects.toThrow(`Missing or invalid keys in config: ${JSON.stringify(invalid)}`)
-
-  await expect(fs.writeFile).toHaveBeenCalledTimes(0)
-})
-
-test('enforce alphanumeric content rule - credentials.oauth2.redirect_uri set and invalid', async () => {
-  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.5.hjson')) // invalid url (credentials.oauth2.redirect_uri)
-  const invalid = fixtureHjson('config.5.error.hjson')
-  await expect(importConfigJson('/some/config/path')).rejects.toThrow(`Missing or invalid keys in config: ${JSON.stringify(invalid)}`)
-
-  await expect(fs.writeFile).toHaveBeenCalledTimes(0)
-})
-
-test('enrich $ims.jwt with project.org.ims_org_id', async () => {
+test('enrich $ims jwt credential with project.org.ims_org_id', async () => {
   const workingFolder = 'my-working-folder'
   const aioPath = path.join(workingFolder, '.aio')
   const envPath = path.join(workingFolder, '.env')
   const configPath = '/some/config/path'
 
-  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.6.orgid.hjson'))
+  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.orgid.hjson'))
   await importConfigJson(configPath, workingFolder, { overwrite: true })
   await expect(fs.writeFile.mock.calls[0][0]).toMatch(envPath)
-  await expect(fs.writeFile.mock.calls[0][1]).toMatchFixture('config.6.orgid.env')
+  await expect(fs.writeFile.mock.calls[0][1]).toMatchFixture('config.orgid.env')
   await expect(fs.writeFile.mock.calls[0][2]).toMatchObject({ flag: 'w' })
   await expect(fs.writeFile.mock.calls[1][0]).toMatch(aioPath)
-  await expect(fs.writeFile.mock.calls[1][1]).toMatchFixture('config.6.orgid.aio')
+  await expect(fs.writeFile.mock.calls[1][1]).toMatchFixture('config.orgid.aio')
   await expect(fs.writeFile.mock.calls[1][2]).toMatchObject({ flag: 'w' })
 
   expect(fs.writeFile).toHaveBeenCalledTimes(2)
@@ -268,13 +253,13 @@ test('do not enrich $ims.jwt with ims_org_id if no jwt credentials defined ', as
   const envPath = path.join(workingFolder, '.env')
   const configPath = '/some/config/path'
 
-  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.6.orgid.no.jwt.hjson'))
+  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.orgid.no.jwt.hjson'))
   await importConfigJson(configPath, workingFolder, { overwrite: true })
   await expect(fs.writeFile.mock.calls[0][0]).toMatch(envPath)
-  await expect(fs.writeFile.mock.calls[0][1]).toMatchFixture('config.6.orgid.no.jwt.env')
+  await expect(fs.writeFile.mock.calls[0][1]).toMatchFixture('config.orgid.no.jwt.env')
   await expect(fs.writeFile.mock.calls[0][2]).toMatchObject({ flag: 'w' })
   await expect(fs.writeFile.mock.calls[1][0]).toMatch(aioPath)
-  await expect(fs.writeFile.mock.calls[1][1]).toMatchFixture('config.6.orgid.no.jwt.aio')
+  await expect(fs.writeFile.mock.calls[1][1]).toMatchFixture('config.orgid.no.jwt.aio')
   await expect(fs.writeFile.mock.calls[1][2]).toMatchObject({ flag: 'w' })
   expect(fs.writeFile).toHaveBeenCalledTimes(2)
 })
