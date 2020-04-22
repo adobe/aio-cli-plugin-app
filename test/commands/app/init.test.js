@@ -217,6 +217,22 @@ describe('run', () => {
     )
   })
 
+  test('no-path --import file=invalid config', async () => {
+    // mock config file
+    importLib.loadConfigFile.mockReturnValue({
+      values: {
+        foo: {
+          bar: 'yolo'
+        }
+      }
+    })
+    importLib.validateConfig.mockReturnValue({
+      valid: false
+    })
+
+    await expect(TheCommand.run(['--import', 'config.json'])).rejects.toThrow('Missing or invalid keys in config:')
+  })
+
   test('no-path --import file={name: yolo, services:AdobeTargetSDK,CampaignSDK}', async () => {
     // mock config file
     importLib.loadConfigFile.mockReturnValue({
