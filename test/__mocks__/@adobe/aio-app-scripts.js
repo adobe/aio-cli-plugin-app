@@ -12,15 +12,28 @@ governing permissions and limitations under the License.
 
 const mockScripts = {
   listeners: null,
-  buildUI: jest.fn(() => mockWithCallbacks()),
-  buildActions: jest.fn(() => mockWithCallbacks()),
-  deployUI: jest.fn(() => mockWithCallbacks()),
-  deployActions: jest.fn(() => mockWithCallbacks()),
-  undeployUI: jest.fn(() => mockWithCallbacks()),
-  undeployActions: jest.fn(() => mockWithCallbacks()),
-  runDev: jest.fn(() => mockWithCallbacks()),
-  addAuth: jest.fn(() => mockWithCallbacks()),
-  logs: jest.fn(() => mockWithCallbacks())
+  buildUI: jest.fn(async () => mockWithCallbacks()),
+  buildActions: jest.fn(async () => mockWithCallbacks()),
+  deployUI: jest.fn(async () => mockWithCallbacks()),
+  deployActions: jest.fn(async () => mockWithCallbacks()),
+  undeployUI: jest.fn(async () => mockWithCallbacks()),
+  undeployActions: jest.fn(async () => mockWithCallbacks()),
+  runDev: jest.fn(async () => mockWithCallbacks()),
+  addAuth: jest.fn(async () => mockWithCallbacks()),
+  logs: jest.fn(async () => mockWithCallbacks())
+}
+
+mockScripts.mockReset = (script) => {
+  mockScripts[script].mockReset()
+  mockScripts[script].mockImplementation(async () => mockWithCallbacks())
+}
+
+mockScripts.mockResolvedValue = (script, value) => {
+  mockScripts[script].mockImplementation(async () => { mockWithCallbacks(); return value })
+}
+
+mockScripts.mockRejectedValue = (script, value) => {
+  mockScripts[script].mockImplementation(async () => { mockWithCallbacks(); throw value })
 }
 
 const mockWithCallbacks = () => {

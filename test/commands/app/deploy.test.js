@@ -18,6 +18,10 @@ const mockFS = require('fs-extra')
 const mockScripts = require('@adobe/aio-app-scripts')()
 
 beforeEach(() => {
+  mockScripts.mockReset('deployActions')
+  mockScripts.mockReset('deployUI')
+  mockScripts.mockReset('buildActions')
+  mockScripts.mockReset('buildUI')
   mockFS.existsSync.mockReset()
   jest.restoreAllMocks()
 })
