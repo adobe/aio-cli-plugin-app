@@ -101,9 +101,11 @@ class Run extends BaseCommand {
       if (frontendUrl) {
         this.log()
         this.log(chalk.blue(chalk.bold(`To view your local application:\n  -> ${frontendUrl}`)))
-        if (process.env.AIO_LAUNCH_URL_PREFIX) {
-          const launchUrl = process.env.AIO_LAUNCH_URL_PREFIX + frontendUrl
-          this.log(chalk.blue(chalk.bold(`To view your local application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
+
+        const launchPrefix = this.getLaunchUrlPrefix()
+        if (launchPrefix) {
+          const launchUrl = launchPrefix + frontendUrl
+          this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
         }
       }
     } catch (error) {

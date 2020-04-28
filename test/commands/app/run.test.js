@@ -89,7 +89,6 @@ beforeEach(() => {
 
   getPort.mockReset()
 
-  delete process.env.AIO_LAUNCH_URL_PREFIX
   delete process.env.REMOTE_ACTIONS
   delete process.env.PORT
 })
@@ -221,6 +220,7 @@ describe('run', () => {
   })
 
   test('run should show ui url', async () => {
+    mockConfig.get.mockReturnValue(null)
     mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
     mockScripts.mockResolvedValue('runDev', 'http://localhost:1111')
     command.argv = []
@@ -231,7 +231,7 @@ describe('run', () => {
 
   test('run should show ui and exc url if AIO_LAUNCH_PREFIX_URL is set', async () => {
     mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    process.env.AIO_LAUNCH_URL_PREFIX = 'http://prefix?fake='
+    mockConfig.get.mockReturnValue('http://prefix?fake=')
     mockScripts.mockResolvedValue('runDev', 'http://localhost:1111')
     command.argv = []
     await command.run()
