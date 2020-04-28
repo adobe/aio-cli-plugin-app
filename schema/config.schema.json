@@ -77,7 +77,7 @@
                 "id": { "type": "string" },
                 "name": { 
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9]+$"
+                    "pattern": "^[ a-zA-Z0-9]+$"
                 },
                 "ims_org_id": { 
                     "type": "string",
@@ -92,7 +92,7 @@
                 "id": { "type": "string" },
                 "name": { 
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9]+$"
+                    "pattern": "^[ a-zA-Z0-9]+$"
                 },
                 "integration_type": {
                     "type": "string",
