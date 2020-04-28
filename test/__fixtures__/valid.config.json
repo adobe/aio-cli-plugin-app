@@ -6,7 +6,7 @@
         "description": "My project description",
         "org": {
             "id": "25591412",
-            "name": "Developers",
+            "name": "Developers Developers Developers",
             "ims_org_id": "XOXOXOXOXOXOX@AdobeOrg"
         },
         "workspace": {
@@ -20,7 +20,7 @@
                 "credentials": [
                     {
                         "id": "17561142",
-                        "name": "ProjectA",
+                        "name": "Project A",
                         "integration_type": "oauthweb",
                         "oauth2": {
                             "client_id": "XYXYXYXYXYXYXYXYX",
@@ -44,7 +44,7 @@
                     },
                     {
                         "id": "17950",
-                        "name": "NewTestIntegration8",
+                        "name": "New Test Integration 8",
                         "integration_type": "oauthandroid",
                         "oauth2": {
                             "client_id": "XRXRXRXRXRXRXRXRXR",
