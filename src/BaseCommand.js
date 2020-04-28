@@ -12,8 +12,25 @@ governing permissions and limitations under the License.
 
 const { Command, flags } = require('@oclif/command')
 const fs = require('fs-extra')
+const chalk = require('chalk')
+const coreConfig = require('@adobe/aio-lib-core-config')
 
 class BaseCommand extends Command {
+  getLaunchUrlPrefix () {
+    // todo: it might make sense to have a value that defines if this is an ExC hosted app, or otherwise
+    // so we can decide what type of url to return here.
+    // at some point we could also just delete the .env value and return our expected url here.
+
+    // note: this is the same value as process.env.AIO_LAUNCH_URL_PREFIX
+    let launchPrefix = coreConfig.get('launch.url.prefix')
+    if (launchPrefix && launchPrefix.search('/myapps/')) {
+      this.log(chalk.redBright(chalk.bold('Warning: your environment variables contains an older version of AIO_LAUNCH_URL_PREFIX')))
+      launchPrefix = launchPrefix.replace('/myapps/', '/apps/')
+      this.log(chalk.redBright(chalk.bold(`You should update your .env file: AIO_LAUNCH_URL_PREFIX='${launchPrefix}'`)))
+    }
+    return launchPrefix
+  }
+
   get pjson () {
     if (!this._pjson) {
       this._pjson = fs.readJSONSync('package.json')
