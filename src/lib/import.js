@@ -418,7 +418,9 @@ function transformCredentials (credentials, imsOrgId) {
     if (!value) {
       value = credential.jwt
     }
-    acc[credential.name] = value
+
+    const name = credential.name.replace(/ /gi, '_') // replace any spaces with underscores
+    acc[name] = value
 
     return acc
   }, {})
