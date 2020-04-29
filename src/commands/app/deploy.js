@@ -28,7 +28,6 @@ class Deploy extends BaseCommand {
     const filterActions = flags.action
 
     // setup scripts, events and spinner
-    // todo modularize (same for all app-scripts wrappers)
     const spinner = ora()
     try {
       const listeners = {
@@ -121,8 +120,9 @@ class Deploy extends BaseCommand {
         }
         if (deployedFrontendUrl) {
           this.log(chalk.blue(chalk.bold(`To view your deployed application:\n  -> ${deployedFrontendUrl}`)))
-          if (process.env.AIO_LAUNCH_URL_PREFIX) {
-            const launchUrl = process.env.AIO_LAUNCH_URL_PREFIX + deployedFrontendUrl
+          const launchPrefix = this.getLaunchUrlPrefix()
+          if (launchPrefix) {
+            const launchUrl = launchPrefix + deployedFrontendUrl
             this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
           }
         }
@@ -175,9 +175,6 @@ Deploy.flags = {
     char: 'a',
     multiple: true
   })
-
-  // todo no color/spinner/open output
-  // 'no-fancy': flags.boolean({ description: 'Simple output and no url open' }),
 }
 
 Deploy.args = []

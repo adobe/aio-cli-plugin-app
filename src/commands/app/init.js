@@ -15,7 +15,7 @@ const path = require('path')
 const fs = require('fs-extra')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
-const { importConfigJson, loadConfigFile, writeAio } = require('../../lib/import')
+const { validateConfig, importConfigJson, loadConfigFile, writeAio } = require('../../lib/import')
 
 class InitCommand extends BaseCommand {
   async run () {
@@ -29,13 +29,18 @@ class InitCommand extends BaseCommand {
     aioLogger.debug('creating new app with init command ', flags)
 
     let projectName = path.basename(process.cwd())
-    let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK' // todo fetch those from console when no --import
+    let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk' // todo fetch those from console when no --import
 
     if (flags.import) {
-      const config = loadConfigFile(flags.import).values
+      const { values: config } = loadConfigFile(flags.import)
+      const { valid: configIsValid, errors: configErrors } = validateConfig(config)
+      if (!configIsValid) {
+        const message = `Missing or invalid keys in config: ${JSON.stringify(configErrors, null, 2)}`
+        this.error(message)
+      }
 
-      projectName = config.name // must be defined
-      services = (config.services && config.services.map(s => s.code).join(',')) || ''
+      projectName = config.project.name
+      services = config.project.workspace.details.services.map(s => s.code).join(',') || ''
     }
 
     const env = yeoman.createEnv()

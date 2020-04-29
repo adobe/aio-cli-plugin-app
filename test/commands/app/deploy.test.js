@@ -17,7 +17,14 @@ const mockFS = require('fs-extra')
 
 const mockScripts = require('@adobe/aio-app-scripts')()
 
+jest.mock('@adobe/aio-lib-core-config')
+const mockConfig = require('@adobe/aio-lib-core-config')
+
 beforeEach(() => {
+  mockScripts.mockReset('deployActions')
+  mockScripts.mockReset('deployUI')
+  mockScripts.mockReset('buildActions')
+  mockScripts.mockReset('buildUI')
   mockFS.existsSync.mockReset()
   jest.restoreAllMocks()
 })
@@ -264,13 +271,12 @@ describe('run', () => {
   test('deploy should show ui and exc url if AIO_LAUNCH_PREFIX_URL is set', async () => {
     mockFS.existsSync.mockReturnValue(true)
     mockScripts.deployUI.mockResolvedValue('https://example.com')
-    process.env.AIO_LAUNCH_URL_PREFIX = 'http://prefix?fake='
+    mockConfig.get.mockReturnValue('http://prefix?fake=')
     command.argv = []
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('https://example.com'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://prefix?fake=https://example.com'))
-    delete process.env.AIO_LAUNCH_PREFIX_URL
   })
 
   test('deploy should show action urls', async () => {

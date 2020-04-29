@@ -80,6 +80,8 @@ describe('template module cannot be registered', () => {
   })
 })
 
+const fullServicesList = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk'
+
 describe('run', () => {
   const spyChdir = jest.spyOn(process, 'chdir')
   const spyCwd = jest.spyOn(process, 'cwd')
@@ -106,7 +108,7 @@ describe('run', () => {
       'skip-prompt': true,
       'skip-install': false,
       'project-name': 'some-path',
-      'adobe-services': 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK'
+      'adobe-services': fullServicesList
     })
     expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
     expect(spyChdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
@@ -122,7 +124,7 @@ describe('run', () => {
       'skip-prompt': true,
       'skip-install': true,
       'project-name': 'some-path',
-      'adobe-services': 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK'
+      'adobe-services': fullServicesList
     })
     expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
     expect(spyChdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
@@ -138,7 +140,7 @@ describe('run', () => {
       'skip-prompt': true,
       'skip-install': false,
       'project-name': 'yolo',
-      'adobe-services': 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK'
+      'adobe-services': fullServicesList
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
     expect(spyChdir).not.toHaveBeenCalled()
@@ -154,7 +156,7 @@ describe('run', () => {
       'skip-prompt': true,
       'skip-install': true,
       'project-name': 'yolo',
-      'adobe-services': 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK'
+      'adobe-services': fullServicesList
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
     expect(spyChdir).not.toHaveBeenCalled()
@@ -170,7 +172,7 @@ describe('run', () => {
       'skip-prompt': false,
       'skip-install': true,
       'project-name': 'yolo',
-      'adobe-services': 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK'
+      'adobe-services': fullServicesList
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
     expect(spyChdir).not.toHaveBeenCalled()
@@ -189,7 +191,7 @@ describe('run', () => {
       'skip-prompt': false,
       'skip-install': false,
       'project-name': 'yolo',
-      'adobe-services': 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK'
+      'adobe-services': fullServicesList
     })
   })
 
@@ -206,23 +208,49 @@ describe('run', () => {
       'skip-prompt': false,
       'skip-install': false,
       'project-name': 'yolo',
-      'adobe-services': 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK'
+      'adobe-services': fullServicesList
     })
     expect(importLib.writeAio).toHaveBeenCalledWith(
-      { services: [{ code: 'AdobeTargetSDK' }, { code: 'AdobeAnalyticsSDK' }, { code: 'CampaignSDK' }] },
+      { services: [{ code: 'AdobeTargetSDK' }, { code: 'AdobeAnalyticsSDK' }, { code: 'CampaignSDK' }, { code: 'McDataServicesSdk' }] },
       process.cwd(),
       { interactive: false, merge: true }
     )
   })
 
-  test('no-path --import file={name: yolo, services:AdobeTargetSDK,CampaignSDK}', async () => {
+  test('no-path --import file=invalid config', async () => {
     // mock config file
-    importLib.loadConfigFile.mockReturnValueOnce({
+    importLib.loadConfigFile.mockReturnValue({
       values: {
-        name: 'yolo',
-        services: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }]
+        foo: {
+          bar: 'yolo'
+        }
       }
     })
+    importLib.validateConfig.mockReturnValue({
+      valid: false
+    })
+
+    await expect(TheCommand.run(['--import', 'config.json'])).rejects.toThrow('Missing or invalid keys in config:')
+  })
+
+  test('no-path --import file={name: yolo, services:AdobeTargetSDK,CampaignSDK}', async () => {
+    // mock config file
+    importLib.loadConfigFile.mockReturnValue({
+      values: {
+        project: {
+          name: 'yolo',
+          workspace: {
+            details: {
+              services: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }]
+            }
+          }
+        }
+      }
+    })
+    importLib.validateConfig.mockReturnValue({
+      valid: true
+    })
+
     await TheCommand.run(['--import', 'config.json'])
 
     // no args.path
@@ -244,11 +272,20 @@ describe('run', () => {
 
   test('no-path --yes --import file={name: yolo, services:AdobeTargetSDK,CampaignSDK}', async () => {
     // mock config file
-    importLib.loadConfigFile.mockReturnValueOnce({
+    importLib.loadConfigFile.mockReturnValue({
       values: {
-        name: 'yolo',
-        services: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }]
+        project: {
+          name: 'yolo',
+          workspace: {
+            details: {
+              services: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }]
+            }
+          }
+        }
       }
+    })
+    importLib.validateConfig.mockReturnValue({
+      valid: true
     })
     await TheCommand.run(['--yes', '--import', 'config.json'])
 
@@ -271,10 +308,20 @@ describe('run', () => {
 
   test('some-path --import file={name: yolo, services:undefined}', async () => {
     // mock config file
-    importLib.loadConfigFile.mockReturnValueOnce({
+    importLib.loadConfigFile.mockReturnValue({
       values: {
-        name: 'yolo'
+        project: {
+          name: 'yolo',
+          workspace: {
+            details: {
+              services: []
+            }
+          }
+        }
       }
+    })
+    importLib.validateConfig.mockReturnValue({
+      valid: true
     })
     await TheCommand.run(['some-path', '--import', 'config.json'])
 
