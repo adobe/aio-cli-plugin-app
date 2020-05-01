@@ -120,11 +120,8 @@ class Deploy extends BaseCommand {
         }
         if (deployedFrontendUrl) {
           this.log(chalk.blue(chalk.bold(`To view your deployed application:\n  -> ${deployedFrontendUrl}`)))
-          const launchPrefix = this.getLaunchUrlPrefix()
-          if (launchPrefix) {
-            const launchUrl = launchPrefix + deployedFrontendUrl
-            this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
-          }
+          const launchUrl = this.getLaunchUrlPrefix() + deployedFrontendUrl
+          this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
         }
 
         try {
