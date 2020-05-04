@@ -16,6 +16,8 @@ const fs = require('fs-extra')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 const { validateConfig, importConfigJson, loadConfigFile, writeAio } = require('../../lib/import')
+const { getToken } = require('@adobe/aio-lib-ims')
+const { CLI } = require('@adobe/aio-lib-ims/src/context')
 
 class InitCommand extends BaseCommand {
   async run () {
@@ -44,12 +46,25 @@ class InitCommand extends BaseCommand {
     }
 
     const env = yeoman.createEnv()
+    let res
 
     this.log(`You are about to initialize the project '${projectName}'`)
 
+    if (!flags.import) {
+      const accessToken = await getToken(CLI)
+
+      env.register(require.resolve('@adobe/generator-aio-console'), 'gen-console')
+      res = await env.run('gen-console', {
+        'access-token': accessToken
+      })
+
+      // trigger import
+      flags.import = 'console.json'
+    }
+
     // call code generator
     env.register(require.resolve('@adobe/generator-aio-app'), 'gen')
-    const res = await env.run('gen', {
+    res = await env.run('gen', {
       'skip-install': flags['skip-install'],
       'skip-prompt': flags.yes,
       'project-name': projectName,

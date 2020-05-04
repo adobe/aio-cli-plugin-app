@@ -8,6 +8,7 @@
     "@adobe/aio-app-scripts": "^0.15.0",
     "@adobe/aio-lib-core-config": ">=1.2.8",
     "@adobe/aio-lib-core-logging": "^1.1.0",
+    "@adobe/aio-lib-ims": "^2.0.1",
     "@adobe/generator-aio-app": "^0.7.2",
     "@oclif/command": "^1.5.11",
     "@oclif/config": "^1.12.9",
