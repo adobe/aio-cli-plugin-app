@@ -18,6 +18,7 @@ const { flags } = require('@oclif/command')
 const { validateConfig, importConfigJson, loadConfigFile, writeAio } = require('../../lib/import')
 const { getToken } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
+const chalk = require('chalk')
 
 class InitCommand extends BaseCommand {
   async run () {
@@ -53,13 +54,17 @@ class InitCommand extends BaseCommand {
     if (!flags.import) {
       const accessToken = await getToken(CLI)
 
-      env.register(require.resolve('@adobe/generator-aio-console'), 'gen-console')
-      res = await env.run('gen-console', {
-        'access-token': accessToken
-      })
-
-      // trigger import
-      flags.import = 'console.json'
+      try {
+        env.register(require.resolve('@adobe/generator-aio-console'), 'gen-console')
+        res = await env.run('gen-console', {
+          'access-token': accessToken
+        })
+        // trigger import
+        flags.import = 'console.json'
+      } catch (e) {
+        console.log(chalk.red(e.message))
+      }
+      this.log()
     }
 
     // call code generator
