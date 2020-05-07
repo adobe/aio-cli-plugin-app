@@ -128,12 +128,19 @@
             "properties": {
                 "client_id": { "type": "string" },
                 "client_secret": { "type": "string" },
-                "redirect_uri": { 
+                "defaultRedirectUri": { 
                     "type": "string",
                     "format": "uri"
+                },
+                "redirect_uri": { 
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "format": "uri"
+                    }
                 }
             },
-            "required": [ "client_id", "client_secret", "redirect_uri" ]
+            "required": [ "client_id", "client_secret", "redirect_uri", "defaultRedirectUri" ]
         }, 
         "jwt": {
             "type": "object",

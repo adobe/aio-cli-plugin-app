@@ -25,7 +25,8 @@
                         "oauth2": {
                             "client_id": "XRXRXRXRXRXRXRXRXR",
                             "client_secret": "XRXRXRXRXRXRXRXRXRX",
-                            "redirect_uri": "ams:\\\\+TRTRTRTRTRTR://adobeid/XWXWXWXWXWXWXWX"
+                            "redirect_uri": ["https://abc123/foo"]
+                            "defaultRedirectUri": "https://abc123/foo"
                         }
                     }
                 ],

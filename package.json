@@ -71,7 +71,7 @@
   "repository": "adobe/aio-cli-plugin-app",
   "scripts": {
     "postpack": "rm -f oclif.manifest.json",
-    "posttest": "eslint .",
+    "posttest": "eslint src test",
     "prepack": "oclif-dev manifest && oclif-dev readme",
     "test": "jest -c ./jest.config.js",
     "version": "oclif-dev readme && git add README.md"
