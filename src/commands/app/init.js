@@ -29,7 +29,7 @@ class InitCommand extends BaseCommand {
     aioLogger.debug('creating new app with init command ', flags)
 
     let projectName = path.basename(process.cwd())
-    let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk' // todo fetch those from console when no --import
+    let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk,AudienceManagerCDSDK' // todo fetch those from console when no --import
 
     if (flags.import) {
       const { values: config } = loadConfigFile(flags.import)
