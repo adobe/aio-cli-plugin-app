@@ -16,7 +16,7 @@ const fs = require('fs-extra')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 const { validateConfig, importConfigJson, loadConfigFile, writeAio } = require('../../lib/import')
-const { getToken } = require('@adobe/aio-lib-ims')
+const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
 const chalk = require('chalk')
 
@@ -53,11 +53,13 @@ class InitCommand extends BaseCommand {
 
     if (!flags.import) {
       const accessToken = await getToken(CLI)
+      const imsEnv = (await context.getCli()).env
 
       try {
         env.register(require.resolve('@adobe/generator-aio-console'), 'gen-console')
         res = await env.run('gen-console', {
-          'access-token': accessToken
+          'access-token': accessToken,
+          'ims-env': imsEnv
         })
         // trigger import
         flags.import = 'console.json'
