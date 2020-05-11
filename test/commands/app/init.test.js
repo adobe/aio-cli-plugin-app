@@ -80,7 +80,7 @@ describe('template module cannot be registered', () => {
   })
 })
 
-const fullServicesList = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk,AudienceManagerCDSDK'
+const fullServicesList = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk,AudienceManagerCustomerSDK'
 
 describe('run', () => {
   const spyChdir = jest.spyOn(process, 'chdir')
@@ -211,7 +211,7 @@ describe('run', () => {
       'adobe-services': fullServicesList
     })
     expect(importLib.writeAio).toHaveBeenCalledWith(
-      { services: [{ code: 'AdobeTargetSDK' }, { code: 'AdobeAnalyticsSDK' }, { code: 'CampaignSDK' }, { code: 'McDataServicesSdk' }, { code: 'AudienceManagerCDSDK' }] },
+      { services: [{ code: 'AdobeTargetSDK' }, { code: 'AdobeAnalyticsSDK' }, { code: 'CampaignSDK' }, { code: 'McDataServicesSdk' }, { code: 'AudienceManagerCustomerSDK' }] },
       process.cwd(),
       { interactive: false, merge: true }
     )
