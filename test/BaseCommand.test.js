@@ -55,7 +55,7 @@ test('getLaunchUrlPrefix() warns on older url', async () => {
   mockConfig.get.mockReturnValue('some-url/myapps/some-param')
   expect(cmd.getLaunchUrlPrefix()).toBe('some-url/custom-apps/some-param')
   expect(stdout.output).toMatch('Warning: your environment variables contains an older version of AIO_LAUNCH_URL_PREFIX')
-  
+
   mockConfig.get.mockReturnValue('some-url/custom-apps/some-param')
   expect(cmd.getLaunchUrlPrefix()).toBe('some-url/custom-apps/some-param')
   expect(stdout.output).toMatch('')
