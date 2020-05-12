@@ -14,7 +14,7 @@ const { Command, flags } = require('@oclif/command')
 const fs = require('fs-extra')
 const chalk = require('chalk')
 const coreConfig = require('@adobe/aio-lib-core-config')
-const DEFAULT_LAUNCH_PREFIX = 'https://experience.adobe.com/?devMode=true#/apps/?localDevUrl='
+const DEFAULT_LAUNCH_PREFIX = 'https://experience.adobe.com/?devMode=true#/custom-apps/?localDevUrl='
 
 class BaseCommand extends Command {
   getLaunchUrlPrefix () {
@@ -24,10 +24,13 @@ class BaseCommand extends Command {
 
     // note: this is the same value as process.env.AIO_LAUNCH_URL_PREFIX
     let launchPrefix = coreConfig.get('launch.url.prefix')
-    if (launchPrefix && launchPrefix.includes('/myapps/')) {
-      this.log(chalk.redBright(chalk.bold('Warning: your environment variables contains an older version of AIO_LAUNCH_URL_PREFIX')))
-      launchPrefix = launchPrefix.replace('/myapps/', '/apps/')
-      this.log(chalk.redBright(chalk.bold(`You should update your .env file: AIO_LAUNCH_URL_PREFIX='${launchPrefix}'`)))
+    if (launchPrefix) {
+      if (launchPrefix.includes('/myapps/') || launchPrefix.includes('/apps/')) {
+        this.log(chalk.redBright(chalk.bold('Warning: your environment variables contains an older version of AIO_LAUNCH_URL_PREFIX')))
+        launchPrefix = launchPrefix.replace('/myapps/', '/custom-apps/')
+        launchPrefix = launchPrefix.replace('/apps/', '/custom-apps/')
+        this.log(chalk.redBright(chalk.bold(`You should update your .env file: AIO_LAUNCH_URL_PREFIX='${launchPrefix}'`)))
+      }
     }
     return (launchPrefix || DEFAULT_LAUNCH_PREFIX)
   }
