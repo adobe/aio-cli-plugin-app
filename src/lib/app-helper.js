@@ -15,15 +15,18 @@ const path = require('path')
 const which = require('which')
 const debug = require('debug')('aio-cli-plugin-app:app-helper')
 
+/** @private */
 function isNpmInstalled () {
   const result = which.sync('npm', { nothrow: true })
   return result !== null
 }
 
+/** @private */
 function isGitInstalled () {
   return which.sync('git', { nothrow: true }) !== null
 }
 
+/** @private */
 async function installPackage (dir) {
   debug(`running npm install : ${dir}`)
   if (!(fs.statSync(dir).isDirectory())) {
@@ -38,6 +41,7 @@ async function installPackage (dir) {
   return execa('npm', ['install'], { cwd: dir })
 }
 
+/** @private */
 async function runPackageScript (scriptName, dir, cmdArgs = []) {
   if (!dir) {
     dir = process.cwd()
@@ -51,6 +55,7 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
   }
 }
 
+/** @private */
 function wrapError (err) {
   let message = 'Unknown error'
 

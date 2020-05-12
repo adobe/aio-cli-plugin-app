@@ -121,6 +121,7 @@ describe('run command definition', () => {
   })
 })
 
+/** @private */
 function mockFSExists (files) {
   if (!Array.isArray(files)) { files = [files] }
   mockFS.exists.mockImplementation(async f => {
