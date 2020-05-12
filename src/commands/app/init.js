@@ -53,16 +53,18 @@ class InitCommand extends BaseCommand {
 
     if (!flags.import) {
       const accessToken = await getToken(CLI)
-      const imsEnv = (await context.getCli()).env
+      const imsEnv = (await context.getCli()).env || 'prod'
 
       try {
+        const generatedFile = 'console.json'
         env.register(require.resolve('@adobe/generator-aio-console'), 'gen-console')
         res = await env.run('gen-console', {
+          'destination-file': generatedFile,
           'access-token': accessToken,
           'ims-env': imsEnv
         })
         // trigger import
-        flags.import = 'console.json'
+        flags.import = generatedFile
       } catch (e) {
         console.log(chalk.red(e.message))
       }
