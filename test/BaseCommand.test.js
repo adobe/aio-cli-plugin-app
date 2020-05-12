@@ -13,6 +13,9 @@ governing permissions and limitations under the License.
 const { Command } = require('@oclif/command')
 const TheCommand = require('../src/BaseCommand')
 
+jest.mock('@adobe/aio-lib-core-config')
+const mockConfig = require('@adobe/aio-lib-core-config')
+
 test('exports', async () => {
   expect(typeof TheCommand).toEqual('function')
   expect(TheCommand.prototype instanceof Command).toBeTruthy()
@@ -29,4 +32,14 @@ test('flags', async () => {
 
 test('args', async () => {
   expect(TheCommand.args).toEqual([])
+})
+
+test('basecommand defines method', async () => {
+  const cmd = new TheCommand()
+  expect(cmd.getLaunchUrlPrefix).toBeDefined()
+  expect(typeof cmd.getLaunchUrlPrefix).toBe('function')
+  mockConfig.get.mockReturnValue('http://prefix?fake=')
+  expect(cmd.getLaunchUrlPrefix()).toBe('http://prefix?fake=')
+  mockConfig.get.mockReturnValue(null)
+  expect(cmd.getLaunchUrlPrefix()).toEqual(expect.stringContaining('https://'))
 })

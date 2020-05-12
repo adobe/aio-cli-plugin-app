@@ -24,7 +24,14 @@ const AIO_ENV_SEPARATOR = '_'
 const FILE_FORMAT_ENV = 'env'
 const FILE_FORMAT_JSON = 'json'
 
+/**
+ * Validate the config json
+ *
+ * @param {object} configJson the json to validate
+ * @returns {object} with keys valid (boolean) and errors (object). errors is null if no errors
+ */
 function validateConfig (configJson) {
+  /* eslint-disable-next-line node/no-unpublished-require */
   const schema = require('../../schema/config.schema.json')
   const ajv = new Ajv({ allErrors: true })
   const validate = ajv.compile(schema)
@@ -36,6 +43,7 @@ function validateConfig (configJson) {
  * Load a config file
  *
  * @param {string} fileOrBuffer the path to the config file or a Buffer
+ * @returns {object} object with properties `value` and `format`
  */
 function loadConfigFile (fileOrBuffer) {
   let contents
@@ -72,6 +80,7 @@ function loadConfigFile (fileOrBuffer) {
  * Delimited by 2 spaces.
  *
  * @param {object} json the json to pretty print
+ * @returns {string} the transformed json as a string
  */
 function prettyPrintJson (json) {
   return JSON.stringify(json, null, 2)
@@ -81,7 +90,7 @@ function prettyPrintJson (json) {
  * Confirmation prompt for overwriting, or merging a file if it already exists.
  *
  * @param {string} filePath the file to ovewrite
- * @return {object} ovewrite, merge, abort (properties, that are set to true if chosen)
+ * @returns {object} ovewrite, merge, abort (properties, that are set to true if chosen)
  */
 async function checkFileConflict (filePath) {
   if (fs.existsSync(filePath)) {
@@ -152,6 +161,7 @@ async function checkFileConflict (filePath) {
  * @param {object} result the result object to initialize the function with
  * @param {string} prefix the prefix to add to the final key
  * @param {string} separator the separator string to separate the nested levels with
+ * @returns {object} the transformed json
  */
 function flattenObjectWithSeparator (json, result = {}, prefix = AIO_ENV_PREFIX, separator = AIO_ENV_SEPARATOR) {
   Object
@@ -179,13 +189,14 @@ function flattenObjectWithSeparator (json, result = {}, prefix = AIO_ENV_PREFIX,
  * Note that comments will not be preserved.
  *
  * @param {string} oldEnv existing env values
- * @param {newEnv} newEnv new env values (takes precedence)
+ * @param {string} newEnv new env values (takes precedence)
+ * @returns {string} the merged env data
  */
 function mergeEnv (oldEnv, newEnv) {
   const result = {}
   const NEWLINES = /\n|\r|\r\n/
 
-  function splitLine (line) {
+  const splitLine = (line) => {
     if (line.trim().startsWith('#')) { // skip comments
       return
     }
@@ -218,7 +229,8 @@ function mergeEnv (oldEnv, newEnv) {
  * Merge json data
  *
  * @param {string} oldData existing values
- * @param {newEnv} newData new values (takes precedence)
+ * @param {string} newData new values (takes precedence)
+ * @returns {object} the merged json
  */
 function mergeJson (oldData, newData) {
   const { values: oldJson } = loadConfigFile(Buffer.from(oldData))
@@ -237,8 +249,9 @@ function mergeJson (oldData, newData) {
  * Merge .env or json data
  *
  * @param {string} oldData the data to merge to
- * @param {string} newDdata the new data to merge from (these contents take precedence)
+ * @param {string} newData the new data to merge from (these contents take precedence)
  * @param {*} fileFormat the file format of the data (env, json)
+ * @returns {string | object} the merged env or json data
  */
 function mergeData (oldData, newData, fileFormat) {
   aioLogger.debug(`mergeData - oldData: ${oldData}`)
@@ -257,11 +270,12 @@ function mergeData (oldData, newData, fileFormat) {
  *
  * @param {string} destination the file to write to
  * @param {string} data the data to write to disk
- * @param {object} flags] flags for file writing
+ * @param {object} [flags] flags for file writing
  * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
  * @param {boolean} [flags.merge=false] set to true to merge in the existing .env file (takes precedence over overwrite)
  * @param {boolean} [flags.interactive=false] set to true to prompt the user for file overwrite
  * @param {boolean} [flags.fileFormat=json] set the file format to write (defaults to json)
+ * @returns {Promise} the writefile
  */
 async function writeFile (destination, data, flags = {}) {
   const { overwrite = false, merge = false, fileFormat = FILE_FORMAT_JSON, interactive = false } = flags
@@ -296,7 +310,7 @@ async function writeFile (destination, data, flags = {}) {
  *
  * @param {object} json the json object to transform and write to disk
  * @param {string} parentFolder the parent folder to write the .env file to
- * @param {object} flags] flags for file writing
+ * @param {object} [flags] flags for file writing
  * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
  * @param {boolean} [flags.merge=false] set to true to merge in the existing .env file (takes precedence over overwrite)
  * @param {boolean} [flags.interactive=false] set to true to prompt the user for file overwrite
@@ -324,7 +338,7 @@ async function writeEnv (json, parentFolder, flags) {
  *
  * @param {object} json the json object to write to disk
  * @param {string} parentFolder the parent folder to write the .aio file to
- * @param {object} flags] flags for file writing
+ * @param {object} [flags] flags for file writing
  * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
  * @param {boolean} [flags.merge=false] set to true to merge in the existing .env file (takes precedence over overwrite)
  * @param {boolean} [flags.interactive=false] set to true to prompt the user for file overwrite
@@ -399,7 +413,8 @@ function transformRuntime (runtime) {
  * }
  *
  * @param {Array} credentials array from Downloadable File Format
- * @returns {object} credentials object
+ * @param {string} imsOrgId the ims org id
+ * @returns {object} the Credentials object
  * @private
  */
 function transformCredentials (credentials, imsOrgId) {
@@ -431,10 +446,10 @@ function transformCredentials (credentials, imsOrgId) {
  *
  * @param {string} configFileLocation the path to the config file to import
  * @param {string} [destinationFolder=the current working directory] the path to the folder to write the .env and .aio files to
- * @param {object} flags] flags for file writing
+ * @param {object} [flags] flags for file writing
  * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
  * @param {boolean} [flags.merge=false] set to true to merge in the existing .env file (takes precedence over overwrite)
-*/
+ */
 async function importConfigJson (configFileLocation, destinationFolder = process.cwd(), flags = {}) {
   aioLogger.debug(`importConfigJson - configFileLocation: ${configFileLocation} destinationFolder:${destinationFolder} flags:${flags}`)
 

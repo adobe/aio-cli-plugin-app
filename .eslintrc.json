@@ -1,0 +1,13 @@
+{
+    "extends": "@adobe/eslint-config-aio-lib-config",
+    "globals": {
+      "fixtureFile": true,
+      "fixtureJson": true,
+      "fixtureHjson": true
+    },
+    "settings": {
+        "jsdoc": {
+            "ignorePrivate": true
+        }
+    }
+}
