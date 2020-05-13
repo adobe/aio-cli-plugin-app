@@ -177,6 +177,14 @@ describe('run', () => {
     }))
   })
 
+  test('app:run check if fetchLogs flag is set when calling scripts', async () => {
+    mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
+    await RunCommand.run([])
+    expect(mockScripts.runDev).toHaveBeenCalledWith([], expect.objectContaining({
+      fetchLogs: true
+    }))
+  })
+
   test('app:run with -verbose', async () => {
     mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
     await RunCommand.run(['--verbose'])
