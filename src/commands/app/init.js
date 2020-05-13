@@ -23,6 +23,9 @@ const chalk = require('chalk')
 class InitCommand extends BaseCommand {
   async run () {
     const { args, flags } = this.parse(InitCommand)
+    const env = yeoman.createEnv()
+    let res
+
     if (args.path !== '.') {
       const destDir = path.resolve(args.path)
       fs.ensureDirSync(destDir)
@@ -31,29 +34,13 @@ class InitCommand extends BaseCommand {
 
     aioLogger.debug('creating new app with init command ', flags)
 
+    // default project name and services
     let projectName = path.basename(process.cwd())
     let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk,AudienceManagerCustomerSDK' // todo fetch those from console when no --import
 
-    if (flags.import) {
-      const { values: config } = loadConfigFile(flags.import)
-      const { valid: configIsValid, errors: configErrors } = validateConfig(config)
-      if (!configIsValid) {
-        const message = `Missing or invalid keys in config: ${JSON.stringify(configErrors, null, 2)}`
-        this.error(message)
-      }
-
-      projectName = config.project.name
-      services = config.project.workspace.details.services.map(s => s.code).join(',') || ''
-    }
-
-    const env = yeoman.createEnv()
-    let res
-
-    this.log(`You are about to initialize the project '${projectName}'`)
-
     if (!flags.import) {
       const accessToken = await getToken(CLI)
-      const imsEnv = (await context.getCli()).env || 'prod'
+      const { env: imsEnv = 'prod' } = await context.getCli()
 
       try {
         const generatedFile = 'console.json'
@@ -71,9 +58,23 @@ class InitCommand extends BaseCommand {
       this.log()
     }
 
+    if (flags.import) {
+      const { values: config } = loadConfigFile(flags.import)
+      const { valid: configIsValid, errors: configErrors } = validateConfig(config)
+      if (!configIsValid) {
+        const message = `Missing or invalid keys in config: ${JSON.stringify(configErrors, null, 2)}`
+        this.error(message)
+      }
+
+      projectName = config.project.name
+      services = config.project.workspace.details.services.map(s => s.code).join(',') || ''
+    }
+
+    this.log(`You are about to initialize the project '${projectName}'`)
+
     // call code generator
-    env.register(require.resolve('@adobe/generator-aio-app'), 'gen')
-    res = await env.run('gen', {
+    env.register(require.resolve('@adobe/generator-aio-app'), 'gen-app')
+    res = await env.run('gen-app', {
       'skip-install': flags['skip-install'],
       'skip-prompt': flags.yes,
       'project-name': projectName,
