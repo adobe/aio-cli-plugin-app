@@ -47,7 +47,8 @@ class Run extends BaseCommand {
       skipActions: !!flags['skip-actions'],
       parcel: {
         logLevel: flags.verbose ? 4 : 2
-      }
+      },
+      fetchLogs: true
     }
 
     try {
