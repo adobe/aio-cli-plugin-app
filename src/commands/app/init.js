@@ -53,7 +53,7 @@ class InitCommand extends BaseCommand {
         // trigger import
         flags.import = generatedFile
       } catch (e) {
-        console.log(chalk.red(e.message))
+        this.log(chalk.red(e.message))
       }
       this.log()
     }
