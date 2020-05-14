@@ -19,10 +19,11 @@ jest.mock('../../../src/lib/import')
 jest.mock('fs-extra')
 
 const mockAccessToken = 'some-access-token'
+const mockGetCli = jest.fn()
 jest.mock('@adobe/aio-lib-ims', () => {
   return {
     context: {
-      getCli: () => ({})
+      getCli: () => mockGetCli()
     },
     getToken: () => mockAccessToken
   }
@@ -39,6 +40,7 @@ yeoman.createEnv.mockReturnValue({
 })
 
 beforeEach(() => {
+  mockGetCli.mockReturnValue({})
   mockRegister.mockReset()
   mockRun.mockReset()
   yeoman.createEnv.mockClear()
@@ -381,5 +383,20 @@ describe('run', () => {
     })
 
     expect(importLib.importConfigJson).toHaveBeenCalledWith('config.json', process.cwd(), { interactive: false, merge: true })
+  })
+
+  test('no cli context', async () => {
+    mockGetCli.mockReturnValue(null)
+    mockValidConfig()
+    await TheCommand.run([])
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(2)
+    const genConsole = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
+      'access-token': mockAccessToken,
+      'destination-file': 'console.json',
+      'ims-env': 'prod'
+    })
   })
 })

@@ -40,7 +40,7 @@ class InitCommand extends BaseCommand {
 
     if (!(flags.import || flags.yes)) {
       const accessToken = await getToken(CLI)
-      const { env: imsEnv = 'prod' } = await context.getCli()
+      const { env: imsEnv = 'prod' } = await context.getCli() || {}
 
       try {
         const generatedFile = 'console.json'
