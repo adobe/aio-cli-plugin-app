@@ -157,16 +157,18 @@ describe('run', () => {
   })
 
   test('some-path, --yes', async () => {
-    const project = mockValidConfig()
-    await TheCommand.run(['some-path', '--yes'])
+    mockValidConfig()
+    const appFolder = 'some-path'
+    await TheCommand.run([appFolder, '--yes'])
 
+    // gen-console is skipped
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(2)
-    const genApp = mockRegister.mock.calls[1][1]
-    expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genApp = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genApp, {
       'skip-prompt': true,
       'skip-install': false,
-      'project-name': project.name,
+      'project-name': appFolder,
       'adobe-services': getFullServicesList()
     })
     expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
@@ -174,16 +176,18 @@ describe('run', () => {
   })
 
   test('some-path, --yes --skip-install', async () => {
-    const project = mockValidConfig()
-    await TheCommand.run(['some-path', '--yes', '--skip-install'])
+    mockValidConfig()
+    const appFolder = 'some-path'
+    await TheCommand.run([appFolder, '--yes', '--skip-install'])
 
+    // gen-console is skipped
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(2)
-    const genApp = mockRegister.mock.calls[1][1]
-    expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genApp = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genApp, {
       'skip-prompt': true,
       'skip-install': true,
-      'project-name': project.name,
+      'project-name': appFolder,
       'adobe-services': getFullServicesList()
     })
     expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
@@ -194,10 +198,11 @@ describe('run', () => {
     const project = mockValidConfig()
     await TheCommand.run(['--yes'])
 
+    // gen-console is skipped
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(2)
-    const genApp = mockRegister.mock.calls[1][1]
-    expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genApp = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genApp, {
       'skip-prompt': true,
       'skip-install': false,
       'project-name': project.name,
@@ -211,10 +216,11 @@ describe('run', () => {
     const project = mockValidConfig()
     await TheCommand.run(['--yes', '--skip-install'])
 
+    // gen-console is skipped
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(2)
-    const genApp = mockRegister.mock.calls[1][1]
-    expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genApp = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genApp, {
       'skip-prompt': true,
       'skip-install': true,
       'project-name': project.name,
@@ -230,6 +236,12 @@ describe('run', () => {
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(2)
+    const genConsole = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
+      'access-token': mockAccessToken,
+      'destination-file': 'console.json',
+      'ims-env': 'prod'
+    })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
       'skip-prompt': false,
@@ -250,6 +262,12 @@ describe('run', () => {
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(2)
+    const genConsole = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
+      'access-token': mockAccessToken,
+      'destination-file': 'console.json',
+      'ims-env': 'prod'
+    })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
       'skip-prompt': false,
@@ -271,6 +289,12 @@ describe('run', () => {
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(2)
+    const genConsole = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
+      'access-token': mockAccessToken,
+      'destination-file': 'console.json',
+      'ims-env': 'prod'
+    })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenCalledWith(genApp, {
       'skip-prompt': false,
