@@ -16,10 +16,16 @@ const fs = require('fs-extra')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 const { validateConfig, importConfigJson, loadConfigFile, writeAio } = require('../../lib/import')
+const { getToken, context } = require('@adobe/aio-lib-ims')
+const { CLI } = require('@adobe/aio-lib-ims/src/context')
+const chalk = require('chalk')
 
 class InitCommand extends BaseCommand {
   async run () {
     const { args, flags } = this.parse(InitCommand)
+    const env = yeoman.createEnv()
+    let res
+
     if (args.path !== '.') {
       const destDir = path.resolve(args.path)
       fs.ensureDirSync(destDir)
@@ -28,8 +34,29 @@ class InitCommand extends BaseCommand {
 
     aioLogger.debug('creating new app with init command ', flags)
 
+    // default project name and services
     let projectName = path.basename(process.cwd())
     let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk,AudienceManagerCustomerSDK' // todo fetch those from console when no --import
+
+    if (!(flags.import || flags.yes)) {
+      const accessToken = await getToken(CLI)
+      const { env: imsEnv = 'prod' } = await context.getCli() || {}
+
+      try {
+        const generatedFile = 'console.json'
+        env.register(require.resolve('@adobe/generator-aio-console'), 'gen-console')
+        res = await env.run('gen-console', {
+          'destination-file': generatedFile,
+          'access-token': accessToken,
+          'ims-env': imsEnv
+        })
+        // trigger import
+        flags.import = generatedFile
+      } catch (e) {
+        this.log(chalk.red(e.message))
+      }
+      this.log()
+    }
 
     if (flags.import) {
       const { values: config } = loadConfigFile(flags.import)
@@ -43,13 +70,11 @@ class InitCommand extends BaseCommand {
       services = config.project.workspace.details.services.map(s => s.code).join(',') || ''
     }
 
-    const env = yeoman.createEnv()
-
     this.log(`You are about to initialize the project '${projectName}'`)
 
     // call code generator
-    env.register(require.resolve('@adobe/generator-aio-app'), 'gen')
-    const res = await env.run('gen', {
+    env.register(require.resolve('@adobe/generator-aio-app'), 'gen-app')
+    res = await env.run('gen-app', {
       'skip-install': flags['skip-install'],
       'skip-prompt': flags.yes,
       'project-name': projectName,
