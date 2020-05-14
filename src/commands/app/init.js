@@ -38,7 +38,7 @@ class InitCommand extends BaseCommand {
     let projectName = path.basename(process.cwd())
     let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk,AudienceManagerCustomerSDK' // todo fetch those from console when no --import
 
-    if (!flags.import) {
+    if (!(flags.import || flags.yes)) {
       const accessToken = await getToken(CLI)
       const { env: imsEnv = 'prod' } = await context.getCli()
 
