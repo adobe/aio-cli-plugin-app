@@ -127,7 +127,7 @@ function mockValidConfig ({ name = 'lifeisgood', services = fullServicesJson } =
 /** @private */
 function mockInvalidConfig () {
   const foo = {
-    bar: 'lifeisjustok'
+    bar: 'lifeismeh'
   }
 
   importLib.loadConfigFile.mockReturnValue({
@@ -261,7 +261,9 @@ describe('run', () => {
 
   test('no imports should write aio config', async () => {
     // the only way we write defaults if gen-console threw an error
+    mockRun.mockImplementationOnce(() => { throw new Error('some error') })
 
+    const project = mockValidConfig()
     await TheCommand.run([])
 
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
@@ -273,11 +275,11 @@ describe('run', () => {
     expect(mockRun).toHaveBeenCalledWith(genApp, {
       'skip-prompt': false,
       'skip-install': false,
-      'project-name': 'lifeisgood',
+      'project-name': project.name,
       'adobe-services': getFullServicesList()
     })
     expect(importLib.writeAio).toHaveBeenCalledWith(
-      { services: [{ code: 'AdobeTargetSDK' }, { code: 'AdobeAnalyticsSDK' }, { code: 'CampaignSDK' }, { code: 'McDataServicesSdk' }, { code: 'AudienceManagerCustomerSDK' }] },
+      { services: fullServicesJson },
       process.cwd(),
       { interactive: false, merge: true }
     )
