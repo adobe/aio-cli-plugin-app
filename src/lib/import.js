@@ -10,6 +10,7 @@ governing permissions and limitations under the License.
 */
 
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:import', { provider: 'debug' })
+const config = require('@adobe/aio-lib-core-config')
 const path = require('path')
 const fs = require('fs-extra')
 const inquirer = require('inquirer')
@@ -334,6 +335,38 @@ async function writeEnv (json, parentFolder, flags) {
 }
 
 /**
+ * Writes the org, project, and workspace information to the global console config.
+ *
+ * @param {object} json the json object to write to the console config
+ */
+async function writeConsoleConfig (json) {
+  const CONSOLE_CONFIG_KEY = '$console'
+  console.log('JSON', json)
+  const { project } = json
+  const { org, workspace } = project
+
+  const data = {
+    org: {
+      id: org.id,
+      name: org.name,
+      code: org.ims_org_id
+    },
+    project: {
+      name: project.name,
+      id: project.id,
+      title: project.title,
+      description: project.description,
+      org_id: org.id
+    },
+    workspace: {
+      id: workspace.id,
+      name: workspace.name
+    }
+  }
+
+  config.set(CONSOLE_CONFIG_KEY, data)
+}
+/**
  * Writes the json object to the .aio file in the specified parent folder.
  *
  * @param {object} json the json object to write to disk
@@ -474,12 +507,16 @@ async function importConfigJson (configFileLocation, destinationFolder = process
   delete config.project.workspace.details.runtime
   delete config.project.workspace.details.credentials
 
+  // write to the console config (for the `aio console` commands)
+  await writeConsoleConfig(config)
+
   return writeAio(config, destinationFolder, flags)
 }
 
 module.exports = {
   validateConfig,
   loadConfigFile,
+  writeConsoleConfig,
   writeAio,
   writeEnv,
   flattenObjectWithSeparator,
