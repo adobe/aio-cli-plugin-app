@@ -15,6 +15,15 @@ const BaseCommand = require('../../../src/BaseCommand')
 const importLib = require('../../../src/lib/import')
 
 jest.mock('../../../src/lib/import')
+jest.mock('yeoman-environment')
+const yeoman = require('yeoman-environment')
+
+const mockRegister = jest.fn()
+const mockRun = jest.fn()
+yeoman.createEnv.mockReturnValue({
+  register: mockRegister,
+  run: mockRun
+})
 
 beforeEach(() => {
   jest.restoreAllMocks()
