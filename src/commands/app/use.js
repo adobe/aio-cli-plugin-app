@@ -18,10 +18,9 @@ const { EOL } = require('os')
 const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
 const yeoman = require('yeoman-environment')
-const env = yeoman.createEnv()
 
 class Use extends BaseCommand {
-  consoleConfigString (consoleConfig) {
+  async consoleConfigString (consoleConfig) {
     const { org = {}, project = {}, workspace = {} } = consoleConfig || {}
     const list = [
       `1. Org: ${org.name || '<no org selected>'}`,
@@ -32,9 +31,9 @@ class Use extends BaseCommand {
     return { value: list.join(EOL), error }
   }
 
-  async useConsoleConfig () {
+  async useConsoleConfig (flags, args) {
     const consoleConfig = config.get('$console')
-    const { value, error } = this.consoleConfigString(consoleConfig)
+    const { value, error } = await this.consoleConfigString(consoleConfig)
     if (error) {
       const message = `Your console configuration is incomplete.${EOL}Use the 'aio console' commands to select your organization, project, and workspace.${EOL}${value}`
       this.error(message)
@@ -46,11 +45,12 @@ class Use extends BaseCommand {
       }])
 
       if (confirm.res) {
-        const { org, project, workspace } = consoleConfig || {}
+        const { org, project, workspace } = consoleConfig
         const accessToken = await getToken(CLI)
         const { env: imsEnv = 'prod' } = await context.getCli() || {}
 
         const generatedFile = 'console.json'
+        const env = yeoman.createEnv()
         env.register(require.resolve('@adobe/generator-aio-console'), 'gen-console')
         await env.run('gen-console', {
           'destination-file': generatedFile,
@@ -61,14 +61,12 @@ class Use extends BaseCommand {
           'workspace-id': workspace.id
         })
 
-        return this.importConfigFile(generatedFile)
+        return this.importConfigFile(generatedFile, flags)
       }
     }
   }
 
-  async importConfigFile (filePath) {
-    const { flags } = this.parse(Use)
-
+  async importConfigFile (filePath, flags) {
     const overwrite = flags.overwrite
     const merge = flags.merge
     let interactive = true
@@ -81,12 +79,12 @@ class Use extends BaseCommand {
   }
 
   async run () {
-    const { args } = this.parse(Use)
+    const { flags, args } = this.parse(Use)
 
     if (args.config_file_path) {
-      return this.importConfigFile(args.config_file_path)
+      return this.importConfigFile(args.config_file_path, flags)
     } else {
-      return this.useConsoleConfig()
+      return this.useConsoleConfig(flags)
     }
   }
 }
