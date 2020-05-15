@@ -60,7 +60,8 @@
   },
   "files": [
     "/oclif.manifest.json",
-    "/src"
+    "/src",
+    "/schema/config.schema.json"
   ],
   "homepage": "https://github.com/adobe/aio-cli-plugin-app",
   "keywords": [
