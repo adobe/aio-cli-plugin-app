@@ -340,8 +340,9 @@ async function writeEnv (json, parentFolder, flags) {
  * @param {object} json the json object to write to the console config
  */
 async function writeConsoleConfig (json) {
+  aioLogger.debug(`writeConsoleConfig - json: ${JSON.stringify(json)}`)
   const CONSOLE_CONFIG_KEY = '$console'
-  console.log('JSON', json)
+
   const { project } = json
   const { org, workspace } = project
 
