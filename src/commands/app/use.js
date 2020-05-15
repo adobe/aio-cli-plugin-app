@@ -56,9 +56,9 @@ class Use extends BaseCommand {
           'destination-file': generatedFile,
           'access-token': accessToken,
           'ims-env': imsEnv,
-          'ims-org-id': org.id,
-          'ims-project-id': project.id,
-          'ims-workspace-id': workspace.id
+          'org-id': org.id,
+          'project-id': project.id,
+          'workspace-id': workspace.id
         })
 
         return this.importConfigFile(generatedFile)
