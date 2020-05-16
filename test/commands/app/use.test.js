@@ -13,40 +13,109 @@ governing permissions and limitations under the License.
 const TheCommand = require('../../../src/commands/app/use')
 const BaseCommand = require('../../../src/BaseCommand')
 const importLib = require('../../../src/lib/import')
+const inquirer = require('inquirer')
+
+jest.mock('@adobe/aio-lib-core-config')
+const mockConfig = require('@adobe/aio-lib-core-config')
+
+const mockAccessToken = 'some-access-token'
+const mockGetCli = jest.fn()
+jest.mock('@adobe/aio-lib-ims', () => {
+  return {
+    context: {
+      getCli: () => mockGetCli()
+    },
+    getToken: () => mockAccessToken
+  }
+})
 
 jest.mock('../../../src/lib/import')
+jest.mock('yeoman-environment')
+
+const yeoman = require('yeoman-environment')
+
+const mockRegister = jest.fn()
+const mockRun = jest.fn()
+yeoman.createEnv.mockReturnValue({
+  register: mockRegister,
+  run: mockRun
+})
 
 beforeEach(() => {
-  jest.restoreAllMocks()
+  jest.clearAllMocks()
+  mockGetCli.mockReturnValue({})
 })
 
-describe('Command Prototype', () => {
-  test('exports', async () => {
-    expect(typeof TheCommand).toEqual('function')
-    expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
-    expect(typeof TheCommand.description).toBe('string')
+test('exports', async () => {
+  expect(typeof TheCommand).toEqual('function')
+  expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
+  expect(typeof TheCommand.description).toBe('string')
+})
+
+test('bad flags - unknown', async () => {
+  const result = TheCommand.run(['.', '--wtf'])
+  expect(result instanceof Promise).toBeTruthy()
+  return new Promise((resolve, reject) => {
+    return result
+      .then(() => reject(new Error()))
+      .catch(res => {
+        expect(res).toEqual(new Error('Unexpected argument: --wtf\nSee more help with --help'))
+        resolve()
+      })
   })
 })
 
-describe('bad flags', () => {
-  test('unknown', async () => {
-    const result = TheCommand.run(['.', '--wtf'])
-    expect(result instanceof Promise).toBeTruthy()
-    return new Promise((resolve, reject) => {
-      return result
-        .then(() => reject(new Error()))
-        .catch(res => {
-          expect(res).toEqual(new Error('Unexpected argument: --wtf\nSee more help with --help'))
-          resolve()
-        })
-    })
-  })
-})
-
-test('runs', async () => {
+test('runs (config file)', async () => {
   await TheCommand.run(['config-file'])
   await TheCommand.run(['config-file', '--overwrite'])
   await TheCommand.run(['config-file', '--merge'])
 
   expect(importLib.importConfigJson).toHaveBeenCalledTimes(3)
+})
+
+test('runs (generator, confirmation yes, got global console config)', async () => {
+  inquirer.prompt.mockResolvedValueOnce({ res: true })
+  mockConfig.get.mockReturnValueOnce({
+    org: { name: 'MyOrg', id: '123' },
+    project: { name: 'MyProject', id: '456' },
+    workspace: { name: 'MyWorkspace', id: '789' }
+  })
+  mockGetCli.mockReturnValue({})
+
+  await TheCommand.run([])
+  expect(importLib.importConfigJson).toHaveBeenCalledTimes(1)
+})
+
+test('runs (generator, confirmation yes, got global console config, no cli context)', async () => {
+  inquirer.prompt.mockResolvedValueOnce({ res: true })
+  mockConfig.get.mockReturnValueOnce({
+    org: { name: 'MyOrg', id: '123' },
+    project: { name: 'MyProject', id: '456' },
+    workspace: { name: 'MyWorkspace', id: '789' }
+  })
+  mockGetCli.mockReturnValue()
+
+  await TheCommand.run([])
+  expect(importLib.importConfigJson).toHaveBeenCalledTimes(1)
+})
+
+test('runs (generator, confirmation no, got global console config)', async () => {
+  inquirer.prompt.mockResolvedValueOnce({ res: false })
+  mockConfig.get.mockReturnValueOnce({
+    org: { name: 'MyOrg', id: '123' },
+    project: { name: 'MyProject', id: '456' },
+    workspace: { name: 'MyWorkspace', id: '789' }
+  })
+  mockGetCli.mockReturnValue({})
+
+  await TheCommand.run([])
+  expect(importLib.importConfigJson).toHaveBeenCalledTimes(0)
+})
+
+test('runs (generator, error in global console config)', async () => {
+  inquirer.prompt.mockResolvedValue({ res: 'true' })
+  mockConfig.get.mockReturnValueOnce(null)
+
+  await expect(TheCommand.run([])).rejects.toThrowError()
+  expect(importLib.importConfigJson).toHaveBeenCalledTimes(0)
 })
