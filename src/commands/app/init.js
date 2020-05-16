@@ -23,7 +23,6 @@ const chalk = require('chalk')
 class InitCommand extends BaseCommand {
   async run () {
     const { args, flags } = this.parse(InitCommand)
-    const env = yeoman.createEnv()
     let res
 
     if (args.path !== '.') {
@@ -32,6 +31,7 @@ class InitCommand extends BaseCommand {
       process.chdir(destDir)
     }
 
+    const env = yeoman.createEnv()
     aioLogger.debug('creating new app with init command ', flags)
 
     // default project name and services
