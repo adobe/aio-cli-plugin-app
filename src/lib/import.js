@@ -205,7 +205,7 @@ function mergeEnv (oldEnv, newEnv) {
     const items = line.split('=')
     if (items.length >= 2) {
       const key = items.shift().trim() // pop first element
-      const value = items.join('').trimStart() // join the rest
+      const value = items.join('=').trimStart() // join the rest
 
       result[key] = value
     }
