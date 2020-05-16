@@ -10,7 +10,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { importConfigJson, writeAio, writeEnv, flattenObjectWithSeparator, loadConfigFile } = require('../../../src/lib/import')
+const { importConfigJson, writeAio, writeEnv, mergeEnv, splitEnvLine, flattenObjectWithSeparator, loadConfigFile } = require('../../../src/lib/import')
 const fs = require('fs-extra')
 const path = require('path')
 const inquirer = require('inquirer')
@@ -75,6 +75,36 @@ test('writeAio', async () => {
   await expect(fs.writeFile.mock.calls[2][1]).toMatchFixture(destination)
 
   return expect(fs.writeFile).toHaveBeenCalledTimes(3)
+})
+
+test('splitEnvLine', () => {
+  expect(splitEnvLine('#comment')).toEqual(null)
+  expect(splitEnvLine('# comment')).toEqual(null)
+  expect(splitEnvLine('     # comment')).toEqual(null)
+  expect(splitEnvLine('no equal separator')).toEqual(null)
+
+  expect(splitEnvLine('foo = bar')).toEqual(['foo', 'bar'])
+  expect(splitEnvLine('     foo = bar')).toEqual(['foo', 'bar'])
+  expect(splitEnvLine('foo=bar')).toEqual(['foo', 'bar'])
+  expect(splitEnvLine('     foo=bar')).toEqual(['foo', 'bar'])
+
+  // multiple equal separators
+  expect(splitEnvLine('foo=bar=baz')).toEqual(['foo', 'bar=baz'])
+  expect(splitEnvLine('foo=bar=baz=faz')).toEqual(['foo', 'bar=baz=faz'])
+  expect(splitEnvLine('foo   =   bar  =  baz')).toEqual(['foo', 'bar  =  baz'])
+  expect(splitEnvLine('foo=bar=   baz=faz')).toEqual(['foo', 'bar=   baz=faz'])
+})
+
+test('mergeEnv', async () => {
+  let oldEnv, newEnv
+
+  oldEnv = fixtureFile('merge.1.old.env')
+  newEnv = fixtureFile('merge.1.new.env')
+  expect(mergeEnv(oldEnv, newEnv)).toMatchFixture('merge.1.final.env')
+
+  oldEnv = fixtureFile('merge.2.old.env')
+  newEnv = fixtureFile('merge.2.new.env')
+  expect(mergeEnv(oldEnv, newEnv)).toMatchFixture('merge.2.final.env')
 })
 
 test('writeEnv', async () => {
