@@ -90,10 +90,7 @@
             "type": "object",
             "properties": {
                 "id": { "type": "string" },
-                "name": { 
-                    "type": "string",
-                    "pattern": "^[ a-zA-Z0-9]+$"
-                },
+                "name": { "type": "string" },
                 "integration_type": {
                     "type": "string",
                     "enum": [ "oauthweb", "oauthios", "oauthandroid", "service", "apikey" ]
