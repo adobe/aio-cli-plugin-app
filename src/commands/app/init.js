@@ -16,8 +16,7 @@ const fs = require('fs-extra')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 const { validateConfig, importConfigJson, loadConfigFile, writeAio } = require('../../lib/import')
-const { getToken, context } = require('@adobe/aio-lib-ims')
-const { CLI } = require('@adobe/aio-lib-ims/src/context')
+const { getCliInfo } = require('../../lib/app-helper')
 const chalk = require('chalk')
 
 class InitCommand extends BaseCommand {
@@ -39,8 +38,7 @@ class InitCommand extends BaseCommand {
     let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk,AudienceManagerCustomerSDK' // todo fetch those from console when no --import
 
     if (!(flags.import || flags.yes)) {
-      const accessToken = await getToken(CLI)
-      const { env: imsEnv = 'prod' } = await context.getCli() || {}
+      const { accessToken, env: imsEnv } = await getCliInfo()
 
       try {
         const generatedFile = 'console.json'
