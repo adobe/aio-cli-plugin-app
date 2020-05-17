@@ -15,9 +15,8 @@ const { flags } = require('@oclif/command')
 const inquirer = require('inquirer')
 const config = require('@adobe/aio-lib-core-config')
 const { EOL } = require('os')
-const { getToken, context } = require('@adobe/aio-lib-ims')
-const { CLI } = require('@adobe/aio-lib-ims/src/context')
 const yeoman = require('yeoman-environment')
+const { getCliInfo } = require('../../lib/app-helper')
 
 class Use extends BaseCommand {
   async consoleConfigString (consoleConfig) {
@@ -46,8 +45,7 @@ class Use extends BaseCommand {
 
       if (confirm.res) {
         const { org, project, workspace } = consoleConfig
-        const accessToken = await getToken(CLI)
-        const { env: imsEnv = 'prod' } = await context.getCli() || {}
+        const { accessToken, env: imsEnv } = await getCliInfo()
 
         const generatedFile = 'console.json'
         const env = yeoman.createEnv()

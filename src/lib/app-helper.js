@@ -14,6 +14,8 @@ const fs = require('fs-extra')
 const path = require('path')
 const which = require('which')
 const debug = require('debug')('aio-cli-plugin-app:app-helper')
+const { getToken, context } = require('@adobe/aio-lib-ims')
+const { CLI } = require('@adobe/aio-lib-ims/src/context')
 
 /** @private */
 function isNpmInstalled () {
@@ -70,10 +72,22 @@ function wrapError (err) {
   return new Error(message)
 }
 
+/** @private */
+async function getCliInfo () {
+  const { env = 'prod' } = await context.getCli() || {}
+  await context.setCli({ '$cli.bare-output': true }, false) // set this globally
+
+  debug('Retrieving CLI Token')
+  const accessToken = await getToken(CLI)
+
+  return { accessToken, env }
+}
+
 module.exports = {
   isNpmInstalled,
   isGitInstalled,
   installPackage,
   runPackageScript,
-  wrapError
+  wrapError,
+  getCliInfo
 }
