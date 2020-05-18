@@ -262,7 +262,7 @@ describe('run', () => {
     mockGetCli.mockImplementationOnce(() => { throw new Error('Error') })
 
     const project = mockValidConfig()
-    await TheCommand.run()
+    await TheCommand.run([])
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(1)
