@@ -12,10 +12,59 @@ governing permissions and limitations under the License.
 const BaseCommand = require('../../BaseCommand')
 const { importConfigJson } = require('../../lib/import')
 const { flags } = require('@oclif/command')
+const inquirer = require('inquirer')
+const config = require('@adobe/aio-lib-core-config')
+const { EOL } = require('os')
+const yeoman = require('yeoman-environment')
+const { getCliInfo } = require('../../lib/app-helper')
 
 class Use extends BaseCommand {
-  async run () {
-    const { args, flags } = this.parse(Use)
+  async consoleConfigString (consoleConfig) {
+    const { org = {}, project = {}, workspace = {} } = consoleConfig || {}
+    const list = [
+      `1. Org: ${org.name || '<no org selected>'}`,
+      `2. Project: ${project.name || '<no project selected>'}`,
+      `3. Workspace: ${workspace.name || '<no workspace selected>'}`
+    ]
+    const error = !consoleConfig || org === {} || project === {} || workspace === {}
+    return { value: list.join(EOL), error }
+  }
+
+  async useConsoleConfig (flags, args) {
+    const consoleConfig = config.get('$console')
+    const { value, error } = await this.consoleConfigString(consoleConfig)
+    if (error) {
+      const message = `Your console configuration is incomplete.${EOL}Use the 'aio console' commands to select your organization, project, and workspace.${EOL}${value}`
+      this.error(message)
+    } else {
+      const confirm = await inquirer.prompt([{
+        type: 'confirm',
+        name: 'res',
+        message: `Do you want to use the current workspace?${EOL}${value}${EOL}`
+      }])
+
+      if (confirm.res) {
+        const { org, project, workspace } = consoleConfig
+        const { accessToken, env: imsEnv } = await getCliInfo()
+
+        const generatedFile = 'console.json'
+        const env = yeoman.createEnv()
+        env.register(require.resolve('@adobe/generator-aio-console'), 'gen-console')
+        await env.run('gen-console', {
+          'destination-file': generatedFile,
+          'access-token': accessToken,
+          'ims-env': imsEnv,
+          'org-id': org.id,
+          'project-id': project.id,
+          'workspace-id': workspace.id
+        })
+
+        return this.importConfigFile(generatedFile, flags)
+      }
+    }
+  }
+
+  async importConfigFile (filePath, flags) {
     const overwrite = flags.overwrite
     const merge = flags.merge
     let interactive = true
@@ -24,7 +73,17 @@ class Use extends BaseCommand {
       interactive = false
     }
 
-    return importConfigJson(args.config_file_path, process.cwd(), { interactive, overwrite, merge })
+    return importConfigJson(filePath, process.cwd(), { interactive, overwrite, merge })
+  }
+
+  async run () {
+    const { flags, args } = this.parse(Use)
+
+    if (args.config_file_path) {
+      return this.importConfigFile(args.config_file_path, flags)
+    } else {
+      return this.useConsoleConfig(flags)
+    }
   }
 }
 
@@ -49,7 +108,7 @@ Use.args = [
   {
     name: 'config_file_path',
     description: 'path to an Adobe I/O Developer Console configuration file',
-    required: true
+    required: false
   }
 ]
 

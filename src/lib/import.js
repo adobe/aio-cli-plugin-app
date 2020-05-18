@@ -10,6 +10,7 @@ governing permissions and limitations under the License.
 */
 
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:import', { provider: 'debug' })
+const config = require('@adobe/aio-lib-core-config')
 const path = require('path')
 const fs = require('fs-extra')
 const inquirer = require('inquirer')
@@ -184,6 +185,31 @@ function flattenObjectWithSeparator (json, result = {}, prefix = AIO_ENV_PREFIX,
 }
 
 /**
+ * Split line from .env
+ *
+ * @param {string} line env line to split
+ * @returns {Array} tuple, first item is key, second item is value or null if it's a comment
+ */
+function splitEnvLine (line) {
+  if (line.trim().startsWith('#')) { // skip comments
+    aioLogger.debug(`splitEnvLine - skipping comment: ${line}`)
+    return null
+  }
+
+  const items = line.split('=')
+  if (items.length >= 2) {
+    const key = items.shift().trim() // pop first element
+    const value = items.join('=').trimStart() // join the rest
+
+    return [key, value]
+  } else {
+    aioLogger.debug(`splitEnvLine - cannot process line: ${line}`)
+  }
+
+  return null
+}
+
+/**
  * Merge .env data
  * (we don't want to go through the .env to json conversion)
  * Note that comments will not be preserved.
@@ -193,28 +219,24 @@ function flattenObjectWithSeparator (json, result = {}, prefix = AIO_ENV_PREFIX,
  * @returns {string} the merged env data
  */
 function mergeEnv (oldEnv, newEnv) {
+  aioLogger.debug(`mergeEnv - oldEnv: ${oldEnv}`)
+  aioLogger.debug(`mergeEnv - newEnv:${newEnv}`)
+
   const result = {}
   const NEWLINES = /\n|\r|\r\n/
-
-  const splitLine = (line) => {
-    if (line.trim().startsWith('#')) { // skip comments
-      return
-    }
-
-    const items = line.split('=')
-    if (items.length >= 2) {
-      const key = items.shift().trim() // pop first element
-      const value = items.join('').trimStart() // join the rest
-
-      result[key] = value
-    }
-  }
 
   aioLogger.debug(`mergeEnv - oldEnv:${oldEnv}`)
   aioLogger.debug(`mergeEnv - newEnv:${newEnv}`)
 
-  oldEnv.split(NEWLINES).forEach(splitLine)
-  newEnv.split(NEWLINES).forEach(splitLine)
+  const splitHelper = line => {
+    const tuple = splitEnvLine(line)
+    if (tuple) {
+      result[tuple[0]] = tuple[1]
+    }
+  }
+
+  oldEnv.split(NEWLINES).forEach(splitHelper)
+  newEnv.split(NEWLINES).forEach(splitHelper)
 
   const mergedEnv = Object
     .keys(result)
@@ -324,15 +346,49 @@ async function writeEnv (json, parentFolder, flags) {
   const resultObject = flattenObjectWithSeparator(json)
   aioLogger.debug(`convertJsonToEnv - flattened and separated json: ${prettyPrintJson(resultObject)}`)
 
+  const LINE_SEP = '\n'
   const data = Object
     .keys(resultObject)
     .map(key => `${key}=${resultObject[key]}`)
-    .join('\n')
-  aioLogger.debug(`writeEnv - data: ${data}`)
+    .join(LINE_SEP)
+  aioLogger.debug(`writeEnv - data: ${data + LINE_SEP}`)
 
   return writeFile(destination, data, { ...flags, fileFormat: FILE_FORMAT_ENV })
 }
 
+/**
+ * Writes the org, project, and workspace information to the global console config.
+ *
+ * @param {object} json the json object to write to the console config
+ */
+async function writeConsoleConfig (json) {
+  aioLogger.debug(`writeConsoleConfig - json: ${JSON.stringify(json)}`)
+  const CONSOLE_CONFIG_KEY = '$console'
+
+  const { project } = json
+  const { org, workspace } = project
+
+  const data = {
+    org: {
+      id: org.id,
+      name: org.name,
+      code: org.ims_org_id
+    },
+    project: {
+      name: project.name,
+      id: project.id,
+      title: project.title,
+      description: project.description,
+      org_id: org.id
+    },
+    workspace: {
+      id: workspace.id,
+      name: workspace.name
+    }
+  }
+
+  config.set(CONSOLE_CONFIG_KEY, data)
+}
 /**
  * Writes the json object to the .aio file in the specified parent folder.
  *
@@ -474,14 +530,20 @@ async function importConfigJson (configFileLocation, destinationFolder = process
   delete config.project.workspace.details.runtime
   delete config.project.workspace.details.credentials
 
+  // write to the console config (for the `aio console` commands)
+  await writeConsoleConfig(config)
+
   return writeAio(config, destinationFolder, flags)
 }
 
 module.exports = {
   validateConfig,
   loadConfigFile,
+  writeConsoleConfig,
   writeAio,
   writeEnv,
   flattenObjectWithSeparator,
-  importConfigJson
+  importConfigJson,
+  mergeEnv,
+  splitEnvLine
 }

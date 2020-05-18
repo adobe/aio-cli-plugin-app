@@ -1,14 +1,16 @@
 {
   "name": "@adobe/aio-cli-plugin-app",
   "description": "Create, Build and Deploy Adobe I/O Applications",
-  "version": "1.7.1",
+  "version": "2.0.6",
   "author": "Adobe Inc.",
   "bugs": "https://github.com/adobe/aio-cli-plugin-app/issues",
   "dependencies": {
-    "@adobe/aio-app-scripts": "^0.15.0",
+    "@adobe/aio-app-scripts": "^1.0.1",
     "@adobe/aio-lib-core-config": ">=1.2.8",
     "@adobe/aio-lib-core-logging": "^1.1.0",
-    "@adobe/generator-aio-app": "^0.7.2",
+    "@adobe/aio-lib-ims": "^2.0.1",
+    "@adobe/generator-aio-app": "^1.0.1",
+    "@adobe/generator-aio-console": "^1.1.1",
     "@oclif/command": "^1.5.11",
     "@oclif/config": "^1.12.9",
     "ajv": "^6.12.2",
@@ -43,8 +45,8 @@
     "eslint-config-oclif": "^3.1.0",
     "eslint-config-standard": "^14.1.1",
     "eslint-plugin-import": "^2.20.2",
-    "eslint-plugin-jest": "^23.10.0",
-    "eslint-plugin-jsdoc": "^21.0.0",
+    "eslint-plugin-jest": "^23.13.0",
+    "eslint-plugin-jsdoc": "^25.4.1",
     "eslint-plugin-node": "^10.0.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
@@ -58,7 +60,8 @@
   },
   "files": [
     "/oclif.manifest.json",
-    "/src"
+    "/src",
+    "/schema/config.schema.json"
   ],
   "homepage": "https://github.com/adobe/aio-cli-plugin-app",
   "keywords": [

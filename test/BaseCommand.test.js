@@ -10,6 +10,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
+const { stdout } = require('stdout-stderr')
 const { Command } = require('@oclif/command')
 const TheCommand = require('../src/BaseCommand')
 
@@ -40,6 +41,25 @@ test('basecommand defines method', async () => {
   expect(typeof cmd.getLaunchUrlPrefix).toBe('function')
   mockConfig.get.mockReturnValue('http://prefix?fake=')
   expect(cmd.getLaunchUrlPrefix()).toBe('http://prefix?fake=')
+  mockConfig.get.mockReturnValue(null)
+  expect(cmd.getLaunchUrlPrefix()).toEqual(expect.stringContaining('https://'))
+})
+
+test('getLaunchUrlPrefix() warns on older url', async () => {
+  const cmd = new TheCommand()
+
+  mockConfig.get.mockReturnValue('some-url/apps/some-param')
+  expect(cmd.getLaunchUrlPrefix()).toBe('some-url/custom-apps/some-param')
+  expect(stdout.output).toMatch('Warning: your environment variables contains an older version of AIO_LAUNCH_URL_PREFIX')
+
+  mockConfig.get.mockReturnValue('some-url/myapps/some-param')
+  expect(cmd.getLaunchUrlPrefix()).toBe('some-url/custom-apps/some-param')
+  expect(stdout.output).toMatch('Warning: your environment variables contains an older version of AIO_LAUNCH_URL_PREFIX')
+
+  mockConfig.get.mockReturnValue('some-url/custom-apps/some-param')
+  expect(cmd.getLaunchUrlPrefix()).toBe('some-url/custom-apps/some-param')
+  expect(stdout.output).toMatch('')
+
   mockConfig.get.mockReturnValue(null)
   expect(cmd.getLaunchUrlPrefix()).toEqual(expect.stringContaining('https://'))
 })
