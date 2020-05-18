@@ -39,9 +39,8 @@ class InitCommand extends BaseCommand {
     let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk,AudienceManagerCustomerSDK'
 
     if (!(flags.import || flags.yes)) {
-      const { accessToken, env: imsEnv } = await getCliInfo()
-
       try {
+        const { accessToken, env: imsEnv } = await getCliInfo()
         const generatedFile = 'console.json'
         env.register(require.resolve('@adobe/generator-aio-console'), 'gen-console')
         res = await env.run('gen-console', {
