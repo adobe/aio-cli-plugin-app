@@ -257,6 +257,26 @@ describe('run', () => {
     expect(spyChdir).not.toHaveBeenCalled()
   })
 
+  test('getCliInfo error', async () => {
+    mockGetCli.mockReset()
+    mockGetCli.mockImplementationOnce(() => { throw new Error('Error') })
+
+    const project = mockValidConfig()
+    await TheCommand.run()
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genApp = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genApp, {
+      'skip-prompt': false,
+      'skip-install': false,
+      'project-name': project.name,
+      'adobe-services': getFullServicesList()
+    })
+    expect(fs.ensureDirSync).not.toHaveBeenCalled()
+    expect(spyChdir).not.toHaveBeenCalled()
+  })
+
   test('no-path', async () => {
     const project = mockValidConfig()
     await TheCommand.run([])
