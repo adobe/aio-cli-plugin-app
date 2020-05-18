@@ -262,14 +262,14 @@ describe('run', () => {
     mockGetCli.mockImplementationOnce(() => { throw new Error('Error') })
 
     const project = mockValidConfig()
-    await TheCommand.run([])
+    await TheCommand.run(['--skip-install'])
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(1)
     const genApp = mockRegister.mock.calls[0][1]
     expect(mockRun).toHaveBeenNthCalledWith(1, genApp, {
       'skip-prompt': false,
-      'skip-install': false,
+      'skip-install': true,
       'project-name': project.name,
       'adobe-services': getFullServicesList()
     })
