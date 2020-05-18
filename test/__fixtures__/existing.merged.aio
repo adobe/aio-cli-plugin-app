@@ -9,7 +9,7 @@
   },
   "project": {
     "id": "123",
-    "name": "TestProject",
+    "name": "TestProject123",
     "title": "Test Title",
     "description": "My project description",
     "org": {
@@ -19,9 +19,9 @@
     },
     "workspace": {
       "id": "1356",
-      "name": "TestWorkspace",
-      "title": "Test Title",
-      "description": "My workspace description",
+      "name": "TestWörkspacé",
+      "title": "Tést Tïtle",
+      "description": "My wörkspacè description",
       "action_url": "https://ABCD-TestProject-TestWorkspace.adobeioruntime.net",
       "app_url": "https://ABCD-TestProject-TestWorkspace.adobestatic.net",
       "details": {

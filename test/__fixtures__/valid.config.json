@@ -1,7 +1,7 @@
 {
     "project": {
         "id": "123",
-        "name": "TestProject",
+        "name": "TestProject123",
         "title": "Test Title",
         "description": "My project description",
         "org": {
@@ -11,16 +11,16 @@
         },
         "workspace": {
             "id": "1356",
-            "name": "TestWorkspace",
-            "title": "Test Title",
-            "description": "My workspace description",
+            "name": "TestWörkspacé",
+            "title": "Tést Tïtle",
+            "description": "My wörkspacè description",
             "action_url": "https://ABCD-TestProject-TestWorkspace.adobeioruntime.net",
             "app_url": "https://ABCD-TestProject-TestWorkspace.adobestatic.net",
             "details": {
                 "credentials": [
                     {
                         "id": "17561142",
-                        "name": "Project A",
+                        "name": "Projéct A",
                         "integration_type": "oauthweb",
                         "oauth2": {
                             "client_id": "XYXYXYXYXYXYXYXYX",
@@ -31,7 +31,7 @@
                     },
                     {
                         "id": "17606512",
-                        "name": "ProjectB",
+                        "name": "PröjectB",
                         "integration_type": "service",
                         "jwt": {
                             "client_id": "XUXUXUXUXUXUXUX",
@@ -45,7 +45,7 @@
                     },
                     {
                         "id": "17950",
-                        "name": "New Test Integration 8",
+                        "name": "New Test Intégration 8",
                         "integration_type": "oauthandroid",
                         "oauth2": {
                             "client_id": "XRXRXRXRXRXRXRXRXR",
