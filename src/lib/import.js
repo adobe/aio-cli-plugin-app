@@ -339,6 +339,7 @@ async function writeFile (destination, data, flags = {}) {
  * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
  * @param {boolean} [flags.merge=false] set to true to merge in the existing .env file (takes precedence over overwrite)
  * @param {boolean} [flags.interactive=false] set to true to prompt the user for file overwrite
+ * @returns {Promise} promise from writeFile call
  */
 async function writeEnv (json, parentFolder, flags) {
   aioLogger.debug(`writeEnv - json: ${JSON.stringify(json)} parentFolder:${parentFolder} flags:${flags}`)
@@ -392,6 +393,7 @@ async function writeConsoleConfig (json) {
 
   config.set(CONSOLE_CONFIG_KEY, data)
 }
+
 /**
  * Writes the json object to the .aio file in the specified parent folder.
  *
@@ -401,6 +403,7 @@ async function writeConsoleConfig (json) {
  * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
  * @param {boolean} [flags.merge=false] set to true to merge in the existing .env file (takes precedence over overwrite)
  * @param {boolean} [flags.interactive=false] set to true to prompt the user for file overwrite
+ * @returns {Promise} promise from writeFile call
  */
 async function writeAio (json, parentFolder, flags) {
   aioLogger.debug(`writeAio - parentFolder:${parentFolder} flags:${flags}`)
@@ -508,6 +511,7 @@ function transformCredentials (credentials, imsOrgId) {
  * @param {object} [flags] flags for file writing
  * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
  * @param {boolean} [flags.merge=false] set to true to merge in the existing .env file (takes precedence over overwrite)
+ * @returns {Promise} promise from writeAio call
  */
 async function importConfigJson (configFileLocation, destinationFolder = process.cwd(), flags = {}) {
   aioLogger.debug(`importConfigJson - configFileLocation: ${configFileLocation} destinationFolder:${destinationFolder} flags:${flags}`)
