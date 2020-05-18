@@ -78,9 +78,9 @@ test('writeAio', async () => {
 })
 
 test('splitEnvLine', () => {
-  expect(splitEnvLine('#comment')).toEqual(null)
-  expect(splitEnvLine('# comment')).toEqual(null)
-  expect(splitEnvLine('     # comment')).toEqual(null)
+  expect(splitEnvLine('#comment')).toEqual(['#comment', undefined])
+  expect(splitEnvLine('# comment')).toEqual(['# comment', undefined])
+  expect(splitEnvLine('     # comment')).toEqual(['# comment', undefined])
   expect(splitEnvLine('no equal separator')).toEqual(null)
 
   expect(splitEnvLine('foo = bar')).toEqual(['foo', 'bar'])

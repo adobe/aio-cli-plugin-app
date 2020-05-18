@@ -17,6 +17,7 @@ const inquirer = require('inquirer')
 const yaml = require('js-yaml')
 const hjson = require('hjson')
 const Ajv = require('ajv')
+const { EOL } = require('os')
 
 const AIO_FILE = '.aio'
 const ENV_FILE = '.env'
@@ -191,9 +192,10 @@ function flattenObjectWithSeparator (json, result = {}, prefix = AIO_ENV_PREFIX,
  * @returns {Array} tuple, first item is key, second item is value or null if it's a comment
  */
 function splitEnvLine (line) {
-  if (line.trim().startsWith('#')) { // skip comments
-    aioLogger.debug(`splitEnvLine - skipping comment: ${line}`)
-    return null
+  const trimmedLine = line.trim()
+  if (trimmedLine.startsWith('#')) { // skip comments
+    aioLogger.debug(`splitEnvLine - processing comment: ${line}`)
+    return [trimmedLine, undefined]
   }
 
   const items = line.split('=')
@@ -240,8 +242,9 @@ function mergeEnv (oldEnv, newEnv) {
 
   const mergedEnv = Object
     .keys(result)
-    .map(key => `${key}=${result[key]}`)
-    .join('\n')
+    .map(key => result[key] !== undefined ? `${key}=${result[key]}` : key)
+    .join(EOL)
+    .concat(EOL) // add a new line
   aioLogger.debug(`mergeEnv - mergedEnv:${mergedEnv}`)
 
   return mergedEnv
