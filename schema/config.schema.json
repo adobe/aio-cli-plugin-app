@@ -77,7 +77,7 @@
                 "id": { "type": "string" },
                 "name": { 
                     "type": "string",
-                    "pattern": "^.{0,255}$"
+                    "pattern": "^(?=\\S).{0,255}(?<=\\S)$"
                 },
                 "ims_org_id": { 
                     "type": "string",
