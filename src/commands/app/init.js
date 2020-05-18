@@ -38,30 +38,19 @@ class InitCommand extends BaseCommand {
     let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk,AudienceManagerCustomerSDK' // todo fetch those from console when no --import
 
     if (!(flags.import || flags.yes)) {
-      let token
-      let cliEnv
       try {
         const { accessToken, env: imsEnv } = await getCliInfo()
-        token = accessToken
-        cliEnv = imsEnv
+        const generatedFile = 'console.json'
+        env.register(require.resolve('@adobe/generator-aio-console'), 'gen-console')
+        res = await env.run('gen-console', {
+          'destination-file': generatedFile,
+          'access-token': accessToken,
+          'ims-env': imsEnv
+        })
+        // trigger import
+        flags.import = generatedFile
       } catch (e) {
-        this.log(chalk.red('Error occurred while fetching access token - ' + e.message))
-      }
-
-      if (token) {
-        try {
-          const generatedFile = 'console.json'
-          env.register(require.resolve('@adobe/generator-aio-console'), 'gen-console')
-          res = await env.run('gen-console', {
-            'destination-file': generatedFile,
-            'access-token': token,
-            'ims-env': cliEnv
-          })
-          // trigger import
-          flags.import = generatedFile
-        } catch (e) {
-          this.log(chalk.red(e.message))
-        }
+        this.log(chalk.red(e.message))
       }
       this.log()
     }
