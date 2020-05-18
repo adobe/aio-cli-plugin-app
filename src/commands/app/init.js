@@ -35,7 +35,8 @@ class InitCommand extends BaseCommand {
 
     // default project name and services
     let projectName = path.basename(process.cwd())
-    let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk,AudienceManagerCustomerSDK' // todo fetch those from console when no --import
+    // list of supported service templates
+    let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk,AudienceManagerCustomerSDK'
 
     if (!(flags.import || flags.yes)) {
       try {
@@ -86,7 +87,6 @@ class InitCommand extends BaseCommand {
       await importConfigJson(flags.import, process.cwd(), { interactive, merge })
     } else {
       // write default services value to .aio
-      // todo use real imported values from console
       await writeAio({
         services: services.split(',').map(code => ({ code }))
       }, process.cwd(), { merge, interactive })
