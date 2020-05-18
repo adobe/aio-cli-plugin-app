@@ -349,12 +349,12 @@ async function writeEnv (json, parentFolder, flags) {
   const resultObject = flattenObjectWithSeparator(json)
   aioLogger.debug(`convertJsonToEnv - flattened and separated json: ${prettyPrintJson(resultObject)}`)
 
-  const LINE_SEP = '\n'
   const data = Object
     .keys(resultObject)
     .map(key => `${key}=${resultObject[key]}`)
-    .join(LINE_SEP)
-  aioLogger.debug(`writeEnv - data: ${data + LINE_SEP}`)
+    .join(EOL)
+    .concat(EOL)
+  aioLogger.debug(`writeEnv - data:${data}`)
 
   return writeFile(destination, data, { ...flags, fileFormat: FILE_FORMAT_ENV })
 }
