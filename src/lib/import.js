@@ -344,7 +344,7 @@ async function writeFile (destination, data, flags = {}) {
  * @returns {Promise} promise from writeFile call
  */
 async function writeEnv (json, parentFolder, flags, extraEnvVars) {
-  aioLogger.debug(`writeEnv - json: ${JSON.stringify(json)} parentFolder:${parentFolder} flags:${flags}`)
+  aioLogger.debug(`writeEnv - json: ${JSON.stringify(json)} parentFolder:${parentFolder} flags:${flags} extraEnvVars:${extraEnvVars}`)
 
   const destination = path.join(parentFolder, ENV_FILE)
   aioLogger.debug(`writeEnv - destination: ${destination}`)
