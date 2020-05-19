@@ -339,15 +339,17 @@ async function writeFile (destination, data, flags = {}) {
  * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
  * @param {boolean} [flags.merge=false] set to true to merge in the existing .env file (takes precedence over overwrite)
  * @param {boolean} [flags.interactive=false] set to true to prompt the user for file overwrite
+ * @param {object} [extraEnvVars={}] extra environment variables key/value pairs to add to the generated .env.
+ *        Extra variables are treated as raw and won't be rewritten to comply with aio-lib-core-config
  * @returns {Promise} promise from writeFile call
  */
-async function writeEnv (json, parentFolder, flags) {
+async function writeEnv (json, parentFolder, flags, extraEnvVars) {
   aioLogger.debug(`writeEnv - json: ${JSON.stringify(json)} parentFolder:${parentFolder} flags:${flags}`)
 
   const destination = path.join(parentFolder, ENV_FILE)
   aioLogger.debug(`writeEnv - destination: ${destination}`)
 
-  const resultObject = flattenObjectWithSeparator(json)
+  const resultObject = { ...flattenObjectWithSeparator(json), ...extraEnvVars }
   aioLogger.debug(`convertJsonToEnv - flattened and separated json: ${prettyPrintJson(resultObject)}`)
 
   const data = Object
@@ -508,13 +510,15 @@ function transformCredentials (credentials, imsOrgId) {
  *
  * @param {string} configFileLocation the path to the config file to import
  * @param {string} [destinationFolder=the current working directory] the path to the folder to write the .env and .aio files to
- * @param {object} [flags] flags for file writing
+ * @param {object} [flags={}] flags for file writing
  * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
  * @param {boolean} [flags.merge=false] set to true to merge in the existing .env file (takes precedence over overwrite)
+ * @param {object} [extraEnvVars={}] extra environment variables key/value pairs to add to the generated .env.
+ *        Extra variables are treated as raw and won't be rewritten to comply with aio-lib-core-config
  * @returns {Promise} promise from writeAio call
  */
-async function importConfigJson (configFileLocation, destinationFolder = process.cwd(), flags = {}) {
-  aioLogger.debug(`importConfigJson - configFileLocation: ${configFileLocation} destinationFolder:${destinationFolder} flags:${flags}`)
+async function importConfigJson (configFileLocation, destinationFolder = process.cwd(), flags = {}, extraEnvVars = {}) {
+  aioLogger.debug(`importConfigJson - configFileLocation: ${configFileLocation} destinationFolder:${destinationFolder} flags:${flags} extraEnvVars:${extraEnvVars}`)
 
   const { values: config, format } = loadConfigFile(configFileLocation)
   const { valid: configIsValid, errors: configErrors } = validateConfig(config)
@@ -531,7 +535,7 @@ async function importConfigJson (configFileLocation, destinationFolder = process
   await writeEnv({
     runtime: transformRuntime(runtime),
     $ims: transformCredentials(credentials, config.project.org.ims_org_id)
-  }, destinationFolder, flags)
+  }, destinationFolder, flags, extraEnvVars)
 
   // remove the credentials
   delete config.project.workspace.details.runtime

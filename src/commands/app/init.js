@@ -19,6 +19,8 @@ const { validateConfig, importConfigJson, loadConfigFile, writeAio } = require('
 const { getCliInfo } = require('../../lib/app-helper')
 const chalk = require('chalk')
 
+const SERVICE_API_KEY_ENV = 'SERVICE_API_KEY'
+
 class InitCommand extends BaseCommand {
   async run () {
     const { args, flags } = this.parse(InitCommand)
@@ -37,6 +39,8 @@ class InitCommand extends BaseCommand {
     let projectName = path.basename(process.cwd())
     // list of supported service templates
     let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk,AudienceManagerCustomerSDK'
+    // client id of the console's workspace jwt credentials
+    let serviceClientId = ''
 
     if (!(flags.import || flags.yes)) {
       try {
@@ -66,6 +70,8 @@ class InitCommand extends BaseCommand {
 
       projectName = config.project.name
       services = config.project.workspace.details.services.map(s => s.code).join(',') || ''
+      const jwtConfig = config.project.workspace.details.credentials.find(c => c.jwt)
+      serviceClientId = (jwtConfig && jwtConfig.jwt.client_id) || serviceClientId // defaults to ''
     }
 
     this.log(`You are about to initialize the project '${projectName}'`)
@@ -84,7 +90,7 @@ class InitCommand extends BaseCommand {
     const interactive = false
     const merge = true
     if (flags.import) {
-      await importConfigJson(flags.import, process.cwd(), { interactive, merge })
+      await importConfigJson(flags.import, process.cwd(), { interactive, merge }, { [SERVICE_API_KEY_ENV]: serviceClientId })
     } else {
       // write default services value to .aio
       await writeAio({
