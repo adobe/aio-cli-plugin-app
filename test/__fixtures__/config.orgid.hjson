@@ -25,7 +25,8 @@
                         "jwt": {
                             "client_id": "XUXUXUXUXUXUXUX",
                             "client_secret": "XPXPXPXPXPXPXPXPX",
-                            "techacct": "XTXTXTXTXTX@techacct.adobe.com",
+                            "technical_account_email": "XTXTXTXTXTX@techacct.adobe.com",
+                            "technical_account_id": "IDIDIDIDID@techacct.adobe.com",
                             "meta_scopes": [
                                 "ent_smartcontent_sdk",
                                 "ent_adobeio_sdk"
