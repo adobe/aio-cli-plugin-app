@@ -15,7 +15,7 @@ const path = require('path')
 const fs = require('fs-extra')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
-const { validateConfig, importConfigJson, loadConfigFile, writeAio } = require('../../lib/import')
+const { loadAndValidateConfigFile, importConfigJson, writeAio } = require('../../lib/import')
 const { getCliInfo } = require('../../lib/app-helper')
 const chalk = require('chalk')
 
@@ -61,16 +61,11 @@ class InitCommand extends BaseCommand {
     }
 
     if (flags.import) {
-      const { values: config } = loadConfigFile(flags.import)
-      const { valid: configIsValid, errors: configErrors } = validateConfig(config)
-      if (!configIsValid) {
-        const message = `Missing or invalid keys in config: ${JSON.stringify(configErrors, null, 2)}`
-        this.error(message)
-      }
+      const { values: config } = loadAndValidateConfigFile(flags.import)
 
       projectName = config.project.name
       services = config.project.workspace.details.services.map(s => s.code).join(',') || ''
-      const jwtConfig = config.project.workspace.details.credentials.find(c => c.jwt)
+      const jwtConfig = config.project.workspace.details.credentials && config.project.workspace.details.credentials.find(c => c.jwt)
       serviceClientId = (jwtConfig && jwtConfig.jwt.client_id) || serviceClientId // defaults to ''
     }
 

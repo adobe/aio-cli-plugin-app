@@ -10,7 +10,7 @@ governing permissions and limitations under the License.
 */
 
 const BaseCommand = require('../../BaseCommand')
-const { importConfigJson, loadConfigFile } = require('../../lib/import')
+const { importConfigJson, loadAndValidateConfigFile } = require('../../lib/import')
 const { flags } = require('@oclif/command')
 const inquirer = require('inquirer')
 const config = require('@adobe/aio-lib-core-config')
@@ -75,9 +75,8 @@ class Use extends BaseCommand {
       interactive = false
     }
 
-    // set the SERVICE_API_KEY env variable
-    const { values: config } = loadConfigFile(filePath)
-    const jwtConfig = config.project.workspace.details.credentials.find(c => c.jwt)
+    const { values: config } = loadAndValidateConfigFile(filePath)
+    const jwtConfig = config.project.workspace.details.credentials && config.project.workspace.details.credentials.find(c => c.jwt)
     const serviceClientId = (jwtConfig && jwtConfig.jwt.client_id) || ''
     const extraEnvVars = { [SERVICE_API_KEY_ENV]: serviceClientId }
 

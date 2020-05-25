@@ -78,6 +78,22 @@ function loadConfigFile (fileOrBuffer) {
 }
 
 /**
+ * Load and validate a config file
+ *
+ * @param {string} fileOrBuffer the path to the config file or a Buffer
+ * @returns {object} object with properties `value` and `format`
+ */
+function loadAndValidateConfigFile (fileOrBuffer) {
+  const res = loadConfigFile(fileOrBuffer)
+  const { valid: configIsValid, errors: configErrors } = validateConfig(res.values)
+  if (!configIsValid) {
+    const message = `Missing or invalid keys in config: ${JSON.stringify(configErrors, null, 2)}`
+    throw new Error(message)
+  }
+  return res
+}
+
+/**
  * Pretty prints the json object as a string.
  * Delimited by 2 spaces.
  *
@@ -520,15 +536,9 @@ function transformCredentials (credentials, imsOrgId) {
 async function importConfigJson (configFileLocation, destinationFolder = process.cwd(), flags = {}, extraEnvVars = {}) {
   aioLogger.debug(`importConfigJson - configFileLocation: ${configFileLocation} destinationFolder:${destinationFolder} flags:${flags} extraEnvVars:${extraEnvVars}`)
 
-  const { values: config, format } = loadConfigFile(configFileLocation)
-  const { valid: configIsValid, errors: configErrors } = validateConfig(config)
+  const { values: config, format } = loadAndValidateConfigFile(configFileLocation)
 
   aioLogger.debug(`importConfigJson - format: ${format} config:${prettyPrintJson(config)} `)
-
-  if (!configIsValid) {
-    const message = `Missing or invalid keys in config: ${JSON.stringify(configErrors, null, 2)}`
-    throw new Error(message)
-  }
 
   const { runtime, credentials } = config.project.workspace.details
 
@@ -550,6 +560,7 @@ async function importConfigJson (configFileLocation, destinationFolder = process
 module.exports = {
   validateConfig,
   loadConfigFile,
+  loadAndValidateConfigFile,
   writeConsoleConfig,
   writeAio,
   writeEnv,
