@@ -10,6 +10,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 const fs = require('fs-extra')
+const path = require('path')
 
 const TheCommand = require('../../../src/commands/app/init')
 const BaseCommand = require('../../../src/BaseCommand')
@@ -359,7 +360,7 @@ describe('run', () => {
       'adobe-services': 'AdobeTargetSDK,CampaignSDK'
     })
 
-    expect(importLib.importConfigJson).toHaveBeenCalledWith('config.json', process.cwd(), { interactive: false, merge: true })
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'), process.cwd(), { interactive: false, merge: true })
   })
 
   test('no-path --yes --import file={name: lifeisgood, services:AdobeTargetSDK,CampaignSDK}', async () => {
@@ -383,7 +384,7 @@ describe('run', () => {
       'adobe-services': 'AdobeTargetSDK,CampaignSDK'
     })
 
-    expect(importLib.importConfigJson).toHaveBeenCalledWith('config.json', process.cwd(), { interactive: false, merge: true })
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'), process.cwd(), { interactive: false, merge: true })
   })
 
   test('some-path --import file={name: lifeisgood, services:undefined}', async () => {
@@ -404,7 +405,14 @@ describe('run', () => {
       'adobe-services': ''
     })
 
-    expect(importLib.importConfigJson).toHaveBeenCalledWith('config.json', process.cwd(), { interactive: false, merge: true })
+    // Note here path.resolve uses another cwd than the mocked process.cwd
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'), process.cwd(), { interactive: false, merge: true })
+  })
+
+  test('some-path --import ../fake/config.json', async () => {
+    await TheCommand.run(['some-path', '--import', '../fake/config.json'])
+    // Note here path.resolve uses another cwd than the mocked process.cwd
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('../fake/config.json'), process.cwd(), { interactive: false, merge: true })
   })
 
   test('no cli context', async () => {

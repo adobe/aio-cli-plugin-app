@@ -24,6 +24,11 @@ class InitCommand extends BaseCommand {
     const { args, flags } = this.parse(InitCommand)
     let res
 
+    if (flags.import) {
+      // resolve to absolute path before any chdir
+      flags.import = path.resolve(flags.import)
+    }
+
     if (args.path !== '.') {
       const destDir = path.resolve(args.path)
       fs.ensureDirSync(destDir)
