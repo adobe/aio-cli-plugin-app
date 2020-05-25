@@ -168,7 +168,11 @@
             "properties": {
                 "client_id": { "type": "string" },
                 "client_secret": { "type": "string" },
-                "techacct": { 
+                "technical_account_email": { 
+                    "type": "string",
+                    "format": "email"
+                },
+                "technical_account_id": { 
                     "type": "string",
                     "format": "email"
                 },
@@ -178,7 +182,7 @@
                     "default": []
                 }
             },
-            "required": [ "client_id", "client_secret", "techacct", "meta_scopes" ]
+            "required": [ "client_id", "client_secret", "technical_account_email", "technical_account_id", "meta_scopes" ]
         }
     }
 }
