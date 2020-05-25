@@ -90,7 +90,7 @@ class Use extends BaseCommand {
     if (args.config_file_path) {
       return this.importConfigFile(args.config_file_path, flags)
     }
-    const file = this.useConsoleConfig(flags)
+    const file = await this.useConsoleConfig(flags)
     if (file) {
       return this.importConfigFile(file, flags)
     }
