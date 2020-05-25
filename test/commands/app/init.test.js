@@ -415,6 +415,12 @@ describe('run', () => {
     expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('../fake/config.json'), process.cwd(), { interactive: false, merge: true })
   })
 
+  test('some-path --import /abs/fake/config.json', async () => {
+    await TheCommand.run(['some-path', '--import', '/abs/fake/config.json'])
+    // Note here path.resolve uses another cwd than the mocked process.cwd
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.normalize('/abs/fake/config.json'), process.cwd(), { interactive: false, merge: true })
+  })
+
   test('no cli context', async () => {
     mockGetCli.mockReturnValue(null)
     mockValidConfig()
