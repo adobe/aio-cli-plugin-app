@@ -385,7 +385,10 @@ describe('run', () => {
       'adobe-services': 'AdobeTargetSDK,CampaignSDK'
     })
 
-    expect(importLib.importConfigJson).toHaveBeenCalledWith('config.json', process.cwd(), { interactive: false, merge: true }, { SERVICE_API_KEY: '' })
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
+      process.cwd(),
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: '' })
   })
 
   test('no-path --import file={name: lifeisgood, services:AdobeTargetSDK,CampaignSDK, credentials:null}', async () => {
@@ -410,7 +413,10 @@ describe('run', () => {
       'adobe-services': 'AdobeTargetSDK,CampaignSDK'
     })
 
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'), process.cwd(), { interactive: false, merge: true }, { SERVICE_API_KEY: '' })
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
+      process.cwd(),
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: '' })
   })
 
   test('no-path --yes --import file={name: lifeisgood, services:AdobeTargetSDK,CampaignSDK, credentials:fake,jwt}', async () => {
@@ -458,19 +464,28 @@ describe('run', () => {
     })
 
     // Note here path.resolve uses another cwd than the mocked process.cwd
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'), process.cwd(), { interactive: false, merge: true })
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
+      process.cwd(),
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: 'fakeId123' })
   })
 
   test('some-path --import ../fake/config.json', async () => {
     await TheCommand.run(['some-path', '--import', '../fake/config.json'])
     // Note here path.resolve uses another cwd than the mocked process.cwd
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('../fake/config.json'), process.cwd(), { interactive: false, merge: true })
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('../fake/config.json'),
+      process.cwd(),
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: 'fakeId123' })
   })
 
   test('some-path --import /abs/fake/config.json', async () => {
     await TheCommand.run(['some-path', '--import', '/abs/fake/config.json'])
     // Note here path.resolve uses another cwd than the mocked process.cwd
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('/abs/fake/config.json'), process.cwd(), { interactive: false, merge: true }, { SERVICE_API_KEY: 'fakeId123' })
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('/abs/fake/config.json'),
+      process.cwd(),
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: 'fakeId123' })
   })
 
   test('no cli context', async () => {
