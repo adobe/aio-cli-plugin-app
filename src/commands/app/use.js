@@ -10,13 +10,15 @@ governing permissions and limitations under the License.
 */
 
 const BaseCommand = require('../../BaseCommand')
-const { importConfigJson } = require('../../lib/import')
+const { importConfigJson, loadAndValidateConfigFile } = require('../../lib/import')
 const { flags } = require('@oclif/command')
 const inquirer = require('inquirer')
 const config = require('@adobe/aio-lib-core-config')
 const { EOL } = require('os')
 const yeoman = require('yeoman-environment')
 const { getCliInfo } = require('../../lib/app-helper')
+
+const SERVICE_API_KEY_ENV = 'SERVICE_API_KEY'
 
 class Use extends BaseCommand {
   async consoleConfigString (consoleConfig) {
@@ -30,7 +32,7 @@ class Use extends BaseCommand {
     return { value: list.join(EOL), error }
   }
 
-  async useConsoleConfig (flags, args) {
+  async useConsoleConfig () {
     const consoleConfig = config.get('$console')
     const { value, error } = await this.consoleConfigString(consoleConfig)
     if (error) {
@@ -58,9 +60,9 @@ class Use extends BaseCommand {
           'project-id': project.id,
           'workspace-id': workspace.id
         })
-
-        return this.importConfigFile(generatedFile, flags)
+        return generatedFile
       }
+      return null
     }
   }
 
@@ -73,7 +75,12 @@ class Use extends BaseCommand {
       interactive = false
     }
 
-    return importConfigJson(filePath, process.cwd(), { interactive, overwrite, merge })
+    const { values: config } = loadAndValidateConfigFile(filePath)
+    const jwtConfig = config.project.workspace.details.credentials && config.project.workspace.details.credentials.find(c => c.jwt)
+    const serviceClientId = (jwtConfig && jwtConfig.jwt.client_id) || ''
+    const extraEnvVars = { [SERVICE_API_KEY_ENV]: serviceClientId }
+
+    return importConfigJson(filePath, process.cwd(), { interactive, overwrite, merge }, extraEnvVars)
   }
 
   async run () {
@@ -81,8 +88,10 @@ class Use extends BaseCommand {
 
     if (args.config_file_path) {
       return this.importConfigFile(args.config_file_path, flags)
-    } else {
-      return this.useConsoleConfig(flags)
+    }
+    const file = await this.useConsoleConfig(flags)
+    if (file) {
+      return this.importConfigFile(file, flags)
     }
   }
 }
