@@ -103,7 +103,12 @@ class Run extends BaseCommand {
         this.log()
         this.log(chalk.blue(chalk.bold(`To view your local application:\n  -> ${frontendUrl}`)))
         const launchUrl = this.getLaunchUrlPrefix() + frontendUrl
-        this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
+        if (flags.open) {
+          this.log(chalk.blue(chalk.bold(`Opening your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
+          cli.open(launchUrl)
+        } else {
+          this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
+        }
       }
     } catch (error) {
       spinner.fail()
@@ -186,6 +191,7 @@ Run.description = `Run an Adobe I/O App
 `
 
 Run.flags = {
+  ...BaseCommand.flags,
   local: flags.boolean({
     description: 'run/debug actions locally',
     exclusive: ['skip-actions']
@@ -194,7 +200,10 @@ Run.flags = {
     description: 'skip actions, only run the ui server',
     exclusive: ['local']
   }),
-  ...BaseCommand.flags
+  open: flags.boolean({
+    description: 'Open the default web browser after a successful run, only valid if your app has a front-end',
+    default: false
+  })
 }
 
 // Run.args = [
