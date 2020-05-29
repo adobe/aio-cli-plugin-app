@@ -10,6 +10,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 const fs = require('fs-extra')
+const path = require('path')
 
 const TheCommand = require('../../../src/commands/app/init')
 const BaseCommand = require('../../../src/BaseCommand')
@@ -356,7 +357,10 @@ describe('run', () => {
       'adobe-services': 'AdobeTargetSDK,CampaignSDK'
     })
 
-    expect(importLib.importConfigJson).toHaveBeenCalledWith('config.json', process.cwd(), { interactive: false, merge: true }, { SERVICE_API_KEY: 'fakeId123' })
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
+      process.cwd(),
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: 'fakeId123' })
   })
 
   test('no-path --import file={name: lifeisgood, services:AdobeTargetSDK,CampaignSDK, credentials:fake}', async () => {
@@ -381,7 +385,10 @@ describe('run', () => {
       'adobe-services': 'AdobeTargetSDK,CampaignSDK'
     })
 
-    expect(importLib.importConfigJson).toHaveBeenCalledWith('config.json', process.cwd(), { interactive: false, merge: true }, { SERVICE_API_KEY: '' })
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
+      process.cwd(),
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: '' })
   })
 
   test('no-path --import file={name: lifeisgood, services:AdobeTargetSDK,CampaignSDK, credentials:null}', async () => {
@@ -406,7 +413,10 @@ describe('run', () => {
       'adobe-services': 'AdobeTargetSDK,CampaignSDK'
     })
 
-    expect(importLib.importConfigJson).toHaveBeenCalledWith('config.json', process.cwd(), { interactive: false, merge: true }, { SERVICE_API_KEY: '' })
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
+      process.cwd(),
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: '' })
   })
 
   test('no-path --yes --import file={name: lifeisgood, services:AdobeTargetSDK,CampaignSDK, credentials:fake,jwt}', async () => {
@@ -429,8 +439,10 @@ describe('run', () => {
       'project-name': project.name,
       'adobe-services': 'AdobeTargetSDK,CampaignSDK'
     })
-
-    expect(importLib.importConfigJson).toHaveBeenCalledWith('config.json', process.cwd(), { interactive: false, merge: true }, { SERVICE_API_KEY: 'fakeId123' })
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
+      process.cwd(),
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: 'fakeId123' })
   })
 
   test('some-path --import file={name: lifeisgood, services:undefined, credentials:fake,jwt}', async () => {
@@ -451,7 +463,29 @@ describe('run', () => {
       'adobe-services': ''
     })
 
-    expect(importLib.importConfigJson).toHaveBeenCalledWith('config.json', process.cwd(), { interactive: false, merge: true }, { SERVICE_API_KEY: 'fakeId123' })
+    // Note here path.resolve uses another cwd than the mocked process.cwd
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
+      process.cwd(),
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: 'fakeId123' })
+  })
+
+  test('some-path --import ../fake/config.json', async () => {
+    await TheCommand.run(['some-path', '--import', '../fake/config.json'])
+    // Note here path.resolve uses another cwd than the mocked process.cwd
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('../fake/config.json'),
+      process.cwd(),
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: 'fakeId123' })
+  })
+
+  test('some-path --import /abs/fake/config.json', async () => {
+    await TheCommand.run(['some-path', '--import', '/abs/fake/config.json'])
+    // Note here path.resolve uses another cwd than the mocked process.cwd
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('/abs/fake/config.json'),
+      process.cwd(),
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: 'fakeId123' })
   })
 
   test('no cli context', async () => {
