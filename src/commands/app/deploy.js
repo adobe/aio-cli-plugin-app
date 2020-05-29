@@ -14,6 +14,7 @@ const ora = require('ora')
 const chalk = require('chalk')
 const fs = require('fs-extra')
 // const path = require('path')
+const { cli } = require('cli-ux')
 
 const BaseCommand = require('../../BaseCommand')
 const AppScripts = require('@adobe/aio-app-scripts')
@@ -121,7 +122,12 @@ class Deploy extends BaseCommand {
         if (deployedFrontendUrl) {
           this.log(chalk.blue(chalk.bold(`To view your deployed application:\n  -> ${deployedFrontendUrl}`)))
           const launchUrl = this.getLaunchUrlPrefix() + deployedFrontendUrl
-          this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
+          if (flags.open) {
+            this.log(chalk.blue(chalk.bold(`Opening your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
+            cli.open(launchUrl)
+          } else {
+            this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
+          }
         }
 
         try {
@@ -171,6 +177,10 @@ Deploy.flags = {
     exclusive: ['skip-actions'],
     char: 'a',
     multiple: true
+  }),
+  open: flags.boolean({
+    description: 'Open the default web browser after a successful deploy, only valid if your app has a front-end',
+    default: false
   })
 }
 

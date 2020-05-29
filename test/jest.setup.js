@@ -18,7 +18,7 @@ const path = require('path')
 const hjson = require('hjson')
 
 // trap console log
-beforeEach(() => { stdout.start(); stderr.start(); stdout.print = true })
+beforeEach(() => { stdout.start(); stderr.start() })
 afterEach(() => { stdout.stop(); stderr.stop() })
 
 process.on('unhandledRejection', error => {
