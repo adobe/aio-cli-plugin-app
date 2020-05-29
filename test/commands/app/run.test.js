@@ -64,6 +64,7 @@ beforeEach(() => {
     stop: jest.fn(),
     start: jest.fn()
   }
+  cli.open = jest.fn()
   cli.wait = jest.fn() // .mockImplementation((ms = 1000) => { return new Promise(resolve => setTimeout(resolve, ms)) })
 
   mockFindCommandLoad.mockClear()
@@ -77,7 +78,6 @@ beforeEach(() => {
       load: mockFindCommandLoad
     })
   }
-  cli.open = jest.fn()
 
   https.createServer.mockImplementation((opts, func) => {
     mockHttpsServerInstance.args = { opts, func }
@@ -238,6 +238,17 @@ describe('run', () => {
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://localhost:1111'))
   })
 
+  test('run should open ui url with --open', async () => {
+    mockConfig.get.mockReturnValue(null)
+    mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
+    mockScripts.mockResolvedValue('runDev', 'http://localhost:1111')
+    command.argv = ['--open']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://localhost:1111'))
+    expect(cli.open).toHaveBeenCalledWith(expect.stringContaining('http://localhost:1111'))
+  })
+
   test('run should show ui and exc url if AIO_LAUNCH_PREFIX_URL is set', async () => {
     mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
     mockConfig.get.mockReturnValue('http://prefix?fake=')
@@ -247,6 +258,18 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://localhost:1111'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://prefix?fake=http://localhost:1111'))
+  })
+
+  test('run should show ui and open exc url if AIO_LAUNCH_PREFIX_URL is set with --open', async () => {
+    mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
+    mockConfig.get.mockReturnValue('http://prefix?fake=')
+    mockScripts.mockResolvedValue('runDev', 'http://localhost:1111')
+    command.argv = ['--open']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://localhost:1111'))
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://prefix?fake=http://localhost:1111'))
+    expect(cli.open).toHaveBeenCalledWith('http://prefix?fake=http://localhost:1111')
   })
 
   test('app:run with UI and existing cert files', async () => {

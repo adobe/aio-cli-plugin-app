@@ -20,6 +20,9 @@ const mockScripts = require('@adobe/aio-app-scripts')()
 jest.mock('@adobe/aio-lib-core-config')
 const mockConfig = require('@adobe/aio-lib-core-config')
 
+jest.mock('cli-ux')
+const { cli } = require('cli-ux')
+
 beforeEach(() => {
   mockScripts.mockReset('deployActions')
   mockScripts.mockReset('deployUI')
@@ -268,6 +271,17 @@ describe('run', () => {
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('https://example.com'))
   })
 
+  test('deploy should open ui url with --open', async () => {
+    cli.open = jest.fn()
+    mockFS.existsSync.mockReturnValue(true)
+    mockScripts.deployUI.mockResolvedValue('https://example.com')
+    command.argv = ['--open']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(cli.open).toHaveBeenCalledWith(expect.stringContaining('https://example.com'))
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('https://example.com'))
+  })
+
   test('deploy should show ui and exc url if AIO_LAUNCH_PREFIX_URL is set', async () => {
     mockFS.existsSync.mockReturnValue(true)
     mockScripts.deployUI.mockResolvedValue('https://example.com')
@@ -277,6 +291,19 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('https://example.com'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://prefix?fake=https://example.com'))
+  })
+
+  test('deploy should show ui and open exc url if AIO_LAUNCH_PREFIX_URL is set and --open', async () => {
+    mockFS.existsSync.mockReturnValue(true)
+    mockScripts.deployUI.mockResolvedValue('https://example.com')
+    mockConfig.get.mockReturnValue('http://prefix?fake=')
+    cli.open = jest.fn()
+    command.argv = ['--open']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('https://example.com'))
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://prefix?fake=https://example.com'))
+    expect(cli.open).toHaveBeenCalledWith('http://prefix?fake=https://example.com')
   })
 
   test('deploy should show action urls', async () => {

@@ -47,7 +47,7 @@ class InitCommand extends BaseCommand {
     // client id of the console's workspace jwt credentials
     let serviceClientId = ''
 
-    if (!(flags.import || flags.yes)) {
+    if (!flags.import && !flags.yes && flags.login) {
       try {
         const { accessToken, env: imsEnv } = await getCliInfo()
         const generatedFile = 'console.json'
@@ -122,6 +122,11 @@ InitCommand.flags = {
   import: flags.string({
     description: 'Import an Adobe I/O Developer Console configuration file',
     char: 'i'
+  }),
+  login: flags.boolean({
+    description: 'Login using your Adobe ID for interacting with Adobe I/O Developer Console',
+    default: true,
+    allowNo: true
   })
 }
 
