@@ -9,7 +9,7 @@ Create, Build and Deploy Adobe I/O Apps
 [![Build Status](https://travis-ci.org/adobe/aio-cli-plugin-app.svg?branch=master)](https://travis-ci.org/adobe/aio-cli-plugin-app)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Codecov Coverage](https://img.shields.io/codecov/c/github/adobe/aio-cli-plugin-app/master.svg?style=flat-square)](https://codecov.io/gh/adobe/aio-cli-plugin-app/)
-[![Greenkeeper badge](https://badges.greenkeeper.io/adobe/aio-cli-plugin-app.svg)](https://greenkeeper.io/)
+
 
 <!-- toc -->
 * [Usage](#usage)
