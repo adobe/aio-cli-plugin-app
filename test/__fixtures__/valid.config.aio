@@ -17,6 +17,23 @@
       "action_url": "https://ABCD-TestProject-TestWorkspace.adobeioruntime.net",
       "app_url": "https://ABCD-TestProject-TestWorkspace.adobestatic.net",
       "details": {
+        "credentials": [
+          {
+            "id": "17561142",
+            "name": "projéct_a",
+            "integration_type": "oauthweb"
+          },
+          {
+            "id": "17606512",
+            "name": "pröjectb",
+            "integration_type": "service"
+          },
+          {
+            "id": "17950",
+            "name": "new_test_intégration_8",
+            "integration_type": "oauthandroid"
+          }
+        ],
         "services": [
           {
             "code": "AdobeIOManagementAPISDK",
