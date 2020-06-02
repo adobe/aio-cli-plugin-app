@@ -20,7 +20,7 @@
         "credentials": [
           {
             "id": "17950",
-            "name": "newtestintegration8",
+            "name": "NewTestIntegration8",
             "integration_type": "oauthandroid"
           }
         ],

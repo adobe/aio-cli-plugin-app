@@ -20,17 +20,17 @@
         "credentials": [
           {
             "id": "17561142",
-            "name": "projéct_a",
+            "name": "Projéct_A",
             "integration_type": "oauthweb"
           },
           {
             "id": "17606512",
-            "name": "pröjectb",
+            "name": "PröjectB",
             "integration_type": "service"
           },
           {
             "id": "17950",
-            "name": "new_test_intégration_8",
+            "name": "New_Test_Intégration_8",
             "integration_type": "oauthandroid"
           }
         ],

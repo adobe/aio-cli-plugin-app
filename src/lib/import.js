@@ -549,7 +549,7 @@ function transformCredentials (credentials, imsOrgId) {
  * @private
  */
 function credentialsReferences (credentials) {
-  return credentials.map(c => ({ id: c.id, name: c.name.replace(/ /gi, '_').toLowerCase(), integration_type: c.integration_type }))
+  return credentials.map(c => ({ id: c.id, name: c.name.replace(/ /gi, '_'), integration_type: c.integration_type }))
 }
 
 /**

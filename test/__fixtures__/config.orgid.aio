@@ -20,12 +20,12 @@
         "credentials": [
           {
             "id": "17606512",
-            "name": "projectb",
+            "name": "ProjectB",
             "integration_type": "service"
           },
           {
             "id": "17950",
-            "name": "newtestintegration8",
+            "name": "NewTestIntegration8",
             "integration_type": "oauthandroid"
           }
         ],
