@@ -10,6 +10,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 const fs = require('fs-extra')
+const path = require('path')
 
 const TheCommand = require('../../../src/commands/app/init')
 const BaseCommand = require('../../../src/BaseCommand')
@@ -102,27 +103,35 @@ const fullServicesJson = [
   { code: 'AudienceManagerCustomerSDK' }
 ]
 
+const fakeCredentials = [
+  {
+    id: '1',
+    fake: { client_id: 'notjwtId' }
+  },
+  {
+    id: '2',
+    jwt: { client_id: 'fakeId123' }
+  }
+]
 /** @private */
 function getFullServicesList () {
   return fullServicesJson.map(s => s.code).join(',')
 }
 
 /** @private */
-function mockValidConfig ({ name = 'lifeisgood', services = fullServicesJson } = {}) {
+function mockValidConfig ({ name = 'lifeisgood', services = fullServicesJson, credentials = fakeCredentials } = {}) {
   const project = {
     name,
     workspace: {
       details: {
-        services
+        services,
+        credentials
       }
     }
   }
 
-  importLib.loadConfigFile.mockReturnValue({
+  importLib.loadAndValidateConfigFile.mockReturnValue({
     values: { project }
-  })
-  importLib.validateConfig.mockReturnValue({
-    valid: true
   })
 
   return project
@@ -130,18 +139,7 @@ function mockValidConfig ({ name = 'lifeisgood', services = fullServicesJson } =
 
 /** @private */
 function mockInvalidConfig () {
-  const foo = {
-    bar: 'lifeismeh'
-  }
-
-  importLib.loadConfigFile.mockReturnValue({
-    values: { foo }
-  })
-  importLib.validateConfig.mockReturnValue({
-    valid: false
-  })
-
-  return foo
+  importLib.loadAndValidateConfigFile.mockImplementation(() => { throw new Error('fake error') })
 }
 
 describe('run', () => {
@@ -216,6 +214,24 @@ describe('run', () => {
     expect(spyChdir).not.toHaveBeenCalled()
   })
 
+  test('no-path, --no-login', async () => {
+    const project = mockValidConfig()
+    await TheCommand.run(['--no-login'])
+
+    // gen-console is skipped
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genApp = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genApp, {
+      'skip-prompt': false,
+      'skip-install': false,
+      'project-name': project.name,
+      'adobe-services': getFullServicesList()
+    })
+    expect(fs.ensureDirSync).not.toHaveBeenCalled()
+    expect(spyChdir).not.toHaveBeenCalled()
+  })
+
   test('no-path, --yes --skip-install', async () => {
     const project = mockValidConfig()
     await TheCommand.run(['--yes', '--skip-install'])
@@ -248,6 +264,26 @@ describe('run', () => {
     })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
+      'skip-prompt': false,
+      'skip-install': true,
+      'project-name': project.name,
+      'adobe-services': getFullServicesList()
+    })
+    expect(fs.ensureDirSync).not.toHaveBeenCalled()
+    expect(spyChdir).not.toHaveBeenCalled()
+  })
+
+  test('getCliInfo error', async () => {
+    mockGetCli.mockReset()
+    mockGetCli.mockImplementationOnce(() => { throw new Error('Error') })
+
+    const project = mockValidConfig()
+    await TheCommand.run(['--skip-install'])
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genApp = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genApp, {
       'skip-prompt': false,
       'skip-install': true,
       'project-name': project.name,
@@ -315,10 +351,10 @@ describe('run', () => {
 
   test('no-path --import file=invalid config', async () => {
     mockInvalidConfig()
-    await expect(TheCommand.run(['--import', 'config.json'])).rejects.toThrow('Missing or invalid keys in config:')
+    await expect(TheCommand.run(['--import', 'config.json'])).rejects.toThrow('fake error')
   })
 
-  test('no-path --import file={name: lifeisgood, services:AdobeTargetSDK,CampaignSDK}', async () => {
+  test('no-path --import file={name: lifeisgood, services:AdobeTargetSDK,CampaignSDK, credentials:fake,jwt}', async () => {
     const project = mockValidConfig({
       name: 'lifeisgood',
       services: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }]
@@ -339,10 +375,69 @@ describe('run', () => {
       'adobe-services': 'AdobeTargetSDK,CampaignSDK'
     })
 
-    expect(importLib.importConfigJson).toHaveBeenCalledWith('config.json', process.cwd(), { interactive: false, merge: true })
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
+      process.cwd(),
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: 'fakeId123' })
   })
 
-  test('no-path --yes --import file={name: lifeisgood, services:AdobeTargetSDK,CampaignSDK}', async () => {
+  test('no-path --import file={name: lifeisgood, services:AdobeTargetSDK,CampaignSDK, credentials:fake}', async () => {
+    const project = mockValidConfig({
+      name: 'lifeisgood',
+      services: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }],
+      credentials: [{ id: '1', fake: { client_id: 'notjwtId' } }]
+    })
+    await TheCommand.run(['--import', 'config.json'])
+
+    // no args.path
+    expect(fs.ensureDirSync).not.toHaveBeenCalled()
+    expect(spyChdir).not.toHaveBeenCalled()
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genApp = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genApp, {
+      'skip-prompt': false,
+      'skip-install': false,
+      'project-name': project.name,
+      'adobe-services': 'AdobeTargetSDK,CampaignSDK'
+    })
+
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
+      process.cwd(),
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: '' })
+  })
+
+  test('no-path --import file={name: lifeisgood, services:AdobeTargetSDK,CampaignSDK, credentials:null}', async () => {
+    const project = mockValidConfig({
+      name: 'lifeisgood',
+      services: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }],
+      credentials: null
+    })
+    await TheCommand.run(['--import', 'config.json'])
+
+    // no args.path
+    expect(fs.ensureDirSync).not.toHaveBeenCalled()
+    expect(spyChdir).not.toHaveBeenCalled()
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genApp = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genApp, {
+      'skip-prompt': false,
+      'skip-install': false,
+      'project-name': project.name,
+      'adobe-services': 'AdobeTargetSDK,CampaignSDK'
+    })
+
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
+      process.cwd(),
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: '' })
+  })
+
+  test('no-path --yes --import file={name: lifeisgood, services:AdobeTargetSDK,CampaignSDK, credentials:fake,jwt}', async () => {
     const project = mockValidConfig({
       name: 'lifeisgood',
       services: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }]
@@ -362,11 +457,13 @@ describe('run', () => {
       'project-name': project.name,
       'adobe-services': 'AdobeTargetSDK,CampaignSDK'
     })
-
-    expect(importLib.importConfigJson).toHaveBeenCalledWith('config.json', process.cwd(), { interactive: false, merge: true })
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
+      process.cwd(),
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: 'fakeId123' })
   })
 
-  test('some-path --import file={name: lifeisgood, services:undefined}', async () => {
+  test('some-path --import file={name: lifeisgood, services:undefined, credentials:fake,jwt}', async () => {
     const project = mockValidConfig({ name: 'lifeisgood', services: [] })
     await TheCommand.run(['some-path', '--import', 'config.json'])
 
@@ -384,7 +481,29 @@ describe('run', () => {
       'adobe-services': ''
     })
 
-    expect(importLib.importConfigJson).toHaveBeenCalledWith('config.json', process.cwd(), { interactive: false, merge: true })
+    // Note here path.resolve uses another cwd than the mocked process.cwd
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
+      process.cwd(),
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: 'fakeId123' })
+  })
+
+  test('some-path --import ../fake/config.json', async () => {
+    await TheCommand.run(['some-path', '--import', '../fake/config.json'])
+    // Note here path.resolve uses another cwd than the mocked process.cwd
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('../fake/config.json'),
+      process.cwd(),
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: 'fakeId123' })
+  })
+
+  test('some-path --import /abs/fake/config.json', async () => {
+    await TheCommand.run(['some-path', '--import', '/abs/fake/config.json'])
+    // Note here path.resolve uses another cwd than the mocked process.cwd
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('/abs/fake/config.json'),
+      process.cwd(),
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: 'fakeId123' })
   })
 
   test('no cli context', async () => {

@@ -1,26 +1,26 @@
 {
     "project": {
         "id": "123",
-        "name": "TestProject",
+        "name": "TestProject123",
         "title": "Test Title",
         "description": "My project description",
         "org": {
             "id": "25591412",
-            "name": "Developers Developers Developers",
+            "name": "Developers-Developers-Dévêlöpèrš",
             "ims_org_id": "XOXOXOXOXOXOX@AdobeOrg"
         },
         "workspace": {
             "id": "1356",
-            "name": "TestWorkspace",
-            "title": "Test Title",
-            "description": "My workspace description",
+            "name": "TestWörkspacé",
+            "title": "Tést Tïtle",
+            "description": "My wörkspacè description",
             "action_url": "https://ABCD-TestProject-TestWorkspace.adobeioruntime.net",
             "app_url": "https://ABCD-TestProject-TestWorkspace.adobestatic.net",
             "details": {
                 "credentials": [
                     {
                         "id": "17561142",
-                        "name": "Project A",
+                        "name": "Projéct A",
                         "integration_type": "oauthweb",
                         "oauth2": {
                             "client_id": "XYXYXYXYXYXYXYXYX",
@@ -31,12 +31,13 @@
                     },
                     {
                         "id": "17606512",
-                        "name": "ProjectB",
+                        "name": "PröjectB",
                         "integration_type": "service",
                         "jwt": {
                             "client_id": "XUXUXUXUXUXUXUX",
                             "client_secret": "XPXPXPXPXPXPXPXPX",
-                            "techacct": "XTXTXTXTXTX@techacct.adobe.com",
+                            "technical_account_email": "XTXTXTXTXTX@techacct.adobe.com",
+                            "technical_account_id": "IDIDIDIDID@techacct.adobe.com",
                             "meta_scopes": [
                                 "ent_smartcontent_sdk",
                                 "ent_adobeio_sdk"
@@ -45,7 +46,7 @@
                     },
                     {
                         "id": "17950",
-                        "name": "New Test Integration 8",
+                        "name": "New Test Intégration 8",
                         "integration_type": "oauthandroid",
                         "oauth2": {
                             "client_id": "XRXRXRXRXRXRXRXRXR",

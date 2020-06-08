@@ -17,6 +17,7 @@ const inquirer = require('inquirer')
 const yaml = require('js-yaml')
 const hjson = require('hjson')
 const Ajv = require('ajv')
+const { EOL } = require('os')
 
 const AIO_FILE = '.aio'
 const ENV_FILE = '.env'
@@ -74,6 +75,22 @@ function loadConfigFile (fileOrBuffer) {
     }
   }
   return { values: {}, format: 'json' }
+}
+
+/**
+ * Load and validate a config file
+ *
+ * @param {string} fileOrBuffer the path to the config file or a Buffer
+ * @returns {object} object with properties `value` and `format`
+ */
+function loadAndValidateConfigFile (fileOrBuffer) {
+  const res = loadConfigFile(fileOrBuffer)
+  const { valid: configIsValid, errors: configErrors } = validateConfig(res.values)
+  if (!configIsValid) {
+    const message = `Missing or invalid keys in config: ${JSON.stringify(configErrors, null, 2)}`
+    throw new Error(message)
+  }
+  return res
 }
 
 /**
@@ -191,9 +208,10 @@ function flattenObjectWithSeparator (json, result = {}, prefix = AIO_ENV_PREFIX,
  * @returns {Array} tuple, first item is key, second item is value or null if it's a comment
  */
 function splitEnvLine (line) {
-  if (line.trim().startsWith('#')) { // skip comments
-    aioLogger.debug(`splitEnvLine - skipping comment: ${line}`)
-    return null
+  const trimmedLine = line.trim()
+  if (trimmedLine.startsWith('#')) { // skip comments
+    aioLogger.debug(`splitEnvLine - processing comment: ${line}`)
+    return [trimmedLine, undefined]
   }
 
   const items = line.split('=')
@@ -240,8 +258,9 @@ function mergeEnv (oldEnv, newEnv) {
 
   const mergedEnv = Object
     .keys(result)
-    .map(key => `${key}=${result[key]}`)
-    .join('\n')
+    .map(key => result[key] !== undefined ? `${key}=${result[key]}` : key)
+    .join(EOL)
+    .concat(EOL) // add a new line
   aioLogger.debug(`mergeEnv - mergedEnv:${mergedEnv}`)
 
   return mergedEnv
@@ -336,22 +355,25 @@ async function writeFile (destination, data, flags = {}) {
  * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
  * @param {boolean} [flags.merge=false] set to true to merge in the existing .env file (takes precedence over overwrite)
  * @param {boolean} [flags.interactive=false] set to true to prompt the user for file overwrite
+ * @param {object} [extraEnvVars={}] extra environment variables key/value pairs to add to the generated .env.
+ *        Extra variables are treated as raw and won't be rewritten to comply with aio-lib-core-config
+ * @returns {Promise} promise from writeFile call
  */
-async function writeEnv (json, parentFolder, flags) {
-  aioLogger.debug(`writeEnv - json: ${JSON.stringify(json)} parentFolder:${parentFolder} flags:${flags}`)
+async function writeEnv (json, parentFolder, flags, extraEnvVars) {
+  aioLogger.debug(`writeEnv - json: ${JSON.stringify(json)} parentFolder:${parentFolder} flags:${flags} extraEnvVars:${extraEnvVars}`)
 
   const destination = path.join(parentFolder, ENV_FILE)
   aioLogger.debug(`writeEnv - destination: ${destination}`)
 
-  const resultObject = flattenObjectWithSeparator(json)
+  const resultObject = { ...flattenObjectWithSeparator(json), ...extraEnvVars }
   aioLogger.debug(`convertJsonToEnv - flattened and separated json: ${prettyPrintJson(resultObject)}`)
 
-  const LINE_SEP = '\n'
   const data = Object
     .keys(resultObject)
     .map(key => `${key}=${resultObject[key]}`)
-    .join(LINE_SEP)
-  aioLogger.debug(`writeEnv - data: ${data + LINE_SEP}`)
+    .join(EOL)
+    .concat(EOL)
+  aioLogger.debug(`writeEnv - data:${data}`)
 
   return writeFile(destination, data, { ...flags, fileFormat: FILE_FORMAT_ENV })
 }
@@ -389,6 +411,7 @@ async function writeConsoleConfig (json) {
 
   config.set(CONSOLE_CONFIG_KEY, data)
 }
+
 /**
  * Writes the json object to the .aio file in the specified parent folder.
  *
@@ -398,6 +421,7 @@ async function writeConsoleConfig (json) {
  * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
  * @param {boolean} [flags.merge=false] set to true to merge in the existing .env file (takes precedence over overwrite)
  * @param {boolean} [flags.interactive=false] set to true to prompt the user for file overwrite
+ * @returns {Promise} promise from writeFile call
  */
 async function writeAio (json, parentFolder, flags) {
   aioLogger.debug(`writeAio - parentFolder:${parentFolder} flags:${flags}`)
@@ -502,29 +526,26 @@ function transformCredentials (credentials, imsOrgId) {
  *
  * @param {string} configFileLocation the path to the config file to import
  * @param {string} [destinationFolder=the current working directory] the path to the folder to write the .env and .aio files to
- * @param {object} [flags] flags for file writing
+ * @param {object} [flags={}] flags for file writing
  * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
  * @param {boolean} [flags.merge=false] set to true to merge in the existing .env file (takes precedence over overwrite)
+ * @param {object} [extraEnvVars={}] extra environment variables key/value pairs to add to the generated .env.
+ *        Extra variables are treated as raw and won't be rewritten to comply with aio-lib-core-config
+ * @returns {Promise} promise from writeAio call
  */
-async function importConfigJson (configFileLocation, destinationFolder = process.cwd(), flags = {}) {
-  aioLogger.debug(`importConfigJson - configFileLocation: ${configFileLocation} destinationFolder:${destinationFolder} flags:${flags}`)
+async function importConfigJson (configFileLocation, destinationFolder = process.cwd(), flags = {}, extraEnvVars = {}) {
+  aioLogger.debug(`importConfigJson - configFileLocation: ${configFileLocation} destinationFolder:${destinationFolder} flags:${flags} extraEnvVars:${extraEnvVars}`)
 
-  const { values: config, format } = loadConfigFile(configFileLocation)
-  const { valid: configIsValid, errors: configErrors } = validateConfig(config)
+  const { values: config, format } = loadAndValidateConfigFile(configFileLocation)
 
   aioLogger.debug(`importConfigJson - format: ${format} config:${prettyPrintJson(config)} `)
-
-  if (!configIsValid) {
-    const message = `Missing or invalid keys in config: ${JSON.stringify(configErrors, null, 2)}`
-    throw new Error(message)
-  }
 
   const { runtime, credentials } = config.project.workspace.details
 
   await writeEnv({
     runtime: transformRuntime(runtime),
     $ims: transformCredentials(credentials, config.project.org.ims_org_id)
-  }, destinationFolder, flags)
+  }, destinationFolder, flags, extraEnvVars)
 
   // remove the credentials
   delete config.project.workspace.details.runtime
@@ -539,6 +560,7 @@ async function importConfigJson (configFileLocation, destinationFolder = process
 module.exports = {
   validateConfig,
   loadConfigFile,
+  loadAndValidateConfigFile,
   writeConsoleConfig,
   writeAio,
   writeEnv,

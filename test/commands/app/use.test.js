@@ -43,9 +43,34 @@ yeoman.createEnv.mockReturnValue({
   run: mockRun
 })
 
+/** @private */
+function mockValidConfig ({ name = 'lifeisgood', credentials = null } = {}) {
+  const project = {
+    name,
+    workspace: {
+      details: {
+        credentials
+      }
+    }
+  }
+
+  importLib.loadAndValidateConfigFile.mockReturnValue({
+    values: { project }
+  })
+
+  return project
+}
+
+/** @private */
+function mockInvalidConfig () {
+  importLib.loadAndValidateConfigFile.mockImplementation(() => { throw new Error('fake error') })
+}
+
 beforeEach(() => {
   jest.clearAllMocks()
   mockGetCli.mockReturnValue({})
+  importLib.loadConfigFile.mockReset()
+  importLib.validateConfig.mockReset()
 })
 
 test('exports', async () => {
@@ -68,6 +93,7 @@ test('bad flags - unknown', async () => {
 })
 
 test('runs (config file)', async () => {
+  mockValidConfig()
   await TheCommand.run(['config-file'])
   await TheCommand.run(['config-file', '--overwrite'])
   await TheCommand.run(['config-file', '--merge'])
@@ -75,7 +101,13 @@ test('runs (config file)', async () => {
   expect(importLib.importConfigJson).toHaveBeenCalledTimes(3)
 })
 
+test('runs invalid config', async () => {
+  mockInvalidConfig()
+  await expect(TheCommand.run(['config-file'])).rejects.toThrow('fake error')
+})
+
 test('runs (generator, confirmation yes, got global console config)', async () => {
+  mockValidConfig()
   inquirer.prompt.mockResolvedValueOnce({ res: true })
   mockConfig.get.mockReturnValueOnce({
     org: { name: 'MyOrg', id: '123' },
@@ -86,9 +118,11 @@ test('runs (generator, confirmation yes, got global console config)', async () =
 
   await TheCommand.run([])
   expect(importLib.importConfigJson).toHaveBeenCalledTimes(1)
+  expect(importLib.importConfigJson).toHaveBeenCalledWith('console.json', process.cwd(), { interactive: true, merge: false, overwrite: false }, { SERVICE_API_KEY: '' })
 })
 
 test('runs (generator, confirmation yes, got global console config, no cli context)', async () => {
+  mockValidConfig()
   inquirer.prompt.mockResolvedValueOnce({ res: true })
   mockConfig.get.mockReturnValueOnce({
     org: { name: 'MyOrg', id: '123' },
@@ -99,9 +133,30 @@ test('runs (generator, confirmation yes, got global console config, no cli conte
 
   await TheCommand.run([])
   expect(importLib.importConfigJson).toHaveBeenCalledTimes(1)
+  expect(importLib.importConfigJson).toHaveBeenCalledWith('console.json', process.cwd(), { interactive: true, merge: false, overwrite: false }, { SERVICE_API_KEY: '' })
+})
+
+test('runs (generator, confirmation yes, got global console config, no cli context, jwt client id is set)', async () => {
+  const fakeCredentials = [
+    { id: '1', fake: { client_id: 'notjwtId' } },
+    { id: '2', jwt: { client_id: 'fakeId123' } }
+  ]
+  mockValidConfig({ credentials: fakeCredentials })
+  inquirer.prompt.mockResolvedValueOnce({ res: true })
+  mockConfig.get.mockReturnValueOnce({
+    org: { name: 'MyOrg', id: '123' },
+    project: { name: 'MyProject', id: '456' },
+    workspace: { name: 'MyWorkspace', id: '789' }
+  })
+  mockGetCli.mockReturnValue()
+
+  await TheCommand.run([])
+  expect(importLib.importConfigJson).toHaveBeenCalledTimes(1)
+  expect(importLib.importConfigJson).toHaveBeenCalledWith('console.json', process.cwd(), { interactive: true, merge: false, overwrite: false }, { SERVICE_API_KEY: 'fakeId123' })
 })
 
 test('runs (generator, confirmation no, got global console config)', async () => {
+  mockValidConfig()
   inquirer.prompt.mockResolvedValueOnce({ res: false })
   mockConfig.get.mockReturnValueOnce({
     org: { name: 'MyOrg', id: '123' },

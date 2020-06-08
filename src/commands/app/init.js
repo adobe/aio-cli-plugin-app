@@ -15,14 +15,21 @@ const path = require('path')
 const fs = require('fs-extra')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
-const { validateConfig, importConfigJson, loadConfigFile, writeAio } = require('../../lib/import')
+const { loadAndValidateConfigFile, importConfigJson, writeAio } = require('../../lib/import')
 const { getCliInfo } = require('../../lib/app-helper')
 const chalk = require('chalk')
+
+const SERVICE_API_KEY_ENV = 'SERVICE_API_KEY'
 
 class InitCommand extends BaseCommand {
   async run () {
     const { args, flags } = this.parse(InitCommand)
     let res
+
+    if (flags.import) {
+      // resolve to absolute path before any chdir
+      flags.import = path.resolve(flags.import)
+    }
 
     if (args.path !== '.') {
       const destDir = path.resolve(args.path)
@@ -35,12 +42,14 @@ class InitCommand extends BaseCommand {
 
     // default project name and services
     let projectName = path.basename(process.cwd())
-    let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk,AudienceManagerCustomerSDK' // todo fetch those from console when no --import
+    // list of supported service templates
+    let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk,AudienceManagerCustomerSDK'
+    // client id of the console's workspace jwt credentials
+    let serviceClientId = ''
 
-    if (!(flags.import || flags.yes)) {
-      const { accessToken, env: imsEnv } = await getCliInfo()
-
+    if (!flags.import && !flags.yes && flags.login) {
       try {
+        const { accessToken, env: imsEnv } = await getCliInfo()
         const generatedFile = 'console.json'
         env.register(require.resolve('@adobe/generator-aio-console'), 'gen-console')
         res = await env.run('gen-console', {
@@ -57,15 +66,12 @@ class InitCommand extends BaseCommand {
     }
 
     if (flags.import) {
-      const { values: config } = loadConfigFile(flags.import)
-      const { valid: configIsValid, errors: configErrors } = validateConfig(config)
-      if (!configIsValid) {
-        const message = `Missing or invalid keys in config: ${JSON.stringify(configErrors, null, 2)}`
-        this.error(message)
-      }
+      const { values: config } = loadAndValidateConfigFile(flags.import)
 
       projectName = config.project.name
       services = config.project.workspace.details.services.map(s => s.code).join(',') || ''
+      const jwtConfig = config.project.workspace.details.credentials && config.project.workspace.details.credentials.find(c => c.jwt)
+      serviceClientId = (jwtConfig && jwtConfig.jwt.client_id) || serviceClientId // defaults to ''
     }
 
     this.log(`You are about to initialize the project '${projectName}'`)
@@ -84,10 +90,9 @@ class InitCommand extends BaseCommand {
     const interactive = false
     const merge = true
     if (flags.import) {
-      await importConfigJson(flags.import, process.cwd(), { interactive, merge })
+      await importConfigJson(flags.import, process.cwd(), { interactive, merge }, { [SERVICE_API_KEY_ENV]: serviceClientId })
     } else {
       // write default services value to .aio
-      // todo use real imported values from console
       await writeAio({
         services: services.split(',').map(code => ({ code }))
       }, process.cwd(), { merge, interactive })
@@ -117,6 +122,11 @@ InitCommand.flags = {
   import: flags.string({
     description: 'Import an Adobe I/O Developer Console configuration file',
     char: 'i'
+  }),
+  login: flags.boolean({
+    description: 'Login using your Adobe ID for interacting with Adobe I/O Developer Console',
+    default: true,
+    allowNo: true
   })
 }
 

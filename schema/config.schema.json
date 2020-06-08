@@ -10,13 +10,22 @@
         "project": { 
             "type": "object",
             "properties": {
-                "id": { "type": "string" },
+                "id": { 
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                },
                 "name": { 
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9]+$"
+                    "pattern": "^[a-zA-Z0-9]{0,20}$"
                 },
-                "title": { "type": "string" },
-                "description": { "type": "string" },
+                "title": { 
+                    "type": "string",
+                    "pattern": "^(?=\\S).{0,45}(?<=\\S)$"
+                },
+                "description": { 
+                    "type": "string",
+                    "pattern": "^(?=\\S).{0,1000}(?<=\\S)$"
+                },
                 "org": { "$ref": "#/definitions/org" },
                 "workspace": { "$ref": "#/definitions/workspace" }
             },
@@ -25,13 +34,22 @@
         "workspace": {
             "type": "object",
             "properties": {
-                "id": { "type": "string" },
+                "id": { 
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                },
                 "name": { 
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9]+$"
+                    "pattern": "^(?=\\S).{0,20}(?<=\\S)$"
                 },
-                "title": { "type": "string" },
-                "description": { "type": "string" },
+                "title": { 
+                    "type": "string",
+                    "pattern": "^(?=\\S).{0,45}(?<=\\S)$"
+                },
+                "description": { 
+                    "type": "string",
+                    "pattern": "^(?=\\S).{0,500}(?<=\\S)$"
+                },
                 "action_url": { 
                     "type": "string",
                     "format": "uri"
@@ -74,10 +92,13 @@
         "org": {
             "type": "object",
             "properties": {
-                "id": { "type": "string" },
+                "id": { 
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                },
                 "name": { 
                     "type": "string",
-                    "pattern": "^[ a-zA-Z0-9]+$"
+                    "pattern": "^(?=\\S).{0,255}(?<=\\S)$"
                 },
                 "ims_org_id": { 
                     "type": "string",
@@ -90,7 +111,10 @@
             "type": "object",
             "properties": {
                 "id": { "type": "string" },
-                "name": { "type": "string" },
+                "name": { 
+                    "type": "string",
+                    "pattern": "^(?=\\S).{0,255}(?<=\\S)$"
+                },
                 "integration_type": {
                     "type": "string",
                     "enum": [ "oauthweb", "oauthios", "oauthandroid", "service", "apikey" ]
@@ -144,7 +168,11 @@
             "properties": {
                 "client_id": { "type": "string" },
                 "client_secret": { "type": "string" },
-                "techacct": { 
+                "technical_account_email": { 
+                    "type": "string",
+                    "format": "email"
+                },
+                "technical_account_id": { 
                     "type": "string",
                     "format": "email"
                 },
@@ -154,7 +182,7 @@
                     "default": []
                 }
             },
-            "required": [ "client_id", "client_secret", "techacct", "meta_scopes" ]
+            "required": [ "client_id", "client_secret", "technical_account_email", "technical_account_id", "meta_scopes" ]
         }
     }
 }
