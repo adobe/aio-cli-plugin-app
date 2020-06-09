@@ -522,6 +522,37 @@ function transformCredentials (credentials, imsOrgId) {
 }
 
 /**
+ * Trim the credentials array to only keep a reference to each integration credential.
+ * Replace spaces in the name with _ and lowercase the name
+ *
+ * @example
+ * from:
+ * [{
+ *   "id": "17561142",
+ *   "name": "Project Foo",
+ *   "integration_type": "oauthweb",
+ *   "oauth2": {
+ *       "client_id": "XYXYXYXYXYXYXYXYX",
+ *       "client_secret": "XYXYXYXYZZZZZZ",
+ *       "redirect_uri": "https://test123"
+ *   }
+ * }]
+ * to:
+ * [{
+ *   "id": "17561142",
+ *   "name": "project_foo",
+ *   "integration_type": "oauthweb"
+ * }]
+ *
+ * @param {Array} credentials array from Downloadable File Format
+ * @returns {object} an array holding only the references to the credentials
+ * @private
+ */
+function credentialsReferences (credentials) {
+  return credentials.map(c => ({ id: c.id, name: c.name.replace(/ /gi, '_'), integration_type: c.integration_type }))
+}
+
+/**
  * Import a downloadable config and write to the appropriate .env (credentials) and .aio (non-credentials) files.
  *
  * @param {string} configFileLocation the path to the config file to import
@@ -549,7 +580,8 @@ async function importConfigJson (configFileLocation, destinationFolder = process
 
   // remove the credentials
   delete config.project.workspace.details.runtime
-  delete config.project.workspace.details.credentials
+  // keep only a reference to the credentials in the aio config (hiding secrets)
+  config.project.workspace.details.credentials = credentialsReferences(config.project.workspace.details.credentials)
 
   // write to the console config (for the `aio console` commands)
   await writeConsoleConfig(config)
