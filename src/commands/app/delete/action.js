@@ -11,14 +11,14 @@ governing permissions and limitations under the License.
 
 const BaseCommand = require('../../../BaseCommand')
 const yeoman = require('yeoman-environment')
-const debug = require('debug')('aio-cli-plugin-app:init')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:delete:action', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 
 class DeleteActionCommand extends BaseCommand {
   async run () {
     const { args, flags } = this.parse(DeleteActionCommand)
 
-    debug('deleting an action from the project, with args', args, 'and flags:', flags)
+    aioLogger.debug(`deleting an action from the project, with args ${args}, and flags: ${flags}`)
 
     // is there an oclif mechanism for flag depends on arg?
     if (flags.yes && !args['action-name']) {

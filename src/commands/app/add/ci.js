@@ -11,13 +11,13 @@ governing permissions and limitations under the License.
 
 const BaseCommand = require('../../../BaseCommand')
 const yeoman = require('yeoman-environment')
-const debug = require('debug')('aio-cli-plugin-app:init')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:ci', { provider: 'debug' })
 
 class AddCICommand extends BaseCommand {
   async run () {
     const { args, flags } = this.parse(AddCICommand)
 
-    debug(`adding component ${args.component} to the project, using flags: `, flags)
+    aioLogger.debug(`adding component ${args.component} to the project, using flags: ${flags}`)
 
     const generator = '@adobe/generator-aio-app/generators/add-ci'
     const env = yeoman.createEnv()

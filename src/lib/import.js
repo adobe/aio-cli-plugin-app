@@ -503,7 +503,7 @@ function transformCredentials (credentials, imsOrgId) {
 
   // enrich jwt credentials with ims org id
   if (credential && credential.jwt && !credential.jwt.ims_org_id) {
-    aioLogger.debug('adding ims_org_id to $ims.jwt config')
+    aioLogger.debug('adding ims_org_id to ims.jwt config')
     credential.jwt.ims_org_id = imsOrgId
   }
 
