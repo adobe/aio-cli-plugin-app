@@ -11,14 +11,14 @@ governing permissions and limitations under the License.
 
 const BaseCommand = require('../../../BaseCommand')
 const yeoman = require('yeoman-environment')
-const debug = require('debug')('aio-cli-plugin-app:init')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 
 class DeleteWebAssetsCommand extends BaseCommand {
   async run () {
     const { flags } = this.parse(DeleteWebAssetsCommand)
 
-    debug('deleting web assets from the project, using flags: ', flags)
+    aioLogger.debug(`deleting web assets from the project, using flags: ${flags}`)
 
     // todo should we undeploy web assets or leave it to the user ?
 

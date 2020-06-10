@@ -10,7 +10,7 @@ governing permissions and limitations under the License.
 */
 
 const BaseCommand = require('../../../BaseCommand')
-const debug = require('debug')('aio-cli-plugin-app:init')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:auth', { provider: 'debug' })
 
 const AppScripts = require('@adobe/aio-app-scripts')
 
@@ -18,7 +18,7 @@ class AddAuthCommand extends BaseCommand {
   async run () {
     const { flags } = this.parse(AddAuthCommand)
 
-    debug('add auth to the project, using flags:', flags)
+    aioLogger.debug(`add auth to the project, using flags: ${flags}`)
 
     const scripts = AppScripts({})
     const res = await scripts.addAuth()
