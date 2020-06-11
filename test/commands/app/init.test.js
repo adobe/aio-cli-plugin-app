@@ -97,6 +97,7 @@ describe('template module cannot be registered', () => {
 
 const fullServicesJson = [
   { code: 'AdobeTargetSDK' },
+  { code: 'AssetComputeSDK' },
   { code: 'AdobeAnalyticsSDK' },
   { code: 'CampaignSDK' },
   { code: 'McDataServicesSdk' },
