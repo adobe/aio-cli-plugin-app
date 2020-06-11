@@ -25,6 +25,7 @@ const AIO_ENV_PREFIX = 'AIO_'
 const AIO_ENV_SEPARATOR = '_'
 const FILE_FORMAT_ENV = 'env'
 const FILE_FORMAT_JSON = 'json'
+const CONSOLE_CONFIG_KEY = 'console'
 
 /**
  * Validate the config json
@@ -385,7 +386,6 @@ async function writeEnv (json, parentFolder, flags, extraEnvVars) {
  */
 async function writeConsoleConfig (json) {
   aioLogger.debug(`writeConsoleConfig - json: ${JSON.stringify(json)}`)
-  const CONSOLE_CONFIG_KEY = '$console'
 
   const { project } = json
   const { org, workspace } = project
@@ -599,5 +599,6 @@ module.exports = {
   flattenObjectWithSeparator,
   importConfigJson,
   mergeEnv,
-  splitEnvLine
+  splitEnvLine,
+  CONSOLE_CONFIG_KEY
 }
