@@ -10,7 +10,7 @@ governing permissions and limitations under the License.
 */
 
 const BaseCommand = require('../../BaseCommand')
-const { importConfigJson, loadAndValidateConfigFile } = require('../../lib/import')
+const { CONSOLE_CONFIG_KEY, importConfigJson, loadAndValidateConfigFile } = require('../../lib/import')
 const { flags } = require('@oclif/command')
 const inquirer = require('inquirer')
 const config = require('@adobe/aio-lib-core-config')
@@ -33,7 +33,7 @@ class Use extends BaseCommand {
   }
 
   async useConsoleConfig () {
-    const consoleConfig = config.get('$console')
+    const consoleConfig = config.get(CONSOLE_CONFIG_KEY)
     const { value, error } = await this.consoleConfigString(consoleConfig)
     if (error) {
       const message = `Your console configuration is incomplete.${EOL}Use the 'aio console' commands to select your organization, project, and workspace.${EOL}${value}`
