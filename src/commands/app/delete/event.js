@@ -11,21 +11,14 @@ governing permissions and limitations under the License.
 
 const BaseCommand = require('../../../BaseCommand')
 const yeoman = require('yeoman-environment')
-const debug = require('debug')('aio-cli-plugin-app:init')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:delete:event', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 
 class DeleteEventCommand extends BaseCommand {
   async run () {
     const { args, flags } = this.parse(DeleteEventCommand)
 
-    debug('deleting an action from the project, with args', args, 'and flags:', flags)
-
-    // is there an oclif mechanism for flag depends on arg?
-    if (flags.yes && !args['action-name']) {
-      this.error('<action-name> must also be provided when using --yes=')
-    }
-
-    // todo should undeploy specific action ?
+    aioLogger.debug('deleting an action from the project, with args', args, 'and flags:', flags)
 
     const generator = '@adobe/generator-aio-app/generators/delete-events'
 
@@ -33,7 +26,7 @@ class DeleteEventCommand extends BaseCommand {
     env.register(require.resolve(generator), 'gen')
     const res = await env.run('gen', {
       'skip-prompt': flags.yes,
-      'action-name': args['action-name']
+      'action-name': args['event-action-name']
     })
 
     this.log('✔ An action was deleted locally, run `aio app deploy --skip-static` to sync your current actions deployment')
@@ -42,7 +35,7 @@ class DeleteEventCommand extends BaseCommand {
   }
 }
 
-DeleteEventCommand.description = `Delete an existing event action
+DeleteEventCommand.description = `Delete an existing Adobe I/O Events action
 `
 
 DeleteEventCommand.flags = {
@@ -56,10 +49,9 @@ DeleteEventCommand.flags = {
 
 DeleteEventCommand.args = [
   {
-    name: 'action-name',
-    description: 'Action name to delete, if not specified you will choose from a list of actions',
-    default: '',
-    required: false
+    name: 'event-action-name',
+    description: 'Action name to delete',
+    required: true
   }
 ]
 

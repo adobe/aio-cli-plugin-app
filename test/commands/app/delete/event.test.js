@@ -42,15 +42,8 @@ describe('Command Prototype', () => {
 })
 
 describe('bad flags', () => {
-  test('--yes without <action-name>', async () => {
-    await expect(TheCommand.run(['--yes'])).rejects.toThrow('<action-name> must also be provided when using --yes=')
-  })
-})
-
-describe('template module cannot be registered', () => {
-  test('unknown error', async () => {
-    mockRegister.mockImplementation(() => { throw new Error('some error') })
-    await expect(TheCommand.run([])).rejects.toThrow('some error')
+  test('--yes without <event-action-name>', async () => {
+    await expect(TheCommand.run(['--yes'])).rejects.toThrow('Missing 1 required arg:\nevent-action-name  Action name to delete\nSee more help with --help')
   })
 })
 
@@ -79,15 +72,7 @@ describe('good flags', () => {
     })
   })
 
-  test('no arg no flags', async () => {
-    await TheCommand.run([])
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': false,
-      'action-name': ''
-    })
+  test('try to delete with any args', async () => {
+    await expect(TheCommand.run([])).rejects.toThrow('Missing 1 required arg:\nevent-action-name  Action name to delete\nSee more help with --help')
   })
 })

@@ -11,32 +11,27 @@ governing permissions and limitations under the License.
 
 const BaseCommand = require('../../../BaseCommand')
 const yeoman = require('yeoman-environment')
-const debug = require('debug')('aio-cli-plugin-app:init')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:event', { provider: 'debug' })
 const { flags } = require('@oclif/command')
-
-const config = require('@adobe/aio-lib-core-config')
 
 class AddEventCommand extends BaseCommand {
   async run () {
-    const { args, flags } = this.parse(AddEventCommand)
+    const { flags } = this.parse(AddEventCommand)
 
-    debug(`adding component ${args.component} to the project, using flags: `, flags)
-
-    const services = (config.get('services') || []).map(s => s.code).join(',')
+    aioLogger.debug('adding event to the project, using flags: ', flags)
 
     const generator = '@adobe/generator-aio-app/generators/add-events'
     const env = yeoman.createEnv()
     env.register(require.resolve(generator), 'gen')
     const res = await env.run('gen', {
       'skip-install': flags['skip-install'],
-      'skip-prompt': flags.yes,
-      'adobe-services': services
+      'skip-prompt': flags.yes
     })
     return res
   }
 }
 
-AddEventCommand.description = `Add a new event action
+AddEventCommand.description = `Add a new Adobe I/O Events action
 `
 
 AddEventCommand.flags = {

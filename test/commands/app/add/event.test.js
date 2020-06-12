@@ -67,8 +67,7 @@ describe('good flags', () => {
     const genName = mockRegister.mock.calls[0][1]
     expect(mockRun).toHaveBeenCalledWith(genName, {
       'skip-prompt': true,
-      'skip-install': false,
-      'adobe-services': ''
+      'skip-install': false
     })
   })
 
@@ -80,8 +79,7 @@ describe('good flags', () => {
     const genName = mockRegister.mock.calls[0][1]
     expect(mockRun).toHaveBeenCalledWith(genName, {
       'skip-prompt': true,
-      'skip-install': true,
-      'adobe-services': ''
+      'skip-install': true
     })
   })
 
@@ -93,8 +91,7 @@ describe('good flags', () => {
     const genName = mockRegister.mock.calls[0][1]
     expect(mockRun).toHaveBeenCalledWith(genName, {
       'skip-prompt': false,
-      'skip-install': true,
-      'adobe-services': ''
+      'skip-install': true
     })
   })
   test('no flags', async () => {
@@ -105,23 +102,7 @@ describe('good flags', () => {
     const genName = mockRegister.mock.calls[0][1]
     expect(mockRun).toHaveBeenCalledWith(genName, {
       'skip-prompt': false,
-      'skip-install': false,
-      'adobe-services': ''
-    })
-  })
-
-  test('pass services config codes to generator-aio-app', async () => {
-    config.get.mockReturnValue([{ code: 'CampaignSDK' }, { code: 'AdobeAnalyticsSDK' }])
-
-    await TheCommand.run([])
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': false,
-      'skip-install': false,
-      'adobe-services': 'CampaignSDK,AdobeAnalyticsSDK'
+      'skip-install': false
     })
   })
 })
