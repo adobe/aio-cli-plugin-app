@@ -59,7 +59,7 @@
   "license": "Apache-2.0",
   "oclif": {
     "commands": "./src/commands",
-    "bin": "",
+    "bin": "aio",
     "devPlugins": [
       "@oclif/plugin-help"
     ],

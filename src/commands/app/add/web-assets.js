@@ -11,7 +11,7 @@ governing permissions and limitations under the License.
 
 const BaseCommand = require('../../../BaseCommand')
 const yeoman = require('yeoman-environment')
-const debug = require('debug')('aio-cli-plugin-app:init')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:web-assets', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 
 const config = require('@adobe/aio-lib-core-config')
@@ -20,7 +20,7 @@ class AddWebAssetsCommand extends BaseCommand {
   async run () {
     const { args, flags } = this.parse(AddWebAssetsCommand)
 
-    debug(`adding component ${args.component} to the project, using flags: `, flags)
+    aioLogger.debug(`adding component ${args.component} to the project, using flags: ${flags}`)
 
     const services = (config.get('services') || []).map(s => s.code).join(',')
 

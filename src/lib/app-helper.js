@@ -13,7 +13,7 @@ const execa = require('execa')
 const fs = require('fs-extra')
 const path = require('path')
 const which = require('which')
-const debug = require('debug')('aio-cli-plugin-app:app-helper')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:lib-app-helper', { provider: 'debug' })
 const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
 
@@ -30,13 +30,13 @@ function isGitInstalled () {
 
 /** @private */
 async function installPackage (dir) {
-  debug(`running npm install : ${dir}`)
+  aioLogger.debug(`running npm install : ${dir}`)
   if (!(fs.statSync(dir).isDirectory())) {
-    debug(`${dir} is not a directory`)
+    aioLogger.debug(`${dir} is not a directory`)
     throw new Error(`${dir} is not a directory`)
   }
   if (!fs.readdirSync(dir).includes('package.json')) {
-    debug(`${dir} does not contain a package.json file.`)
+    aioLogger.debug(`${dir} does not contain a package.json file.`)
     throw new Error(`${dir} does not contain a package.json file.`)
   }
   // npm install
@@ -48,7 +48,7 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
   if (!dir) {
     dir = process.cwd()
   }
-  debug(`running npm run-script ${scriptName} in dir: ${dir}`)
+  aioLogger.debug(`running npm run-script ${scriptName} in dir: ${dir}`)
   const pkg = await fs.readJSON(path.join(dir, 'package.json'))
   if (pkg && pkg.scripts && pkg.scripts[scriptName]) {
     return execa('npm', ['run-script', scriptName].concat(cmdArgs), { cwd: dir, stdio: 'inherit' })
@@ -77,7 +77,7 @@ async function getCliInfo () {
   const { env = 'prod' } = await context.getCli() || {}
   await context.setCli({ '$cli.bare-output': true }, false) // set this globally
 
-  debug('Retrieving CLI Token')
+  aioLogger.debug('Retrieving CLI Token')
   const accessToken = await getToken(CLI)
 
   return { accessToken, env }

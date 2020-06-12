@@ -25,6 +25,7 @@ const AIO_ENV_PREFIX = 'AIO_'
 const AIO_ENV_SEPARATOR = '_'
 const FILE_FORMAT_ENV = 'env'
 const FILE_FORMAT_JSON = 'json'
+const CONSOLE_CONFIG_KEY = 'console'
 
 /**
  * Validate the config json
@@ -385,7 +386,6 @@ async function writeEnv (json, parentFolder, flags, extraEnvVars) {
  */
 async function writeConsoleConfig (json) {
   aioLogger.debug(`writeConsoleConfig - json: ${JSON.stringify(json)}`)
-  const CONSOLE_CONFIG_KEY = '$console'
 
   const { project } = json
   const { org, workspace } = project
@@ -503,7 +503,7 @@ function transformCredentials (credentials, imsOrgId) {
 
   // enrich jwt credentials with ims org id
   if (credential && credential.jwt && !credential.jwt.ims_org_id) {
-    aioLogger.debug('adding ims_org_id to $ims.jwt config')
+    aioLogger.debug('adding ims_org_id to ims.jwt config')
     credential.jwt.ims_org_id = imsOrgId
   }
 
@@ -519,6 +519,37 @@ function transformCredentials (credentials, imsOrgId) {
 
     return acc
   }, {})
+}
+
+/**
+ * Trim the credentials array to only keep a reference to each integration credential.
+ * Replace spaces in the name with _ and lowercase the name
+ *
+ * @example
+ * from:
+ * [{
+ *   "id": "17561142",
+ *   "name": "Project Foo",
+ *   "integration_type": "oauthweb",
+ *   "oauth2": {
+ *       "client_id": "XYXYXYXYXYXYXYXYX",
+ *       "client_secret": "XYXYXYXYZZZZZZ",
+ *       "redirect_uri": "https://test123"
+ *   }
+ * }]
+ * to:
+ * [{
+ *   "id": "17561142",
+ *   "name": "project_foo",
+ *   "integration_type": "oauthweb"
+ * }]
+ *
+ * @param {Array} credentials array from Downloadable File Format
+ * @returns {object} an array holding only the references to the credentials
+ * @private
+ */
+function credentialsReferences (credentials) {
+  return credentials.map(c => ({ id: c.id, name: c.name.replace(/ /gi, '_'), integration_type: c.integration_type }))
 }
 
 /**
@@ -549,7 +580,8 @@ async function importConfigJson (configFileLocation, destinationFolder = process
 
   // remove the credentials
   delete config.project.workspace.details.runtime
-  delete config.project.workspace.details.credentials
+  // keep only a reference to the credentials in the aio config (hiding secrets)
+  config.project.workspace.details.credentials = credentialsReferences(config.project.workspace.details.credentials)
 
   // write to the console config (for the `aio console` commands)
   await writeConsoleConfig(config)
@@ -567,5 +599,6 @@ module.exports = {
   flattenObjectWithSeparator,
   importConfigJson,
   mergeEnv,
-  splitEnvLine
+  splitEnvLine,
+  CONSOLE_CONFIG_KEY
 }
