@@ -9,7 +9,7 @@
     "@adobe/aio-lib-core-config": ">=1.2.8",
     "@adobe/aio-lib-core-logging": "^1.1.0",
     "@adobe/aio-lib-ims": "^3.0.0",
-    "@adobe/generator-aio-app": "^1.1.0",
+    "@adobe/generator-aio-app": "^1.1.1",
     "@adobe/generator-aio-console": "^1.1.1",
     "@oclif/command": "^1.5.11",
     "@oclif/config": "^1.12.9",
@@ -59,7 +59,7 @@
   "license": "Apache-2.0",
   "oclif": {
     "commands": "./src/commands",
-    "bin": "",
+    "bin": "aio",
     "devPlugins": [
       "@oclif/plugin-help"
     ],
