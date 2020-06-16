@@ -43,7 +43,12 @@ class InitCommand extends BaseCommand {
     // default project name and services
     let projectName = path.basename(process.cwd())
     // list of supported service templates
-    let services = 'AdobeTargetSDK,AssetComputeSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk,AudienceManagerCustomerSDK'
+    let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk,AudienceManagerCustomerSDK'
+    // hidden --feature flag to add AssetComputeSDK if true
+    if (flags['asset-compute']) {
+      services += ',AssetComputeSDK'
+    }
+    console.log('services ', services)
     // client id of the console's workspace jwt credentials
     let serviceClientId = ''
 
@@ -127,6 +132,11 @@ InitCommand.flags = {
     description: 'Login using your Adobe ID for interacting with Adobe I/O Developer Console',
     default: true,
     allowNo: true
+  }),
+  'asset-compute': flags.boolean({
+    description: 'Feature flag to allow AssetComputeSDK apps to be generated without login',
+    hidden: true,
+    default: false
   })
 }
 
