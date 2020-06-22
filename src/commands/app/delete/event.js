@@ -1,5 +1,5 @@
 /*
-Copyright 2019 Adobe. All rights reserved.
+Copyright 2020 Adobe. All rights reserved.
 This file is licensed to you under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License. You may obtain a copy
 of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -11,43 +11,48 @@ governing permissions and limitations under the License.
 
 const BaseCommand = require('../../../BaseCommand')
 const yeoman = require('yeoman-environment')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:delete:event', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 
-class DeleteWebAssetsCommand extends BaseCommand {
+class DeleteEventCommand extends BaseCommand {
   async run () {
-    const { flags } = this.parse(DeleteWebAssetsCommand)
+    const { args, flags } = this.parse(DeleteEventCommand)
 
-    aioLogger.debug(`deleting web assets from the project, using flags: ${flags}`)
+    aioLogger.debug('deleting an action from the project, with args', args, 'and flags:', flags)
 
-    // todo should we undeploy web assets or leave it to the user ?
-
-    const generator = '@adobe/generator-aio-app/generators/delete-web-assets'
+    const generator = '@adobe/generator-aio-app/generators/delete-events'
 
     const env = yeoman.createEnv()
     env.register(require.resolve(generator), 'gen')
     const res = await env.run('gen', {
-      'skip-prompt': flags.yes
+      'skip-prompt': flags.yes,
+      'action-name': args['event-action-name']
     })
 
-    this.log('✔ Web assets deleted locally, run `aio app undeploy --skip-actions` to delete deployed web assets for the current app version')
+    this.log('✔ An action was deleted locally, run `aio app deploy --skip-static` to sync your current actions deployment')
 
     return res
   }
 }
 
-DeleteWebAssetsCommand.description = `Delete existing web assets
+DeleteEventCommand.description = `Delete an existing Adobe I/O Events action
 `
 
-DeleteWebAssetsCommand.flags = {
+DeleteEventCommand.flags = {
   yes: flags.boolean({
     description: 'Skip questions, and use all default values',
-    default: false,
-    char: 'y'
+    char: 'y',
+    default: false
   }),
   ...BaseCommand.flags
 }
 
-DeleteWebAssetsCommand.args = []
+DeleteEventCommand.args = [
+  {
+    name: 'event-action-name',
+    description: 'Action name to delete',
+    required: true
+  }
+]
 
-module.exports = DeleteWebAssetsCommand
+module.exports = DeleteEventCommand

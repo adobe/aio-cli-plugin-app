@@ -1,5 +1,5 @@
 /*
-Copyright 2019 Adobe. All rights reserved.
+Copyright 2020 Adobe. All rights reserved.
 This file is licensed to you under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License. You may obtain a copy
 of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -11,43 +11,42 @@ governing permissions and limitations under the License.
 
 const BaseCommand = require('../../../BaseCommand')
 const yeoman = require('yeoman-environment')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:event', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 
-class DeleteWebAssetsCommand extends BaseCommand {
+class AddEventCommand extends BaseCommand {
   async run () {
-    const { flags } = this.parse(DeleteWebAssetsCommand)
+    const { flags } = this.parse(AddEventCommand)
 
-    aioLogger.debug(`deleting web assets from the project, using flags: ${flags}`)
+    aioLogger.debug('adding event to the project, using flags: ', flags)
 
-    // todo should we undeploy web assets or leave it to the user ?
-
-    const generator = '@adobe/generator-aio-app/generators/delete-web-assets'
-
+    const generator = '@adobe/generator-aio-app/generators/add-events'
     const env = yeoman.createEnv()
     env.register(require.resolve(generator), 'gen')
     const res = await env.run('gen', {
+      'skip-install': flags['skip-install'],
       'skip-prompt': flags.yes
     })
-
-    this.log('✔ Web assets deleted locally, run `aio app undeploy --skip-actions` to delete deployed web assets for the current app version')
-
     return res
   }
 }
 
-DeleteWebAssetsCommand.description = `Delete existing web assets
+AddEventCommand.description = `Add a new Adobe I/O Events action
 `
 
-DeleteWebAssetsCommand.flags = {
+AddEventCommand.flags = {
   yes: flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
   }),
+  'skip-install': flags.boolean({
+    description: 'Skip npm installation after files are created',
+    default: false
+  }),
   ...BaseCommand.flags
 }
 
-DeleteWebAssetsCommand.args = []
+AddEventCommand.args = []
 
-module.exports = DeleteWebAssetsCommand
+module.exports = AddEventCommand

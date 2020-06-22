@@ -38,7 +38,7 @@ class InitCommand extends BaseCommand {
     }
 
     const env = yeoman.createEnv()
-    aioLogger.debug('creating new app with init command ', flags)
+    aioLogger.debug(`creating new app with init command: ${flags}`)
 
     // default project name and services
     let projectName = path.basename(process.cwd())
