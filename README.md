@@ -29,7 +29,6 @@ $ aio app --help
 * [`aio app`](#aio-app)
 * [`aio app:add`](#aio-appadd)
 * [`aio app:add:action`](#aio-appaddaction)
-* [`aio app:add:auth`](#aio-appaddauth)
 * [`aio app:add:ci`](#aio-appaddci)
 * [`aio app:add:event`](#aio-appaddevent)
 * [`aio app:add:web-assets`](#aio-appaddweb-assets)
@@ -94,21 +93,6 @@ OPTIONS
 ```
 
 _See code: [src/commands/app/add/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/3.0.1/src/commands/app/add/action.js)_
-
-## `aio app:add:auth`
-
-Add auth support
-
-```
-USAGE
-  $ aio app:add:auth
-
-OPTIONS
-  -v, --verbose  Verbose output
-  --version      Show version
-```
-
-_See code: [src/commands/app/add/auth.js](https://github.com/adobe/aio-cli-plugin-app/blob/3.0.1/src/commands/app/add/auth.js)_
 
 ## `aio app:add:ci`
 
