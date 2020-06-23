@@ -575,7 +575,7 @@ async function importConfigJson (configFileLocation, destinationFolder = process
 
   await writeEnv({
     runtime: transformRuntime(runtime),
-    $ims: transformCredentials(credentials, config.project.org.ims_org_id)
+    ims: transformCredentials(credentials, config.project.org.ims_org_id)
   }, destinationFolder, flags, extraEnvVars)
 
   // remove the credentials

@@ -259,7 +259,7 @@ test('importConfigJson - interactive', async () => {
   await expect(fs.writeFile).toHaveBeenCalledTimes(8)
 })
 
-test('enrich $ims jwt credential with project.org.ims_org_id', async () => {
+test('enrich ims jwt credential with project.org.ims_org_id', async () => {
   const workingFolder = 'my-working-folder'
   const aioPath = path.join(workingFolder, '.aio')
   const envPath = path.join(workingFolder, '.env')
@@ -277,7 +277,7 @@ test('enrich $ims jwt credential with project.org.ims_org_id', async () => {
   expect(fs.writeFile).toHaveBeenCalledTimes(2)
 })
 
-test('do not enrich $ims.jwt with ims_org_id if no jwt credentials defined ', async () => {
+test('do not enrich ims.jwt with ims_org_id if no jwt credentials defined ', async () => {
   const workingFolder = 'my-working-folder'
   const aioPath = path.join(workingFolder, '.aio')
   const envPath = path.join(workingFolder, '.env')
