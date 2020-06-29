@@ -48,7 +48,6 @@ class InitCommand extends BaseCommand {
     if (flags['asset-compute']) {
       services += ',AssetComputeSDK'
     }
-    console.log('services ', services)
     // client id of the console's workspace jwt credentials
     let serviceClientId = ''
 
