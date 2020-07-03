@@ -30,7 +30,6 @@ class GetUrlCommand extends BaseCommand {
       options.action = args.action
       options.cdn = flags.cdn
       const urls = await scripts.getUrls(options)
-      // console.log("received : ", urls)
       if (flags.json) {
         this.log(JSON.stringify(urls))
       } else if (flags.yml) {
