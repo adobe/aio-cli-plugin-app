@@ -20,7 +20,7 @@ class DeleteWebAssetsCommand extends BaseCommand {
 
     aioLogger.debug(`deleting web assets from the project, using flags: ${flags}`)
 
-    // todo should we undeploy web assets or leave it to the user ?
+    // NOTE: this is only deleting the files, no un-deployment happens here
 
     const generator = '@adobe/generator-aio-app/generators/delete-web-assets'
 

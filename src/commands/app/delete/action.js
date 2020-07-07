@@ -25,7 +25,7 @@ class DeleteActionCommand extends BaseCommand {
       this.error('<action-name> must also be provided when using --yes=')
     }
 
-    // todo should undeploy specific action ?
+    // NOTE: this is only deleting the file and the entry in the manifest, no un-deployment happens here
 
     const generator = '@adobe/generator-aio-app/generators/delete-action'
 
