@@ -29,8 +29,6 @@ class DeleteEventCommand extends BaseCommand {
       'action-name': args['event-action-name']
     })
 
-    this.log('✔ An action was deleted locally, run `aio app deploy --skip-static` to sync your current actions deployment')
-
     return res
   }
 }
