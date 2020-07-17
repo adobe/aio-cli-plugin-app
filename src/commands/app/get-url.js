@@ -16,20 +16,37 @@ const { flags } = require('@oclif/command')
 
 const BaseCommand = require('../../BaseCommand')
 const AppScripts = require('@adobe/aio-app-scripts')
-const { wrapError } = require('../../lib/app-helper')
+const { wrapError, getActionUrls } = require('../../lib/app-helper')
 const yaml = require('js-yaml')
+const cloneDeep = require('lodash.clonedeep')
 
 class GetUrlCommand extends BaseCommand {
   async run () {
     // cli input
     const { args, flags } = this.parse(GetUrlCommand)
-    const scripts = AppScripts({ listeners: {} })
 
     try {
       const options = {}
       options.action = args.action
       options.cdn = flags.cdn
-      const urls = await scripts.getUrls(options)
+
+      const urls = {}
+      const configCopy = cloneDeep(AppScripts()._config)
+      if (options.action) {
+        const action = configCopy.manifest.package.actions[options.action]
+        if (!action) {
+          throw new Error(`No action with name ${options.action} found`)
+        }
+        configCopy.manifest.package.actions = {}
+        configCopy.manifest.package.actions[options.action] = action
+      }
+      const actionUrls = await getActionUrls(configCopy, true)
+      urls.runtime = actionUrls
+      if (options.cdn) {
+        const cdnUrls = await getActionUrls(configCopy, false)
+        urls.cdn = cdnUrls
+      }
+  
       if (flags.json) {
         this.log(JSON.stringify(urls))
       } else if (flags.yml) {

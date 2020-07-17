@@ -15,23 +15,72 @@ const AppScripts = require('@adobe/aio-app-scripts')
 const { flags } = require('@oclif/command')
 // const { cli } = require('cli-ux')
 const BaseCommand = require('../../BaseCommand')
-
-const { wrapError } = require('../../lib/app-helper')
+const RuntimeLib = require('@adobe/aio-lib-runtime')
+const { wrapError, checkOpenWhiskCredentials } = require('../../lib/app-helper')
 
 class Logs extends BaseCommand {
   async run () {
     const { flags } = this.parse(Logs)
 
     const scripts = AppScripts({ listeners: {} })
-
     const logOptions = {
       logger: this.log,
       limit: flags.limit
     }
 
     try {
-      const foundLogs = await scripts.logs([], logOptions)
-      return foundLogs
+      let args = []
+      let limit = logOptions.limit
+  
+      // parcel bundle options
+      const startTime = logOptions.startTime || 0
+  
+      // remove this bit if app-scripts becomes a lib
+      const i = args.indexOf('-l')
+      // istanbul ignore next
+      if (i >= 0) {
+        // istanbul ignore next
+        limit = args[i + 1]
+      }
+      limit = limit || 1
+  
+      const logger = logOptions.logger || console.log
+      const config = AppScripts()._config
+
+      // check for runtime credentials
+      checkOpenWhiskCredentials(config)
+      const ow = await RuntimeLib.init({
+        // todo make this.config.ow compatible with Openwhisk config
+        apihost: config.ow.apihost,
+        apiversion: config.ow.apiversion,
+        api_key: config.ow.auth,
+        namespace: config.ow.namespace
+      })
+  
+      let hasLogs = false
+  
+      // get activations
+      const listOptions = { limit: limit, skip: 0 }
+      const activations = await ow.activations.list(listOptions)
+      let lastActivationTime = 0
+      for (let i = (activations.length - 1); i >= 0; i--) {
+        const activation = activations[i]
+        lastActivationTime = activation.start
+        if (lastActivationTime > startTime) {
+          const results = await ow.activations.logs({ activationId: activation.activationId })
+          // send fetched logs to console
+          if (results.logs.length > 0) {
+            hasLogs = true
+            logger(activation.name + ':' + activation.activationId)
+            results.logs.forEach(function (log) {
+              logger(log)
+            })
+            logger()
+          }
+        }
+      }
+    
+      return { hasLogs: hasLogs, lastActivationTime: lastActivationTime }
     } catch (error) {
       this.error(wrapError(error))
     }
