@@ -15,10 +15,8 @@ const chalk = require('chalk')
 const { flags } = require('@oclif/command')
 
 const BaseCommand = require('../../BaseCommand')
-const AppScripts = require('@adobe/aio-app-scripts')
 const { wrapError, getActionUrls } = require('../../lib/app-helper')
 const yaml = require('js-yaml')
-const cloneDeep = require('lodash.clonedeep')
 
 class GetUrlCommand extends BaseCommand {
   async run () {
@@ -31,7 +29,7 @@ class GetUrlCommand extends BaseCommand {
       options.cdn = flags.cdn
 
       const urls = {}
-      const configCopy = cloneDeep(AppScripts()._config)
+      const configCopy = this.getAppConfig()
       if (options.action) {
         const action = configCopy.manifest.package.actions[options.action]
         if (!action) {

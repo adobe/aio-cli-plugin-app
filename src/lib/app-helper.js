@@ -147,6 +147,11 @@ function checkOpenWhiskCredentials (config) {
   }
 }
 
+function checkFile (filePath) {
+  // note lstatSync will throw if file doesn't exist
+  if (!fs.lstatSync(filePath).isFile()) throw Error(`${filePath} is not a valid file (e.g. cannot be a dir or a symlink)`)
+}
+
 module.exports = {
   isNpmInstalled,
   isGitInstalled,
@@ -157,5 +162,6 @@ module.exports = {
   getActionUrls,
   removeProtocolFromURL,
   urlJoin,
-  checkOpenWhiskCredentials
+  checkOpenWhiskCredentials,
+  checkFile
 }
