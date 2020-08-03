@@ -100,7 +100,8 @@ const fullServicesJson = [
   { code: 'AdobeAnalyticsSDK' },
   { code: 'CampaignSDK' },
   { code: 'McDataServicesSdk' },
-  { code: 'AudienceManagerCustomerSDK' }
+  { code: 'AudienceManagerCustomerSDK' },
+  { code: 'AssetComputeSDK' }
 ]
 
 const fakeCredentials = [
@@ -227,24 +228,6 @@ describe('run', () => {
       'skip-install': false,
       'project-name': project.name,
       'adobe-services': getFullServicesList()
-    })
-    expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
-  })
-
-  test('no-path, --no-login --asset-compute', async () => {
-    const project = mockValidConfig()
-    await TheCommand.run(['--no-login', '--asset-compute'])
-
-    // gen-console is skipped
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genApp = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenNthCalledWith(1, genApp, {
-      'skip-prompt': false,
-      'skip-install': false,
-      'project-name': project.name,
-      'adobe-services': getFullServicesList() + ',AssetComputeSDK'
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
     expect(spyChdir).not.toHaveBeenCalled()
