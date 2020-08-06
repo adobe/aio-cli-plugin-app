@@ -61,6 +61,7 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
     })
 
     const childPro = execa('npm', ['run-script', scriptName].concat(cmdArgs), { cwd: dir, stdio: 'pipe' })
+    if(!childPro) return
     process.stdin.pipe(childPro.stdin)
     childPro.stdout.pipe(process.stdout)
     childPro.stderr.pipe(process.stderr)
