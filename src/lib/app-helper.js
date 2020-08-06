@@ -51,8 +51,36 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
   aioLogger.debug(`running npm run-script ${scriptName} in dir: ${dir}`)
   const pkg = await fs.readJSON(path.join(dir, 'package.json'))
   if (pkg && pkg.scripts && pkg.scripts[scriptName]) {
-    return execa('npm', ['run-script', scriptName].concat(cmdArgs), { cwd: dir, stdio: 'inherit' })
-  } else {
+
+    let termListeners = process.listeners('SIGINT')
+    process.removeAllListeners('SIGINT')
+    process.on('SIGINT', () => {
+      if(!childPro.killed) {
+        childPro.kill()
+      }
+    })
+
+    const childPro = execa('npm', ['run-script', scriptName].concat(cmdArgs), { cwd: dir, stdio: 'pipe' })
+    process.stdin.pipe(childPro.stdin)
+    childPro.stdout.pipe(process.stdout)
+    childPro.stderr.pipe(process.stderr)
+    
+    try {
+      await childPro
+    }catch(err){
+      // Ignore
+    }
+    process.stdin.unpipe()
+    process.stdin.resume()
+    // Adding the SIGINT listeners back
+    if(termListeners.length>0) {
+      process.removeAllListeners('SIGINT')
+      termListeners.forEach((listener) => {
+        process.addListener('SIGINT', listener)
+      })
+      termListeners = []
+    }
+} else {
     throw new Error(`${dir} does not contain a package.json or it does not contain a script named ${scriptName}`)
   }
 }
