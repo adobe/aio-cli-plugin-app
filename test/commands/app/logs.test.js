@@ -12,94 +12,159 @@ governing permissions and limitations under the License.
 
 const TheCommand = require('../../../src/commands/app/logs')
 const BaseCommand = require('../../../src/BaseCommand')
+const fs = require('fs-extra')
+const RuntimeLib = require('@adobe/aio-lib-runtime')
 
-jest.mock('@adobe/aio-app-scripts')
-const mockScripts = require('@adobe/aio-app-scripts')()
+describe('interface', () => {
+  beforeEach(() => {
+    jest.restoreAllMocks()
+  })
 
-beforeEach(() => {
-  jest.restoreAllMocks()
-})
+  test('exports', async () => {
+    expect(typeof TheCommand).toEqual('function')
+    expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
+  })
 
-test('exports', async () => {
-  expect(typeof TheCommand).toEqual('function')
-  expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
-})
+  test('description', async () => {
+    expect(TheCommand.description).toBeDefined()
+  })
 
-test('description', async () => {
-  expect(TheCommand.description).toBeDefined()
-})
+  test('aliases', async () => {
+    expect(TheCommand.aliases).toEqual([])
+  })
 
-test('aliases', async () => {
-  expect(TheCommand.aliases).toEqual([])
-})
-
-test('flags', async () => {
-  expect(typeof TheCommand.flags.limit).toBe('object')
-  expect(TheCommand.flags.limit.char).toBe('l')
-  expect(typeof TheCommand.flags.limit.description).toBe('string')
-  expect(TheCommand.flags.limit.default).toEqual(1)
+  test('flags', async () => {
+    expect(typeof TheCommand.flags.limit).toBe('object')
+    expect(TheCommand.flags.limit.char).toBe('l')
+    expect(typeof TheCommand.flags.limit.description).toBe('string')
+    expect(TheCommand.flags.limit.default).toEqual(1)
+  })
 })
 
 describe('run', () => {
   beforeEach(() => {
-    mockScripts.logs.mockReset()
+    jest.restoreAllMocks()
   })
 
-  test('when there is an error in app scripts', async () => {
+  test('missing various ow credentials', async () => {
     const command = new TheCommand([])
+    command.appConfig = {}
     command.error = jest.fn()
     command.log = jest.fn()
 
-    mockScripts.logs.mockRejectedValue('error')
+    fs.lstatSync = jest.fn(() => {
+      return { isFile: () => true }
+    })
+
     await command.run()
-    expect(command.error).toHaveBeenCalledWith(expect.objectContaining({ message: 'error' }))
+    expect(command.error).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenNthCalledWith(1, Error('missing aio runtime config, did you set AIO_RUNTIME_XXX env variables?'))
+
+    command.appConfig = { ow: {} }
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(2)
+    expect(command.error).toHaveBeenNthCalledWith(2, Error('missing Adobe I/O Runtime apihost, did you set the AIO_RUNTIME_APIHOST environment variable?'))
+
+    command.appConfig = {
+      ow: {
+        apihost: 'host'
+      }
+    }
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(3)
+    expect(command.error).toHaveBeenNthCalledWith(3, Error('missing Adobe I/O Runtime namespace, did you set the AIO_RUNTIME_NAMESPACE environment variable?'))
+
+    command.appConfig = {
+      ow: {
+        apihost: 'host',
+        namespace: 'namespace'
+      }
+    }
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(4)
+    expect(command.error).toHaveBeenNthCalledWith(4, Error('missing Adobe I/O Runtime auth, did you set the AIO_RUNTIME_AUTH environment variable?'))
+
+    command.appConfig = {
+      ow: {
+        apihost: 'host',
+        namespace: 'namespace',
+        auth: 'auth'
+      }
+    }
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(4)
   })
 
-  test('when there are no logs, no flags', async () => {
+  test('no flags', async () => {
     const command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
-
-    mockScripts.logs.mockResolvedValue(false)
-    const foundLogs = await command.run()
+    command.appConfig = {
+      ow: {
+        apihost: 'host',
+        namespace: 'namespace',
+        auth: 'auth'
+      }
+    }
+    await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.logs).toBeCalledWith([], { logger: command.log, limit: 1 })
-    expect(foundLogs).toBe(false)
   })
 
-  test('when there are logs, no flags', async () => {
-    const command = new TheCommand([])
+  test('does not fail when --limit < 1', async () => {
+    // todo: test that 1 is passed through to runtime.activations.list
+    const command = new TheCommand(['--limit=-1'])
     command.error = jest.fn()
     command.log = jest.fn()
-
-    mockScripts.logs.mockResolvedValue(true)
-    const foundLogs = await command.run()
+    command.appConfig = {
+      ow: {
+        apihost: 'host',
+        namespace: 'namespace',
+        auth: 'auth'
+      }
+    }
+    await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.logs).toBeCalledWith([], { logger: command.log, limit: 1 })
-    expect(foundLogs).toBe(true)
   })
 
-  test('when there are logs, -l 2', async () => {
-    const command = new TheCommand(['-l', '2'])
+  test('does not fail when --limit > 50', async () => {
+    // todo: test that 50 is passed through to runtime.activations.list
+    const command = new TheCommand(['--limit=51'])
     command.error = jest.fn()
     command.log = jest.fn()
-
-    mockScripts.logs.mockResolvedValue(true)
-    const foundLogs = await command.run()
+    command.appConfig = {
+      ow: {
+        apihost: 'host',
+        namespace: 'namespace',
+        auth: 'auth'
+      }
+    }
+    await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.logs).toBeCalledWith([], { logger: command.log, limit: 2 })
-    expect(foundLogs).toBe(true)
   })
 
-  test('when there are logs, --limit 2', async () => {
-    const command = new TheCommand(['--limit', '2'])
+  test('does not log if no logs returned', async () => {
+    // todo: cover line 54
+    jest.spyOn(RuntimeLib, 'init').mockImplementation(async () => {
+      return {
+        activations: {
+          list: jest.fn(async () => []),
+          logs: jest.fn(async () => {
+            return { logs: [] }
+          })
+        }
+      }
+    })
+    const command = new TheCommand(['--limit=51'])
     command.error = jest.fn()
     command.log = jest.fn()
-
-    mockScripts.logs.mockResolvedValue(true)
-    const foundLogs = await command.run()
+    command.appConfig = {
+      ow: {
+        apihost: 'host',
+        namespace: 'namespace',
+        auth: 'auth'
+      }
+    }
+    await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.logs).toBeCalledWith([], { logger: command.log, limit: 2 })
-    expect(foundLogs).toBe(true)
   })
 })
