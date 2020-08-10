@@ -20,12 +20,13 @@ const BaseCommand = require('../../BaseCommand')
 const AppScripts = require('@adobe/aio-app-scripts')
 const { flags } = require('@oclif/command')
 const { runPackageScript, wrapError } = require('../../lib/app-helper')
+const rtLib = require('@adobe/aio-lib-runtime')
 
 class Deploy extends BaseCommand {
   async run () {
     // cli input
     const { flags } = this.parse(Deploy)
-
+    const config = this.getAppConfig()
     const filterActions = flags.action
 
     // setup scripts, events and spinner
@@ -65,7 +66,9 @@ class Deploy extends BaseCommand {
 
         if (!flags['skip-actions']) {
           if (fs.existsSync('manifest.yml')) {
-            await scripts.buildActions([], { filterActions })
+            // todo: this replacement seems to be working, but the one below is not yet -jm
+            // await scripts.buildActions([], { filterActions })
+            await rtLib.buildActions(config, filterActions)
           } else {
             this.log('no manifest.yml, skipping action build')
           }
@@ -99,6 +102,9 @@ class Deploy extends BaseCommand {
             if (filterActions) {
               filterEntities = { actions: filterActions }
             }
+            // todo: fix this, the following change does not work, if we call rtLib version it chokes on some actions
+            // Error: EISDIR: illegal operation on a directory, read
+            // deployedRuntimeEntities = { ...await rtLib.deployActions(config, filterEntities) }
             deployedRuntimeEntities = { ...await scripts.deployActions([], { filterEntities }) }
           } else {
             this.log('no manifest.yml, skipping action deploy')
