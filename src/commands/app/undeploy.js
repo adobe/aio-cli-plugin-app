@@ -20,6 +20,7 @@ const { flags } = require('@oclif/command')
 const BaseCommand = require('../../BaseCommand')
 const AppScripts = require('@adobe/aio-app-scripts')
 const { wrapError } = require('../../lib/app-helper')
+const rtLib = require('@adobe/aio-lib-runtime')
 
 class Undeploy extends BaseCommand {
   async run () {
@@ -56,7 +57,7 @@ class Undeploy extends BaseCommand {
       // undeploy
       if (!flags['skip-actions']) {
         if (fs.existsSync('manifest.yml')) {
-          await scripts.undeployActions()
+          await rtLib.undeployActions(this.getAppConfig())
         } else {
           this.log('no manifest file, skipping action undeploy')
         }

@@ -21,7 +21,8 @@ const { flags } = require('@oclif/command')
 const coreConfig = require('@adobe/aio-lib-core-config')
 
 const BaseCommand = require('../../BaseCommand')
-const AppScripts = require('@adobe/aio-app-scripts')
+// const AppScripts = require('@adobe/aio-app-scripts')
+const runDev = require('../../lib/runDev')
 const { runPackageScript, wrapError } = require('../../lib/app-helper')
 
 const DEV_KEYS_DIR = 'dist/dev-keys/'
@@ -30,7 +31,7 @@ const PUB_CERT_PATH = DEV_KEYS_DIR + 'cert-pub.crt'
 const CONFIG_KEY = 'aio-dev.dev-keys'
 
 class Run extends BaseCommand {
-  async run () {
+  async run (args = []) {
     const { flags } = this.parse(Run)
 
     const hasFrontend = await fs.exists('web-src/')
@@ -91,9 +92,10 @@ class Run extends BaseCommand {
     }
 
     process.env.REMOTE_ACTIONS = !flags.local
-    const scripts = AppScripts({ listeners })
+    // const scripts = AppScripts({ listeners })
     try {
-      const frontendUrl = await scripts.runDev([], runOptions)
+      const frontendUrl = await runDev(args, this.getAppConfig(), runOptions)
+      // const frontendUrl = await scripts.runDev([], runOptions)
       try {
         await runPackageScript('post-app-run')
       } catch (err) {

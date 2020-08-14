@@ -15,7 +15,8 @@ const chalk = require('chalk')
 const { flags } = require('@oclif/command')
 
 const BaseCommand = require('../../BaseCommand')
-const { wrapError, getActionUrls } = require('../../lib/app-helper')
+const { wrapError } = require('../../lib/app-helper')
+const { getActionUrls } = require('@adobe/aio-lib-runtime').utils
 const yaml = require('js-yaml')
 
 class GetUrlCommand extends BaseCommand {

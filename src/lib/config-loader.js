@@ -25,6 +25,7 @@ const defaultHTMLCacheDuration = '60'
 const defaultJSCacheDuration = '604800'
 const defaultCSSCacheDuration = '604800'
 const defaultImageCacheDuration = '604800'
+const AIO_CONFIG_IMS_ORG_ID = 'project.org.ims_org_id'
 
 /** loading config returns following object (this config is internal, not user facing):
 {
@@ -82,7 +83,8 @@ module.exports = () => {
   aioConfig.reload()
   const userConfig = aioConfig.get() || {}
   userConfig.cna = userConfig.cna || {}
-
+  userConfig.imsOrgId = aioConfig.get(AIO_CONFIG_IMS_ORG_ID)
+  
   // 1. paths
   // 1.a defaults
   const actions = path.normalize(userConfig.cna.actions || 'actions')

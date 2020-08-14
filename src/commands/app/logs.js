@@ -14,7 +14,7 @@ const { flags } = require('@oclif/command')
 // const { cli } = require('cli-ux')
 const BaseCommand = require('../../BaseCommand')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
-const { wrapError, checkOpenWhiskCredentials } = require('../../lib/app-helper')
+const { wrapError, getLogs } = require('../../lib/app-helper')
 
 class Logs extends BaseCommand {
   async run () {
@@ -31,34 +31,7 @@ class Logs extends BaseCommand {
     try {
       const config = this.getAppConfig()
 
-      // check for runtime credentials
-      checkOpenWhiskCredentials(config)
-      const runtime = await RuntimeLib.init({
-        // todo make this.config.ow compatible with Openwhisk config
-        apihost: config.ow.apihost,
-        apiversion: config.ow.apiversion,
-        api_key: config.ow.auth,
-        namespace: config.ow.namespace
-      })
-
-      // get activations
-      const listOptions = { limit: flags.limit, skip: 0 }
-      const logFunc = this.log
-      const activations = await runtime.activations.list(listOptions)
-      console.log('activations = ', activations)
-      for (let i = (activations.length - 1); i >= 0; i--) {
-        const activation = activations[i]
-        const results = await runtime.activations.logs({ activationId: activation.activationId })
-        console.log('results = ', results)
-        // send fetched logs to console
-        if (results.logs.length > 0) {
-          logFunc(activation.name + ':' + activation.activationId)
-          results.logs.forEach(function (log) {
-            logFunc(log)
-          })
-          logFunc()
-        }
-      }
+      await getLogs(config, flags.limit, this.log)
     } catch (error) {
       this.error(wrapError(error))
     }

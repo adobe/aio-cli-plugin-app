@@ -13,9 +13,11 @@ const execa = require('execa')
 const fs = require('fs-extra')
 const path = require('path')
 const which = require('which')
+const dotenv = require('dotenv')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:lib-app-helper', { provider: 'debug' })
 const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
+const RuntimeLib = require('@adobe/aio-lib-runtime')
 
 /** @private */
 function isNpmInstalled () {
@@ -83,6 +85,42 @@ async function getCliInfo () {
   return { accessToken, env }
 }
 
+async function getLogs(config, limit, logger, startTime = 0) {
+  // check for runtime credentials
+  RuntimeLib.utils.checkOpenWhiskCredentials(config)
+  const runtime = await RuntimeLib.init({
+    // todo make this.config.ow compatible with Openwhisk config
+    apihost: config.ow.apihost,
+    apiversion: config.ow.apiversion,
+    api_key: config.ow.auth,
+    namespace: config.ow.namespace
+  })
+
+  // get activations
+  const listOptions = { limit: limit, skip: 0 }
+  const logFunc = logger || console.log
+  const activations = await runtime.activations.list(listOptions)
+  let lastActivationTime = 0
+  // console.log('activations = ', activations)
+  for (let i = (activations.length - 1); i >= 0; i--) {
+    const activation = activations[i]
+    lastActivationTime = activation.start
+    if (lastActivationTime > startTime) {
+      const results = await runtime.activations.logs({ activationId: activation.activationId })
+      // console.log('results = ', results)
+      // send fetched logs to console
+      if (results.logs.length > 0) {
+        logFunc(activation.name + ':' + activation.activationId)
+        results.logs.forEach(function (log) {
+          logFunc(log)
+        })
+        logFunc()
+      }
+    }
+  }
+  return { lastActivationTime }
+}
+
 function getActionUrls (config, /* istanbul ignore next */ isRemoteDev = false, /* istanbul ignore next */ isLocalDev = false) {
   // set action urls
   // action urls {name: url}, if !LocalDev subdomain uses namespace
@@ -124,32 +162,146 @@ function removeProtocolFromURL (url) {
   return url.replace(/(^\w+:|^)\/\//, '')
 }
 
-function checkOpenWhiskCredentials (config) {
-  const owConfig = config.ow
-
-  // todo errors are too specific to env context
-
-  // this condition cannot happen because config defines it as empty object
-  /* istanbul ignore next */
-  if (typeof owConfig !== 'object') {
-    throw new Error('missing aio runtime config, did you set AIO_RUNTIME_XXX env variables?')
-  }
-  // this condition cannot happen because config defines a default apihost for now
-  /* istanbul ignore next */
-  if (!owConfig.apihost) {
-    throw new Error('missing Adobe I/O Runtime apihost, did you set the AIO_RUNTIME_APIHOST environment variable?')
-  }
-  if (!owConfig.namespace) {
-    throw new Error('missing Adobe I/O Runtime namespace, did you set the AIO_RUNTIME_NAMESPACE environment variable?')
-  }
-  if (!owConfig.auth) {
-    throw new Error('missing Adobe I/O Runtime auth, did you set the AIO_RUNTIME_AUTH environment variable?')
-  }
-}
-
 function checkFile (filePath) {
   // note lstatSync will throw if file doesn't exist
   if (!fs.lstatSync(filePath).isFile()) throw Error(`${filePath} is not a valid file (e.g. cannot be a dir or a symlink)`)
+}
+
+/**
+ * Writes an object to a file
+ * @param {string} file path
+ * @param {object} config object to write
+ * @returns {Promise}
+ */
+function writeConfig (file, config) {
+  fs.ensureDirSync(path.dirname(file))
+  // for now only action URLs
+  fs.writeFileSync(
+    file,
+    JSON.stringify(config), { encoding: 'utf-8' }
+  )
+}
+
+async function isDockerRunning () {
+  // todo more checks
+  const args = ['info']
+  try {
+    await execa('docker', args)
+    return true
+  } catch (error) {
+    aioLogger.debug('Error spawning docker info: ' + error)
+  }
+  return false
+}
+
+async function hasDockerCLI () {
+  // todo check min version
+  try {
+    const result = await execa('docker', ['-v'])
+    aioLogger.debug('docker version : ' + result.stdout)
+    return true
+  } catch (error) {
+    aioLogger.debug('Error spawning docker info: ' + error)
+  }
+  return false
+}
+
+async function hasJavaCLI () {
+  // todo check min version
+  try {
+    const result = await execa('java', ['-version'])
+    aioLogger.debug('java version : ' + result.stdout)
+    return true
+  } catch (error) {
+    aioLogger.debug('Error spawning java info: ' + error)
+  }
+  return false
+}
+// async function hasWskDebugInstalled () {
+//   // todo should test for local install as well
+//   try {
+//     const result = await execa('wskdebug', ['--version'])
+//     debug('wskdebug version : ' + result.stdout)
+//     return true
+//   } catch (error) {
+//     debug('Error spawning wskdebug info: ' + error)
+//   }
+//   return false
+// }
+
+async function downloadOWJar (url, outFile) {
+  aioLogger.debug(`downloadOWJar - url: ${url} outFile: ${outFile}`)
+  let response
+  try {
+    response = await fetch(url)
+  } catch (e) {
+    aioLogger.debug(`connection error while downloading '${url}'`, e)
+    throw new Error(`connection error while downloading '${url}', are you online?`)
+  }
+  if (!response.ok) throw new Error(`unexpected response while downloading '${url}': ${response.statusText}`)
+  fs.ensureDirSync(path.dirname(outFile))
+  const fstream = fs.createWriteStream(outFile)
+
+  return new Promise((resolve, reject) => {
+    response.body.pipe(fstream)
+    response.body.on('error', (err) => {
+      reject(err)
+    })
+    fstream.on('finish', () => {
+      resolve()
+    })
+  })
+}
+
+async function runOpenWhiskJar (jarFile, runtimeConfigFile, apihost, waitInitTime, waitPeriodTime, timeout, /* istanbul ignore next */ execaOptions = {}) {
+  aioLogger.debug(`runOpenWhiskJar - jarFile: ${jarFile} runtimeConfigFile ${runtimeConfigFile} apihost: ${apihost} waitInitTime: ${waitInitTime} waitPeriodTime: ${waitPeriodTime} timeout: ${timeout}`)
+  const proc = execa('java', ['-jar', '-Dwhisk.concurrency-limit.max=10', jarFile, '-m', runtimeConfigFile, '--no-ui'], execaOptions)
+  await waitForOpenWhiskReadiness(apihost, waitInitTime, waitPeriodTime, timeout)
+  // must wrap in an object as execa return value is awaitable
+  return { proc }
+
+  async function waitForOpenWhiskReadiness (host, initialWait, period, timeout) {
+    const endTime = Date.now() + timeout
+    await waitFor(initialWait)
+    await _waitForOpenWhiskReadiness(host, endTime)
+
+    async function _waitForOpenWhiskReadiness (host, endTime) {
+      if (Date.now() > endTime) {
+        throw new Error(`local openwhisk stack startup timed out: ${timeout}ms`)
+      }
+      let ok
+      try {
+        const response = await fetch(host + '/api/v1')
+        ok = response.ok
+      } catch (e) {
+        ok = false
+      }
+      if (!ok) {
+        await waitFor(period)
+        return _waitForOpenWhiskReadiness(host, endTime)
+      }
+    }
+    function waitFor (t) {
+      return new Promise(resolve => setTimeout(resolve, t))
+    }
+  }
+}
+
+function saveAndReplaceDotEnvCredentials (dotenvFile, saveFile, apihost, namespace, auth) {
+  if (fs.existsSync(saveFile)) throw new Error(`cannot save .env, please make sure to restore and delete ${saveFile}`) // todo make saveFile relative
+  fs.moveSync(dotenvFile, saveFile)
+  // Only override needed env vars and preserve other vars in .env
+  const env = dotenv.parse(fs.readFileSync(saveFile))
+  env.AIO_RUNTIME_APIHOST = apihost
+  env.AIO_RUNTIME_AUTH = auth
+  env.AIO_RUNTIME_NAMESPACE = namespace
+  // existing AIO__ vars might override above AIO_ vars
+  delete env.AIO__RUNTIME_AUTH
+  delete env.AIO__RUNTIME_NAMESPACE
+  delete env.AIO__RUNTIME_APIHOST
+  const envContent = Object.keys(env).reduce((content, k) => content + `${k}=${env[k]}\n`, '')
+
+  fs.writeFileSync(dotenvFile, envContent)
 }
 
 module.exports = {
@@ -160,8 +312,15 @@ module.exports = {
   wrapError,
   getCliInfo,
   getActionUrls,
+  getLogs,
   removeProtocolFromURL,
   urlJoin,
-  checkOpenWhiskCredentials,
-  checkFile
+  checkFile,
+  hasDockerCLI,
+  hasJavaCLI,
+  isDockerRunning,
+  writeConfig,
+  downloadOWJar,
+  runOpenWhiskJar,
+  saveAndReplaceDotEnvCredentials
 }
