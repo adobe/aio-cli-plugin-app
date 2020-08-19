@@ -104,7 +104,7 @@ class Deploy extends BaseCommand {
             }
             // todo: fix this, the following change does not work, if we call rtLib version it chokes on some actions
             // Error: EISDIR: illegal operation on a directory, read
-            deployedRuntimeEntities = { ...await rtLib.deployActions(config, filterEntities) }
+            deployedRuntimeEntities = { ...await rtLib.deployActions(config, { filterEntities } ) }
             // deployedRuntimeEntities = { ...await scripts.deployActions([], { filterEntities }) }
           } else {
             this.log('no manifest.yml, skipping action deploy')

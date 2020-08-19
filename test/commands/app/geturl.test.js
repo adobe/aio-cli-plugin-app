@@ -13,8 +13,8 @@ governing permissions and limitations under the License.
 const TheCommand = require('../../../src/commands/app/get-url')
 const BaseCommand = require('../../../src/BaseCommand')
 
-jest.mock('@adobe/aio-app-scripts')
-const mockScripts = require('@adobe/aio-app-scripts')()
+const mockRuntimeLib = require('@adobe/aio-lib-runtime')
+const deepClone = require('lodash.clonedeep')
 
 beforeEach(() => {
   jest.restoreAllMocks()
@@ -49,24 +49,35 @@ test('flags', async () => {
 
 describe('run', () => {
   beforeEach(() => {
-    mockScripts.getUrls = mockScripts.logs
-    mockScripts.getUrls.mockReset()
+    mockRuntimeLib.utils.getActionUrls.mockReset()
+    mockRuntimeLib.utils.getActionUrls.mockImplementation(jest.fn(
+      (config, isRemoteDev) => {
+        if(isRemoteDev) {
+          return {
+            action: 'https://fake_ns.adobeioruntime.net/api/v1/web/sample-app-1.0.0/action'
+          }
+        } else {
+          return {
+            action: 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action'
+          }
+        }
+      }))
   })
 
   test('get all action urls', async () => {
     const command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
+    command.appConfig = {}
     const retVal = {
       runtime: {
         action: 'https://fake_ns.adobeioruntime.net/api/v1/web/sample-app-1.0.0/action'
       }
     }
-    mockScripts.getUrls.mockResolvedValue(retVal)
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.getUrls).toBeCalledWith({})
-    expect(urls).toBe(retVal)
+    expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith({}, true)
+    expect(urls).toEqual(retVal)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.runtime.action))
   })
 
@@ -74,54 +85,59 @@ describe('run', () => {
     const command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
+    command.appConfig = {}
     const retVal = {}
-    mockScripts.getUrls.mockResolvedValue(retVal)
+    mockRuntimeLib.utils.getActionUrls.mockResolvedValue(undefined)
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.getUrls).toBeCalledWith({})
-    expect(urls).toBe(retVal)
+    expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith({}, true)
+    expect(urls).toEqual(retVal)
   })
 
   test('get empty action urls -j', async () => {
     const command = new TheCommand(['--json'])
     command.error = jest.fn()
     command.log = jest.fn()
-    const retVal = {}
-    mockScripts.getUrls.mockResolvedValue(retVal)
+    command.appConfig = {}
+    const retVal = { runtime: {}}
+    mockRuntimeLib.utils.getActionUrls.mockResolvedValue({})
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.getUrls).toBeCalledWith({})
-    expect(urls).toBe(retVal)
+    expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith({}, true)
+    expect(urls).toEqual(retVal)
   })
 
   test('get empty action urls -y', async () => {
     const command = new TheCommand(['--yml'])
     command.error = jest.fn()
     command.log = jest.fn()
-    const retVal = {}
-    mockScripts.getUrls.mockResolvedValue(retVal)
+    command.appConfig = {}
+    const retVal = { runtime: {}}
+    mockRuntimeLib.utils.getActionUrls.mockResolvedValue({})
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.getUrls).toBeCalledWith({})
-    expect(urls).toBe(retVal)
+    expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith({}, true)
+    expect(urls).toEqual(retVal)
   })
 
   test('get empty action urls -h', async () => {
     const command = new TheCommand(['--hson'])
     command.error = jest.fn()
     command.log = jest.fn()
-    const retVal = {}
-    mockScripts.getUrls.mockResolvedValue(retVal)
+    command.appConfig = {}
+    mockRuntimeLib.utils.getActionUrls.mockResolvedValue({})
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.getUrls).toBeCalledWith({})
-    expect(urls).toBe(retVal)
+    expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith({}, true)
+    expect(urls).toEqual({runtime:{}})
   })
 
   test('get all action urls with cdn flag', async () => {
     const command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
+    command.appConfig = {}
+    command.argv = ['--cdn']
     const retVal = {
       runtime: {
         action: 'https://fake_ns.adobeioruntime.net/api/v1/web/sample-app-1.0.0/action'
@@ -130,11 +146,10 @@ describe('run', () => {
         action: 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action'
       }
     }
-    mockScripts.getUrls.mockResolvedValue(retVal)
-    const urls = await command.run(['--cdn'])
+    const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.getUrls).toBeCalledWith({})
-    expect(urls).toBe(retVal)
+    expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith({}, true)
+    expect(urls).toEqual(retVal)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.runtime.action))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.cdn.action))
   })
@@ -144,16 +159,16 @@ describe('run', () => {
     command.error = jest.fn()
     command.log = jest.fn()
     command.args = { action: 'action' }
+    command.appConfig = {}
     const retVal = {
       runtime: {
         action: 'https://fake_ns.adobeioruntime.net/api/v1/web/sample-app-1.0.0/action'
       }
     }
-    mockScripts.getUrls.mockResolvedValue(retVal)
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.getUrls).toBeCalledWith({})
-    expect(urls).toBe(retVal)
+    expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith({}, true)
+    expect(urls).toEqual(retVal)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.runtime.action))
   })
 
@@ -161,8 +176,23 @@ describe('run', () => {
     const command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
-    command.args = { action: 'action' }
-    const retVal = {
+    command.argv = ['action', '--cdn']
+    command.appConfig = {
+      manifest: {
+        package: {
+          actions: {
+            action: {
+            },
+            action2: {
+            }
+          }
+        }
+      }
+    }
+    const appConfigParam = deepClone(command.appConfig)
+    //To check that only one action is sent to getActionUrls()
+    delete appConfigParam.manifest.package.actions.action2 
+    const result = {
       runtime: {
         action: 'https://fake_ns.adobeioruntime.net/api/v1/web/sample-app-1.0.0/action'
       },
@@ -170,11 +200,12 @@ describe('run', () => {
         action: 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action'
       }
     }
-    mockScripts.getUrls.mockResolvedValue(retVal)
-    const urls = await command.run(['--cdn'])
+    const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.getUrls).toBeCalledWith({})
-    expect(urls).toBe(retVal)
+    expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalledTimes(2)
+    expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenNthCalledWith(1, appConfigParam, true)
+    expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenNthCalledWith(2, appConfigParam, false)
+    expect(urls).toEqual(result)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.runtime.action))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.cdn.action))
   })
@@ -183,9 +214,33 @@ describe('run', () => {
     const command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
-    command.args = { action: 'invalid' }
-    mockScripts.getUrls.mockRejectedValue('error')
+    command.argv = ['invalid']
+    command.appConfig = {
+      manifest: {
+        package: {
+          actions: {
+          }
+        }
+      }
+    }
     await command.run()
-    expect(command.error).toHaveBeenCalledWith(expect.objectContaining({ message: 'error' }))
+    expect(command.error).toHaveBeenCalledWith(new Error('No action with name invalid found'))
+  })
+
+  test('get only cdn url', async () => {
+    const command = new TheCommand([])
+    command.error = jest.fn()
+    command.log = jest.fn()
+    command.argv = ['invalid']
+    command.appConfig = {
+      manifest: {
+        package: {
+          actions: {
+          }
+        }
+      }
+    }
+    await command.run()
+    expect(command.error).toHaveBeenCalledWith(new Error('No action with name invalid found'))
   })
 })

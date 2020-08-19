@@ -46,7 +46,7 @@ describe('run', () => {
     jest.restoreAllMocks()
   })
 
-  test('missing various ow credentials', async () => {
+  test('calls checkOpenwhiskCredentials with right param', async () => {
     const command = new TheCommand([])
     command.appConfig = {}
     command.error = jest.fn()
@@ -57,42 +57,11 @@ describe('run', () => {
     })
 
     await command.run()
-    expect(command.error).toHaveBeenCalledTimes(1)
-    expect(command.error).toHaveBeenNthCalledWith(1, Error('missing aio runtime config, did you set AIO_RUNTIME_XXX env variables?'))
+    expect(RuntimeLib.utils.checkOpenWhiskCredentials).toHaveBeenNthCalledWith(1, {})
 
-    command.appConfig = { ow: {} }
+    command.appConfig = { ow: {apihost: 'host'} }
     await command.run()
-    expect(command.error).toHaveBeenCalledTimes(2)
-    expect(command.error).toHaveBeenNthCalledWith(2, Error('missing Adobe I/O Runtime apihost, did you set the AIO_RUNTIME_APIHOST environment variable?'))
-
-    command.appConfig = {
-      ow: {
-        apihost: 'host'
-      }
-    }
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(3)
-    expect(command.error).toHaveBeenNthCalledWith(3, Error('missing Adobe I/O Runtime namespace, did you set the AIO_RUNTIME_NAMESPACE environment variable?'))
-
-    command.appConfig = {
-      ow: {
-        apihost: 'host',
-        namespace: 'namespace'
-      }
-    }
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(4)
-    expect(command.error).toHaveBeenNthCalledWith(4, Error('missing Adobe I/O Runtime auth, did you set the AIO_RUNTIME_AUTH environment variable?'))
-
-    command.appConfig = {
-      ow: {
-        apihost: 'host',
-        namespace: 'namespace',
-        auth: 'auth'
-      }
-    }
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(4)
+    expect(RuntimeLib.utils.checkOpenWhiskCredentials).toHaveBeenNthCalledWith(2, { ow: {apihost: 'host'}})
   })
 
   test('no flags', async () => {

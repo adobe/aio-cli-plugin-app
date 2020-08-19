@@ -20,5 +20,12 @@ const mockRuntime = {
 }
 
 module.exports = {
-  init: jest.fn(async () => mockRuntime)
+  init: jest.fn(async () => mockRuntime),
+  buildActions: jest.fn(),
+  deployActions: jest.fn(),
+  undeployActions: jest.fn(),
+  utils: {
+    getActionUrls: jest.fn(),
+    checkOpenWhiskCredentials: jest.fn()
+  }
 }
