@@ -69,7 +69,7 @@ class Run extends BaseCommand {
     }
 
     const spinner = ora()
-    const listeners = {
+    /*const listeners = {
       onStart: taskName => {
         this.log(chalk.bold(`> ${taskName}`))
         spinner.start(taskName)
@@ -89,7 +89,7 @@ class Run extends BaseCommand {
         }
         spinner.start()
       }
-    }
+    }*/
 
     process.env.REMOTE_ACTIONS = !flags.local
     // const scripts = AppScripts({ listeners })

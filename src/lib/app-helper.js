@@ -18,6 +18,7 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
+const fetch = require('node-fetch')
 
 /** @private */
 function isNpmInstalled () {

@@ -9,7 +9,7 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-
+const originalRuntimeLib = require.requireActual('@adobe/aio-lib-runtime')
 const mockRuntime = {
   activations: {
     list: jest.fn(async () => [1, 2, 3]),
@@ -26,6 +26,9 @@ module.exports = {
   undeployActions: jest.fn(),
   utils: {
     getActionUrls: jest.fn(),
-    checkOpenWhiskCredentials: jest.fn()
+    checkOpenWhiskCredentials: jest.fn(),
+    _absApp: originalRuntimeLib.utils._absApp,
+    _relApp: originalRuntimeLib.utils._relApp,
+    getActionEntryFile: originalRuntimeLib.utils.getActionEntryFile,
   }
 }

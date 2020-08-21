@@ -106,7 +106,7 @@ const eventPoller = new EventPoller(fetchLogInterval)
 
           eventEmitter.emit('progress', 'checking if docker is running...')
           if (!await utils.isDockerRunning()) throw new Error('docker is not running, please make sure to start docker')
-console.log(OW_JAR_FILE)
+
           if (!fs.existsSync(OW_JAR_FILE)) {
             eventEmitter.emit('progress', `downloading OpenWhisk standalone jar from ${OW_JAR_URL} to ${OW_JAR_FILE}, this might take a while... (to be done only once!)`)
             await utils.downloadOWJar(OW_JAR_URL, OW_JAR_FILE)
@@ -338,6 +338,7 @@ console.log(OW_JAR_FILE)
         await _buildAndDeploy(devConfig, isLocalDev, eventEmitter)
         aioLogger.debug('Deployment successfull.')
       } catch (err) {
+        eventEmitter.emit('progress', '  -> Error encountered while deploying actions. Stopping auto refresh.')
         aioLogger.debug(err)
         await watcher.close()
       }

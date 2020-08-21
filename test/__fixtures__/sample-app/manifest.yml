@@ -1,0 +1,32 @@
+packages:
+  __APP_PACKAGE__:
+    license: Apache-2.0
+    actions:
+      action:
+        function: actions/action.js
+        web: yes
+        runtime: 'nodejs:12'
+      action-zip:
+        function: actions/action-zip
+        web: yes
+        runtime: 'nodejs:12'
+    sequences:
+      action-sequence:
+        actions: action, action-zip
+        web: yes
+    triggers:
+      trigger1:
+    rules:
+      rule1:
+        trigger: trigger1
+        action: action
+        rule: true
+    apis:
+      api1:
+        base:
+          path:
+            action:
+              method: get
+    dependencies:
+      dependency1:
+        location: fake.com/package
