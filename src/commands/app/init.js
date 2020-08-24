@@ -43,7 +43,8 @@ class InitCommand extends BaseCommand {
     // default project name and services
     let projectName = path.basename(process.cwd())
     // list of supported service templates
-    let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk,AudienceManagerCustomerSDK'
+    let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk,AudienceManagerCustomerSDK,AssetComputeSDK'
+
     // client id of the console's workspace jwt credentials
     let serviceClientId = ''
 

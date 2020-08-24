@@ -100,7 +100,8 @@ const fullServicesJson = [
   { code: 'AdobeAnalyticsSDK' },
   { code: 'CampaignSDK' },
   { code: 'McDataServicesSdk' },
-  { code: 'AudienceManagerCustomerSDK' }
+  { code: 'AudienceManagerCustomerSDK' },
+  { code: 'AssetComputeSDK' }
 ]
 
 const fakeCredentials = [
