@@ -12,14 +12,11 @@ governing permissions and limitations under the License.
 
 const TheCommand = require('../../../src/commands/app/logs')
 const BaseCommand = require('../../../src/BaseCommand')
-const fs = require('fs-extra')
-const RuntimeLib = require('@adobe/aio-lib-runtime')
+
+jest.mock('../../../src/lib/app-helper.js')
+const helpers = require('../../../src/lib/app-helper.js')
 
 describe('interface', () => {
-  beforeEach(() => {
-    jest.restoreAllMocks()
-  })
-
   test('exports', async () => {
     expect(typeof TheCommand).toEqual('function')
     expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
@@ -43,97 +40,66 @@ describe('interface', () => {
 
 describe('run', () => {
   beforeEach(() => {
-    jest.restoreAllMocks()
+    helpers.getLogs.mockReset()
+    helpers.wrapError.mockReset()
   })
 
-  test('calls checkOpenwhiskCredentials with right param', async () => {
+  test('no flags, sets limit to 1', async () => {
     const command = new TheCommand([])
-    command.appConfig = {}
+    command.appConfig = { fake: 'config' }
     command.error = jest.fn()
     command.log = jest.fn()
 
-    fs.lstatSync = jest.fn(() => {
-      return { isFile: () => true }
-    })
-
     await command.run()
-    expect(RuntimeLib.utils.checkOpenWhiskCredentials).toHaveBeenNthCalledWith(1, {})
-
-    command.appConfig = { ow: {apihost: 'host'} }
-    await command.run()
-    expect(RuntimeLib.utils.checkOpenWhiskCredentials).toHaveBeenNthCalledWith(2, { ow: {apihost: 'host'}})
+    expect(helpers.getLogs).toHaveBeenCalledWith({ fake: 'config' }, 1, command.log)
+    expect(command.error).not.toHaveBeenCalled()
   })
 
-  test('no flags', async () => {
+  test('--limit < 1, sets limit to 1', async () => {
+    const command = new TheCommand(['--limit', '-1'])
+    command.appConfig = { fake: 'config' }
+    command.error = jest.fn()
+    command.log = jest.fn()
+
+    await command.run()
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('using --limit=1'))
+    expect(helpers.getLogs).toHaveBeenCalledWith({ fake: 'config' }, 1, command.log)
+    expect(command.error).not.toHaveBeenCalled()
+  })
+
+  test('--limit > 50, sets limit to 50', async () => {
+    const command = new TheCommand(['--limit', '51'])
+    command.appConfig = { fake: 'config' }
+    command.error = jest.fn()
+    command.log = jest.fn()
+
+    await command.run()
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('using --limit=50'))
+    expect(helpers.getLogs).toHaveBeenCalledWith({ fake: 'config' }, 50, command.log)
+    expect(command.error).not.toHaveBeenCalled()
+  })
+
+  test('--limit 32', async () => {
+    const command = new TheCommand(['--limit', '32'])
+    command.appConfig = { fake: 'config' }
+    command.error = jest.fn()
+    command.log = jest.fn()
+
+    await command.run()
+    expect(helpers.getLogs).toHaveBeenCalledWith({ fake: 'config' }, 32, command.log)
+    expect(command.error).not.toHaveBeenCalled()
+  })
+
+  test('error while getting logs', async () => {
     const command = new TheCommand([])
+    command.appConfig = { fake: 'config' }
     command.error = jest.fn()
     command.log = jest.fn()
-    command.appConfig = {
-      ow: {
-        apihost: 'host',
-        namespace: 'namespace',
-        auth: 'auth'
-      }
-    }
+    const theerror = new Error('I do not like logs')
+    helpers.getLogs.mockRejectedValue(theerror)
+    helpers.wrapError.mockReturnValue('wrapped error')
     await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-  })
-
-  test('does not fail when --limit < 1', async () => {
-    // todo: test that 1 is passed through to runtime.activations.list
-    const command = new TheCommand(['--limit=-1'])
-    command.error = jest.fn()
-    command.log = jest.fn()
-    command.appConfig = {
-      ow: {
-        apihost: 'host',
-        namespace: 'namespace',
-        auth: 'auth'
-      }
-    }
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-  })
-
-  test('does not fail when --limit > 50', async () => {
-    // todo: test that 50 is passed through to runtime.activations.list
-    const command = new TheCommand(['--limit=51'])
-    command.error = jest.fn()
-    command.log = jest.fn()
-    command.appConfig = {
-      ow: {
-        apihost: 'host',
-        namespace: 'namespace',
-        auth: 'auth'
-      }
-    }
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-  })
-
-  test('does not log if no logs returned', async () => {
-    // todo: cover line 54
-    jest.spyOn(RuntimeLib, 'init').mockImplementation(async () => {
-      return {
-        activations: {
-          list: jest.fn(async () => []),
-          logs: jest.fn(async () => {
-            return { logs: [] }
-          })
-        }
-      }
-    })
-    const command = new TheCommand(['--limit=51'])
-    command.error = jest.fn()
-    command.log = jest.fn()
-    command.appConfig = {
-      ow: {
-        apihost: 'host',
-        namespace: 'namespace',
-        auth: 'auth'
-      }
-    }
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.error).toHaveBeenCalledWith('wrapped error')
+    expect(helpers.wrapError).toHaveBeenCalledWith(theerror)
   })
 })

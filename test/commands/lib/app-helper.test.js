@@ -13,6 +13,7 @@ const which = require('which')
 const fs = require('fs-extra')
 const execa = require('execa')
 const appHelper = require('../../../src/lib/app-helper')
+const RuntimeLib = require('@adobe/aio-lib-runtime')
 
 describe('exports helper methods', () => {
   test('isNpmInstalled', () => {
@@ -113,5 +114,335 @@ describe('exports helper methods', () => {
     expect(error).toBeInstanceOf(Error)
     expect(error.message).toEqual('yolo3')
     expect(error.stack).toBeDefined()
+  })
+
+  describe('getLogs', () => {
+    const fakeConfig = {
+      ow: {
+        apihost: 'https://fake.com',
+        apiversion: 'v0',
+        auth: 'abcde',
+        namespace: 'dude'
+      }
+    }
+    const logger = jest.fn()
+    let rtLib
+    beforeEach(async () => {
+      RuntimeLib.mockReset()
+      rtLib = await RuntimeLib.init({ fake: 'credentials' })
+      logger.mockReset()
+    })
+
+    test('inits the runtime lib instance', async () => {
+      rtLib.mockResolved('activations.list', [])
+      rtLib.mockResolved('activations.logs', { logs: [] })
+      await appHelper.getLogs(fakeConfig, 1, logger)
+      expect(RuntimeLib.init).toHaveBeenCalledWith({
+        namespace: fakeConfig.ow.namespace,
+        apihost: fakeConfig.ow.apihost,
+        api_key: fakeConfig.ow.auth,
+        apiversion: fakeConfig.ow.apiversion
+      })
+    })
+    test('(config, limit=1, logger) and no activations', async () => {
+      rtLib.mockResolved('activations.list', [])
+      rtLib.mockResolved('activations.logs', { logs: [] })
+      await appHelper.getLogs(fakeConfig, 1, logger)
+      expect(RuntimeLib.init).toHaveBeenCalled()
+      expect(rtLib.activations.list).toHaveBeenCalledWith({ limit: 1, skip: 0 })
+      expect(rtLib.activations.logs).not.toHaveBeenCalled()
+      expect(logger).not.toHaveBeenCalled()
+    })
+    test('(config, limit=3, logger) and 3 activations and no logs', async () => {
+      rtLib.mockResolved('activations.list', [
+        { activationId: 123, start: 555555, name: 'one' },
+        { activationId: 456, start: 555666, name: 'two' },
+        { activationId: 100, start: 666666, name: 'three' }
+      ])
+      rtLib.mockResolved('activations.logs', { logs: [] })
+      await appHelper.getLogs(fakeConfig, 3, logger)
+      expect(rtLib.activations.list).toHaveBeenCalledWith({ limit: 3, skip: 0 })
+      expect(rtLib.activations.logs).toHaveBeenCalledTimes(3)
+      // reverse order
+      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(1, { activationId: 100 })
+      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(2, { activationId: 456 })
+      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(3, { activationId: 123 })
+      expect(logger).not.toHaveBeenCalled()
+    })
+    test('(config, limit=45, logger) and 3 activations and logs for 2 of them', async () => {
+      rtLib.mockResolved('activations.list', [
+        { activationId: 123, start: 555555, name: 'one' },
+        { activationId: 456, start: 555666, name: 'two' },
+        { activationId: 100, start: 666666, name: 'three' }
+      ])
+      rtLib.mockFn('activations.logs').mockImplementation(a => {
+        if (a.activationId === 100) {
+          return { logs: ['three A', 'three B', 'three C'] }
+        } else if (a.activationId === 456) {
+          return { logs: ['two A \n two B'] }
+        }
+        return { logs: [] }
+      })
+
+      await appHelper.getLogs(fakeConfig, 45, logger)
+      expect(rtLib.activations.list).toHaveBeenCalledWith({ limit: 45, skip: 0 })
+      expect(rtLib.activations.logs).toHaveBeenCalledTimes(3)
+      // reverse order
+      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(1, { activationId: 100 })
+      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(2, { activationId: 456 })
+      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(3, { activationId: 123 })
+      expect(logger).toHaveBeenCalledTimes(8)
+      expect(logger).toHaveBeenNthCalledWith(1, 'three:100')
+      expect(logger).toHaveBeenNthCalledWith(2, 'three A')
+      expect(logger).toHaveBeenNthCalledWith(3, 'three B')
+      expect(logger).toHaveBeenNthCalledWith(4, 'three C')
+      expect(logger).toHaveBeenNthCalledWith(5) // new line
+      expect(logger).toHaveBeenNthCalledWith(6, 'two:456')
+      expect(logger).toHaveBeenNthCalledWith(7, 'two A \n two B')
+    })
+
+    test('(config, limit=45, logger, startTime=bigger than first 2) and 3 activations and logs for 2 of them', async () => {
+      rtLib.mockResolved('activations.list', [
+        { activationId: 123, start: 555555, name: 'one' },
+        { activationId: 456, start: 555666, name: 'two' },
+        { activationId: 100, start: 666666, name: 'three' }
+      ])
+      rtLib.mockFn('activations.logs').mockImplementation(a => {
+        if (a.activationId === 100) {
+          return { logs: ['three A', 'three B', 'three C'] }
+        } else if (a.activationId === 456) {
+          return { logs: ['two A \n two B'] }
+        }
+        return { logs: [] }
+      })
+
+      await appHelper.getLogs(fakeConfig, 45, logger, 666665)
+      expect(rtLib.activations.list).toHaveBeenCalledWith({ limit: 45, skip: 0 })
+      expect(rtLib.activations.logs).toHaveBeenCalledTimes(1)
+      // reverse order
+      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(1, { activationId: 100 })
+      expect(logger).toHaveBeenCalledTimes(5)
+      expect(logger).toHaveBeenNthCalledWith(1, 'three:100')
+      expect(logger).toHaveBeenNthCalledWith(2, 'three A')
+      expect(logger).toHaveBeenNthCalledWith(3, 'three B')
+      expect(logger).toHaveBeenNthCalledWith(4, 'three C')
+      expect(logger).toHaveBeenNthCalledWith(5) // new line
+    })
+
+    test('(config, limit=45, no logger) and 1 activation and 1 log', async () => {
+      const spy = jest.spyOn(console, 'log')
+      spy.mockImplementation(() => {})
+
+      rtLib.mockResolved('activations.list', [
+        { activationId: 123, start: 555555, name: 'one' }
+      ])
+      rtLib.mockFn('activations.logs').mockImplementation(a => {
+        if (a.activationId === 123) {
+          return { logs: ['one A'] }
+        }
+        return { logs: [] }
+      })
+
+      await appHelper.getLogs(fakeConfig, 45)
+      expect(rtLib.activations.list).toHaveBeenCalledWith({ limit: 45, skip: 0 })
+      expect(rtLib.activations.logs).toHaveBeenCalledTimes(1)
+      // reverse order
+      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(1, { activationId: 123 })
+      expect(spy).toHaveBeenCalledTimes(3)
+      expect(spy).toHaveBeenNthCalledWith(1, 'one:123')
+      expect(spy).toHaveBeenNthCalledWith(2, 'one A')
+      expect(spy).toHaveBeenNthCalledWith(3) // new line
+
+      spy.mockRestore()
+    })
+  })
+
+  describe('getActionUrls', () => {
+    let fakeConfig
+    beforeEach(() => {
+      // base
+      fakeConfig = {
+        ow: {
+          namespace: 'dude',
+          apihost: 'https://fake.com',
+          package: 'thepackage',
+          apiversion: 'v0'
+        },
+        app: {
+          hasFrontend: true,
+          hostname: 'https://cdn.com'
+        },
+        manifest: {
+          package: {
+            actions: {}
+          }
+        }
+      }
+    })
+    test('no actions in manifest config', () => {
+      expect(appHelper.getActionUrls(fakeConfig)).toEqual({})
+    })
+    test('6 actions, 2 web and 4 non-web and no sequence', () => {
+      fakeConfig.manifest.package.actions = {
+        one: { 'web-export': true },
+        two: { web: true },
+        three: { web: false },
+        four: { web: 'no' },
+        five: { web: 'false' },
+        six: { other: 'something' }
+      }
+      expect(appHelper.getActionUrls(fakeConfig)).toEqual({
+        five: 'https://dude.fake.com/api/v0/thepackage/five',
+        four: 'https://dude.fake.com/api/v0/thepackage/four',
+        one: 'https://dude.cdn.com/api/v0/web/thepackage/one',
+        six: 'https://dude.fake.com/api/v0/thepackage/six',
+        three: 'https://dude.fake.com/api/v0/thepackage/three',
+        two: 'https://dude.cdn.com/api/v0/web/thepackage/two'
+      })
+    })
+    test('6 sequences, 2 web and 4 non-web and no actions', () => {
+      fakeConfig.manifest.package.sequences = {
+        one: { 'web-export': true },
+        two: { web: true },
+        three: { web: false },
+        four: { web: 'no' },
+        five: { web: 'false' },
+        six: { other: 'something' }
+      }
+      expect(appHelper.getActionUrls(fakeConfig)).toEqual({
+        five: 'https://dude.fake.com/api/v0/thepackage/five',
+        four: 'https://dude.fake.com/api/v0/thepackage/four',
+        one: 'https://dude.cdn.com/api/v0/web/thepackage/one',
+        six: 'https://dude.fake.com/api/v0/thepackage/six',
+        three: 'https://dude.fake.com/api/v0/thepackage/three',
+        two: 'https://dude.cdn.com/api/v0/web/thepackage/two'
+      })
+    })
+    test('2 actions and 2 sequences, one web one non-web', () => {
+      fakeConfig.manifest.package.actions = {
+        aone: { 'web-export': true },
+        atwo: {}
+      }
+      fakeConfig.manifest.package.sequences = {
+        sone: { 'web-export': true },
+        stwo: {}
+      }
+      expect(appHelper.getActionUrls(fakeConfig)).toEqual({
+        aone: 'https://dude.cdn.com/api/v0/web/thepackage/aone',
+        atwo: 'https://dude.fake.com/api/v0/thepackage/atwo',
+        sone: 'https://dude.cdn.com/api/v0/web/thepackage/sone',
+        stwo: 'https://dude.fake.com/api/v0/thepackage/stwo'
+      })
+    })
+    test('2 actions and 2 sequences, one web one non-web, app has no frontend', () => {
+      fakeConfig.manifest.package.actions = {
+        aone: { 'web-export': true },
+        atwo: {}
+      }
+      fakeConfig.manifest.package.sequences = {
+        sone: { 'web-export': true },
+        stwo: {}
+      }
+      fakeConfig.app.hasFrontend = false
+      expect(appHelper.getActionUrls(fakeConfig)).toEqual({
+        aone: 'https://dude.fake.com/api/v0/web/thepackage/aone',
+        atwo: 'https://dude.fake.com/api/v0/thepackage/atwo',
+        sone: 'https://dude.fake.com/api/v0/web/thepackage/sone',
+        stwo: 'https://dude.fake.com/api/v0/thepackage/stwo'
+      })
+    })
+    test('2 actions and 2 sequences, one web one non-web, isRemoteDev=true', () => {
+      fakeConfig.manifest.package.actions = {
+        aone: { 'web-export': true },
+        atwo: {}
+      }
+      fakeConfig.manifest.package.sequences = {
+        sone: { 'web-export': true },
+        stwo: {}
+      }
+      expect(appHelper.getActionUrls(fakeConfig, true)).toEqual({
+        aone: 'https://dude.fake.com/api/v0/web/thepackage/aone',
+        atwo: 'https://dude.fake.com/api/v0/thepackage/atwo',
+        sone: 'https://dude.fake.com/api/v0/web/thepackage/sone',
+        stwo: 'https://dude.fake.com/api/v0/thepackage/stwo'
+      })
+    })
+    test('2 actions and 2 sequences, one web one non-web, isLocalDev=true', () => {
+      fakeConfig.manifest.package.actions = {
+        aone: { 'web-export': true },
+        atwo: {}
+      }
+      fakeConfig.manifest.package.sequences = {
+        sone: { 'web-export': true },
+        stwo: {}
+      }
+      expect(appHelper.getActionUrls(fakeConfig, false, true)).toEqual({
+        aone: 'https://fake.com/api/v0/web/dude/thepackage/aone',
+        atwo: 'https://fake.com/api/v0/dude/thepackage/atwo',
+        sone: 'https://fake.com/api/v0/web/dude/thepackage/sone',
+        stwo: 'https://fake.com/api/v0/dude/thepackage/stwo'
+      })
+    })
+  })
+
+  test('removeProtocol', () => {
+    let res = appHelper.removeProtocolFromURL('https://some-url')
+    expect(res).toBe('some-url')
+
+    res = appHelper.removeProtocolFromURL('https:/some-url')
+    expect(res).toBe('https:/some-url')
+
+    res = appHelper.removeProtocolFromURL('https:some-url')
+    expect(res).toBe('https:some-url')
+
+    res = appHelper.removeProtocolFromURL('https//some-url')
+    expect(res).toBe('https//some-url')
+
+    res = appHelper.removeProtocolFromURL('http://user:pass@sub.example.com:8080/p/a/t/h?query=string#hash')
+    expect(res).toBe('user:pass@sub.example.com:8080/p/a/t/h?query=string#hash')
+  })
+
+  test('urlJoin', () => {
+    let res = appHelper.urlJoin('a', 'b', 'c')
+    expect(res).toBe('a/b/c')
+    // keeps leading /
+    res = appHelper.urlJoin('/', 'a', 'b', 'c')
+    expect(res).toBe('/a/b/c')
+
+    res = appHelper.urlJoin('/a/b/c')
+    expect(res).toBe('/a/b/c')
+    // keeps inner /
+    res = appHelper.urlJoin('a/b/c')
+    expect(res).toBe('a/b/c')
+
+    res = appHelper.urlJoin('a/b', 'c')
+    expect(res).toBe('a/b/c')
+
+    res = appHelper.urlJoin('a/b', '/c')
+    expect(res).toBe('a/b/c')
+
+    res = appHelper.urlJoin('a/b', '/', 'c')
+    expect(res).toBe('a/b/c')
+    // collapses duplicate //
+    res = appHelper.urlJoin('a/b', '/', '/', '/', 'c')
+    expect(res).toBe('a/b/c')
+
+    res = appHelper.urlJoin('a', 'b', 'c/')
+    expect(res).toBe('a/b/c')
+
+    res = appHelper.urlJoin('a', 'b', 'c', '/')
+    expect(res).toBe('a/b/c')
+  })
+
+  test('checkFile', () => {
+    jest.mock('fs-extra')
+    const fs = require('fs-extra')
+    // if file exists
+    fs.lstatSync.mockReturnValue({ isFile: () => true })
+    expect(() => appHelper.checkFile('somepath/a/b')).not.toThrow()
+    expect(fs.lstatSync).toHaveBeenCalledWith('somepath/a/b')
+    // if not exists
+    fs.lstatSync.mockReturnValue({ isFile: () => false })
+    expect(() => appHelper.checkFile('no/exists')).toThrow('no/exists is not a valid file')
   })
 })

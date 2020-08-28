@@ -122,7 +122,7 @@ async function getLogs(config, limit, logger, startTime = 0) {
   return { lastActivationTime }
 }
 
-function getActionUrls (config, /* istanbul ignore next */ isRemoteDev = false, /* istanbul ignore next */ isLocalDev = false) {
+function getActionUrls (config, isRemoteDev = false, isLocalDev = false) {
   // set action urls
   // action urls {name: url}, if !LocalDev subdomain uses namespace
   return Object.entries({ ...config.manifest.package.actions, ...(config.manifest.package.sequences || {}) }).reduce((obj, [name, action]) => {
@@ -148,8 +148,9 @@ function getActionUrls (config, /* istanbul ignore next */ isRemoteDev = false, 
 
 /**
  * Joins url path parts
+ *
  * @param {...string} args url parts
- * @returns {string}
+ * @returns {string} joined url
  */
 function urlJoin (...args) {
   let start = ''
@@ -159,20 +160,35 @@ function urlJoin (...args) {
     .join('/')
 }
 
+/**
+ * Removes the protocol prefix from a URL string
+ *
+ * @param {string} url the input url string
+ * @returns {string} the url without the protocol prefix
+ */
 function removeProtocolFromURL (url) {
+  // will replace strings like '<protocol>://hello.com' and  '//hello.com' with
+  // 'hello.com'
   return url.replace(/(^\w+:|^)\/\//, '')
 }
 
+/**
+ * Tests that a file exists, if not throws an error
+ *
+ * @param {string} filePath path to a file
+ */
 function checkFile (filePath) {
   // note lstatSync will throw if file doesn't exist
-  if (!fs.lstatSync(filePath).isFile()) throw Error(`${filePath} is not a valid file (e.g. cannot be a dir or a symlink)`)
+  if (!fs.lstatSync(filePath).isFile()) {
+    throw Error(`${filePath} is not a valid file`)
+  }
 }
 
 /**
  * Writes an object to a file
+ *
  * @param {string} file path
  * @param {object} config object to write
- * @returns {Promise}
  */
 function writeConfig (file, config) {
   fs.ensureDirSync(path.dirname(file))

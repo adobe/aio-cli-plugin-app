@@ -13,7 +13,6 @@ governing permissions and limitations under the License.
 const { flags } = require('@oclif/command')
 // const { cli } = require('cli-ux')
 const BaseCommand = require('../../BaseCommand')
-const RuntimeLib = require('@adobe/aio-lib-runtime')
 const { wrapError, getLogs } = require('../../lib/app-helper')
 
 class Logs extends BaseCommand {
