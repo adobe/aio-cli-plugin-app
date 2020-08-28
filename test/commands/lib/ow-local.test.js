@@ -13,6 +13,8 @@ governing permissions and limitations under the License.
 jest.mock('execa')
 const execa = require('execa')
 
+const aioLogger = require('@adobe/aio-lib-core-logging')()
+
 beforeEach(() => {
   execa.sync.mockReset()
   delete process.env.OW_LOCAL_NAMESPACE
@@ -21,6 +23,7 @@ beforeEach(() => {
   delete process.env.OW_JAR_URL
   delete process.env.OW_JAR_FILE
   delete process.env.OW_LOCAL_APIHOST
+  aioLogger.debug.mockReset()
 })
 
 describe('owlocal', () => {
@@ -95,6 +98,20 @@ describe('owlocal', () => {
       expect(owLocal.getDockerNetworkAddress()).toBe('http://localhost:3233')
       expect(execa.sync).not.toHaveBeenCalled()
       expect(owLocal.OW_LOCAL_APIHOST).toEqual('http://localhost:3233')
+    })
+    test('if execa fails', () => {
+      Object.defineProperty(process, 'platform', {
+        value: 'abc'
+      })
+      execa.sync.mockImplementation(() => { throw new Error('fake error') })
+      let owLocal
+      jest.isolateModules(() => {
+        owLocal = require('../../../src/lib/owlocal')
+      })
+      expect(owLocal.getDockerNetworkAddress()).toBe('http://localhost:3233') // fall back to default
+      expect(execa.sync).toHaveBeenCalledWith('docker', ['network', 'inspect', 'bridge'])
+      expect(owLocal.OW_LOCAL_APIHOST).toEqual('http://localhost:3233')
+      expect(aioLogger.debug).toHaveBeenCalledWith(expect.stringContaining('fake error'))
     })
   })
 })
