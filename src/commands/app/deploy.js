@@ -29,33 +29,15 @@ class Deploy extends BaseCommand {
     const config = this.getAppConfig()
     const filterActions = flags.action
 
-    // setup scripts, events and spinner
     const spinner = ora()
+    const onProgress = !flags.verbose ? info => {
+      spinner.text = info
+    } : info => {
+      spinner.info(chalk.dim(`${info}`))
+      spinner.start()
+    }
+    // setup scripts, events and spinner
     try {
-      const listeners = {
-        onStart: taskName => {
-          this.log(chalk.bold(`> ${taskName}`))
-          spinner.start(taskName)
-        },
-        onEnd: taskName => {
-          spinner.succeed(chalk.green(taskName))
-          this.log()
-        },
-        onWarning: warning => {
-          spinner.warn(chalk.dim(chalk.yellow(warning)))
-          spinner.start()
-        },
-        onProgress: info => {
-          if (flags.verbose) {
-            spinner.stopAndPersist({ text: chalk.dim(` > ${info}`) })
-          } else {
-            spinner.info(chalk.dim(info))
-          }
-          spinner.start()
-        }
-      }
-      const scripts = AppScripts({ listeners })
-
       // build phase
       if (!flags['skip-build']) {
         try {
@@ -75,7 +57,24 @@ class Deploy extends BaseCommand {
         }
         if (!flags['skip-static']) {
           if (fs.existsSync('web-src/')) {
-            await scripts.buildUI()
+            // function writeConfig (file, config) {
+            //   fs.ensureDirSync(path.dirname(file))
+            //   // for now only action URLs
+            //   fs.writeFileSync(
+            //     file,
+            //     JSON.stringify(config), { encoding: 'utf-8' }
+            //   )
+            // }
+            // let urls = {}
+            // if (this.config.app.hasBackend) { urls = await utils.getActionUrls(this.config) }
+            // await writeConfig(this.config.web.injectedConfig, urls)
+
+            // TODO: get urls for the actions, and inject them into the web-src contig file before building ui
+            // code from app-scripts above
+
+            spinner.start('building')
+            await AppScripts.buildWeb(config, onProgress)
+            spinner.succeed(chalk.green('building'))
           } else {
             this.log('no web-src, skipping web-src build')
           }
@@ -104,15 +103,16 @@ class Deploy extends BaseCommand {
             }
             // todo: fix this, the following change does not work, if we call rtLib version it chokes on some actions
             // Error: EISDIR: illegal operation on a directory, read
-            deployedRuntimeEntities = { ...await rtLib.deployActions(config, { filterEntities } ) }
-            // deployedRuntimeEntities = { ...await scripts.deployActions([], { filterEntities }) }
+            deployedRuntimeEntities = { ...await rtLib.deployActions(config, { filterEntities }) }
           } else {
             this.log('no manifest.yml, skipping action deploy')
           }
         }
         if (!flags['skip-static']) {
           if (fs.existsSync('web-src/')) {
-            deployedFrontendUrl = await scripts.deployUI()
+            spinner.start('deploying')
+            deployedFrontendUrl = await AppScripts.deployWeb(config, onProgress)
+            spinner.succeed(chalk.green('deploying'))
           } else {
             this.log('no web-src, skipping web-src deploy')
           }
@@ -152,7 +152,7 @@ class Deploy extends BaseCommand {
         this.log(chalk.green(chalk.bold('Well done, your app is now online 🏄')))
       }
     } catch (error) {
-      spinner.fail()
+      spinner.stop()
       this.error(wrapError(error))
     }
   }

@@ -15,6 +15,7 @@ module.exports = () => {
     stopAndPersist: jest.fn(() => {
       // console.error('stopAndPersist')
     }),
+    stop: jest.fn(),
     start: jest.fn(() => {
       // console.error('start')
     }),
