@@ -15,7 +15,6 @@ const BaseCommand = require('../../../src/BaseCommand')
 
 jest.mock('../../../src/lib/runDev')
 const mockRun = require('../../../src/lib/runDev')
-//runDev.mockImplementation(jest.fn())
 
 // should be same as in run.js
 const DEV_KEYS_DIR = 'dist/dev-keys/'
@@ -185,7 +184,7 @@ describe('run', () => {
       parcel: expect.objectContaining({
         logLevel: 2
       })
-    }))
+    }), expect.any(Function))
   })
 
   test('app:run check if fetchLogs flag is set when calling scripts', async () => {
@@ -195,7 +194,7 @@ describe('run', () => {
     await command.run()
     expect(mockRun).toHaveBeenCalledWith([], {}, expect.objectContaining({
       fetchLogs: true
-    }))
+    }), expect.any(Function))
   })
 
   test('app:run with -verbose', async () => {
@@ -209,7 +208,7 @@ describe('run', () => {
       parcel: expect.objectContaining({
         logLevel: 4
       })
-    }))
+    }), expect.any(Function))
     expect(process.env.REMOTE_ACTIONS).toBe('true')
   })
 
@@ -234,7 +233,7 @@ describe('run', () => {
       parcel: expect.objectContaining({
         logLevel: 4
       })
-    }))
+    }), expect.any(Function))
     expect(process.env.REMOTE_ACTIONS).toBe('false')
   })
 
@@ -312,7 +311,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }))
+    }), expect.any(Function))
   })
 
   test('app:run with UI and no cert files but has cert config', async () => {
@@ -332,7 +331,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }))
+    }), expect.any(Function))
     expect(mockFS.ensureDir).toHaveBeenCalledWith(DEV_KEYS_DIR)
     expect(mockFS.writeFile).toHaveBeenCalledTimes(2)
     expect(mockFS.writeFile).toHaveBeenCalledWith(PUB_CERT_PATH, 'pub cert')
@@ -361,7 +360,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }))
+    }), expect.any(Function))
     expect(mockFS.ensureDir).toHaveBeenCalledWith(DEV_KEYS_DIR)
     expect(command.config.findCommand).toHaveBeenCalledWith('certificate:generate')
     expect(mockFindCommandRun).toHaveBeenCalledWith([`--keyout=${PRIVATE_KEY_PATH}`, `--out=${PUB_CERT_PATH}`, '-n=DeveloperSelfSigned.cert'])
@@ -397,7 +396,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }))
+    }), expect.any(Function))
     expect(mockConfig.set).toHaveBeenCalledTimes(2)
     expect(mockConfig.set).toHaveBeenCalledWith(CONFIG_KEY + '.privateKey', 'private key')
     expect(mockConfig.set).toHaveBeenCalledWith(CONFIG_KEY + '.publicCert', 'public cert')
@@ -435,7 +434,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }))
+    }), expect.any(Function))
     expect(https.createServer).toHaveBeenCalledWith({ key: 'private key', cert: 'public cert' }, expect.any(Function))
     expect(getPort).toHaveBeenCalledWith({ port: 9080 })
     expect(mockHttpsServerInstance.listen).toHaveBeenCalledWith(1111)
@@ -471,7 +470,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }))
+    }), expect.any(Function))
     expect(getPort).toHaveBeenCalledWith({ port: 9999 })
     expect(mockHttpsServerInstance.listen).toHaveBeenCalledWith(1111)
     expect(cli.open).toHaveBeenCalledWith('https://localhost:1111')
@@ -508,7 +507,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }))
+    }), expect.any(Function))
     expect(mockHttpsServerInstance.listen).toHaveBeenCalledWith(1111)
     expect(mockHttpsServerInstance.close).toHaveBeenCalledTimes(1)
     expect(cli.open).toHaveBeenCalledWith('https://localhost:1111')

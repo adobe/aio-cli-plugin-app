@@ -69,32 +69,17 @@ class Run extends BaseCommand {
     }
 
     const spinner = ora()
-    /*const listeners = {
-      onStart: taskName => {
-        this.log(chalk.bold(`> ${taskName}`))
-        spinner.start(taskName)
-      },
-      onEnd: taskName => {
-        spinner.succeed(chalk.green(taskName))
-      },
-      onWarning: warning => {
-        spinner.warn(chalk.dim(chalk.yellow(warning)))
-        spinner.start()
-      },
-      onProgress: info => {
-        if (flags.verbose) {
-          spinner.stopAndPersist({ text: chalk.dim(` > ${info}`) })
-        } else {
-          spinner.info(chalk.dim(info))
-        }
-        spinner.start()
-      }
-    }*/
+    const onProgress = !flags.verbose ? info => {
+      spinner.text = info
+    } : info => {
+      spinner.info(chalk.dim(`${info}`))
+      spinner.start()
+    }
 
     process.env.REMOTE_ACTIONS = !flags.local
     // const scripts = AppScripts({ listeners })
     try {
-      const frontendUrl = await runDev(args, this.getAppConfig(), runOptions)
+      const frontendUrl = await runDev(args, this.getAppConfig(), runOptions, onProgress)
       // const frontendUrl = await scripts.runDev([], runOptions)
       try {
         await runPackageScript('post-app-run')
