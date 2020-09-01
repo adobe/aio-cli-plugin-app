@@ -11,48 +11,22 @@ governing permissions and limitations under the License.
 */
 
 const mockScripts = {
-  listeners: null,
-  buildUI: jest.fn(async () => mockWithCallbacks()),
-  buildActions: jest.fn(async () => mockWithCallbacks()),
-  deployUI: jest.fn(async () => mockWithCallbacks()),
-  deployActions: jest.fn(async () => mockWithCallbacks()),
-  undeployUI: jest.fn(async () => mockWithCallbacks()),
-  undeployActions: jest.fn(async () => mockWithCallbacks()),
-  runDev: jest.fn(async () => mockWithCallbacks()),
-  logs: jest.fn(async () => mockWithCallbacks())
+  buildWeb: jest.fn(),
+  deployWeb: jest.fn(),
+  undeployWeb: jest.fn(),
 }
 
 mockScripts.mockReset = (script) => {
   mockScripts[script].mockReset()
-  mockScripts[script].mockImplementation(async () => mockWithCallbacks())
+  mockScripts[script].mockImplementation()
 }
 
 mockScripts.mockResolvedValue = (script, value) => {
-  mockScripts[script].mockImplementation(async () => { mockWithCallbacks(); return value })
+  mockScripts[script].mockImplementation(async () => { return value })
 }
 
 mockScripts.mockRejectedValue = (script, value) => {
-  mockScripts[script].mockImplementation(async () => { mockWithCallbacks(); throw value })
+  mockScripts[script].mockImplementation(async () => { throw value })
 }
 
-const mockWithCallbacks = () => {
-  const lnr = mockScripts.listeners
-  if (lnr.onStart) {
-    lnr.onStart('run:start')
-  }
-  if (lnr.onProgress) {
-    lnr.onProgress('gettin stuff done')
-  }
-  if (lnr.onWarning) {
-    lnr.onWarning('you have been warned')
-  }
-  if (lnr.onEnd) {
-    lnr.onEnd('run:end')
-  }
-}
-
-module.exports = (arg) => {
-  arg = arg || { listeners: null }
-  mockScripts.listeners = arg.listeners
-  return mockScripts
-}
+module.exports = mockScripts

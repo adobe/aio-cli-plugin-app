@@ -16,12 +16,12 @@ const BaseCommand = require('../../../src/BaseCommand')
 const mockFS = require('fs-extra')
 
 // mocks
-const mockScripts = require('@adobe/aio-app-scripts')()
+const mockScripts = require('@adobe/aio-app-scripts')
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 
 beforeEach(() => {
   mockRuntimeLib.undeployActions.mockReset()
-  mockScripts.mockReset('undeployUI')
+  mockScripts.mockReset('undeployWeb')
   mockFS.existsSync.mockReset()
   jest.restoreAllMocks()
 })
@@ -66,7 +66,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
-    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
+    expect(mockScripts.undeployWeb).toHaveBeenCalledTimes(1)
   })
 
   test('undeploy an App with --verbose', async () => {
@@ -75,7 +75,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
-    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
+    expect(mockScripts.undeployWeb).toHaveBeenCalledTimes(1)
   })
 
   test('undeploy skip-actions', async () => {
@@ -84,7 +84,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(0)
-    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
+    expect(mockScripts.undeployWeb).toHaveBeenCalledTimes(1)
   })
 
   test('undeploy skip-actions verbose', async () => {
@@ -93,7 +93,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(0)
-    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
+    expect(mockScripts.undeployWeb).toHaveBeenCalledTimes(1)
   })
 
   test('undeploy skip static', async () => {
@@ -102,7 +102,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
-    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(0)
+    expect(mockScripts.undeployWeb).toHaveBeenCalledTimes(0)
   })
 
   test('undeploy skip static verbose', async () => {
@@ -111,7 +111,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
-    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(0)
+    expect(mockScripts.undeployWeb).toHaveBeenCalledTimes(0)
   })
 
   test('undeploy an app with no backend', async () => {
@@ -119,7 +119,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(0)
-    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
+    expect(mockScripts.undeployWeb).toHaveBeenCalledTimes(1)
     expect(command.log).toHaveBeenCalledWith('no manifest file, skipping action undeploy')
   })
 
@@ -128,7 +128,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
-    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(0)
+    expect(mockScripts.undeployWeb).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith('no web-src, skipping web-src undeploy')
   })
 
@@ -141,12 +141,12 @@ describe('run', () => {
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
   })
 
-  test('should fail if scripts.undeployUI fails', async () => {
+  test('should fail if scripts.undeployWeb fails', async () => {
     mockFS.existsSync.mockReturnValue(true)
     const error = new Error('mock failure UI')
-    mockScripts.mockRejectedValue('undeployUI', error)
+    mockScripts.mockRejectedValue('undeployWeb', error)
     await command.run()
     expect(command.error).toHaveBeenCalledWith(error)
-    expect(mockScripts.undeployUI).toHaveBeenCalledTimes(1)
+    expect(mockScripts.undeployWeb).toHaveBeenCalledTimes(1)
   })
 })
