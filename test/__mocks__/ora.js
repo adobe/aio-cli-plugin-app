@@ -22,8 +22,8 @@ module.exports = () => {
     warn: jest.fn(() => {
       // console.error('warn')
     }),
-    info: jest.fn(() => {
-      // console.error('info')
+    info: jest.fn((msg) => {
+      console.log(msg)
     }),
     error: jest.fn(),
     fail: jest.fn(),

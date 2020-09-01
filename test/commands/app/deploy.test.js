@@ -21,6 +21,7 @@ const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 jest.mock('@adobe/aio-lib-core-config')
 const mockConfig = require('@adobe/aio-lib-core-config')
 
+const { stdout, stderr } = require('stdout-stderr')
 jest.mock('cli-ux')
 const { cli } = require('cli-ux')
 
@@ -337,6 +338,30 @@ describe('run', () => {
     mockScripts.deployWeb.mockRejectedValue(error)
     await command.run()
     expect(command.error).toHaveBeenCalledWith(error)
+    expect(mockScripts.deployWeb).toHaveBeenCalledTimes(1)
+  })
+
+  test('spinner should be called for progress logs on deployWeb call , with verbose', async () => {
+    mockFS.existsSync.mockReturnValue(true)
+    mockRuntimeLib.deployActions.mockResolvedValue('ok')
+    mockScripts.deployWeb.mockImplementation( async (config, log) => {
+      log('progress log')
+      return 'ok'
+    })
+    command.argv = ['-v']
+    await command.run()
+    expect(mockScripts.deployWeb).toHaveBeenCalledTimes(1)
+    expect(stdout.output).toEqual(expect.stringContaining('progress log'))
+  })
+
+  test('spinner should be called for progress logs on deployWeb call , without verbose', async () => {
+    mockFS.existsSync.mockReturnValue(true)
+    mockRuntimeLib.deployActions.mockResolvedValue('ok')
+    mockScripts.deployWeb.mockImplementation( async (config, log) => {
+      log('progress log')
+      return 'ok'
+    })
+    await command.run()
     expect(mockScripts.deployWeb).toHaveBeenCalledTimes(1)
   })
 })
