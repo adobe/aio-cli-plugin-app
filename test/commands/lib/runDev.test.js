@@ -297,18 +297,22 @@ describe('call checkOpenwhiskCredentials with right params', () => {
     const tvmConfig = cloneDeep(global.fakeConfig.tvm) // don't override original
     delete tvmConfig.runtime[configVarName]
     const config = await loadEnvScripts('sample-app', tvmConfig)
-    runDev([], config)
+    await runDev([], config)
     expect(mockRuntimeLib.utils.checkOpenWhiskCredentials).toHaveBeenCalledWith(config)
     //await expect(runDev([], config)).rejects.toEqual(expect.objectContaining({ message: expect.stringContaining(`missing Adobe I/O Runtime ${configVarName}`) }))
   }
 
-  /* test('missing runtime namespace and REMOTE_ACTIONS=true', () => failMissingRuntimeConfig('namespace', 'true')) // eslint-disable-line jest/expect-expect
+  test('error before chokidar watcher gets a chance to be initialized -> codecov', async () => {
+    BuildActions.mockImplementationOnce(() => { throw new Error('error')})
+    await expect(failMissingRuntimeConfig('auth', '1')).rejects.toThrowError('error')
+  }) // eslint-disable-line jest/expect-expect
+
+  test('missing runtime namespace and REMOTE_ACTIONS=true', () => failMissingRuntimeConfig('namespace', 'true')) // eslint-disable-line jest/expect-expect
   test('missing runtime namespace and REMOTE_ACTIONS=yes', () => failMissingRuntimeConfig('namespace', 'yes')) // eslint-disable-line jest/expect-expect
   test('missing runtime namespace and REMOTE_ACTIONS=1', () => failMissingRuntimeConfig('namespace', '1')) // eslint-disable-line jest/expect-expect
 
   test('missing runtime auth and REMOTE_ACTIONS=true', () => failMissingRuntimeConfig('auth', 'true')) // eslint-disable-line jest/expect-expect
   test('missing runtime auth and REMOTE_ACTIONS=yes', () => failMissingRuntimeConfig('auth', 'yes')) // eslint-disable-line jest/expect-expect
-   */
   test('missing runtime auth and REMOTE_ACTIONS=1', () => failMissingRuntimeConfig('auth', '1')) // eslint-disable-line jest/expect-expect
 })
 
