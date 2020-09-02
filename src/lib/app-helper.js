@@ -86,7 +86,7 @@ async function getCliInfo () {
   return { accessToken, env }
 }
 
-async function getLogs(config, limit, logger, startTime = 0) {
+async function getLogs (config, limit, logger, startTime = 0) {
   // check for runtime credentials
   RuntimeLib.utils.checkOpenWhiskCredentials(config)
   const runtime = await RuntimeLib.init({

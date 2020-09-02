@@ -13,7 +13,7 @@ governing permissions and limitations under the License.
 const mockScripts = {
   buildWeb: jest.fn(),
   deployWeb: jest.fn(),
-  undeployWeb: jest.fn(),
+  undeployWeb: jest.fn()
 }
 
 mockScripts.mockReset = (script) => {

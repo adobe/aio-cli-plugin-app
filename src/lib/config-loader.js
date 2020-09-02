@@ -84,7 +84,7 @@ module.exports = () => {
   const userConfig = aioConfig.get() || {}
   userConfig.cna = userConfig.cna || {}
   config.imsOrgId = aioConfig.get(AIO_CONFIG_IMS_ORG_ID)
-  
+
   // 1. paths
   // 1.a defaults
   const actions = path.normalize(userConfig.cna.actions || 'actions')

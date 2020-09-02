@@ -25,13 +25,12 @@ process.exit = jest.fn()
 const loadConfig = require('../../../src/lib/config-loader')
 const runDev = require('../../../src/lib/runDev')
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
-const BuildActions = mockRuntimeLib.buildActions
 const DeployActions = mockRuntimeLib.deployActions
 
 jest.mock('../../../src/lib/app-helper.js')
 const mockHelpers = require('../../../src/lib/app-helper.js')
 
-describe ('runDev logListener', () => {
+describe('runDev logListener', () => {
   const ref = {}
   beforeEach(async () => {
     process.env.REMOTE_ACTIONS = 'true'
@@ -40,7 +39,7 @@ describe ('runDev logListener', () => {
     mockAIOConfig.get.mockReturnValue(global.fakeConfig.local)
     process.chdir('/')
     ref.config = loadConfig()
-    
+
     execa.mockReturnValue({
       stdout: jest.fn(),
       kill: jest.fn()
@@ -87,7 +86,7 @@ describe ('runDev logListener', () => {
   })
 })
 
-describe ('poller', () => {
+describe('poller', () => {
   test('poll', () => {
     const poller = new EventPoller(1234)
     poller.emit = jest.fn()

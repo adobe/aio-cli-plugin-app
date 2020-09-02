@@ -14,7 +14,6 @@ const { stdout, stderr } = require('stdout-stderr')
 
 const fs = require.requireActual('fs')
 const eol = require('eol')
-//const fs = require('fs')
 const path = require('path')
 const hjson = require('hjson')
 
@@ -39,13 +38,11 @@ global.mockFs = () => {
     removeKeys: (arr) => {
       // remove from existing
       const files = fileSystem.files()
-      //console.log(Object.keys(files))
       for (const prop in files) {
         if (arr.includes(prop)) {
           delete files[prop]
         }
       }
-      //console.log(Object.keys(files))
       fileSystem.restore()
       fileSystem.mock(files)
     },
@@ -139,13 +136,13 @@ expect.extend({
 })
 
 global.addSampleAppFiles = () => {
-  global.fakeFileSystem.addJson({ 
+  global.fakeFileSystem.addJson({
     'actions/action-zip/index.js': global.fixtureFile('/sample-app/actions/action-zip/index.js'),
     'actions/action-zip/package.json': global.fixtureFile('/sample-app/actions/action-zip/package.json'),
     'actions/action.js': global.fixtureFile('/sample-app/actions/action.js'),
     'web-src/index.html': global.fixtureFile('/sample-app/web-src/index.html'),
     'manifest.yml': global.fixtureFile('/sample-app/manifest.yml'),
-    'package.json': global.fixtureFile('/sample-app/package.json'),
+    'package.json': global.fixtureFile('/sample-app/package.json')
   })
 }
 

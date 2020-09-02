@@ -15,7 +15,6 @@ const BaseCommand = require('../../../src/BaseCommand')
 
 jest.mock('../../../src/lib/runDev')
 const mockRun = require('../../../src/lib/runDev')
-//runDev.mockImplementation(jest.fn())
 
 // should be same as in run.js
 const DEV_KEYS_DIR = 'dist/dev-keys/'

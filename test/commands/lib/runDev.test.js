@@ -9,9 +9,7 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-//const { vol } = global.mockFs()
 global.mockFs()
-//const AppScripts = require('../..')
 const runDev = require('../../../src/lib/runDev')
 const loadConfig = require('../../../src/lib/config-loader')
 const cloneDeep = require('lodash.clonedeep')
@@ -104,13 +102,13 @@ beforeEach(() => {
   Date.now.mockImplementation(() => time)
   global.setTimeout.mockImplementation((fn, d) => { time = time + d; fn() })
 
-  //deployActionsSpy = jest.spyOn(DeployActions.prototype, 'run')
+  // deployActionsSpy = jest.spyOn(DeployActions.prototype, 'run')
   deployActionsSpy = DeployActions
   deployActionsSpy.mockResolvedValue({})
 })
 
 afterAll(() => {
-  //deployActionsSpy.mockRestore()
+  // deployActionsSpy.mockRestore()
 })
 
 /* ****************** Consts ******************* */
@@ -156,28 +154,31 @@ function generateDotenvContent (credentials) {
 
 async function loadEnvScripts (project, config, excludeFiles = []) {
   // create test app
-  //global.loadFs(vol, project)
-  //TODO: respect project though it is not used ?
+  // global.loadFs(vol, project)
+  // TODO: respect project though it is not used ?
   global.addSampleAppFiles()
   excludeFiles.forEach(f => global.fakeFileSystem.removeKeys([f])/* vol.unlinkSync(f) */)
   mockAIOConfig.get.mockReturnValue(config)
-  //console.log(Object.keys(global.fakeFileSystem.files()))
+  // console.log(Object.keys(global.fakeFileSystem.files()))
   process.chdir('/')
   return loadConfig()
-  //const scripts = AppScripts({ listeners: { onProgress: mockOnProgress } })
-  //return scripts
+  // const scripts = AppScripts({ listeners: { onProgress: mockOnProgress } })
+  // return scripts
 }
 
 function writeFakeOwJar () {
-  //global.addFakeFiles(vol, path.dirname(owJarPath), path.basename(owJarPath))
-  fakeFsJson = {}
-  fakeFsJson[path.dirname(owJarPath)+'/'+path.basename(owJarPath)] = 'fake-content'
+  // global.addFakeFiles(vol, path.dirname(owJarPath), path.basename(owJarPath))
+  const fakeFsJson = {}
+  fakeFsJson[path.dirname(owJarPath) + '/' + path.basename(owJarPath)] = 'fake-content'
   global.fakeFileSystem.addJson(fakeFsJson)
 }
 
+/**
+ *
+ */
 function deleteFakeOwJar () {
-  //const parts = owJarPath.split('/').slice(1) // slice(1) to remove first empty '' because of path starting with /
-  //vol.unlinkSync(owJarPath)
+  // const parts = owJarPath.split('/').slice(1) // slice(1) to remove first empty '' because of path starting with /
+  // vol.unlinkSync(owJarPath)
   global.fakeFileSystem.removeKeys([owJarPath])
   /* parts.pop()
   while (parts.length > 0) {
@@ -212,7 +213,7 @@ function expectAppFiles (expectedFiles) {
   const files = new Set(Object.keys(global.fakeFileSystem.files()))
   // in run local, the openwhisk standalone jar is created at __dirname,
   // but as we store the app in the root of the memfs, we need to ignore the extra created folder
-  files.delete(owJarPath)   //Using jest-plugin-fs now instead of memfs. So change of behavior in deleting the whole path
+  files.delete(owJarPath) // Using jest-plugin-fs now instead of memfs. So change of behavior in deleting the whole path
   expect(files).toEqual(expectedFiles)
 }
 
@@ -235,13 +236,15 @@ async function testCleanupNoErrors (done, config, postCleanupChecks) {
 
 async function testCleanupOnError (config, postCleanupChecks) {
   const error = new Error('fake')
-  mockEmitter = { emit: (event, message) => {
-        if (message.includes('CTRL+C to terminate')) {
-            throw error
-        } else {
-            console.log(`${event}: ${message}`)
-        }
-    }}
+  mockEmitter = {
+    emit: (event, message) => {
+      if (message.includes('CTRL+C to terminate')) {
+        throw error
+      } else {
+        console.log(`${event}: ${message}`)
+      }
+    }
+  }
   /* mockOnProgress.mockImplementation(msg => {
     // throw error for last progress statement
     // todo tests for intermediary progress steps aswell
@@ -251,7 +254,7 @@ async function testCleanupOnError (config, postCleanupChecks) {
   }) */
   await expect(runDev([], config, {}, mockEmitter)).rejects.toBe(error)
   postCleanupChecks()
-  mockEmitter = { emit: jest.fn() }   //To let it be a clearable mock in beforeEach
+  mockEmitter = { emit: jest.fn() } // To let it be a clearable mock in beforeEach
 }
 
 const getExpectedActionVSCodeDebugConfig = actionName =>
@@ -299,11 +302,11 @@ describe('call checkOpenwhiskCredentials with right params', () => {
     const config = await loadEnvScripts('sample-app', tvmConfig)
     await runDev([], config)
     expect(mockRuntimeLib.utils.checkOpenWhiskCredentials).toHaveBeenCalledWith(config)
-    //await expect(runDev([], config)).rejects.toEqual(expect.objectContaining({ message: expect.stringContaining(`missing Adobe I/O Runtime ${configVarName}`) }))
+    // await expect(runDev([], config)).rejects.toEqual(expect.objectContaining({ message: expect.stringContaining(`missing Adobe I/O Runtime ${configVarName}`) }))
   }
 
   test('error before chokidar watcher gets a chance to be initialized -> codecov', async () => {
-    BuildActions.mockImplementationOnce(() => { throw new Error('error')})
+    BuildActions.mockImplementationOnce(() => { throw new Error('error') })
     await expect(failMissingRuntimeConfig('auth', '1')).rejects.toThrowError('error')
   }) // eslint-disable-line jest/expect-expect
 
@@ -318,16 +321,15 @@ describe('call checkOpenwhiskCredentials with right params', () => {
 
 function runCommonTests (ref) {
   test('should save a previous existing .vscode/config.json file to .vscode/config.json.save', async () => {
-
-    //global.addFakeFiles(vol, '.vscode', { 'launch.json': 'fakecontent' })
+    // global.addFakeFiles(vol, '.vscode', { 'launch.json': 'fakecontent' })
     global.fakeFileSystem.addJson({
-        '.vscode/launch.json': 'fakecontent'
+      '.vscode/launch.json': 'fakecontent'
     })
     await runDev([], ref.config)
     expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(true)
     expect(global.fakeFileSystem.files()['/.vscode/launch.json.save'].toString()).toEqual('fakecontent')
-    //expect(vol.existsSync('/.vscode/launch.json.save')).toEqual(true)
-    //expect(vol.readFileSync('/.vscode/launch.json.save').toString()).toEqual('fakecontent')
+    // expect(vol.existsSync('/.vscode/launch.json.save')).toEqual(true)
+    // expect(vol.readFileSync('/.vscode/launch.json.save').toString()).toEqual('fakecontent')
   })
 
   test('should not save to .vscode/config.json.save if there is no existing .vscode/config.json file', async () => {
@@ -338,11 +340,11 @@ function runCommonTests (ref) {
   test('should not overwrite .vscode/config.json.save', async () => {
     // why? because it might be because previous restore failed
     global.fakeFileSystem.addJson({
-        '.vscode/launch.json': 'fakecontent',
-        '.vscode/launch.json.save': 'fakecontentsaved'
+      '.vscode/launch.json': 'fakecontent',
+      '.vscode/launch.json.save': 'fakecontentsaved'
     })
-    //global.addFakeFiles(vol, '.vscode', { 'launch.json': 'fakecontent' })
-    //global.addFakeFiles(vol, '.vscode', { 'launch.json.save': 'fakecontentsaved' }) 
+    // global.addFakeFiles(vol, '.vscode', { 'launch.json': 'fakecontent' })
+    // global.addFakeFiles(vol, '.vscode', { 'launch.json.save': 'fakecontentsaved' })
     await runDev([], ref.config)
     expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(true)
     expect(global.fakeFileSystem.files()['/.vscode/launch.json.save'].toString()).toEqual('fakecontentsaved')
@@ -364,7 +366,7 @@ function runCommonTests (ref) {
 
   test('should cleanup and restore previous existing .vscode/config.json on SIGINT', async () => {
     global.fakeFileSystem.addJson({
-        '.vscode/launch.json': 'fakecontent'
+      '.vscode/launch.json': 'fakecontent'
     })
     // global.addFakeFiles(vol, '.vscode', { 'launch.json': 'fakecontent' })
     return new Promise(resolve => {
@@ -379,7 +381,7 @@ function runCommonTests (ref) {
 
   test('should cleanup and restore previous existing .vscode/config.json on error', async () => {
     global.fakeFileSystem.addJson({
-        '.vscode/launch.json': 'fakecontent'
+      '.vscode/launch.json': 'fakecontent'
     })
     // global.addFakeFiles(vol, '.vscode', { 'launch.json': 'fakecontent' })
     await testCleanupOnError(ref.config, () => {
@@ -387,13 +389,13 @@ function runCommonTests (ref) {
       expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(false)
       expect('/.vscode/launch.json' in global.fakeFileSystem.files()).toEqual(true)
       expect(global.fakeFileSystem.files()['/.vscode/launch.json'].toString()).toEqual('fakecontent')
-  })
+    })
   })
 
   test('should not remove previously existing ./vscode/launch.json.save on SIGINT', async () => {
     global.fakeFileSystem.addJson({
-        '.vscode/launch.json': 'fakecontent',
-        '.vscode/launch.json.save': 'fakecontentsaved'
+      '.vscode/launch.json': 'fakecontent',
+      '.vscode/launch.json.save': 'fakecontentsaved'
     })
     return new Promise(resolve => {
       testCleanupNoErrors(resolve, ref.config, () => {
@@ -405,8 +407,8 @@ function runCommonTests (ref) {
 
   test('should not remove previously existing ./vscode/launch.json.save on error', async () => {
     global.fakeFileSystem.addJson({
-        '.vscode/launch.json': 'fakecontent',
-        '.vscode/launch.json.save': 'fakecontentsaved'
+      '.vscode/launch.json': 'fakecontent',
+      '.vscode/launch.json.save': 'fakecontentsaved'
     })
     await testCleanupOnError(ref.config, () => {
       expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(true)
@@ -439,8 +441,8 @@ function runCommonWithBackendTests (ref) {
 
     await runDev([], ref.config, {}, mockEmitter)
 
-    expect(mockEmitter.emit).toHaveBeenCalledWith("progress", expect.stringContaining('https://fake.com/action'))
-    expect(mockEmitter.emit).toHaveBeenCalledWith("progress", expect.stringContaining('pkg/actionNoUrl'))
+    expect(mockEmitter.emit).toHaveBeenCalledWith('progress', expect.stringContaining('https://fake.com/action'))
+    expect(mockEmitter.emit).toHaveBeenCalledWith('progress', expect.stringContaining('pkg/actionNoUrl'))
   })
 }
 
@@ -725,9 +727,9 @@ function runCommonLocalTests (ref) {
   })
 
   test('should backup an existing .env and create a new .env with local openwhisk credentials', async () => {
-    //vol.writeFileSync('/.env', generateDotenvContent(remoteOWCredentials))
+    // vol.writeFileSync('/.env', generateDotenvContent(remoteOWCredentials))
     global.fakeFileSystem.addJson({
-        '.env': generateDotenvContent(remoteOWCredentials)
+      '.env': generateDotenvContent(remoteOWCredentials)
     })
     await runDev([], ref.config)
     // 1. make sure the new .env is still written properly
@@ -741,11 +743,11 @@ function runCommonLocalTests (ref) {
   })
 
   test('should fail backup an existing .env if .env.save already exists', async () => {
-    //vol.writeFileSync('/.env', generateDotenvContent(remoteOWCredentials))
-    //vol.writeFileSync('/.env.app.save', 'fake content')
+    // vol.writeFileSync('/.env', generateDotenvContent(remoteOWCredentials))
+    // vol.writeFileSync('/.env.app.save', 'fake content')
     global.fakeFileSystem.addJson({
-        '.env': generateDotenvContent(remoteOWCredentials),
-        '.env.app.save': 'fake content'
+      '.env': generateDotenvContent(remoteOWCredentials),
+      '.env.app.save': 'fake content'
     })
     await expect(runDev([], ref.config)).rejects.toThrow(`cannot save .env, please make sure to restore and delete ${r('/.env.app.save')}`)
     expect(global.fakeFileSystem.files()['/.env.app.save'].toString()).toEqual('fake content')
@@ -757,9 +759,9 @@ AIO_RUNTIME_MORE=hello
 AIO_CNA_TVMURL=yolo
 MORE_VAR_1=hello2
 `
-    //vol.writeFileSync('/.env', dotenvOldContent)
+    // vol.writeFileSync('/.env', dotenvOldContent)
     global.fakeFileSystem.addJson({
-        '.env': dotenvOldContent
+      '.env': dotenvOldContent
     })
 
     await runDev([], ref.config)
@@ -783,9 +785,9 @@ AIO_RUNTIME_MORE=hello
 AIO_CNA_TVMURL=yolo
 MORE_VAR_1=hello2
 `
-    //vol.writeFileSync('/.env', dotenvOldContent)
+    // vol.writeFileSync('/.env', dotenvOldContent)
     global.fakeFileSystem.addJson({
-        '.env': dotenvOldContent
+      '.env': dotenvOldContent
     })
 
     return new Promise(resolve => {
@@ -804,9 +806,9 @@ AIO_RUNTIME_MORE=hello
 AIO_CNA_TVMURL=yolo
 MORE_VAR_1=hello2
 `
-    //vol.writeFileSync('/.env', dotenvOldContent)
+    // vol.writeFileSync('/.env', dotenvOldContent)
     global.fakeFileSystem.addJson({
-        '.env': dotenvOldContent
+      '.env': dotenvOldContent
     })
 
     await testCleanupOnError(ref.config, () => {
@@ -966,7 +968,7 @@ describe('with remote actions and frontend', () => {
   const ref = {}
   beforeEach(async () => {
     process.env.REMOTE_ACTIONS = 'true'
-    ref.config= await loadEnvScripts('sample-app', global.fakeConfig.tvm)
+    ref.config = await loadEnvScripts('sample-app', global.fakeConfig.tvm)
     ref.appFiles = ['/manifest.yml', '/package.json', '/web-src/index.html', '/web-src/src/config.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
   })
 
@@ -990,10 +992,10 @@ describe('with remote actions and frontend', () => {
   test('should inject remote action urls into the UI', async () => {
     const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApiHost.split('https://')[1] + '/api/v1/web/sample-app-1.0.0/'
     const retVal = {
-        action: baseUrl + 'action',
-        'action-zip': baseUrl + 'action-zip',
-        'action-sequence': baseUrl + 'action-sequence'
-      }
+      action: baseUrl + 'action',
+      'action-zip': baseUrl + 'action-zip',
+      'action-sequence': baseUrl + 'action-sequence'
+    }
     mockRuntimeLib.utils.getActionUrls.mockReturnValueOnce(retVal)
     await runDev([], ref.config)
     expect('/web-src/src/config.json' in global.fakeFileSystem.files()).toEqual(true)
@@ -1003,10 +1005,10 @@ describe('with remote actions and frontend', () => {
   test('should still inject remote action urls into the UI if skipActions is set', async () => {
     const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApiHost.split('https://')[1] + '/api/v1/web/sample-app-1.0.0/'
     const retVal = {
-        action: baseUrl + 'action',
-        'action-zip': baseUrl + 'action-zip',
-        'action-sequence': baseUrl + 'action-sequence'
-      }
+      action: baseUrl + 'action',
+      'action-zip': baseUrl + 'action-zip',
+      'action-sequence': baseUrl + 'action-sequence'
+    }
     mockRuntimeLib.utils.getActionUrls.mockReturnValueOnce(retVal)
     await runDev([], ref.config, { skipActions: true })
     expect('/web-src/src/config.json' in global.fakeFileSystem.files()).toEqual(true)
@@ -1028,7 +1030,7 @@ describe('with local actions and no frontend', () => {
       stdout: jest.fn(),
       kill: jest.fn()
     })
-    
+
     fetch.mockResolvedValue({
       ok: true
     })
@@ -1084,10 +1086,10 @@ describe('with local actions and frontend', () => {
   test('should inject local action urls into the UI', async () => {
     const baseUrl = localOWCredentials.apihost + '/api/v1/web/' + localOWCredentials.namespace + '/sample-app-1.0.0/'
     const retVal = {
-        action: baseUrl + 'action',
-        'action-zip': baseUrl + 'action-zip',
-        'action-sequence': baseUrl + 'action-sequence'
-      }
+      action: baseUrl + 'action',
+      'action-zip': baseUrl + 'action-zip',
+      'action-sequence': baseUrl + 'action-sequence'
+    }
     mockRuntimeLib.utils.getActionUrls.mockReturnValueOnce(retVal)
     await runDev([], ref.config)
     expect('/web-src/src/config.json' in global.fakeFileSystem.files()).toEqual(true)
@@ -1097,10 +1099,10 @@ describe('with local actions and frontend', () => {
   test('should inject REMOTE action urls into the UI if skipActions is set', async () => {
     const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApiHost.split('https://')[1] + '/api/v1/web/sample-app-1.0.0/'
     const retVal = {
-        action: baseUrl + 'action',
-        'action-zip': baseUrl + 'action-zip',
-        'action-sequence': baseUrl + 'action-sequence'
-      }
+      action: baseUrl + 'action',
+      'action-zip': baseUrl + 'action-zip',
+      'action-sequence': baseUrl + 'action-sequence'
+    }
     mockRuntimeLib.utils.getActionUrls.mockReturnValueOnce(retVal)
     await runDev([], ref.config, { skipActions: true })
     expect('/web-src/src/config.json' in global.fakeFileSystem.files()).toEqual(true)
@@ -1156,13 +1158,13 @@ describe('with frontend only', () => {
 // natively supported in Adobe I/O Runtime.
 test('vscode wskdebug config with require-adobe-auth annotation && apihost=https://adobeioruntime.net', async () => {
   // create test app
-  //global.loadFs(vol, 'sample-app')
+  // global.loadFs(vol, 'sample-app')
   global.addSampleAppFiles()
-  //vol.unlinkSync('web-src/index.html')
+  // vol.unlinkSync('web-src/index.html')
   global.fakeFileSystem.removeKeys(['/web-src/index.html'])
   mockAIOConfig.get.mockReturnValue(global.fakeConfig.tvm)
   process.env.REMOTE_ACTIONS = 'true'
-  //const scripts = AppScripts({})
+  // const scripts = AppScripts({})
   const config = loadConfig()
   // avoid recreating a new fixture
   config.manifest.package.actions.action.annotations = { 'require-adobe-auth': true }
@@ -1193,13 +1195,13 @@ test('vscode wskdebug config with require-adobe-auth annotation && apihost=https
 
 test('vscode wskdebug config with require-adobe-auth annotation && apihost!=https://adobeioruntime.net', async () => {
   // create test app
-  //global.loadFs(vol, 'sample-app')
+  // global.loadFs(vol, 'sample-app')
   global.addSampleAppFiles()
-  //vol.unlinkSync('web-src/index.html')
+  // vol.unlinkSync('web-src/index.html')
   global.fakeFileSystem.removeKeys(['/web-src/index.html'])
   mockAIOConfig.get.mockReturnValue(global.fakeConfig.tvm)
   process.env.REMOTE_ACTIONS = 'true'
-  //const scripts = AppScripts({})
+  // const scripts = AppScripts({})
   const config = loadConfig()
   // avoid recreating a new fixture
   config.manifest.package.actions.action.annotations = { 'require-adobe-auth': true }
@@ -1230,13 +1232,13 @@ test('vscode wskdebug config with require-adobe-auth annotation && apihost!=http
 
 test('vscode wskdebug config without runtime option', async () => {
   // create test app
-  //global.loadFs(vol, 'sample-app')
+  // global.loadFs(vol, 'sample-app')
   global.addSampleAppFiles()
-  //vol.unlinkSync('web-src/index.html')
+  // vol.unlinkSync('web-src/index.html')
   global.fakeFileSystem.removeKeys(['/web-src/index.html'])
   mockAIOConfig.get.mockReturnValue(global.fakeConfig.tvm)
   process.env.REMOTE_ACTIONS = 'true'
-  //const scripts = AppScripts({})
+  // const scripts = AppScripts({})
   const config = loadConfig()
   // avoid recreating a new fixture
   delete config.manifest.package.actions.action.runtime

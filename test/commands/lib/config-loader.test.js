@@ -15,59 +15,60 @@ const loadConfig = require('../../../src/lib/config-loader')
 const mockAIOConfig = require('@adobe/aio-lib-core-config')
 const yaml = require('js-yaml')
 
-describe ('load config', () => {
-    beforeEach(async () => {
-        global.fakeFileSystem.reset()
-        global.addSampleAppFiles()
-        mockAIOConfig.get.mockReturnValue(global.fakeConfig.local)
-        process.chdir('/')    
-    })
-    
-    test('sample app', async () => {
-        config = loadConfig()
-        expect(config.imsOrgId).toEqual(global.fakeConfig.local)
-    })
+describe('load config', () => {
+  let config
+  beforeEach(async () => {
+    global.fakeFileSystem.reset()
+    global.addSampleAppFiles()
+    mockAIOConfig.get.mockReturnValue(global.fakeConfig.local)
+    process.chdir('/')
+  })
 
-    test('no project.org.ims_org_id in config', async () => {
-        mockAIOConfig.get.mockReturnValue(undefined)
-        config = loadConfig()
-        expect(config.imsOrgId).toBe(undefined)
-    })
+  test('sample app', async () => {
+    config = loadConfig()
+    expect(config.imsOrgId).toEqual(global.fakeConfig.local)
+  })
 
-    test('with s3 creds in config', async () => {
-        mockAIOConfig.get.mockReturnValue(global.fakeConfig.creds)
-        config = loadConfig()
-        expect(config.s3.creds).toEqual({
-            accessKeyId: global.fakeConfig.creds.cna.awsaccesskeyid,
-            secretAccessKey: global.fakeConfig.creds.cna.awssecretaccesskey,
-            params: { 
-                Bucket: global.fakeConfig.creds.cna.s3bucket 
-            }
-        })
-    })
- 
-    test('with empty package.json', async () => {
-        global.fakeFileSystem.addJson({
-            'package.json': '{}'
-        })
-        config = loadConfig()
-        expect(config.app.version).toEqual('0.1.0')
-    })
+  test('no project.org.ims_org_id in config', async () => {
+    mockAIOConfig.get.mockReturnValue(undefined)
+    config = loadConfig()
+    expect(config.imsOrgId).toBe(undefined)
+  })
 
-    test('with no backend', async () => {
-        global.fakeFileSystem.removeKeys(['/manifest.yml'])
-        config = loadConfig()
-        expect(config.manifest.package).toBe(undefined)
+  test('with s3 creds in config', async () => {
+    mockAIOConfig.get.mockReturnValue(global.fakeConfig.creds)
+    config = loadConfig()
+    expect(config.s3.creds).toEqual({
+      accessKeyId: global.fakeConfig.creds.cna.awsaccesskeyid,
+      secretAccessKey: global.fakeConfig.creds.cna.awssecretaccesskey,
+      params: {
+        Bucket: global.fakeConfig.creds.cna.s3bucket
+      }
     })
+  })
 
-    test('with manifest not using packagePlaceHolder __APP_PACKAGE__', async () => {
-        let manifest = yaml.safeLoad(global.fakeFileSystem.files()['/manifest.yml'], 'utf8')
-        manifest.packages.samplePackage = manifest.packages['__APP_PACKAGE__']
-        delete manifest.packages['__APP_PACKAGE__']
-        global.fakeFileSystem.addJson({
-            'manifest.yml': yaml.safeDump(manifest)
-        })
-        config = loadConfig()
-        expect(config.manifest.package).toBe(undefined)
+  test('with empty package.json', async () => {
+    global.fakeFileSystem.addJson({
+      'package.json': '{}'
     })
+    config = loadConfig()
+    expect(config.app.version).toEqual('0.1.0')
+  })
+
+  test('with no backend', async () => {
+    global.fakeFileSystem.removeKeys(['/manifest.yml'])
+    config = loadConfig()
+    expect(config.manifest.package).toBe(undefined)
+  })
+
+  test('with manifest not using packagePlaceHolder __APP_PACKAGE__', async () => {
+    const manifest = yaml.safeLoad(global.fakeFileSystem.files()['/manifest.yml'], 'utf8')
+    manifest.packages.samplePackage = manifest.packages.__APP_PACKAGE__
+    delete manifest.packages.__APP_PACKAGE__
+    global.fakeFileSystem.addJson({
+      'manifest.yml': yaml.safeDump(manifest)
+    })
+    config = loadConfig()
+    expect(config.manifest.package).toBe(undefined)
+  })
 })
