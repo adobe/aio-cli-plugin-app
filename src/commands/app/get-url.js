@@ -45,7 +45,7 @@ class GetUrlCommand extends BaseCommand {
         const cdnUrls = await getActionUrls(configCopy, false)
         urls.cdn = cdnUrls
       }
-  
+
       if (flags.json) {
         this.log(JSON.stringify(urls))
       } else if (flags.yml) {

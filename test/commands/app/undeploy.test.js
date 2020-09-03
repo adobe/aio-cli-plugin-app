@@ -16,7 +16,7 @@ const BaseCommand = require('../../../src/BaseCommand')
 const mockFS = require('fs-extra')
 
 // mocks
-const { stdout, stderr } = require('stdout-stderr')
+const { stdout } = require('stdout-stderr')
 const mockScripts = require('@adobe/aio-app-scripts')
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 
@@ -154,7 +154,7 @@ describe('run', () => {
   test('spinner should be called for progress logs on undeployWeb call , with verbose', async () => {
     mockFS.existsSync.mockReturnValue(true)
     mockRuntimeLib.undeployActions.mockResolvedValue('ok')
-    mockScripts.undeployWeb.mockImplementation( async (config, log) => {
+    mockScripts.undeployWeb.mockImplementation(async (config, log) => {
       log('progress log')
       return 'ok'
     })
@@ -167,7 +167,7 @@ describe('run', () => {
   test('spinner should be called for progress logs on undeployWeb call , without verbose', async () => {
     mockFS.existsSync.mockReturnValue(true)
     mockRuntimeLib.undeployActions.mockResolvedValue('ok')
-    mockScripts.undeployWeb.mockImplementation( async (config, log) => {
+    mockScripts.undeployWeb.mockImplementation(async (config, log) => {
       log('progress log')
       return 'ok'
     })

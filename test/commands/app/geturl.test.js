@@ -52,7 +52,7 @@ describe('run', () => {
     mockRuntimeLib.utils.getActionUrls.mockReset()
     mockRuntimeLib.utils.getActionUrls.mockImplementation(jest.fn(
       (config, isRemoteDev) => {
-        if(isRemoteDev) {
+        if (isRemoteDev) {
           return {
             action: 'https://fake_ns.adobeioruntime.net/api/v1/web/sample-app-1.0.0/action'
           }
@@ -99,7 +99,7 @@ describe('run', () => {
     command.error = jest.fn()
     command.log = jest.fn()
     command.appConfig = {}
-    const retVal = { runtime: {}}
+    const retVal = { runtime: {} }
     mockRuntimeLib.utils.getActionUrls.mockResolvedValue({})
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -112,7 +112,7 @@ describe('run', () => {
     command.error = jest.fn()
     command.log = jest.fn()
     command.appConfig = {}
-    const retVal = { runtime: {}}
+    const retVal = { runtime: {} }
     mockRuntimeLib.utils.getActionUrls.mockResolvedValue({})
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -129,7 +129,7 @@ describe('run', () => {
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith({}, true)
-    expect(urls).toEqual({runtime:{}})
+    expect(urls).toEqual({ runtime: {} })
   })
 
   test('get all action urls with cdn flag', async () => {
@@ -190,8 +190,8 @@ describe('run', () => {
       }
     }
     const appConfigParam = deepClone(command.appConfig)
-    //To check that only one action is sent to getActionUrls()
-    delete appConfigParam.manifest.package.actions.action2 
+    // To check that only one action is sent to getActionUrls()
+    delete appConfigParam.manifest.package.actions.action2
     const result = {
       runtime: {
         action: 'https://fake_ns.adobeioruntime.net/api/v1/web/sample-app-1.0.0/action'
