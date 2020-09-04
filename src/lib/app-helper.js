@@ -154,7 +154,9 @@ function getActionUrls (config, isRemoteDev = false, isLocalDev = false) {
  */
 function urlJoin (...args) {
   let start = ''
-  if (args[0] && args[0].startsWith('/')) start = '/'
+  if (args[0] && args[0].startsWith('/')) {
+    start = '/'
+  }
   return start + args.map(a => a && a.replace(/(^\/|\/$)/g, ''))
     .filter(a => a) // remove empty strings / nulls
     .join('/')

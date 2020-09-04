@@ -77,10 +77,8 @@ class Run extends BaseCommand {
     }
 
     process.env.REMOTE_ACTIONS = !flags.local
-    // const scripts = AppScripts({ listeners })
     try {
       const frontendUrl = await runDev(args, this.getAppConfig(), runOptions, onProgress)
-      // const frontendUrl = await scripts.runDev([], runOptions)
       try {
         await runPackageScript('post-app-run')
       } catch (err) {

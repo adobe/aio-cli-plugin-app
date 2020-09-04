@@ -60,7 +60,7 @@ global.mockFs = () => {
     }
   }
   // seed the fake filesystem
-  fakeFileSystem.reset()
+  global.fakeFileSystem.reset()
 }
 
 global.unmockFs = () => {
@@ -191,100 +191,3 @@ global.fakeTVMResponse = {
   secretAccessKey: 'fake',
   params: { Bucket: global.fakeS3Bucket }
 }
-
-/* global.sampleAppConfig = {
-  app: {
-    hasFrontend: true,
-    hasBackend: true,
-    version: '1.0.0',
-    name: 'sample-app',
-    hostname: 'adobeio-static.net',
-    htmlCacheDuration: '60',
-    jsCacheDuration: '604800',
-    cssCacheDuration: '604800',
-    imageCacheDuration: '604800'
-  },
-  ow: {
-    namespace: 'fake_ns',
-    auth: 'fake:auth',
-    apihost: 'https://adobeioruntime.net',
-    apiversion: 'v1',
-    package: 'sample-app-1.0.0'
-  },
-  s3: {
-    credsCacheFile: '/.aws.tmp.creds.json',
-    creds: undefined,
-    folder: 'fake_ns',
-    tvmUrl: 'https://adobeio.adobeioruntime.net/apis/tvm/'
-  },
-  web: {
-    src: '/web-src',
-    distDev: '/dist/web-src-dev',
-    distProd: '/dist/web-src-prod',
-    injectedConfig: '/web-src/src/config.json'
-  },
-  manifest: {
-    src: '/manifest.yml',
-    packagePlaceholder: '__APP_PACKAGE__',
-    full: {
-      packages: {
-        __APP_PACKAGE__: {
-          license: 'Apache-2.0',
-          actions: {
-            action: {
-              function: 'actions/action.js',
-              web: 'yes',
-              runtime: 'nodejs:12'
-            },
-            'action-zip': {
-              function: 'actions/action-zip',
-              web: 'yes',
-              runtime: 'nodejs:12'
-            }
-          },
-          sequences: {
-            'action-sequence': { actions: 'action, action-zip', web: 'yes' }
-          },
-          triggers: { trigger1: null },
-          rules: {
-            rule1: { trigger: 'trigger1', action: 'action', rule: true }
-          },
-          apis: {
-            api1: {
-              base: { path: { action: { method: 'get' } } }
-            }
-          },
-          dependencies: { dependency1: { location: 'fake.com/package' } }
-        }
-      }
-    },
-    package: {
-      license: 'Apache-2.0',
-      actions: {
-        action: {
-          function: 'actions/action.js',
-          web: 'yes',
-          runtime: 'nodejs:12'
-        },
-        'action-zip': {
-          function: 'actions/action-zip',
-          web: 'yes',
-          runtime: 'nodejs:12'
-        }
-      },
-      sequences: {
-        'action-sequence': { actions: 'action, action-zip', web: 'yes' }
-      },
-      triggers: { trigger1: null },
-      rules: { rule1: { trigger: 'trigger1', action: 'action', rule: true } },
-      apis: {
-        api1: {
-          base: { path: { action: { method: 'get' } } }
-        }
-      },
-      dependencies: { dependency1: { location: 'fake.com/package' } }
-    }
-  },
-  actions: { src: '/actions', dist: '/dist/actions', devRemote: false },
-  root: '/'
-} */

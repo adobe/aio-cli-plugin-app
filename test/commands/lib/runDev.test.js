@@ -40,6 +40,7 @@ jest.mock('node-fetch')
 const mockLogger = require('@adobe/aio-lib-core-logging')
 const Bundler = require('parcel-bundler')
 jest.mock('parcel-bundler')
+
 const mockUIServerAddressInstance = { port: 1111 }
 const mockUIServerInstance = {
   close: jest.fn(),
@@ -48,18 +49,16 @@ const mockUIServerInstance = {
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 const BuildActions = mockRuntimeLib.buildActions
 const DeployActions = mockRuntimeLib.deployActions
-/* jest.mock('../../scripts/build.actions')
-jest.mock('../../scripts/deploy.actions')
- */
-jest.mock('http-terminator')
+
 const httpTerminator = require('http-terminator')
+jest.mock('http-terminator')
 const mockTerminatorInstance = {
   terminate: jest.fn()
 }
+
 let deployActionsSpy
 
 process.exit = jest.fn()
-let mockEmitter = { emit: jest.fn() }
 
 const actualSetTimeout = setTimeout
 const now = Date.now
@@ -87,8 +86,6 @@ beforeEach(() => {
 
   process.exit.mockReset()
   process.removeAllListeners('SIGINT')
-
-  mockEmitter.emit.mockReset()
 
   httpTerminator.createHttpTerminator.mockReset()
   httpTerminator.createHttpTerminator.mockImplementation(() => mockTerminatorInstance)
@@ -177,14 +174,7 @@ function writeFakeOwJar () {
  *
  */
 function deleteFakeOwJar () {
-  // const parts = owJarPath.split('/').slice(1) // slice(1) to remove first empty '' because of path starting with /
-  // vol.unlinkSync(owJarPath)
   global.fakeFileSystem.removeKeys([owJarPath])
-  /* parts.pop()
-  while (parts.length > 0) {
-    vol.rmdirSync('/' + parts.join('/'))
-    parts.pop()
-  } */
 }
 
 // helpers for checking good path
@@ -200,7 +190,6 @@ function expectDevActionBuildAndDeploy (expectedBuildDeployConfig) {
 
 function expectUIServer (fakeMiddleware, port) {
   expect(Bundler.mockConstructor).toHaveBeenCalledTimes(1)
-
   expect(Bundler.mockConstructor).toHaveBeenCalledWith(r('/web-src/index.html'),
     expect.objectContaining({
       watch: true,
@@ -236,13 +225,11 @@ async function testCleanupNoErrors (done, config, postCleanupChecks) {
 
 async function testCleanupOnError (config, postCleanupChecks) {
   const error = new Error('fake')
-  mockEmitter = {
-    emit: (event, message) => {
-      if (message.includes('CTRL+C to terminate')) {
-        throw error
-      } else {
-        console.log(`${event}: ${message}`)
-      }
+  const logFunc = (message) => {
+    if (message.includes('CTRL+C to terminate')) {
+      throw error
+    } else {
+      console.log(message)
     }
   }
   /* mockOnProgress.mockImplementation(msg => {
@@ -252,9 +239,8 @@ async function testCleanupOnError (config, postCleanupChecks) {
       throw error
     }
   }) */
-  await expect(runDev([], config, {}, mockEmitter)).rejects.toBe(error)
+  await expect(runDev([], config, {}, logFunc)).rejects.toBe(error)
   postCleanupChecks()
-  mockEmitter = { emit: jest.fn() } // To let it be a clearable mock in beforeEach
 }
 
 const getExpectedActionVSCodeDebugConfig = actionName =>
@@ -438,18 +424,19 @@ function runCommonWithBackendTests (ref) {
         { name: 'pkg/actionNoUrl' }
       ]
     })
+    const log = jest.fn()
+    await runDev([], ref.config, {}, log)
 
-    await runDev([], ref.config, {}, mockEmitter)
-
-    expect(mockEmitter.emit).toHaveBeenCalledWith('progress', expect.stringContaining('https://fake.com/action'))
-    expect(mockEmitter.emit).toHaveBeenCalledWith('progress', expect.stringContaining('pkg/actionNoUrl'))
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('https://fake.com/action'))
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('pkg/actionNoUrl'))
   })
 }
 
 function runCommonRemoteTests (ref) {
   // eslint-disable-next-line jest/expect-expect
   test('should build and deploy actions to remote', async () => {
-    await runDev([], ref.config, {}, mockEmitter)
+    const log = jest.fn()
+    await runDev([], ref.config, {}, log)
     expectDevActionBuildAndDeploy(expectedRemoteOWConfig)
 
     BuildActions.mockClear()
@@ -472,7 +459,7 @@ function runCommonRemoteTests (ref) {
     await sleep(3)
 
     // The second call to DeployActions will result in an error because of the second mock above
-    expect(mockEmitter.emit).toHaveBeenLastCalledWith('progress', expect.stringContaining('Stopping'))
+    expect(log).toHaveBeenLastCalledWith(expect.stringContaining('Stopping'))
     expect(BuildActions).toHaveBeenCalledTimes(2)
     // expect(BuildActions.mock.instances[0].run).toHaveBeenCalledTimes(1)
     expect(DeployActions).toHaveBeenCalledTimes(2)
@@ -680,12 +667,12 @@ function runCommonLocalTests (ref) {
 
   // eslint-disable-next-line jest/expect-expect
   test('should build and deploy actions to local ow', async () => {
-    await runDev([], ref.config, {}, mockEmitter)
+    const log = jest.fn()
+    await runDev([], ref.config, {}, log)
     expectDevActionBuildAndDeploy(expectedLocalOWConfig)
 
     BuildActions.mockClear()
     DeployActions.mockClear()
-    mockEmitter.emit.mockClear()
 
     jest.useFakeTimers()
     DeployActions.mockImplementation(async () => {
@@ -714,7 +701,7 @@ function runCommonLocalTests (ref) {
     await sleep(1)
 
     // The second call to DeployActions will result in an error because of the second mock above
-    expect(mockEmitter.emit).toHaveBeenCalledWith('progress', expect.stringContaining('Stopping'))
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('Stopping'))
     expect(BuildActions).toHaveBeenCalledTimes(2)
     expect(DeployActions).toHaveBeenCalledTimes(2)
   })

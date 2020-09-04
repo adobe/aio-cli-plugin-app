@@ -36,22 +36,19 @@ const fetchLogInterval = 10000
 const logOptions = {}
 const eventPoller = new EventPoller(fetchLogInterval)
 
-async function runDev (args = [], config, options = {}, eventEmitter) {
-  // options
-  // TODO: Should we still support emitting events (start, progress, end ... )
-  eventEmitter = eventEmitter || {
-    emit: (event, message) => { console.log(`${event}: ${message}`) }
+async function runDev (args = [], config, options = {}, log) {
+  // note: args are considered perfect here because this function is only ever called by the `app run` command
+  let logFunc = log
+  if (!logFunc) {
+    logFunc = () => { }
   }
+
   /* parcel bundle options */
   const bundleOptions = options.parcel || {}
   /* skip actions */
   const skipActions = !!options.skipActions
-
   /* fetch logs for actions option */
   const fetchLogs = options.fetchLogs || false
-
-  const taskName = 'Local Dev Server'
-  eventEmitter.emit('start', taskName)
 
   // files
   // const OW_LOG_FILE = '.openwhisk-standalone.log'
@@ -68,7 +65,7 @@ async function runDev (args = [], config, options = {}, eventEmitter) {
   // port for UI
   const uiPort = parseInt(args[0]) || parseInt(process.env.PORT) || 9080
 
-  let frontEndUrl = null
+  let frontEndUrl
 
   // state
   const resources = {}
@@ -96,33 +93,39 @@ async function runDev (args = [], config, options = {}, eventEmitter) {
     if (withBackend) {
       if (isLocal) {
         // take following steps only when we have a backend
-        eventEmitter.emit('progress', 'checking if java is installed...')
-        if (!await utils.hasJavaCLI()) throw new Error('could not find java CLI, please make sure java is installed')
+        logFunc('checking if java is installed...')
+        if (!await utils.hasJavaCLI()) {
+          throw new Error('could not find java CLI, please make sure java is installed')
+        }
 
-        eventEmitter.emit('progress', 'checking if docker is installed...')
-        if (!await utils.hasDockerCLI()) throw new Error('could not find docker CLI, please make sure docker is installed')
+        logFunc('checking if docker is installed...')
+        if (!await utils.hasDockerCLI()) {
+          throw new Error('could not find docker CLI, please make sure docker is installed')
+        }
 
-        eventEmitter.emit('progress', 'checking if docker is running...')
-        if (!await utils.isDockerRunning()) throw new Error('docker is not running, please make sure to start docker')
+        logFunc('checking if docker is running...')
+        if (!await utils.isDockerRunning()) {
+          throw new Error('docker is not running, please make sure to start docker')
+        }
 
         if (!fs.existsSync(OW_JAR_FILE)) {
-          eventEmitter.emit('progress', `downloading OpenWhisk standalone jar from ${OW_JAR_URL} to ${OW_JAR_FILE}, this might take a while... (to be done only once!)`)
+          logFunc(`downloading OpenWhisk standalone jar from ${OW_JAR_URL} to ${OW_JAR_FILE}, this might take a while... (to be done only once!)`)
           await utils.downloadOWJar(OW_JAR_URL, OW_JAR_FILE)
         }
         // return
-        eventEmitter.emit('progress', 'starting local OpenWhisk stack..')
+        logFunc('starting local OpenWhisk stack..')
         const res = await utils.runOpenWhiskJar(OW_JAR_FILE, OW_CONFIG_RUNTIMES_FILE, OW_LOCAL_APIHOST, owWaitInitTime, owWaitPeriodTime, owTimeout, { stderr: 'inherit' })
         resources.owProc = res.proc
 
         // case1: no dotenv file => expose local credentials in .env, delete on cleanup
         const dotenvFile = rtLibUtils._absApp(config.root, '.env')
         if (!fs.existsSync(dotenvFile)) {
-          eventEmitter.emit('progress', 'writing temporary .env with local OpenWhisk guest credentials..')
+          logFunc('writing temporary .env with local OpenWhisk guest credentials..')
           fs.writeFileSync(dotenvFile, `AIO_RUNTIME_NAMESPACE=${OW_LOCAL_NAMESPACE}\nAIO_RUNTIME_AUTH=${OW_LOCAL_AUTH}\nAIO_RUNTIME_APIHOST=${OW_LOCAL_APIHOST}`)
           resources.dotenv = dotenvFile
         } else {
           // case2: existing dotenv file => save .env & expose local credentials in .env, restore on cleanup
-          eventEmitter.emit('progress', `saving .env to ${DOTENV_SAVE} and writing new .env with local OpenWhisk guest credentials..`)
+          logFunc(`saving .env to ${DOTENV_SAVE} and writing new .env with local OpenWhisk guest credentials..`)
           utils.saveAndReplaceDotEnvCredentials(dotenvFile, DOTENV_SAVE, OW_LOCAL_APIHOST, OW_LOCAL_NAMESPACE, OW_LOCAL_AUTH)
           resources.dotenvSave = DOTENV_SAVE
           resources.dotenv = dotenvFile
@@ -136,17 +139,17 @@ async function runDev (args = [], config, options = {}, eventEmitter) {
       } else {
         // check credentials
         rtLibUtils.checkOpenWhiskCredentials(config)
-        eventEmitter.emit('progress', 'using remote actions')
+        logFunc('using remote actions')
       }
 
       // build and deploy actions
-      eventEmitter.emit('progress', 'redeploying actions..')
-      await _buildAndDeploy(devConfig, isLocal, eventEmitter)
+      logFunc('redeploying actions..')
+      await _buildAndDeploy(devConfig, isLocal, logFunc)
 
       watcher = chokidar.watch(devConfig.actions.src)
-      watcher.on('change', _getActionChangeHandler(devConfig, isLocal, eventEmitter))
+      watcher.on('change', _getActionChangeHandler(devConfig, isLocal, logFunc))
 
-      eventEmitter.emit('progress', `writing credentials to tmp wskdebug config '${rtLibUtils._relApp(config.root, WSK_DEBUG_PROPS)}'..`)
+      logFunc(`writing credentials to tmp wskdebug config '${rtLibUtils._relApp(config.root, WSK_DEBUG_PROPS)}'..`)
       // prepare wskprops for wskdebug
       fs.writeFileSync(WSK_DEBUG_PROPS, `NAMESPACE=${devConfig.ow.namespace}\nAUTH=${devConfig.ow.auth}\nAPIHOST=${devConfig.ow.apihost}`)
       resources.wskdebugProps = WSK_DEBUG_PROPS
@@ -158,12 +161,12 @@ async function runDev (args = [], config, options = {}, eventEmitter) {
         // inject backend urls into ui
         // note the condition: we still write backend urls EVEN if skipActions is set
         // the urls will always point to remotely deployed actions if skipActions is set
-        eventEmitter.emit('progress', 'injecting backend urls into frontend config')
+        logFunc('injecting backend urls into frontend config')
         urls = await rtLibUtils.getActionUrls(devConfig, true, isLocal && !skipActions)
       }
       await utils.writeConfig(devConfig.web.injectedConfig, urls)
 
-      eventEmitter.emit('progress', 'starting local frontend server ..')
+      logFunc('starting local frontend server ..')
       const entryFile = path.join(devConfig.web.src, 'index.html')
 
       // our defaults here can be overridden by the bundleOptions passed in
@@ -185,13 +188,13 @@ async function runDev (args = [], config, options = {}, eventEmitter) {
         server: resources.uiServer
       })
       if (actualPort !== uiPort) {
-        eventEmitter.emit('progress', `Could not use port:${uiPort}, using port:${actualPort} instead`)
+        logFunc(`Could not use port:${uiPort}, using port:${actualPort} instead`)
       }
       frontEndUrl = `${bundleOptions.https ? 'https:' : 'http:'}//localhost:${actualPort}`
-      eventEmitter.emit('progress', `local frontend server running at ${frontEndUrl}`)
+      logFunc(`local frontend server running at ${frontEndUrl}`)
     }
 
-    eventEmitter.emit('progress', 'setting up vscode debug configuration files..')
+    logFunc('setting up vscode debug configuration files..')
     fs.ensureDirSync(path.dirname(CODE_DEBUG))
     if (fs.existsSync(CODE_DEBUG)) {
       if (!fs.existsSync(CODE_DEBUG_SAVE)) {
@@ -210,12 +213,12 @@ async function runDev (args = [], config, options = {}, eventEmitter) {
       // trick to avoid termination
       resources.dummyProc = execa('node')
     }
-    eventEmitter.emit('progress', 'press CTRL+C to terminate dev environment')
+    logFunc('press CTRL+C to terminate dev environment')
 
     if (config.app.hasBackend && fetchLogs) {
       // fetch action logs
       resources.stopFetchLogs = false
-      eventPoller.onPoll(logListner)
+      eventPoller.onPoll(logListener)
       eventPoller.poll({ resources: resources, config: devConfig })
     }
   } catch (e) {
@@ -226,7 +229,7 @@ async function runDev (args = [], config, options = {}, eventEmitter) {
   return frontEndUrl
 }
 
-async function logListner (args) {
+async function logListener (args) {
   if (!args.resources.stopFetchLogs) {
     try {
       const ret = await utils.getLogs(args.config, logOptions.limit || 1, console.log, logOptions.startTime)
@@ -323,7 +326,7 @@ async function generateVSCodeDebugConfig (devConfig, withBackend, hasFrontend, f
   return debugConfig
 }
 
-function _getActionChangeHandler (devConfig, isLocalDev, eventEmitter) {
+function _getActionChangeHandler (devConfig, isLocalDev, logFunc) {
   return async (filePath) => {
     if (running) {
       aioLogger.debug(`${filePath} has changed. Deploy in progress. This change will be deployed after completion of current deployment.`)
@@ -333,28 +336,28 @@ function _getActionChangeHandler (devConfig, isLocalDev, eventEmitter) {
     running = true
     try {
       aioLogger.debug(`${filePath} has changed. Redeploying actions.`)
-      await _buildAndDeploy(devConfig, isLocalDev, eventEmitter)
+      await _buildAndDeploy(devConfig, isLocalDev, logFunc)
       aioLogger.debug('Deployment successfull.')
     } catch (err) {
-      eventEmitter.emit('progress', '  -> Error encountered while deploying actions. Stopping auto refresh.')
+      logFunc('  -> Error encountered while deploying actions. Stopping auto refresh.')
       aioLogger.debug(err)
       await watcher.close()
     }
     if (changed) {
       aioLogger.debug('Code changed during deployment. Triggering deploy again.')
       changed = running = false
-      await _getActionChangeHandler(devConfig, isLocalDev, eventEmitter)(devConfig.actions.src)
+      await _getActionChangeHandler(devConfig, isLocalDev, logFunc)(devConfig.actions.src)
     }
     running = false
   }
 }
 
-async function _buildAndDeploy (devConfig, isLocalDev, eventEmitter) {
+async function _buildAndDeploy (devConfig, isLocalDev, logFunc) {
   await BuildActions(devConfig)
   const entities = await DeployActions(devConfig, { isLocalDev })
   if (entities.actions) {
     entities.actions.forEach(a => {
-      eventEmitter.emit('progress', `  -> ${a.url || a.name}`)
+      logFunc(`  -> ${a.url || a.name}`)
     })
   }
 }

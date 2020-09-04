@@ -14,7 +14,7 @@ const RunCommand = require('../../../src/commands/app/run')
 const BaseCommand = require('../../../src/BaseCommand')
 
 jest.mock('../../../src/lib/runDev')
-const mockRun = require('../../../src/lib/runDev')
+const mockRunDev = require('../../../src/lib/runDev')
 
 // should be same as in run.js
 const DEV_KEYS_DIR = 'dist/dev-keys/'
@@ -55,7 +55,7 @@ const mockHttpsServerInstance = {
 beforeEach(() => {
   jest.restoreAllMocks()
   // mockScripts.mockReset('runDev')
-  mockRun.mockReset()
+  mockRunDev.mockReset()
 
   mockConfig.get = jest.fn().mockReturnValue({ globalConfig: 'seems-legit' })
 
@@ -158,7 +158,33 @@ describe('run', () => {
     command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRun).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(process.env.REMOTE_ACTIONS).toBe('true')
+  })
+
+  test('app:run calls log spinner --verbose', async () => {
+    mockFSExists(['manifest.yml', 'web-src', PRIVATE_KEY_PATH, PUB_CERT_PATH])
+    mockRunDev.mockImplementation((args, config, options, logFunc) => {
+      logFunc('boo')
+    })
+    command.argv = ['--verbose']
+    command.appConfig = {}
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(process.env.REMOTE_ACTIONS).toBe('true')
+  })
+
+  test('app:run calls log spinner not verbose', async () => {
+    mockFSExists(['manifest.yml', 'web-src', PRIVATE_KEY_PATH, PUB_CERT_PATH])
+    mockRunDev.mockImplementation((args, config, options, logFunc) => {
+      logFunc('boo')
+    })
+    command.argv = []
+    command.appConfig = {}
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(process.env.REMOTE_ACTIONS).toBe('true')
   })
 
@@ -168,7 +194,7 @@ describe('run', () => {
     command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRun).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(process.env.REMOTE_ACTIONS).toBe('true')
   })
 
@@ -178,9 +204,9 @@ describe('run', () => {
     command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRun).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(process.env.REMOTE_ACTIONS).toBe('true')
-    expect(mockRun).toHaveBeenCalledWith([], {}, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       parcel: expect.objectContaining({
         logLevel: 2
       })
@@ -192,7 +218,7 @@ describe('run', () => {
     command.argv = []
     command.appConfig = {}
     await command.run()
-    expect(mockRun).toHaveBeenCalledWith([], {}, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       fetchLogs: true
     }), expect.any(Function))
   })
@@ -203,8 +229,8 @@ describe('run', () => {
     command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRun).toHaveBeenCalledTimes(1)
-    expect(mockRun).toHaveBeenCalledWith([], {}, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       parcel: expect.objectContaining({
         logLevel: 4
       })
@@ -218,7 +244,7 @@ describe('run', () => {
     command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRun).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(process.env.REMOTE_ACTIONS).toBe('false')
   })
 
@@ -228,8 +254,8 @@ describe('run', () => {
     command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRun).toHaveBeenCalledTimes(1)
-    expect(mockRun).toHaveBeenCalledWith([], {}, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       parcel: expect.objectContaining({
         logLevel: 4
       })
@@ -239,18 +265,18 @@ describe('run', () => {
 
   test('app:run where scripts.runDev throws', async () => {
     mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    mockRun.mockRejectedValue('error')
+    mockRunDev.mockRejectedValue('error')
     command.argv = []
     command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(1)
-    expect(mockRun).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
   })
 
   test('run should show ui url', async () => {
     mockConfig.get.mockReturnValue(null)
     mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    mockRun.mockResolvedValue('http://localhost:1111')
+    mockRunDev.mockResolvedValue('http://localhost:1111')
     command.argv = []
     command.appConfig = {}
     await command.run()
@@ -261,7 +287,7 @@ describe('run', () => {
   test('run should open ui url with --open', async () => {
     mockConfig.get.mockReturnValue(null)
     mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    mockRun.mockResolvedValue('http://localhost:1111')
+    mockRunDev.mockResolvedValue('http://localhost:1111')
     command.argv = ['--open']
     command.appConfig = {}
     await command.run()
@@ -273,7 +299,7 @@ describe('run', () => {
   test('run should show ui and exc url if AIO_LAUNCH_PREFIX_URL is set', async () => {
     mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
     mockConfig.get.mockReturnValue('http://prefix?fake=')
-    mockRun.mockResolvedValue('http://localhost:1111')
+    mockRunDev.mockResolvedValue('http://localhost:1111')
     command.argv = []
     command.appConfig = {}
     await command.run()
@@ -285,7 +311,7 @@ describe('run', () => {
   test('run should show ui and open exc url if AIO_LAUNCH_PREFIX_URL is set with --open', async () => {
     mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
     mockConfig.get.mockReturnValue('http://prefix?fake=')
-    mockRun.mockResolvedValue('http://localhost:1111')
+    mockRunDev.mockResolvedValue('http://localhost:1111')
     command.argv = ['--open']
     command.appConfig = {}
     await command.run()
@@ -302,8 +328,8 @@ describe('run', () => {
     command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRun).toHaveBeenCalledTimes(1)
-    expect(mockRun).toHaveBeenCalledWith([], {}, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       parcel: {
         logLevel: 2,
         https: {
@@ -322,8 +348,8 @@ describe('run', () => {
     command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRun).toHaveBeenCalledTimes(1)
-    expect(mockRun).toHaveBeenCalledWith([], {}, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       parcel: {
         logLevel: 2,
         https: {
@@ -351,8 +377,8 @@ describe('run', () => {
     command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRun).toHaveBeenCalledTimes(1)
-    expect(mockRun).toHaveBeenCalledWith([], {}, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       parcel: {
         logLevel: 2,
         https: {
@@ -387,8 +413,8 @@ describe('run', () => {
     command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRun).toHaveBeenCalledTimes(1)
-    expect(mockRun).toHaveBeenCalledWith([], {}, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       parcel: {
         logLevel: 2,
         https: {
@@ -425,8 +451,8 @@ describe('run', () => {
     command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRun).toHaveBeenCalledTimes(1)
-    expect(mockRun).toHaveBeenCalledWith([], {}, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       parcel: {
         logLevel: 2,
         https: {
@@ -461,8 +487,8 @@ describe('run', () => {
     command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRun).toHaveBeenCalledTimes(1)
-    expect(mockRun).toHaveBeenCalledWith([], {}, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       parcel: {
         logLevel: 2,
         https: {
@@ -498,8 +524,8 @@ describe('run', () => {
     command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRun).toHaveBeenCalledTimes(1)
-    expect(mockRun).toHaveBeenCalledWith([], {}, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       parcel: {
         logLevel: 2,
         https: {
@@ -531,7 +557,7 @@ describe('run', () => {
     await expect(command.run()).rejects.toThrow('error while generating certificate - no certificate:generate command found')
 
     expect(command.error).toHaveBeenCalledTimes(1)
-    expect(mockRun).toHaveBeenCalledTimes(0)
+    expect(mockRunDev).toHaveBeenCalledTimes(0)
     spy.mockRestore()
   })
 })
