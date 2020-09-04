@@ -175,7 +175,13 @@ function writeFakeOwJar () {
  *
  */
 function deleteFakeOwJar () {
-  global.fakeFileSystem.removeKeys([owJarPath])
+  let owJarFilePath
+  Object.keys(global.fakeFileSystem.files()).forEach(filePath => {
+    if (filePath.includes(owJarFile)) {
+      owJarFilePath = filePath
+    }
+  })
+  global.fakeFileSystem.removeKeys([owJarFilePath])
 }
 
 // helpers for checking good path
