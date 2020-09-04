@@ -34,7 +34,7 @@ describe('owlocal', () => {
     })
     expect(typeof owLocal.getDockerNetworkAddress).toEqual('function')
     expect(owLocal.OW_CONFIG_RUNTIMES_FILE).toEqual(expect.stringContaining(n('/bin/openwhisk-standalone-config/runtimes.json')))
-    expect(owLocal.OW_JAR_FILE).toMatch('/bin/openwhisk-standalone.jar')
+    expect(owLocal.OW_JAR_FILE).toEqual(expect.stringContaining(n('/bin/openwhisk-standalone.jar')))
     expect(owLocal.OW_JAR_URL).toMatch('https://dl.bintray.com/adobeio-firefly/aio/openwhisk-standalone.jar')
     expect(owLocal.OW_LOCAL_NAMESPACE).toMatch('guest')
     expect(owLocal.OW_LOCAL_AUTH).toMatch('23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP')

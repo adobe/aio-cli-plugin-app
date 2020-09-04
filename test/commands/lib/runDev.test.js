@@ -171,17 +171,18 @@ function writeFakeOwJar () {
   global.fakeFileSystem.addJson(fakeFsJson)
 }
 
-/**
- *
- */
 function deleteFakeOwJar () {
+  global.fakeFileSystem.removeKeys([deriveOwJarFilePath()])
+}
+
+function deriveOwJarFilePath () {
   let owJarFilePath
   Object.keys(global.fakeFileSystem.files()).forEach(filePath => {
     if (filePath.includes(owJarFile)) {
       owJarFilePath = filePath
     }
   })
-  global.fakeFileSystem.removeKeys([owJarFilePath])
+  return owJarFilePath
 }
 
 // helpers for checking good path
@@ -632,8 +633,8 @@ function runCommonLocalTests (ref) {
     await runDev([], ref.config)
 
     expect(fetch).toHaveBeenCalledWith(owJarUrl)
-    expect(owJarPath in global.fakeFileSystem.files()).toEqual(true)
-    expect(global.fakeFileSystem.files()[owJarPath].toString()).toEqual('fakeowjar')
+    expect(deriveOwJarFilePath() in global.fakeFileSystem.files()).toEqual(true)
+    expect(global.fakeFileSystem.files()[deriveOwJarFilePath()].toString()).toEqual('fakeowjar')
   })
 
   test('should fail if downloading openwhisk-standalone.jar creates a stream error', async () => {
