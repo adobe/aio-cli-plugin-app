@@ -202,7 +202,7 @@ function expectAppFiles (expectedFiles) {
   const files = new Set(Object.keys(global.fakeFileSystem.files()).map(p => path.normalize(p)))
   // in run local, the openwhisk standalone jar is created at __dirname,
   // but as we store the app in the root of the memfs, we need to ignore the extra created folder
-  files.delete(owJarPath) // Using jest-plugin-fs now instead of memfs. So change of behavior in deleting the whole path
+  files.delete(path.normalize(owJarPath)) // Using jest-plugin-fs now instead of memfs. So change of behavior in deleting the whole path
   expect(files).toEqual(expectedFileSet)
 }
 
