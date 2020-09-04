@@ -132,7 +132,8 @@ const expectedRemoteOWConfig = expect.objectContaining({
 })
 
 // those must match the ones defined in dev.js
-const owJarPath = path.resolve(__dirname, '../../../bin/openwhisk-standalone.jar')
+const owJarFile = 'openwhisk-standalone.jar'
+const owJarPath = path.resolve(__dirname, '../../../bin/' + owJarFile)
 const owRuntimesConfig = path.resolve(__dirname, '../../../bin/openwhisk-standalone-config/runtimes.json')
 const owJarUrl = 'https://dl.bintray.com/adobeio-firefly/aio/openwhisk-standalone.jar'
 const waitInitTime = 2000
@@ -199,11 +200,9 @@ function expectUIServer (fakeMiddleware, port) {
 
 function expectAppFiles (expectedFiles) {
   const expectedFileSet = new Set(expectedFiles)
-  const files = new Set(Object.keys(global.fakeFileSystem.files()))
+  const files = new Set(Object.keys(global.fakeFileSystem.files()).filter(filePath => !filePath.includes(owJarFile)))
   // in run local, the openwhisk standalone jar is created at __dirname,
   // but as we store the app in the root of the memfs, we need to ignore the extra created folder
-  expect(owJarPath).toEqual('\\Users\\travis\\build\\adobe\\aio-cli-plugin-app\\bin\\openwhisk-standalone.jar')
-  files.delete(owJarPath) // Using jest-plugin-fs now instead of memfs. So change of behavior in deleting the whole path
   expect(files).toEqual(expectedFileSet)
 }
 
