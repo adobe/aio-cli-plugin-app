@@ -311,13 +311,31 @@ function saveAndReplaceDotEnvCredentials (dotenvFile, saveFile, apihost, namespa
   fs.moveSync(dotenvFile, saveFile)
   // Only override needed env vars and preserve other vars in .env
   const env = dotenv.parse(fs.readFileSync(saveFile))
-  env.AIO_RUNTIME_APIHOST = apihost
-  env.AIO_RUNTIME_AUTH = auth
-  env.AIO_RUNTIME_NAMESPACE = namespace
-  // existing AIO__ vars might override above AIO_ vars
-  delete env.AIO__RUNTIME_AUTH
-  delete env.AIO__RUNTIME_NAMESPACE
-  delete env.AIO__RUNTIME_APIHOST
+  const newCredentials = {
+    RUNTIME_NAMESPACE: namespace,
+    RUNTIME_AUTH: auth,
+    RUNTIME_APIHOST: apihost
+  }
+
+  // remove old keys (match by normalized key name)
+  for (const key in env) {
+    // match AIO_ or AIO__ since they map to the same key
+    // see https://github.com/adobe/aio-lib-core-config/issues/49
+    const match = key.match(/^AIO__(.+)/i) || key.match(/^AIO_(.+)/i)
+    if (match) {
+      for (const newCredential in newCredentials) {
+        if (newCredential.toLowerCase() === match[1].toLowerCase()) {
+          delete env[key]
+        }
+      }
+    }
+  }
+
+  // set the new keys
+  for (const key in newCredentials) {
+    env[`AIO_${key}`] = newCredentials[key]
+  }
+
   const envContent = Object.keys(env).reduce((content, k) => content + `${k}=${env[k]}\n`, '')
 
   fs.writeFileSync(dotenvFile, envContent)
