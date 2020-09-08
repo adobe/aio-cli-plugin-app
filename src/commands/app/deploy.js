@@ -50,7 +50,9 @@ class Deploy extends BaseCommand {
           if (fs.existsSync('manifest.yml')) {
             // todo: this replacement seems to be working, but the one below is not yet -jm
             // await scripts.buildActions([], { filterActions })
+            spinner.start('Building actions')
             await rtLib.buildActions(config, filterActions)
+            spinner.succeed(chalk.green('Building actions'))
           } else {
             this.log('no manifest.yml, skipping action build')
           }
@@ -72,9 +74,9 @@ class Deploy extends BaseCommand {
             // TODO: get urls for the actions, and inject them into the web-src contig file before building ui
             // code from app-scripts above
 
-            spinner.start('building')
+            spinner.start('Building web assets')
             await AppScripts.buildWeb(config, onProgress)
-            spinner.succeed(chalk.green('building'))
+            spinner.succeed(chalk.green('Building web assets'))
           } else {
             this.log('no web-src, skipping web-src build')
           }
@@ -103,16 +105,18 @@ class Deploy extends BaseCommand {
             }
             // todo: fix this, the following change does not work, if we call rtLib version it chokes on some actions
             // Error: EISDIR: illegal operation on a directory, read
-            deployedRuntimeEntities = { ...await rtLib.deployActions(config, { filterEntities }) }
+            spinner.start('Deploying actions')
+            deployedRuntimeEntities = { ...await rtLib.deployActions(config, { filterEntities }, onProgress) }
+            spinner.succeed(chalk.green('Deploying actions'))
           } else {
             this.log('no manifest.yml, skipping action deploy')
           }
         }
         if (!flags['skip-static']) {
           if (fs.existsSync('web-src/')) {
-            spinner.start('deploying')
+            spinner.start('Deploying web assets')
             deployedFrontendUrl = await AppScripts.deployWeb(config, onProgress)
-            spinner.succeed(chalk.green('deploying'))
+            spinner.succeed(chalk.green('Deploying web assets'))
           } else {
             this.log('no web-src, skipping web-src deploy')
           }

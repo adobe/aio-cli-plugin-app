@@ -126,7 +126,8 @@ describe('run', () => {
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledWith({}, ['a', 'b', 'c'])
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith({}, {
       filterEntities: { actions: ['a', 'b', 'c'] }
-    })
+    },
+    expect.any(Function))
   })
 
   test('build & deploy actions with no actions folder and no manifest', async () => {
