@@ -19,7 +19,7 @@ const { cli } = require('cli-ux')
 const BaseCommand = require('../../BaseCommand')
 const AppScripts = require('@adobe/aio-app-scripts')
 const { flags } = require('@oclif/command')
-const { runPackageScript, wrapError } = require('../../lib/app-helper')
+const { runPackageScript, wrapError, writeConfig } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 
 class Deploy extends BaseCommand {
@@ -36,6 +36,7 @@ class Deploy extends BaseCommand {
       spinner.info(chalk.dim(`${info}`))
       spinner.start()
     }
+
     // setup scripts, events and spinner
     try {
       // build phase
@@ -59,21 +60,10 @@ class Deploy extends BaseCommand {
         }
         if (!flags['skip-static']) {
           if (fs.existsSync('web-src/')) {
-            // function writeConfig (file, config) {
-            //   fs.ensureDirSync(path.dirname(file))
-            //   // for now only action URLs
-            //   fs.writeFileSync(
-            //     file,
-            //     JSON.stringify(config), { encoding: 'utf-8' }
-            //   )
-            // }
-            // let urls = {}
-            // if (this.config.app.hasBackend) { urls = await utils.getActionUrls(this.config) }
-            // await writeConfig(this.config.web.injectedConfig, urls)
-
-            // TODO: get urls for the actions, and inject them into the web-src contig file before building ui
-            // code from app-scripts above
-
+            if (config.app && config.app.hasBackend) {
+              const urls = await rtLib.utils.getActionUrls(config)
+              await writeConfig(config.web.injectedConfig, urls)
+            }
             spinner.start('Building web assets')
             await AppScripts.buildWeb(config, onProgress)
             spinner.succeed(chalk.green('Building web assets'))
@@ -91,6 +81,7 @@ class Deploy extends BaseCommand {
       // deploy phase
       let deployedRuntimeEntities = {}
       let deployedFrontendUrl = ''
+
       if (!flags['skip-deploy']) {
         try {
           await runPackageScript('pre-app-deploy')
