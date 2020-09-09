@@ -78,7 +78,7 @@ async function runDev (args = [], config, options = {}, log) {
     // - unregister sigint and return properly (e.g. not waiting on stdin.resume anymore)
     try {
       await cleanup(resources)
-      aioLogger.info('exiting!')
+      logFunc('exiting!')
       process.exit(0) // eslint-disable-line no-process-exit
     } catch (e) {
       aioLogger.error('unexpected error while cleaning up!')
@@ -364,36 +364,36 @@ async function _buildAndDeploy (devConfig, isLocalDev, logFunc) {
 
 async function cleanup (resources) {
   if (watcher) {
-    aioLogger.info('stopping action watcher...')
+    aioLogger.debug('stopping action watcher...')
     await watcher.close()
   }
   if (resources.uiBundler) {
-    aioLogger.info('stopping parcel watcher...')
+    aioLogger.debug('stopping parcel watcher...')
     await resources.uiBundler.stop()
   }
   if (resources.uiServer && resources.uiServerTerminator) {
-    aioLogger.info('stopping ui server...')
+    aioLogger.debug('stopping ui server...')
     // close server and kill any open connections
     await resources.uiServerTerminator.terminate()
   }
   if (resources.dotenv && resources.dotenvSave && fs.existsSync(resources.dotenvSave)) {
-    aioLogger.info('restoring .env file...')
+    aioLogger.debug('restoring .env file...')
     fs.moveSync(resources.dotenvSave, resources.dotenv, { overwrite: true })
   } else if (resources.dotenv && !resources.dotenvSave) {
     // if there was no save file it means .env was created
-    aioLogger.info('deleting tmp .env file...')
+    aioLogger.debug('deleting tmp .env file...')
     fs.removeSync(resources.dotenv)
   }
   if (resources.owProc) {
-    aioLogger.info('stopping local OpenWhisk stack...')
+    aioLogger.debug('stopping local OpenWhisk stack...')
     resources.owProc.kill()
   }
   if (resources.wskdebugProps) {
-    aioLogger.info('removing wskdebug tmp credentials file...')
+    aioLogger.debug('removing wskdebug tmp credentials file...')
     fs.unlinkSync(resources.wskdebugProps)
   }
   if (resources.vscodeDebugConfig && !resources.vscodeDebugConfigSave) {
-    aioLogger.info('removing .vscode/launch.json...')
+    aioLogger.debug('removing .vscode/launch.json...')
     const vscodeDir = path.dirname(resources.vscodeDebugConfig)
     fs.unlinkSync(resources.vscodeDebugConfig)
     if (fs.readdirSync(vscodeDir).length === 0) {
@@ -401,11 +401,11 @@ async function cleanup (resources) {
     }
   }
   if (resources.vscodeDebugConfigSave) {
-    aioLogger.info('restoring previous .vscode/launch.json...')
+    aioLogger.debug('restoring previous .vscode/launch.json...')
     fs.moveSync(resources.vscodeDebugConfigSave, resources.vscodeDebugConfig, { overwrite: true })
   }
   if (resources.dummyProc) {
-    aioLogger.info('stopping sigint waiter...')
+    aioLogger.debug('stopping sigint waiter...')
     resources.dummyProc.kill()
   }
   resources.stopFetchLogs = true
