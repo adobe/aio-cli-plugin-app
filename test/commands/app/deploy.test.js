@@ -15,13 +15,15 @@ const BaseCommand = require('../../../src/BaseCommand')
 
 const mockFS = require('fs-extra')
 
+jest.mock('../../../src/lib/app-helper.js')
+const helpers = require('../../../src/lib/app-helper.js')
+
 const mockScripts = require('@adobe/aio-app-scripts')
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 
 jest.mock('@adobe/aio-lib-core-config')
 const mockConfig = require('@adobe/aio-lib-core-config')
 
-const { stdout } = require('stdout-stderr')
 jest.mock('cli-ux')
 const { cli } = require('cli-ux')
 
@@ -29,7 +31,10 @@ beforeEach(() => {
   mockScripts.mockReset('deployWeb')
   mockScripts.mockReset('buildWeb')
   mockFS.existsSync.mockReset()
+  helpers.writeConfig.mockReset()
   jest.restoreAllMocks()
+
+  helpers.wrapError.mockImplementation(msg => msg)
 })
 
 test('exports', async () => {
@@ -362,6 +367,24 @@ describe('run', () => {
       return 'ok'
     })
     await command.run()
+    expect(mockScripts.deployWeb).toHaveBeenCalledTimes(1)
+  })
+
+  test('write web-src/src/config.json with action urls after buildActions and before buildWeb', async () => {
+    mockFS.existsSync.mockReturnValue(true)
+    mockRuntimeLib.deployActions.mockResolvedValue('ok')
+    mockScripts.deployWeb.mockImplementation(async (config, log) => {
+      log('progress log')
+      return 'ok'
+    })
+    mockRuntimeLib.utils.getActionUrls.mockResolvedValue({ a: 'a' })
+    //
+    command.appConfig.app = { hasBackend: true }
+    command.appConfig.web = { injectedConfig: 'sdf' }
+    helpers.writeConfig.mockResolvedValue('ok')
+    await command.run()
+    expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalledTimes(1)
+    expect(helpers.writeConfig).toHaveBeenCalledWith('sdf', { a: 'a' })
     expect(mockScripts.deployWeb).toHaveBeenCalledTimes(1)
   })
 })
