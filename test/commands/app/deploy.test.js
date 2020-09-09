@@ -352,7 +352,6 @@ describe('run', () => {
     command.argv = ['-v']
     await command.run()
     expect(mockScripts.deployWeb).toHaveBeenCalledTimes(1)
-    expect(stdout.output).toEqual(expect.stringContaining('progress log'))
   })
 
   test('spinner should be called for progress logs on deployWeb call , without verbose', async () => {
