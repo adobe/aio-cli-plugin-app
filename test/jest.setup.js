@@ -85,7 +85,7 @@ jest.mock('fs-extra')
 // don't wait for user input in tests
 jest.mock('inquirer')
 // make sure we mock the app scripts
-jest.mock('@adobe/aio-app-scripts')
+jest.mock('@adobe/aio-lib-web')
 //
 jest.mock('ora')
 //

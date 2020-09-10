@@ -10,23 +10,23 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const mockScripts = {
+const mockLibWeb = {
   buildWeb: jest.fn(),
   deployWeb: jest.fn(),
   undeployWeb: jest.fn()
 }
 
-mockScripts.mockReset = (script) => {
-  mockScripts[script].mockReset()
-  mockScripts[script].mockImplementation()
+mockLibWeb.mockReset = (script) => {
+  mockLibWeb[script].mockReset()
+  mockLibWeb[script].mockImplementation()
 }
 
-mockScripts.mockResolvedValue = (script, value) => {
-  mockScripts[script].mockImplementation(async () => { return value })
+mockLibWeb.mockResolvedValue = (script, value) => {
+  mockLibWeb[script].mockImplementation(async () => { return value })
 }
 
-mockScripts.mockRejectedValue = (script, value) => {
-  mockScripts[script].mockImplementation(async () => { throw value })
+mockLibWeb.mockRejectedValue = (script, value) => {
+  mockLibWeb[script].mockImplementation(async () => { throw value })
 }
 
-module.exports = mockScripts
+module.exports = mockLibWeb

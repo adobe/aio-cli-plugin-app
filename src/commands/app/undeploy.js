@@ -18,7 +18,7 @@ const fs = require('fs-extra')
 const { flags } = require('@oclif/command')
 
 const BaseCommand = require('../../BaseCommand')
-const AppScripts = require('@adobe/aio-app-scripts')
+const webLib = require('@adobe/aio-lib-web')
 const { wrapError } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 
@@ -47,7 +47,7 @@ class Undeploy extends BaseCommand {
       }
       if (!flags['skip-static']) {
         if (fs.existsSync('web-src/')) {
-          await AppScripts.undeployWeb(config, onProgress)
+          await webLib.undeployWeb(config, onProgress)
         } else {
           this.log('no web-src, skipping web-src undeploy')
         }

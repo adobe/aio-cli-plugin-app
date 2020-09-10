@@ -10,9 +10,6 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-// need to manually mock because parcel seems to fs read
-// /Users/mraho/work/aio-app-scripts/node_modules/grapheme-breaker/src/classes.trie which conflicts with fs mocking
-
 const mockBundle = jest.fn()
 const mockMiddleware = jest.fn()
 const mockConstructor = jest.fn()

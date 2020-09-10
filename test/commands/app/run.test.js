@@ -37,8 +37,6 @@ const https = require('https')
 jest.mock('get-port')
 const getPort = require('get-port')
 
-// const https = require('https')
-// const mockScripts = require('@adobe/aio-app-scripts')()
 let command
 
 const mockFindCommandRun = jest.fn()
