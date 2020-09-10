@@ -19,42 +19,26 @@ const { cli } = require('cli-ux')
 const BaseCommand = require('../../BaseCommand')
 const AppScripts = require('@adobe/aio-app-scripts')
 const { flags } = require('@oclif/command')
-const { runPackageScript, wrapError } = require('../../lib/app-helper')
+const { runPackageScript, wrapError, writeConfig } = require('../../lib/app-helper')
+const rtLib = require('@adobe/aio-lib-runtime')
 
 class Deploy extends BaseCommand {
   async run () {
     // cli input
     const { flags } = this.parse(Deploy)
-
+    const config = this.getAppConfig()
     const filterActions = flags.action
 
-    // setup scripts, events and spinner
     const spinner = ora()
-    try {
-      const listeners = {
-        onStart: taskName => {
-          this.log(chalk.bold(`> ${taskName}`))
-          spinner.start(taskName)
-        },
-        onEnd: taskName => {
-          spinner.succeed(chalk.green(taskName))
-          this.log()
-        },
-        onWarning: warning => {
-          spinner.warn(chalk.dim(chalk.yellow(warning)))
-          spinner.start()
-        },
-        onProgress: info => {
-          if (flags.verbose) {
-            spinner.stopAndPersist({ text: chalk.dim(` > ${info}`) })
-          } else {
-            spinner.info(chalk.dim(info))
-          }
-          spinner.start()
-        }
-      }
-      const scripts = AppScripts({ listeners })
+    const onProgress = !flags.verbose ? info => {
+      spinner.text = info
+    } : info => {
+      spinner.info(chalk.dim(`${info}`))
+      spinner.start()
+    }
 
+    // setup scripts, events and spinner
+    try {
       // build phase
       if (!flags['skip-build']) {
         try {
@@ -65,14 +49,24 @@ class Deploy extends BaseCommand {
 
         if (!flags['skip-actions']) {
           if (fs.existsSync('manifest.yml')) {
-            await scripts.buildActions([], { filterActions })
+            // todo: this replacement seems to be working, but the one below is not yet -jm
+            // await scripts.buildActions([], { filterActions })
+            spinner.start('Building actions')
+            await rtLib.buildActions(config, filterActions)
+            spinner.succeed(chalk.green('Building actions'))
           } else {
             this.log('no manifest.yml, skipping action build')
           }
         }
         if (!flags['skip-static']) {
           if (fs.existsSync('web-src/')) {
-            await scripts.buildUI()
+            if (config.app && config.app.hasBackend) {
+              const urls = await rtLib.utils.getActionUrls(config)
+              await writeConfig(config.web.injectedConfig, urls)
+            }
+            spinner.start('Building web assets')
+            await AppScripts.buildWeb(config, onProgress)
+            spinner.succeed(chalk.green('Building web assets'))
           } else {
             this.log('no web-src, skipping web-src build')
           }
@@ -87,6 +81,7 @@ class Deploy extends BaseCommand {
       // deploy phase
       let deployedRuntimeEntities = {}
       let deployedFrontendUrl = ''
+
       if (!flags['skip-deploy']) {
         try {
           await runPackageScript('pre-app-deploy')
@@ -99,14 +94,21 @@ class Deploy extends BaseCommand {
             if (filterActions) {
               filterEntities = { actions: filterActions }
             }
-            deployedRuntimeEntities = { ...await scripts.deployActions([], { filterEntities }) }
+            // todo: fix this, the following change does not work, if we call rtLib version it chokes on some actions
+            // Error: EISDIR: illegal operation on a directory, read
+            spinner.start('Deploying actions')
+            console.log('deployedRuntimeEntities = ', deployedRuntimeEntities)
+            deployedRuntimeEntities = { ...await rtLib.deployActions(config, { filterEntities }, onProgress) }
+            spinner.succeed(chalk.green('Deploying actions'))
           } else {
             this.log('no manifest.yml, skipping action deploy')
           }
         }
         if (!flags['skip-static']) {
           if (fs.existsSync('web-src/')) {
-            deployedFrontendUrl = await scripts.deployUI()
+            spinner.start('Deploying web assets')
+            deployedFrontendUrl = await AppScripts.deployWeb(config, onProgress)
+            spinner.succeed(chalk.green('Deploying web assets'))
           } else {
             this.log('no web-src, skipping web-src deploy')
           }
@@ -146,7 +148,7 @@ class Deploy extends BaseCommand {
         this.log(chalk.green(chalk.bold('Well done, your app is now online 🏄')))
       }
     } catch (error) {
-      spinner.fail()
+      spinner.stop()
       this.error(wrapError(error))
     }
   }

@@ -1,5 +1,5 @@
 /*
-Copyright 2019 Adobe. All rights reserved.
+Copyright 2020 Adobe. All rights reserved.
 This file is licensed to you under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License. You may obtain a copy
 of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -10,26 +10,22 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-module.exports = () => {
-  const spinner = {
-    stopAndPersist: jest.fn(() => {
-      // console.error('stopAndPersist')
-    }),
-    stop: jest.fn(),
-    start: jest.fn(() => {
-      // console.error('start')
-    }),
-    warn: jest.fn(() => {
-      // console.error('warn')
-    }),
-    info: jest.fn((msg) => {
-      console.log(msg)
-    }),
-    error: jest.fn(),
-    fail: jest.fn(),
-    succeed: jest.fn(() => {
-      // console.error('succeed')
-    })
+const EventEmitter = require('events')
+
+class EventPoller extends EventEmitter {
+  constructor (timeout) {
+    super()
+    this.timeout = timeout
   }
-  return spinner
+
+  poll (args) {
+    // emit event after poll interval
+    setTimeout(() => this.emit('poll', args), this.timeout)
+  }
+
+  onPoll (callback) {
+    this.on('poll', callback)
+  }
 }
+
+module.exports = EventPoller

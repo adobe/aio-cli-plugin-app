@@ -20,50 +20,34 @@ const { flags } = require('@oclif/command')
 const BaseCommand = require('../../BaseCommand')
 const AppScripts = require('@adobe/aio-app-scripts')
 const { wrapError } = require('../../lib/app-helper')
+const rtLib = require('@adobe/aio-lib-runtime')
 
 class Undeploy extends BaseCommand {
   async run () {
     // cli input
     const { flags } = this.parse(Undeploy)
+    const config = this.getAppConfig()
 
     // setup scripts, events and spinner
     const spinner = ora()
+    const onProgress = !flags.verbose ? info => {
+      spinner.text = info
+    } : info => {
+      spinner.info(chalk.dim(`${info}`))
+      spinner.start()
+    }
     try {
-      const listeners = {
-        onStart: taskName => {
-          this.log(chalk.bold(`> ${taskName}`))
-          spinner.start(taskName)
-        },
-        onEnd: taskName => {
-          spinner.succeed(chalk.green(taskName))
-          this.log()
-        },
-        onWarning: warning => {
-          spinner.warn(chalk.dim(chalk.yellow(warning)))
-          spinner.start()
-        },
-        onProgress: info => {
-          if (flags.verbose) {
-            spinner.stopAndPersist({ text: chalk.dim(` > ${info}`) })
-          } else {
-            spinner.info(chalk.dim(info))
-          }
-          spinner.start()
-        }
-      }
-      const scripts = AppScripts({ listeners })
-
       // undeploy
       if (!flags['skip-actions']) {
         if (fs.existsSync('manifest.yml')) {
-          await scripts.undeployActions()
+          await rtLib.undeployActions(this.getAppConfig())
         } else {
           this.log('no manifest file, skipping action undeploy')
         }
       }
       if (!flags['skip-static']) {
         if (fs.existsSync('web-src/')) {
-          await scripts.undeployUI()
+          await AppScripts.undeployWeb(config, onProgress)
         } else {
           this.log('no web-src, skipping web-src undeploy')
         }
@@ -72,7 +56,7 @@ class Undeploy extends BaseCommand {
       // final message
       this.log(chalk.green(chalk.bold('Undeploy done !')))
     } catch (error) {
-      spinner.fail()
+      spinner.stop()
       this.error(wrapError(error))
     }
   }

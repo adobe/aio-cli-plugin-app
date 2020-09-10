@@ -21,7 +21,8 @@ const { flags } = require('@oclif/command')
 const coreConfig = require('@adobe/aio-lib-core-config')
 
 const BaseCommand = require('../../BaseCommand')
-const AppScripts = require('@adobe/aio-app-scripts')
+// const AppScripts = require('@adobe/aio-app-scripts')
+const runDev = require('../../lib/runDev')
 const { runPackageScript, wrapError } = require('../../lib/app-helper')
 
 const DEV_KEYS_DIR = 'dist/dev-keys/'
@@ -30,7 +31,7 @@ const PUB_CERT_PATH = DEV_KEYS_DIR + 'cert-pub.crt'
 const CONFIG_KEY = 'aio-dev.dev-keys'
 
 class Run extends BaseCommand {
-  async run () {
+  async run (args = []) {
     const { flags } = this.parse(Run)
 
     const hasFrontend = await fs.exists('web-src/')
@@ -68,32 +69,16 @@ class Run extends BaseCommand {
     }
 
     const spinner = ora()
-    const listeners = {
-      onStart: taskName => {
-        this.log(chalk.bold(`> ${taskName}`))
-        spinner.start(taskName)
-      },
-      onEnd: taskName => {
-        spinner.succeed(chalk.green(taskName))
-      },
-      onWarning: warning => {
-        spinner.warn(chalk.dim(chalk.yellow(warning)))
-        spinner.start()
-      },
-      onProgress: info => {
-        if (flags.verbose) {
-          spinner.stopAndPersist({ text: chalk.dim(` > ${info}`) })
-        } else {
-          spinner.info(chalk.dim(info))
-        }
-        spinner.start()
-      }
+    const onProgress = !flags.verbose ? info => {
+      spinner.text = info
+    } : info => {
+      spinner.info(chalk.dim(`${info}`))
+      spinner.start()
     }
 
     process.env.REMOTE_ACTIONS = !flags.local
-    const scripts = AppScripts({ listeners })
     try {
-      const frontendUrl = await scripts.runDev([], runOptions)
+      const frontendUrl = await runDev(args, this.getAppConfig(), runOptions, onProgress)
       try {
         await runPackageScript('post-app-run')
       } catch (err) {

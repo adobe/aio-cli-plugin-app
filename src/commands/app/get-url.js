@@ -15,21 +15,37 @@ const chalk = require('chalk')
 const { flags } = require('@oclif/command')
 
 const BaseCommand = require('../../BaseCommand')
-const AppScripts = require('@adobe/aio-app-scripts')
 const { wrapError } = require('../../lib/app-helper')
+const { getActionUrls } = require('@adobe/aio-lib-runtime').utils
 const yaml = require('js-yaml')
 
 class GetUrlCommand extends BaseCommand {
   async run () {
     // cli input
     const { args, flags } = this.parse(GetUrlCommand)
-    const scripts = AppScripts({ listeners: {} })
 
     try {
       const options = {}
       options.action = args.action
       options.cdn = flags.cdn
-      const urls = await scripts.getUrls(options)
+
+      const urls = {}
+      const configCopy = this.getAppConfig()
+      if (options.action) {
+        const action = configCopy.manifest.package.actions[options.action]
+        if (!action) {
+          throw new Error(`No action with name ${options.action} found`)
+        }
+        configCopy.manifest.package.actions = {}
+        configCopy.manifest.package.actions[options.action] = action
+      }
+      const actionUrls = await getActionUrls(configCopy, true)
+      urls.runtime = actionUrls
+      if (options.cdn) {
+        const cdnUrls = await getActionUrls(configCopy, false)
+        urls.cdn = cdnUrls
+      }
+
       if (flags.json) {
         this.log(JSON.stringify(urls))
       } else if (flags.yml) {
