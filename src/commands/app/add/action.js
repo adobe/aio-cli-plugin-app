@@ -21,8 +21,8 @@ class AddActionCommand extends BaseCommand {
     const { args, flags } = this.parse(AddActionCommand)
 
     aioLogger.debug(`adding component ${args.component} to the project, using flags: ${flags}`)
-
-    const services = (config.get('services') || []).map(s => s.code).join(',')
+    
+    const services = (config.get('services') || config.get('project.workspace.details.services') || []).map(s => s.code).join(',')
 
     const generator = '@adobe/generator-aio-app/generators/add-action'
     const env = yeoman.createEnv()

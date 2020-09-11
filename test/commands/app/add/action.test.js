@@ -124,4 +124,25 @@ describe('good flags', () => {
       'adobe-services': 'CampaignSDK,AdobeAnalyticsSDK'
     })
   })
+
+  test('pass services config codes from imported config to generator-aio-app', async () => {
+    config.get.mockImplementation((key) => {
+      if (key === 'services') {
+        return undefined
+      } else if (key === 'project.workspace.details.services') {
+        return [{ code: 'CampaignSDK' }, { code: 'AdobeAnalyticsSDK' }]
+      }
+    })
+
+    await TheCommand.run([])
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genName = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenCalledWith(genName, {
+      'skip-prompt': false,
+      'skip-install': false,
+      'adobe-services': 'CampaignSDK,AdobeAnalyticsSDK'
+    })
+  })
 })
