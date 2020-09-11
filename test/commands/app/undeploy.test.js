@@ -17,12 +17,12 @@ const mockFS = require('fs-extra')
 
 // mocks
 const { stdout } = require('stdout-stderr')
-const mockScripts = require('@adobe/aio-app-scripts')
+const mockWebLib = require('@adobe/aio-lib-web')
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 
 beforeEach(() => {
   mockRuntimeLib.undeployActions.mockReset()
-  mockScripts.mockReset('undeployWeb')
+  mockWebLib.mockReset('undeployWeb')
   mockFS.existsSync.mockReset()
   jest.restoreAllMocks()
 })
@@ -67,7 +67,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
-    expect(mockScripts.undeployWeb).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
   })
 
   test('undeploy an App with --verbose', async () => {
@@ -76,7 +76,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
-    expect(mockScripts.undeployWeb).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
   })
 
   test('undeploy skip-actions', async () => {
@@ -85,7 +85,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(0)
-    expect(mockScripts.undeployWeb).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
   })
 
   test('undeploy skip-actions verbose', async () => {
@@ -94,7 +94,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(0)
-    expect(mockScripts.undeployWeb).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
   })
 
   test('undeploy skip static', async () => {
@@ -103,7 +103,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
-    expect(mockScripts.undeployWeb).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(0)
   })
 
   test('undeploy skip static verbose', async () => {
@@ -112,7 +112,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
-    expect(mockScripts.undeployWeb).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(0)
   })
 
   test('undeploy an app with no backend', async () => {
@@ -120,7 +120,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(0)
-    expect(mockScripts.undeployWeb).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
     expect(command.log).toHaveBeenCalledWith('no manifest file, skipping action undeploy')
   })
 
@@ -129,7 +129,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
-    expect(mockScripts.undeployWeb).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith('no web-src, skipping web-src undeploy')
   })
 
@@ -145,33 +145,33 @@ describe('run', () => {
   test('should fail if scripts.undeployWeb fails', async () => {
     mockFS.existsSync.mockReturnValue(true)
     const error = new Error('mock failure UI')
-    mockScripts.mockRejectedValue('undeployWeb', error)
+    mockWebLib.mockRejectedValue('undeployWeb', error)
     await command.run()
     expect(command.error).toHaveBeenCalledWith(error)
-    expect(mockScripts.undeployWeb).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
   })
 
   test('spinner should be called for progress logs on undeployWeb call , with verbose', async () => {
     mockFS.existsSync.mockReturnValue(true)
     mockRuntimeLib.undeployActions.mockResolvedValue('ok')
-    mockScripts.undeployWeb.mockImplementation(async (config, log) => {
+    mockWebLib.undeployWeb.mockImplementation(async (config, log) => {
       log('progress log')
       return 'ok'
     })
     command.argv = ['-v']
     await command.run()
-    expect(mockScripts.undeployWeb).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
     expect(stdout.output).toEqual(expect.stringContaining('progress log'))
   })
 
   test('spinner should be called for progress logs on undeployWeb call , without verbose', async () => {
     mockFS.existsSync.mockReturnValue(true)
     mockRuntimeLib.undeployActions.mockResolvedValue('ok')
-    mockScripts.undeployWeb.mockImplementation(async (config, log) => {
+    mockWebLib.undeployWeb.mockImplementation(async (config, log) => {
       log('progress log')
       return 'ok'
     })
     await command.run()
-    expect(mockScripts.undeployWeb).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
   })
 })
