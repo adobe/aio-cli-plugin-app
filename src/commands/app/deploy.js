@@ -19,7 +19,7 @@ const { cli } = require('cli-ux')
 const BaseCommand = require('../../BaseCommand')
 const AppScripts = require('@adobe/aio-app-scripts')
 const { flags } = require('@oclif/command')
-const { runPackageScript, wrapError, writeConfig } = require('../../lib/app-helper')
+const { buildApp, runPackageScript, wrapError, writeConfig } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 
 class Deploy extends BaseCommand {
@@ -40,42 +40,10 @@ class Deploy extends BaseCommand {
     // setup scripts, events and spinner
     try {
       // build phase
-      if (!flags['skip-build']) {
-        try {
-          await runPackageScript('pre-app-build')
-        } catch (err) {
-          // this is assumed to be a missing script error
-        }
-
-        if (!flags['skip-actions']) {
-          if (fs.existsSync('manifest.yml')) {
-            // todo: this replacement seems to be working, but the one below is not yet -jm
-            // await scripts.buildActions([], { filterActions })
-            spinner.start('Building actions')
-            await rtLib.buildActions(config, filterActions)
-            spinner.succeed(chalk.green('Building actions'))
-          } else {
-            this.log('no manifest.yml, skipping action build')
-          }
-        }
-        if (!flags['skip-static']) {
-          if (fs.existsSync('web-src/')) {
-            if (config.app && config.app.hasBackend) {
-              const urls = await rtLib.utils.getActionUrls(config)
-              await writeConfig(config.web.injectedConfig, urls)
-            }
-            spinner.start('Building web assets')
-            await AppScripts.buildWeb(config, onProgress)
-            spinner.succeed(chalk.green('Building web assets'))
-          } else {
-            this.log('no web-src, skipping web-src build')
-          }
-        }
-        try {
-          await runPackageScript('post-app-build')
-        } catch (err) {
-          // this is assumed to be a missing script error
-        }
+      /* if (flags['force-build']) {
+        await buildApp(config, flags, true, spinner, onProgress)
+      } else  */if (!flags['skip-build']) {
+        await buildApp(config, flags, false, spinner, onProgress)
       }
 
       // deploy phase
@@ -97,7 +65,6 @@ class Deploy extends BaseCommand {
             // todo: fix this, the following change does not work, if we call rtLib version it chokes on some actions
             // Error: EISDIR: illegal operation on a directory, read
             spinner.start('Deploying actions')
-            console.log('deployedRuntimeEntities = ', deployedRuntimeEntities)
             deployedRuntimeEntities = { ...await rtLib.deployActions(config, { filterEntities }, onProgress) }
             spinner.succeed(chalk.green('Deploying actions'))
           } else {

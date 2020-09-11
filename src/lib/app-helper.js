@@ -18,7 +18,46 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
+const AppScripts = require('@adobe/aio-app-scripts')
 const fetch = require('node-fetch')
+const chalk = require('chalk')
+
+async function buildApp (config, flags, overwrite, spinner, onProgress) {
+  const filterActions = flags.action
+  try {
+    await runPackageScript('pre-app-build')
+  } catch (err) {
+    // this is assumed to be a missing script error
+  }
+
+  if (!flags['skip-actions']) {
+    if (fs.existsSync('manifest.yml')) {
+      spinner.start('Building actions')
+      await RuntimeLib.buildActions(config, filterActions, overwrite)
+      spinner.succeed(chalk.green('Building actions'))
+    } else {
+      spinner.info('no manifest.yml, skipping action build')
+    }
+  }
+  if (!flags['skip-static']) {
+    if (fs.existsSync('web-src/')) {
+      if (config.app && config.app.hasBackend) {
+        const urls = await RuntimeLib.utils.getActionUrls(config)
+        await writeConfig(config.web.injectedConfig, urls)
+      }
+      spinner.start('Building web assets')
+      await AppScripts.buildWeb(config, onProgress, overwrite)
+      spinner.succeed(chalk.green('Building web assets'))
+    } else {
+      spinner.info('no web-src, skipping web-src build')
+    }
+  }
+  try {
+    await runPackageScript('post-app-build')
+  } catch (err) {
+    // this is assumed to be a missing script error
+  }
+}
 
 /** @private */
 function isNpmInstalled () {
@@ -342,6 +381,7 @@ function saveAndReplaceDotEnvCredentials (dotenvFile, saveFile, apihost, namespa
 }
 
 module.exports = {
+  buildApp,
   isNpmInstalled,
   isGitInstalled,
   installPackage,
