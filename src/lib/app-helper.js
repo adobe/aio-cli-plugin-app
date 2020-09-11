@@ -18,7 +18,7 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
-const AppScripts = require('@adobe/aio-app-scripts')
+const webLib = require('@adobe/aio-lib-web')
 const fetch = require('node-fetch')
 const chalk = require('chalk')
 
@@ -46,7 +46,7 @@ async function buildApp (config, flags, overwrite, spinner, onProgress) {
         await writeConfig(config.web.injectedConfig, urls)
       }
       spinner.start('Building web assets')
-      await AppScripts.buildWeb(config, onProgress, overwrite)
+      await webLib.buildWeb(config, onProgress, overwrite)
       spinner.succeed(chalk.green('Building web assets'))
     } else {
       spinner.info('no web-src, skipping web-src build')

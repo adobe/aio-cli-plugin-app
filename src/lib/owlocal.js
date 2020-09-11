@@ -11,7 +11,7 @@ governing permissions and limitations under the License.
 */
 
 const path = require('path')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-app-scripts:owlocal', { provider: 'debug' })
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:owlocal', { provider: 'debug' })
 const execa = require('execa')
 
 const OW_LOCAL_DOCKER_PORT = 3233

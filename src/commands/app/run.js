@@ -21,7 +21,6 @@ const { flags } = require('@oclif/command')
 const coreConfig = require('@adobe/aio-lib-core-config')
 
 const BaseCommand = require('../../BaseCommand')
-// const AppScripts = require('@adobe/aio-app-scripts')
 const runDev = require('../../lib/runDev')
 const { runPackageScript, wrapError } = require('../../lib/app-helper')
 

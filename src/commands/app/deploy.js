@@ -17,7 +17,7 @@ const fs = require('fs-extra')
 const { cli } = require('cli-ux')
 
 const BaseCommand = require('../../BaseCommand')
-const AppScripts = require('@adobe/aio-app-scripts')
+const webLib = require('@adobe/aio-lib-web')
 const { flags } = require('@oclif/command')
 const { buildApp, runPackageScript, wrapError, writeConfig } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
@@ -74,7 +74,7 @@ class Deploy extends BaseCommand {
         if (!flags['skip-static']) {
           if (fs.existsSync('web-src/')) {
             spinner.start('Deploying web assets')
-            deployedFrontendUrl = await AppScripts.deployWeb(config, onProgress)
+            deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
             spinner.succeed(chalk.green('Deploying web assets'))
           } else {
             this.log('no web-src, skipping web-src deploy')
