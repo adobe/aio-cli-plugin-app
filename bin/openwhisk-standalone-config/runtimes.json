@@ -1,0 +1,23 @@
+{
+  "runtimes": {
+    "nodejs": [
+      {
+        "kind": "nodejs:12",
+        "default": true,
+        "image": {
+          "prefix": "adobeapiplatform",
+          "name": "adobe-action-nodejs-v12",
+          "tag": "3.0.22"
+        }
+      },
+      {
+        "kind": "nodejs:10",
+        "image": {
+          "prefix": "adobeapiplatform",
+          "name": "adobe-action-nodejs-v10",
+          "tag": "3.0.22"
+        }
+      }
+    ]
+  }
+}

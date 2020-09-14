@@ -10,28 +10,27 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const AppScripts = require('@adobe/aio-app-scripts')
-
 const { flags } = require('@oclif/command')
 // const { cli } = require('cli-ux')
 const BaseCommand = require('../../BaseCommand')
-
-const { wrapError } = require('../../lib/app-helper')
+const { wrapError, getLogs } = require('../../lib/app-helper')
 
 class Logs extends BaseCommand {
   async run () {
     const { flags } = this.parse(Logs)
 
-    const scripts = AppScripts({ listeners: {} })
-
-    const logOptions = {
-      logger: this.log,
-      limit: flags.limit
+    if (flags.limit < 1) {
+      this.log('--limit should be > 0, using --limit=1')
+      flags.limit = 1
+    } else if (flags.limit > 50) {
+      this.log('--limit should be <= 50, using --limit=50')
+      flags.limit = 50
     }
 
     try {
-      const foundLogs = await scripts.logs([], logOptions)
-      return foundLogs
+      const config = this.getAppConfig()
+
+      await getLogs(config, flags.limit, this.log)
     } catch (error) {
       this.error(wrapError(error))
     }
@@ -44,7 +43,7 @@ Logs.description = `Fetch logs for an Adobe I/O App
 Logs.flags = {
   ...BaseCommand.flags,
   limit: flags.integer({
-    description: 'Limit number of activations to fetch logs from',
+    description: 'Limit number of activations to fetch logs from ( 1-50 )',
     default: 1,
     char: 'l'
   })

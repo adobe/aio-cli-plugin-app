@@ -3,7 +3,10 @@
     "globals": {
       "fixtureFile": true,
       "fixtureJson": true,
-      "fixtureHjson": true
+      "fixtureHjson": true,
+      "fakeFileSystem": true,
+      "n": "readonly",
+      "r": "readonly"
     },
     "settings": {
         "jsdoc": {

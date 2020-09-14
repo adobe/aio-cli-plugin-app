@@ -15,8 +15,16 @@ const fs = require('fs-extra')
 const chalk = require('chalk')
 const coreConfig = require('@adobe/aio-lib-core-config')
 const DEFAULT_LAUNCH_PREFIX = 'https://experience.adobe.com/?devMode=true#/custom-apps/?localDevUrl='
+const loadConfig = require('./lib/config-loader')
 
 class BaseCommand extends Command {
+  getAppConfig () {
+    if (!this.appConfig) {
+      this.appConfig = loadConfig()
+    }
+    return this.appConfig
+  }
+
   getLaunchUrlPrefix () {
     // todo: it might make sense to have a value that defines if this is an ExC hosted app, or otherwise
     // so we can decide what type of url to return here.

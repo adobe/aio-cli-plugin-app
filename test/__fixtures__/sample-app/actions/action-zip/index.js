@@ -9,27 +9,7 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-
-module.exports = () => {
-  const spinner = {
-    stopAndPersist: jest.fn(() => {
-      // console.error('stopAndPersist')
-    }),
-    stop: jest.fn(),
-    start: jest.fn(() => {
-      // console.error('start')
-    }),
-    warn: jest.fn(() => {
-      // console.error('warn')
-    }),
-    info: jest.fn((msg) => {
-      console.log(msg)
-    }),
-    error: jest.fn(),
-    fail: jest.fn(),
-    succeed: jest.fn(() => {
-      // console.error('succeed')
-    })
-  }
-  return spinner
+function main (args) {
+  return 'hello'
 }
+exports.main = main

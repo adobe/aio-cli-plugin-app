@@ -13,6 +13,9 @@ governing permissions and limitations under the License.
 const RunCommand = require('../../../src/commands/app/run')
 const BaseCommand = require('../../../src/BaseCommand')
 
+jest.mock('../../../src/lib/runDev')
+const mockRunDev = require('../../../src/lib/runDev')
+
 // should be same as in run.js
 const DEV_KEYS_DIR = 'dist/dev-keys/'
 const PRIVATE_KEY_PATH = DEV_KEYS_DIR + 'private.key'
@@ -34,8 +37,6 @@ const https = require('https')
 jest.mock('get-port')
 const getPort = require('get-port')
 
-// const https = require('https')
-const mockScripts = require('@adobe/aio-app-scripts')()
 let command
 
 const mockFindCommandRun = jest.fn()
@@ -51,7 +52,8 @@ const mockHttpsServerInstance = {
 
 beforeEach(() => {
   jest.restoreAllMocks()
-  mockScripts.mockReset('runDev')
+  // mockScripts.mockReset('runDev')
+  mockRunDev.mockReset()
 
   mockConfig.get = jest.fn().mockReturnValue({ globalConfig: 'seems-legit' })
 
@@ -150,89 +152,131 @@ describe('run', () => {
 
   test('app:run with web-src and --skip-actions', async () => {
     mockFSExists(['manifest.yml', 'web-src', PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    await RunCommand.run([])
+    command.argv = []
+    command.appConfig = {}
+    await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(process.env.REMOTE_ACTIONS).toBe('true')
+  })
+
+  test('app:run calls log spinner --verbose', async () => {
+    mockFSExists(['manifest.yml', 'web-src', PRIVATE_KEY_PATH, PUB_CERT_PATH])
+    mockRunDev.mockImplementation((args, config, options, logFunc) => {
+      logFunc('boo')
+    })
+    command.argv = ['--verbose']
+    command.appConfig = {}
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(process.env.REMOTE_ACTIONS).toBe('true')
+  })
+
+  test('app:run calls log spinner not verbose', async () => {
+    mockFSExists(['manifest.yml', 'web-src', PRIVATE_KEY_PATH, PUB_CERT_PATH])
+    mockRunDev.mockImplementation((args, config, options, logFunc) => {
+      logFunc('boo')
+    })
+    command.argv = []
+    command.appConfig = {}
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(process.env.REMOTE_ACTIONS).toBe('true')
   })
 
   test('app:run with manifest and no certificates', async () => {
     mockFSExists(['manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    await RunCommand.run([])
+    command.argv = []
+    command.appConfig = {}
+    await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(process.env.REMOTE_ACTIONS).toBe('true')
   })
 
   test('app:run with web src and manifest', async () => {
     mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    await RunCommand.run([])
+    command.argv = []
+    command.appConfig = {}
+    await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(process.env.REMOTE_ACTIONS).toBe('true')
-    expect(mockScripts.runDev).toHaveBeenCalledWith([], expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       parcel: expect.objectContaining({
         logLevel: 2
       })
-    }))
+    }), expect.any(Function))
   })
 
   test('app:run check if fetchLogs flag is set when calling scripts', async () => {
     mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    await RunCommand.run([])
-    expect(mockScripts.runDev).toHaveBeenCalledWith([], expect.objectContaining({
+    command.argv = []
+    command.appConfig = {}
+    await command.run()
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       fetchLogs: true
-    }))
+    }), expect.any(Function))
   })
 
   test('app:run with -verbose', async () => {
     mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    await RunCommand.run(['--verbose'])
+    command.argv = ['--verbose']
+    command.appConfig = {}
+    await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
-    expect(mockScripts.runDev).toHaveBeenCalledWith([], expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       parcel: expect.objectContaining({
         logLevel: 4
       })
-    }))
+    }), expect.any(Function))
     expect(process.env.REMOTE_ACTIONS).toBe('true')
   })
 
   test('app:run with --local', async () => {
     mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    await RunCommand.run(['--local'])
+    command.argv = ['--local']
+    command.appConfig = {}
+    await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(process.env.REMOTE_ACTIONS).toBe('false')
   })
 
   test('app:run with --local --verbose', async () => {
     mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    await RunCommand.run(['--local', '--verbose'])
+    command.argv = ['--local', '--verbose']
+    command.appConfig = {}
+    await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
-    expect(mockScripts.runDev).toHaveBeenCalledWith([], expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       parcel: expect.objectContaining({
         logLevel: 4
       })
-    }))
+    }), expect.any(Function))
     expect(process.env.REMOTE_ACTIONS).toBe('false')
   })
 
   test('app:run where scripts.runDev throws', async () => {
     mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    mockScripts.mockRejectedValue('runDev', 'error')
+    mockRunDev.mockRejectedValue('error')
     command.argv = []
+    command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(1)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
   })
 
   test('run should show ui url', async () => {
     mockConfig.get.mockReturnValue(null)
     mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    mockScripts.mockResolvedValue('runDev', 'http://localhost:1111')
+    mockRunDev.mockResolvedValue('http://localhost:1111')
     command.argv = []
+    command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://localhost:1111'))
@@ -241,8 +285,9 @@ describe('run', () => {
   test('run should open ui url with --open', async () => {
     mockConfig.get.mockReturnValue(null)
     mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    mockScripts.mockResolvedValue('runDev', 'http://localhost:1111')
+    mockRunDev.mockResolvedValue('http://localhost:1111')
     command.argv = ['--open']
+    command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://localhost:1111'))
@@ -252,8 +297,9 @@ describe('run', () => {
   test('run should show ui and exc url if AIO_LAUNCH_PREFIX_URL is set', async () => {
     mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
     mockConfig.get.mockReturnValue('http://prefix?fake=')
-    mockScripts.mockResolvedValue('runDev', 'http://localhost:1111')
+    mockRunDev.mockResolvedValue('http://localhost:1111')
     command.argv = []
+    command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://localhost:1111'))
@@ -263,8 +309,9 @@ describe('run', () => {
   test('run should show ui and open exc url if AIO_LAUNCH_PREFIX_URL is set with --open', async () => {
     mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
     mockConfig.get.mockReturnValue('http://prefix?fake=')
-    mockScripts.mockResolvedValue('runDev', 'http://localhost:1111')
+    mockRunDev.mockResolvedValue('http://localhost:1111')
     command.argv = ['--open']
+    command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://localhost:1111'))
@@ -276,10 +323,11 @@ describe('run', () => {
     // only generate cert if the app has a UI
     mockFSExists(['web-src/', PRIVATE_KEY_PATH, PUB_CERT_PATH])
     command.argv = []
+    command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
-    expect(mockScripts.runDev).toHaveBeenCalledWith([], expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       parcel: {
         logLevel: 2,
         https: {
@@ -287,7 +335,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }))
+    }), expect.any(Function))
   })
 
   test('app:run with UI and no cert files but has cert config', async () => {
@@ -295,10 +343,11 @@ describe('run', () => {
     mockConfig.get.mockReturnValue({ publicCert: 'pub cert', privateKey: 'private key' })
 
     command.argv = []
+    command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
-    expect(mockScripts.runDev).toHaveBeenCalledWith([], expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       parcel: {
         logLevel: 2,
         https: {
@@ -306,7 +355,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }))
+    }), expect.any(Function))
     expect(mockFS.ensureDir).toHaveBeenCalledWith(DEV_KEYS_DIR)
     expect(mockFS.writeFile).toHaveBeenCalledTimes(2)
     expect(mockFS.writeFile).toHaveBeenCalledWith(PUB_CERT_PATH, 'pub cert')
@@ -323,10 +372,11 @@ describe('run', () => {
     })
 
     command.argv = []
+    command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
-    expect(mockScripts.runDev).toHaveBeenCalledWith([], expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       parcel: {
         logLevel: 2,
         https: {
@@ -334,7 +384,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }))
+    }), expect.any(Function))
     expect(mockFS.ensureDir).toHaveBeenCalledWith(DEV_KEYS_DIR)
     expect(command.config.findCommand).toHaveBeenCalledWith('certificate:generate')
     expect(mockFindCommandRun).toHaveBeenCalledWith([`--keyout=${PRIVATE_KEY_PATH}`, `--out=${PUB_CERT_PATH}`, '-n=DeveloperSelfSigned.cert'])
@@ -358,10 +408,11 @@ describe('run', () => {
     })
 
     command.argv = []
+    command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
-    expect(mockScripts.runDev).toHaveBeenCalledWith([], expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       parcel: {
         logLevel: 2,
         https: {
@@ -369,7 +420,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }))
+    }), expect.any(Function))
     expect(mockConfig.set).toHaveBeenCalledTimes(2)
     expect(mockConfig.set).toHaveBeenCalledWith(CONFIG_KEY + '.privateKey', 'private key')
     expect(mockConfig.set).toHaveBeenCalledWith(CONFIG_KEY + '.publicCert', 'public cert')
@@ -395,10 +446,11 @@ describe('run', () => {
     getPort.mockReturnValue(1111)
 
     command.argv = []
+    command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
-    expect(mockScripts.runDev).toHaveBeenCalledWith([], expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       parcel: {
         logLevel: 2,
         https: {
@@ -406,7 +458,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }))
+    }), expect.any(Function))
     expect(https.createServer).toHaveBeenCalledWith({ key: 'private key', cert: 'public cert' }, expect.any(Function))
     expect(getPort).toHaveBeenCalledWith({ port: 9080 })
     expect(mockHttpsServerInstance.listen).toHaveBeenCalledWith(1111)
@@ -430,10 +482,11 @@ describe('run', () => {
     process.env.PORT = 9999
 
     command.argv = []
+    command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
-    expect(mockScripts.runDev).toHaveBeenCalledWith([], expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       parcel: {
         logLevel: 2,
         https: {
@@ -441,7 +494,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }))
+    }), expect.any(Function))
     expect(getPort).toHaveBeenCalledWith({ port: 9999 })
     expect(mockHttpsServerInstance.listen).toHaveBeenCalledWith(1111)
     expect(cli.open).toHaveBeenCalledWith('https://localhost:1111')
@@ -466,10 +519,11 @@ describe('run', () => {
     }
 
     command.argv = []
+    command.appConfig = {}
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(1)
-    expect(mockScripts.runDev).toHaveBeenCalledWith([], expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledWith([], {}, expect.objectContaining({
       parcel: {
         logLevel: 2,
         https: {
@@ -477,7 +531,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }))
+    }), expect.any(Function))
     expect(mockHttpsServerInstance.listen).toHaveBeenCalledWith(1111)
     expect(mockHttpsServerInstance.close).toHaveBeenCalledTimes(1)
     expect(cli.open).toHaveBeenCalledWith('https://localhost:1111')
@@ -501,7 +555,7 @@ describe('run', () => {
     await expect(command.run()).rejects.toThrow('error while generating certificate - no certificate:generate command found')
 
     expect(command.error).toHaveBeenCalledTimes(1)
-    expect(mockScripts.runDev).toHaveBeenCalledTimes(0)
+    expect(mockRunDev).toHaveBeenCalledTimes(0)
     spy.mockRestore()
   })
 })

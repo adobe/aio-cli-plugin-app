@@ -10,26 +10,23 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-module.exports = () => {
-  const spinner = {
-    stopAndPersist: jest.fn(() => {
-      // console.error('stopAndPersist')
-    }),
-    stop: jest.fn(),
-    start: jest.fn(() => {
-      // console.error('start')
-    }),
-    warn: jest.fn(() => {
-      // console.error('warn')
-    }),
-    info: jest.fn((msg) => {
-      console.log(msg)
-    }),
-    error: jest.fn(),
-    fail: jest.fn(),
-    succeed: jest.fn(() => {
-      // console.error('succeed')
-    })
-  }
-  return spinner
+const mockLibWeb = {
+  buildWeb: jest.fn(),
+  deployWeb: jest.fn(),
+  undeployWeb: jest.fn()
 }
+
+mockLibWeb.mockReset = (script) => {
+  mockLibWeb[script].mockReset()
+  mockLibWeb[script].mockImplementation()
+}
+
+mockLibWeb.mockResolvedValue = (script, value) => {
+  mockLibWeb[script].mockImplementation(async () => { return value })
+}
+
+mockLibWeb.mockRejectedValue = (script, value) => {
+  mockLibWeb[script].mockImplementation(async () => { throw value })
+}
+
+module.exports = mockLibWeb
