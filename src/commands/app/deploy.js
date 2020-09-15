@@ -97,7 +97,6 @@ class Deploy extends BaseCommand {
             // todo: fix this, the following change does not work, if we call rtLib version it chokes on some actions
             // Error: EISDIR: illegal operation on a directory, read
             spinner.start('Deploying actions')
-            console.log('deployedRuntimeEntities = ', deployedRuntimeEntities)
             deployedRuntimeEntities = { ...await rtLib.deployActions(config, { filterEntities }, onProgress) }
             spinner.succeed(chalk.green('Deploying actions'))
           } else {
