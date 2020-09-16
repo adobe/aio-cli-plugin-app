@@ -57,7 +57,9 @@
     "node": ">=10.0.0"
   },
   "files": [
-    "bin",
+    "bin/run",
+    "bin/run.cmd",
+    "bin/openwhisk-standalone-config/",
     "oclif.manifest.json",
     "src",
     "schema/config.schema.json"
