@@ -57,9 +57,10 @@
     "node": ">=10.0.0"
   },
   "files": [
-    "/oclif.manifest.json",
-    "/src",
-    "/schema/config.schema.json"
+    "bin",
+    "oclif.manifest.json",
+    "src",
+    "schema/config.schema.json"
   ],
   "homepage": "https://github.com/adobe/aio-cli-plugin-app",
   "keywords": [
