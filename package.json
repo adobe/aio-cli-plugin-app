@@ -1,7 +1,7 @@
 {
   "name": "@adobe/aio-cli-plugin-app",
   "description": "Create, Build and Deploy Adobe I/O Applications",
-  "version": "4.0.0-0",
+  "version": "4.0.0-2",
   "author": "Adobe Inc.",
   "bugs": "https://github.com/adobe/aio-cli-plugin-app/issues",
   "dependencies": {
@@ -57,9 +57,12 @@
     "node": ">=10.0.0"
   },
   "files": [
-    "/oclif.manifest.json",
-    "/src",
-    "/schema/config.schema.json"
+    "bin/run",
+    "bin/run.cmd",
+    "bin/openwhisk-standalone-config/",
+    "oclif.manifest.json",
+    "src",
+    "schema/config.schema.json"
   ],
   "homepage": "https://github.com/adobe/aio-cli-plugin-app",
   "keywords": [
