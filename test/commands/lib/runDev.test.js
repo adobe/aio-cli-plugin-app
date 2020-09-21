@@ -252,9 +252,10 @@ async function testCleanupOnError (config, postCleanupChecks) {
 
 const getExpectedActionVSCodeDebugConfig = actionName =>
   expect.objectContaining({
-    type: 'node',
+    type: 'pwa-node',
     request: 'launch',
     name: 'Action:' + actionName,
+    attachSimplePort: 0,
     runtimeExecutable: r('/node_modules/.bin/wskdebug'),
     runtimeArgs: [
       actionName,
@@ -1168,9 +1169,10 @@ test('vscode wskdebug config with require-adobe-auth annotation && apihost=https
   expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
     configurations: expect.arrayContaining([
       expect.objectContaining({
-        type: 'node',
+        type: 'pwa-node',
         request: 'launch',
         name: 'Action:' + 'sample-app-1.0.0/action',
+        attachSimplePort: 0,
         runtimeExecutable: r('/node_modules/.bin/wskdebug'),
         runtimeArgs: [
           'sample-app-1.0.0/__secured_action',
@@ -1205,9 +1207,10 @@ test('vscode wskdebug config with require-adobe-auth annotation && apihost!=http
   expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
     configurations: expect.arrayContaining([
       expect.objectContaining({
-        type: 'node',
+        type: 'pwa-node',
         request: 'launch',
         name: 'Action:' + 'sample-app-1.0.0/action',
+        attachSimplePort: 0,
         runtimeExecutable: r('/node_modules/.bin/wskdebug'),
         runtimeArgs: [
           'sample-app-1.0.0/action',
@@ -1241,9 +1244,10 @@ test('vscode wskdebug config without runtime option', async () => {
   expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
     configurations: expect.arrayContaining([
       expect.objectContaining({
-        type: 'node',
+        type: 'pwa-node',
         request: 'launch',
         name: 'Action:' + 'sample-app-1.0.0/action',
+        attachSimplePort: 0,
         runtimeExecutable: r('/node_modules/.bin/wskdebug'),
         runtimeArgs: [
           'sample-app-1.0.0/action',
