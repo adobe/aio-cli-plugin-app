@@ -19,10 +19,6 @@ const hjson = require('hjson')
 
 const fileSystem = require('jest-plugin-fs').default
 
-// quick normalization to test windows paths
-global.n = p => path.normalize(p)
-global.r = p => path.resolve(p)
-
 // dont touch the real fs
 global.mockFs = () => {
   jest.unmock('fs-extra')
