@@ -54,7 +54,23 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
   aioLogger.debug(`running npm run-script ${scriptName} in dir: ${dir}`)
   const pkg = await fs.readJSON(path.join(dir, 'package.json'))
   if (pkg && pkg.scripts && pkg.scripts[scriptName]) {
-    return execa('npm', ['run-script', scriptName].concat(cmdArgs), { cwd: dir, stdio: 'inherit' })
+    const command = pkg.scripts[scriptName].split(' ')
+    const child = execa(command[0], command.slice(1).concat(cmdArgs), {
+      stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+      cwd: dir,
+      preferLocal: true
+    })
+    // handle IPC from possible aio-run-detached script
+    child.on('message', message => {
+      if (message.type === 'long-running-process') {
+        const pid = message.data.pid
+        aioLogger.debug(`long running process (pid: ${pid}) found. Registering for SIGTERM`)
+        process.on('exit', () => {
+          process.kill(pid, 'SIGTERM')
+        })
+      }
+    })
+    return child
   } else {
     throw new Error(`${dir} does not contain a package.json or it does not contain a script named ${scriptName}`)
   }
