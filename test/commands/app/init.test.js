@@ -48,6 +48,7 @@ beforeEach(() => {
   mockRun.mockReset()
   yeoman.createEnv.mockClear()
   fs.ensureDirSync.mockClear()
+  fs.unlinkSync.mockClear()
   importLib.importConfigJson.mockReset()
   importLib.writeAio.mockReset()
 })
@@ -176,6 +177,7 @@ describe('run', () => {
     })
     expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
     expect(spyChdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
   test('some-path, --yes --skip-install', async () => {
@@ -195,6 +197,7 @@ describe('run', () => {
     })
     expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
     expect(spyChdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
   test('no-path, --yes', async () => {
@@ -213,6 +216,7 @@ describe('run', () => {
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
     expect(spyChdir).not.toHaveBeenCalled()
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
   test('no-path, --no-login', async () => {
@@ -231,6 +235,7 @@ describe('run', () => {
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
     expect(spyChdir).not.toHaveBeenCalled()
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
   test('no-path, --yes --skip-install', async () => {
@@ -249,6 +254,7 @@ describe('run', () => {
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
     expect(spyChdir).not.toHaveBeenCalled()
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
   test('no-path, --skip-install', async () => {
@@ -272,6 +278,7 @@ describe('run', () => {
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
     expect(spyChdir).not.toHaveBeenCalled()
+    expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
   })
 
   test('getCliInfo error', async () => {
@@ -292,6 +299,7 @@ describe('run', () => {
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
     expect(spyChdir).not.toHaveBeenCalled()
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
   test('no-path', async () => {
@@ -316,6 +324,34 @@ describe('run', () => {
       'project-name': project.name,
       'adobe-services': getFullServicesList()
     })
+    expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
+  })
+
+  test('some-path', async () => {
+    const project = mockValidConfig()
+    await TheCommand.run(['some-path'])
+
+    expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+    expect(spyChdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(2)
+    const genConsole = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
+      'access-token': mockAccessToken,
+      'destination-file': 'console.json',
+      'ims-env': 'prod'
+    })
+    const genApp = mockRegister.mock.calls[1][1]
+    expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
+      'skip-prompt': false,
+      'skip-install': false,
+      'project-name': project.name,
+      'adobe-services': getFullServicesList()
+    })
+
+    // we changed dir, console.json is in cwd
+    expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
   })
 
   test('no imports should write aio config', async () => {
@@ -348,6 +384,7 @@ describe('run', () => {
       process.cwd(),
       { interactive: false, merge: true }
     )
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
   test('no-path --import file=invalid config', async () => {
@@ -380,6 +417,7 @@ describe('run', () => {
       process.cwd(),
       { interactive: false, merge: true },
       { SERVICE_API_KEY: 'fakeId123' })
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
   test('no-path --import file={name: lifeisgood, services:AdobeTargetSDK,CampaignSDK, credentials:fake}', async () => {
@@ -408,6 +446,7 @@ describe('run', () => {
       process.cwd(),
       { interactive: false, merge: true },
       { SERVICE_API_KEY: '' })
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
   test('no-path --import file={name: lifeisgood, services:AdobeTargetSDK,CampaignSDK, credentials:null}', async () => {
@@ -436,6 +475,7 @@ describe('run', () => {
       process.cwd(),
       { interactive: false, merge: true },
       { SERVICE_API_KEY: '' })
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
   test('no-path --yes --import file={name: lifeisgood, services:AdobeTargetSDK,CampaignSDK, credentials:fake,jwt}', async () => {
@@ -462,6 +502,7 @@ describe('run', () => {
       process.cwd(),
       { interactive: false, merge: true },
       { SERVICE_API_KEY: 'fakeId123' })
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
   test('some-path --import file={name: lifeisgood, services:undefined, credentials:fake,jwt}', async () => {
@@ -520,5 +561,6 @@ describe('run', () => {
       'destination-file': 'console.json',
       'ims-env': 'prod'
     })
+    expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
   })
 })

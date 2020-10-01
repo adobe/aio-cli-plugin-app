@@ -17,7 +17,7 @@ const config = require('@adobe/aio-lib-core-config')
 const { EOL } = require('os')
 const yeoman = require('yeoman-environment')
 const { getCliInfo } = require('../../lib/app-helper')
-const fs = require('fs')
+const fs = require('fs-extra')
 
 const SERVICE_API_KEY_ENV = 'SERVICE_API_KEY'
 
@@ -94,7 +94,7 @@ class Use extends BaseCommand {
     if (file) {
       const config = this.importConfigFile(file, flags)
       // delete file only if it was downloaded
-      fs.unlinkSync(flags.import)
+      fs.unlinkSync(file)
       return config
     }
   }
