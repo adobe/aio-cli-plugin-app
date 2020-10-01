@@ -18,14 +18,16 @@ const aioConfig = require('@adobe/aio-lib-core-config')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:config-loader', { provider: 'debug' })
 
 // defaults
-const defaultAioHostname = 'adobeio-static.net'
-const defaultTvmUrl = 'https://adobeio.adobeioruntime.net/apis/tvm/'
-const defaultOwApiHost = 'https://adobeioruntime.net'
-const defaultHTMLCacheDuration = '60'
-const defaultJSCacheDuration = '604800'
-const defaultCSSCacheDuration = '604800'
-const defaultImageCacheDuration = '604800'
-const AIO_CONFIG_IMS_ORG_ID = 'project.org.ims_org_id'
+const {
+  defaultAioHostname,
+  defaultTvmUrl,
+  defaultOwApiHost,
+  defaultHTMLCacheDuration,
+  defaultJSCacheDuration,
+  defaultCSSCacheDuration,
+  defaultImageCacheDuration,
+  AIO_CONFIG_IMS_ORG_ID
+} = require('./defaults')
 
 /** loading config returns following object (this config is internal, not user facing):
 {
