@@ -102,6 +102,7 @@ async function getCliInfo () {
   return { accessToken, env }
 }
 
+/** @private */
 async function getLogs (config, limit, logger, startTime = 0) {
   // check for runtime credentials
   RuntimeLib.utils.checkOpenWhiskCredentials(config)
@@ -138,6 +139,7 @@ async function getLogs (config, limit, logger, startTime = 0) {
   return { lastActivationTime }
 }
 
+/** @private */
 function getActionUrls (config, isRemoteDev = false, isLocalDev = false) {
   // set action urls
   // action urls {name: url}, if !LocalDev subdomain uses namespace
@@ -217,6 +219,7 @@ function writeConfig (file, config) {
   )
 }
 
+/** @private */
 async function isDockerRunning () {
   // todo more checks
   const args = ['info']
@@ -229,6 +232,7 @@ async function isDockerRunning () {
   return false
 }
 
+/** @private */
 async function hasDockerCLI () {
   // todo check min version
   try {
@@ -241,6 +245,7 @@ async function hasDockerCLI () {
   return false
 }
 
+/** @private */
 async function hasJavaCLI () {
   // todo check min version
   try {
@@ -264,6 +269,7 @@ async function hasJavaCLI () {
 //   return false
 // }
 
+/** @private */
 async function downloadOWJar (url, outFile) {
   aioLogger.debug(`downloadOWJar - url: ${url} outFile: ${outFile}`)
   let response
@@ -287,7 +293,7 @@ async function downloadOWJar (url, outFile) {
     })
   })
 }
-
+/** @private */
 async function runOpenWhiskJar (jarFile, runtimeConfigFile, apihost, waitInitTime, waitPeriodTime, timeout, /* istanbul ignore next */ execaOptions = {}) {
   aioLogger.debug(`runOpenWhiskJar - jarFile: ${jarFile} runtimeConfigFile ${runtimeConfigFile} apihost: ${apihost} waitInitTime: ${waitInitTime} waitPeriodTime: ${waitPeriodTime} timeout: ${timeout}`)
   const proc = execa('java', ['-jar', '-Dwhisk.concurrency-limit.max=10', jarFile, '-m', runtimeConfigFile, '--no-ui'], execaOptions)
@@ -295,11 +301,13 @@ async function runOpenWhiskJar (jarFile, runtimeConfigFile, apihost, waitInitTim
   // must wrap in an object as execa return value is awaitable
   return { proc }
 
+  /** @private */
   async function waitForOpenWhiskReadiness (host, initialWait, period, timeout) {
     const endTime = Date.now() + timeout
     await waitFor(initialWait)
     await _waitForOpenWhiskReadiness(host, endTime)
 
+    /** @private */
     async function _waitForOpenWhiskReadiness (host, endTime) {
       if (Date.now() > endTime) {
         throw new Error(`local openwhisk stack startup timed out: ${timeout}ms`)
@@ -316,12 +324,15 @@ async function runOpenWhiskJar (jarFile, runtimeConfigFile, apihost, waitInitTim
         return _waitForOpenWhiskReadiness(host, endTime)
       }
     }
+
+    /** @private */
     function waitFor (t) {
       return new Promise(resolve => setTimeout(resolve, t))
     }
   }
 }
 
+/** @private */
 function saveAndReplaceDotEnvCredentials (dotenvFile, saveFile, apihost, namespace, auth) {
   if (fs.existsSync(saveFile)) throw new Error(`cannot save .env, please make sure to restore and delete ${saveFile}`) // todo make saveFile relative
   fs.moveSync(dotenvFile, saveFile)

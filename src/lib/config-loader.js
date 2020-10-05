@@ -29,45 +29,46 @@ const {
   AIO_CONFIG_IMS_ORG_ID
 } = require('./defaults')
 
-/** loading config returns following object (this config is internal, not user facing):
-{
-  app: {
-    name,
-    version,
-    hasFrontend
-  },
-  ow: {
-    apihost,
-    apiversion,
-    auth,
-    namespace,
-    package
-  },
-  s3: {
-    creds || tvmUrl,
-    credsCacheFile,
-    folder,
-  },
-  web: {
-    src,
-    injectedConfig,
-    distDev,
-    distProd,
-  },
-  manifest: {
-    full,
-    package,
-    packagePlaceholder,
-    src,
-  },
-  actions: {
-    src,
-    dist,
-    remote,
-    urls
-  }
-}
-*/
+/**
+ * loading config returns following object (this config is internal, not user facing):
+ *  {
+ *    app: {
+ *      name,
+ *      version,
+ *      hasFrontend
+ *    },
+ *    ow: {
+ *      apihost,
+ *      apiversion,
+ *      auth,
+ *      namespace,
+ *      package
+ *    },
+ *    s3: {
+ *      creds || tvmUrl,
+ *      credsCacheFile,
+ *      folder,
+ *    },
+ *    web: {
+ *      src,
+ *      injectedConfig,
+ *      distDev,
+ *      distProd,
+ *    },
+ *    manifest: {
+ *      full,
+ *      package,
+ *      packagePlaceholder,
+ *      src,
+ *    },
+ *    actions: {
+ *      src,
+ *      dist,
+ *      remote,
+ *      urls
+ *    }
+ *  }
+ */
 
 module.exports = () => {
   // init internal config
@@ -165,6 +166,7 @@ module.exports = () => {
   return config
 }
 
+/** @private */
 function getModuleName (packagejson) {
   if (packagejson && packagejson.name) {
     // turn "@company/myaction" into "myaction"
