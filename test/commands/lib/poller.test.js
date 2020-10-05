@@ -28,7 +28,6 @@ const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 const DeployActions = mockRuntimeLib.deployActions
 
 jest.mock('../../../src/lib/app-helper.js')
-const mockHelpers = require('../../../src/lib/app-helper.js')
 
 describe('runDev logListener', () => {
   const ref = {}
@@ -61,23 +60,23 @@ describe('runDev logListener', () => {
     global.fakeFileSystem.reset()
     fetch.mockReset()
     execa.mockReset()
-    mockHelpers.getLogs.mockReset()
+    mockRuntimeLib.printActionLogs.mockReset()
   })
 
   test('should throw error on error from getLogs', async () => {
-    mockHelpers.getLogs.mockReset()
-    mockHelpers.getLogs.mockRejectedValue('error')
+    mockRuntimeLib.printActionLogs.mockReset()
+    mockRuntimeLib.printActionLogs.mockRejectedValue('error')
     await runDev([], ref.config, { fetchLogs: true })
     jest.runAllTimers()
-    expect(mockHelpers.getLogs).toHaveBeenCalled()
+    expect(mockRuntimeLib.printActionLogs).toHaveBeenCalled()
     process.emit('SIGINT')
   })
 
   test('should get action logs', async () => {
-    mockHelpers.getLogs.mockResolvedValueOnce({ lastActivationTime: 0 })
+    mockRuntimeLib.printActionLogs.mockResolvedValueOnce({ lastActivationTime: 0 })
     await runDev([], ref.config, { fetchLogs: true })
     jest.runAllTimers()
-    expect(mockHelpers.getLogs).toHaveBeenCalled()
+    expect(mockRuntimeLib.printActionLogs).toHaveBeenCalled()
     process.emit('SIGINT')
   })
 

@@ -17,7 +17,6 @@ const dotenv = require('dotenv')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:lib-app-helper', { provider: 'debug' })
 const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
-const RuntimeLib = require('@adobe/aio-lib-runtime')
 const fetch = require('node-fetch')
 
 /** @private */
@@ -84,42 +83,6 @@ async function getCliInfo () {
   const accessToken = await getToken(CLI)
 
   return { accessToken, env }
-}
-
-async function getLogs (config, limit, logger, startTime = 0) {
-  // check for runtime credentials
-  RuntimeLib.utils.checkOpenWhiskCredentials(config)
-  const runtime = await RuntimeLib.init({
-    // todo make this.config.ow compatible with Openwhisk config
-    apihost: config.ow.apihost,
-    apiversion: config.ow.apiversion,
-    api_key: config.ow.auth,
-    namespace: config.ow.namespace
-  })
-
-  // get activations
-  const listOptions = { limit: limit, skip: 0 }
-  const logFunc = logger || console.log
-  const activations = await runtime.activations.list(listOptions)
-  let lastActivationTime = 0
-  // console.log('activations = ', activations)
-  for (let i = (activations.length - 1); i >= 0; i--) {
-    const activation = activations[i]
-    lastActivationTime = activation.start
-    if (lastActivationTime > startTime) {
-      const results = await runtime.activations.logs({ activationId: activation.activationId })
-      // console.log('results = ', results)
-      // send fetched logs to console
-      if (results.logs.length > 0) {
-        logFunc(activation.name + ':' + activation.activationId)
-        results.logs.forEach(function (log) {
-          logFunc(log)
-        })
-        logFunc()
-      }
-    }
-  }
-  return { lastActivationTime }
 }
 
 function getActionUrls (config, isRemoteDev = false, isLocalDev = false) {
@@ -349,7 +312,6 @@ module.exports = {
   wrapError,
   getCliInfo,
   getActionUrls,
-  getLogs,
   removeProtocolFromURL,
   urlJoin,
   checkFile,

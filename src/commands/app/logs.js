@@ -13,11 +13,13 @@ governing permissions and limitations under the License.
 const { flags } = require('@oclif/command')
 // const { cli } = require('cli-ux')
 const BaseCommand = require('../../BaseCommand')
-const { wrapError, getLogs } = require('../../lib/app-helper')
+const { wrapError } = require('../../lib/app-helper')
+const rtLib = require('@adobe/aio-lib-runtime')
 
 class Logs extends BaseCommand {
   async run () {
     const { flags } = this.parse(Logs)
+    const config = this.getAppConfig()
 
     if (flags.limit < 1) {
       this.log('--limit should be > 0, using --limit=1')
@@ -27,10 +29,26 @@ class Logs extends BaseCommand {
       flags.limit = 50
     }
 
+    let filterActions = []
+    if (flags.action) {
+      let actionName = flags.action
+      if (!actionName.includes('/')) {
+        actionName = config.ow.package + '/' + actionName
+      }
+      filterActions = [actionName]
+    } else {
+      Object.entries(config.manifest.full.packages).forEach((packageTuple) => {
+        Object.keys(packageTuple[1].actions).forEach((actionName) => {
+          packageTuple[0] = packageTuple[0].replace(/__APP_PACKAGE__/g, config.ow.package)
+          filterActions.push(packageTuple[0] + '/' + actionName)
+        })
+      })
+    }
+    
     try {
       const config = this.getAppConfig()
 
-      await getLogs(config, flags.limit, this.log)
+      await rtLib.printActionLogs(config, this.log, flags.limit, filterActions, flags.strip, flags.tail)
     } catch (error) {
       this.error(wrapError(error))
     }
@@ -46,11 +64,22 @@ Logs.flags = {
     description: 'Limit number of activations to fetch logs from ( 1-50 )',
     default: 1,
     char: 'l'
+  }),
+  action: flags.string({
+    description: 'Fetch logs for a specific action',
+    default: '',
+    char: 'a'
+  }),
+  strip: flags.boolean({
+    char: 'r',
+    description: 'strip timestamp information and output first line only',
+    default: false
+  }),
+  tail: flags.boolean({
+    description: 'Fetch logs continuously',
+    char: 't',
+    default: false
   })
 }
-
-// Logs.args = [
-//   ...BaseCommand.args
-// ]
 
 module.exports = Logs
