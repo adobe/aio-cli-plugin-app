@@ -48,6 +48,9 @@ class InitCommand extends BaseCommand {
     // client id of the console's workspace jwt credentials
     let serviceClientId = ''
 
+    // delete console credentials only if it was generated
+    let deleteConsoleCredentials = false
+
     if (!flags.import && !flags.yes && flags.login) {
       try {
         const { accessToken, env: imsEnv } = await getCliInfo()
@@ -60,6 +63,8 @@ class InitCommand extends BaseCommand {
         })
         // trigger import
         flags.import = generatedFile
+        // delete console credentials
+        deleteConsoleCredentials = true
       } catch (e) {
         this.log(chalk.red(e.message))
       }
@@ -92,6 +97,9 @@ class InitCommand extends BaseCommand {
     const merge = true
     if (flags.import) {
       await importConfigJson(flags.import, process.cwd(), { interactive, merge }, { [SERVICE_API_KEY_ENV]: serviceClientId })
+      if (deleteConsoleCredentials) {
+        fs.unlinkSync(flags.import)
+      }
     } else {
       // write default services value to .aio
       await writeAio({
