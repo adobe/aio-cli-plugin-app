@@ -259,7 +259,7 @@ async function generateVSCodeDebugConfig (devConfig, withBackend, hasFrontend, f
       const actionPath = rtLibUtils._absApp(devConfig.root, action.function)
 
       const config = {
-        type: 'node',
+        type: 'pwa-node',
         request: 'launch',
         name: name,
         runtimeExecutable: rtLibUtils._absApp(devConfig.root, './node_modules/.bin/wskdebug'),
@@ -268,7 +268,8 @@ async function generateVSCodeDebugConfig (devConfig, withBackend, hasFrontend, f
         // replaces remoteRoot with localRoot to get src files
         localRoot: rtLibUtils._absApp(devConfig.root, '.'),
         remoteRoot: '/code',
-        outputCapture: 'std'
+        outputCapture: 'std',
+        attachSimplePort: 0
       }
 
       const actionFileStats = fs.lstatSync(actionPath)
