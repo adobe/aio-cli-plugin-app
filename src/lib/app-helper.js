@@ -66,7 +66,11 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
         const pid = message.data.pid
         aioLogger.debug(`long running process (pid: ${pid}) found. Registering for SIGTERM`)
         process.on('exit', () => {
-          process.kill(pid, 'SIGTERM')
+          try {
+            process.kill(pid, 'SIGTERM')
+          } catch (_) {
+            // do nothing if pid not found
+          }
         })
       }
     })
