@@ -66,12 +66,6 @@ describe('exports helper methods', () => {
     expect(appHelper.runPackageScript).toBeInstanceOf(Function)
   })
 
-  test('runPackageScript missing package.json', async () => {
-    // throws error if dir does not contain a package.json
-    await expect(appHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
-      .rejects.toThrow(/does-not-exist does not contain a package.json/)
-  })
-
   test('runPackageScript success', async () => {
     fs.readJSON.mockReturnValue({ scripts: { test: 'some-script some-arg-1 some-arg-2' } })
 
@@ -129,11 +123,12 @@ describe('exports helper methods', () => {
     return expect(execa).toHaveBeenCalledWith('some-script', ['some-arg-1', 'some-arg-2', '--my-flag'], expect.any(Object))
   })
 
-  test('runPackageScript rejects if package.json does not have matching script', async () => {
+  test('runPackageScript logs if package.json does not have matching script', async () => {
     fs.readdirSync.mockReturnValue(['package.json'])
     fs.readJSONSync.mockReturnValue({ scripts: { notest: 'some-value' } })
+    // coverage: the error is logged, no error thrown
     await expect(appHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
-      .rejects.toThrow(/does-not-exist/)
+      .resolves.toBeUndefined()
   })
 
   test('wrapError returns an a Error in any case', async () => {
