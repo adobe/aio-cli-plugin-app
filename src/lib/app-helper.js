@@ -76,7 +76,7 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
     })
     return child
   } else {
-    throw new Error(`${dir} does not contain a package.json or it does not contain a script named ${scriptName}`)
+    aioLogger.debug(`${dir} does not contain a package.json or it does not contain a script named ${scriptName}`)
   }
 }
 
