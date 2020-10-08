@@ -63,10 +63,12 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
     // handle IPC from possible aio-run-detached script
     child.on('message', message => {
       if (message.type === 'long-running-process') {
-        const pid = message.data.pid
-        aioLogger.debug(`long running process (pid: ${pid}) found. Registering for SIGTERM`)
+        const { pid, logs } = message.data
+        aioLogger.debug(`Found ${scriptName} event hook long running process (pid: ${pid}). Registering for SIGTERM`)
+        aioLogger.debug(`Log locations for ${scriptName} event hook long-running process (stdout: ${logs.stdout} stderr: ${logs.stderr})`)
         process.on('exit', () => {
           try {
+            aioLogger.debug(`Killing ${scriptName} event hook long-running process (pid: ${pid})`)
             process.kill(pid, 'SIGTERM')
           } catch (_) {
             // do nothing if pid not found
