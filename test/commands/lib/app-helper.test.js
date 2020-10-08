@@ -72,7 +72,11 @@ describe('exports helper methods', () => {
     const ipcMessage = {
       type: 'long-running-process',
       data: {
-        pid: 123
+        pid: 123,
+        logs: {
+          stdout: 'logs/foo.sh.out.log',
+          stderr: 'logs/foo.sh.err.log'
+        }
       }
     }
 
@@ -84,7 +88,11 @@ describe('exports helper methods', () => {
         fn({
           type: 'some-other-message',
           data: {
-            pid: 1234
+            pid: 1234,
+            logs: {
+              stdout: 'logs/bar.sh.out.log',
+              stderr: 'logs/bar.sh.err.log'
+            }
           }
         })
       }
