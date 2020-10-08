@@ -38,16 +38,15 @@ class Logs extends BaseCommand {
       filterActions = [actionName]
     } else {
       Object.entries(config.manifest.full.packages).forEach((packageTuple) => {
+        packageTuple[0] = packageTuple[0].replace(/__APP_PACKAGE__/g, config.ow.package)
+
         Object.keys(packageTuple[1].actions).forEach((actionName) => {
-          packageTuple[0] = packageTuple[0].replace(/__APP_PACKAGE__/g, config.ow.package)
           filterActions.push(packageTuple[0] + '/' + actionName)
         })
       })
     }
-    
-    try {
-      const config = this.getAppConfig()
 
+    try {
       await rtLib.printActionLogs(config, this.log, flags.limit, filterActions, flags.strip, flags.tail)
     } catch (error) {
       this.error(wrapError(error))
