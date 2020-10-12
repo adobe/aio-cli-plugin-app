@@ -18,12 +18,7 @@ const { flags } = require('@oclif/command')
 const { loadAndValidateConfigFile, importConfigJson, writeAio } = require('../../lib/import')
 const { getCliInfo } = require('../../lib/app-helper')
 const chalk = require('chalk')
-
-const Console = require('@adobe/aio-lib-console')
-const ConsoleApiKey = {
-  prod: 'aio-cli-console-auth',
-  stage: 'aio-cli-console-auth-stage'
-}
+const { servicesToGeneratorInput } = require('../../lib/app-helper')
 
 const SERVICE_API_KEY_ENV = 'SERVICE_API_KEY'
 
@@ -49,7 +44,7 @@ class InitCommand extends BaseCommand {
     // default project name and services
     let projectName = path.basename(process.cwd())
     // list of services added to the workspace
-    let services = []
+    let workspaceServices = []
     // list of services supported by the organization
     let supportedServices = []
 
@@ -71,12 +66,6 @@ class InitCommand extends BaseCommand {
         })
         // trigger import
         flags.import = generatedFile
-        // get services supported by the org
-        const consoleClient = await Console.init(accessToken, ConsoleApiKey[imsEnv], imsEnv)
-        // todo reorg code to not load the config twice!
-        const { values: config } = loadAndValidateConfigFile(flags.import)
-        res = await consoleClient.getServicesForOrg(config.project.org.id)
-        supportedServices = res.body.filter(s => s.enabled).map(s => ({ name: s.name, code: s.code }))
         // delete console credentials
         deleteConsoleCredentials = true
       } catch (e) {
@@ -89,7 +78,8 @@ class InitCommand extends BaseCommand {
       const { values: config } = loadAndValidateConfigFile(flags.import)
 
       projectName = config.project.name
-      services = config.project.workspace.details.services
+      workspaceServices = config.project.workspace.details.services
+      supportedServices = config.project.org.details.services
       const jwtConfig = config.project.workspace.details.credentials && config.project.workspace.details.credentials.find(c => c.jwt)
       serviceClientId = (jwtConfig && jwtConfig.jwt.client_id) || serviceClientId // defaults to ''
     }
@@ -102,8 +92,8 @@ class InitCommand extends BaseCommand {
       'skip-install': flags['skip-install'],
       'skip-prompt': flags.yes,
       'project-name': projectName,
-      'adobe-services': services.map(s => s.code).join(','),
-      'supported-adobe-services': supportedServices.map(s => s.code).join(',')
+      'adobe-services': servicesToGeneratorInput(workspaceServices),
+      'supported-adobe-services': servicesToGeneratorInput(supportedServices)
     })
 
     // config import
@@ -115,29 +105,7 @@ class InitCommand extends BaseCommand {
       if (deleteConsoleCredentials) {
         fs.unlinkSync(flags.import)
       }
-    } else {
-      // write default added services value to .aio
-      await writeAio({
-        project: {
-          workspace: {
-            details: {
-              services
-            }
-          }
-        }
-      }, process.cwd(), { merge, interactive })
     }
-
-    // finally add supported services to .aio
-    // await writeAio({
-    //   project: {
-    //     org: {
-    //       details: {
-    //         services: supportedServices
-    //       }
-    //     }
-    //   }
-    // }, process.cwd(), { merge, interactive })
 
     // finalize configuration data
     this.log('✔ App initialization finished!')
