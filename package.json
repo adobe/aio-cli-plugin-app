@@ -10,7 +10,7 @@
     "@adobe/aio-lib-ims": "^4.1.0",
     "@adobe/aio-lib-runtime": "^1.0.0-0",
     "@adobe/aio-lib-web": "^4.0.0",
-    "@adobe/generator-aio-app": "^1.7.0",
+    "@adobe/generator-aio-app": "^1.9.0",
     "@adobe/generator-aio-console": "^1.2.0",
     "@oclif/command": "^1.5.11",
     "@oclif/config": "^1.12.9",
