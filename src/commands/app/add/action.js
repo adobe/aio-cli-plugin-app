@@ -27,7 +27,7 @@ class AddActionCommand extends BaseCommand {
       config.get('services') || // legacy
       config.get('project.workspace.details.services') ||
       []
-    const supportedOrganizationServices = config.get('project.org.details.services') || []
+    const supportedOrgServices = config.get('project.org.details.services') || []
 
     const generator = '@adobe/generator-aio-app/generators/add-action'
     const env = yeoman.createEnv()
@@ -36,7 +36,7 @@ class AddActionCommand extends BaseCommand {
       'skip-install': flags['skip-install'],
       'skip-prompt': flags.yes,
       'adobe-services': servicesToGeneratorInput(workspaceServices),
-      'supported-adobe-services': servicesToGeneratorInput(supportedOrganizationServices)
+      'supported-adobe-services': servicesToGeneratorInput(supportedOrgServices)
     })
     return res
   }
