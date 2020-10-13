@@ -77,10 +77,11 @@ class InitCommand extends BaseCommand {
     if (flags.import) {
       const { values: config } = loadAndValidateConfigFile(flags.import)
 
-      projectName = config.project.name
-      workspaceServices = config.project.workspace.details.services
-      supportedServices = config.project.org.details.services
-      const jwtConfig = config.project.workspace.details.credentials && config.project.workspace.details.credentials.find(c => c.jwt)
+      const project = config.project
+      projectName = project.name
+      workspaceServices = project.workspace.details.services
+      supportedServices = project.org.details.services
+      const jwtConfig = project.workspace.details.credentials && project.workspace.details.credentials.find(c => c.jwt)
       serviceClientId = (jwtConfig && jwtConfig.jwt.client_id) || serviceClientId // defaults to ''
     }
 
