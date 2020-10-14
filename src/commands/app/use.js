@@ -77,7 +77,8 @@ class Use extends BaseCommand {
     }
 
     const { values: config } = loadAndValidateConfigFile(filePath)
-    const jwtConfig = config.project.workspace.details.credentials && config.project.workspace.details.credentials.find(c => c.jwt)
+    const project = config.project
+    const jwtConfig = project.workspace.details.credentials && project.workspace.details.credentials.find(c => c.jwt)
     const serviceClientId = (jwtConfig && jwtConfig.jwt.client_id) || ''
     const extraEnvVars = { [SERVICE_API_KEY_ENV]: serviceClientId }
 

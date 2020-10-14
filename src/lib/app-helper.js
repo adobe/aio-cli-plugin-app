@@ -374,6 +374,17 @@ function saveAndReplaceDotEnvCredentials (dotenvFile, saveFile, apihost, namespa
   fs.writeFileSync(dotenvFile, envContent)
 }
 
+/**
+ *
+ * Converts a service array to an input string that can be consumed by generator-aio-app
+ *
+ * @param {Array} services array of services [{ code: 'xxx', name: 'xxx' }, ...]
+ * @returns {string} 'code1,code2,code3'
+ */
+function servicesToGeneratorInput (services) {
+  return services.map(s => s.code).filter(s => s).join(',')
+}
+
 module.exports = {
   isNpmInstalled,
   isGitInstalled,
@@ -392,5 +403,6 @@ module.exports = {
   writeConfig,
   downloadOWJar,
   runOpenWhiskJar,
-  saveAndReplaceDotEnvCredentials
+  saveAndReplaceDotEnvCredentials,
+  servicesToGeneratorInput
 }

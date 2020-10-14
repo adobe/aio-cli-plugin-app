@@ -298,7 +298,7 @@ function mergeJson (oldData, newData) {
  */
 function mergeData (oldData, newData, fileFormat) {
   aioLogger.debug(`mergeData - oldData: ${oldData}`)
-  aioLogger.debug(`mergeData - newData:${newData}`)
+  aioLogger.debug(`mergeData - newData: ${newData}`)
 
   if (fileFormat === FILE_FORMAT_ENV) {
     return mergeEnv(oldData, newData)
@@ -329,7 +329,7 @@ async function writeFile (destination, data, flags = {}) {
 
   if (interactive) {
     answer = await checkFileConflict(destination)
-    aioLogger.debug(`writeEnv - answer (interactive): ${JSON.stringify(answer)}`)
+    aioLogger.debug(`writeFile - answer (interactive): ${JSON.stringify(answer)}`)
   }
 
   if (answer.abort) {
