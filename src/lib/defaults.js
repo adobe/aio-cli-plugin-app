@@ -2,7 +2,7 @@
 
 module.exports = {
   defaultAioHostname: 'adobeio-static.net',
-  defaultTvmUrl: 'https://adobeio.adobeioruntime.net/apis/tvm/',
+  defaultTvmUrl: 'https://firefly-tvm.adobe.io',
   defaultOwApiHost: 'https://adobeioruntime.net',
   defaultHTMLCacheDuration: '60',
   defaultJSCacheDuration: '604800',

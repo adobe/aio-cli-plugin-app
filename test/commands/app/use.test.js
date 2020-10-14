@@ -9,11 +9,13 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-
 const TheCommand = require('../../../src/commands/app/use')
 const BaseCommand = require('../../../src/BaseCommand')
 const importLib = require('../../../src/lib/import')
 const inquirer = require('inquirer')
+const fs = require('fs-extra')
+
+jest.mock('fs-extra')
 
 jest.mock('@adobe/aio-lib-core-config')
 const mockConfig = require('@adobe/aio-lib-core-config')
@@ -71,6 +73,7 @@ beforeEach(() => {
   mockGetCli.mockReturnValue({})
   importLib.loadConfigFile.mockReset()
   importLib.validateConfig.mockReset()
+  fs.unlinkSync.mockClear()
 })
 
 test('exports', async () => {
@@ -99,11 +102,13 @@ test('runs (config file)', async () => {
   await TheCommand.run(['config-file', '--merge'])
 
   expect(importLib.importConfigJson).toHaveBeenCalledTimes(3)
+  expect(fs.unlinkSync).not.toHaveBeenCalled()
 })
 
 test('runs invalid config', async () => {
   mockInvalidConfig()
   await expect(TheCommand.run(['config-file'])).rejects.toThrow('fake error')
+  expect(fs.unlinkSync).not.toHaveBeenCalled()
 })
 
 test('runs (generator, confirmation yes, got global console config)', async () => {
@@ -119,6 +124,7 @@ test('runs (generator, confirmation yes, got global console config)', async () =
   await TheCommand.run([])
   expect(importLib.importConfigJson).toHaveBeenCalledTimes(1)
   expect(importLib.importConfigJson).toHaveBeenCalledWith('console.json', process.cwd(), { interactive: true, merge: false, overwrite: false }, { SERVICE_API_KEY: '' })
+  expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
 })
 
 test('runs (generator, confirmation yes, got global console config, no cli context)', async () => {
@@ -134,6 +140,7 @@ test('runs (generator, confirmation yes, got global console config, no cli conte
   await TheCommand.run([])
   expect(importLib.importConfigJson).toHaveBeenCalledTimes(1)
   expect(importLib.importConfigJson).toHaveBeenCalledWith('console.json', process.cwd(), { interactive: true, merge: false, overwrite: false }, { SERVICE_API_KEY: '' })
+  expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
 })
 
 test('runs (generator, confirmation yes, got global console config, no cli context, jwt client id is set)', async () => {
@@ -153,6 +160,7 @@ test('runs (generator, confirmation yes, got global console config, no cli conte
   await TheCommand.run([])
   expect(importLib.importConfigJson).toHaveBeenCalledTimes(1)
   expect(importLib.importConfigJson).toHaveBeenCalledWith('console.json', process.cwd(), { interactive: true, merge: false, overwrite: false }, { SERVICE_API_KEY: 'fakeId123' })
+  expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
 })
 
 test('runs (generator, confirmation no, got global console config)', async () => {
@@ -167,6 +175,7 @@ test('runs (generator, confirmation no, got global console config)', async () =>
 
   await TheCommand.run([])
   expect(importLib.importConfigJson).toHaveBeenCalledTimes(0)
+  expect(fs.unlinkSync).not.toHaveBeenCalled()
 })
 
 test('runs (generator, error in global console config)', async () => {
@@ -175,4 +184,5 @@ test('runs (generator, error in global console config)', async () => {
 
   await expect(TheCommand.run([])).rejects.toThrowError()
   expect(importLib.importConfigJson).toHaveBeenCalledTimes(0)
+  expect(fs.unlinkSync).not.toHaveBeenCalled()
 })

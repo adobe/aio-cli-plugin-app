@@ -17,6 +17,7 @@ const config = require('@adobe/aio-lib-core-config')
 const { EOL } = require('os')
 const yeoman = require('yeoman-environment')
 const { getCliInfo } = require('../../lib/app-helper')
+const fs = require('fs-extra')
 
 const SERVICE_API_KEY_ENV = 'SERVICE_API_KEY'
 
@@ -76,7 +77,8 @@ class Use extends BaseCommand {
     }
 
     const { values: config } = loadAndValidateConfigFile(filePath)
-    const jwtConfig = config.project.workspace.details.credentials && config.project.workspace.details.credentials.find(c => c.jwt)
+    const project = config.project
+    const jwtConfig = project.workspace.details.credentials && project.workspace.details.credentials.find(c => c.jwt)
     const serviceClientId = (jwtConfig && jwtConfig.jwt.client_id) || ''
     const extraEnvVars = { [SERVICE_API_KEY_ENV]: serviceClientId }
 
@@ -91,7 +93,10 @@ class Use extends BaseCommand {
     }
     const file = await this.useConsoleConfig(flags)
     if (file) {
-      return this.importConfigFile(file, flags)
+      const config = this.importConfigFile(file, flags)
+      // delete file only if it was downloaded
+      fs.unlinkSync(file)
+      return config
     }
   }
 }
