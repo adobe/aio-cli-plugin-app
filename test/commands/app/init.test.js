@@ -137,7 +137,7 @@ const fakeSupportedServices = [
 ]
 
 /** @private */
-function mockValidConfig ({ name = 'lifeisgood', workspaceServices = fakeWorkspaceServices, supportedServices = fakeSupportedServices, credentials = fakeCredentials } = {}) {
+function mockValidConfig ({ name = 'lifeisgood', workspaceServices = fakeWorkspaceServices, supportedServices = undefined, credentials = fakeCredentials } = {}) {
   const project = {
     name,
     org: {
@@ -151,6 +151,10 @@ function mockValidConfig ({ name = 'lifeisgood', workspaceServices = fakeWorkspa
         credentials
       }
     }
+  }
+  // note: supportedServices config is not always defined, e.g. when importing the file
+  if (supportedServices) {
+    project.org.details = { services: supportedServices }
   }
 
   importLib.loadAndValidateConfigFile.mockReturnValue({
@@ -284,7 +288,7 @@ describe('run', () => {
   })
 
   test('no-path, --skip-install', async () => {
-    const project = mockValidConfig()
+    const project = mockValidConfig({ supportedServices: fakeSupportedServices })
     await TheCommand.run(['--skip-install'])
 
     expect(yeoman.createEnv).toHaveBeenCalled()
@@ -331,7 +335,7 @@ describe('run', () => {
   })
 
   test('no-path', async () => {
-    const project = mockValidConfig()
+    const project = mockValidConfig({ supportedServices: fakeSupportedServices })
     await TheCommand.run([])
 
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
@@ -383,7 +387,7 @@ describe('run', () => {
   })
 
   test('no path, no workspace services in console config file', async () => {
-    const project = mockValidConfig({ workspaceServices: [] })
+    const project = mockValidConfig({ workspaceServices: [], supportedServices: fakeSupportedServices })
     await TheCommand.run([])
 
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
@@ -435,7 +439,7 @@ describe('run', () => {
   })
 
   test('some-path', async () => {
-    const project = mockValidConfig()
+    const project = mockValidConfig({ supportedServices: fakeSupportedServices })
     await TheCommand.run(['some-path'])
 
     expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
@@ -456,6 +460,34 @@ describe('run', () => {
       'project-name': project.name,
       'adobe-services': 'service1SDK,service2SDK',
       'supported-adobe-services': 'service1SDK,service2SDK,service3SDK,service4SDK'
+    })
+
+    // we changed dir, console.json is in cwd
+    expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
+  })
+
+  test('some-path no-supported-services', async () => {
+    const project = mockValidConfig()
+    await TheCommand.run(['some-path'])
+
+    expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+    expect(spyChdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(2)
+    const genConsole = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
+      'access-token': mockAccessToken,
+      'destination-file': 'console.json',
+      'ims-env': 'prod'
+    })
+    const genApp = mockRegister.mock.calls[1][1]
+    expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
+      'skip-prompt': false,
+      'skip-install': false,
+      'project-name': project.name,
+      'adobe-services': 'service1SDK,service2SDK',
+      'supported-adobe-services': ''
     })
 
     // we changed dir, console.json is in cwd
@@ -515,7 +547,7 @@ describe('run', () => {
       'skip-install': false,
       'project-name': project.name,
       'adobe-services': 'AdobeTargetSDK,CampaignSDK',
-      'supported-adobe-services': 'service1SDK,service2SDK,service3SDK,service4SDK'
+      'supported-adobe-services': ''
     })
 
     expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
@@ -545,7 +577,7 @@ describe('run', () => {
       'skip-install': false,
       'project-name': project.name,
       'adobe-services': 'AdobeTargetSDK,CampaignSDK',
-      'supported-adobe-services': 'service1SDK,service2SDK,service3SDK,service4SDK'
+      'supported-adobe-services': ''
     })
 
     expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
@@ -575,7 +607,7 @@ describe('run', () => {
       'skip-install': false,
       'project-name': project.name,
       'adobe-services': 'AdobeTargetSDK,CampaignSDK',
-      'supported-adobe-services': 'service1SDK,service2SDK,service3SDK,service4SDK'
+      'supported-adobe-services': ''
     })
 
     expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
