@@ -78,11 +78,15 @@ class InitCommand extends BaseCommand {
       const { values: config } = loadAndValidateConfigFile(flags.import)
 
       const project = config.project
+      // get project name
       projectName = project.name
+      // extract workspace services
       workspaceServices = project.workspace.details.services
-      supportedServices = project.org.details.services
+      // get jwt client id
       const jwtConfig = project.workspace.details.credentials && project.workspace.details.credentials.find(c => c.jwt)
       serviceClientId = (jwtConfig && jwtConfig.jwt.client_id) || serviceClientId // defaults to ''
+      // supportedServices are only defined when the console.json file was generated via the generator (not in downloaded file)
+      supportedServices = (project.org.details && project.org.details.services) || []
     }
 
     this.log(`You are about to initialize the project '${projectName}'`)
