@@ -139,7 +139,7 @@ const owJarUrl = 'https://dl.bintray.com/adobeio-firefly/aio/openwhisk-standalon
 const waitInitTime = 2000
 const waitPeriodTime = 500
 
-const execaLocalOWArgs = ['java', expect.arrayContaining(['-jar', r(owJarPath), '-m', owRuntimesConfig, '--no-ui']), expect.anything()]
+const execaLocalOWArgs = ['java', expect.arrayContaining(['-jar', path.resolve(owJarPath), '-m', owRuntimesConfig, '--no-ui']), expect.anything()]
 
 /* ****************** Helpers ******************* */
 function generateDotenvContent (credentials) {
@@ -198,10 +198,10 @@ function expectDevActionBuildAndDeploy (expectedBuildDeployConfig) {
 
 function expectUIServer (fakeMiddleware, port) {
   expect(Bundler.mockConstructor).toHaveBeenCalledTimes(1)
-  expect(Bundler.mockConstructor).toHaveBeenCalledWith(r('/web-src/index.html'),
+  expect(Bundler.mockConstructor).toHaveBeenCalledWith(path.resolve('/web-src/index.html'),
     expect.objectContaining({
       watch: true,
-      outDir: r('/dist/web-src-dev')
+      outDir: path.resolve('/dist/web-src-dev')
     }))
 }
 
@@ -256,7 +256,7 @@ const getExpectedActionVSCodeDebugConfig = actionName =>
     request: 'launch',
     name: 'Action:' + actionName,
     attachSimplePort: 0,
-    runtimeExecutable: r('/node_modules/.bin/wskdebug'),
+    runtimeExecutable: path.resolve('/node_modules/.bin/wskdebug'),
     runtimeArgs: [
       actionName,
       expect.stringContaining(actionName.split('/')[1]),
@@ -264,8 +264,8 @@ const getExpectedActionVSCodeDebugConfig = actionName =>
       '--kind',
       'nodejs:12'
     ],
-    env: { WSK_CONFIG_FILE: r('/.wskdebug.props.tmp') },
-    localRoot: r('/'),
+    env: { WSK_CONFIG_FILE: path.resolve('/.wskdebug.props.tmp') },
+    localRoot: path.resolve('/'),
     remoteRoot: '/code'
   })
 
@@ -274,10 +274,10 @@ const getExpectedUIVSCodeDebugConfig = uiPort => expect.objectContaining({
   request: 'launch',
   name: 'Web',
   url: `http://localhost:${uiPort}`,
-  webRoot: r('/web-src'),
+  webRoot: path.resolve('/web-src'),
   breakOnLoad: true,
   sourceMapPathOverrides: {
-    '*': r('/dist/web-src-dev/*')
+    '*': path.resolve('/dist/web-src-dev/*')
   }
 })
 /* ****************** Tests ******************* */
@@ -744,7 +744,7 @@ function runCommonLocalTests (ref) {
       '.env': generateDotenvContent(remoteOWCredentials),
       '.env.app.save': 'fake content'
     })
-    await expect(runDev([], ref.config)).rejects.toThrow(`cannot save .env, please make sure to restore and delete ${r('/.env.app.save')}`)
+    await expect(runDev([], ref.config)).rejects.toThrow(`cannot save .env, please make sure to restore and delete ${path.resolve('/.env.app.save')}`)
     expect(global.fakeFileSystem.files()['/.env.app.save'].toString()).toEqual('fake content')
   })
 
@@ -1173,16 +1173,16 @@ test('vscode wskdebug config with require-adobe-auth annotation && apihost=https
         request: 'launch',
         name: 'Action:' + 'sample-app-1.0.0/action',
         attachSimplePort: 0,
-        runtimeExecutable: r('/node_modules/.bin/wskdebug'),
+        runtimeExecutable: path.resolve('/node_modules/.bin/wskdebug'),
         runtimeArgs: [
           'sample-app-1.0.0/__secured_action',
-          r('actions/action.js'),
+          path.resolve('actions/action.js'),
           '-v',
           '--kind',
           'nodejs:12'
         ],
-        env: { WSK_CONFIG_FILE: r('/.wskdebug.props.tmp') },
-        localRoot: r('/'),
+        env: { WSK_CONFIG_FILE: path.resolve('/.wskdebug.props.tmp') },
+        localRoot: path.resolve('/'),
         remoteRoot: '/code'
       })
     ])
@@ -1211,16 +1211,16 @@ test('vscode wskdebug config with require-adobe-auth annotation && apihost!=http
         request: 'launch',
         name: 'Action:' + 'sample-app-1.0.0/action',
         attachSimplePort: 0,
-        runtimeExecutable: r('/node_modules/.bin/wskdebug'),
+        runtimeExecutable: path.resolve('/node_modules/.bin/wskdebug'),
         runtimeArgs: [
           'sample-app-1.0.0/action',
-          r('actions/action.js'),
+          path.resolve('actions/action.js'),
           '-v',
           '--kind',
           'nodejs:12'
         ],
-        env: { WSK_CONFIG_FILE: r('/.wskdebug.props.tmp') },
-        localRoot: r('/'),
+        env: { WSK_CONFIG_FILE: path.resolve('/.wskdebug.props.tmp') },
+        localRoot: path.resolve('/'),
         remoteRoot: '/code'
       })
     ])
@@ -1248,15 +1248,15 @@ test('vscode wskdebug config without runtime option', async () => {
         request: 'launch',
         name: 'Action:' + 'sample-app-1.0.0/action',
         attachSimplePort: 0,
-        runtimeExecutable: r('/node_modules/.bin/wskdebug'),
+        runtimeExecutable: path.resolve('/node_modules/.bin/wskdebug'),
         runtimeArgs: [
           'sample-app-1.0.0/action',
-          r('actions/action.js'),
+          path.resolve('actions/action.js'),
           '-v'
           // no kind
         ],
-        env: { WSK_CONFIG_FILE: r('/.wskdebug.props.tmp') },
-        localRoot: r('/'),
+        env: { WSK_CONFIG_FILE: path.resolve('/.wskdebug.props.tmp') },
+        localRoot: path.resolve('/'),
         remoteRoot: '/code'
       })
     ])
