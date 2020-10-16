@@ -13,8 +13,11 @@ governing permissions and limitations under the License.
 const TheCommand = require('../../../src/commands/app/logs')
 const BaseCommand = require('../../../src/BaseCommand')
 
+const mockFS = require('fs-extra')
+
 jest.mock('../../../src/lib/app-helper.js')
 const helpers = require('../../../src/lib/app-helper.js')
+
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 const printActionLogs = mockRuntimeLib.printActionLogs
 
@@ -60,9 +63,11 @@ describe('run', () => {
   beforeEach(() => {
     printActionLogs.mockReset()
     helpers.wrapError.mockReset()
+    mockFS.existsSync.mockReset()
   })
 
   test('no flags, sets limit to 1', async () => {
+    mockFS.existsSync.mockReturnValue(true)
     const command = new TheCommand([])
     command.appConfig = fakeAppConfig
     command.error = jest.fn()
@@ -74,6 +79,7 @@ describe('run', () => {
   })
 
   test('--limit < 1, sets limit to 1', async () => {
+    mockFS.existsSync.mockReturnValue(true)
     const command = new TheCommand(['--limit', '-1'])
     command.appConfig = fakeAppConfig
     command.error = jest.fn()
@@ -86,6 +92,7 @@ describe('run', () => {
   })
 
   test('--limit > 50, sets limit to 50', async () => {
+    mockFS.existsSync.mockReturnValue(true)
     const command = new TheCommand(['--limit', '51'])
     command.appConfig = fakeAppConfig
     command.error = jest.fn()
@@ -98,6 +105,7 @@ describe('run', () => {
   })
 
   test('--limit 32', async () => {
+    mockFS.existsSync.mockReturnValue(true)
     const command = new TheCommand(['--limit', '32'])
     command.appConfig = fakeAppConfig
     command.error = jest.fn()
@@ -109,6 +117,7 @@ describe('run', () => {
   })
 
   test('--action without including package name', async () => {
+    mockFS.existsSync.mockReturnValue(true)
     const command = new TheCommand(['--action', 'hello'])
     command.appConfig = fakeAppConfig
     command.error = jest.fn()
@@ -120,6 +129,7 @@ describe('run', () => {
   })
 
   test('--action including package name', async () => {
+    mockFS.existsSync.mockReturnValue(true)
     const command = new TheCommand(['--action', 'pkg1/hello'])
     command.appConfig = fakeAppConfig
     command.error = jest.fn()
@@ -131,6 +141,7 @@ describe('run', () => {
   })
 
   test('error while getting logs', async () => {
+    mockFS.existsSync.mockReturnValue(true)
     const command = new TheCommand([])
     command.appConfig = fakeAppConfig
     command.error = jest.fn()
@@ -141,5 +152,17 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledWith('wrapped error')
     expect(helpers.wrapError).toHaveBeenCalledWith(theerror)
+  })
+
+  test('error no manifest', async () => {
+    mockFS.existsSync.mockReturnValue(false)
+    const command = new TheCommand([])
+    command.appConfig = fakeAppConfig
+    command.error = jest.fn()
+    command.log = jest.fn()
+    helpers.wrapError.mockReturnValue('wrapped error')
+    await command.run()
+    expect(command.error).toHaveBeenCalledWith('wrapped error')
+    expect(helpers.wrapError).toHaveBeenCalledWith(new Error('no manifest.yml'))
   })
 })

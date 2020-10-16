@@ -15,11 +15,15 @@ const { flags } = require('@oclif/command')
 const BaseCommand = require('../../BaseCommand')
 const { wrapError } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
+const fs = require('fs-extra')
 
 class Logs extends BaseCommand {
   async run () {
     const { flags } = this.parse(Logs)
     const config = this.getAppConfig()
+    if (!fs.existsSync('manifest.yml')) {
+      this.error(wrapError(new Error('no manifest.yml')))
+    }
 
     if (flags.limit < 1) {
       this.log('--limit should be > 0, using --limit=1')
@@ -47,7 +51,7 @@ class Logs extends BaseCommand {
     }
 
     try {
-      await rtLib.printActionLogs(config, this.log, flags.limit, filterActions, flags.strip, flags.tail)
+      await rtLib.printActionLogs(config, this.log, flags.limit, filterActions, flags.strip, flags.poll || flags.tail || flags.watch)
     } catch (error) {
       this.error(wrapError(error))
     }
@@ -66,7 +70,6 @@ Logs.flags = {
   }),
   action: flags.string({
     description: 'Fetch logs for a specific action',
-    default: '',
     char: 'a'
   }),
   strip: flags.boolean({
@@ -77,7 +80,20 @@ Logs.flags = {
   tail: flags.boolean({
     description: 'Fetch logs continuously',
     char: 't',
-    default: false
+    default: false,
+    exclusive: ['watch', 'poll']
+  }),
+  watch: flags.boolean({
+    description: 'Fetch logs continuously',
+    default: false,
+    char: 'w',
+    exclusive: ['tail', 'poll']
+  }),
+  poll: flags.boolean({
+    description: 'Fetch logs continuously',
+    default: false,
+    char: 'o',
+    exclusive: ['watch', 'tail']
   })
 }
 
