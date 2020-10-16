@@ -14,6 +14,7 @@ const path = require('path')
 
 const TheCommand = require('../../../src/commands/app/init')
 const BaseCommand = require('../../../src/BaseCommand')
+const runtimeLib = require('@adobe/aio-lib-runtime') // eslint-disable-line no-unused-vars
 const importLib = require('../../../src/lib/import')
 jest.mock('../../../src/lib/import')
 
