@@ -107,7 +107,7 @@ async function getCliInfo () {
   return { accessToken, env }
 }
 
-
+/** @private */
 function getActionUrls (config, isRemoteDev = false, isLocalDev = false) {
   // set action urls
   // action urls {name: url}, if !LocalDev subdomain uses namespace
