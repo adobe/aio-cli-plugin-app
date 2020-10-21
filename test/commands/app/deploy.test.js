@@ -32,6 +32,7 @@ beforeEach(() => {
   mockWebLib.mockReset('buildWeb')
   mockFS.existsSync.mockReset()
   helpers.writeConfig.mockReset()
+  helpers.runPackageScript.mockReset()
   jest.restoreAllMocks()
 
   helpers.wrapError.mockImplementation(msg => msg)
@@ -386,5 +387,21 @@ describe('run', () => {
     expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalledTimes(1)
     expect(helpers.writeConfig).toHaveBeenCalledWith('sdf', { a: 'a' })
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+  })
+
+  test('build & deploy (app hooks missing)', async () => {
+    mockFS.existsSync.mockReturnValue(true)
+    helpers.runPackageScript
+      .mockRejectedValueOnce('error-1')
+      .mockRejectedValueOnce('error-2')
+      .mockRejectedValueOnce('error-3')
+      .mockRejectedValueOnce('error-4')
+
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.log).toHaveBeenCalledWith('error-1')
+    expect(command.log).toHaveBeenCalledWith('error-2')
+    expect(command.log).toHaveBeenCalledWith('error-3')
+    expect(command.log).toHaveBeenCalledWith('error-4')
   })
 })

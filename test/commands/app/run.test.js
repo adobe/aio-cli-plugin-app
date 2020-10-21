@@ -16,6 +16,14 @@ const BaseCommand = require('../../../src/BaseCommand')
 jest.mock('../../../src/lib/runDev')
 const mockRunDev = require('../../../src/lib/runDev')
 
+jest.mock('../../../src/lib/app-helper', () => {
+  return {
+    ...require.requireActual('../../../src/lib/app-helper'),
+    runPackageScript: jest.fn()
+  }
+})
+const mockAppHelper = require('../../../src/lib/app-helper')
+
 // should be same as in run.js
 const DEV_KEYS_DIR = 'dist/dev-keys/'
 const PRIVATE_KEY_PATH = DEV_KEYS_DIR + 'private.key'
@@ -54,6 +62,7 @@ beforeEach(() => {
   jest.restoreAllMocks()
   // mockScripts.mockReset('runDev')
   mockRunDev.mockReset()
+  mockAppHelper.runPackageScript.mockReset()
 
   mockConfig.get = jest.fn().mockReturnValue({ globalConfig: 'seems-legit' })
 
@@ -557,5 +566,19 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(1)
     expect(mockRunDev).toHaveBeenCalledTimes(0)
     spy.mockRestore()
+  })
+
+  test('app:run with missing app hooks', async () => {
+    mockAppHelper.runPackageScript
+      .mockRejectedValueOnce('error-1')
+      .mockRejectedValueOnce('error-2')
+
+    mockFSExists(['web-src/', 'manifest.yml', PRIVATE_KEY_PATH, PUB_CERT_PATH])
+    command.argv = []
+    command.appConfig = {}
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.log).toHaveBeenCalledWith('error-1')
+    expect(command.log).toHaveBeenCalledWith('error-2')
   })
 })

@@ -37,6 +37,7 @@ const fetchLogInterval = 10000
 const logOptions = {}
 const eventPoller = new EventPoller(fetchLogInterval)
 
+/** @private */
 async function runDev (args = [], config, options = {}, log) {
   // note: args are considered perfect here because this function is only ever called by the `app run` command
   let logFunc = log
@@ -230,6 +231,7 @@ async function runDev (args = [], config, options = {}, log) {
   return frontEndUrl
 }
 
+/** @private */
 async function logListener (args) {
   if (!args.resources.stopFetchLogs) {
     try {
@@ -245,6 +247,7 @@ async function logListener (args) {
   }
 }
 
+/** @private */
 async function generateVSCodeDebugConfig (devConfig, withBackend, hasFrontend, frontUrl, wskdebugProps) {
   const actionConfigNames = []
   let actionConfigs = []
@@ -329,6 +332,7 @@ async function generateVSCodeDebugConfig (devConfig, withBackend, hasFrontend, f
   return debugConfig
 }
 
+/** @private */
 function _getActionChangeHandler (devConfig, isLocalDev, logFunc) {
   return async (filePath) => {
     if (running) {
@@ -355,6 +359,7 @@ function _getActionChangeHandler (devConfig, isLocalDev, logFunc) {
   }
 }
 
+/** @private */
 async function _buildAndDeploy (devConfig, isLocalDev, logFunc) {
   await BuildActions(devConfig)
   const entities = await DeployActions(devConfig, { isLocalDev })
@@ -365,6 +370,7 @@ async function _buildAndDeploy (devConfig, isLocalDev, logFunc) {
   }
 }
 
+/** @private */
 async function cleanup (resources) {
   if (watcher) {
     aioLogger.debug('stopping action watcher...')

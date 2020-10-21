@@ -14,6 +14,8 @@ const fs = require('fs-extra')
 const execa = require('execa')
 const appHelper = require('../../../src/lib/app-helper')
 
+jest.mock('process')
+
 describe('exports helper methods', () => {
   test('isNpmInstalled', () => {
     expect(appHelper.isNpmInstalled).toBeDefined()
@@ -55,7 +57,7 @@ describe('exports helper methods', () => {
     // succeeds if npm install returns success
     fs.readdirSync.mockReturnValue(['package.json'])
     appHelper.installPackage('does-not-exist')
-    expect(execa).toHaveBeenCalledWith('npm', ['install'], { cwd: 'does-not-exist' })
+    return expect(execa).toHaveBeenCalledWith('npm', ['install'], { cwd: 'does-not-exist' })
   })
 
   test('runPackageScript', async () => {
@@ -63,31 +65,77 @@ describe('exports helper methods', () => {
     expect(appHelper.runPackageScript).toBeInstanceOf(Function)
   })
 
-  test('runPackageScript missing package.json', async () => {
-    // throws error if dir does not contain a package.json
-    await expect(appHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
-      .rejects.toThrow(/does-not-exist does not contain a package.json/)
-  })
-
   test('runPackageScript success', async () => {
-    fs.readJSON.mockReturnValue({ scripts: { test: 'some-value' } })
+    fs.readJSON.mockReturnValue({ scripts: { test: 'some-script some-arg-1 some-arg-2' } })
+
+    const ipcMessage = {
+      type: 'long-running-process',
+      data: {
+        pid: 123,
+        logs: {
+          stdout: 'logs/foo.sh.out.log',
+          stderr: 'logs/foo.sh.err.log'
+        }
+      }
+    }
+
+    const mockChildProcessOn = jest.fn((eventname, fn) => {
+      if (eventname === 'message') {
+        // call it back right away, for coverage
+        fn(ipcMessage)
+        // now call with a different message type, for coverage
+        fn({
+          type: 'some-other-message',
+          data: {
+            pid: 1234,
+            logs: {
+              stdout: 'logs/bar.sh.out.log',
+              stderr: 'logs/bar.sh.err.log'
+            }
+          }
+        })
+      }
+    })
+
+    process.kill = jest.fn()
+    process.on = jest.fn((eventname, fn) => {
+      if (eventname === 'exit') {
+        // call it back right away, for coverage
+        fn()
+      }
+    })
+
+    execa.mockReturnValueOnce({
+      on: mockChildProcessOn
+    })
+
     await appHelper.runPackageScript('test', '')
-    expect(execa).toHaveBeenCalledWith('npm', ['run-script', 'test'], expect.any(Object))
+    expect(mockChildProcessOn).toHaveBeenCalledWith('message', expect.any(Function))
+    expect(process.on).toHaveBeenCalledWith('exit', expect.any(Function))
+    expect(process.kill).toHaveBeenCalledWith(ipcMessage.data.pid, 'SIGTERM')
+    return expect(execa).toHaveBeenCalledWith('some-script', ['some-arg-1', 'some-arg-2'], expect.any(Object))
   })
 
-  test('runPackageScript success with silent option', async () => {
+  test('runPackageScript success with additional command arg/flag', async () => {
     // succeeds if npm run-script returns success
-    fs.readJSON.mockReturnValue({ scripts: { cmd: 'some-value' } })
+    fs.readJSON.mockReturnValue({ scripts: { cmd: 'some-script some-arg-1 some-arg-2' } })
 
-    await appHelper.runPackageScript('cmd', '', ['--silent'])
-    expect(execa).toHaveBeenCalledWith('npm', ['run-script', 'cmd', '--silent'], expect.any(Object))
+    const mockChildProcessOn = jest.fn()
+    execa.mockReturnValueOnce({
+      on: mockChildProcessOn
+    })
+
+    await appHelper.runPackageScript('cmd', '', ['--my-flag'])
+    expect(mockChildProcessOn).toHaveBeenCalledWith('message', expect.any(Function))
+    return expect(execa).toHaveBeenCalledWith('some-script', ['some-arg-1', 'some-arg-2', '--my-flag'], expect.any(Object))
   })
 
-  test('runPackageScript rejects if package.json does not have matching script', async () => {
+  test('runPackageScript logs if package.json does not have matching script', async () => {
     fs.readdirSync.mockReturnValue(['package.json'])
     fs.readJSONSync.mockReturnValue({ scripts: { notest: 'some-value' } })
+    // coverage: the error is logged, no error thrown
     await expect(appHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
-      .rejects.toThrow(/does-not-exist/)
+      .resolves.toBeUndefined()
   })
 
   test('wrapError returns an a Error in any case', async () => {
