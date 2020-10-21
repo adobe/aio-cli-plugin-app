@@ -86,7 +86,8 @@ const init = jest.fn().mockReturnValue(mockRtLibInstance)
 const mockActionMethods = {
   buildActions: jest.fn(),
   deployActions: jest.fn(),
-  undeployActions: jest.fn()
+  undeployActions: jest.fn(),
+  printActionLogs: jest.fn()
 }
 module.exports = {
   utils: {

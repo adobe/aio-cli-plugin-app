@@ -11,7 +11,8 @@ governing permissions and limitations under the License.
 */
 /* eslint-disable no-template-curly-in-string */
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:runDev', { provider: 'debug' })
-const rtLibUtils = require('@adobe/aio-lib-runtime').utils
+const rtLib = require('@adobe/aio-lib-runtime')
+const rtLibUtils = rtLib.utils
 const path = require('path')
 const fs = require('fs-extra')
 
@@ -234,7 +235,8 @@ async function runDev (args = [], config, options = {}, log) {
 async function logListener (args) {
   if (!args.resources.stopFetchLogs) {
     try {
-      const ret = await utils.getLogs(args.config, logOptions.limit || 1, console.log, logOptions.startTime)
+      // TODO : Is is better to just tail ?
+      const ret = await rtLib.printActionLogs(args.config, console.log, logOptions.limit || 1, [], false, false, undefined, logOptions.startTime)
       logOptions.limit = 30
       logOptions.startTime = ret.lastActivationTime
     } catch (e) {

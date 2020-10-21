@@ -318,9 +318,14 @@ USAGE
   $ aio app:logs
 
 OPTIONS
-  -l, --limit=limit  [default: 1] Limit number of activations to fetch logs from ( 1-50 )
-  -v, --verbose      Verbose output
-  --version          Show version
+  -a, --action=action  Fetch logs for a specific action
+  -l, --limit=limit    [default: 1] Limit number of activations to fetch logs from ( 1-50 )
+  -o, --poll           Fetch logs continuously
+  -r, --strip          strip timestamp information and output first line only
+  -t, --tail           Fetch logs continuously
+  -v, --verbose        Verbose output
+  -w, --watch          Fetch logs continuously
+  --version            Show version
 ```
 
 _See code: [src/commands/app/logs.js](https://github.com/adobe/aio-cli-plugin-app/blob/4.1.1/src/commands/app/logs.js)_
