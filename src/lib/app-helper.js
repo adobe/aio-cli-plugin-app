@@ -27,7 +27,7 @@ async function buildApp (config, flags, overwrite, spinner, onProgress) {
   try {
     await runPackageScript('pre-app-build')
   } catch (err) {
-    // this is assumed to be a missing script error
+    this.log(err)
   }
 
   if (!flags['skip-actions']) {
@@ -55,7 +55,7 @@ async function buildApp (config, flags, overwrite, spinner, onProgress) {
   try {
     await runPackageScript('post-app-build')
   } catch (err) {
-    // this is assumed to be a missing script error
+    this.log(err)
   }
 }
 
@@ -93,9 +93,31 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
   aioLogger.debug(`running npm run-script ${scriptName} in dir: ${dir}`)
   const pkg = await fs.readJSON(path.join(dir, 'package.json'))
   if (pkg && pkg.scripts && pkg.scripts[scriptName]) {
-    return execa('npm', ['run-script', scriptName].concat(cmdArgs), { cwd: dir, stdio: 'inherit' })
+    const command = pkg.scripts[scriptName].split(' ')
+    const child = execa(command[0], command.slice(1).concat(cmdArgs), {
+      stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+      cwd: dir,
+      preferLocal: true
+    })
+    // handle IPC from possible aio-run-detached script
+    child.on('message', message => {
+      if (message.type === 'long-running-process') {
+        const { pid, logs } = message.data
+        aioLogger.debug(`Found ${scriptName} event hook long running process (pid: ${pid}). Registering for SIGTERM`)
+        aioLogger.debug(`Log locations for ${scriptName} event hook long-running process (stdout: ${logs.stdout} stderr: ${logs.stderr})`)
+        process.on('exit', () => {
+          try {
+            aioLogger.debug(`Killing ${scriptName} event hook long-running process (pid: ${pid})`)
+            process.kill(pid, 'SIGTERM')
+          } catch (_) {
+            // do nothing if pid not found
+          }
+        })
+      }
+    })
+    return child
   } else {
-    throw new Error(`${dir} does not contain a package.json or it does not contain a script named ${scriptName}`)
+    aioLogger.debug(`${dir} does not contain a package.json or it does not contain a script named ${scriptName}`)
   }
 }
 
@@ -125,42 +147,7 @@ async function getCliInfo () {
   return { accessToken, env }
 }
 
-async function getLogs (config, limit, logger, startTime = 0) {
-  // check for runtime credentials
-  RuntimeLib.utils.checkOpenWhiskCredentials(config)
-  const runtime = await RuntimeLib.init({
-    // todo make this.config.ow compatible with Openwhisk config
-    apihost: config.ow.apihost,
-    apiversion: config.ow.apiversion,
-    api_key: config.ow.auth,
-    namespace: config.ow.namespace
-  })
-
-  // get activations
-  const listOptions = { limit: limit, skip: 0 }
-  const logFunc = logger || console.log
-  const activations = await runtime.activations.list(listOptions)
-  let lastActivationTime = 0
-  // console.log('activations = ', activations)
-  for (let i = (activations.length - 1); i >= 0; i--) {
-    const activation = activations[i]
-    lastActivationTime = activation.start
-    if (lastActivationTime > startTime) {
-      const results = await runtime.activations.logs({ activationId: activation.activationId })
-      // console.log('results = ', results)
-      // send fetched logs to console
-      if (results.logs.length > 0) {
-        logFunc(activation.name + ':' + activation.activationId)
-        results.logs.forEach(function (log) {
-          logFunc(log)
-        })
-        logFunc()
-      }
-    }
-  }
-  return { lastActivationTime }
-}
-
+/** @private */
 function getActionUrls (config, isRemoteDev = false, isLocalDev = false) {
   // set action urls
   // action urls {name: url}, if !LocalDev subdomain uses namespace
@@ -240,6 +227,7 @@ function writeConfig (file, config) {
   )
 }
 
+/** @private */
 async function isDockerRunning () {
   // todo more checks
   const args = ['info']
@@ -252,6 +240,7 @@ async function isDockerRunning () {
   return false
 }
 
+/** @private */
 async function hasDockerCLI () {
   // todo check min version
   try {
@@ -264,6 +253,7 @@ async function hasDockerCLI () {
   return false
 }
 
+/** @private */
 async function hasJavaCLI () {
   // todo check min version
   try {
@@ -287,6 +277,7 @@ async function hasJavaCLI () {
 //   return false
 // }
 
+/** @private */
 async function downloadOWJar (url, outFile) {
   aioLogger.debug(`downloadOWJar - url: ${url} outFile: ${outFile}`)
   let response
@@ -310,7 +301,7 @@ async function downloadOWJar (url, outFile) {
     })
   })
 }
-
+/** @private */
 async function runOpenWhiskJar (jarFile, runtimeConfigFile, apihost, waitInitTime, waitPeriodTime, timeout, /* istanbul ignore next */ execaOptions = {}) {
   aioLogger.debug(`runOpenWhiskJar - jarFile: ${jarFile} runtimeConfigFile ${runtimeConfigFile} apihost: ${apihost} waitInitTime: ${waitInitTime} waitPeriodTime: ${waitPeriodTime} timeout: ${timeout}`)
   const proc = execa('java', ['-jar', '-Dwhisk.concurrency-limit.max=10', jarFile, '-m', runtimeConfigFile, '--no-ui'], execaOptions)
@@ -318,11 +309,13 @@ async function runOpenWhiskJar (jarFile, runtimeConfigFile, apihost, waitInitTim
   // must wrap in an object as execa return value is awaitable
   return { proc }
 
+  /** @private */
   async function waitForOpenWhiskReadiness (host, initialWait, period, timeout) {
     const endTime = Date.now() + timeout
     await waitFor(initialWait)
     await _waitForOpenWhiskReadiness(host, endTime)
 
+    /** @private */
     async function _waitForOpenWhiskReadiness (host, endTime) {
       if (Date.now() > endTime) {
         throw new Error(`local openwhisk stack startup timed out: ${timeout}ms`)
@@ -339,12 +332,15 @@ async function runOpenWhiskJar (jarFile, runtimeConfigFile, apihost, waitInitTim
         return _waitForOpenWhiskReadiness(host, endTime)
       }
     }
+
+    /** @private */
     function waitFor (t) {
       return new Promise(resolve => setTimeout(resolve, t))
     }
   }
 }
 
+/** @private */
 function saveAndReplaceDotEnvCredentials (dotenvFile, saveFile, apihost, namespace, auth) {
   if (fs.existsSync(saveFile)) throw new Error(`cannot save .env, please make sure to restore and delete ${saveFile}`) // todo make saveFile relative
   fs.moveSync(dotenvFile, saveFile)
@@ -380,6 +376,17 @@ function saveAndReplaceDotEnvCredentials (dotenvFile, saveFile, apihost, namespa
   fs.writeFileSync(dotenvFile, envContent)
 }
 
+/**
+ *
+ * Converts a service array to an input string that can be consumed by generator-aio-app
+ *
+ * @param {Array} services array of services [{ code: 'xxx', name: 'xxx' }, ...]
+ * @returns {string} 'code1,code2,code3'
+ */
+function servicesToGeneratorInput (services) {
+  return services.map(s => s.code).filter(s => s).join(',')
+}
+
 module.exports = {
   buildApp,
   isNpmInstalled,
@@ -389,7 +396,6 @@ module.exports = {
   wrapError,
   getCliInfo,
   getActionUrls,
-  getLogs,
   removeProtocolFromURL,
   urlJoin,
   checkFile,
@@ -399,5 +405,6 @@ module.exports = {
   writeConfig,
   downloadOWJar,
   runOpenWhiskJar,
-  saveAndReplaceDotEnvCredentials
+  saveAndReplaceDotEnvCredentials,
+  servicesToGeneratorInput
 }

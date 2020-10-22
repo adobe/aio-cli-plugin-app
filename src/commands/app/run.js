@@ -54,7 +54,7 @@ class Run extends BaseCommand {
     try {
       await runPackageScript('pre-app-run')
     } catch (err) {
-      // this is assumed to be a missing script error
+      this.log(err)
     }
 
     // check if there are certificates available, and generate them if not ...
@@ -81,7 +81,7 @@ class Run extends BaseCommand {
       try {
         await runPackageScript('post-app-run')
       } catch (err) {
-        // this is assumed to be a missing script error
+        this.log(err)
       }
       if (frontendUrl) {
         this.log()

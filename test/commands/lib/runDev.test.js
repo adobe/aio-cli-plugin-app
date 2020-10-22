@@ -139,9 +139,10 @@ const owJarUrl = 'https://dl.bintray.com/adobeio-firefly/aio/openwhisk-standalon
 const waitInitTime = 2000
 const waitPeriodTime = 500
 
-const execaLocalOWArgs = ['java', expect.arrayContaining(['-jar', r(owJarPath), '-m', owRuntimesConfig, '--no-ui']), expect.anything()]
+const execaLocalOWArgs = ['java', expect.arrayContaining(['-jar', path.resolve(owJarPath), '-m', owRuntimesConfig, '--no-ui']), expect.anything()]
 
 /* ****************** Helpers ******************* */
+/** @private */
 function generateDotenvContent (credentials) {
   let content = ''
   if (credentials.namespace) content = content + `AIO_RUNTIME_NAMESPACE=${credentials.namespace}`
@@ -150,6 +151,7 @@ function generateDotenvContent (credentials) {
   return content
 }
 
+/** @private */
 async function loadEnvScripts (project, config, excludeFiles = []) {
   // create test app
   // global.loadFs(vol, project)
@@ -164,6 +166,7 @@ async function loadEnvScripts (project, config, excludeFiles = []) {
   // return scripts
 }
 
+/** @private */
 function writeFakeOwJar () {
   // global.addFakeFiles(vol, path.dirname(owJarPath), path.basename(owJarPath))
   const fakeFsJson = {}
@@ -171,10 +174,12 @@ function writeFakeOwJar () {
   global.fakeFileSystem.addJson(fakeFsJson)
 }
 
+/** @private */
 function deleteFakeOwJar () {
   global.fakeFileSystem.removeKeys([deriveOwJarFilePath()])
 }
 
+/** @private */
 function deriveOwJarFilePath () {
   let owJarFilePath
   Object.keys(global.fakeFileSystem.files()).forEach(filePath => {
@@ -186,6 +191,7 @@ function deriveOwJarFilePath () {
 }
 
 // helpers for checking good path
+/** @private */
 function expectDevActionBuildAndDeploy (expectedBuildDeployConfig) {
   // build & deploy
   expect(BuildActions).toHaveBeenCalledTimes(1)
@@ -196,15 +202,17 @@ function expectDevActionBuildAndDeploy (expectedBuildDeployConfig) {
   // expect(DeployActions.mock.instances[1].run).toHaveBeenCalledTimes(1)
 }
 
+/** @private */
 function expectUIServer (fakeMiddleware, port) {
   expect(Bundler.mockConstructor).toHaveBeenCalledTimes(1)
-  expect(Bundler.mockConstructor).toHaveBeenCalledWith(r('/web-src/index.html'),
+  expect(Bundler.mockConstructor).toHaveBeenCalledWith(path.resolve('/web-src/index.html'),
     expect.objectContaining({
       watch: true,
-      outDir: r('/dist/web-src-dev')
+      outDir: path.resolve('/dist/web-src-dev')
     }))
 }
 
+/** @private */
 function expectAppFiles (expectedFiles) {
   const expectedFileSet = new Set(expectedFiles)
   const files = new Set(Object.keys(global.fakeFileSystem.files()).filter(filePath => !filePath.includes(owJarFile)))
@@ -213,6 +221,7 @@ function expectAppFiles (expectedFiles) {
   expect(files).toEqual(expectedFileSet)
 }
 
+/** @private */
 async function testCleanupNoErrors (done, config, postCleanupChecks) {
   // todo why do we need to remove listeners here, somehow the one in beforeEach isn't sufficient, is jest adding a listener?
   process.removeAllListeners('SIGINT')
@@ -230,6 +239,7 @@ async function testCleanupNoErrors (done, config, postCleanupChecks) {
   // if test times out => means handler is not calling process.exit
 }
 
+/** @private */
 async function testCleanupOnError (config, postCleanupChecks) {
   const error = new Error('fake')
   const logFunc = (message) => {
@@ -252,10 +262,11 @@ async function testCleanupOnError (config, postCleanupChecks) {
 
 const getExpectedActionVSCodeDebugConfig = actionName =>
   expect.objectContaining({
-    type: 'node',
+    type: 'pwa-node',
     request: 'launch',
     name: 'Action:' + actionName,
-    runtimeExecutable: r('/node_modules/.bin/wskdebug'),
+    attachSimplePort: 0,
+    runtimeExecutable: path.resolve('/node_modules/.bin/wskdebug'),
     runtimeArgs: [
       actionName,
       expect.stringContaining(actionName.split('/')[1]),
@@ -263,8 +274,8 @@ const getExpectedActionVSCodeDebugConfig = actionName =>
       '--kind',
       'nodejs:12'
     ],
-    env: { WSK_CONFIG_FILE: r('/.wskdebug.props.tmp') },
-    localRoot: r('/'),
+    env: { WSK_CONFIG_FILE: path.resolve('/.wskdebug.props.tmp') },
+    localRoot: path.resolve('/'),
     remoteRoot: '/code'
   })
 
@@ -273,10 +284,10 @@ const getExpectedUIVSCodeDebugConfig = uiPort => expect.objectContaining({
   request: 'launch',
   name: 'Web',
   url: `http://localhost:${uiPort}`,
-  webRoot: r('/web-src'),
+  webRoot: path.resolve('/web-src'),
   breakOnLoad: true,
   sourceMapPathOverrides: {
-    '*': r('/dist/web-src-dev/*')
+    '*': path.resolve('/dist/web-src-dev/*')
   }
 })
 /* ****************** Tests ******************* */
@@ -312,6 +323,7 @@ describe('call checkOpenwhiskCredentials with right params', () => {
   test('missing runtime auth and REMOTE_ACTIONS=1', () => failMissingRuntimeConfig('auth', '1')) // eslint-disable-line jest/expect-expect
 })
 
+/** @private */
 function runCommonTests (ref) {
   test('should save a previous existing .vscode/config.json file to .vscode/config.json.save', async () => {
     // global.addFakeFiles(vol, '.vscode', { 'launch.json': 'fakecontent' })
@@ -423,6 +435,7 @@ function runCommonTests (ref) {
   })
 }
 
+/** @private */
 function runCommonWithBackendTests (ref) {
   test('should log actions url or name when actions are deployed', async () => {
     DeployActions.mockResolvedValue({
@@ -439,6 +452,7 @@ function runCommonWithBackendTests (ref) {
   })
 }
 
+/** @private */
 function runCommonRemoteTests (ref) {
   // eslint-disable-next-line jest/expect-expect
   test('should build and deploy actions to remote', async () => {
@@ -487,6 +501,7 @@ function runCommonRemoteTests (ref) {
   })
 }
 
+/** @private */
 function runCommonBackendOnlyTests (ref) {
   test('should not start a ui server', async () => {
     await runDev([], ref.config)
@@ -505,6 +520,7 @@ function runCommonBackendOnlyTests (ref) {
   })
 }
 
+/** @private */
 function runCommonWithFrontendTests (ref) {
   // eslint-disable-next-line jest/expect-expect
   test('should start a ui server', async () => {
@@ -578,6 +594,7 @@ function runCommonWithFrontendTests (ref) {
   })
 }
 
+/** @private */
 function runCommonLocalTests (ref) {
   test('should fail if java is not installed', async () => {
     execa.mockImplementation((cmd, args) => {
@@ -743,7 +760,7 @@ function runCommonLocalTests (ref) {
       '.env': generateDotenvContent(remoteOWCredentials),
       '.env.app.save': 'fake content'
     })
-    await expect(runDev([], ref.config)).rejects.toThrow(`cannot save .env, please make sure to restore and delete ${r('/.env.app.save')}`)
+    await expect(runDev([], ref.config)).rejects.toThrow(`cannot save .env, please make sure to restore and delete ${path.resolve('/.env.app.save')}`)
     expect(global.fakeFileSystem.files()['/.env.app.save'].toString()).toEqual('fake content')
   })
 
@@ -1168,19 +1185,20 @@ test('vscode wskdebug config with require-adobe-auth annotation && apihost=https
   expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
     configurations: expect.arrayContaining([
       expect.objectContaining({
-        type: 'node',
+        type: 'pwa-node',
         request: 'launch',
         name: 'Action:' + 'sample-app-1.0.0/action',
-        runtimeExecutable: r('/node_modules/.bin/wskdebug'),
+        attachSimplePort: 0,
+        runtimeExecutable: path.resolve('/node_modules/.bin/wskdebug'),
         runtimeArgs: [
           'sample-app-1.0.0/__secured_action',
-          r('actions/action.js'),
+          path.resolve('actions/action.js'),
           '-v',
           '--kind',
           'nodejs:12'
         ],
-        env: { WSK_CONFIG_FILE: r('/.wskdebug.props.tmp') },
-        localRoot: r('/'),
+        env: { WSK_CONFIG_FILE: path.resolve('/.wskdebug.props.tmp') },
+        localRoot: path.resolve('/'),
         remoteRoot: '/code'
       })
     ])
@@ -1205,19 +1223,20 @@ test('vscode wskdebug config with require-adobe-auth annotation && apihost!=http
   expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
     configurations: expect.arrayContaining([
       expect.objectContaining({
-        type: 'node',
+        type: 'pwa-node',
         request: 'launch',
         name: 'Action:' + 'sample-app-1.0.0/action',
-        runtimeExecutable: r('/node_modules/.bin/wskdebug'),
+        attachSimplePort: 0,
+        runtimeExecutable: path.resolve('/node_modules/.bin/wskdebug'),
         runtimeArgs: [
           'sample-app-1.0.0/action',
-          r('actions/action.js'),
+          path.resolve('actions/action.js'),
           '-v',
           '--kind',
           'nodejs:12'
         ],
-        env: { WSK_CONFIG_FILE: r('/.wskdebug.props.tmp') },
-        localRoot: r('/'),
+        env: { WSK_CONFIG_FILE: path.resolve('/.wskdebug.props.tmp') },
+        localRoot: path.resolve('/'),
         remoteRoot: '/code'
       })
     ])
@@ -1241,18 +1260,19 @@ test('vscode wskdebug config without runtime option', async () => {
   expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
     configurations: expect.arrayContaining([
       expect.objectContaining({
-        type: 'node',
+        type: 'pwa-node',
         request: 'launch',
         name: 'Action:' + 'sample-app-1.0.0/action',
-        runtimeExecutable: r('/node_modules/.bin/wskdebug'),
+        attachSimplePort: 0,
+        runtimeExecutable: path.resolve('/node_modules/.bin/wskdebug'),
         runtimeArgs: [
           'sample-app-1.0.0/action',
-          r('actions/action.js'),
+          path.resolve('actions/action.js'),
           '-v'
           // no kind
         ],
-        env: { WSK_CONFIG_FILE: r('/.wskdebug.props.tmp') },
-        localRoot: r('/'),
+        env: { WSK_CONFIG_FILE: path.resolve('/.wskdebug.props.tmp') },
+        localRoot: path.resolve('/'),
         remoteRoot: '/code'
       })
     ])

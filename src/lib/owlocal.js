@@ -16,6 +16,7 @@ const execa = require('execa')
 
 const OW_LOCAL_DOCKER_PORT = 3233
 
+/** @private */
 function isWindowsOrMac () {
   return (
     process.platform === 'win32' ||
@@ -23,6 +24,7 @@ function isWindowsOrMac () {
   )
 }
 
+/** @private */
 function getDockerNetworkAddress () {
   try {
     // Docker for Windows and macOS do not allow routing to the containers via

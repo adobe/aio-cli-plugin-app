@@ -68,7 +68,8 @@ describe('good flags', () => {
     expect(mockRun).toHaveBeenCalledWith(genName, {
       'skip-prompt': true,
       'skip-install': false,
-      'adobe-services': ''
+      'adobe-services': '',
+      'supported-adobe-services': ''
     })
   })
 
@@ -81,7 +82,8 @@ describe('good flags', () => {
     expect(mockRun).toHaveBeenCalledWith(genName, {
       'skip-prompt': true,
       'skip-install': true,
-      'adobe-services': ''
+      'adobe-services': '',
+      'supported-adobe-services': ''
     })
   })
 
@@ -94,7 +96,8 @@ describe('good flags', () => {
     expect(mockRun).toHaveBeenCalledWith(genName, {
       'skip-prompt': false,
       'skip-install': true,
-      'adobe-services': ''
+      'adobe-services': '',
+      'supported-adobe-services': ''
     })
   })
   test('no flags', async () => {
@@ -106,12 +109,22 @@ describe('good flags', () => {
     expect(mockRun).toHaveBeenCalledWith(genName, {
       'skip-prompt': false,
       'skip-install': false,
-      'adobe-services': ''
+      'adobe-services': '',
+      'supported-adobe-services': ''
     })
   })
 
   test('pass services config codes to generator-aio-app', async () => {
-    config.get.mockReturnValue([{ code: 'CampaignSDK' }, { code: 'AdobeAnalyticsSDK' }])
+    config.get.mockImplementation(c => {
+      if (c === 'project.org.details.services') {
+        // supported services
+        return [{ code: 'CampaignSDK' }, { code: 'AdobeAnalyticsSDK' }, { code: 'AnotherOneSDK' }]
+      } else if (c === 'project.workspace.details.services') {
+        // added to workspace
+        return [{ code: 'CampaignSDK' }, { code: 'AdobeAnalyticsSDK' }]
+      }
+      return undefined
+    })
 
     await TheCommand.run([])
 
@@ -121,7 +134,33 @@ describe('good flags', () => {
     expect(mockRun).toHaveBeenCalledWith(genName, {
       'skip-prompt': false,
       'skip-install': false,
-      'adobe-services': 'CampaignSDK,AdobeAnalyticsSDK'
+      'adobe-services': 'CampaignSDK,AdobeAnalyticsSDK',
+      'supported-adobe-services': 'CampaignSDK,AdobeAnalyticsSDK,AnotherOneSDK'
+    })
+  })
+
+  test('pass services config codes from legacy service config key to generator-aio-app', async () => {
+    config.get.mockImplementation(c => {
+      if (c === 'project.org.details.services') {
+        // supported services
+        return [{ code: 'CampaignSDK' }, { code: 'AdobeAnalyticsSDK' }, { code: 'AnotherOneSDK' }]
+      } else if (c === 'services') {
+        // added to workspace
+        return [{ code: 'CampaignSDK' }, { code: 'AdobeAnalyticsSDK' }]
+      }
+      return undefined
+    })
+
+    await TheCommand.run([])
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genName = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenCalledWith(genName, {
+      'skip-prompt': false,
+      'skip-install': false,
+      'adobe-services': 'CampaignSDK,AdobeAnalyticsSDK',
+      'supported-adobe-services': 'CampaignSDK,AdobeAnalyticsSDK,AnotherOneSDK'
     })
   })
 })

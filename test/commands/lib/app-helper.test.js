@@ -13,7 +13,8 @@ const which = require('which')
 const fs = require('fs-extra')
 const execa = require('execa')
 const appHelper = require('../../../src/lib/app-helper')
-const RuntimeLib = require('@adobe/aio-lib-runtime')
+
+jest.mock('process')
 
 describe('exports helper methods', () => {
   test('isNpmInstalled', () => {
@@ -56,7 +57,7 @@ describe('exports helper methods', () => {
     // succeeds if npm install returns success
     fs.readdirSync.mockReturnValue(['package.json'])
     appHelper.installPackage('does-not-exist')
-    expect(execa).toHaveBeenCalledWith('npm', ['install'], { cwd: 'does-not-exist' })
+    return expect(execa).toHaveBeenCalledWith('npm', ['install'], { cwd: 'does-not-exist' })
   })
 
   test('runPackageScript', async () => {
@@ -64,31 +65,77 @@ describe('exports helper methods', () => {
     expect(appHelper.runPackageScript).toBeInstanceOf(Function)
   })
 
-  test('runPackageScript missing package.json', async () => {
-    // throws error if dir does not contain a package.json
-    await expect(appHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
-      .rejects.toThrow(/does-not-exist does not contain a package.json/)
-  })
-
   test('runPackageScript success', async () => {
-    fs.readJSON.mockReturnValue({ scripts: { test: 'some-value' } })
+    fs.readJSON.mockReturnValue({ scripts: { test: 'some-script some-arg-1 some-arg-2' } })
+
+    const ipcMessage = {
+      type: 'long-running-process',
+      data: {
+        pid: 123,
+        logs: {
+          stdout: 'logs/foo.sh.out.log',
+          stderr: 'logs/foo.sh.err.log'
+        }
+      }
+    }
+
+    const mockChildProcessOn = jest.fn((eventname, fn) => {
+      if (eventname === 'message') {
+        // call it back right away, for coverage
+        fn(ipcMessage)
+        // now call with a different message type, for coverage
+        fn({
+          type: 'some-other-message',
+          data: {
+            pid: 1234,
+            logs: {
+              stdout: 'logs/bar.sh.out.log',
+              stderr: 'logs/bar.sh.err.log'
+            }
+          }
+        })
+      }
+    })
+
+    process.kill = jest.fn()
+    process.on = jest.fn((eventname, fn) => {
+      if (eventname === 'exit') {
+        // call it back right away, for coverage
+        fn()
+      }
+    })
+
+    execa.mockReturnValueOnce({
+      on: mockChildProcessOn
+    })
+
     await appHelper.runPackageScript('test', '')
-    expect(execa).toHaveBeenCalledWith('npm', ['run-script', 'test'], expect.any(Object))
+    expect(mockChildProcessOn).toHaveBeenCalledWith('message', expect.any(Function))
+    expect(process.on).toHaveBeenCalledWith('exit', expect.any(Function))
+    expect(process.kill).toHaveBeenCalledWith(ipcMessage.data.pid, 'SIGTERM')
+    return expect(execa).toHaveBeenCalledWith('some-script', ['some-arg-1', 'some-arg-2'], expect.any(Object))
   })
 
-  test('runPackageScript success with silent option', async () => {
+  test('runPackageScript success with additional command arg/flag', async () => {
     // succeeds if npm run-script returns success
-    fs.readJSON.mockReturnValue({ scripts: { cmd: 'some-value' } })
+    fs.readJSON.mockReturnValue({ scripts: { cmd: 'some-script some-arg-1 some-arg-2' } })
 
-    await appHelper.runPackageScript('cmd', '', ['--silent'])
-    expect(execa).toHaveBeenCalledWith('npm', ['run-script', 'cmd', '--silent'], expect.any(Object))
+    const mockChildProcessOn = jest.fn()
+    execa.mockReturnValueOnce({
+      on: mockChildProcessOn
+    })
+
+    await appHelper.runPackageScript('cmd', '', ['--my-flag'])
+    expect(mockChildProcessOn).toHaveBeenCalledWith('message', expect.any(Function))
+    return expect(execa).toHaveBeenCalledWith('some-script', ['some-arg-1', 'some-arg-2', '--my-flag'], expect.any(Object))
   })
 
-  test('runPackageScript rejects if package.json does not have matching script', async () => {
+  test('runPackageScript logs if package.json does not have matching script', async () => {
     fs.readdirSync.mockReturnValue(['package.json'])
     fs.readJSONSync.mockReturnValue({ scripts: { notest: 'some-value' } })
+    // coverage: the error is logged, no error thrown
     await expect(appHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
-      .rejects.toThrow(/does-not-exist/)
+      .resolves.toBeUndefined()
   })
 
   test('wrapError returns an a Error in any case', async () => {
@@ -114,147 +161,6 @@ describe('exports helper methods', () => {
     expect(error).toBeInstanceOf(Error)
     expect(error.message).toEqual('yolo3')
     expect(error.stack).toBeDefined()
-  })
-
-  describe('getLogs', () => {
-    const fakeConfig = {
-      ow: {
-        apihost: 'https://fake.com',
-        apiversion: 'v0',
-        auth: 'abcde',
-        namespace: 'dude'
-      }
-    }
-    const logger = jest.fn()
-    let rtLib
-    beforeEach(async () => {
-      RuntimeLib.mockReset()
-      rtLib = await RuntimeLib.init({ fake: 'credentials' })
-      logger.mockReset()
-    })
-
-    test('inits the runtime lib instance', async () => {
-      rtLib.mockResolved('activations.list', [])
-      rtLib.mockResolved('activations.logs', { logs: [] })
-      await appHelper.getLogs(fakeConfig, 1, logger)
-      expect(RuntimeLib.init).toHaveBeenCalledWith({
-        namespace: fakeConfig.ow.namespace,
-        apihost: fakeConfig.ow.apihost,
-        api_key: fakeConfig.ow.auth,
-        apiversion: fakeConfig.ow.apiversion
-      })
-    })
-    test('(config, limit=1, logger) and no activations', async () => {
-      rtLib.mockResolved('activations.list', [])
-      rtLib.mockResolved('activations.logs', { logs: [] })
-      await appHelper.getLogs(fakeConfig, 1, logger)
-      expect(RuntimeLib.init).toHaveBeenCalled()
-      expect(rtLib.activations.list).toHaveBeenCalledWith({ limit: 1, skip: 0 })
-      expect(rtLib.activations.logs).not.toHaveBeenCalled()
-      expect(logger).not.toHaveBeenCalled()
-    })
-    test('(config, limit=3, logger) and 3 activations and no logs', async () => {
-      rtLib.mockResolved('activations.list', [
-        { activationId: 123, start: 555555, name: 'one' },
-        { activationId: 456, start: 555666, name: 'two' },
-        { activationId: 100, start: 666666, name: 'three' }
-      ])
-      rtLib.mockResolved('activations.logs', { logs: [] })
-      await appHelper.getLogs(fakeConfig, 3, logger)
-      expect(rtLib.activations.list).toHaveBeenCalledWith({ limit: 3, skip: 0 })
-      expect(rtLib.activations.logs).toHaveBeenCalledTimes(3)
-      // reverse order
-      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(1, { activationId: 100 })
-      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(2, { activationId: 456 })
-      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(3, { activationId: 123 })
-      expect(logger).not.toHaveBeenCalled()
-    })
-    test('(config, limit=45, logger) and 3 activations and logs for 2 of them', async () => {
-      rtLib.mockResolved('activations.list', [
-        { activationId: 123, start: 555555, name: 'one' },
-        { activationId: 456, start: 555666, name: 'two' },
-        { activationId: 100, start: 666666, name: 'three' }
-      ])
-      rtLib.mockFn('activations.logs').mockImplementation(a => {
-        if (a.activationId === 100) {
-          return { logs: ['three A', 'three B', 'three C'] }
-        } else if (a.activationId === 456) {
-          return { logs: ['two A \n two B'] }
-        }
-        return { logs: [] }
-      })
-
-      await appHelper.getLogs(fakeConfig, 45, logger)
-      expect(rtLib.activations.list).toHaveBeenCalledWith({ limit: 45, skip: 0 })
-      expect(rtLib.activations.logs).toHaveBeenCalledTimes(3)
-      // reverse order
-      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(1, { activationId: 100 })
-      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(2, { activationId: 456 })
-      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(3, { activationId: 123 })
-      expect(logger).toHaveBeenCalledTimes(8)
-      expect(logger).toHaveBeenNthCalledWith(1, 'three:100')
-      expect(logger).toHaveBeenNthCalledWith(2, 'three A')
-      expect(logger).toHaveBeenNthCalledWith(3, 'three B')
-      expect(logger).toHaveBeenNthCalledWith(4, 'three C')
-      expect(logger).toHaveBeenNthCalledWith(5) // new line
-      expect(logger).toHaveBeenNthCalledWith(6, 'two:456')
-      expect(logger).toHaveBeenNthCalledWith(7, 'two A \n two B')
-    })
-
-    test('(config, limit=45, logger, startTime=bigger than first 2) and 3 activations and logs for 2 of them', async () => {
-      rtLib.mockResolved('activations.list', [
-        { activationId: 123, start: 555555, name: 'one' },
-        { activationId: 456, start: 555666, name: 'two' },
-        { activationId: 100, start: 666666, name: 'three' }
-      ])
-      rtLib.mockFn('activations.logs').mockImplementation(a => {
-        if (a.activationId === 100) {
-          return { logs: ['three A', 'three B', 'three C'] }
-        } else if (a.activationId === 456) {
-          return { logs: ['two A \n two B'] }
-        }
-        return { logs: [] }
-      })
-
-      await appHelper.getLogs(fakeConfig, 45, logger, 666665)
-      expect(rtLib.activations.list).toHaveBeenCalledWith({ limit: 45, skip: 0 })
-      expect(rtLib.activations.logs).toHaveBeenCalledTimes(1)
-      // reverse order
-      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(1, { activationId: 100 })
-      expect(logger).toHaveBeenCalledTimes(5)
-      expect(logger).toHaveBeenNthCalledWith(1, 'three:100')
-      expect(logger).toHaveBeenNthCalledWith(2, 'three A')
-      expect(logger).toHaveBeenNthCalledWith(3, 'three B')
-      expect(logger).toHaveBeenNthCalledWith(4, 'three C')
-      expect(logger).toHaveBeenNthCalledWith(5) // new line
-    })
-
-    test('(config, limit=45, no logger) and 1 activation and 1 log', async () => {
-      const spy = jest.spyOn(console, 'log')
-      spy.mockImplementation(() => {})
-
-      rtLib.mockResolved('activations.list', [
-        { activationId: 123, start: 555555, name: 'one' }
-      ])
-      rtLib.mockFn('activations.logs').mockImplementation(a => {
-        if (a.activationId === 123) {
-          return { logs: ['one A'] }
-        }
-        return { logs: [] }
-      })
-
-      await appHelper.getLogs(fakeConfig, 45)
-      expect(rtLib.activations.list).toHaveBeenCalledWith({ limit: 45, skip: 0 })
-      expect(rtLib.activations.logs).toHaveBeenCalledTimes(1)
-      // reverse order
-      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(1, { activationId: 123 })
-      expect(spy).toHaveBeenCalledTimes(3)
-      expect(spy).toHaveBeenNthCalledWith(1, 'one:123')
-      expect(spy).toHaveBeenNthCalledWith(2, 'one A')
-      expect(spy).toHaveBeenNthCalledWith(3) // new line
-
-      spy.mockRestore()
-    })
   })
 
   describe('getActionUrls', () => {

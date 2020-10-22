@@ -54,7 +54,7 @@ class Deploy extends BaseCommand {
         try {
           await runPackageScript('pre-app-deploy')
         } catch (err) {
-          // this is assumed to be a missing script error
+          this.log(err)
         }
         if (!flags['skip-actions']) {
           if (fs.existsSync('manifest.yml')) {
@@ -102,7 +102,7 @@ class Deploy extends BaseCommand {
         try {
           await runPackageScript('post-app-deploy')
         } catch (err) {
-          // this is assumed to be a missing script error
+          this.log(err)
         }
       }
 

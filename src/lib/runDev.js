@@ -11,7 +11,8 @@ governing permissions and limitations under the License.
 */
 /* eslint-disable no-template-curly-in-string */
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:runDev', { provider: 'debug' })
-const rtLibUtils = require('@adobe/aio-lib-runtime').utils
+const rtLib = require('@adobe/aio-lib-runtime')
+const rtLibUtils = rtLib.utils
 const path = require('path')
 const fs = require('fs-extra')
 
@@ -36,6 +37,7 @@ const fetchLogInterval = 10000
 const logOptions = {}
 const eventPoller = new EventPoller(fetchLogInterval)
 
+/** @private */
 async function runDev (args = [], config, options = {}, log) {
   // note: args are considered perfect here because this function is only ever called by the `app run` command
   let logFunc = log
@@ -229,10 +231,12 @@ async function runDev (args = [], config, options = {}, log) {
   return frontEndUrl
 }
 
+/** @private */
 async function logListener (args) {
   if (!args.resources.stopFetchLogs) {
     try {
-      const ret = await utils.getLogs(args.config, logOptions.limit || 1, console.log, logOptions.startTime)
+      // TODO : Is is better to just tail ?
+      const ret = await rtLib.printActionLogs(args.config, console.log, logOptions.limit || 1, [], false, false, undefined, logOptions.startTime)
       logOptions.limit = 30
       logOptions.startTime = ret.lastActivationTime
     } catch (e) {
@@ -243,6 +247,7 @@ async function logListener (args) {
   }
 }
 
+/** @private */
 async function generateVSCodeDebugConfig (devConfig, withBackend, hasFrontend, frontUrl, wskdebugProps) {
   const actionConfigNames = []
   let actionConfigs = []
@@ -257,7 +262,7 @@ async function generateVSCodeDebugConfig (devConfig, withBackend, hasFrontend, f
       const actionPath = rtLibUtils._absApp(devConfig.root, action.function)
 
       const config = {
-        type: 'node',
+        type: 'pwa-node',
         request: 'launch',
         name: name,
         runtimeExecutable: rtLibUtils._absApp(devConfig.root, './node_modules/.bin/wskdebug'),
@@ -266,7 +271,8 @@ async function generateVSCodeDebugConfig (devConfig, withBackend, hasFrontend, f
         // replaces remoteRoot with localRoot to get src files
         localRoot: rtLibUtils._absApp(devConfig.root, '.'),
         remoteRoot: '/code',
-        outputCapture: 'std'
+        outputCapture: 'std',
+        attachSimplePort: 0
       }
 
       const actionFileStats = fs.lstatSync(actionPath)
@@ -326,6 +332,7 @@ async function generateVSCodeDebugConfig (devConfig, withBackend, hasFrontend, f
   return debugConfig
 }
 
+/** @private */
 function _getActionChangeHandler (devConfig, isLocalDev, logFunc) {
   return async (filePath) => {
     if (running) {
@@ -352,6 +359,7 @@ function _getActionChangeHandler (devConfig, isLocalDev, logFunc) {
   }
 }
 
+/** @private */
 async function _buildAndDeploy (devConfig, isLocalDev, logFunc) {
   await BuildActions(devConfig)
   const entities = await DeployActions(devConfig, { isLocalDev })
@@ -362,6 +370,7 @@ async function _buildAndDeploy (devConfig, isLocalDev, logFunc) {
   }
 }
 
+/** @private */
 async function cleanup (resources) {
   if (watcher) {
     aioLogger.debug('stopping action watcher...')
