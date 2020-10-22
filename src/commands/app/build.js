@@ -15,10 +15,8 @@ const chalk = require('chalk')
 const fs = require('fs-extra')
 
 const BaseCommand = require('../../BaseCommand')
-const AppScripts = require('@adobe/aio-app-scripts')
 const { flags } = require('@oclif/command')
 const { buildApp, runPackageScript, wrapError, writeConfig } = require('../../lib/app-helper')
-const rtLib = require('@adobe/aio-lib-runtime')
 
 class Build extends BaseCommand {
   async run () {
