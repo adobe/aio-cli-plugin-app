@@ -9,6 +9,17 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
+
+/* eslint jest/expect-expect: [
+  "error",
+  {
+    "assertFunctionNames": [
+        "expect", "testCleanupNoErrors", "testCleanupOnError", "expectUIServer", "failMissingRuntimeConfig"
+    ]
+  }
+]
+*/
+
 global.mockFs()
 const runDev = require('../../../src/lib/runDev')
 const loadConfig = require('../../../src/lib/config-loader')
@@ -18,6 +29,8 @@ const stream = require('stream')
 const mockAIOConfig = require('@adobe/aio-lib-core-config')
 const util = require('util')
 const sleep = util.promisify(setTimeout)
+
+jest.mock('../../../src/lib/poller')
 
 /* ****************** Mocks & beforeEach ******************* */
 let onChangeFunc
@@ -142,28 +155,15 @@ const waitPeriodTime = 500
 const execaLocalOWArgs = ['java', expect.arrayContaining(['-jar', path.resolve(owJarPath), '-m', owRuntimesConfig, '--no-ui']), expect.anything()]
 
 /* ****************** Helpers ******************* */
-/** @private */
-function generateDotenvContent (credentials) {
-  let content = ''
-  if (credentials.namespace) content = content + `AIO_RUNTIME_NAMESPACE=${credentials.namespace}`
-  if (credentials.auth) content = content + `\nAIO_RUNTIME_AUTH=${credentials.auth}`
-  if (credentials.apihost) content = content + `\nAIO_RUNTIME_APIHOST=${credentials.apihost}`
-  return content
-}
 
 /** @private */
 async function loadEnvScripts (project, config, excludeFiles = []) {
   // create test app
-  // global.loadFs(vol, project)
-  // TODO: respect project though it is not used ?
   global.addSampleAppFiles()
-  excludeFiles.forEach(f => global.fakeFileSystem.removeKeys([f])/* vol.unlinkSync(f) */)
+  excludeFiles.forEach(f => global.fakeFileSystem.removeKeys([f]))
   mockAIOConfig.get.mockReturnValue(config)
-  // console.log(Object.keys(global.fakeFileSystem.files()))
   process.chdir('/')
   return loadConfig()
-  // const scripts = AppScripts({ listeners: { onProgress: mockOnProgress } })
-  // return scripts
 }
 
 /** @private */
@@ -230,6 +230,7 @@ async function testCleanupNoErrors (done, config, postCleanupChecks) {
     expect(process.exit).toHaveBeenCalledWith(0)
     done()
   })
+
   await runDev([], config)
   expect(process.exit).toHaveBeenCalledTimes(0)
   // make sure we have only one listener = cleanup listener after each test + no pending promises
@@ -249,13 +250,7 @@ async function testCleanupOnError (config, postCleanupChecks) {
       console.log(message)
     }
   }
-  /* mockOnProgress.mockImplementation(msg => {
-    // throw error for last progress statement
-    // todo tests for intermediary progress steps aswell
-    if (msg.includes('CTRL+C to terminate')) {
-      throw error
-    }
-  }) */
+
   await expect(runDev([], config, {}, logFunc)).rejects.toBe(error)
   postCleanupChecks()
 }
@@ -274,7 +269,8 @@ const getExpectedActionVSCodeDebugConfig = actionName =>
       '--kind',
       'nodejs:12'
     ],
-    env: { WSK_CONFIG_FILE: path.resolve('/.wskdebug.props.tmp') },
+    // eslint-disable-next-line no-template-curly-in-string
+    envFile: path.join('${workspaceFolder}', 'dist', '.env'),
     localRoot: path.resolve('/'),
     remoteRoot: '/code'
   })
@@ -293,7 +289,6 @@ const getExpectedUIVSCodeDebugConfig = uiPort => expect.objectContaining({
 /* ****************** Tests ******************* */
 
 test('runDev is exported', async () => {
-  // const scripts = await loadEnvScripts('sample-app', global.fakeConfig.tvm)
   expect(runDev).toBeDefined()
   expect(typeof runDev).toBe('function')
 })
@@ -306,35 +301,31 @@ describe('call checkOpenwhiskCredentials with right params', () => {
     const config = await loadEnvScripts('sample-app', tvmConfig)
     await runDev([], config)
     expect(mockRuntimeLib.utils.checkOpenWhiskCredentials).toHaveBeenCalledWith(config)
-    // await expect(runDev([], config)).rejects.toEqual(expect.objectContaining({ message: expect.stringContaining(`missing Adobe I/O Runtime ${configVarName}`) }))
   }
 
   test('error before chokidar watcher gets a chance to be initialized -> codecov', async () => {
     BuildActions.mockImplementationOnce(() => { throw new Error('error') })
     await expect(failMissingRuntimeConfig('auth', '1')).rejects.toThrowError('error')
-  }) // eslint-disable-line jest/expect-expect
+  })
 
-  test('missing runtime namespace and REMOTE_ACTIONS=true', () => failMissingRuntimeConfig('namespace', 'true')) // eslint-disable-line jest/expect-expect
-  test('missing runtime namespace and REMOTE_ACTIONS=yes', () => failMissingRuntimeConfig('namespace', 'yes')) // eslint-disable-line jest/expect-expect
-  test('missing runtime namespace and REMOTE_ACTIONS=1', () => failMissingRuntimeConfig('namespace', '1')) // eslint-disable-line jest/expect-expect
+  test('missing runtime namespace and REMOTE_ACTIONS=true', () => failMissingRuntimeConfig('namespace', 'true'))
+  test('missing runtime namespace and REMOTE_ACTIONS=yes', () => failMissingRuntimeConfig('namespace', 'yes'))
+  test('missing runtime namespace and REMOTE_ACTIONS=1', () => failMissingRuntimeConfig('namespace', '1'))
 
-  test('missing runtime auth and REMOTE_ACTIONS=true', () => failMissingRuntimeConfig('auth', 'true')) // eslint-disable-line jest/expect-expect
-  test('missing runtime auth and REMOTE_ACTIONS=yes', () => failMissingRuntimeConfig('auth', 'yes')) // eslint-disable-line jest/expect-expect
-  test('missing runtime auth and REMOTE_ACTIONS=1', () => failMissingRuntimeConfig('auth', '1')) // eslint-disable-line jest/expect-expect
+  test('missing runtime auth and REMOTE_ACTIONS=true', () => failMissingRuntimeConfig('auth', 'true'))
+  test('missing runtime auth and REMOTE_ACTIONS=yes', () => failMissingRuntimeConfig('auth', 'yes'))
+  test('missing runtime auth and REMOTE_ACTIONS=1', () => failMissingRuntimeConfig('auth', '1'))
 })
 
 /** @private */
 function runCommonTests (ref) {
   test('should save a previous existing .vscode/config.json file to .vscode/config.json.save', async () => {
-    // global.addFakeFiles(vol, '.vscode', { 'launch.json': 'fakecontent' })
     global.fakeFileSystem.addJson({
       '.vscode/launch.json': 'fakecontent'
     })
     await runDev([], ref.config)
     expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(true)
     expect(global.fakeFileSystem.files()['/.vscode/launch.json.save'].toString()).toEqual('fakecontent')
-    // expect(vol.existsSync('/.vscode/launch.json.save')).toEqual(true)
-    // expect(vol.readFileSync('/.vscode/launch.json.save').toString()).toEqual('fakecontent')
   })
 
   test('should not save to .vscode/config.json.save if there is no existing .vscode/config.json file', async () => {
@@ -348,22 +339,27 @@ function runCommonTests (ref) {
       '.vscode/launch.json': 'fakecontent',
       '.vscode/launch.json.save': 'fakecontentsaved'
     })
-    // global.addFakeFiles(vol, '.vscode', { 'launch.json': 'fakecontent' })
-    // global.addFakeFiles(vol, '.vscode', { 'launch.json.save': 'fakecontentsaved' })
+
     await runDev([], ref.config)
     expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(true)
     expect(global.fakeFileSystem.files()['/.vscode/launch.json.save'].toString()).toEqual('fakecontentsaved')
   })
 
-  // eslint-disable-next-line jest/expect-expect
   test('should cleanup generated files on SIGINT', async () => {
+    execa.mockImplementation(() => ({
+      kill: jest.fn()
+    }))
+
     return new Promise(resolve => {
       testCleanupNoErrors(resolve, ref.config, () => { expectAppFiles(ref.appFiles) })
     })
   })
 
-  // eslint-disable-next-line jest/expect-expect
   test('should cleanup generated files on error', async () => {
+    execa.mockImplementation(() => ({
+      kill: jest.fn()
+    }))
+
     await testCleanupOnError(ref.config, () => {
       expectAppFiles(ref.appFiles)
     })
@@ -373,7 +369,11 @@ function runCommonTests (ref) {
     global.fakeFileSystem.addJson({
       '.vscode/launch.json': 'fakecontent'
     })
-    // global.addFakeFiles(vol, '.vscode', { 'launch.json': 'fakecontent' })
+
+    execa.mockImplementation(() => ({
+      kill: jest.fn()
+    }))
+
     return new Promise(resolve => {
       testCleanupNoErrors(resolve, ref.config, () => {
         expectAppFiles([...ref.appFiles, '/.vscode/launch.json'])
@@ -388,7 +388,11 @@ function runCommonTests (ref) {
     global.fakeFileSystem.addJson({
       '.vscode/launch.json': 'fakecontent'
     })
-    // global.addFakeFiles(vol, '.vscode', { 'launch.json': 'fakecontent' })
+
+    execa.mockImplementation(() => ({
+      kill: jest.fn()
+    }))
+
     await testCleanupOnError(ref.config, () => {
       expectAppFiles([...ref.appFiles, '/.vscode/launch.json'])
       expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(false)
@@ -397,27 +401,57 @@ function runCommonTests (ref) {
     })
   })
 
-  test('should not remove previously existing ./vscode/launch.json.save on SIGINT', async () => {
+  test('should restore previously existing ./vscode/launch.json.save on SIGINT', async () => {
     global.fakeFileSystem.addJson({
       '.vscode/launch.json': 'fakecontent',
       '.vscode/launch.json.save': 'fakecontentsaved'
     })
+
+    execa.mockImplementation(() => ({
+      kill: jest.fn()
+    }))
+
     return new Promise(resolve => {
       testCleanupNoErrors(resolve, ref.config, () => {
-        expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(true)
-        expect(global.fakeFileSystem.files()['/.vscode/launch.json.save'].toString()).toEqual('fakecontentsaved')
+        expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(false)
+        expect(global.fakeFileSystem.files()['/.vscode/launch.json'].toString()).toEqual('fakecontentsaved')
       })
     })
   })
 
-  test('should not remove previously existing ./vscode/launch.json.save on error', async () => {
+  test('should not remove /.vscode folder if there is something else in it (coverage)', async () => {
+    global.fakeFileSystem.addJson({
+      '.vscode/launch.json': 'fakecontent',
+      '.vscode/readme.txt': 'treasure'
+    })
+
+    execa.mockImplementation(() => ({
+      kill: jest.fn()
+    }))
+
+    global.fakeFileSystem.removeKeys(['/.vscode/launch.json'])
+
+    return new Promise(resolve => {
+      testCleanupNoErrors(resolve, ref.config, () => {
+        expect('/.vscode/launch.json' in global.fakeFileSystem.files()).toEqual(false)
+        expect('/.vscode/readme.txt' in global.fakeFileSystem.files()).toEqual(true)
+      })
+    })
+  })
+
+  test('should restore previously existing ./vscode/launch.json.save on error', async () => {
     global.fakeFileSystem.addJson({
       '.vscode/launch.json': 'fakecontent',
       '.vscode/launch.json.save': 'fakecontentsaved'
     })
+
+    execa.mockImplementation(() => ({
+      kill: jest.fn()
+    }))
+
     await testCleanupOnError(ref.config, () => {
-      expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(true)
-      expect(global.fakeFileSystem.files()['/.vscode/launch.json.save'].toString()).toEqual('fakecontentsaved')
+      expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(false)
+      expect(global.fakeFileSystem.files()['/.vscode/launch.json'].toString()).toEqual('fakecontentsaved')
     })
   })
 
@@ -454,7 +488,6 @@ function runCommonWithBackendTests (ref) {
 
 /** @private */
 function runCommonRemoteTests (ref) {
-  // eslint-disable-next-line jest/expect-expect
   test('should build and deploy actions to remote', async () => {
     const log = jest.fn()
     await runDev([], ref.config, {}, log)
@@ -492,12 +525,12 @@ function runCommonRemoteTests (ref) {
     expect(execa).not.toHaveBeenCalledWith(...execaLocalOWArgs)
   })
 
-  test('should generate a .wskdebug.props.tmp file with the remote credentials', async () => {
+  test('should generate a /dist/.env file with the remote credentials', async () => {
     await runDev([], ref.config)
-    const debugProps = global.fakeFileSystem.files()['/.wskdebug.props.tmp'].toString()
-    expect(debugProps).toContain(`NAMESPACE=${remoteOWCredentials.namespace}`)
-    expect(debugProps).toContain(`AUTH=${remoteOWCredentials.auth}`)
-    expect(debugProps).toContain(`APIHOST=${remoteOWCredentials.apihost}`)
+    const debugProps = global.fakeFileSystem.files()['/dist/.env'].toString()
+    expect(debugProps).toContain(`OW_NAMESPACE=${remoteOWCredentials.namespace}`)
+    expect(debugProps).toContain(`OW_AUTH=${remoteOWCredentials.auth}`)
+    expect(debugProps).toContain(`OW_APIHOST=${remoteOWCredentials.apihost}`)
   })
 }
 
@@ -522,7 +555,6 @@ function runCommonBackendOnlyTests (ref) {
 
 /** @private */
 function runCommonWithFrontendTests (ref) {
-  // eslint-disable-next-line jest/expect-expect
   test('should start a ui server', async () => {
     const fakeMiddleware = Symbol('fake middleware')
     Bundler.mockMiddleware.mockReturnValue(fakeMiddleware)
@@ -538,6 +570,10 @@ function runCommonWithFrontendTests (ref) {
   })
 
   test('should cleanup ui server on SIGINT', async () => {
+    execa.mockImplementation(() => ({
+      kill: jest.fn()
+    }))
+
     return new Promise(resolve => {
       testCleanupNoErrors(resolve, ref.config, () => {
         expect(Bundler.mockStop).toHaveBeenCalledTimes(1)
@@ -560,21 +596,26 @@ function runCommonWithFrontendTests (ref) {
       })
     })
   })
-  // eslint-disable-next-line jest/no-test-callback
-  test('should exit with 1 if there is an error in cleanup', async done => {
-    const theError = new Error('theerror')
-    Bundler.mockStop.mockRejectedValue(theError)
-    process.removeAllListeners('SIGINT')
-    process.exit.mockImplementation(() => {
-      expect(mockLogger.error).toHaveBeenCalledWith(theError)
-      expect(process.exit).toHaveBeenCalledWith(1)
-      done()
+
+  test('should exit with 1 if there is an error in cleanup', async () => {
+    return new Promise(resolve => {
+      const theError = new Error('theerror')
+      Bundler.mockStop.mockRejectedValue(theError)
+      process.removeAllListeners('SIGINT')
+      process.exit.mockImplementation(() => {
+        expect(mockLogger.error).toHaveBeenCalledWith(theError)
+        expect(process.exit).toHaveBeenCalledWith(1)
+        resolve()
+      })
+
+      runDev([], ref.config)
+        .then(() => {
+          expect(process.exit).toHaveBeenCalledTimes(0)
+          // send cleanup signal
+          process.emit('SIGINT')
+        // if test times out => means handler is not calling process.exit
+        })
     })
-    await runDev([], ref.config)
-    expect(process.exit).toHaveBeenCalledTimes(0)
-    // send cleanup signal
-    process.emit('SIGINT')
-    // if test times out => means handler is not calling process.exit
   })
 
   test('should return another available port for the UI server if used', async () => {
@@ -689,7 +730,6 @@ function runCommonLocalTests (ref) {
     await expect(runDev([], ref.config)).rejects.toEqual(expect.objectContaining({ message: `unexpected response while downloading '${owJarUrl}': 404` }))
   })
 
-  // eslint-disable-next-line jest/expect-expect
   test('should build and deploy actions to local ow', async () => {
     const log = jest.fn()
     await runDev([], ref.config, {}, log)
@@ -728,133 +768,6 @@ function runCommonLocalTests (ref) {
     expect(log).toHaveBeenCalledWith(expect.stringContaining('Stopping'))
     expect(BuildActions).toHaveBeenCalledTimes(2)
     expect(DeployActions).toHaveBeenCalledTimes(2)
-  })
-
-  test('should create a tmp .env file with local openwhisk credentials if there is no existing .env', async () => {
-    await runDev([], ref.config)
-    expect('/.env' in global.fakeFileSystem.files()).toBe(true)
-    const dotenvContent = global.fakeFileSystem.files()['/.env'].toString()
-    expect(dotenvContent).toContain(generateDotenvContent(localOWCredentials))
-  })
-
-  test('should backup an existing .env and create a new .env with local openwhisk credentials', async () => {
-    // vol.writeFileSync('/.env', generateDotenvContent(remoteOWCredentials))
-    global.fakeFileSystem.addJson({
-      '.env': generateDotenvContent(remoteOWCredentials)
-    })
-    await runDev([], ref.config)
-    // 1. make sure the new .env is still written properly
-    expect('/.env' in global.fakeFileSystem.files()).toBe(true)
-    const dotenvContent = global.fakeFileSystem.files()['/.env'].toString()
-    expect(dotenvContent).toContain(generateDotenvContent(localOWCredentials))
-    // 2. check that saved file has old content
-    expect('/.env.app.save' in global.fakeFileSystem.files()).toBe(true)
-    const dotenvSaveContent = global.fakeFileSystem.files()['/.env.app.save'].toString()
-    expect(dotenvSaveContent).toEqual(generateDotenvContent(remoteOWCredentials))
-  })
-
-  test('should fail backup an existing .env if .env.save already exists', async () => {
-    // vol.writeFileSync('/.env', generateDotenvContent(remoteOWCredentials))
-    // vol.writeFileSync('/.env.app.save', 'fake content')
-    global.fakeFileSystem.addJson({
-      '.env': generateDotenvContent(remoteOWCredentials),
-      '.env.app.save': 'fake content'
-    })
-    await expect(runDev([], ref.config)).rejects.toThrow(`cannot save .env, please make sure to restore and delete ${path.resolve('/.env.app.save')}`)
-    expect(global.fakeFileSystem.files()['/.env.app.save'].toString()).toEqual('fake content')
-  })
-
-  test('should take additional variables from existing .env and plug them into new .env with local openwhisk credentials', async () => {
-    const dotenvOldContent = generateDotenvContent(remoteOWCredentials) + `
-AIO_RUNTIME_MORE=hello
-AIO_CNA_TVMURL=yolo
-MORE_VAR_1=hello2
-`
-    // vol.writeFileSync('/.env', dotenvOldContent)
-    global.fakeFileSystem.addJson({
-      '.env': dotenvOldContent
-    })
-
-    await runDev([], ref.config)
-    // 1. make sure the new .env is still written properly
-    expect('/.env' in global.fakeFileSystem.files()).toBe(true)
-    const dotenvContent = global.fakeFileSystem.files()['/.env'].toString()
-    expect(dotenvContent).toContain(generateDotenvContent(localOWCredentials))
-    // 2. make sure the new .env include additional variables
-    expect(dotenvContent).toContain('AIO_RUNTIME_MORE=hello')
-    expect(dotenvContent).toContain('AIO_CNA_TVMURL=yolo')
-    expect(dotenvContent).toContain('MORE_VAR_1=hello2')
-    // 3. check that saved file has old content
-    expect('/.env.app.save' in global.fakeFileSystem.files()).toBe(true)
-    const dotenvSaveContent = global.fakeFileSystem.files()['/.env.app.save'].toString()
-    expect(dotenvSaveContent).toEqual(dotenvOldContent)
-  })
-
-  test('should restore .env file on SIGINT', async () => {
-    const dotenvOldContent = generateDotenvContent(remoteOWCredentials) + `
-AIO_RUNTIME_MORE=hello
-AIO_CNA_TVMURL=yolo
-MORE_VAR_1=hello2
-`
-    // vol.writeFileSync('/.env', dotenvOldContent)
-    global.fakeFileSystem.addJson({
-      '.env': dotenvOldContent
-    })
-
-    return new Promise(resolve => {
-      testCleanupNoErrors(resolve, ref.config, () => {
-        expect('/.env.app.save' in global.fakeFileSystem.files()).toBe(false)
-        expect('/.env' in global.fakeFileSystem.files()).toBe(true)
-        const dotenvContent = global.fakeFileSystem.files()['/.env'].toString()
-        expect(dotenvContent).toEqual(dotenvOldContent)
-      })
-    })
-  })
-
-  test('should restore .env file on error', async () => {
-    const dotenvOldContent = generateDotenvContent(remoteOWCredentials) + `
-AIO_RUNTIME_MORE=hello
-AIO_CNA_TVMURL=yolo
-MORE_VAR_1=hello2
-`
-    // vol.writeFileSync('/.env', dotenvOldContent)
-    global.fakeFileSystem.addJson({
-      '.env': dotenvOldContent
-    })
-
-    await testCleanupOnError(ref.config, () => {
-      expect('/.env.app.save' in global.fakeFileSystem.files()).toBe(false)
-      expect('/.env' in global.fakeFileSystem.files()).toBe(true)
-      const dotenvContent = global.fakeFileSystem.files()['/.env'].toString()
-      expect(dotenvContent).toEqual(dotenvOldContent)
-    })
-  })
-
-  test('should start openwhisk-standalone jar', async () => {
-    await runDev([], ref.config)
-    expect(execa).toHaveBeenCalledWith(...execaLocalOWArgs)
-  })
-
-  test('should kill openwhisk-standalone subprocess on SIGINT', async () => {
-    const owProcessMockKill = jest.fn()
-    execa.mockImplementation((cmd, args) => {
-      if (cmd === 'java' && args.includes('-jar') && args.includes(owJarPath)) {
-        return {
-          stdout: jest.fn(),
-          kill: owProcessMockKill
-        }
-      }
-      return {
-        stdout: jest.fn(),
-        kill: jest.fn()
-      }
-    })
-    return new Promise(resolve => {
-      testCleanupNoErrors(resolve, ref.config, () => {
-        expect(execa).toHaveBeenCalledWith(...execaLocalOWArgs)
-        expect(owProcessMockKill).toHaveBeenCalledTimes(1)
-      })
-    })
   })
 
   test('should kill openwhisk-standalone subprocess on error', async () => {
@@ -941,7 +854,7 @@ describe('with remote actions and no frontend', () => {
     process.env.REMOTE_ACTIONS = 'true'
     // remove '/web-src/index.html' file = no ui
     ref.config = await loadEnvScripts('sample-app', global.fakeConfig.tvm, ['/web-src/index.html'])
-    ref.appFiles = ['/manifest.yml', '/package.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
+    ref.appFiles = ['/dist', '/manifest.yml', '/package.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
   })
 
   runCommonTests(ref)
@@ -955,6 +868,10 @@ describe('with remote actions and no frontend', () => {
   })
 
   test('should kill dummy node background process on sigint', async () => {
+    execa.mockImplementation(() => ({
+      kill: jest.fn()
+    }))
+
     const mockKill = jest.fn()
     execa.mockReturnValue({ kill: mockKill })
     await runDev([], ref.config)
@@ -980,7 +897,7 @@ describe('with remote actions and frontend', () => {
   beforeEach(async () => {
     process.env.REMOTE_ACTIONS = 'true'
     ref.config = await loadEnvScripts('sample-app', global.fakeConfig.tvm)
-    ref.appFiles = ['/manifest.yml', '/package.json', '/web-src/index.html', '/web-src/src/config.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
+    ref.appFiles = ['/dist', '/manifest.yml', '/package.json', '/web-src/index.html', '/web-src/src/config.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
   })
 
   runCommonTests(ref)
@@ -1033,7 +950,7 @@ describe('with local actions and no frontend', () => {
   beforeEach(async () => {
     process.env.REMOTE_ACTIONS = 'false'
     ref.config = await loadEnvScripts('sample-app', global.fakeConfig.tvm, ['/web-src/index.html'])
-    ref.appFiles = ['/manifest.yml', '/package.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
+    ref.appFiles = ['/dist', '/manifest.yml', '/package.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
     // default mocks
     // assume ow jar is already downloaded
     writeFakeOwJar()
@@ -1054,6 +971,13 @@ describe('with local actions and no frontend', () => {
   runCommonWithBackendTests(ref)
   runCommonBackendOnlyTests(ref)
   runCommonLocalTests(ref)
+
+  test('should not try to delete /dist/.env if it does not exist (branch coverage)', async () => {
+    await runDev([], ref.config)
+    global.fakeFileSystem.removeKeys(['/dist/.env'])
+    expect('/dist/.env' in global.fakeFileSystem.files()).toEqual(false)
+    process.emit('SIGINT')
+  })
 })
 
 describe('with local actions and frontend', () => {
@@ -1061,7 +985,7 @@ describe('with local actions and frontend', () => {
   beforeEach(async () => {
     process.env.REMOTE_ACTIONS = 'false'
     ref.config = await loadEnvScripts('sample-app', global.fakeConfig.tvm)
-    ref.appFiles = ['/manifest.yml', '/package.json', '/web-src/index.html', '/web-src/src/config.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
+    ref.appFiles = ['/dist', '/manifest.yml', '/package.json', '/web-src/index.html', '/web-src/src/config.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
     // default mocks
     // assume ow jar is already downloaded
     writeFakeOwJar()
@@ -1134,7 +1058,6 @@ describe('with frontend only', () => {
     expect(ref.config.app.hasBackend).toBe(false)
   })
 
-  // eslint-disable-next-line jest/expect-expect
   test('should start a ui server', async () => {
     await runDev([], ref.config)
     expectUIServer(null, 9080)
@@ -1169,13 +1092,10 @@ describe('with frontend only', () => {
 // natively supported in Adobe I/O Runtime.
 test('vscode wskdebug config with require-adobe-auth annotation && apihost=https://adobeioruntime.net', async () => {
   // create test app
-  // global.loadFs(vol, 'sample-app')
   global.addSampleAppFiles()
-  // vol.unlinkSync('web-src/index.html')
   global.fakeFileSystem.removeKeys(['/web-src/index.html'])
   mockAIOConfig.get.mockReturnValue(global.fakeConfig.tvm)
   process.env.REMOTE_ACTIONS = 'true'
-  // const scripts = AppScripts({})
   const config = loadConfig()
   // avoid recreating a new fixture
   config.manifest.package.actions.action.annotations = { 'require-adobe-auth': true }
@@ -1197,7 +1117,8 @@ test('vscode wskdebug config with require-adobe-auth annotation && apihost=https
           '--kind',
           'nodejs:12'
         ],
-        env: { WSK_CONFIG_FILE: path.resolve('/.wskdebug.props.tmp') },
+        // eslint-disable-next-line no-template-curly-in-string
+        envFile: path.join('${workspaceFolder}', 'dist', '.env'),
         localRoot: path.resolve('/'),
         remoteRoot: '/code'
       })
@@ -1207,13 +1128,10 @@ test('vscode wskdebug config with require-adobe-auth annotation && apihost=https
 
 test('vscode wskdebug config with require-adobe-auth annotation && apihost!=https://adobeioruntime.net', async () => {
   // create test app
-  // global.loadFs(vol, 'sample-app')
   global.addSampleAppFiles()
-  // vol.unlinkSync('web-src/index.html')
   global.fakeFileSystem.removeKeys(['/web-src/index.html'])
   mockAIOConfig.get.mockReturnValue(global.fakeConfig.tvm)
   process.env.REMOTE_ACTIONS = 'true'
-  // const scripts = AppScripts({})
   const config = loadConfig()
   // avoid recreating a new fixture
   config.manifest.package.actions.action.annotations = { 'require-adobe-auth': true }
@@ -1235,7 +1153,8 @@ test('vscode wskdebug config with require-adobe-auth annotation && apihost!=http
           '--kind',
           'nodejs:12'
         ],
-        env: { WSK_CONFIG_FILE: path.resolve('/.wskdebug.props.tmp') },
+        // eslint-disable-next-line no-template-curly-in-string
+        envFile: path.join('${workspaceFolder}', 'dist', '.env'),
         localRoot: path.resolve('/'),
         remoteRoot: '/code'
       })
@@ -1245,13 +1164,10 @@ test('vscode wskdebug config with require-adobe-auth annotation && apihost!=http
 
 test('vscode wskdebug config without runtime option', async () => {
   // create test app
-  // global.loadFs(vol, 'sample-app')
   global.addSampleAppFiles()
-  // vol.unlinkSync('web-src/index.html')
   global.fakeFileSystem.removeKeys(['/web-src/index.html'])
   mockAIOConfig.get.mockReturnValue(global.fakeConfig.tvm)
   process.env.REMOTE_ACTIONS = 'true'
-  // const scripts = AppScripts({})
   const config = loadConfig()
   // avoid recreating a new fixture
   delete config.manifest.package.actions.action.runtime
@@ -1271,7 +1187,8 @@ test('vscode wskdebug config without runtime option', async () => {
           '-v'
           // no kind
         ],
-        env: { WSK_CONFIG_FILE: path.resolve('/.wskdebug.props.tmp') },
+        // eslint-disable-next-line no-template-curly-in-string
+        envFile: path.join('${workspaceFolder}', 'dist', '.env'),
         localRoot: path.resolve('/'),
         remoteRoot: '/code'
       })
