@@ -102,6 +102,14 @@ module.exports = () => {
   config.web.distProd = _abs(path.join(dist, `${web}-prod`))
   config.web.injectedConfig = _abs(path.join(web, 'src', 'config.json'))
 
+  // custom UI run and build commands if specified
+  if (userConfig.cna.runScript) {
+    config.web.runScript = userConfig.cna.runScript
+  }
+  if (userConfig.cna.buildScript) {
+    config.web.buildScript = userConfig.cna.buildScript
+  }
+
   config.s3.credsCacheFile = _abs('.aws.tmp.creds.json')
   config.manifest.src = _abs('manifest.yml')
 
@@ -117,7 +125,7 @@ module.exports = () => {
 
   // check if the app has a frontend, for now enforce index.html to be there
   // todo we shouldn't have any config.web config if !hasFrontend
-  config.app.hasFrontend = fs.existsSync(path.join(config.web.src, 'index.html'))
+  config.app.hasFrontend = fs.existsSync(config.web.src)
 
   // check if the app has a backend by checking presence of manifest.yml file
   config.app.hasBackend = fs.existsSync(config.manifest.src)

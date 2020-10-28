@@ -18,6 +18,7 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
 const fetch = require('node-fetch')
+const aioRunDetached = require('@adobe/aio-run-detached')
 
 /** @private */
 function isNpmInstalled () {
@@ -76,6 +77,23 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
       }
     })
     return child
+  } else {
+    aioLogger.debug(`${dir} does not contain a package.json or it does not contain a script named ${scriptName}`)
+  }
+}
+
+/** @private */
+async function runPackageScriptDetached (scriptName, dir, cmdArgs = []) {
+  if (!dir) {
+    dir = process.cwd()
+  }
+  aioLogger.debug(`running npm run-script ${scriptName} in dir: ${dir}`)
+  const pkg = await fs.readJSON(path.join(dir, 'package.json'))
+  if (pkg && pkg.scripts && pkg.scripts[scriptName]) {
+    const command = pkg.scripts[scriptName].split(' ')
+
+    const child = aioRunDetached.run(command, dir)
+
   } else {
     aioLogger.debug(`${dir} does not contain a package.json or it does not contain a script named ${scriptName}`)
   }
@@ -352,6 +370,7 @@ module.exports = {
   isGitInstalled,
   installPackage,
   runPackageScript,
+  runPackageScriptDetached,
   wrapError,
   getCliInfo,
   getActionUrls,

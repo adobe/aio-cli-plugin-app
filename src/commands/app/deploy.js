@@ -59,7 +59,7 @@ class Deploy extends BaseCommand {
           }
         }
         if (!flags['skip-static']) {
-          if (fs.existsSync('web-src/')) {
+          if (fs.existsSync(config.web.src)) {
             if (config.app && config.app.hasBackend) {
               const urls = await rtLib.utils.getActionUrls(config)
               await writeConfig(config.web.injectedConfig, urls)
@@ -104,7 +104,7 @@ class Deploy extends BaseCommand {
           }
         }
         if (!flags['skip-static']) {
-          if (fs.existsSync('web-src/')) {
+          if (fs.existsSync(config.web.src)) {
             spinner.start('Deploying web assets')
             deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
             spinner.succeed(chalk.green('Deploying web assets'))

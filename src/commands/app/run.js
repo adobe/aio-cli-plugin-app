@@ -32,9 +32,9 @@ const CONFIG_KEY = 'aio-dev.dev-keys'
 class Run extends BaseCommand {
   async run (args = []) {
     const { flags } = this.parse(Run)
-
-    const hasFrontend = await fs.exists('web-src/')
-    const hasBackend = await fs.exists('manifest.yml')
+    const devConfig = require('../../lib/config-loader')()
+    const hasFrontend = fs.existsSync(devConfig.web.src)
+    const hasBackend = fs.existsSync('manifest.yml')
 
     if (!hasBackend && !hasFrontend) {
       this.error(wrapError('nothing to run.. there is no web-src/ and no manifest.yml, are you in a valid app?'))
@@ -183,6 +183,9 @@ Run.flags = {
   'skip-actions': flags.boolean({
     description: 'skip actions, only run the ui server',
     exclusive: ['local']
+  }),
+  'skip-build': flags.boolean({
+    description: 'skip frontend build, only run actions'
   }),
   open: flags.boolean({
     description: 'Open the default web browser after a successful run, only valid if your app has a front-end',

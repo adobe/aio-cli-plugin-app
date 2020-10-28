@@ -49,6 +49,8 @@ async function runDev (args = [], config, options = {}, log) {
   const bundleOptions = options.parcel || {}
   /* skip actions */
   const skipActions = !!options.skipActions
+  /* skip frontend build */
+  const skipBuild = !!options.skipBuild
   /* fetch logs for actions option */
   const fetchLogs = options.fetchLogs || false
 
@@ -156,7 +158,6 @@ async function runDev (args = [], config, options = {}, log) {
       fs.writeFileSync(WSK_DEBUG_PROPS, `NAMESPACE=${devConfig.ow.namespace}\nAUTH=${devConfig.ow.auth}\nAPIHOST=${devConfig.ow.apihost}`)
       resources.wskdebugProps = WSK_DEBUG_PROPS
     }
-
     if (hasFrontend) {
       let urls = {}
       if (config.app.hasBackend) {
@@ -168,32 +169,42 @@ async function runDev (args = [], config, options = {}, log) {
       }
       await utils.writeConfig(devConfig.web.injectedConfig, urls)
 
-      logFunc('starting local frontend server ..')
-      const entryFile = path.join(devConfig.web.src, 'index.html')
+      if (!skipBuild) {
+        // If a custom frontend app run command is specified
+        if (config.web.runScript) {
+          logFunc('starting local frontend server with custom script..')
 
-      // our defaults here can be overridden by the bundleOptions passed in
-      // bundleOptions.https are also passed to bundler.serve
-      const parcelBundleOptions = {
-        cache: false,
-        outDir: devConfig.web.distDev,
-        contentHash: false,
-        watch: true,
-        minify: false,
-        logLevel: 1,
-        ...bundleOptions
+          utils.runPackageScript(config.web.runScript, config.web.src)
+          // utils.runPackageScriptDetached(config.web.runScript, config.web.src)
+        } else {
+          logFunc('starting local frontend server with parcel..')
+          const entryFile = path.join(devConfig.web.src, '*.html')
+
+          // our defaults here can be overridden by the bundleOptions passed in
+          // bundleOptions.https are also passed to bundler.serve
+          const parcelBundleOptions = {
+            cache: false,
+            outDir: devConfig.web.distDev,
+            contentHash: false,
+            watch: true,
+            minify: false,
+            logLevel: 1,
+            ...bundleOptions
+          }
+          let actualPort = uiPort
+          resources.uiBundler = new Bundler(entryFile, parcelBundleOptions)
+          resources.uiServer = await resources.uiBundler.serve(uiPort, bundleOptions.https)
+          actualPort = resources.uiServer.address().port
+          resources.uiServerTerminator = httpTerminator.createHttpTerminator({
+            server: resources.uiServer
+          })
+          if (actualPort !== uiPort) {
+            logFunc(`Could not use port:${uiPort}, using port:${actualPort} instead`)
+          }
+          frontEndUrl = `${bundleOptions.https ? 'https:' : 'http:'}//localhost:${actualPort}`
+          logFunc(`local frontend server running at ${frontEndUrl}`)
+        }
       }
-      let actualPort = uiPort
-      resources.uiBundler = new Bundler(entryFile, parcelBundleOptions)
-      resources.uiServer = await resources.uiBundler.serve(uiPort, bundleOptions.https)
-      actualPort = resources.uiServer.address().port
-      resources.uiServerTerminator = httpTerminator.createHttpTerminator({
-        server: resources.uiServer
-      })
-      if (actualPort !== uiPort) {
-        logFunc(`Could not use port:${uiPort}, using port:${actualPort} instead`)
-      }
-      frontEndUrl = `${bundleOptions.https ? 'https:' : 'http:'}//localhost:${actualPort}`
-      logFunc(`local frontend server running at ${frontEndUrl}`)
     }
 
     logFunc('setting up vscode debug configuration files..')
