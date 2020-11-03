@@ -46,7 +46,7 @@ async function buildApp (config, flags, spinner, onProgress, logFunc) {
       await RuntimeLib.buildActions(config, filterActions)
       spinner.succeed(chalk.green('Building actions'))
     } else {
-      spinner.info('no manifest.yml, skipping action build')
+      spinner.info('no manifest.yml or build already exists, skipping action build')
     }
   }
   if (!flags['skip-static']) {
@@ -59,7 +59,7 @@ async function buildApp (config, flags, spinner, onProgress, logFunc) {
       await webLib.buildWeb(config, onProgress)
       spinner.succeed(chalk.green('Building web assets'))
     } else {
-      spinner.info('no web-src, skipping web-src build')
+      spinner.info('no web-src or build already exists, skipping web-src build')
     }
   }
   try {

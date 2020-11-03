@@ -33,6 +33,7 @@ class Build extends BaseCommand {
 
     // setup scripts, events and spinner
     try {
+      flags['force-build'] = true // The build command should always build
       await buildApp(config, flags, spinner, onProgress, this.log)
 
       // final message
