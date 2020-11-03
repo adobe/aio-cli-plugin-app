@@ -22,31 +22,41 @@ const webLib = require('@adobe/aio-lib-web')
 const fetch = require('node-fetch')
 const chalk = require('chalk')
 
-async function buildApp (config, flags, overwrite, spinner, onProgress) {
+/**
+ * Helper function for building actions and static content.
+ * To be used by both build and deploy commands.
+ *
+ * @param {object} config manifest config
+ * @param {object} flags flags (build/deploy)
+ * @param {object} spinner spinner for cmdline display
+ * @param {object} onProgress progress logger during build activity
+ * @param {object} logFunc logger for persistent log messages like errors
+ */
+async function buildApp (config, flags, spinner, onProgress, logFunc) {
   const filterActions = flags.action
   try {
     await runPackageScript('pre-app-build')
   } catch (err) {
-    this.log(err)
+    logFunc(err)
   }
 
   if (!flags['skip-actions']) {
-    if (fs.existsSync('manifest.yml')) {
+    if (fs.existsSync('manifest.yml') && (flags['force-build'] || !fs.existsSync(config.actions.dist))) {
       spinner.start('Building actions')
-      await RuntimeLib.buildActions(config, filterActions, overwrite)
+      await RuntimeLib.buildActions(config, filterActions)
       spinner.succeed(chalk.green('Building actions'))
     } else {
       spinner.info('no manifest.yml, skipping action build')
     }
   }
   if (!flags['skip-static']) {
-    if (fs.existsSync('web-src/')) {
+    if (fs.existsSync('web-src/') && (flags['force-build'] || !fs.existsSync(config.web.distProd))) {
       if (config.app && config.app.hasBackend) {
         const urls = await RuntimeLib.utils.getActionUrls(config)
         await writeConfig(config.web.injectedConfig, urls)
       }
       spinner.start('Building web assets')
-      await webLib.buildWeb(config, onProgress, overwrite)
+      await webLib.buildWeb(config, onProgress)
       spinner.succeed(chalk.green('Building web assets'))
     } else {
       spinner.info('no web-src, skipping web-src build')
@@ -55,7 +65,7 @@ async function buildApp (config, flags, overwrite, spinner, onProgress) {
   try {
     await runPackageScript('post-app-build')
   } catch (err) {
-    this.log(err)
+    logFunc(err)
   }
 }
 

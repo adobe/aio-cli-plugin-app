@@ -19,7 +19,7 @@ const { cli } = require('cli-ux')
 const BaseCommand = require('../../BaseCommand')
 const webLib = require('@adobe/aio-lib-web')
 const { flags } = require('@oclif/command')
-const { buildApp, runPackageScript, wrapError, writeConfig } = require('../../lib/app-helper')
+const { buildApp, runPackageScript, wrapError } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 
 class Deploy extends BaseCommand {
@@ -40,10 +40,8 @@ class Deploy extends BaseCommand {
     // setup scripts, events and spinner
     try {
       // build phase
-      /* if (flags['force-build']) {
-        await buildApp(config, flags, true, spinner, onProgress)
-      } else  */if (!flags['skip-build']) {
-        await buildApp(config, flags, false, spinner, onProgress)
+      if (!flags['skip-build']) {
+        await buildApp(config, flags, spinner, onProgress, this.log)
       }
 
       // deploy phase
@@ -139,6 +137,10 @@ Deploy.flags = {
   }),
   'skip-actions': flags.boolean({
     description: 'Skip action build & deploy'
+  }),
+  'force-build': flags.boolean({
+    description: 'Forces a build even if one already exists',
+    exclusive: ['skip-build']
   }),
   action: flags.string({
     description: 'Deploy only a specific action, the flags can be specified multiple times',

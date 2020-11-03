@@ -12,18 +12,16 @@ governing permissions and limitations under the License.
 
 const ora = require('ora')
 const chalk = require('chalk')
-const fs = require('fs-extra')
 
 const BaseCommand = require('../../BaseCommand')
 const { flags } = require('@oclif/command')
-const { buildApp, runPackageScript, wrapError, writeConfig } = require('../../lib/app-helper')
+const { buildApp, wrapError } = require('../../lib/app-helper')
 
 class Build extends BaseCommand {
   async run () {
     // cli input
     const { flags } = this.parse(Build)
     const config = this.getAppConfig()
-    const filterActions = flags.action
 
     const spinner = ora()
     const onProgress = !flags.verbose ? info => {
@@ -35,15 +33,14 @@ class Build extends BaseCommand {
 
     // setup scripts, events and spinner
     try {
-      await buildApp(config, flags, true, spinner, onProgress)
-      
+      await buildApp(config, flags, spinner, onProgress, this.log)
+
       // final message
       if (flags['skip-static']) {
         this.log(chalk.green(chalk.bold('Build success, your actions are ready to be deployed 👌')))
       } else {
         this.log(chalk.green(chalk.bold('Build success, your app is ready to be deployed 👌')))
       }
-
     } catch (error) {
       spinner.stop()
       this.error(wrapError(error))
