@@ -86,14 +86,25 @@ describe('runDev logListener', () => {
 })
 
 describe('poller', () => {
-  test('poll', () => {
+  test('start', () => {
     const poller = new EventPoller(1234)
     poller.emit = jest.fn()
 
-    poller.poll('some fake args')
+    poller.start('some fake args')
     expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), 1234)
     jest.runAllTimers()
     expect(poller.emit).toHaveBeenCalledWith('poll', 'some fake args')
+  })
+
+  test('stop', () => {
+    const poller = new EventPoller(1234)
+    poller.emit = jest.fn()
+
+    poller.start('some fake args')
+    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), 1234)
+    jest.runAllTimers()
+    expect(poller.emit).toHaveBeenCalledWith('poll', 'some fake args')
+    poller.stop()
   })
 
   test('onPoll', () => {
