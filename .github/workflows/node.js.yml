@@ -27,5 +27,9 @@ jobs:
     - run: npm ci
     - run: npm run build --if-present
     - run: npm test
-    - name: codecov
-      run: bash <(curl -s https://codecov.io/bash)
+    - name: upload coverage
+      if: success()
+      run: curl -s https://codecov.io/bash | bash
+      env:
+        CODECOV_NAME: ${{ runner.os }} node.js ${{ matrix.node-version }}
+      shell: bash
