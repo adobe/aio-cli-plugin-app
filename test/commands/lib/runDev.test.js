@@ -255,8 +255,9 @@ async function testCleanupOnError (config, postCleanupChecks) {
   postCleanupChecks()
 }
 
-const getExpectedActionVSCodeDebugConfig = actionName =>
-  expect.objectContaining({
+const getExpectedActionVSCodeDebugConfig = (isLocal, actionName) => {
+  const envFile = isLocal ? path.join('dist', '.env.local') : '.env'
+  return expect.objectContaining({
     type: 'pwa-node',
     request: 'launch',
     name: 'Action:' + actionName,
@@ -269,11 +270,11 @@ const getExpectedActionVSCodeDebugConfig = actionName =>
       '--kind',
       'nodejs:12'
     ],
-    // eslint-disable-next-line no-template-curly-in-string
-    envFile: path.join('${workspaceFolder}', 'dist', '.env'),
+    envFile: path.join('${workspaceFolder}', envFile), // eslint-disable-line no-template-curly-in-string
     localRoot: path.resolve('/'),
     remoteRoot: '/code'
   })
+}
 
 const getExpectedUIVSCodeDebugConfig = uiPort => expect.objectContaining({
   type: 'chrome',
@@ -525,12 +526,9 @@ function runCommonRemoteTests (ref) {
     expect(execa).not.toHaveBeenCalledWith(...execaLocalOWArgs)
   })
 
-  test('should generate a /dist/.env file with the remote credentials', async () => {
+  test('should not generate a /dist/.env.local file with the remote credentials', async () => {
     await runDev([], ref.config)
-    const debugProps = global.fakeFileSystem.files()['/dist/.env'].toString()
-    expect(debugProps).toContain(`OW_NAMESPACE=${remoteOWCredentials.namespace}`)
-    expect(debugProps).toContain(`OW_AUTH=${remoteOWCredentials.auth}`)
-    expect(debugProps).toContain(`OW_APIHOST=${remoteOWCredentials.apihost}`)
+    expect('/dist/.env.local' in global.fakeFileSystem.files()).toEqual(false)
   })
 }
 
@@ -543,10 +541,11 @@ function runCommonBackendOnlyTests (ref) {
 
   test('should generate a vscode config for actions only', async () => {
     await runDev([], ref.config)
+    const isLocal = !ref.config.actions.devRemote
     expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
       configurations: [
-        getExpectedActionVSCodeDebugConfig('sample-app-1.0.0/action'),
-        getExpectedActionVSCodeDebugConfig('sample-app-1.0.0/action-zip')
+        getExpectedActionVSCodeDebugConfig(isLocal, 'sample-app-1.0.0/action'),
+        getExpectedActionVSCodeDebugConfig(isLocal, 'sample-app-1.0.0/action-zip')
         // fails if ui config
       ]
     }))
@@ -854,7 +853,7 @@ describe('with remote actions and no frontend', () => {
     process.env.REMOTE_ACTIONS = 'true'
     // remove '/web-src/index.html' file = no ui
     ref.config = await loadEnvScripts('sample-app', global.fakeConfig.tvm, ['/web-src/index.html'])
-    ref.appFiles = ['/dist', '/manifest.yml', '/package.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
+    ref.appFiles = ['/manifest.yml', '/package.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
   })
 
   runCommonTests(ref)
@@ -897,7 +896,7 @@ describe('with remote actions and frontend', () => {
   beforeEach(async () => {
     process.env.REMOTE_ACTIONS = 'true'
     ref.config = await loadEnvScripts('sample-app', global.fakeConfig.tvm)
-    ref.appFiles = ['/dist', '/manifest.yml', '/package.json', '/web-src/index.html', '/web-src/src/config.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
+    ref.appFiles = ['/manifest.yml', '/package.json', '/web-src/index.html', '/web-src/src/config.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
   })
 
   runCommonTests(ref)
@@ -908,10 +907,11 @@ describe('with remote actions and frontend', () => {
   test('should generate a vscode debug config for actions and web-src', async () => {
     mockUIServerAddressInstance.port = 9999
     await runDev([], ref.config)
+    const isLocal = !ref.config.actions.devRemote
     expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
       configurations: [
-        getExpectedActionVSCodeDebugConfig('sample-app-1.0.0/action'),
-        getExpectedActionVSCodeDebugConfig('sample-app-1.0.0/action-zip'),
+        getExpectedActionVSCodeDebugConfig(isLocal, 'sample-app-1.0.0/action'),
+        getExpectedActionVSCodeDebugConfig(isLocal, 'sample-app-1.0.0/action-zip'),
         getExpectedUIVSCodeDebugConfig(9999)
       ]
     }))
@@ -972,10 +972,10 @@ describe('with local actions and no frontend', () => {
   runCommonBackendOnlyTests(ref)
   runCommonLocalTests(ref)
 
-  test('should not try to delete /dist/.env if it does not exist (branch coverage)', async () => {
+  test('should not try to delete /dist/.env.local if it does not exist (branch coverage)', async () => {
     await runDev([], ref.config)
-    global.fakeFileSystem.removeKeys(['/dist/.env'])
-    expect('/dist/.env' in global.fakeFileSystem.files()).toEqual(false)
+    global.fakeFileSystem.removeKeys(['/dist/.env.local'])
+    expect('/dist/.env.local' in global.fakeFileSystem.files()).toEqual(false)
     process.emit('SIGINT')
   })
 })
@@ -1009,10 +1009,11 @@ describe('with local actions and frontend', () => {
   test('should generate a vscode debug config for actions and web-src', async () => {
     mockUIServerAddressInstance.port = 9999
     await runDev([], ref.config)
+    const isLocal = !ref.config.actions.devRemote
     expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
       configurations: [
-        getExpectedActionVSCodeDebugConfig('sample-app-1.0.0/action'),
-        getExpectedActionVSCodeDebugConfig('sample-app-1.0.0/action-zip'),
+        getExpectedActionVSCodeDebugConfig(isLocal, 'sample-app-1.0.0/action'),
+        getExpectedActionVSCodeDebugConfig(isLocal, 'sample-app-1.0.0/action-zip'),
         getExpectedUIVSCodeDebugConfig(9999)
       ]
     }))
@@ -1117,8 +1118,7 @@ test('vscode wskdebug config with require-adobe-auth annotation && apihost=https
           '--kind',
           'nodejs:12'
         ],
-        // eslint-disable-next-line no-template-curly-in-string
-        envFile: path.join('${workspaceFolder}', 'dist', '.env'),
+        envFile: path.join('${workspaceFolder}', '.env'), // eslint-disable-line no-template-curly-in-string
         localRoot: path.resolve('/'),
         remoteRoot: '/code'
       })
@@ -1153,8 +1153,7 @@ test('vscode wskdebug config with require-adobe-auth annotation && apihost!=http
           '--kind',
           'nodejs:12'
         ],
-        // eslint-disable-next-line no-template-curly-in-string
-        envFile: path.join('${workspaceFolder}', 'dist', '.env'),
+        envFile: path.join('${workspaceFolder}', '.env'), // eslint-disable-line no-template-curly-in-string
         localRoot: path.resolve('/'),
         remoteRoot: '/code'
       })
@@ -1187,8 +1186,7 @@ test('vscode wskdebug config without runtime option', async () => {
           '-v'
           // no kind
         ],
-        // eslint-disable-next-line no-template-curly-in-string
-        envFile: path.join('${workspaceFolder}', 'dist', '.env'),
+        envFile: path.join('${workspaceFolder}', '.env'), // eslint-disable-line no-template-curly-in-string
         localRoot: path.resolve('/'),
         remoteRoot: '/code'
       })

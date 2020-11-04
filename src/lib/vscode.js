@@ -64,7 +64,7 @@ function cleanup (config) {
 
 /** @private */
 async function generateConfig (appConfig, props) {
-  const { hasFrontend, withBackend, frontEndUrl, wskDebugEnvFile } = props
+  const { hasFrontend, withBackend, frontEndUrl } = props
   const actionConfigNames = []
   let actionConfigs = []
 
@@ -83,7 +83,7 @@ async function generateConfig (appConfig, props) {
         request: 'launch',
         name: name,
         runtimeExecutable: rtLibUtils._absApp(appConfig.root, './node_modules/.bin/wskdebug'),
-        envFile: path.join('${workspaceFolder}', wskDebugEnvFile), // eslint-disable-line no-template-curly-in-string
+        envFile: path.join('${workspaceFolder}', appConfig.envFile), // eslint-disable-line no-template-curly-in-string
         timeout: 30000,
         // replaces remoteRoot with localRoot to get src files
         localRoot: rtLibUtils._absApp(appConfig.root, '.'),

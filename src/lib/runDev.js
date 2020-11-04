@@ -18,6 +18,7 @@ const fs = require('fs-extra')
 const cloneDeep = require('lodash.clonedeep')
 const vscode = require('./vscode')
 const Cleanup = require('./cleanup')
+const dedent = require('dedent-js')
 
 const httpTerminator = require('http-terminator')
 const BuildActions = require('@adobe/aio-lib-runtime').buildActions
@@ -42,6 +43,7 @@ const eventPoller = new EventPoller(fetchLogInterval)
 /** @private */
 async function runDevLocal (config, cleanup, log) {
   const devConfig = cloneDeep(config)
+  devConfig.envFile = path.join(config.app.dist, '.env.local')
 
   // take following steps only when we have a backend
   log('checking if java is installed...')
@@ -81,6 +83,24 @@ async function runDevLocal (config, cleanup, log) {
   delete process.env.AIO_RUNTIME_NAMESPACE
   delete process.env.AIO_RUNTIME_AUTH
 
+  log(`writing credentials to tmp wskdebug config '${devConfig.envFile}'`)
+  // prepare wskprops for wskdebug
+  fs.ensureDirSync(config.app.dist)
+  const envFile = rtLibUtils._absApp(devConfig.root, devConfig.envFile)
+  await fs.outputFile(envFile, dedent(`
+  # This file is auto-generated, do not edit.
+  # The items below are temporary credentials for local debugging
+  OW_NAMESPACE=${devConfig.ow.namespace}
+  OW_AUTH=${devConfig.ow.auth}
+  OW_APIHOST=${devConfig.ow.apihost}
+  `))
+
+  cleanup.add(() => {
+    if (fs.existsSync(devConfig.envFile)) {
+      fs.unlinkSync(devConfig.envFile)
+    }
+  }, 'removing wskdebug tmp .env file...')
+
   return devConfig
 }
 
@@ -95,10 +115,6 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
   /* fetch logs for actions option */
   const fetchLogs = options.fetchLogs || false
 
-  // files
-  // const OW_LOG_FILE = '.openwhisk-standalone.log'
-  const wskDebugEnvFile = rtLibUtils._absApp(config.app.dist, '.env')
-
   // control variables
   const hasFrontend = config.app.hasFrontend
   const withBackend = config.app.hasBackend && !skipActions
@@ -111,6 +127,8 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
 
   // state
   let devConfig = config // config will be different if local or remote
+  devConfig.envFile = '.env'
+
   const cleanup = new Cleanup()
 
   // bind cleanup function
@@ -148,16 +166,6 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       const watcher = chokidar.watch(devConfig.actions.src)
       watcher.on('change', _getActionChangeHandler(devConfig, isLocal, log, watcher))
       cleanup.add(() => watcher.close(), 'stopping action watcher...')
-
-      log(`writing credentials to tmp wskdebug config '${wskDebugEnvFile}'`)
-      // prepare wskprops for wskdebug
-      fs.ensureDirSync(config.app.dist)
-      await fs.outputFile(wskDebugEnvFile, `OW_NAMESPACE=${devConfig.ow.namespace}\nOW_AUTH=${devConfig.ow.auth}\nOW_APIHOST=${devConfig.ow.apihost}`)
-      cleanup.add(() => {
-        if (fs.existsSync(wskDebugEnvFile)) {
-          fs.unlinkSync(wskDebugEnvFile)
-        }
-      }, 'removing wskdebug tmp .env file...')
     }
 
     if (hasFrontend) {
@@ -206,7 +214,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
 
     log('setting up vscode debug configuration files...')
     const vscodeConfig = vscode(devConfig)
-    await vscodeConfig.update({ hasFrontend, withBackend, frontEndUrl, wskDebugEnvFile })
+    await vscodeConfig.update({ hasFrontend, withBackend, frontEndUrl })
     cleanup.add(() => vscodeConfig.cleanup(), 'cleaning up vscode debug configuration files...')
 
     if (!isLocal && !hasFrontend) {
