@@ -205,7 +205,7 @@ function expectDevActionBuildAndDeploy (expectedBuildDeployConfig) {
 /** @private */
 function expectUIServer (fakeMiddleware, port) {
   expect(Bundler.mockConstructor).toHaveBeenCalledTimes(1)
-  expect(Bundler.mockConstructor).toHaveBeenCalledWith(path.resolve('/web-src/index.html'),
+  expect(Bundler.mockConstructor).toHaveBeenCalledWith(path.resolve('/web-src/*.html'),
     expect.objectContaining({
       watch: true,
       outDir: path.resolve('/dist/web-src-dev')

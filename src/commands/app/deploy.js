@@ -48,7 +48,7 @@ class Deploy extends BaseCommand {
         }
 
         if (!flags['skip-actions']) {
-          if (fs.existsSync('manifest.yml')) {
+          if (config.app.hasBackend) {
             // todo: this replacement seems to be working, but the one below is not yet -jm
             // await scripts.buildActions([], { filterActions })
             spinner.start('Building actions')
@@ -59,8 +59,8 @@ class Deploy extends BaseCommand {
           }
         }
         if (!flags['skip-static']) {
-          if (fs.existsSync('web-src/')) {
-            if (config.app && config.app.hasBackend) {
+          if (config.app.hasFrontend) {
+            if (config.app.hasBackend) {
               const urls = await rtLib.utils.getActionUrls(config)
               await writeConfig(config.web.injectedConfig, urls)
             }
@@ -68,7 +68,7 @@ class Deploy extends BaseCommand {
             await webLib.buildWeb(config, onProgress)
             spinner.succeed(chalk.green('Building web assets'))
           } else {
-            this.log('no web-src, skipping web-src build')
+            this.log('no frontend, skipping frontend build')
           }
         }
         try {
@@ -104,12 +104,12 @@ class Deploy extends BaseCommand {
           }
         }
         if (!flags['skip-static']) {
-          if (fs.existsSync('web-src/')) {
+          if (config.app && config.app.hasFrontend) {
             spinner.start('Deploying web assets')
             deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
             spinner.succeed(chalk.green('Deploying web assets'))
           } else {
-            this.log('no web-src, skipping web-src deploy')
+            this.log('no frontend, skipping frontend deploy')
           }
         }
 

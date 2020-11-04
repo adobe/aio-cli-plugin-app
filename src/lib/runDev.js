@@ -64,6 +64,10 @@ async function runDev (args = [], config, options = {}, log) {
   const withBackend = config.app.hasBackend && !skipActions
   const isLocal = !config.actions.devRemote // applies only for backend
 
+  aioLogger.debug(`hasFrontend ${hasFrontend}`)
+  aioLogger.debug(`withBackend ${withBackend}`)
+  aioLogger.debug(`isLocal ${isLocal}`)
+
   // port for UI
   const uiPort = parseInt(args[0]) || parseInt(process.env.PORT) || 9080
 
@@ -168,32 +172,34 @@ async function runDev (args = [], config, options = {}, log) {
       }
       await utils.writeConfig(devConfig.web.injectedConfig, urls)
 
-      logFunc('starting local frontend server ..')
-      const entryFile = path.join(devConfig.web.src, 'index.html')
+      if (!options.skipServe) {
+        logFunc('starting local frontend server ..')
+        const entryFile = path.join(devConfig.web.src, '*.html')
 
-      // our defaults here can be overridden by the bundleOptions passed in
-      // bundleOptions.https are also passed to bundler.serve
-      const parcelBundleOptions = {
-        cache: false,
-        outDir: devConfig.web.distDev,
-        contentHash: false,
-        watch: true,
-        minify: false,
-        logLevel: 1,
-        ...bundleOptions
+        // our defaults here can be overridden by the bundleOptions passed in
+        // bundleOptions.https are also passed to bundler.serve
+        const parcelBundleOptions = {
+          cache: false,
+          outDir: devConfig.web.distDev,
+          contentHash: false,
+          watch: true,
+          minify: false,
+          logLevel: 1,
+          ...bundleOptions
+        }
+        let actualPort = uiPort
+        resources.uiBundler = new Bundler(entryFile, parcelBundleOptions)
+        resources.uiServer = await resources.uiBundler.serve(uiPort, bundleOptions.https)
+        actualPort = resources.uiServer.address().port
+        resources.uiServerTerminator = httpTerminator.createHttpTerminator({
+          server: resources.uiServer
+        })
+        if (actualPort !== uiPort) {
+          logFunc(`Could not use port:${uiPort}, using port:${actualPort} instead`)
+        }
+        frontEndUrl = `${bundleOptions.https ? 'https:' : 'http:'}//localhost:${actualPort}`
+        logFunc(`local frontend server running at ${frontEndUrl}`)
       }
-      let actualPort = uiPort
-      resources.uiBundler = new Bundler(entryFile, parcelBundleOptions)
-      resources.uiServer = await resources.uiBundler.serve(uiPort, bundleOptions.https)
-      actualPort = resources.uiServer.address().port
-      resources.uiServerTerminator = httpTerminator.createHttpTerminator({
-        server: resources.uiServer
-      })
-      if (actualPort !== uiPort) {
-        logFunc(`Could not use port:${uiPort}, using port:${actualPort} instead`)
-      }
-      frontEndUrl = `${bundleOptions.https ? 'https:' : 'http:'}//localhost:${actualPort}`
-      logFunc(`local frontend server running at ${frontEndUrl}`)
     }
 
     logFunc('setting up vscode debug configuration files..')
@@ -211,7 +217,7 @@ async function runDev (args = [], config, options = {}, log) {
     resources.vscodeDebugConfig = CODE_DEBUG
 
     if (!resources.owProc && !resources.uiServer) {
-      // not local + ow is not running => need to explicitely wait for CTRL+C
+      // not local + ow is not running => need to explicitly wait for CTRL+C
       // trick to avoid termination
       resources.dummyProc = execa('node')
     }

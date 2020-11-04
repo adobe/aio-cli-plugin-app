@@ -32,19 +32,18 @@ const CONFIG_KEY = 'aio-dev.dev-keys'
 class Run extends BaseCommand {
   async run (args = []) {
     const { flags } = this.parse(Run)
-
-    const hasFrontend = await fs.exists('web-src/')
-    const hasBackend = await fs.exists('manifest.yml')
-
+    const config = this.getAppConfig()
+    const { hasBackend, hasFrontend } = config.app
     if (!hasBackend && !hasFrontend) {
-      this.error(wrapError('nothing to run.. there is no web-src/ and no manifest.yml, are you in a valid app?'))
+      this.error(wrapError('nothing to run.. there is no frontend and no manifest.yml, are you in a valid app?'))
     }
     if (!!flags['skip-actions'] && !hasFrontend) {
-      this.error(wrapError('nothing to run.. there is no web-src/ and --skip-actions is set'))
+      this.error(wrapError('nothing to run.. there is no frontend and --skip-actions is set'))
     }
 
     const runOptions = {
       skipActions: !!flags['skip-actions'],
+      skipServe: !!flags['skip-serve'],
       parcel: {
         logLevel: flags.verbose ? 4 : 2
       },
@@ -107,7 +106,7 @@ class Run extends BaseCommand {
     }
 
     /* get existing certificates from file.. */
-    if (await fs.exists(PRIVATE_KEY_PATH) && await fs.exists(PUB_CERT_PATH)) {
+    if (fs.existsSync(PRIVATE_KEY_PATH) && fs.existsSync(PUB_CERT_PATH)) {
       return certs
     }
 
@@ -171,14 +170,16 @@ class Run extends BaseCommand {
   }
 }
 
-Run.description = `Run an Adobe I/O App
-`
+Run.description = 'Run an Adobe I/O App'
 
 Run.flags = {
   ...BaseCommand.flags,
   local: flags.boolean({
     description: 'run/debug actions locally',
     exclusive: ['skip-actions']
+  }),
+  'skip-serve': flags.boolean({
+    description: 'skip local frontend serve'
   }),
   'skip-actions': flags.boolean({
     description: 'skip actions, only run the ui server',

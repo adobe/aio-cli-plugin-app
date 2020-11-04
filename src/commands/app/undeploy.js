@@ -46,10 +46,10 @@ class Undeploy extends BaseCommand {
         }
       }
       if (!flags['skip-static']) {
-        if (fs.existsSync('web-src/')) {
+        if (config.app.hasFrontend) {
           await webLib.undeployWeb(config, onProgress)
         } else {
-          this.log('no web-src, skipping web-src undeploy')
+          this.log('no frontend, skipping frontend undeploy')
         }
       }
 

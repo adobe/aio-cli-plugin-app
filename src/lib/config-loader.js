@@ -115,9 +115,8 @@ module.exports = () => {
     params: { Bucket: userConfig.cna.s3bucket }
   }
 
-  // check if the app has a frontend, for now enforce index.html to be there
   // todo we shouldn't have any config.web config if !hasFrontend
-  config.app.hasFrontend = fs.existsSync(path.join(config.web.src, 'index.html'))
+  config.app.hasFrontend = fs.existsSync(config.web.src)
 
   // check if the app has a backend by checking presence of manifest.yml file
   config.app.hasBackend = fs.existsSync(config.manifest.src)
