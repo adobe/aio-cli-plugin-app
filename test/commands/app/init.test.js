@@ -298,7 +298,8 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true
     })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
@@ -348,7 +349,8 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true
     })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
@@ -374,7 +376,8 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true
     })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
@@ -400,7 +403,8 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true
     })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
@@ -426,7 +430,8 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true
     })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
@@ -452,7 +457,8 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true
     })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
@@ -480,7 +486,8 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true
     })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
@@ -511,7 +518,8 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true
     })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenCalledWith(genApp, {
@@ -675,7 +683,8 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true
     })
     expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
   })
