@@ -44,9 +44,7 @@ function getDockerNetworkAddress () {
 
 // gets these values if the keys are set in the environment, if not it will use the defaults set
 const {
-  OW_JAR_URL = 'https://dl.bintray.com/adobeio-firefly/aio/openwhisk-standalone.jar',
-  // This path will be relative to this module, and not the cwd, so multiple projects can use it.
-  OW_JAR_FILE = path.resolve(__dirname, '../../bin/openwhisk-standalone.jar'),
+  OW_JAR_URL = 'https://bintray.com/api/ui/download/adobe/generic/openwhisk/standalone-v1/openwhisk-standalone.jar',
   OW_CONFIG_RUNTIMES_FILE = path.resolve(__dirname, '../../bin/openwhisk-standalone-config/runtimes.json'),
   OW_LOCAL_APIHOST = getDockerNetworkAddress(),
   OW_LOCAL_NAMESPACE = 'guest',
@@ -57,7 +55,6 @@ module.exports = {
   getDockerNetworkAddress,
   OW_LOCAL_DOCKER_PORT,
   OW_JAR_URL,
-  OW_JAR_FILE,
   OW_CONFIG_RUNTIMES_FILE,
   OW_LOCAL_APIHOST,
   OW_LOCAL_NAMESPACE,

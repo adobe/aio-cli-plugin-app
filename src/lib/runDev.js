@@ -26,7 +26,7 @@ const DeployActions = require('@adobe/aio-lib-runtime').deployActions
 // const ActionLogs = require('../commands/app/logs')
 const utils = require('./app-helper')
 const EventPoller = require('../lib/poller')
-const { OW_JAR_FILE, OW_CONFIG_RUNTIMES_FILE, OW_JAR_URL, OW_LOCAL_APIHOST, OW_LOCAL_NAMESPACE, OW_LOCAL_AUTH } = require('../lib/owlocal')
+const { OW_CONFIG_RUNTIMES_FILE, OW_JAR_URL, OW_LOCAL_APIHOST, OW_LOCAL_NAMESPACE, OW_LOCAL_AUTH } = require('../lib/owlocal')
 const execa = require('execa')
 const Bundler = require('parcel-bundler')
 const chokidar = require('chokidar')
@@ -44,6 +44,7 @@ const eventPoller = new EventPoller(fetchLogInterval)
 async function runDevLocal (config, cleanup, log) {
   const devConfig = cloneDeep(config)
   devConfig.envFile = path.join(config.app.dist, '.env.local')
+  const owJarFile = path.join(config.app.cliConfig.dataDir, 'openwhisk', 'openwhisk-standalone.jar')
 
   // take following steps only when we have a backend
   log('checking if java is installed...')
@@ -61,13 +62,13 @@ async function runDevLocal (config, cleanup, log) {
     throw new Error('docker is not running, please make sure to start docker')
   }
 
-  if (!fs.existsSync(OW_JAR_FILE)) {
-    log(`downloading OpenWhisk standalone jar from ${OW_JAR_URL} to ${OW_JAR_FILE}, this might take a while... (to be done only once!)`)
-    await utils.downloadOWJar(OW_JAR_URL, OW_JAR_FILE)
+  if (!fs.existsSync(owJarFile)) {
+    log(`downloading OpenWhisk standalone jar from ${OW_JAR_URL} to ${owJarFile}, this might take a while... (to be done only once!)`)
+    await utils.downloadOWJar(OW_JAR_URL, owJarFile)
   }
 
   log('starting local OpenWhisk stack...')
-  const res = await utils.runOpenWhiskJar(OW_JAR_FILE, OW_CONFIG_RUNTIMES_FILE, OW_LOCAL_APIHOST, owWaitInitTime, owWaitPeriodTime, owTimeout, { stderr: 'inherit' })
+  const res = await utils.runOpenWhiskJar(owJarFile, OW_CONFIG_RUNTIMES_FILE, OW_LOCAL_APIHOST, owWaitInitTime, owWaitPeriodTime, owTimeout, { stderr: 'inherit' })
   cleanup.add(() => res.proc.kill(), 'stopping local OpenWhisk stack...')
 
   log('setting local openwhisk credentials...')

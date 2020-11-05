@@ -148,7 +148,7 @@ const expectedRemoteOWConfig = expect.objectContaining({
 const owJarFile = 'openwhisk-standalone.jar'
 const owJarPath = path.resolve(__dirname, '../../../bin/' + owJarFile)
 const owRuntimesConfig = path.resolve(__dirname, '../../../bin/openwhisk-standalone-config/runtimes.json')
-const owJarUrl = 'https://dl.bintray.com/adobeio-firefly/aio/openwhisk-standalone.jar'
+const owJarUrl = 'https://bintray.com/api/ui/download/adobe/generic/openwhisk/standalone-v1/openwhisk-standalone.jar'
 const waitInitTime = 2000
 const waitPeriodTime = 500
 
