@@ -23,7 +23,6 @@ beforeEach(() => {
   delete process.env.OW_CONFIG_RUNTIMES_FILE
   delete process.env.OW_LOCAL_AUTH
   delete process.env.OW_JAR_URL
-  delete process.env.OW_JAR_FILE
   delete process.env.OW_LOCAL_APIHOST
   aioLogger.debug.mockReset()
 })
@@ -36,7 +35,6 @@ describe('owlocal', () => {
     })
     expect(typeof owLocal.getDockerNetworkAddress).toEqual('function')
     expect(owLocal.OW_CONFIG_RUNTIMES_FILE).toEqual(expect.stringContaining(path.normalize('/bin/openwhisk-standalone-config/runtimes.json')))
-    expect(owLocal.OW_JAR_FILE).toEqual(expect.stringContaining(path.normalize('/bin/openwhisk-standalone.jar')))
     expect(owLocal.OW_JAR_URL).toMatch('https://bintray.com/api/ui/download/adobe/generic/openwhisk/standalone-v1/openwhisk-standalone.jar')
     expect(owLocal.OW_LOCAL_NAMESPACE).toMatch('guest')
     expect(owLocal.OW_LOCAL_AUTH).toMatch('23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP')
@@ -46,14 +44,12 @@ describe('owlocal', () => {
     process.env.OW_CONFIG_RUNTIMES_FILE = 'file'
     process.env.OW_LOCAL_AUTH = '123'
     process.env.OW_JAR_URL = 'example.com'
-    process.env.OW_JAR_FILE = 'hey.jar'
     process.env.OW_LOCAL_APIHOST = 'fake.com'
     let owLocal
     jest.isolateModules(() => {
       owLocal = require('../../../src/lib/owlocal')
     })
     expect(owLocal.OW_CONFIG_RUNTIMES_FILE).toEqual('file')
-    expect(owLocal.OW_JAR_FILE).toMatch('hey.jar')
     expect(owLocal.OW_JAR_URL).toMatch('example.com')
     expect(owLocal.OW_LOCAL_NAMESPACE).toMatch('dude')
     expect(owLocal.OW_LOCAL_AUTH).toMatch('123')

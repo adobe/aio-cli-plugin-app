@@ -29,7 +29,6 @@ global.mockFs = () => {
     addJson: (json) => {
       // add to existing
       fileSystem.mock(json)
-      // console.log(json)
     },
     removeKeys: (arr) => {
       // remove from existing
