@@ -169,15 +169,22 @@ async function loadEnvScripts (project, config, excludeFiles = []) {
 }
 
 /** @private */
+function posixPath (pathString) {
+  return pathString
+    .split(path.sep)
+    .join(path.posix.sep)
+}
+
+/** @private */
 function writeFakeOwJar () {
   global.fakeFileSystem.addJson({
-    [OW_JAR_PATH]: 'fakecontent'
+    [posixPath(OW_JAR_PATH)]: 'fakecontent'
   })
 }
 
 /** @private */
 function deleteFakeOwJar () {
-  global.fakeFileSystem.removeKeys(OW_JAR_PATH)
+  global.fakeFileSystem.removeKeys(posixPath(OW_JAR_PATH))
 }
 
 // helpers for checking good path
@@ -203,7 +210,7 @@ function expectUIServer (fakeMiddleware, port) {
 /** @private */
 function expectAppFiles (expectedFiles) {
   const expectedFileSet = new Set(expectedFiles)
-  const files = new Set(Object.keys(global.fakeFileSystem.files()).filter(filePath => !filePath.includes(OW_JAR_FILE)))
+  const files = new Set(Object.keys(global.fakeFileSystem.files()).filter(filePath => !filePath.includes(posixPath(OW_JAR_PATH))))
   // in run local, the openwhisk standalone jar is created at __dirname,
   // but as we store the app in the root of the memfs, we need to ignore the extra created folder
   expect(files).toEqual(expectedFileSet)
@@ -676,8 +683,8 @@ function runCommonLocalTests (ref) {
     await runDev([], ref.config)
 
     expect(fetch).toHaveBeenCalledWith(OW_JAR_URL)
-    expect(OW_JAR_PATH in global.fakeFileSystem.files()).toEqual(true)
-    expect(global.fakeFileSystem.files()[OW_JAR_PATH].toString()).toEqual('fakeowjar')
+    expect(posixPath(OW_JAR_PATH) in global.fakeFileSystem.files()).toEqual(true)
+    expect(global.fakeFileSystem.files()[posixPath(OW_JAR_PATH)].toString()).toEqual('fakeowjar')
   })
 
   test('should fail if downloading openwhisk-standalone.jar creates a stream error', async () => {
