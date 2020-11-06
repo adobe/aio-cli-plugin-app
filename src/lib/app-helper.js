@@ -13,7 +13,6 @@ const execa = require('execa')
 const fs = require('fs-extra')
 const path = require('path')
 const which = require('which')
-const dotenv = require('dotenv')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:lib-app-helper', { provider: 'debug' })
 const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
@@ -218,7 +217,8 @@ async function hasJavaCLI () {
   // todo check min version
   try {
     const result = await execa('java', ['-version'])
-    aioLogger.debug('java version : ' + result.stdout)
+    // stderr is where the version is printed out for
+    aioLogger.debug('java version : ' + result.stderr)
     return true
   } catch (error) {
     aioLogger.debug('Error spawning java info: ' + error)
@@ -300,42 +300,6 @@ async function runOpenWhiskJar (jarFile, runtimeConfigFile, apihost, waitInitTim
   }
 }
 
-/** @private */
-function saveAndReplaceDotEnvCredentials (dotenvFile, saveFile, apihost, namespace, auth) {
-  if (fs.existsSync(saveFile)) throw new Error(`cannot save .env, please make sure to restore and delete ${saveFile}`) // todo make saveFile relative
-  fs.moveSync(dotenvFile, saveFile)
-  // Only override needed env vars and preserve other vars in .env
-  const env = dotenv.parse(fs.readFileSync(saveFile))
-  const newCredentials = {
-    RUNTIME_NAMESPACE: namespace,
-    RUNTIME_AUTH: auth,
-    RUNTIME_APIHOST: apihost
-  }
-
-  // remove old keys (match by normalized key name)
-  for (const key in env) {
-    // match AIO_ or AIO__ since they map to the same key
-    // see https://github.com/adobe/aio-lib-core-config/issues/49
-    const match = key.match(/^AIO__(.+)/i) || key.match(/^AIO_(.+)/i)
-    if (match) {
-      for (const newCredential in newCredentials) {
-        if (newCredential.toLowerCase() === match[1].toLowerCase()) {
-          delete env[key]
-        }
-      }
-    }
-  }
-
-  // set the new keys
-  for (const key in newCredentials) {
-    env[`AIO_${key}`] = newCredentials[key]
-  }
-
-  const envContent = Object.keys(env).reduce((content, k) => content + `${k}=${env[k]}\n`, '')
-
-  fs.writeFileSync(dotenvFile, envContent)
-}
-
 /**
  *
  * Converts a service array to an input string that can be consumed by generator-aio-app
@@ -364,6 +328,5 @@ module.exports = {
   writeConfig,
   downloadOWJar,
   runOpenWhiskJar,
-  saveAndReplaceDotEnvCredentials,
   servicesToGeneratorInput
 }

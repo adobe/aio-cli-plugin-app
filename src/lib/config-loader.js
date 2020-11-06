@@ -35,7 +35,8 @@ const {
  *    app: {
  *      name,
  *      version,
- *      hasFrontend
+ *      hasFrontend,
+ *      dist
  *    },
  *    ow: {
  *      apihost,
@@ -115,6 +116,10 @@ module.exports = () => {
     params: { Bucket: userConfig.cna.s3bucket }
   }
 
+  // set for general build artifacts
+  config.app.dist = dist
+
+  // check if the app has a frontend, for now enforce index.html to be there
   // todo we shouldn't have any config.web config if !hasFrontend
   config.app.hasFrontend = fs.existsSync(config.web.src)
 
