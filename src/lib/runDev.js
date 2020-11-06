@@ -185,7 +185,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
 
       if (!options.skipServe) {
         log('starting local frontend server ..')
-        const entryFile = path.join(devConfig.web.src, 'index.html')
+        const entryFile = path.join(devConfig.web.src, '*.html')
 
         // our defaults here can be overridden by the bundleOptions passed in
         // bundleOptions.https are also passed to bundler.serve
