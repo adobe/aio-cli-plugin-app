@@ -12,7 +12,7 @@ governing permissions and limitations under the License.
 
 const path = require('path')
 const yaml = require('js-yaml')
-const fs = require('fs')
+const fs = require('fs-extra')
 const utils = require('./app-helper')
 const aioConfig = require('@adobe/aio-lib-core-config')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:config-loader', { provider: 'debug' })

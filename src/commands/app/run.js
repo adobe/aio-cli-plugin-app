@@ -33,7 +33,10 @@ class Run extends BaseCommand {
   async run (args = []) {
     const { flags } = this.parse(Run)
     const config = this.getAppConfig()
-    const { hasBackend, hasFrontend } = config.app
+
+    const hasBackend = config.app ? !!config.app.hasBackend : false
+    const hasFrontend = config.app ? !!config.app.hasFrontend : false
+
     if (!hasBackend && !hasFrontend) {
       this.error(wrapError('nothing to run.. there is no frontend and no manifest.yml, are you in a valid app?'))
     }
