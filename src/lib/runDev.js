@@ -213,7 +213,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
           log(`Could not use port:${uiPort}, using port:${actualPort} instead`)
         }
         frontEndUrl = `${bundleOptions.https ? 'https:' : 'http:'}//localhost:${actualPort}`
-        logFunc(`local frontend server running at ${frontEndUrl}`)
+        log(`local frontend server running at ${frontEndUrl}`)
       }
     }
 

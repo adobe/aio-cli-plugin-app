@@ -12,7 +12,6 @@ governing permissions and limitations under the License.
 
 const ora = require('ora')
 const chalk = require('chalk')
-const fs = require('fs-extra')
 // const path = require('path')
 const { cli } = require('cli-ux')
 
@@ -55,7 +54,7 @@ class Deploy extends BaseCommand {
             await rtLib.buildActions(config, filterActions)
             spinner.succeed(chalk.green('Building actions'))
           } else {
-            this.log('no manifest.yml, skipping action build')
+            this.log('no backend, skipping action build')
           }
         }
         if (!flags['skip-static']) {
@@ -89,7 +88,7 @@ class Deploy extends BaseCommand {
           this.log(err)
         }
         if (!flags['skip-actions']) {
-          if (fs.existsSync('manifest.yml')) {
+          if (config.app.hasBackend) {
             let filterEntities
             if (filterActions) {
               filterEntities = { actions: filterActions }
@@ -100,7 +99,7 @@ class Deploy extends BaseCommand {
             deployedRuntimeEntities = { ...await rtLib.deployActions(config, { filterEntities }, onProgress) }
             spinner.succeed(chalk.green('Deploying actions'))
           } else {
-            this.log('no manifest.yml, skipping action deploy')
+            this.log('no backend, skipping action deploy')
           }
         }
         if (!flags['skip-static']) {

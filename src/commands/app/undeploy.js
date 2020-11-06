@@ -12,7 +12,6 @@ governing permissions and limitations under the License.
 
 const ora = require('ora')
 const chalk = require('chalk')
-const fs = require('fs-extra')
 // const path = require('path')
 
 const { flags } = require('@oclif/command')
@@ -39,7 +38,7 @@ class Undeploy extends BaseCommand {
     try {
       // undeploy
       if (!flags['skip-actions']) {
-        if (fs.existsSync('manifest.yml')) {
+        if (config.app.hasBackend) {
           await rtLib.undeployActions(this.getAppConfig())
         } else {
           this.log('no manifest file, skipping action undeploy')

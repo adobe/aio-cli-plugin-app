@@ -34,7 +34,6 @@ const mockConfigData = {
 jest.mock('../../../src/lib/config-loader', () => {
   return () => mockConfigData
 })
-const mockConfigLoader = require('../../../src/lib/config-loader')
 
 // should be same as in run.js
 const DEV_KEYS_DIR = 'dist/dev-keys/'
@@ -102,6 +101,7 @@ beforeEach(() => {
       load: mockFindCommandLoad
     })
   }
+  command.appConfig = mockConfigData
 
   https.createServer.mockImplementation((opts, func) => {
     mockHttpsServerInstance.args = { opts, func }
