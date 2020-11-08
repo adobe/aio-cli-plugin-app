@@ -52,9 +52,13 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
   aioLogger.debug(`running npm run-script ${scriptName} in dir: ${dir}`)
   const pkg = await fs.readJSON(path.join(dir, 'package.json'))
   if (pkg && pkg.scripts && pkg.scripts[scriptName]) {
-    const command = pkg.scripts[scriptName].split(' ')
-    const child = execa(command[0], command.slice(1).concat(cmdArgs), {
+    let command = pkg.scripts[scriptName]
+    if (cmdArgs.length) {
+      command = `${command} ${cmdArgs.join(' ')}`
+    }
+    const child = execa.command(command, {
       stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+      shell: true,
       cwd: dir,
       preferLocal: true
     })
