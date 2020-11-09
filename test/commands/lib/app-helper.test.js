@@ -66,7 +66,10 @@ describe('exports helper methods', () => {
   })
 
   test('runPackageScript success', async () => {
-    fs.readJSON.mockReturnValue({ scripts: { test: 'some-script some-arg-1 some-arg-2' } })
+    const scripts = {
+      test: 'some-script some-arg-1 some-arg-2'
+    }
+    fs.readJSON.mockReturnValue({ scripts })
 
     const ipcMessage = {
       type: 'long-running-process',
@@ -105,7 +108,7 @@ describe('exports helper methods', () => {
       }
     })
 
-    execa.mockReturnValueOnce({
+    execa.command.mockReturnValueOnce({
       on: mockChildProcessOn
     })
 
@@ -113,21 +116,26 @@ describe('exports helper methods', () => {
     expect(mockChildProcessOn).toHaveBeenCalledWith('message', expect.any(Function))
     expect(process.on).toHaveBeenCalledWith('exit', expect.any(Function))
     expect(process.kill).toHaveBeenCalledWith(ipcMessage.data.pid, 'SIGTERM')
-    return expect(execa).toHaveBeenCalledWith('some-script', ['some-arg-1', 'some-arg-2'], expect.any(Object))
+    return expect(execa.command).toHaveBeenCalledWith(scripts.test, expect.any(Object))
   })
 
   test('runPackageScript success with additional command arg/flag', async () => {
     // succeeds if npm run-script returns success
-    fs.readJSON.mockReturnValue({ scripts: { cmd: 'some-script some-arg-1 some-arg-2' } })
+    const scripts = {
+      cmd: 'some-script some-arg-1 some-arg-2'
+    }
+    fs.readJSON.mockReturnValue({ scripts })
 
     const mockChildProcessOn = jest.fn()
-    execa.mockReturnValueOnce({
+    execa.command.mockReturnValueOnce({
       on: mockChildProcessOn
     })
 
-    await appHelper.runPackageScript('cmd', '', ['--my-flag'])
+    const cmdExtraArgs = ['--my-flag']
+    await appHelper.runPackageScript('cmd', '', cmdExtraArgs)
     expect(mockChildProcessOn).toHaveBeenCalledWith('message', expect.any(Function))
-    return expect(execa).toHaveBeenCalledWith('some-script', ['some-arg-1', 'some-arg-2', '--my-flag'], expect.any(Object))
+    const finalCommand = `${scripts.cmd} ${cmdExtraArgs.join(' ')}`
+    return expect(execa.command).toHaveBeenCalledWith(finalCommand, expect.any(Object))
   })
 
   test('runPackageScript logs if package.json does not have matching script', async () => {
