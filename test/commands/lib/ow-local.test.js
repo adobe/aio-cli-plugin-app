@@ -53,7 +53,7 @@ describe('owlocal', () => {
     })
     expect(owLocal.OW_CONFIG_RUNTIMES_FILE).toEqual('file')
     expect(owLocal.OW_JAR_URL).toMatch('https://example.com/openwhisk/foo/bar.jar')
-    expect(owLocal.OW_JAR_PATH).toMatch('openwhisk/foo/bar.jar')
+    expect(owLocal.OW_JAR_PATH).toMatch(path.join('openwhisk', 'foo', 'bar.jar'))
     expect(owLocal.OW_LOCAL_NAMESPACE).toMatch('dude')
     expect(owLocal.OW_LOCAL_AUTH).toMatch('123')
     expect(owLocal.OW_LOCAL_APIHOST).toMatch('fake.com')
@@ -66,7 +66,7 @@ describe('owlocal', () => {
       owLocal = require('../../../src/lib/owlocal')
     })
     expect(owLocal.OW_JAR_URL).toMatch('https://example.com/some/path')
-    expect(owLocal.OW_JAR_PATH).toMatch('openwhisk/openwhisk-standalone.jar')
+    expect(owLocal.OW_JAR_PATH).toMatch(path.join('openwhisk', 'openwhisk-standalone.jar'))
   })
 
   describe('getDockerNetworkAddress', () => {
