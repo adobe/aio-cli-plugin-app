@@ -78,7 +78,6 @@ const now = Date.now
 let time
 
 beforeEach(() => {
-  // global.cleanFs(vol)
   global.fakeFileSystem.reset()
   delete process.env.REMOTE_ACTIONS
 
@@ -117,10 +116,6 @@ beforeEach(() => {
   deployActionsSpy.mockResolvedValue({})
 })
 
-afterAll(() => {
-  // deployActionsSpy.mockRestore()
-})
-
 /* ****************** Consts ******************* */
 
 const localOWCredentials = {
@@ -144,15 +139,18 @@ const expectedRemoteOWConfig = expect.objectContaining({
   })
 })
 
-// those must match the ones defined in dev.js
-const owJarFile = 'openwhisk-standalone.jar'
-const owJarPath = path.resolve(__dirname, '../../../bin/' + owJarFile)
-const owRuntimesConfig = path.resolve(__dirname, '../../../bin/openwhisk-standalone-config/runtimes.json')
-const owJarUrl = 'https://dl.bintray.com/adobeio-firefly/aio/openwhisk-standalone.jar'
-const waitInitTime = 2000
-const waitPeriodTime = 500
+const CLI_CONFIG = {
+  dataDir: path.join('/', 'dataDir')
+}
 
-const execaLocalOWArgs = ['java', expect.arrayContaining(['-jar', path.resolve(owJarPath), '-m', owRuntimesConfig, '--no-ui']), expect.anything()]
+// those must match the ones defined in dev.js
+const OW_RUNTIMES_CONFIG = path.resolve(__dirname, '../../../bin/openwhisk-standalone-config/runtimes.json')
+const OW_JAR_URL = 'https://bintray.com/api/ui/download/adobe/generic/openwhisk/standalone-v1/openwhisk-standalone.jar'
+const OW_JAR_PATH = path.join(CLI_CONFIG.dataDir, 'openwhisk', 'standalone-v1', 'openwhisk-standalone.jar')
+const WAIT_INIT_TIME = 2000
+const WAIT_PERIOD_TIME = 500
+
+const EXECA_LOCAL_OW_ARGS = ['java', expect.arrayContaining(['-jar', OW_JAR_PATH, '-m', OW_RUNTIMES_CONFIG, '--no-ui']), expect.anything()]
 
 /* ****************** Helpers ******************* */
 
@@ -163,31 +161,29 @@ async function loadEnvScripts (project, config, excludeFiles = []) {
   excludeFiles.forEach(f => global.fakeFileSystem.removeKeys([f]))
   mockAIOConfig.get.mockReturnValue(config)
   process.chdir('/')
-  return loadConfig()
+
+  const appConfig = loadConfig()
+  appConfig.cli = CLI_CONFIG
+  return appConfig
+}
+
+/** @private */
+function posixPath (pathString) {
+  return pathString
+    .split(path.sep)
+    .join(path.posix.sep)
 }
 
 /** @private */
 function writeFakeOwJar () {
-  // global.addFakeFiles(vol, path.dirname(owJarPath), path.basename(owJarPath))
-  const fakeFsJson = {}
-  fakeFsJson[path.dirname(owJarPath) + '/' + path.basename(owJarPath)] = 'fake-content'
-  global.fakeFileSystem.addJson(fakeFsJson)
+  global.fakeFileSystem.addJson({
+    [posixPath(OW_JAR_PATH)]: 'fakecontent'
+  })
 }
 
 /** @private */
 function deleteFakeOwJar () {
-  global.fakeFileSystem.removeKeys([deriveOwJarFilePath()])
-}
-
-/** @private */
-function deriveOwJarFilePath () {
-  let owJarFilePath
-  Object.keys(global.fakeFileSystem.files()).forEach(filePath => {
-    if (filePath.includes(owJarFile)) {
-      owJarFilePath = filePath
-    }
-  })
-  return owJarFilePath
+  global.fakeFileSystem.removeKeys(posixPath(OW_JAR_PATH))
 }
 
 // helpers for checking good path
@@ -196,10 +192,8 @@ function expectDevActionBuildAndDeploy (expectedBuildDeployConfig) {
   // build & deploy
   expect(BuildActions).toHaveBeenCalledTimes(1)
   expect(BuildActions.mock.calls[0][0]).toEqual(expectedBuildDeployConfig)
-  // expect(BuildActions.mock.instances[1].run).toHaveBeenCalledTimes(1)
   expect(DeployActions).toHaveBeenCalledTimes(1)
   expect(DeployActions.mock.calls[0][0]).toEqual(expectedBuildDeployConfig)
-  // expect(DeployActions.mock.instances[1].run).toHaveBeenCalledTimes(1)
 }
 
 /** @private */
@@ -215,7 +209,7 @@ function expectUIServer (fakeMiddleware, port) {
 /** @private */
 function expectAppFiles (expectedFiles) {
   const expectedFileSet = new Set(expectedFiles)
-  const files = new Set(Object.keys(global.fakeFileSystem.files()).filter(filePath => !filePath.includes(owJarFile)))
+  const files = new Set(Object.keys(global.fakeFileSystem.files()).filter(filePath => !filePath.includes(posixPath(OW_JAR_PATH))))
   // in run local, the openwhisk standalone jar is created at __dirname,
   // but as we store the app in the root of the memfs, we need to ignore the extra created folder
   expect(files).toEqual(expectedFileSet)
@@ -516,14 +510,12 @@ function runCommonRemoteTests (ref) {
     // The second call to DeployActions will result in an error because of the second mock above
     expect(log).toHaveBeenLastCalledWith(expect.stringContaining('Stopping'))
     expect(BuildActions).toHaveBeenCalledTimes(2)
-    // expect(BuildActions.mock.instances[0].run).toHaveBeenCalledTimes(1)
     expect(DeployActions).toHaveBeenCalledTimes(2)
-    // expect(DeployActions.mock.instances[0].run).toHaveBeenCalledTimes(1)
   })
 
   test('should not start the local openwhisk stack', async () => {
     await runDev([], ref.config)
-    expect(execa).not.toHaveBeenCalledWith(...execaLocalOWArgs)
+    expect(execa).not.toHaveBeenCalledWith(...EXECA_LOCAL_OW_ARGS)
   })
 
   test('should not generate a /dist/.env.local file with the remote credentials', async () => {
@@ -689,9 +681,9 @@ function runCommonLocalTests (ref) {
 
     await runDev([], ref.config)
 
-    expect(fetch).toHaveBeenCalledWith(owJarUrl)
-    expect(deriveOwJarFilePath() in global.fakeFileSystem.files()).toEqual(true)
-    expect(global.fakeFileSystem.files()[deriveOwJarFilePath()].toString()).toEqual('fakeowjar')
+    expect(fetch).toHaveBeenCalledWith(OW_JAR_URL)
+    expect(posixPath(OW_JAR_PATH) in global.fakeFileSystem.files()).toEqual(true)
+    expect(global.fakeFileSystem.files()[posixPath(OW_JAR_PATH)].toString()).toEqual('fakeowjar')
   })
 
   test('should fail if downloading openwhisk-standalone.jar creates a stream error', async () => {
@@ -717,7 +709,7 @@ function runCommonLocalTests (ref) {
   test('should fail when there is a connection error while downloading openwhisk-standalone.jar on first usage', async () => {
     deleteFakeOwJar()
     fetch.mockRejectedValue(new Error('fake connection error'))
-    await expect(runDev([], ref.config)).rejects.toEqual(expect.objectContaining({ message: `connection error while downloading '${owJarUrl}', are you online?` }))
+    await expect(runDev([], ref.config)).rejects.toEqual(expect.objectContaining({ message: `connection error while downloading '${OW_JAR_URL}', are you online?` }))
   })
 
   test('should fail if fetch fails to download openwhisk-standalone.jar on first usage because of status error', async () => {
@@ -726,7 +718,7 @@ function runCommonLocalTests (ref) {
       ok: false,
       statusText: 404
     })
-    await expect(runDev([], ref.config)).rejects.toEqual(expect.objectContaining({ message: `unexpected response while downloading '${owJarUrl}': 404` }))
+    await expect(runDev([], ref.config)).rejects.toEqual(expect.objectContaining({ message: `unexpected response while downloading '${OW_JAR_URL}': 404` }))
   })
 
   test('should build and deploy actions to local ow', async () => {
@@ -772,7 +764,7 @@ function runCommonLocalTests (ref) {
   test('should kill openwhisk-standalone subprocess on error', async () => {
     const owProcessMockKill = jest.fn()
     execa.mockImplementation((cmd, args) => {
-      if (cmd === 'java' && args.includes('-jar') && args.includes(owJarPath)) {
+      if (cmd === 'java' && args.includes('-jar') && args.includes(OW_JAR_PATH)) {
         return {
           stdout: jest.fn(),
           kill: owProcessMockKill
@@ -784,7 +776,7 @@ function runCommonLocalTests (ref) {
       }
     })
     await testCleanupOnError(ref.config, () => {
-      expect(execa).toHaveBeenCalledWith(...execaLocalOWArgs)
+      expect(execa).toHaveBeenCalledWith(...EXECA_LOCAL_OW_ARGS)
       expect(owProcessMockKill).toHaveBeenCalledTimes(1)
     })
   })
@@ -808,11 +800,11 @@ function runCommonLocalTests (ref) {
     })
 
     await runDev([], ref.config)
-    expect(execa).toHaveBeenCalledWith(...execaLocalOWArgs)
+    expect(execa).toHaveBeenCalledWith(...EXECA_LOCAL_OW_ARGS)
     expect(fetch).toHaveBeenCalledWith('http://localhost:3233/api/v1')
     expect(fetch).toHaveBeenCalledTimes(5)
-    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), waitInitTime) // initial wait
-    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), waitPeriodTime) // period wait
+    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), WAIT_INIT_TIME) // initial wait
+    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), WAIT_PERIOD_TIME) // period wait
     expect(setTimeout).toHaveBeenCalledTimes(5)
   })
 
@@ -825,10 +817,10 @@ function runCommonLocalTests (ref) {
       return { ok: true }
     })
     await expect(runDev([], ref.config)).rejects.toEqual(expect.objectContaining({ message: 'local openwhisk stack startup timed out: 60000ms' }))
-    expect(execa).toHaveBeenCalledWith(...execaLocalOWArgs)
+    expect(execa).toHaveBeenCalledWith(...EXECA_LOCAL_OW_ARGS)
     expect(fetch).toHaveBeenCalledWith('http://localhost:3233/api/v1')
-    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), waitInitTime) // initial wait
-    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), waitPeriodTime) // period wait
+    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), WAIT_INIT_TIME) // initial wait
+    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), WAIT_PERIOD_TIME) // period wait
   })
 
   test('should run if local openwhisk-standalone jar startup takes 59seconds', async () => {
@@ -840,10 +832,10 @@ function runCommonLocalTests (ref) {
       return { ok: true }
     })
     await runDev([], ref.config)
-    expect(execa).toHaveBeenCalledWith(...execaLocalOWArgs)
+    expect(execa).toHaveBeenCalledWith(...EXECA_LOCAL_OW_ARGS)
     expect(fetch).toHaveBeenCalledWith('http://localhost:3233/api/v1')
-    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), waitInitTime) // initial wait
-    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), waitPeriodTime) // period wait
+    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), WAIT_INIT_TIME) // initial wait
+    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), WAIT_PERIOD_TIME) // period wait
   })
 }
 
@@ -940,7 +932,6 @@ describe('with remote actions and frontend', () => {
     mockRuntimeLib.utils.getActionUrls.mockReturnValueOnce(retVal)
     await runDev([], ref.config, { skipActions: true })
     expect('/web-src/src/config.json' in global.fakeFileSystem.files()).toEqual(true)
-    console.log(global.fakeFileSystem.files())
     expect(JSON.parse(global.fakeFileSystem.files()['/web-src/src/config.json'].toString())).toEqual(retVal)
   })
 })
