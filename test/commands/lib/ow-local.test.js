@@ -36,25 +36,39 @@ describe('owlocal', () => {
     expect(typeof owLocal.getDockerNetworkAddress).toEqual('function')
     expect(owLocal.OW_CONFIG_RUNTIMES_FILE).toEqual(expect.stringContaining(path.normalize('/bin/openwhisk-standalone-config/runtimes.json')))
     expect(owLocal.OW_JAR_URL).toMatch('https://bintray.com/api/ui/download/adobe/generic/openwhisk/standalone-v1/openwhisk-standalone.jar')
+    expect(owLocal.OW_JAR_PATH).toMatch(path.join('openwhisk', 'standalone-v1', 'openwhisk-standalone.jar'))
     expect(owLocal.OW_LOCAL_NAMESPACE).toMatch('guest')
     expect(owLocal.OW_LOCAL_AUTH).toMatch('23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP')
   })
+
   test('exports can be overwritten by process env', () => {
     process.env.OW_LOCAL_NAMESPACE = 'dude'
     process.env.OW_CONFIG_RUNTIMES_FILE = 'file'
     process.env.OW_LOCAL_AUTH = '123'
-    process.env.OW_JAR_URL = 'example.com'
+    process.env.OW_JAR_URL = 'https://example.com/openwhisk/foo/bar.jar'
     process.env.OW_LOCAL_APIHOST = 'fake.com'
     let owLocal
     jest.isolateModules(() => {
       owLocal = require('../../../src/lib/owlocal')
     })
     expect(owLocal.OW_CONFIG_RUNTIMES_FILE).toEqual('file')
-    expect(owLocal.OW_JAR_URL).toMatch('example.com')
+    expect(owLocal.OW_JAR_URL).toMatch('https://example.com/openwhisk/foo/bar.jar')
+    expect(owLocal.OW_JAR_PATH).toMatch('openwhisk/foo/bar.jar')
     expect(owLocal.OW_LOCAL_NAMESPACE).toMatch('dude')
     expect(owLocal.OW_LOCAL_AUTH).toMatch('123')
     expect(owLocal.OW_LOCAL_APIHOST).toMatch('fake.com')
   })
+
+  test('use defaults for OW_JAR_PATH if path not found in OW_JAR_URL', () => {
+    process.env.OW_JAR_URL = 'https://example.com/some/path'
+    let owLocal
+    jest.isolateModules(() => {
+      owLocal = require('../../../src/lib/owlocal')
+    })
+    expect(owLocal.OW_JAR_URL).toMatch('https://example.com/some/path')
+    expect(owLocal.OW_JAR_PATH).toMatch('openwhisk/openwhisk-standalone.jar')
+  })
+
   describe('getDockerNetworkAddress', () => {
     test('is not windows or mac', () => {
       Object.defineProperty(process, 'platform', {
@@ -85,6 +99,7 @@ describe('owlocal', () => {
       expect(execa.sync).not.toHaveBeenCalled()
       expect(owLocal.OW_LOCAL_APIHOST).toEqual('http://localhost:3233')
     })
+
     test('is mac', () => {
       Object.defineProperty(process, 'platform', {
         value: 'darwin'
@@ -97,6 +112,7 @@ describe('owlocal', () => {
       expect(execa.sync).not.toHaveBeenCalled()
       expect(owLocal.OW_LOCAL_APIHOST).toEqual('http://localhost:3233')
     })
+
     test('if execa fails', () => {
       Object.defineProperty(process, 'platform', {
         value: 'abc'

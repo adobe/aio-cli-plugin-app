@@ -20,8 +20,8 @@ class BaseCommand extends Command {
   getAppConfig () {
     if (!this.appConfig) {
       this.appConfig = loadConfig()
-      // add on app.cliConfig
-      this.appConfig.app.cliConfig = this.config
+      // add on appConfig
+      this.appConfig.cli = this.config
     }
     return this.appConfig
   }

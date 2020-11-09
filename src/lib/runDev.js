@@ -26,7 +26,7 @@ const DeployActions = require('@adobe/aio-lib-runtime').deployActions
 // const ActionLogs = require('../commands/app/logs')
 const utils = require('./app-helper')
 const EventPoller = require('../lib/poller')
-const { OW_CONFIG_RUNTIMES_FILE, OW_JAR_URL, OW_LOCAL_APIHOST, OW_LOCAL_NAMESPACE, OW_LOCAL_AUTH } = require('../lib/owlocal')
+const { OW_CONFIG_RUNTIMES_FILE, OW_JAR_URL, OW_JAR_PATH, OW_LOCAL_APIHOST, OW_LOCAL_NAMESPACE, OW_LOCAL_AUTH } = require('../lib/owlocal')
 const execa = require('execa')
 const Bundler = require('parcel-bundler')
 const chokidar = require('chokidar')
@@ -44,7 +44,7 @@ const eventPoller = new EventPoller(fetchLogInterval)
 async function runDevLocal (config, cleanup, log) {
   const devConfig = cloneDeep(config)
   devConfig.envFile = path.join(config.app.dist, '.env.local')
-  const owJarFile = path.join(config.app.cliConfig.dataDir, 'openwhisk', 'openwhisk-standalone.jar')
+  const owJarFile = path.join(config.cli.dataDir, OW_JAR_PATH)
 
   // take following steps only when we have a backend
   log('checking if java is installed...')

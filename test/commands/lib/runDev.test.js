@@ -144,10 +144,9 @@ const CLI_CONFIG = {
 }
 
 // those must match the ones defined in dev.js
-const OW_JAR_FILE = path.join('openwhisk', 'openwhisk-standalone.jar')
-const OW_JAR_PATH = path.join(CLI_CONFIG.dataDir, OW_JAR_FILE)
 const OW_RUNTIMES_CONFIG = path.resolve(__dirname, '../../../bin/openwhisk-standalone-config/runtimes.json')
 const OW_JAR_URL = 'https://bintray.com/api/ui/download/adobe/generic/openwhisk/standalone-v1/openwhisk-standalone.jar'
+const OW_JAR_PATH = path.join(CLI_CONFIG.dataDir, 'openwhisk', 'standalone-v1', 'openwhisk-standalone.jar')
 const WAIT_INIT_TIME = 2000
 const WAIT_PERIOD_TIME = 500
 
@@ -164,7 +163,7 @@ async function loadEnvScripts (project, config, excludeFiles = []) {
   process.chdir('/')
 
   const appConfig = loadConfig()
-  appConfig.app.cliConfig = CLI_CONFIG
+  appConfig.cli = CLI_CONFIG
   return appConfig
 }
 
