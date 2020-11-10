@@ -1087,6 +1087,11 @@ describe('with frontend only', () => {
     expect('/web-src/src/config.json' in global.fakeFileSystem.files()).toEqual(true)
     expect(JSON.parse(global.fakeFileSystem.files()['/web-src/src/config.json'].toString())).toEqual({})
   })
+
+  test('should not run parcel serve', async () => {
+    await runDev([], ref.config, { skipServe: true })
+    expect(Bundler.mockServe).not.toHaveBeenCalled()
+  })
 })
 
 // Note: these tests can be safely deleted once the require-adobe-auth is

@@ -185,6 +185,16 @@ describe('run', () => {
     expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
   })
 
+  test('build & deploy with no manifest.yml', async () => {
+    command.appConfig = { app: { hasFrontend: true, hasBackend: false } }
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
+  })
+
   test('--skip-deploy', async () => {
     command.argv = ['--skip-deploy']
     await command.run()
