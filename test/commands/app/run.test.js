@@ -48,7 +48,7 @@ jest.mock('@adobe/aio-lib-core-config')
 const mockConfig = require('@adobe/aio-lib-core-config')
 
 jest.mock('cli-ux')
-const { cli, config } = require('cli-ux')
+const { cli } = require('cli-ux')
 
 jest.mock('https')
 const https = require('https')
@@ -168,7 +168,6 @@ function mockFSExists (files) {
 }
 
 describe('run', () => {
-
   test('app:run with no ui and no manifest should fail', async () => {
     command.argv = []
     command.appConfig = { app: { hasFrontend: false, hasBackend: false } }
