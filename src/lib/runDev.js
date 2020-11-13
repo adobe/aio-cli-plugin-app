@@ -37,7 +37,6 @@ const owWaitInitTime = 2000
 const owWaitPeriodTime = 500
 const owTimeout = 60000
 const fetchLogInterval = 10000
-const logOptions = {}
 const eventPoller = new EventPoller(fetchLogInterval)
 
 /** @private */
@@ -227,9 +226,16 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
     log('press CTRL+C to terminate dev environment')
 
     if (config.app.hasBackend && fetchLogs) {
+      const pollArgs = {
+        config: devConfig,
+        logOptions: {
+          limit: 30,
+          startTime: new Date().valueOf()
+        }
+      }
       // fetch action logs
       eventPoller.onPoll(logListener)
-      eventPoller.start({ config: devConfig })
+      eventPoller.start(pollArgs)
       cleanup.add(() => eventPoller.stop(), 'stopping event poller...')
     }
   } catch (e) {
@@ -241,16 +247,16 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
 }
 
 /** @private */
-async function logListener (args) {
+async function logListener (pollArgs) {
+  const { limit, startTime } = pollArgs.logOptions
   try {
     // TODO : Is is better to just tail ?
-    const ret = await rtLib.printActionLogs(args.config, console.log, logOptions.limit || 1, [], false, false, undefined, logOptions.startTime)
-    logOptions.limit = 30
-    logOptions.startTime = ret.lastActivationTime
+    const ret = await rtLib.printActionLogs(pollArgs.config, console.log, limit || 1, [], false, false, undefined, startTime)
+    pollArgs.logOptions.startTime = ret.lastActivationTime
   } catch (e) {
     aioLogger.error('Error while fetching action logs ' + e)
   } finally {
-    eventPoller.start(args)
+    eventPoller.start(pollArgs)
   }
 }
 
