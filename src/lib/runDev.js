@@ -229,7 +229,6 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       const pollArgs = {
         config: devConfig,
         logOptions: {
-          limit: 30,
           startTime: new Date().valueOf()
         }
       }
@@ -252,7 +251,10 @@ async function logListener (pollArgs) {
   try {
     // TODO : Is is better to just tail ?
     const ret = await rtLib.printActionLogs(pollArgs.config, console.log, limit || 1, [], false, false, undefined, startTime)
-    pollArgs.logOptions.startTime = ret.lastActivationTime
+    pollArgs.logOptions = {
+      limit: 30,
+      startTime: ret.lastActivationTime
+    }
   } catch (e) {
     aioLogger.error('Error while fetching action logs ' + e)
   } finally {
