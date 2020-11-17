@@ -1,7 +1,7 @@
 {
   "name": "@adobe/aio-cli-plugin-app",
   "description": "Create, Build and Deploy Adobe I/O Applications",
-  "version": "5.1.0",
+  "version": "5.1.1",
   "author": "Adobe Inc.",
   "bugs": "https://github.com/adobe/aio-cli-plugin-app/issues",
   "dependencies": {
@@ -20,6 +20,7 @@
     "chokidar": "^3.4.2",
     "cli-ux": "^5.4.5",
     "debug": "^4.1.1",
+    "dedent-js": "^1.0.1",
     "dotenv": "^8.2.0",
     "execa": "^4.0.0",
     "fs-extra": "^9.0.0",

@@ -13,6 +13,7 @@ governing permissions and limitations under the License.
 const path = require('path')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:owlocal', { provider: 'debug' })
 const execa = require('execa')
+const url = require('url')
 
 const OW_LOCAL_DOCKER_PORT = 3233
 
@@ -22,6 +23,26 @@ function isWindowsOrMac () {
     process.platform === 'win32' ||
     process.platform === 'darwin'
   )
+}
+
+/** @private */
+function owJarPath (owJarUrl) {
+  const { pathname } = new url.URL(owJarUrl)
+  const idx = pathname.indexOf('/openwhisk/')
+  let jarPath
+
+  if (idx === -1) {
+    jarPath = path.join('openwhisk', 'openwhisk-standalone.jar') // default path
+    aioLogger.warn(`Could not parse openwhisk jar path from ${owJarUrl}, using default ${jarPath}`)
+  } else {
+    jarPath = pathname
+      .substring(idx + 1) // skip initial forward slash
+      .split(path.posix.sep) // split on forward slashes
+      .join(path.sep) // join on os path separator (for Windows)
+    aioLogger.debug(`Parsed openwhisk jar path from ${owJarUrl}, using ${jarPath}`)
+  }
+
+  return jarPath
 }
 
 /** @private */
@@ -44,9 +65,7 @@ function getDockerNetworkAddress () {
 
 // gets these values if the keys are set in the environment, if not it will use the defaults set
 const {
-  OW_JAR_URL = 'https://dl.bintray.com/adobeio-firefly/aio/openwhisk-standalone.jar',
-  // This path will be relative to this module, and not the cwd, so multiple projects can use it.
-  OW_JAR_FILE = path.resolve(__dirname, '../../bin/openwhisk-standalone.jar'),
+  OW_JAR_URL = 'https://bintray.com/api/ui/download/adobe/generic/openwhisk/standalone-v1/openwhisk-standalone.jar',
   OW_CONFIG_RUNTIMES_FILE = path.resolve(__dirname, '../../bin/openwhisk-standalone-config/runtimes.json'),
   OW_LOCAL_APIHOST = getDockerNetworkAddress(),
   OW_LOCAL_NAMESPACE = 'guest',
@@ -57,7 +76,7 @@ module.exports = {
   getDockerNetworkAddress,
   OW_LOCAL_DOCKER_PORT,
   OW_JAR_URL,
-  OW_JAR_FILE,
+  OW_JAR_PATH: owJarPath(OW_JAR_URL),
   OW_CONFIG_RUNTIMES_FILE,
   OW_LOCAL_APIHOST,
   OW_LOCAL_NAMESPACE,

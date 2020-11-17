@@ -11,7 +11,6 @@ governing permissions and limitations under the License.
 */
 
 const { Command, flags } = require('@oclif/command')
-const fs = require('fs-extra')
 const chalk = require('chalk')
 const coreConfig = require('@adobe/aio-lib-core-config')
 const DEFAULT_LAUNCH_PREFIX = 'https://experience.adobe.com/?devMode=true#/custom-apps/?localDevUrl='
@@ -21,6 +20,8 @@ class BaseCommand extends Command {
   getAppConfig () {
     if (!this.appConfig) {
       this.appConfig = loadConfig()
+      // add on appConfig
+      this.appConfig.cli = this.config
     }
     return this.appConfig
   }
@@ -44,10 +45,7 @@ class BaseCommand extends Command {
   }
 
   get pjson () {
-    if (!this._pjson) {
-      this._pjson = fs.readJSONSync('package.json')
-    }
-    return this._pjson
+    return this.config.pjson
   }
 
   get appName () {

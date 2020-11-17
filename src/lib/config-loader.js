@@ -12,7 +12,7 @@ governing permissions and limitations under the License.
 
 const path = require('path')
 const yaml = require('js-yaml')
-const fs = require('fs')
+const fs = require('fs-extra')
 const utils = require('./app-helper')
 const aioConfig = require('@adobe/aio-lib-core-config')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:config-loader', { provider: 'debug' })
@@ -35,7 +35,9 @@ const {
  *    app: {
  *      name,
  *      version,
- *      hasFrontend
+ *      hasFrontend,
+ *      hasBackend,
+ *      dist
  *    },
  *    ow: {
  *      apihost,
@@ -115,9 +117,12 @@ module.exports = () => {
     params: { Bucket: userConfig.cna.s3bucket }
   }
 
+  // set for general build artifacts
+  config.app.dist = dist
+
   // check if the app has a frontend, for now enforce index.html to be there
   // todo we shouldn't have any config.web config if !hasFrontend
-  config.app.hasFrontend = fs.existsSync(path.join(config.web.src, 'index.html'))
+  config.app.hasFrontend = fs.existsSync(config.web.src)
 
   // check if the app has a backend by checking presence of manifest.yml file
   config.app.hasBackend = fs.existsSync(config.manifest.src)

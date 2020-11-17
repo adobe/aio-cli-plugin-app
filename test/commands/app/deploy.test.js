@@ -13,8 +13,6 @@ governing permissions and limitations under the License.
 const TheCommand = require('../../../src/commands/app/deploy')
 const BaseCommand = require('../../../src/BaseCommand')
 
-const mockFS = require('fs-extra')
-
 jest.mock('../../../src/lib/app-helper.js')
 const helpers = require('../../../src/lib/app-helper.js')
 
@@ -24,13 +22,26 @@ const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 jest.mock('@adobe/aio-lib-core-config')
 const mockConfig = require('@adobe/aio-lib-core-config')
 
+const mockConfigData = {
+  app: {
+    hasFrontend: true,
+    hasBackend: true
+  },
+  web: {
+    injectedConfig: 'asldkfj'
+  }
+}
+
+jest.mock('../../../src/lib/config-loader', () => {
+  return () => mockConfigData
+})
+
 jest.mock('cli-ux')
 const { cli } = require('cli-ux')
 
 beforeEach(() => {
   mockWebLib.mockReset('deployWeb')
   mockWebLib.mockReset('buildWeb')
-  mockFS.existsSync.mockReset()
   helpers.writeConfig.mockReset()
   helpers.runPackageScript.mockReset()
   jest.restoreAllMocks()
@@ -78,7 +89,7 @@ describe('run', () => {
     command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
-    command.appConfig = { app: { hasFrontend: true, hasBackend: true }, web: { injectedConfig: 'config.json' } }
+    command.appConfig = mockConfigData
     command.config = { runCommand: jest.fn() }
 
     mockRuntimeLib.deployActions.mockResolvedValue({})
@@ -89,7 +100,6 @@ describe('run', () => {
   })
 
   test('build & deploy an App with no flags', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     await command.run()
     // expect(command.error).toHaveBeenCalledWith(0)
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -100,7 +110,6 @@ describe('run', () => {
 
   test('build & deploy an App verbose', async () => {
     command.argv = ['-v']
-    mockFS.existsSync.mockReturnValue(true)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
@@ -111,7 +120,6 @@ describe('run', () => {
 
   test('build & deploy --skip-static', async () => {
     command.argv = ['--skip-static']
-    mockFS.existsSync.mockReturnValue(true)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
@@ -122,7 +130,6 @@ describe('run', () => {
 
   test('build & deploy only some actions using --action', async () => {
     command.argv = ['--skip-static', '-a', 'a', '-a', 'b', '--action', 'c']
-    mockFS.existsSync.mockReturnValue(true)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
@@ -130,7 +137,7 @@ describe('run', () => {
     expect(command.config.runCommand).toHaveBeenCalledTimes(1)
 
     expect(command.config.runCommand).toHaveBeenCalledWith('app:build', expect.arrayContaining(['--skip-static', '--no-force-build', '-a', 'a', '-a', 'b', '-a', 'c']))
-    expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(command.appConfig, {
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(mockConfigData, {
       filterEntities: { actions: ['a', 'b', 'c'] }
     },
     expect.any(Function))
@@ -138,14 +145,13 @@ describe('run', () => {
 
   test('build & deploy actions with no actions folder and no manifest', async () => {
     command.argv = ['--skip-static']
-    mockFS.existsSync.mockReturnValue(false)
     command.appConfig = { app: { hasFrontend: true, hasBackend: false } }
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
+    expect(command.config.runCommand).toHaveBeenCalledTimes(1)
+    expect(command.config.runCommand).toHaveBeenCalledWith('app:build', ['--skip-static', '--no-force-build'])
   })
 
   test('build & deploy actions with no actions folder but with a manifest', async () => {
@@ -169,13 +175,23 @@ describe('run', () => {
 
   test('build & deploy with --skip-actions with no static folder', async () => {
     command.argv = ['--skip-actions']
-    command.appConfig.app.hasFrontend = false
+    command.appConfig = { app: { hasFrontend: false, hasBackend: false } }
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
+    expect(command.config.runCommand).toHaveBeenCalledTimes(1)
+    expect(command.config.runCommand).toHaveBeenCalledWith('app:build', ['--skip-actions', '--no-force-build'])
+  })
+
+  test('build & deploy with no manifest.yml', async () => {
+    command.appConfig = { app: { hasFrontend: true, hasBackend: false } }
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(command.config.runCommand).toHaveBeenCalledTimes(1)
+    expect(command.config.runCommand).toHaveBeenCalledWith('app:build', ['--no-force-build'])
   })
 
   test('--skip-deploy', async () => {
@@ -188,7 +204,6 @@ describe('run', () => {
   })
 
   test('--skip-deploy --verbose', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     command.argv = ['--skip-deploy', '--verbose']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -200,7 +215,6 @@ describe('run', () => {
 
   test('--skip-deploy --skip-static', async () => {
     command.argv = ['--skip-deploy', '--skip-static']
-    mockFS.existsSync.mockReturnValue(true)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
@@ -210,7 +224,6 @@ describe('run', () => {
 
   test('--skip-build', async () => {
     command.argv = ['--skip-build']
-    mockFS.existsSync.mockReturnValue(true)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
@@ -220,7 +233,6 @@ describe('run', () => {
 
   test('--skip-build --verbose', async () => {
     command.argv = ['--skip-build', '--verbose']
-    mockFS.existsSync.mockReturnValue(true)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
@@ -230,7 +242,6 @@ describe('run', () => {
 
   test('--skip-build --skip-actions', async () => {
     command.argv = ['--skip-build', '--skip-actions']
-    mockFS.existsSync.mockReturnValue(true)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
@@ -240,7 +251,6 @@ describe('run', () => {
 
   test('--skip-build --skip-static', async () => {
     command.argv = ['--skip-build', '--skip-static']
-    mockFS.existsSync.mockReturnValue(true)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
@@ -259,7 +269,6 @@ describe('run', () => {
   })
 
   test('deploy should show ui url', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     mockWebLib.deployWeb.mockResolvedValue('https://example.com')
     command.argv = []
     await command.run()
@@ -269,7 +278,6 @@ describe('run', () => {
 
   test('deploy should open ui url with --open', async () => {
     cli.open = jest.fn()
-    mockFS.existsSync.mockReturnValue(true)
     mockWebLib.deployWeb.mockResolvedValue('https://example.com')
     command.argv = ['--open']
     await command.run()
@@ -279,7 +287,6 @@ describe('run', () => {
   })
 
   test('deploy should show ui and exc url if AIO_LAUNCH_PREFIX_URL is set', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     mockWebLib.deployWeb.mockResolvedValue('https://example.com')
     mockConfig.get.mockReturnValue('http://prefix?fake=')
     command.argv = []
@@ -290,7 +297,6 @@ describe('run', () => {
   })
 
   test('deploy should show ui and open exc url if AIO_LAUNCH_PREFIX_URL is set and --open', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     mockWebLib.deployWeb.mockResolvedValue('https://example.com')
     mockConfig.get.mockReturnValue('http://prefix?fake=')
     cli.open = jest.fn()
@@ -303,7 +309,6 @@ describe('run', () => {
   })
 
   test('deploy should show action urls', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     mockRuntimeLib.deployActions.mockResolvedValue({
       actions: [
         { name: 'pkg/action', url: 'https://fake.com/action' },
@@ -318,7 +323,6 @@ describe('run', () => {
   })
 
   test('should fail if scripts.deployActions fails', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     const error = new Error('mock failure')
     mockRuntimeLib.deployActions.mockRejectedValue(error)
     await command.run()
@@ -328,7 +332,6 @@ describe('run', () => {
   })
 
   test('should fail if scripts.deployWeb fails', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     const error = new Error('mock failure')
     mockRuntimeLib.deployActions.mockResolvedValue('ok')
     mockWebLib.deployWeb.mockRejectedValue(error)
@@ -338,7 +341,6 @@ describe('run', () => {
   })
 
   test('spinner should be called for progress logs on deployWeb call , with verbose', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     mockRuntimeLib.deployActions.mockResolvedValue('ok')
     mockWebLib.deployWeb.mockImplementation(async (config, log) => {
       log('progress log')
@@ -350,18 +352,17 @@ describe('run', () => {
   })
 
   test('spinner should be called for progress logs on deployWeb call , without verbose', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     mockRuntimeLib.deployActions.mockResolvedValue('ok')
     mockWebLib.deployWeb.mockImplementation(async (config, log) => {
       log('progress log')
       return 'ok'
     })
+    command.appConfig.web = { injectedConfig: 'sdf' }
     await command.run()
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
   })
 
   test('build & deploy (app hooks missing)', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     helpers.runPackageScript
       .mockRejectedValueOnce('error-1')
       .mockRejectedValueOnce('error-2')
