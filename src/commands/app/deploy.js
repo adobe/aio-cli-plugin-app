@@ -19,8 +19,10 @@ const { cli } = require('cli-ux')
 const BaseCommand = require('../../BaseCommand')
 const webLib = require('@adobe/aio-lib-web')
 const { flags } = require('@oclif/command')
-const { buildApp, runPackageScript, wrapError } = require('../../lib/app-helper')
+const buildCmd = require('./build')
+const { runPackageScript, wrapError } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
+const deepCopy = require('lodash.clonedeep')
 
 class Deploy extends BaseCommand {
   async run () {
@@ -41,7 +43,12 @@ class Deploy extends BaseCommand {
     try {
       // build phase
       if (!flags['skip-build']) {
-        await buildApp(config, flags, spinner, onProgress, this.log)
+        let buildArgs = deepCopy(this.argv)
+        buildArgs = buildArgs.filter((arg) => Object.keys(buildCmd.flags).includes(arg))
+        if (!flags['force-build']) {
+          buildArgs.push('--no-force-build')
+        }
+        await this.config.runCommand('app:build', buildArgs)
       }
 
       // deploy phase
@@ -55,7 +62,7 @@ class Deploy extends BaseCommand {
           this.log(err)
         }
         if (!flags['skip-actions']) {
-          if (fs.existsSync('manifest.yml')) {
+          if (config.app.hasBackend) {
             let filterEntities
             if (filterActions) {
               filterEntities = { actions: filterActions }
@@ -66,16 +73,16 @@ class Deploy extends BaseCommand {
             deployedRuntimeEntities = { ...await rtLib.deployActions(config, { filterEntities }, onProgress) }
             spinner.succeed(chalk.green('Deploying actions'))
           } else {
-            this.log('no manifest.yml, skipping action deploy')
+            this.log('no backend, skipping action deploy')
           }
         }
         if (!flags['skip-static']) {
-          if (fs.existsSync('web-src/')) {
+          if (config.app.hasFrontend) {
             spinner.start('Deploying web assets')
             deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
             spinner.succeed(chalk.green('Deploying web assets'))
           } else {
-            this.log('no web-src, skipping web-src deploy')
+            this.log('no frontend, skipping frontend deploy')
           }
         }
 
@@ -105,12 +112,12 @@ class Deploy extends BaseCommand {
       }
 
       // final message
-      if (flags['skip-deploy']) {
-        this.log(chalk.green(chalk.bold('Build success, your app is ready to be deployed 👌')))
-      } else if (flags['skip-static']) {
-        this.log(chalk.green(chalk.bold('Well done, your actions are now online 🏄')))
-      } else {
-        this.log(chalk.green(chalk.bold('Well done, your app is now online 🏄')))
+      if (!flags['skip-deploy']) {
+        if (flags['skip-static']) {
+          this.log(chalk.green(chalk.bold('Well done, your actions are now online 🏄')))
+        } else {
+          this.log(chalk.green(chalk.bold('Well done, your app is now online 🏄')))
+        }
       }
     } catch (error) {
       spinner.stop()
@@ -140,11 +147,11 @@ Deploy.flags = {
   }),
   'force-build': flags.boolean({
     description: 'Forces a build even if one already exists',
-    exclusive: ['skip-build']
+    exclusive: ['skip-build'],
+    default: false
   }),
   action: flags.string({
     description: 'Deploy only a specific action, the flags can be specified multiple times',
-    default: '',
     exclusive: ['skip-actions'],
     char: 'a',
     multiple: true

@@ -15,7 +15,10 @@ const chalk = require('chalk')
 
 const BaseCommand = require('../../BaseCommand')
 const { flags } = require('@oclif/command')
-const { buildApp, wrapError } = require('../../lib/app-helper')
+const { runPackageScript, writeConfig, wrapError } = require('../../lib/app-helper')
+const RuntimeLib = require('@adobe/aio-lib-runtime')
+const webLib = require('@adobe/aio-lib-web')
+const fs = require('fs-extra')
 
 class Build extends BaseCommand {
   async run () {
@@ -31,10 +34,42 @@ class Build extends BaseCommand {
       spinner.start()
     }
 
-    // setup scripts, events and spinner
     try {
-      flags['force-build'] = true // The build command should always build
-      await buildApp(config, flags, spinner, onProgress, this.log)
+      const filterActions = flags['action']
+      try {
+        await runPackageScript('pre-app-build')
+      } catch (err) {
+        this.log(err)
+      }
+    
+      if (!flags['skip-actions']) {
+        if (config.app.hasBackend && (flags['force-build'] || !fs.existsSync(config.actions.dist))) {
+          spinner.start('Building actions')
+          await RuntimeLib.buildActions(config, filterActions)
+          spinner.succeed(chalk.green('Building actions'))
+        } else {
+          spinner.info('no backend or a build already exists, skipping action build')
+        }
+      }
+      if (!flags['skip-static']) {
+        if (config.app.hasFrontend && (flags['force-build'] || !fs.existsSync(config.web.distProd))) {
+          if (config.app.hasBackend) {
+            const urls = await RuntimeLib.utils.getActionUrls(config)
+            await writeConfig(config.web.injectedConfig, urls)
+          }
+          spinner.start('Building web assets')
+          await webLib.buildWeb(config, onProgress)
+          spinner.succeed(chalk.green('Building web assets'))
+        } else {
+          spinner.info('no frontend or a build already exists, skipping frontend build')
+        }
+      }
+      try {
+        await runPackageScript('post-app-build')
+      } catch (err) {
+        this.log(err)
+      }
+
 
       // final message
       if (flags['skip-static']) {
@@ -60,9 +95,13 @@ Build.flags = {
   'skip-actions': flags.boolean({
     description: 'Skip build of actions'
   }),
+  'force-build': flags.boolean({
+    description: 'Forces a build even if one already exists',
+    default: true,
+    allowNo: true
+  }),
   action: flags.string({
     description: 'Build only a specific action, the flags can be specified multiple times',
-    default: '',
     exclusive: ['skip-actions'],
     char: 'a',
     multiple: true

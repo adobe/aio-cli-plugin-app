@@ -17,57 +17,7 @@ const dotenv = require('dotenv')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:lib-app-helper', { provider: 'debug' })
 const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
-const RuntimeLib = require('@adobe/aio-lib-runtime')
-const webLib = require('@adobe/aio-lib-web')
 const fetch = require('node-fetch')
-const chalk = require('chalk')
-
-/**
- * Helper function for building actions and static content.
- * To be used by both build and deploy commands.
- *
- * @param {object} config manifest config
- * @param {object} flags flags (build/deploy)
- * @param {object} spinner spinner for cmdline display
- * @param {object} onProgress progress logger during build activity
- * @param {object} logFunc logger for persistent log messages like errors
- */
-async function buildApp (config, flags, spinner, onProgress, logFunc) {
-  const filterActions = flags.action
-  try {
-    await runPackageScript('pre-app-build')
-  } catch (err) {
-    logFunc(err)
-  }
-
-  if (!flags['skip-actions']) {
-    if (fs.existsSync('manifest.yml') && (flags['force-build'] || !fs.existsSync(config.actions.dist))) {
-      spinner.start('Building actions')
-      await RuntimeLib.buildActions(config, filterActions)
-      spinner.succeed(chalk.green('Building actions'))
-    } else {
-      spinner.info('no manifest.yml or build already exists, skipping action build')
-    }
-  }
-  if (!flags['skip-static']) {
-    if (fs.existsSync('web-src/') && (flags['force-build'] || !fs.existsSync(config.web.distProd))) {
-      if (config.app && config.app.hasBackend) {
-        const urls = await RuntimeLib.utils.getActionUrls(config)
-        await writeConfig(config.web.injectedConfig, urls)
-      }
-      spinner.start('Building web assets')
-      await webLib.buildWeb(config, onProgress)
-      spinner.succeed(chalk.green('Building web assets'))
-    } else {
-      spinner.info('no web-src or build already exists, skipping web-src build')
-    }
-  }
-  try {
-    await runPackageScript('post-app-build')
-  } catch (err) {
-    logFunc(err)
-  }
-}
 
 /** @private */
 function isNpmInstalled () {
