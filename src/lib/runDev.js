@@ -229,7 +229,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       const pollArgs = {
         config: devConfig,
         logOptions: {
-          startTime: new Date().valueOf()
+          startTime: Date.now()
         }
       }
       // fetch action logs
@@ -249,7 +249,6 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
 async function logListener (pollArgs) {
   const { limit, startTime } = pollArgs.logOptions
   try {
-    // TODO : Is is better to just tail ?
     const ret = await rtLib.printActionLogs(pollArgs.config, console.log, limit || 1, [], false, false, undefined, startTime)
     pollArgs.logOptions = {
       limit: 30,
