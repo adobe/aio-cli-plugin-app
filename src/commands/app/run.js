@@ -34,8 +34,8 @@ class Run extends BaseCommand {
     const { flags } = this.parse(Run)
     const config = this.getAppConfig()
 
-    const hasBackend = config.app ? !!config.app.hasBackend : false
-    const hasFrontend = config.app ? !!config.app.hasFrontend : false
+    const hasBackend = config.app.hasBackend
+    const hasFrontend = config.app.hasFrontend
 
     if (!hasBackend && !hasFrontend) {
       this.error(wrapError('nothing to run.. there is no frontend and no manifest.yml, are you in a valid app?'))
@@ -182,11 +182,13 @@ Run.flags = {
     exclusive: ['skip-actions']
   }),
   'skip-serve': flags.boolean({
-    description: 'skip local frontend serve'
+    description: 'skip local frontend serve',
+    default: false
   }),
   'skip-actions': flags.boolean({
     description: 'skip actions, only run the ui server',
-    exclusive: ['local']
+    exclusive: ['local'],
+    default: false
   }),
   open: flags.boolean({
     description: 'Open the default web browser after a successful run, only valid if your app has a front-end',
