@@ -36,6 +36,7 @@ const {
  *      name,
  *      version,
  *      hasFrontend,
+ *      hasBackend,
  *      dist
  *    },
  *    ow: {

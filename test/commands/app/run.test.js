@@ -177,7 +177,7 @@ describe('run', () => {
 
   test('app:run with no ui and no manifest should fail: default config', async () => {
     command.argv = []
-    command.appConfig = {}
+    command.appConfig = { app: { hasFrontend: false, hasBackend: false } }
     await command.run()
     expect(command.error).toHaveBeenCalledWith(Error('nothing to run.. there is no frontend and no manifest.yml, are you in a valid app?'))
   })
