@@ -199,7 +199,7 @@ function expectDevActionBuildAndDeploy (expectedBuildDeployConfig) {
 /** @private */
 function expectUIServer (fakeMiddleware, port) {
   expect(Bundler.mockConstructor).toHaveBeenCalledTimes(1)
-  expect(Bundler.mockConstructor).toHaveBeenCalledWith(path.resolve('/web-src/index.html'),
+  expect(Bundler.mockConstructor).toHaveBeenCalledWith(path.resolve('/web-src/*.html'),
     expect.objectContaining({
       watch: true,
       outDir: path.resolve('/dist/web-src-dev')
@@ -1077,6 +1077,11 @@ describe('with frontend only', () => {
     await runDev([], ref.config)
     expect('/web-src/src/config.json' in global.fakeFileSystem.files()).toEqual(true)
     expect(JSON.parse(global.fakeFileSystem.files()['/web-src/src/config.json'].toString())).toEqual({})
+  })
+
+  test('should not run parcel serve', async () => {
+    await runDev([], ref.config, { skipServe: true })
+    expect(Bundler.mockServe).not.toHaveBeenCalled()
   })
 })
 

@@ -12,7 +12,6 @@ governing permissions and limitations under the License.
 
 const ora = require('ora')
 const chalk = require('chalk')
-const fs = require('fs-extra')
 // const path = require('path')
 const { cli } = require('cli-ux')
 
@@ -48,19 +47,19 @@ class Deploy extends BaseCommand {
         }
 
         if (!flags['skip-actions']) {
-          if (fs.existsSync('manifest.yml')) {
+          if (config.app.hasBackend) {
             // todo: this replacement seems to be working, but the one below is not yet -jm
             // await scripts.buildActions([], { filterActions })
             spinner.start('Building actions')
             await rtLib.buildActions(config, filterActions)
             spinner.succeed(chalk.green('Building actions'))
           } else {
-            this.log('no manifest.yml, skipping action build')
+            this.log('no backend, skipping action build')
           }
         }
         if (!flags['skip-static']) {
-          if (fs.existsSync('web-src/')) {
-            if (config.app && config.app.hasBackend) {
+          if (config.app.hasFrontend) {
+            if (config.app.hasBackend) {
               const urls = await rtLib.utils.getActionUrls(config)
               await writeConfig(config.web.injectedConfig, urls)
             }
@@ -68,7 +67,7 @@ class Deploy extends BaseCommand {
             await webLib.buildWeb(config, onProgress)
             spinner.succeed(chalk.green('Building web assets'))
           } else {
-            this.log('no web-src, skipping web-src build')
+            this.log('no frontend, skipping frontend build')
           }
         }
         try {
@@ -89,7 +88,7 @@ class Deploy extends BaseCommand {
           this.log(err)
         }
         if (!flags['skip-actions']) {
-          if (fs.existsSync('manifest.yml')) {
+          if (config.app.hasBackend) {
             let filterEntities
             if (filterActions) {
               filterEntities = { actions: filterActions }
@@ -100,16 +99,16 @@ class Deploy extends BaseCommand {
             deployedRuntimeEntities = { ...await rtLib.deployActions(config, { filterEntities }, onProgress) }
             spinner.succeed(chalk.green('Deploying actions'))
           } else {
-            this.log('no manifest.yml, skipping action deploy')
+            this.log('no backend, skipping action deploy')
           }
         }
         if (!flags['skip-static']) {
-          if (fs.existsSync('web-src/')) {
+          if (config.app && config.app.hasFrontend) {
             spinner.start('Deploying web assets')
             deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
             spinner.succeed(chalk.green('Deploying web assets'))
           } else {
-            this.log('no web-src, skipping web-src deploy')
+            this.log('no frontend, skipping frontend deploy')
           }
         }
 
