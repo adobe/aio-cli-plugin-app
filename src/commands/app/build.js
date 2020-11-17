@@ -35,13 +35,13 @@ class Build extends BaseCommand {
     }
 
     try {
-      const filterActions = flags['action']
+      const filterActions = flags.action
       try {
         await runPackageScript('pre-app-build')
       } catch (err) {
         this.log(err)
       }
-    
+
       if (!flags['skip-actions']) {
         if (config.app.hasBackend && (flags['force-build'] || !fs.existsSync(config.actions.dist))) {
           spinner.start('Building actions')
@@ -69,7 +69,6 @@ class Build extends BaseCommand {
       } catch (err) {
         this.log(err)
       }
-
 
       // final message
       if (flags['skip-static']) {

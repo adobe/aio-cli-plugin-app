@@ -348,7 +348,6 @@ function servicesToGeneratorInput (services) {
 }
 
 module.exports = {
-  buildApp,
   isNpmInstalled,
   isGitInstalled,
   installPackage,

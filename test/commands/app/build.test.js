@@ -68,7 +68,8 @@ describe('run', () => {
     command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
-    command.appConfig = {}
+    command.appConfig = { app: { hasFrontend: true, hasBackend: true }, web: { injectedConfig: 'config.json' } }
+    mockRuntimeLib.buildActions.mockReset()
   })
 
   afterEach(() => {
@@ -76,55 +77,54 @@ describe('run', () => {
   })
 
   test('build & deploy an App with no flags', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(helpers.buildApp).toHaveBeenCalledTimes(1)
-    expect(helpers.buildApp).toHaveBeenCalledWith({}, expect.objectContaining({ action: '' }), expect.anything(), expect.anything(), expect.anything())
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
   })
 
-  test('build & deploy an App verbose', async () => {
-    command.argv = ['-v']
+  test('build & deploy an App with no force-build but build exists', async () => {
+    command.argv = ['--no-force-build']
+    command.appConfig.actions = { dist: 'actions' }
+    command.appConfig.web.distProd = 'dist'
     mockFS.existsSync.mockReturnValue(true)
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(helpers.buildApp).toHaveBeenCalledTimes(1)
-    expect(helpers.buildApp).toHaveBeenCalledWith({}, expect.objectContaining({ verbose: true }), expect.anything(), expect.anything(), expect.anything())
-  })
-
-  test('build & deploy --skip-static', async () => {
-    command.argv = ['--skip-static']
-    mockFS.existsSync.mockReturnValue(true)
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(helpers.buildApp).toHaveBeenCalledTimes(1)
-    expect(helpers.buildApp).toHaveBeenCalledWith({}, expect.objectContaining({ 'skip-static': true }), expect.anything(), expect.anything(), expect.anything())
-  })
-
-  test('build & deploy only some actions using --action', async () => {
-    command.argv = ['--skip-static', '-a', 'a', '-a', 'b', '--action', 'c']
-    mockFS.existsSync.mockReturnValue(true)
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(helpers.buildApp).toHaveBeenCalledTimes(1)
-    expect(helpers.buildApp).toHaveBeenCalledWith({}, expect.objectContaining({ action: ['a', 'b', 'c'] }), expect.anything(), expect.anything(), expect.anything())
-  })
-
-  test('build & deploy actions with no actions folder and no manifest', async () => {
-    command.argv = ['--skip-static']
-    mockFS.existsSync.mockReturnValue(false)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
   })
 
-  test('build & deploy actions with no actions folder but with a manifest', async () => {
-    command.argv = ['--skip-static']
-    mockFS.existsSync.mockReturnValue(true)
+  test('build & deploy an App verbose', async () => {
+    command.argv = ['-v']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(helpers.buildApp).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
+  })
+
+  test('build & deploy --skip-static', async () => {
+    command.argv = ['--skip-static']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
+  })
+
+  test('build & deploy only some actions using --action', async () => {
+    command.argv = ['--skip-static', '-a', 'a', '-a', 'b', '--action', 'c']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledWith(command.appConfig, ['a', 'b', 'c'])
+    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
+  })
+
+  test('build & deploy actions with no backend', async () => {
+    command.appConfig = { app: { hasFrontend: true, hasBackend: false } }
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
   })
 
   test('build & deploy with --skip-actions', async () => {
@@ -132,45 +132,53 @@ describe('run', () => {
     mockFS.existsSync.mockReturnValue(true)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(helpers.buildApp).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
   })
 
-  test('build & deploy with --skip-actions with no static folder', async () => {
+  test('build & deploy with --skip-actions with no frontend', async () => {
     command.argv = ['--skip-actions']
-    mockFS.existsSync.mockReturnValue(false)
+    command.appConfig = { app: { hasFrontend: false, hasBackend: true } }
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
   })
 
-  test('should fail if helpers.buildApp fails', async () => {
+  test('should fail if scripts.buildActions fails', async () => {
     mockFS.existsSync.mockReturnValue(true)
     const error = new Error('mock failure')
-    helpers.buildApp.mockRejectedValue(error)
+    mockRuntimeLib.buildActions.mockRejectedValue(error)
     await command.run()
     expect(command.error).toHaveBeenCalledWith(error)
-    expect(helpers.buildApp).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
   })
 
-  test('spinner should be called for progress logs on deployWeb call , with verbose', async () => {
-    mockFS.existsSync.mockReturnValue(true)
-    helpers.buildApp.mockImplementation(async (config, flags, spinner, onProgress, logFunc) => {
+  test('spinner should be called for progress logs on buildWeb call , with verbose', async () => {
+    mockWebLib.buildWeb.mockImplementation(async (config, onProgress) => {
       onProgress('progress log')
       return 'ok'
     })
     command.argv = ['-v']
     await command.run()
-    expect(helpers.buildApp).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
   })
 
-  test('spinner should be called for progress logs on deployWeb call , without verbose', async () => {
-    mockFS.existsSync.mockReturnValue(true)
-    helpers.buildApp.mockImplementation(async (config, flags, spinner, onProgress, logFunc) => {
+  test('spinner should be called for progress logs on buildWeb call , without verbose', async () => {
+    mockWebLib.buildWeb.mockImplementation(async (config, onProgress) => {
       onProgress('progress log')
       return 'ok'
     })
     await command.run()
-    expect(helpers.buildApp).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
+  })
+
+  test('error in runPackageScript', async () => {
+    helpers.runPackageScript.mockRejectedValue('error')
+    await command.run()
+    expect(command.log).toHaveBeenNthCalledWith(1, 'error')
+    expect(command.log).toHaveBeenNthCalledWith(2, 'error')
   })
 })

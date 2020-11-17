@@ -13,10 +13,6 @@ const which = require('which')
 const fs = require('fs-extra')
 const execa = require('execa')
 const appHelper = require('../../../src/lib/app-helper')
-const mockWebLib = require('@adobe/aio-lib-web')
-const mockRuntimeLib = require('@adobe/aio-lib-runtime')
-const ora = require('ora')
-const spinner = ora()
 
 jest.mock('process')
 
@@ -354,89 +350,5 @@ describe('exports helper methods', () => {
     // if not exists
     fs.lstatSync.mockReturnValue({ isFile: () => false })
     expect(() => appHelper.checkFile('no/exists')).toThrow('no/exists is not a valid file')
-  })
-})
-
-describe('buildApp', () => {
-  const defaultAppConfig = { actions: { dist: 'dist/actions' }, web: { distProd: 'dist/web-src-prod' } }
-  beforeEach(() => {
-    jest.clearAllMocks()
-  })
-
-  test('build & deploy only some actions using --action', async () => {
-    const flags = { 'skip-static': true, action: ['a', 'b', 'c'], 'force-build': true }
-    fs.existsSync.mockReturnValue(true)
-    await appHelper.buildApp(defaultAppConfig, flags, spinner, undefined)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
-
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledWith(expect.objectContaining({ actions: expect.objectContaining({ dist: 'dist/actions' }) }), ['a', 'b', 'c'])
-  })
-
-  test('build & deploy actions with no actions folder and no manifest', async () => {
-    const flags = { 'skip-static': true }
-    fs.existsSync.mockReturnValue(false)
-    await appHelper.buildApp(defaultAppConfig, flags, spinner, undefined)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
-  })
-
-  test('build & deploy actions with no actions folder but with a manifest', async () => {
-    const flags = { 'skip-static': true, 'force-build': true }
-    fs.existsSync.mockReturnValue(true)
-    await appHelper.buildApp(defaultAppConfig, flags, spinner, undefined)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
-  })
-
-  test('build & deploy with --skip-actions', async () => {
-    const flags = { 'skip-actions': true, 'force-build': true }
-    fs.existsSync.mockReturnValue(true)
-    await appHelper.buildApp(defaultAppConfig, flags, spinner, undefined)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
-  })
-
-  test('build & deploy with --skip-actions with no static folder', async () => {
-    const flags = { 'skip-actions': true, 'force-build': true }
-    fs.existsSync.mockReturnValue(false)
-    await appHelper.buildApp(defaultAppConfig, flags, spinner, undefined)
-    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
-  })
-
-  test('--skip-deploy --skip-actions', async () => {
-    const flags = { 'skip-deploy': true, 'skip-actions': true, 'force-build': true }
-    fs.existsSync.mockReturnValue(true)
-    await appHelper.buildApp(defaultAppConfig, flags, spinner, undefined)
-    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
-  })
-
-  test('write web-src/src/config.json with action urls after buildActions and before buildWeb', async () => {
-    fs.existsSync.mockReturnValue(true)
-    mockRuntimeLib.deployActions.mockResolvedValue('ok')
-    mockWebLib.deployWeb.mockImplementation(async (config, log) => {
-      log('progress log')
-      return 'ok'
-    })
-    mockRuntimeLib.utils.getActionUrls.mockResolvedValue({ a: 'a' })
-    defaultAppConfig.app = { hasBackend: true }
-    defaultAppConfig.web.injectedConfig = 'sdf'
-    await appHelper.buildApp(defaultAppConfig, { 'force-build': true }, spinner, undefined)
-    expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalledTimes(1)
-    expect(fs.writeFileSync).toHaveBeenCalledWith('sdf', '{"a":"a"}', expect.anything())
-  })
-
-  test('build & deploy (app hooks missing)', async () => {
-    fs.existsSync.mockReturnValue(true)
-    fs.readJSON.mockRejectedValue('error-1')
-    const logFunc = jest.fn()
-    await appHelper.buildApp(defaultAppConfig, {}, spinner, undefined, logFunc)
-    expect(logFunc).toHaveBeenLastCalledWith('error-1')
   })
 })

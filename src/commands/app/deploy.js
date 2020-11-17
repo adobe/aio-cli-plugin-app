@@ -12,17 +12,14 @@ governing permissions and limitations under the License.
 
 const ora = require('ora')
 const chalk = require('chalk')
-const fs = require('fs-extra')
 // const path = require('path')
 const { cli } = require('cli-ux')
 
 const BaseCommand = require('../../BaseCommand')
 const webLib = require('@adobe/aio-lib-web')
 const { flags } = require('@oclif/command')
-const buildCmd = require('./build')
 const { runPackageScript, wrapError } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
-const deepCopy = require('lodash.clonedeep')
 
 class Deploy extends BaseCommand {
   async run () {
@@ -43,10 +40,20 @@ class Deploy extends BaseCommand {
     try {
       // build phase
       if (!flags['skip-build']) {
-        let buildArgs = deepCopy(this.argv)
-        buildArgs = buildArgs.filter((arg) => Object.keys(buildCmd.flags).includes(arg))
+        const buildArgs = []
+        Object.keys(flags).forEach((flag) => {
+          if (['skip-static', 'skip-actions', 'verbose', 'version'].includes(flag)) {
+            buildArgs.push('--' + flag)
+          }
+        })
         if (!flags['force-build']) {
           buildArgs.push('--no-force-build')
+        }
+        if (flags.action) {
+          flags.action.forEach((actionName) => {
+            buildArgs.push('-a')
+            buildArgs.push(actionName)
+          })
         }
         await this.config.runCommand('app:build', buildArgs)
       }
