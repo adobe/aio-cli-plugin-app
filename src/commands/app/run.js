@@ -40,13 +40,13 @@ class Run extends BaseCommand {
     if (!hasBackend && !hasFrontend) {
       this.error(wrapError('nothing to run.. there is no frontend and no manifest.yml, are you in a valid app?'))
     }
-    if (!!flags['skip-actions'] && !hasFrontend) {
+    if (flags['skip-actions'] && !hasFrontend) {
       this.error(wrapError('nothing to run.. there is no frontend and --skip-actions is set'))
     }
 
     const runOptions = {
-      skipActions: !!flags['skip-actions'],
-      skipServe: !!flags['skip-serve'],
+      skipActions: flags['skip-actions'],
+      skipServe: !flags.serve,
       parcel: {
         logLevel: flags.verbose ? 4 : 2
       },
@@ -178,12 +178,13 @@ Run.description = 'Run an Adobe I/O App'
 Run.flags = {
   ...BaseCommand.flags,
   local: flags.boolean({
-    description: 'run/debug actions locally',
+    description: 'run/debug actions locally ( requires Docker running )',
     exclusive: ['skip-actions']
   }),
-  'skip-serve': flags.boolean({
-    description: 'skip local frontend serve',
-    default: false
+  serve: flags.boolean({
+    description: 'start frontend server',
+    default: true,
+    allowNo: true
   }),
   'skip-actions': flags.boolean({
     description: 'skip actions, only run the ui server',
