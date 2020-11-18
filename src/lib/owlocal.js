@@ -69,7 +69,8 @@ const {
   OW_CONFIG_RUNTIMES_FILE = path.resolve(__dirname, '../../bin/openwhisk-standalone-config/runtimes.json'),
   OW_LOCAL_APIHOST = getDockerNetworkAddress(),
   OW_LOCAL_NAMESPACE = 'guest',
-  OW_LOCAL_AUTH = '23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP'
+  OW_LOCAL_AUTH = '23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP',
+  OW_LOCAL_LOG_FILE
 } = process.env
 
 module.exports = {
@@ -80,5 +81,6 @@ module.exports = {
   OW_CONFIG_RUNTIMES_FILE,
   OW_LOCAL_APIHOST,
   OW_LOCAL_NAMESPACE,
-  OW_LOCAL_AUTH
+  OW_LOCAL_AUTH,
+  OW_LOCAL_LOG_FILE
 }

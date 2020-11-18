@@ -50,7 +50,8 @@ class Run extends BaseCommand {
       parcel: {
         logLevel: flags.verbose ? 4 : 2
       },
-      fetchLogs: true
+      fetchLogs: true,
+      verbose: flags.verbose
     }
 
     try {

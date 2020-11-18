@@ -26,7 +26,7 @@ const DeployActions = require('@adobe/aio-lib-runtime').deployActions
 // const ActionLogs = require('../commands/app/logs')
 const utils = require('./app-helper')
 const EventPoller = require('../lib/poller')
-const { OW_CONFIG_RUNTIMES_FILE, OW_JAR_URL, OW_JAR_PATH, OW_LOCAL_APIHOST, OW_LOCAL_NAMESPACE, OW_LOCAL_AUTH } = require('../lib/owlocal')
+const { OW_CONFIG_RUNTIMES_FILE, OW_JAR_URL, OW_JAR_PATH, OW_LOCAL_APIHOST, OW_LOCAL_NAMESPACE, OW_LOCAL_AUTH, OW_LOCAL_LOG_FILE } = require('../lib/owlocal')
 const execa = require('execa')
 const Bundler = require('parcel-bundler')
 const chokidar = require('chokidar')
@@ -40,7 +40,7 @@ const fetchLogInterval = 10000
 const eventPoller = new EventPoller(fetchLogInterval)
 
 /** @private */
-async function runDevLocal (config, cleanup, log) {
+async function runDevLocal (config, cleanup, verbose, log) {
   const devConfig = cloneDeep(config)
   devConfig.envFile = path.join(config.app.dist, '.env.local')
   const owJarFile = path.join(config.cli.dataDir, OW_JAR_PATH)
@@ -67,7 +67,15 @@ async function runDevLocal (config, cleanup, log) {
   }
 
   log('starting local OpenWhisk stack...')
-  const res = await utils.runOpenWhiskJar(owJarFile, OW_CONFIG_RUNTIMES_FILE, OW_LOCAL_APIHOST, owWaitInitTime, owWaitPeriodTime, owTimeout, { stderr: 'inherit' })
+  const owLocalLogFile = OW_LOCAL_LOG_FILE || path.join(config.app.dist, 'openwhisk-local.log.txt')
+  const owExecaOptions = {
+    stdio: [
+      null, // stdin
+      verbose ? fs.openSync(owLocalLogFile, 'w') : null, // stdout
+      'inherit' // stderr
+    ]
+  }
+  const res = await utils.runOpenWhiskJar(owJarFile, OW_CONFIG_RUNTIMES_FILE, OW_LOCAL_APIHOST, owWaitInitTime, owWaitPeriodTime, owTimeout, owExecaOptions)
   cleanup.add(() => res.proc.kill(), 'stopping local OpenWhisk stack...')
 
   log('setting local openwhisk credentials...')
@@ -156,7 +164,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
     // In that case this backend stuff might have to go to lib-runtime ?
     if (withBackend) {
       if (isLocal) {
-        devConfig = await runDevLocal(config, cleanup, log)
+        devConfig = await runDevLocal(config, cleanup, options.verbose, log)
       } else {
         // check credentials
         rtLibUtils.checkOpenWhiskCredentials(config)
