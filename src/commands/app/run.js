@@ -183,7 +183,7 @@ Run.flags = {
     exclusive: ['skip-actions']
   }),
   serve: flags.boolean({
-    description: 'start frontend server',
+    description: 'start frontend server (experimental)',
     default: true,
     allowNo: true
   }),
