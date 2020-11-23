@@ -79,7 +79,6 @@ let time
 
 beforeEach(() => {
   global.fakeFileSystem.reset()
-  delete process.env.REMOTE_ACTIONS
 
   BuildActions.mockClear()
   DeployActions.mockClear()
@@ -216,7 +215,7 @@ function expectAppFiles (expectedFiles) {
 }
 
 /** @private */
-async function testCleanupNoErrors (done, config, postCleanupChecks) {
+async function testCleanupNoErrors (done, ref, postCleanupChecks) {
   // todo why do we need to remove listeners here, somehow the one in beforeEach isn't sufficient, is jest adding a listener?
   process.removeAllListeners('SIGINT')
   process.exit.mockImplementation(() => {
@@ -225,7 +224,8 @@ async function testCleanupNoErrors (done, config, postCleanupChecks) {
     done()
   })
 
-  await runDev([], config)
+  const options = { devRemote: ref.devRemote }
+  await runDev([], ref.config, options)
   expect(process.exit).toHaveBeenCalledTimes(0)
   // make sure we have only one listener = cleanup listener after each test + no pending promises
   expect(process.listenerCount('SIGINT')).toEqual(1)
@@ -235,7 +235,7 @@ async function testCleanupNoErrors (done, config, postCleanupChecks) {
 }
 
 /** @private */
-async function testCleanupOnError (config, postCleanupChecks) {
+async function testCleanupOnError (ref, postCleanupChecks) {
   const error = new Error('fake')
   const logFunc = (message) => {
     if (message.includes('CTRL+C to terminate')) {
@@ -245,7 +245,8 @@ async function testCleanupOnError (config, postCleanupChecks) {
     }
   }
 
-  await expect(runDev([], config, {}, logFunc)).rejects.toBe(error)
+  const options = { devRemote: ref.devRemote }
+  await expect(runDev([], ref.config, options, logFunc)).rejects.toBe(error)
   postCleanupChecks()
 }
 
@@ -290,11 +291,12 @@ test('runDev is exported', async () => {
 
 describe('call checkOpenwhiskCredentials with right params', () => {
   const failMissingRuntimeConfig = async (configVarName, remoteActionsValue) => {
-    process.env.REMOTE_ACTIONS = remoteActionsValue
+    const devRemote = remoteActionsValue
     const tvmConfig = cloneDeep(global.fakeConfig.tvm) // don't override original
     delete tvmConfig.runtime[configVarName]
     const config = await loadEnvScripts('sample-app', tvmConfig)
-    await runDev([], config)
+    const options = { devRemote }
+    await runDev([], config, options)
     expect(mockRuntimeLib.utils.checkOpenWhiskCredentials).toHaveBeenCalledWith(config)
   }
 
@@ -303,13 +305,8 @@ describe('call checkOpenwhiskCredentials with right params', () => {
     await expect(failMissingRuntimeConfig('auth', '1')).rejects.toThrowError('error')
   })
 
-  test('missing runtime namespace and REMOTE_ACTIONS=true', () => failMissingRuntimeConfig('namespace', 'true'))
-  test('missing runtime namespace and REMOTE_ACTIONS=yes', () => failMissingRuntimeConfig('namespace', 'yes'))
-  test('missing runtime namespace and REMOTE_ACTIONS=1', () => failMissingRuntimeConfig('namespace', '1'))
-
-  test('missing runtime auth and REMOTE_ACTIONS=true', () => failMissingRuntimeConfig('auth', 'true'))
-  test('missing runtime auth and REMOTE_ACTIONS=yes', () => failMissingRuntimeConfig('auth', 'yes'))
-  test('missing runtime auth and REMOTE_ACTIONS=1', () => failMissingRuntimeConfig('auth', '1'))
+  test('missing runtime namespace and devRemote=true', () => failMissingRuntimeConfig('namespace', true))
+  test('missing runtime auth and devRemote=true', () => failMissingRuntimeConfig('auth', true))
 })
 
 /** @private */
@@ -318,13 +315,15 @@ function runCommonTests (ref) {
     global.fakeFileSystem.addJson({
       '.vscode/launch.json': 'fakecontent'
     })
-    await runDev([], ref.config)
+    const options = { devRemote: ref.devRemote }
+    await runDev([], ref.config, options)
     expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(true)
     expect(global.fakeFileSystem.files()['/.vscode/launch.json.save'].toString()).toEqual('fakecontent')
   })
 
   test('should not save to .vscode/config.json.save if there is no existing .vscode/config.json file', async () => {
-    await runDev([], ref.config)
+    const options = { devRemote: ref.devRemote }
+    await runDev([], ref.config, options)
     expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(false)
   })
 
@@ -335,7 +334,8 @@ function runCommonTests (ref) {
       '.vscode/launch.json.save': 'fakecontentsaved'
     })
 
-    await runDev([], ref.config)
+    const options = { devRemote: ref.devRemote }
+    await runDev([], ref.config, options)
     expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(true)
     expect(global.fakeFileSystem.files()['/.vscode/launch.json.save'].toString()).toEqual('fakecontentsaved')
   })
@@ -346,7 +346,7 @@ function runCommonTests (ref) {
     }))
 
     return new Promise(resolve => {
-      testCleanupNoErrors(resolve, ref.config, () => { expectAppFiles(ref.appFiles) })
+      testCleanupNoErrors(resolve, ref, () => { expectAppFiles(ref.appFiles) })
     })
   })
 
@@ -355,7 +355,7 @@ function runCommonTests (ref) {
       kill: jest.fn()
     }))
 
-    await testCleanupOnError(ref.config, () => {
+    await testCleanupOnError(ref, () => {
       expectAppFiles(ref.appFiles)
     })
   })
@@ -370,7 +370,7 @@ function runCommonTests (ref) {
     }))
 
     return new Promise(resolve => {
-      testCleanupNoErrors(resolve, ref.config, () => {
+      testCleanupNoErrors(resolve, ref, () => {
         expectAppFiles([...ref.appFiles, '/.vscode/launch.json'])
         expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(false)
         expect('/.vscode/launch.json' in global.fakeFileSystem.files()).toEqual(true)
@@ -388,7 +388,7 @@ function runCommonTests (ref) {
       kill: jest.fn()
     }))
 
-    await testCleanupOnError(ref.config, () => {
+    await testCleanupOnError(ref, () => {
       expectAppFiles([...ref.appFiles, '/.vscode/launch.json'])
       expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(false)
       expect('/.vscode/launch.json' in global.fakeFileSystem.files()).toEqual(true)
@@ -407,7 +407,7 @@ function runCommonTests (ref) {
     }))
 
     return new Promise(resolve => {
-      testCleanupNoErrors(resolve, ref.config, () => {
+      testCleanupNoErrors(resolve, ref, () => {
         expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(false)
         expect(global.fakeFileSystem.files()['/.vscode/launch.json'].toString()).toEqual('fakecontentsaved')
       })
@@ -427,7 +427,7 @@ function runCommonTests (ref) {
     global.fakeFileSystem.removeKeys(['/.vscode/launch.json'])
 
     return new Promise(resolve => {
-      testCleanupNoErrors(resolve, ref.config, () => {
+      testCleanupNoErrors(resolve, ref, () => {
         expect('/.vscode/launch.json' in global.fakeFileSystem.files()).toEqual(false)
         expect('/.vscode/readme.txt' in global.fakeFileSystem.files()).toEqual(true)
       })
@@ -444,14 +444,15 @@ function runCommonTests (ref) {
       kill: jest.fn()
     }))
 
-    await testCleanupOnError(ref.config, () => {
+    await testCleanupOnError(ref, () => {
       expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(false)
       expect(global.fakeFileSystem.files()['/.vscode/launch.json'].toString()).toEqual('fakecontentsaved')
     })
   })
 
   test('should not build and deploy actions if skipActions is set', async () => {
-    await runDev([], ref.config, { skipActions: true })
+    const options = { skipActions: true, devRemote: ref.devRemote }
+    await runDev([], ref.config, options)
     // build & deploy constructor have been called once to init the scripts
     // here we make sure run has not been called
     expect(BuildActions).toHaveBeenCalledTimes(0)
@@ -459,7 +460,8 @@ function runCommonTests (ref) {
   })
 
   test('should not set vscode config for actions if skipActions is set', async () => {
-    await runDev([], ref.config, { skipActions: true })
+    const options = { skipActions: true, devRemote: ref.devRemote }
+    await runDev([], ref.config, options)
     expect(global.fakeFileSystem.files()['/.vscode/launch.json'].toString()).not.toEqual(expect.stringContaining('wskdebug'))
   })
 }
@@ -474,7 +476,8 @@ function runCommonWithBackendTests (ref) {
       ]
     })
     const log = jest.fn()
-    await runDev([], ref.config, {}, log)
+    const options = { devRemote: ref.devRemote }
+    await runDev([], ref.config, options, log)
 
     expect(log).toHaveBeenCalledWith(expect.stringContaining('https://fake.com/action'))
     expect(log).toHaveBeenCalledWith(expect.stringContaining('pkg/actionNoUrl'))
@@ -485,7 +488,8 @@ function runCommonWithBackendTests (ref) {
 function runCommonRemoteTests (ref) {
   test('should build and deploy actions to remote', async () => {
     const log = jest.fn()
-    await runDev([], ref.config, {}, log)
+    const options = { devRemote: ref.devRemote }
+    await runDev([], ref.config, options, log)
     expectDevActionBuildAndDeploy(expectedRemoteOWConfig)
 
     BuildActions.mockClear()
@@ -514,12 +518,14 @@ function runCommonRemoteTests (ref) {
   })
 
   test('should not start the local openwhisk stack', async () => {
-    await runDev([], ref.config)
+    const options = { devRemote: ref.devRemote }
+    await runDev([], ref.config, options)
     expect(execa).not.toHaveBeenCalledWith(...EXECA_LOCAL_OW_ARGS)
   })
 
   test('should not generate a /dist/.env.local file with the remote credentials', async () => {
-    await runDev([], ref.config)
+    const options = { devRemote: ref.devRemote }
+    await runDev([], ref.config, options)
     expect('/dist/.env.local' in global.fakeFileSystem.files()).toEqual(false)
   })
 }
@@ -527,13 +533,15 @@ function runCommonRemoteTests (ref) {
 /** @private */
 function runCommonBackendOnlyTests (ref) {
   test('should not start a ui server', async () => {
-    await runDev([], ref.config)
+    const options = { devRemote: ref.devRemote }
+    await runDev([], ref.config, options)
     expect(Bundler.mockConstructor).toHaveBeenCalledTimes(0)
   })
 
   test('should generate a vscode config for actions only', async () => {
-    await runDev([], ref.config)
-    const isLocal = !ref.config.actions.devRemote
+    const options = { devRemote: ref.devRemote }
+    await runDev([], ref.config, options)
+    const isLocal = !ref.devRemote
     expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
       configurations: [
         getExpectedActionVSCodeDebugConfig(isLocal, 'sample-app-1.0.0/action'),
@@ -547,14 +555,23 @@ function runCommonBackendOnlyTests (ref) {
 /** @private */
 function runCommonWithFrontendTests (ref) {
   test('should start a ui server', async () => {
+    const options = { devRemote: ref.devRemote }
     const fakeMiddleware = Symbol('fake middleware')
     Bundler.mockMiddleware.mockReturnValue(fakeMiddleware)
-    await runDev([], ref.config)
+    await runDev([], ref.config, options)
     expectUIServer(fakeMiddleware, 9080)
   })
 
   test('should use https cert/key if passed', async () => {
-    const options = { parcel: { https: { cert: 'cert.cert', key: 'key.key' } } }
+    const options = {
+      parcel: {
+        https: {
+          cert: 'cert.cert',
+          key: 'key.key'
+        }
+      },
+      devRemote: ref.devRemote
+    }
     const port = 8888
     await runDev([port], ref.config, options)
     expect(Bundler.mockServe).toHaveBeenCalledWith(port, options.parcel.https)
@@ -566,7 +583,7 @@ function runCommonWithFrontendTests (ref) {
     }))
 
     return new Promise(resolve => {
-      testCleanupNoErrors(resolve, ref.config, () => {
+      testCleanupNoErrors(resolve, ref, () => {
         expect(Bundler.mockStop).toHaveBeenCalledTimes(1)
         expect(mockUIServerInstance.close).toBeCalledTimes(0) // should not be called directly, b/c terminator does
         expect(mockTerminatorInstance.terminate).toBeCalledTimes(1)
@@ -578,7 +595,7 @@ function runCommonWithFrontendTests (ref) {
   })
 
   test('should cleanup ui server on error', async () => {
-    await testCleanupOnError(ref.config, () => {
+    await testCleanupOnError(ref, () => {
       expect(Bundler.mockStop).toHaveBeenCalledTimes(1)
       expect(mockUIServerInstance.close).toBeCalledTimes(0) // should not be called directly, b/c terminator does
       expect(mockTerminatorInstance.terminate).toBeCalledTimes(1)
@@ -599,7 +616,7 @@ function runCommonWithFrontendTests (ref) {
         resolve()
       })
 
-      runDev([], ref.config)
+      runDev([], ref.config, { devRemote: ref.devRemote })
         .then(() => {
           expect(process.exit).toHaveBeenCalledTimes(0)
           // send cleanup signal
@@ -611,7 +628,15 @@ function runCommonWithFrontendTests (ref) {
 
   test('should return another available port for the UI server if used', async () => {
     mockUIServerAddressInstance.port = 9999
-    const options = { parcel: { https: { cert: 'cert.cert', key: 'key.key' } } }
+    const options = {
+      parcel: {
+        https: {
+          cert: 'cert.cert',
+          key: 'key.key'
+        }
+      },
+      devRemote: ref.devRemote
+    }
     const resultUrl = await runDev([8888], ref.config, options)
     expect(Bundler.mockServe).toHaveBeenCalledWith(8888, options.parcel.https)
     expect(resultUrl).toBe('https://localhost:9999')
@@ -619,7 +644,15 @@ function runCommonWithFrontendTests (ref) {
 
   test('should return the used ui server port', async () => {
     mockUIServerAddressInstance.port = 8888
-    const options = { parcel: { https: { cert: 'cert.cert', key: 'key.key' } } }
+    const options = {
+      parcel: {
+        https: {
+          cert: 'cert.cert',
+          key: 'key.key'
+        }
+      },
+      devRemote: ref.devRemote
+    }
     const resultUrl = await runDev([8888], ref.config, options)
     expect(Bundler.mockServe).toHaveBeenCalledWith(8888, options.parcel.https)
     expect(resultUrl).toBe('https://localhost:8888')
@@ -635,7 +668,8 @@ function runCommonLocalTests (ref) {
       }
       return { stdout: jest.fn() }
     })
-    await expect(runDev([], ref.config)).rejects.toEqual(expect.objectContaining({ message: 'could not find java CLI, please make sure java is installed' }))
+    const options = { devRemote: ref.devRemote }
+    await expect(runDev([], ref.config, options)).rejects.toEqual(expect.objectContaining({ message: 'could not find java CLI, please make sure java is installed' }))
   })
 
   test('should fail if docker CLI is not installed', async () => {
@@ -645,7 +679,8 @@ function runCommonLocalTests (ref) {
       }
       return { stdout: jest.fn() }
     })
-    await expect(runDev([], ref.config)).rejects.toEqual(expect.objectContaining({ message: 'could not find docker CLI, please make sure docker is installed' }))
+    const options = { devRemote: ref.devRemote }
+    await expect(runDev([], ref.config, options)).rejects.toEqual(expect.objectContaining({ message: 'could not find docker CLI, please make sure docker is installed' }))
   })
 
   test('should fail if docker is not running', async () => {
@@ -655,7 +690,8 @@ function runCommonLocalTests (ref) {
       }
       return { stdout: jest.fn() }
     })
-    await expect(runDev([], ref.config)).rejects.toEqual(expect.objectContaining({ message: 'docker is not running, please make sure to start docker' }))
+    const options = { devRemote: ref.devRemote }
+    await expect(runDev([], ref.config, options)).rejects.toEqual(expect.objectContaining({ message: 'docker is not running, please make sure to start docker' }))
   })
 
   test('should download openwhisk-standalone.jar on first usage', async () => {
@@ -775,7 +811,7 @@ function runCommonLocalTests (ref) {
         kill: jest.fn()
       }
     })
-    await testCleanupOnError(ref.config, () => {
+    await testCleanupOnError(ref, () => {
       expect(execa).toHaveBeenCalledWith(...EXECA_LOCAL_OW_ARGS)
       expect(owProcessMockKill).toHaveBeenCalledTimes(1)
     })
@@ -846,8 +882,8 @@ function runCommonLocalTests (ref) {
 describe('with remote actions and no frontend', () => {
   const ref = {}
   beforeEach(async () => {
-    process.env.REMOTE_ACTIONS = 'true'
     // remove '/web-src/index.html' file = no ui
+    ref.devRemote = true
     ref.config = await loadEnvScripts('sample-app', global.fakeConfig.tvm, ['/web-src/index.html'])
     ref.appFiles = ['/manifest.yml', '/package.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
   })
@@ -858,7 +894,8 @@ describe('with remote actions and no frontend', () => {
   runCommonBackendOnlyTests(ref)
 
   test('should start a dummy node background process to wait1 on sigint', async () => {
-    await runDev([], ref.config)
+    const options = { devRemote: ref.devRemote }
+    await runDev([], ref.config, options)
     expect(execa).toHaveBeenCalledWith('node')
   })
 
@@ -869,9 +906,10 @@ describe('with remote actions and no frontend', () => {
 
     const mockKill = jest.fn()
     execa.mockReturnValue({ kill: mockKill })
-    await runDev([], ref.config)
+    const options = { devRemote: ref.devRemote }
+    await runDev([], ref.config, options)
     return new Promise(resolve => {
-      testCleanupNoErrors(resolve, ref.config, () => {
+      testCleanupNoErrors(resolve, ref, () => {
         expect(mockKill).toHaveBeenCalledTimes(1)
       })
     })
@@ -880,8 +918,9 @@ describe('with remote actions and no frontend', () => {
   test('should kill dummy node background process on error', async () => {
     const mockKill = jest.fn()
     execa.mockReturnValue({ kill: mockKill })
-    await runDev([], ref.config)
-    await testCleanupOnError(ref.config, () => {
+    const options = { devRemote: ref.devRemote }
+    await runDev([], ref.config, options)
+    await testCleanupOnError(ref, () => {
       expect(mockKill).toHaveBeenCalledTimes(1)
     })
   })
@@ -890,7 +929,7 @@ describe('with remote actions and no frontend', () => {
 describe('with remote actions and frontend', () => {
   const ref = {}
   beforeEach(async () => {
-    process.env.REMOTE_ACTIONS = 'true'
+    ref.devRemote = true
     ref.config = await loadEnvScripts('sample-app', global.fakeConfig.tvm)
     ref.appFiles = ['/manifest.yml', '/package.json', '/web-src/index.html', '/web-src/src/config.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
   })
@@ -902,8 +941,9 @@ describe('with remote actions and frontend', () => {
 
   test('should generate a vscode debug config for actions and web-src', async () => {
     mockUIServerAddressInstance.port = 9999
-    await runDev([], ref.config)
-    const isLocal = !ref.config.actions.devRemote
+    const options = { devRemote: ref.devRemote }
+    await runDev([], ref.config, options)
+    const isLocal = !ref.devRemote
     expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
       configurations: [
         getExpectedActionVSCodeDebugConfig(isLocal, 'sample-app-1.0.0/action'),
@@ -921,7 +961,8 @@ describe('with remote actions and frontend', () => {
       'action-sequence': baseUrl + 'action-sequence'
     }
     mockRuntimeLib.utils.getActionUrls.mockReturnValueOnce(retVal)
-    await runDev([], ref.config)
+    const options = { devRemote: ref.devRemote }
+    await runDev([], ref.config, options)
     expect('/web-src/src/config.json' in global.fakeFileSystem.files()).toEqual(true)
     expect(JSON.parse(global.fakeFileSystem.files()['/web-src/src/config.json'].toString())).toEqual(retVal)
   })
@@ -943,7 +984,7 @@ describe('with remote actions and frontend', () => {
 describe('with local actions and no frontend', () => {
   const ref = {}
   beforeEach(async () => {
-    process.env.REMOTE_ACTIONS = 'false'
+    ref.devRemote = false
     ref.config = await loadEnvScripts('sample-app', global.fakeConfig.tvm, ['/web-src/index.html'])
     ref.appFiles = ['/dist', '/manifest.yml', '/package.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
     // default mocks
@@ -968,7 +1009,8 @@ describe('with local actions and no frontend', () => {
   runCommonLocalTests(ref)
 
   test('should not try to delete /dist/.env.local if it does not exist (branch coverage)', async () => {
-    await runDev([], ref.config)
+    const options = { devRemote: ref.devRemote }
+    await runDev([], ref.config, options)
     global.fakeFileSystem.removeKeys(['/dist/.env.local'])
     expect('/dist/.env.local' in global.fakeFileSystem.files()).toEqual(false)
     process.emit('SIGINT')
@@ -978,7 +1020,7 @@ describe('with local actions and no frontend', () => {
 describe('with local actions and frontend', () => {
   const ref = {}
   beforeEach(async () => {
-    process.env.REMOTE_ACTIONS = 'false'
+    ref.devRemote = false
     ref.config = await loadEnvScripts('sample-app', global.fakeConfig.tvm)
     ref.appFiles = ['/dist', '/manifest.yml', '/package.json', '/web-src/index.html', '/web-src/src/config.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
     // default mocks
@@ -1003,8 +1045,9 @@ describe('with local actions and frontend', () => {
 
   test('should generate a vscode debug config for actions and web-src', async () => {
     mockUIServerAddressInstance.port = 9999
-    await runDev([], ref.config)
-    const isLocal = !ref.config.actions.devRemote
+    const options = { devRemote: ref.devRemote }
+    await runDev([], ref.config, options)
+    const isLocal = !ref.devRemote
     expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
       configurations: [
         getExpectedActionVSCodeDebugConfig(isLocal, 'sample-app-1.0.0/action'),
@@ -1022,7 +1065,8 @@ describe('with local actions and frontend', () => {
       'action-sequence': baseUrl + 'action-sequence'
     }
     mockRuntimeLib.utils.getActionUrls.mockReturnValueOnce(retVal)
-    await runDev([], ref.config)
+    const options = { devRemote: ref.devRemote }
+    await runDev([], ref.config, options)
     expect('/web-src/src/config.json' in global.fakeFileSystem.files()).toEqual(true)
     expect(JSON.parse(global.fakeFileSystem.files()['/web-src/src/config.json'].toString())).toEqual(retVal)
   })
@@ -1096,12 +1140,13 @@ test('vscode wskdebug config with require-adobe-auth annotation && apihost=https
   global.addSampleAppFiles()
   global.fakeFileSystem.removeKeys(['/web-src/index.html'])
   mockAIOConfig.get.mockReturnValue(global.fakeConfig.tvm)
-  process.env.REMOTE_ACTIONS = 'true'
+  const devRemote = true
   const config = loadConfig()
   // avoid recreating a new fixture
   config.manifest.package.actions.action.annotations = { 'require-adobe-auth': true }
   config.ow.apihost = 'https://adobeioruntime.net'
-  await runDev([], config)
+  const options = { devRemote }
+  await runDev([], config, options)
 
   expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
     configurations: expect.arrayContaining([
@@ -1131,12 +1176,13 @@ test('vscode wskdebug config with require-adobe-auth annotation && apihost!=http
   global.addSampleAppFiles()
   global.fakeFileSystem.removeKeys(['/web-src/index.html'])
   mockAIOConfig.get.mockReturnValue(global.fakeConfig.tvm)
-  process.env.REMOTE_ACTIONS = 'true'
+  const devRemote = true
   const config = loadConfig()
   // avoid recreating a new fixture
   config.manifest.package.actions.action.annotations = { 'require-adobe-auth': true }
   config.ow.apihost = 'https://notadobeioruntime.net'
-  await runDev([], config)
+  const options = { devRemote }
+  await runDev([], config, options)
 
   expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
     configurations: expect.arrayContaining([
@@ -1166,11 +1212,12 @@ test('vscode wskdebug config without runtime option', async () => {
   global.addSampleAppFiles()
   global.fakeFileSystem.removeKeys(['/web-src/index.html'])
   mockAIOConfig.get.mockReturnValue(global.fakeConfig.tvm)
-  process.env.REMOTE_ACTIONS = 'true'
+  const devRemote = true
   const config = loadConfig()
   // avoid recreating a new fixture
   delete config.manifest.package.actions.action.runtime
-  await runDev([], config)
+  const options = { devRemote }
+  await runDev([], config, options)
 
   expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
     configurations: expect.arrayContaining([

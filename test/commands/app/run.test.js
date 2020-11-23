@@ -113,7 +113,6 @@ beforeEach(() => {
 
   getPort.mockReset()
 
-  delete process.env.REMOTE_ACTIONS
   delete process.env.PORT
 })
 
@@ -191,39 +190,37 @@ describe('run', () => {
   })
 
   test('app:run with web-src and --skip-actions', async () => {
-    // mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     command.argv = []
     command.appConfig = { app: { hasFrontend: false, hasBackend: true } }
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
-    expect(process.env.REMOTE_ACTIONS).toBe('true')
   })
 
   test('app:run calls log spinner --verbose', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     mockRunDev.mockImplementation((args, config, options, logFunc) => {
       logFunc('boo')
+      expect(options.devRemote).toBe(true)
     })
     command.argv = ['--verbose']
     command.appConfig = mockConfigData
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
-    expect(process.env.REMOTE_ACTIONS).toBe('true')
   })
 
   test('app:run calls log spinner not verbose', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     mockRunDev.mockImplementation((args, config, options, logFunc) => {
       logFunc('boo')
+      expect(options.devRemote).toBe(true)
     })
     command.argv = []
     command.appConfig = mockConfigData
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
-    expect(process.env.REMOTE_ACTIONS).toBe('true')
   })
 
   test('app:run with manifest and no certificates', async () => {
@@ -233,7 +230,6 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
-    expect(process.env.REMOTE_ACTIONS).toBe('true')
   })
 
   test('app:run with web src and manifest', async () => {
@@ -243,11 +239,11 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
-    expect(process.env.REMOTE_ACTIONS).toBe('true')
     expect(mockRunDev).toHaveBeenCalledWith([], mockConfigData, expect.objectContaining({
       parcel: expect.objectContaining({
         logLevel: 2
-      })
+      }),
+      devRemote: true
     }), expect.any(Function))
   })
 
@@ -271,19 +267,21 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledWith([], mockConfigData, expect.objectContaining({
       parcel: expect.objectContaining({
         logLevel: 4
-      })
+      }),
+      devRemote: true
     }), expect.any(Function))
-    expect(process.env.REMOTE_ACTIONS).toBe('true')
   })
 
   test('app:run with --local', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
+    mockRunDev.mockImplementation((args, config, options, logFunc) => {
+      expect(options.devRemote).toBe(false)
+    })
     command.argv = ['--local']
     command.appConfig = mockConfigData
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
-    expect(process.env.REMOTE_ACTIONS).toBe('false')
   })
 
   test('app:run with --local --verbose', async () => {
@@ -296,9 +294,9 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledWith([], mockConfigData, expect.objectContaining({
       parcel: expect.objectContaining({
         logLevel: 4
-      })
+      }),
+      devRemote: false
     }), expect.any(Function))
-    expect(process.env.REMOTE_ACTIONS).toBe('false')
   })
 
   test('app:run where scripts.runDev throws', async () => {
