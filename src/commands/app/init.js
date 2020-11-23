@@ -63,7 +63,8 @@ class InitCommand extends BaseCommand {
           'destination-file': generatedFile,
           'access-token': accessToken,
           'ims-env': imsEnv,
-          'allow-create': true
+          'allow-create': true,
+          'cert-dir': path.join(this.config.dataDir, 'entp-certificates')
         })
         // trigger import
         flags.import = generatedFile
