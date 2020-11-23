@@ -49,9 +49,9 @@ $ aio app --help
 
 ## `aio app`
 
+```
 Create, run, test, and deploy Adobe I/O Apps
 
-```
 USAGE
   $ aio app
 
@@ -60,13 +60,13 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.1.1/src/commands/app/index.js)_
+_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.2.0/src/commands/app/index.js)_
 
 ## `aio app:add`
 
+```
 Add a new component to an existing Adobe I/O App
 
-```
 USAGE
   $ aio app:add
 
@@ -75,13 +75,14 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/add/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.1.1/src/commands/app/add/index.js)_
+_See code: [src/commands/app/add/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.2.0/src/commands/app/add/index.js)_
 
 ## `aio app:add:action`
 
+```
 Add a new action
 
-```
+
 USAGE
   $ aio app:add:action
 
@@ -92,13 +93,14 @@ OPTIONS
   --version       Show version
 ```
 
-_See code: [src/commands/app/add/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.1.1/src/commands/app/add/action.js)_
+_See code: [src/commands/app/add/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.2.0/src/commands/app/add/action.js)_
 
 ## `aio app:add:ci`
 
+```
 Add CI files
 
-```
+
 USAGE
   $ aio app:add:ci
 
@@ -107,13 +109,14 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/add/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.1.1/src/commands/app/add/ci.js)_
+_See code: [src/commands/app/add/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.2.0/src/commands/app/add/ci.js)_
 
 ## `aio app:add:event`
 
+```
 Add a new Adobe I/O Events action
 
-```
+
 USAGE
   $ aio app:add:event
 
@@ -124,13 +127,14 @@ OPTIONS
   --version       Show version
 ```
 
-_See code: [src/commands/app/add/event.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.1.1/src/commands/app/add/event.js)_
+_See code: [src/commands/app/add/event.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.2.0/src/commands/app/add/event.js)_
 
 ## `aio app:add:web-assets`
 
+```
 Add web assets support
 
-```
+
 USAGE
   $ aio app:add:web-assets
 
@@ -141,13 +145,14 @@ OPTIONS
   --version       Show version
 ```
 
-_See code: [src/commands/app/add/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.1.1/src/commands/app/add/web-assets.js)_
+_See code: [src/commands/app/add/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.2.0/src/commands/app/add/web-assets.js)_
 
 ## `aio app:create [PATH]`
 
+```
 Create a new Adobe I/O App with default parameters
 
-```
+
 USAGE
   $ aio app:create [PATH]
 
@@ -160,13 +165,13 @@ OPTIONS
   --version            Show version
 ```
 
-_See code: [src/commands/app/create.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.1.1/src/commands/app/create.js)_
+_See code: [src/commands/app/create.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.2.0/src/commands/app/create.js)_
 
 ## `aio app:delete`
 
+```
 Delete a component from an existing Adobe I/O App
 
-```
 USAGE
   $ aio app:delete
 
@@ -175,13 +180,14 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/delete/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.1.1/src/commands/app/delete/index.js)_
+_See code: [src/commands/app/delete/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.2.0/src/commands/app/delete/index.js)_
 
 ## `aio app:delete:action [ACTION-NAME]`
 
+```
 Delete an existing action
 
-```
+
 USAGE
   $ aio app:delete:action [ACTION-NAME]
 
@@ -194,13 +200,14 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/delete/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.1.1/src/commands/app/delete/action.js)_
+_See code: [src/commands/app/delete/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.2.0/src/commands/app/delete/action.js)_
 
 ## `aio app:delete:ci`
 
+```
 Delete existing CI files
 
-```
+
 USAGE
   $ aio app:delete:ci
 
@@ -210,13 +217,14 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/delete/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.1.1/src/commands/app/delete/ci.js)_
+_See code: [src/commands/app/delete/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.2.0/src/commands/app/delete/ci.js)_
 
 ## `aio app:delete:event EVENT-ACTION-NAME`
 
+```
 Delete an existing Adobe I/O Events action
 
-```
+
 USAGE
   $ aio app:delete:event EVENT-ACTION-NAME
 
@@ -229,13 +237,14 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/delete/event.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.1.1/src/commands/app/delete/event.js)_
+_See code: [src/commands/app/delete/event.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.2.0/src/commands/app/delete/event.js)_
 
 ## `aio app:delete:web-assets`
 
+```
 Delete existing web assets
 
-```
+
 USAGE
   $ aio app:delete:web-assets
 
@@ -245,13 +254,14 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/delete/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.1.1/src/commands/app/delete/web-assets.js)_
+_See code: [src/commands/app/delete/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.2.0/src/commands/app/delete/web-assets.js)_
 
 ## `aio app:deploy`
 
+```
 Build and deploy an Adobe I/O App
 
-```
+
 USAGE
   $ aio app:deploy
 
@@ -266,13 +276,13 @@ OPTIONS
   --version            Show version
 ```
 
-_See code: [src/commands/app/deploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.1.1/src/commands/app/deploy.js)_
+_See code: [src/commands/app/deploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.2.0/src/commands/app/deploy.js)_
 
 ## `aio app:get-url [ACTION]`
 
+```
 Get action URLs
 
-```
 USAGE
   $ aio app:get-url [ACTION]
 
@@ -285,13 +295,14 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/get-url.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.1.1/src/commands/app/get-url.js)_
+_See code: [src/commands/app/get-url.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.2.0/src/commands/app/get-url.js)_
 
 ## `aio app:init [PATH]`
 
+```
 Create a new Adobe I/O App
 
-```
+
 USAGE
   $ aio app:init [PATH]
 
@@ -307,13 +318,14 @@ OPTIONS
   --version            Show version
 ```
 
-_See code: [src/commands/app/init.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.1.1/src/commands/app/init.js)_
+_See code: [src/commands/app/init.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.2.0/src/commands/app/init.js)_
 
 ## `aio app:logs`
 
+```
 Fetch logs for an Adobe I/O App
 
-```
+
 USAGE
   $ aio app:logs
 
@@ -328,31 +340,33 @@ OPTIONS
   --version            Show version
 ```
 
-_See code: [src/commands/app/logs.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.1.1/src/commands/app/logs.js)_
+_See code: [src/commands/app/logs.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.2.0/src/commands/app/logs.js)_
 
 ## `aio app:run`
 
+```
 Run an Adobe I/O App
 
-```
 USAGE
   $ aio app:run
 
 OPTIONS
   -v, --verbose   Verbose output
-  --local         run/debug actions locally
+  --local         run/debug actions locally ( requires Docker running )
   --open          Open the default web browser after a successful run, only valid if your app has a front-end
+  --[no-]serve    start frontend server (experimental)
   --skip-actions  skip actions, only run the ui server
   --version       Show version
 ```
 
-_See code: [src/commands/app/run.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.1.1/src/commands/app/run.js)_
+_See code: [src/commands/app/run.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.2.0/src/commands/app/run.js)_
 
 ## `aio app:test`
 
+```
 Run tests for an Adobe I/O App
 
-```
+
 USAGE
   $ aio app:test
 
@@ -363,13 +377,14 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/test.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.1.1/src/commands/app/test.js)_
+_See code: [src/commands/app/test.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.2.0/src/commands/app/test.js)_
 
 ## `aio app:undeploy`
 
+```
 Undeploys an Adobe I/O App
 
-```
+
 USAGE
   $ aio app:undeploy
 
@@ -380,13 +395,14 @@ OPTIONS
   --version       Show version
 ```
 
-_See code: [src/commands/app/undeploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.1.1/src/commands/app/undeploy.js)_
+_See code: [src/commands/app/undeploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.2.0/src/commands/app/undeploy.js)_
 
 ## `aio app:use [CONFIG_FILE_PATH]`
 
+```
 Import an Adobe I/O Developer Console configuration file
 
-```
+
 USAGE
   $ aio app:use [CONFIG_FILE_PATH]
 
@@ -400,5 +416,5 @@ OPTIONS
   --version        Show version
 ```
 
-_See code: [src/commands/app/use.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.1.1/src/commands/app/use.js)_
+_See code: [src/commands/app/use.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.2.0/src/commands/app/use.js)_
 <!-- commandsstop -->
