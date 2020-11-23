@@ -799,7 +799,11 @@ function runCommonLocalTests (ref) {
       return { ok: true }
     })
 
-    await runDev([], ref.config)
+    global.fakeFileSystem.addJson({
+      'dist/somefile.txt': 'some content' // create dist folder
+    })
+
+    await runDev([], ref.config, { verbose: true })
     expect(execa).toHaveBeenCalledWith(...EXECA_LOCAL_OW_ARGS)
     expect(fetch).toHaveBeenCalledWith('http://localhost:3233/api/v1')
     expect(fetch).toHaveBeenCalledTimes(5)
