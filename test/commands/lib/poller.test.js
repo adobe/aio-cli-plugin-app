@@ -32,7 +32,6 @@ jest.mock('../../../src/lib/app-helper.js')
 describe('runDev logListener', () => {
   const ref = {}
   beforeEach(async () => {
-    process.env.REMOTE_ACTIONS = 'true'
     global.addSampleAppFiles()
     global.fakeFileSystem.removeKeys(['/web-src/index.html'])
     mockAIOConfig.get.mockReturnValue(global.fakeConfig.local)
@@ -66,7 +65,7 @@ describe('runDev logListener', () => {
   test('should throw error on error from getLogs', async () => {
     mockRuntimeLib.printActionLogs.mockReset()
     mockRuntimeLib.printActionLogs.mockRejectedValue('error')
-    await runDev([], ref.config, { fetchLogs: true })
+    await runDev([], ref.config, { fetchLogs: true, devRemote: true })
     jest.runAllTimers()
     expect(mockRuntimeLib.printActionLogs).toHaveBeenCalled()
     process.emit('SIGINT')
@@ -74,7 +73,7 @@ describe('runDev logListener', () => {
 
   test('should get action logs', async () => {
     mockRuntimeLib.printActionLogs.mockResolvedValueOnce({ lastActivationTime: 0 })
-    await runDev([], ref.config, { fetchLogs: true })
+    await runDev([], ref.config, { fetchLogs: true, devRemote: true })
     jest.runAllTimers()
     expect(mockRuntimeLib.printActionLogs).toHaveBeenCalled()
     process.emit('SIGINT')

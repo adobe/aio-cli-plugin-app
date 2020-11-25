@@ -127,11 +127,6 @@ module.exports = () => {
   // check if the app has a backend by checking presence of manifest.yml file
   config.app.hasBackend = fs.existsSync(config.manifest.src)
 
-  // todo change env var to DEV_LOCAL_ACTIONS because REMOTE_ACTIONS is only used in the context of dev cmd
-  // this creates confusion as for other commands actions are always remote although REMOTE_ACTIONS is not set
-  const remoteString = process.env.REMOTE_ACTIONS
-  config.actions.devRemote = remoteString === true || remoteString === 'true' || remoteString === 'yes' || remoteString === '1'
-
   // 2. check needed files
   aioLogger.debug('checking package.json existence')
   utils.checkFile(_abs('package.json'))

@@ -126,7 +126,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
   // control variables
   const hasFrontend = config.app.hasFrontend
   const withBackend = config.app.hasBackend && !skipActions
-  const isLocal = !config.actions.devRemote // applies only for backend
+  const isLocal = !options.devRemote // applies only for backend
 
   aioLogger.debug(`hasFrontend ${hasFrontend}`)
   aioLogger.debug(`withBackend ${withBackend}`)

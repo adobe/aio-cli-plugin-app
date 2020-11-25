@@ -51,6 +51,7 @@ class Run extends BaseCommand {
         logLevel: flags.verbose ? 4 : 2
       },
       fetchLogs: true,
+      devRemote: !flags.local,
       verbose: flags.verbose
     }
 
@@ -78,7 +79,6 @@ class Run extends BaseCommand {
       spinner.start()
     }
 
-    process.env.REMOTE_ACTIONS = !flags.local
     try {
       const frontendUrl = await runDev(args, this.getAppConfig(), runOptions, onProgress)
       try {
@@ -183,7 +183,7 @@ Run.flags = {
     exclusive: ['skip-actions']
   }),
   serve: flags.boolean({
-    description: 'start frontend server',
+    description: 'start frontend server (experimental)',
     default: true,
     allowNo: true
   }),
