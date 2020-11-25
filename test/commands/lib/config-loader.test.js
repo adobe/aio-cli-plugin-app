@@ -39,10 +39,10 @@ describe('load config', () => {
     mockAIOConfig.get.mockReturnValue(global.fakeConfig.creds)
     config = loadConfig()
     expect(config.s3.creds).toEqual({
-      accessKeyId: global.fakeConfig.creds.cna.awsaccesskeyid,
-      secretAccessKey: global.fakeConfig.creds.cna.awssecretaccesskey,
+      accessKeyId: global.fakeConfig.creds.app.awsaccesskeyid,
+      secretAccessKey: global.fakeConfig.creds.app.awssecretaccesskey,
       params: {
-        Bucket: global.fakeConfig.creds.cna.s3bucket
+        Bucket: global.fakeConfig.creds.app.s3bucket
       }
     })
   })
