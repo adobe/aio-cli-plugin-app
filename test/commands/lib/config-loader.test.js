@@ -41,7 +41,7 @@ describe('load config', () => {
   test('show warning for .cna config', async () => {
     mockAIOConfig.get.mockReturnValue({ cna: { web: 'new-web-src' } })
     config = loadConfig()
-    expect(aioLogger.log).toBeCalledWith(chalk.redBright(chalk.bold('Deprecation Warning: The config variable `cna` has been deprecated please replace it with `app` in your .aio file')))
+    expect(aioLogger.log).toBeCalledWith(chalk.redBright(chalk.bold('The config variable \'cna\' has been deprecated. Please update it with \'app\' instead in your .aio configuration file.')))
     expect(config.web.src).toMatch(/new-web-src/)
   })
 

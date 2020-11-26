@@ -92,7 +92,7 @@ module.exports = () => {
 
   // userConfig.cna deprecation warning
   if (userConfig.cna !== undefined) {
-    aioLogger.log(chalk.redBright(chalk.bold('Deprecation Warning: The config variable `cna` has been deprecated please replace it with `app` in your .aio file')))
+    aioLogger.log(chalk.redBright(chalk.bold('The config variable \'cna\' has been deprecated. Please update it with \'app\' instead in your .aio configuration file.')))
     Object.assign(userConfig.app, userConfig.cna)
   }
 
