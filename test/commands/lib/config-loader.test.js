@@ -42,7 +42,7 @@ describe('load config', () => {
     mockAIOConfig.get.mockReturnValue({ cna: { web: 'new-web-src' } })
     config = loadConfig()
     expect(aioLogger.log).toBeCalledWith(chalk.redBright(chalk.bold('Deprecation Warning: The config variable `cna` has been deprecated please replace it with `app` in your .aio file')))
-    expect(config.web.src).toBe('/new-web-src')
+    expect(config.web.src).toMatch(/new-web-src/)
   })
 
   test('with s3 creds in config', async () => {
