@@ -13,6 +13,7 @@ governing permissions and limitations under the License.
 const path = require('path')
 const yaml = require('js-yaml')
 const fs = require('fs-extra')
+const chalk = require('chalk')
 const utils = require('./app-helper')
 const aioConfig = require('@adobe/aio-lib-core-config')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:config-loader', { provider: 'debug' })
@@ -88,6 +89,13 @@ module.exports = () => {
   aioConfig.reload()
   const userConfig = aioConfig.get() || {}
   userConfig.app = userConfig.app || {}
+
+  // userConfig.cna deprecation warning
+  if (userConfig.cna !== undefined) {
+    aioLogger.log(chalk.redBright(chalk.bold('Deprecation Warning: The config variable `cna` has been deprecated please replace it with `app` in your .aio file ')))
+    userConfig.app = Object.assign(userConfig.app, userConfig.cna)
+  }
+
   config.imsOrgId = aioConfig.get(AIO_CONFIG_IMS_ORG_ID)
 
   // 1. paths
