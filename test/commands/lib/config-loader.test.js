@@ -72,3 +72,99 @@ describe('load config', () => {
     expect(config.manifest.package).toBe(undefined)
   })
 })
+
+describe('validate .env', () => {
+  let config
+  beforeEach(async () => {
+    global.fakeFileSystem.reset()
+    global.addSampleAppFiles()
+    global.fakeFileSystem.addJson({
+      '.env': 'AIO_runtime_auth=fakeauth',
+      '.env.schema': 'AIO_runtime_auth='
+    })
+    mockAIOConfig.get.mockReturnValue(global.fakeConfig.local)
+    process.chdir('/')
+  })
+
+  test('sample app', async () => {
+    config = loadConfig()
+    expect(config.imsOrgId).toEqual(global.fakeConfig.local)
+  })
+
+  test('sample app - duplicate in .env but no .env.schema', async () => {
+    global.fakeFileSystem.addJson({
+      '.env': 'AIO_runtime_auth=fakeauth\nAIO_runtime_auth=fakeauth'
+    })
+    global.fakeFileSystem.removeKeys(['/.env.schema'])
+    config = loadConfig()
+    expect(config.imsOrgId).toEqual(global.fakeConfig.local)
+  })
+
+  test('sample app - duplicate in .env', async () => {
+    global.fakeFileSystem.addJson({
+      '.env': 'AIO_runtime_auth=fakeauth\nAIO_runtime_auth=fakeauth',
+      '.env.schema': 'AIO_runtime_auth='
+    })
+    expect(loadConfig).toThrow('duplicate declaration of environment variable AIO_runtime_auth in /.env')
+  })
+
+  test('sample app - duplicate in .env - case insensitive', async () => {
+    global.fakeFileSystem.addJson({
+      '.env': 'AIO_runtime_auth=fakeauth\nAIO_runtime_AUTh=fakeauth',
+      '.env.schema': 'AIO_runtime_auth='
+    })
+    expect(loadConfig).toThrow('duplicate declaration of environment variable AIO_runtime_AUTh in /.env')
+  })
+
+  test('sample app - missing required env var', async () => {
+    global.fakeFileSystem.addJson({
+      '.env': ''
+    })
+    expect(loadConfig).toThrow('MISSING CONFIG VALUES: AIO_runtime_auth')
+  })
+
+  test('sample app - env var from process.env', async () => {
+    global.fakeFileSystem.addJson({
+      '.env': ''
+    })
+    process.env.AIO_runtime_auth = 'fakeauth'
+    config = loadConfig()
+    expect(config.imsOrgId).toEqual(global.fakeConfig.local)
+  })
+
+  test('sample app - env var from process.env - case insensitive', async () => {
+    global.fakeFileSystem.addJson({
+      '.env': ''
+    })
+    process.env.AIO_runtime_AuTh = 'fakeauth'
+    config = loadConfig()
+    expect(config.imsOrgId).toEqual(global.fakeConfig.local)
+  })
+
+  test('sample app - regex mismatch', async () => {
+    global.fakeFileSystem.addJson({
+      '.env': 'AIO_runtime_namespace=fakens',
+      '.env.schema': 'AIO_runtime_namespace=[0-9]{5}_[0-9]{5}'
+    })
+    expect(loadConfig).toThrow('REGEX MISMATCH: \nAIO_runtime_namespace. Expected format: [0-9]{5}_[0-9]{5} Received: fakens')
+  })
+
+  test('sample app - regex mismatch 2', async () => {
+    global.fakeFileSystem.addJson({
+      '.env.schema': 'AIO_runtime_namespace=[0-9]{5}_[0-9]{5}'
+    })
+    process.env.AIO_runtime_namespace = 'fromprocessenv'
+    expect(loadConfig).toThrow('REGEX MISMATCH: \nAIO_runtime_namespace. Expected format: [0-9]{5}_[0-9]{5} Received: fromprocessenv')
+    delete process.env.AIO_runtime_namespace
+  })
+
+  test('sample app - regex match', async () => {
+    delete process.env.AIO_runtime_namespace
+    global.fakeFileSystem.addJson({
+      '.env': 'AIO_runtime_namespace=12345_12345',
+      '.env.schema': 'AIO_runtime_namespace=[0-9]{5}_[0-9]{5}'
+    })
+    config = loadConfig()
+    expect(config.imsOrgId).toEqual(global.fakeConfig.local)
+  })
+})
