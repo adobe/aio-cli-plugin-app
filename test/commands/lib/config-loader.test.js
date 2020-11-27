@@ -14,6 +14,7 @@ global.mockFs()
 const loadConfig = require('../../../src/lib/config-loader')
 const mockAIOConfig = require('@adobe/aio-lib-core-config')
 const yaml = require('js-yaml')
+const path = require('path')
 
 describe('load config', () => {
   let config
@@ -105,7 +106,7 @@ describe('validate .env', () => {
       '.env': 'AIO_runtime_auth=fakeauth\nAIO_runtime_auth=fakeauth',
       '.env.schema': 'AIO_runtime_auth='
     })
-    expect(loadConfig).toThrow('duplicate declaration of environment variable AIO_runtime_auth in /.env')
+    expect(loadConfig).toThrow(`duplicate declaration of environment variable AIO_runtime_auth in ${path.resolve('.env')}`)
   })
 
   test('sample app - duplicate in .env - case insensitive', async () => {
@@ -113,7 +114,7 @@ describe('validate .env', () => {
       '.env': 'AIO_runtime_auth=fakeauth\nAIO_runtime_AUTh=fakeauth',
       '.env.schema': 'AIO_runtime_auth='
     })
-    expect(loadConfig).toThrow('duplicate declaration of environment variable AIO_runtime_AUTh in /.env')
+    expect(loadConfig).toThrow(`duplicate declaration of environment variable AIO_runtime_AUTh in ${path.resolve('.env')}`)
   })
 
   test('sample app - missing required env var', async () => {
