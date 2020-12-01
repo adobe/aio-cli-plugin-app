@@ -14,7 +14,7 @@ const RunCommand = require('../../../src/commands/app/run')
 const BaseCommand = require('../../../src/BaseCommand')
 
 jest.mock('../../../src/lib/runDev')
-const mockRunDev = require('../../../src/lib/runDev')
+const mockRunDev = require('../../../src/lib/run-dev')
 
 jest.mock('../../../src/lib/app-helper', () => {
   return {

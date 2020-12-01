@@ -23,7 +23,7 @@ jest.mock('node-fetch')
 process.exit = jest.fn()
 
 const loadConfig = require('../../../src/lib/config-loader')
-const runDev = require('../../../src/lib/runDev')
+const runDev = require('../../../src/lib/run-dev')
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 const DeployActions = mockRuntimeLib.deployActions
 
