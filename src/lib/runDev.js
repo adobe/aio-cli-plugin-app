@@ -13,104 +13,22 @@ governing permissions and limitations under the License.
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:runDev', { provider: 'debug' })
 const rtLib = require('@adobe/aio-lib-runtime')
 const rtLibUtils = rtLib.utils
-const path = require('path')
-const fs = require('fs-extra')
-const cloneDeep = require('lodash.clonedeep')
 const vscode = require('./vscode')
 const Cleanup = require('./cleanup')
-const dedent = require('dedent-js')
+const runWeb = require('./run-web')
+const runDevLocal = require('./run-dev-local')
 
-const httpTerminator = require('http-terminator')
 const BuildActions = require('@adobe/aio-lib-runtime').buildActions
 const DeployActions = require('@adobe/aio-lib-runtime').deployActions
-// const ActionLogs = require('../commands/app/logs')
 const utils = require('./app-helper')
 const EventPoller = require('../lib/poller')
-const { OW_CONFIG_RUNTIMES_FILE, OW_JAR_URL, OW_JAR_PATH, OW_LOCAL_APIHOST, OW_LOCAL_NAMESPACE, OW_LOCAL_AUTH, OW_LOCAL_LOG_FILE } = require('../lib/owlocal')
 const execa = require('execa')
-const Bundler = require('parcel-bundler')
 const chokidar = require('chokidar')
 let running = false
 let changed = false
 
-const owWaitInitTime = 2000
-const owWaitPeriodTime = 500
-const owTimeout = 60000
-const fetchLogInterval = 10000
-const eventPoller = new EventPoller(fetchLogInterval)
-
-/** @private */
-async function runDevLocal (config, cleanup, verbose, log) {
-  const devConfig = cloneDeep(config)
-  devConfig.envFile = path.join(config.app.dist, '.env.local')
-  const owJarFile = path.join(config.cli.dataDir, OW_JAR_PATH)
-
-  // take following steps only when we have a backend
-  log('checking if java is installed...')
-  if (!await utils.hasJavaCLI()) {
-    throw new Error('could not find java CLI, please make sure java is installed')
-  }
-
-  log('checking if docker is installed...')
-  if (!await utils.hasDockerCLI()) {
-    throw new Error('could not find docker CLI, please make sure docker is installed')
-  }
-
-  log('checking if docker is running...')
-  if (!await utils.isDockerRunning()) {
-    throw new Error('docker is not running, please make sure to start docker')
-  }
-
-  if (!fs.existsSync(owJarFile)) {
-    log(`downloading OpenWhisk standalone jar from ${OW_JAR_URL} to ${owJarFile}, this might take a while... (to be done only once!)`)
-    await utils.downloadOWJar(OW_JAR_URL, owJarFile)
-  }
-
-  log('starting local OpenWhisk stack...')
-  const owLocalLogFile = OW_LOCAL_LOG_FILE || path.join(config.app.dist, 'openwhisk-local.log.txt')
-  const owExecaOptions = {
-    stdio: [
-      null, // stdin
-      verbose ? fs.openSync(owLocalLogFile, 'w') : null, // stdout
-      'inherit' // stderr
-    ]
-  }
-  const res = await utils.runOpenWhiskJar(owJarFile, OW_CONFIG_RUNTIMES_FILE, OW_LOCAL_APIHOST, owWaitInitTime, owWaitPeriodTime, owTimeout, owExecaOptions)
-  cleanup.add(() => res.proc.kill(), 'stopping local OpenWhisk stack...')
-
-  log('setting local openwhisk credentials...')
-  const runtime = {
-    namespace: OW_LOCAL_NAMESPACE,
-    auth: OW_LOCAL_AUTH,
-    apihost: OW_LOCAL_APIHOST
-  }
-  devConfig.ow = { ...devConfig.ow, ...runtime }
-
-  // delete potentially conflicting env vars
-  delete process.env.AIO_RUNTIME_APIHOST
-  delete process.env.AIO_RUNTIME_NAMESPACE
-  delete process.env.AIO_RUNTIME_AUTH
-
-  log(`writing credentials to tmp wskdebug config '${devConfig.envFile}'`)
-  // prepare wskprops for wskdebug
-  fs.ensureDirSync(config.app.dist)
-  const envFile = rtLibUtils._absApp(devConfig.root, devConfig.envFile)
-  await fs.outputFile(envFile, dedent(`
-  # This file is auto-generated, do not edit.
-  # The items below are temporary credentials for local debugging
-  OW_NAMESPACE=${devConfig.ow.namespace}
-  OW_AUTH=${devConfig.ow.auth}
-  OW_APIHOST=${devConfig.ow.apihost}
-  `))
-
-  cleanup.add(() => {
-    if (fs.existsSync(devConfig.envFile)) {
-      fs.unlinkSync(devConfig.envFile)
-    }
-  }, 'removing wskdebug tmp .env file...')
-
-  return devConfig
-}
+const FETCH_LOG_INTERVAL = 10000
+const eventPoller = new EventPoller(FETCH_LOG_INTERVAL)
 
 /** @private */
 async function runDev (args = [], config, options = {}, log = () => {}) {
@@ -131,9 +49,6 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
   aioLogger.debug(`hasFrontend ${hasFrontend}`)
   aioLogger.debug(`withBackend ${withBackend}`)
   aioLogger.debug(`isLocal ${isLocal}`)
-
-  // port for UI
-  const uiPort = parseInt(args[0]) || parseInt(process.env.PORT) || 9080
 
   let frontEndUrl
 
@@ -164,7 +79,9 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
     // In that case this backend stuff might have to go to lib-runtime ?
     if (withBackend) {
       if (isLocal) {
-        devConfig = await runDevLocal(config, cleanup, options.verbose, log)
+        const { config: localConfig, cleanup: localCleanup } = await runDevLocal(config, log, options.verbose)
+        devConfig = localConfig
+        cleanup.add(() => localCleanup(), 'cleaning up runDevLocal')
       } else {
         // check credentials
         rtLibUtils.checkOpenWhiskCredentials(config)
@@ -192,36 +109,9 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       await utils.writeConfig(devConfig.web.injectedConfig, urls)
 
       if (!options.skipServe) {
-        log('starting local frontend server ..')
-        const entryFile = path.join(devConfig.web.src, 'index.html')
-
-        // our defaults here can be overridden by the bundleOptions passed in
-        // bundleOptions.https are also passed to bundler.serve
-        const parcelBundleOptions = {
-          cache: false,
-          outDir: devConfig.web.distDev,
-          contentHash: false,
-          watch: true,
-          minify: false,
-          logLevel: 1,
-          ...bundleOptions
-        }
-
-        let actualPort = uiPort
-        const uiBundler = new Bundler(entryFile, parcelBundleOptions)
-        cleanup.add(() => uiBundler.stop(), 'stopping parcel watcher...')
-        const uiServer = await uiBundler.serve(uiPort, bundleOptions.https)
-        actualPort = uiServer.address().port
-        const uiServerTerminator = httpTerminator.createHttpTerminator({
-          server: uiServer
-        })
-        cleanup.add(() => uiServerTerminator.terminate(), 'stopping ui server...')
-
-        if (actualPort !== uiPort) {
-          log(`Could not use port:${uiPort}, using port:${actualPort} instead`)
-        }
-        frontEndUrl = `${bundleOptions.https ? 'https:' : 'http:'}//localhost:${actualPort}`
-        log(`local frontend server running at ${frontEndUrl}`)
+        const { url, cleanup: bundlerCleanup } = await runWeb(config, log, bundleOptions)
+        frontEndUrl = url
+        cleanup.add(() => bundlerCleanup(), 'cleaning up runWeb...')
       }
     }
 

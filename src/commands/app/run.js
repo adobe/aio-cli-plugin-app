@@ -198,8 +198,4 @@ Run.flags = {
   })
 }
 
-// Run.args = [
-//   ...BaseCommand.args
-// ]
-
 module.exports = Run
