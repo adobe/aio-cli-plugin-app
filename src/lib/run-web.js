@@ -46,6 +46,7 @@ const runWeb = async (config, log, options) => {
   }
 
   const bundler = new Bundler(entryFile, parcelBundleOptions)
+  // break out serving to be generic, or re-use bundler.serve: https://github.com/parcel-bundler/parcel/blob/5f065b36f84cc9ccecf4662fc4f48c7787587627/packages/core/parcel-bundler/src/Bundler.js
   const server = await bundler.serve(uiPort, options.https)
   const terminator = httpTerminator.createHttpTerminator({
     server
