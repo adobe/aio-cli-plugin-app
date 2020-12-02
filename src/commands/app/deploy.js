@@ -16,12 +16,13 @@ const chalk = require('chalk')
 const { cli } = require('cli-ux')
 
 const BaseCommand = require('../../BaseCommand')
+const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { flags } = require('@oclif/command')
 const { runPackageScript, wrapError } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 
-class Deploy extends BaseCommand {
+class Deploy extends BuildCommand {
   async run () {
     // cli input
     const { flags } = this.parse(Deploy)
@@ -40,22 +41,7 @@ class Deploy extends BaseCommand {
     try {
       // build phase
       if (!flags['skip-build']) {
-        const buildArgs = []
-        Object.keys(flags).forEach((flag) => {
-          if (['skip-static', 'skip-actions', 'verbose', 'version'].includes(flag)) {
-            buildArgs.push('--' + flag)
-          }
-        })
-        if (!flags['force-build']) {
-          buildArgs.push('--no-force-build')
-        }
-        if (flags.action) {
-          flags.action.forEach((actionName) => {
-            buildArgs.push('-a')
-            buildArgs.push(actionName)
-          })
-        }
-        await this.config.runCommand('app:build', buildArgs)
+        await this.build(config, flags, spinner)
       }
 
       // deploy phase

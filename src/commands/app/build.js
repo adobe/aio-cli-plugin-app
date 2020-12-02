@@ -27,6 +27,11 @@ class Build extends BaseCommand {
     const config = this.getAppConfig()
 
     const spinner = ora()
+
+    await this.build(config, flags, spinner)
+  }
+
+  async build (config, flags, spinner) {
     const onProgress = !flags.verbose ? info => {
       spinner.text = info
     } : info => {
