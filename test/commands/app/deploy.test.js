@@ -90,6 +90,10 @@ describe('run', () => {
     command.error = jest.fn()
     command.log = jest.fn()
     command.appConfig = mockConfigData
+    command.appConfig.actions = { dist: 'actions' }
+    command.appConfig.web.distProd = 'dist'
+    command.config = { runCommand: jest.fn() }
+    command.build = jest.fn()
 
     mockRuntimeLib.deployActions.mockResolvedValue({})
   })
@@ -100,11 +104,11 @@ describe('run', () => {
 
   test('build & deploy an App with no flags', async () => {
     await command.run()
+    // expect(command.error).toHaveBeenCalledWith(0)
     expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.build).toHaveBeenCalledTimes(1)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
   })
 
   test('build & deploy an App verbose', async () => {
@@ -113,8 +117,8 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
+    expect(command.build).toHaveBeenCalledTimes(1)
+    expect(command.build).toHaveBeenCalledWith(command.appConfig, expect.objectContaining({ 'force-build': false, verbose: true }), expect.anything())
   })
 
   test('build & deploy --skip-static', async () => {
@@ -123,8 +127,8 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
+    expect(command.build).toHaveBeenCalledTimes(1)
+    expect(command.build).toHaveBeenCalledWith(command.appConfig, expect.objectContaining({ 'force-build': false, 'skip-static': true }), expect.anything())
   })
 
   test('build & deploy only some actions using --action', async () => {
@@ -133,10 +137,9 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
+    expect(command.build).toHaveBeenCalledTimes(1)
 
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledWith(mockConfigData, ['a', 'b', 'c'])
+    expect(command.build).toHaveBeenCalledWith(command.appConfig, expect.objectContaining({ 'force-build': false, 'skip-static': true, action: ['a', 'b', 'c'] }), expect.anything())
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(mockConfigData, {
       filterEntities: { actions: ['a', 'b', 'c'] }
     },
@@ -150,8 +153,8 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
+    expect(command.build).toHaveBeenCalledTimes(1)
+    expect(command.build).toHaveBeenCalledWith(command.appConfig, expect.objectContaining({ 'force-build': false, 'skip-static': true }), expect.anything())
   })
 
   test('build & deploy actions with no actions folder but with a manifest', async () => {
@@ -160,8 +163,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
+    expect(command.build).toHaveBeenCalledTimes(1)
   })
 
   test('build & deploy with --skip-actions', async () => {
@@ -170,8 +172,8 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
+    expect(command.build).toHaveBeenCalledTimes(1)
+    expect(command.build).toHaveBeenCalledWith(command.appConfig, expect.objectContaining({ 'force-build': false, 'skip-actions': true }), expect.anything())
   })
 
   test('build & deploy with --skip-actions with no static folder', async () => {
@@ -181,8 +183,8 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
+    expect(command.build).toHaveBeenCalledTimes(1)
+    expect(command.build).toHaveBeenCalledWith(command.appConfig, expect.objectContaining({ 'force-build': false, 'skip-actions': true }), expect.anything())
   })
 
   test('build & deploy with no manifest.yml', async () => {
@@ -191,8 +193,8 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
+    expect(command.build).toHaveBeenCalledTimes(1)
+    expect(command.build).toHaveBeenCalledWith(command.appConfig, expect.objectContaining({ 'force-build': false }), expect.anything())
   })
 
   test('--skip-deploy', async () => {
@@ -201,8 +203,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
+    expect(command.build).toHaveBeenCalledWith(command.appConfig, expect.objectContaining({ 'force-build': false }), expect.anything())
   })
 
   test('--skip-deploy --verbose', async () => {
@@ -211,18 +212,8 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
-  })
-
-  test('--skip-deploy --skip-actions', async () => {
-    command.argv = ['--skip-deploy', '--skip-actions']
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
+    expect(command.build).toHaveBeenCalledTimes(1)
+    expect(command.build).toHaveBeenCalledWith(command.appConfig, expect.objectContaining({ 'force-build': false, verbose: true }), expect.anything())
   })
 
   test('--skip-deploy --skip-static', async () => {
@@ -231,8 +222,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
+    expect(command.build).toHaveBeenCalledTimes(1)
   })
 
   test('--skip-build', async () => {
@@ -241,8 +231,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
+    expect(command.build).toHaveBeenCalledTimes(0)
   })
 
   test('--skip-build --verbose', async () => {
@@ -251,8 +240,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
+    expect(command.build).toHaveBeenCalledTimes(0)
   })
 
   test('--skip-build --skip-actions', async () => {
@@ -261,8 +249,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
+    expect(command.build).toHaveBeenCalledTimes(0)
   })
 
   test('--skip-build --skip-static', async () => {
@@ -271,8 +258,17 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
+    expect(command.build).toHaveBeenCalledTimes(0)
+  })
+
+  test('--force-build', async () => {
+    command.argv = ['--force-build']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(command.build).toHaveBeenCalledTimes(1)
+    expect(command.build).toHaveBeenCalledWith(command.appConfig, expect.objectContaining({ 'force-build': true }), expect.anything()) // force-build is true by default for build cmd
   })
 
   test('deploy should show ui url', async () => {
@@ -334,8 +330,7 @@ describe('run', () => {
     mockRuntimeLib.deployActions.mockRejectedValue(error)
     await command.run()
     expect(command.error).toHaveBeenCalledWith(error)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
+    expect(command.build).toHaveBeenCalled()
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
   })
 
@@ -370,33 +365,14 @@ describe('run', () => {
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
   })
 
-  test('write web-src/src/config.json with action urls after buildActions and before buildWeb', async () => {
-    mockRuntimeLib.deployActions.mockResolvedValue('ok')
-    mockWebLib.deployWeb.mockImplementation(async (config, log) => {
-      log('progress log')
-      return 'ok'
-    })
-    mockRuntimeLib.utils.getActionUrls.mockResolvedValue({ a: 'a' })
-    command.appConfig.web = { injectedConfig: 'sdf' }
-    helpers.writeConfig.mockResolvedValue('ok')
-    await command.run()
-    expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalledTimes(1)
-    expect(helpers.writeConfig).toHaveBeenCalledWith('sdf', { a: 'a' })
-    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-  })
-
   test('build & deploy (app hooks missing)', async () => {
     helpers.runPackageScript
       .mockRejectedValueOnce('error-1')
       .mockRejectedValueOnce('error-2')
-      .mockRejectedValueOnce('error-3')
-      .mockRejectedValueOnce('error-4')
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith('error-1')
     expect(command.log).toHaveBeenCalledWith('error-2')
-    expect(command.log).toHaveBeenCalledWith('error-3')
-    expect(command.log).toHaveBeenCalledWith('error-4')
   })
 })
