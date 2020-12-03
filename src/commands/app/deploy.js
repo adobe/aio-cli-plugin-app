@@ -72,6 +72,7 @@ class Deploy extends BuildCommand {
               spinner.succeed(chalk.green('Deploying actions'))
             } catch (err) {
               this.log(err)
+              spinner.fail(chalk.green('Deploying actions'))
             }
           } else {
             this.log('no backend, skipping action deploy')
@@ -89,6 +90,7 @@ class Deploy extends BuildCommand {
               spinner.succeed(chalk.green('Deploying web assets'))
             } catch (err) {
               this.log(err)
+              spinner.fail(chalk.green('Deploying web assets'))
             }
           } else {
             this.log('no frontend, skipping frontend deploy')
