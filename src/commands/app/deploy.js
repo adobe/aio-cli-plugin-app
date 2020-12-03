@@ -54,6 +54,7 @@ class Deploy extends BuildCommand {
         } catch (err) {
           this.log(err)
         }
+
         if (!flags['skip-actions']) {
           if (config.app.hasBackend) {
             let filterEntities
@@ -63,17 +64,32 @@ class Deploy extends BuildCommand {
             // todo: fix this, the following change does not work, if we call rtLib version it chokes on some actions
             // Error: EISDIR: illegal operation on a directory, read
             spinner.start('Deploying actions')
-            deployedRuntimeEntities = { ...await rtLib.deployActions(config, { filterEntities }, onProgress) }
-            spinner.succeed(chalk.green('Deploying actions'))
+            try {
+              const script = await runPackageScript('deploy-actions')
+              if (!script) {
+                deployedRuntimeEntities = { ...await rtLib.deployActions(config, { filterEntities }, onProgress) }
+              }
+              spinner.succeed(chalk.green('Deploying actions'))
+            } catch (err) {
+              this.log(err)
+            }
           } else {
             this.log('no backend, skipping action deploy')
           }
         }
+
         if (!flags['skip-static']) {
           if (config.app.hasFrontend) {
             spinner.start('Deploying web assets')
-            deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
-            spinner.succeed(chalk.green('Deploying web assets'))
+            try {
+              const script = await runPackageScript('deploy-static')
+              if (!script) {
+                deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
+              }
+              spinner.succeed(chalk.green('Deploying web assets'))
+            } catch (err) {
+              this.log(err)
+            }
           } else {
             this.log('no frontend, skipping frontend deploy')
           }
