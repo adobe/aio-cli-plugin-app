@@ -50,8 +50,16 @@ class Build extends BaseCommand {
       if (!flags['skip-actions']) {
         if (config.app.hasBackend && (flags['force-build'] || !fs.existsSync(config.actions.dist))) {
           spinner.start('Building actions')
-          await RuntimeLib.buildActions(config, filterActions)
-          spinner.succeed(chalk.green('Building actions'))
+          try {
+            const script = await runPackageScript('build-actions')
+            if (!script) {
+              await RuntimeLib.buildActions(config, filterActions)
+            }
+            spinner.succeed(chalk.green('Building actions'))
+          } catch (err) {
+            this.log(err)
+            spinner.fail(chalk.green('Building actions'))
+          }
         } else {
           spinner.info('no backend or a build already exists, skipping action build')
         }
@@ -63,8 +71,16 @@ class Build extends BaseCommand {
             await writeConfig(config.web.injectedConfig, urls)
           }
           spinner.start('Building web assets')
-          await webLib.buildWeb(config, onProgress)
-          spinner.succeed(chalk.green('Building web assets'))
+          try {
+            const script = await runPackageScript('build-static')
+            if (!script) {
+              await webLib.buildWeb(config, onProgress)
+            }
+            spinner.succeed(chalk.green('Building web assets'))
+          } catch (err) {
+            this.log(err)
+            spinner.fail(chalk.green('Building web assets'))
+          }
         } else {
           spinner.info('no frontend or a build already exists, skipping frontend build')
         }
