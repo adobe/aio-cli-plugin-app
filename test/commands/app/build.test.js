@@ -175,10 +175,106 @@ describe('run', () => {
     expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
   })
 
-  test('error in runPackageScript', async () => {
-    helpers.runPackageScript.mockRejectedValue('error')
+  test('build (--skip-actions and --skip-static)', async () => {
+    const noScriptFound = undefined
+    helpers.runPackageScript
+      .mockResolvedValueOnce(noScriptFound) // pre-app-build
+      .mockResolvedValueOnce(noScriptFound) // post-app-build
+
+    command.argv = ['--skip-actions', '--skip-static']
     await command.run()
-    expect(command.log).toHaveBeenNthCalledWith(1, 'error')
-    expect(command.log).toHaveBeenNthCalledWith(2, 'error')
+    expect(command.error).toHaveBeenCalledTimes(0)
+
+    expect(command.log).toHaveBeenCalledTimes(1)
+    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Nothing to build/))
+  })
+
+  test('build (--skip-actions)', async () => {
+    const noScriptFound = undefined
+    helpers.runPackageScript
+      .mockResolvedValueOnce(noScriptFound) // pre-app-build
+      .mockResolvedValueOnce(noScriptFound) // post-app-build
+
+    command.argv = ['--skip-actions']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+
+    expect(command.log).toHaveBeenCalledTimes(1)
+    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Build success, your app is ready to be deployed/))
+  })
+
+  test('build (--skip-static)', async () => {
+    const noScriptFound = undefined
+    helpers.runPackageScript
+      .mockResolvedValueOnce(noScriptFound) // pre-app-build
+      .mockResolvedValueOnce(noScriptFound) // post-app-build
+
+    command.argv = ['--skip-static']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+
+    expect(command.log).toHaveBeenCalledTimes(1)
+    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Build success, your actions are ready to be deployed/))
+  })
+
+  test('build (has build-actions and build-static hooks)', async () => {
+    const noScriptFound = undefined
+    const childProcess = {}
+    helpers.runPackageScript
+      .mockResolvedValueOnce(noScriptFound) // pre-app-build
+      .mockResolvedValueOnce(childProcess) // build-actions (uses hook)
+      .mockResolvedValueOnce(childProcess) // build-static (uses hook)
+      .mockResolvedValueOnce(noScriptFound) // post-app-build
+
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+
+    expect(command.log).toHaveBeenCalledTimes(1)
+    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Build success, your app is ready to be deployed/))
+  })
+
+  test('build (pre and post hooks have errors, --skip-actions and --skip-static)', async () => {
+    helpers.runPackageScript
+      .mockRejectedValueOnce('error-pre-app-build') // pre-app-build (logs error)
+      .mockRejectedValueOnce('error-post-app-build') // post-app-build (logs error)
+
+    command.argv = ['--skip-actions', '--skip-static']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+
+    expect(command.log).toHaveBeenCalledTimes(3)
+    expect(command.log).toHaveBeenCalledWith('error-pre-app-build')
+    expect(command.log).toHaveBeenCalledWith('error-post-app-build')
+    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Nothing to build/))
+  })
+
+  test('build (build-actions hook has an error)', async () => {
+    const noScriptFound = undefined
+    helpers.runPackageScript
+      .mockResolvedValueOnce(noScriptFound) // pre-app-build (no error)
+      .mockRejectedValueOnce('error-build-actions') // build-actions (rethrows error)
+      .mockResolvedValueOnce(noScriptFound) // build-static (will not reach here)
+      .mockResolvedValueOnce(noScriptFound) // post-app-build (will not reach here)
+
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledWith('error-build-actions')
+
+    expect(command.log).toHaveBeenCalledTimes(0)
+  })
+
+  test('build (build-static hook has an error)', async () => {
+    const noScriptFound = undefined
+    helpers.runPackageScript
+      .mockResolvedValueOnce(noScriptFound) // pre-app-build (no error)
+      .mockResolvedValueOnce(noScriptFound) // build-actions (uses inbuilt, no error)
+      .mockRejectedValueOnce('error-build-static') // build-static (rethrows error)
+      .mockResolvedValueOnce(noScriptFound) // post-app-build (will not reach here)
+
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledWith('error-build-static')
+
+    expect(command.log).toHaveBeenCalledTimes(0)
   })
 })

@@ -365,14 +365,106 @@ describe('run', () => {
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
   })
 
-  test('build & deploy (app hooks missing)', async () => {
+  test('deploy (--skip-actions and --skip-static)', async () => {
+    const noScriptFound = undefined
     helpers.runPackageScript
-      .mockRejectedValueOnce('error-1')
-      .mockRejectedValueOnce('error-2')
+      .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
+      .mockResolvedValueOnce(noScriptFound) // post-app-deploy
+
+    command.argv = ['--skip-actions', '--skip-static']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+
+    expect(command.log).toHaveBeenCalledTimes(1)
+    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Nothing to deploy/))
+  })
+
+  test('deploy (--skip-actions)', async () => {
+    const noScriptFound = undefined
+    helpers.runPackageScript
+      .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
+      .mockResolvedValueOnce(noScriptFound) // post-app-deploy
+
+    command.argv = ['--skip-actions']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+
+    expect(command.log).toHaveBeenCalledTimes(1)
+    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Well done, your app is now online/))
+  })
+
+  test('deploy (--skip-static)', async () => {
+    const noScriptFound = undefined
+    helpers.runPackageScript
+      .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
+      .mockResolvedValueOnce(noScriptFound) // post-app-deploy
+
+    command.argv = ['--skip-static']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+
+    expect(command.log).toHaveBeenCalledTimes(1)
+    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Well done, your actions are now online/))
+  })
+
+  test('deploy (has deploy-actions and deploy-static hooks)', async () => {
+    const noScriptFound = undefined
+    const childProcess = {}
+    helpers.runPackageScript
+      .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
+      .mockResolvedValueOnce(childProcess) // deploy-actions (uses hook)
+      .mockResolvedValueOnce(childProcess) // deploy-static (uses hook)
+      .mockResolvedValueOnce(noScriptFound) // post-app-deploy
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(command.log).toHaveBeenCalledWith('error-1')
-    expect(command.log).toHaveBeenCalledWith('error-2')
+
+    expect(command.log).toHaveBeenCalledTimes(1)
+    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Well done, your app is now online/))
+  })
+
+  test('deploy (pre and post hooks have errors, --skip-actions and --skip-static)', async () => {
+    helpers.runPackageScript
+      .mockRejectedValueOnce('error-pre-app-deploy') // pre-app-deploy (logs error)
+      .mockRejectedValueOnce('error-post-app-deploy') // post-app-deploy (logs error)
+
+    command.argv = ['--skip-actions', '--skip-static']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+
+    expect(command.log).toHaveBeenCalledTimes(3)
+    expect(command.log).toHaveBeenCalledWith('error-pre-app-deploy')
+    expect(command.log).toHaveBeenCalledWith('error-post-app-deploy')
+    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Nothing to deploy/))
+  })
+
+  test('deploy (deploy-actions hook has an error)', async () => {
+    const noScriptFound = undefined
+    helpers.runPackageScript
+      .mockResolvedValueOnce(noScriptFound) // pre-app-deploy (no error)
+      .mockRejectedValueOnce('error-deploy-actions') // deploy-actions (rethrows error)
+      .mockResolvedValueOnce(noScriptFound) // deploy-static (will not reach here)
+      .mockResolvedValueOnce(noScriptFound) // post-app-deploy (will not reach here)
+
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledWith('error-deploy-actions')
+
+    expect(command.log).toHaveBeenCalledTimes(0)
+  })
+
+  test('deploy (deploy-static hook has an error)', async () => {
+    const noScriptFound = undefined
+    helpers.runPackageScript
+      .mockResolvedValueOnce(noScriptFound) // pre-app-deploy (no error)
+      .mockResolvedValueOnce(noScriptFound) // deploy-actions (uses inbuilt, no error)
+      .mockRejectedValueOnce('error-deploy-static') // deploy-static (rethrows error)
+      .mockResolvedValueOnce(noScriptFound) // post-app-deploy (will not reach here)
+
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledWith('error-deploy-static')
+
+    expect(command.log).toHaveBeenCalledTimes(0)
   })
 })

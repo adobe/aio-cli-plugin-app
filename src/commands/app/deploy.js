@@ -71,8 +71,8 @@ class Deploy extends BuildCommand {
               }
               spinner.succeed(chalk.green('Deploying actions'))
             } catch (err) {
-              this.log(err)
               spinner.fail(chalk.green('Deploying actions'))
+              throw err
             }
           } else {
             this.log('no backend, skipping action deploy')
@@ -89,8 +89,8 @@ class Deploy extends BuildCommand {
               }
               spinner.succeed(chalk.green('Deploying web assets'))
             } catch (err) {
-              this.log(err)
               spinner.fail(chalk.green('Deploying web assets'))
+              throw err
             }
           } else {
             this.log('no frontend, skipping frontend deploy')
@@ -125,7 +125,11 @@ class Deploy extends BuildCommand {
       // final message
       if (!flags['skip-deploy']) {
         if (flags['skip-static']) {
-          this.log(chalk.green(chalk.bold('Well done, your actions are now online 🏄')))
+          if (flags['skip-actions']) {
+            this.log(chalk.green(chalk.bold('Nothing to deploy 🚫')))
+          } else {
+            this.log(chalk.green(chalk.bold('Well done, your actions are now online 🏄')))
+          }
         } else {
           this.log(chalk.green(chalk.bold('Well done, your app is now online 🏄')))
         }
