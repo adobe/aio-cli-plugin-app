@@ -50,8 +50,16 @@ class Build extends BaseCommand {
       if (!flags['skip-actions']) {
         if (config.app.hasBackend && (flags['force-build'] || !fs.existsSync(config.actions.dist))) {
           spinner.start('Building actions')
-          await RuntimeLib.buildActions(config, filterActions)
-          spinner.succeed(chalk.green('Building actions'))
+          try {
+            const script = await runPackageScript('build-actions')
+            if (!script) {
+              await RuntimeLib.buildActions(config, filterActions)
+            }
+            spinner.succeed(chalk.green('Building actions'))
+          } catch (err) {
+            spinner.fail(chalk.green('Building actions'))
+            throw err
+          }
         } else {
           spinner.info('no backend or a build already exists, skipping action build')
         }
@@ -63,8 +71,16 @@ class Build extends BaseCommand {
             await writeConfig(config.web.injectedConfig, urls)
           }
           spinner.start('Building web assets')
-          await webLib.buildWeb(config, onProgress)
-          spinner.succeed(chalk.green('Building web assets'))
+          try {
+            const script = await runPackageScript('build-static')
+            if (!script) {
+              await webLib.buildWeb(config, onProgress)
+            }
+            spinner.succeed(chalk.green('Building web assets'))
+          } catch (err) {
+            spinner.fail(chalk.green('Building web assets'))
+            throw err
+          }
         } else {
           spinner.info('no frontend or a build already exists, skipping frontend build')
         }
@@ -77,7 +93,11 @@ class Build extends BaseCommand {
 
       // final message
       if (flags['skip-static']) {
-        this.log(chalk.green(chalk.bold('Build success, your actions are ready to be deployed 👌')))
+        if (flags['skip-actions']) {
+          this.log(chalk.green(chalk.bold('Nothing to build 🚫')))
+        } else {
+          this.log(chalk.green(chalk.bold('Build success, your actions are ready to be deployed 👌')))
+        }
       } else {
         this.log(chalk.green(chalk.bold('Build success, your app is ready to be deployed 👌')))
       }
