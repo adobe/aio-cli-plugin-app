@@ -14,6 +14,8 @@ const path = require('path')
 const Bundler = require('parcel-bundler')
 const httpTerminator = require('http-terminator')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:run-web', { provider: 'debug' })
+const pureHTTP = require('pure-http')
+const sirv = require('serve-static')
 
 /**
  * @typedef {object} RunWebObject
@@ -42,9 +44,10 @@ const bundle = async (config, log, options) => {
     logLevel: 1,
     ...options
   }
-
+  
   const bundler = new Bundler(entryFile, parcelBundleOptions)
 
+  await bundler.bundle()
   const cleanup = () => {
     aioLogger.debug('stopping parcel watcher...')
     bundler.stop()
@@ -56,26 +59,41 @@ const bundle = async (config, log, options) => {
   }
 }
 
-const serve = async (bundler, log, options) => {
+const serve = async (config, log, options) => {
   const uiPort = parseInt(process.env.PORT) || 9080
-
+  let actualPort = uiPort
   log('starting local frontend server ..')
 
+  const app = pureHTTP()
+  app.use('/', sirv(path.resolve(config.web.distDev)))
+  app.listen(uiPort)
+
+  /* const entryFile = path.join(config.web.src, 'index.html')
+  const parcelBundleOptions = {
+    cache: false,
+    outDir: config.web.distDev,
+    contentHash: false,
+    watch: true,
+    minify: false,
+    logLevel: 1,
+    ...options
+  }
+  const bundler = new Bundler(entryFile, parcelBundleOptions)
   const server = await bundler.serve(uiPort, options.https)
   const terminator = httpTerminator.createHttpTerminator({
     server
   })
 
-  const actualPort = server.address().port
+  actualPort = server.address().port
   if (actualPort !== uiPort) {
     log(`Could not use port:${uiPort}, using port:${actualPort} instead`)
-  }
+  } */
   const url = `${options.https ? 'https:' : 'http:'}//localhost:${actualPort}`
   log(`local frontend server running at ${url}`)
 
   const cleanup = () => {
-    aioLogger.debug('stopping ui server...')
-    terminator.terminate()
+    /* aioLogger.debug('stopping ui server...')
+    terminator.terminate() */
   }
 
   return {

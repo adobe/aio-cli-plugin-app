@@ -139,7 +139,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
         if (!options.skipServe) {
           const script = await utils.runPackageScript('deploy-static')
           if (!script) {
-            const { url, cleanup: serverCleanup } = await runWeb.serve(parcelBundler, log, bundleOptions)
+            const { url, cleanup: serverCleanup } = await runWeb.serve(config, log, bundleOptions)
             frontEndUrl = url
             cleanup.add(() => serverCleanup(), 'cleaning up runWeb...')
           }
