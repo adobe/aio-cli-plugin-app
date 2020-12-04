@@ -15,8 +15,9 @@ const loadConfig = require('../../../src/lib/config-loader')
 const mockAIOConfig = require('@adobe/aio-lib-core-config')
 const yaml = require('js-yaml')
 const chalk = require('chalk')
+
+jest.mock('@adobe/aio-lib-core-logging')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:config-loader', { provider: 'debug' })
-aioLogger.log = jest.fn()
 
 describe('load config', () => {
   let config
@@ -41,7 +42,7 @@ describe('load config', () => {
   test('show warning for .cna config', async () => {
     mockAIOConfig.get.mockReturnValue({ cna: { web: 'new-web-src' } })
     config = loadConfig()
-    expect(aioLogger.log).toBeCalledWith(chalk.redBright(chalk.bold('The config variable \'cna\' has been deprecated. Please update it with \'app\' instead in your .aio configuration file.')))
+    expect(aioLogger.warn).toBeCalledWith(chalk.redBright(chalk.bold('The config variable \'cna\' has been deprecated. Please update it with \'app\' instead in your .aio configuration file.')))
     expect(config.web.src).toMatch(/new-web-src/)
   })
 
