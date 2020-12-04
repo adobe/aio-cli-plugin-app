@@ -114,9 +114,12 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       await utils.writeConfig(devConfig.web.injectedConfig, urls)
 
       if (!options.skipServe) {
-        const { bundler, cleanup: bundlerCleanup } = await runWeb.bundle(config, log, bundleOptions)
-        parcelBundler = bundler
-        cleanup.add(() => bundlerCleanup(), 'cleaning up runWeb.bundle...')
+        const script = await utils.runPackageScript('build-static')
+        if (!script) {
+          const { bundler, cleanup: bundlerCleanup } = await runWeb.bundle(config, log, bundleOptions)
+          parcelBundler = bundler
+          cleanup.add(() => bundlerCleanup(), 'cleaning up runWeb.bundle...')
+        }
       }
     }
     utils.runPackageScript('post-app-build')
@@ -134,11 +137,14 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       // serve UI
       if (hasFrontend) {
         if (!options.skipServe) {
-          const { url, cleanup: serverCleanup } = await runWeb.serve(parcelBundler, log, bundleOptions)
-        frontEndUrl = url
-          cleanup.add(() => serverCleanup(), 'cleaning up runWeb...')
+          const script = await utils.runPackageScript('deploy-static')
+          if (!script) {
+            const { url, cleanup: serverCleanup } = await runWeb.serve(parcelBundler, log, bundleOptions)
+            frontEndUrl = url
+            cleanup.add(() => serverCleanup(), 'cleaning up runWeb...')
+          }
+        }
       }
-    }
       utils.runPackageScript('post-app-deploy')
     }
 
@@ -229,17 +235,21 @@ async function _buildAndDeployActions (devConfig, isLocalDev, logFunc) {
 }
 
 async function _buildActions (devConfig) {
-  utils.runPackageScript('build-actions')
-  await BuildActions(devConfig)
+  const script = await utils.runPackageScript('build-actions')
+  if (!script) {
+    await BuildActions(devConfig)
+  }
 }
 
 async function _deployActions ( devConfig, isLocalDev, logFunc) {
-  utils.runPackageScript('deploy-actions')
-  const entities = await DeployActions(devConfig, { isLocalDev })
-  if (entities.actions) {
-    entities.actions.forEach(a => {
-      logFunc(`  -> ${a.url || a.name}`)
-    })
+  const script = await utils.runPackageScript('deploy-actions')
+  if (!script) {
+    const entities = await DeployActions(devConfig, { isLocalDev })
+    if (entities.actions) {
+      entities.actions.forEach(a => {
+        logFunc(`  -> ${a.url || a.name}`)
+      })
+    }
   }
 }
 
