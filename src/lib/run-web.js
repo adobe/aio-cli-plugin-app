@@ -29,9 +29,7 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
  * @param {object} options the Parcel bundler options
  * @returns {RunWebObject} the RunWebObject
  */
-const runWeb = async (config, log, options) => {
-  const uiPort = parseInt(process.env.PORT) || 9080
-
+const bundle = async (config, log, options) => {
   log('starting local frontend server ..')
   const entryFile = path.join(config.web.src, 'index.html')
 
@@ -46,7 +44,23 @@ const runWeb = async (config, log, options) => {
   }
 
   const bundler = new Bundler(entryFile, parcelBundleOptions)
-  // break out serving to be generic, or re-use bundler.serve: https://github.com/parcel-bundler/parcel/blob/5f065b36f84cc9ccecf4662fc4f48c7787587627/packages/core/parcel-bundler/src/Bundler.js
+
+  const cleanup = () => {
+    aioLogger.debug('stopping parcel watcher...')
+    bundler.stop()
+  }
+
+  return {
+    bundler,
+    cleanup
+  }
+}
+
+const serve = async (bundler, log, options) => {
+  const uiPort = parseInt(process.env.PORT) || 9080
+
+  log('starting local frontend server ..')
+
   const server = await bundler.serve(uiPort, options.https)
   const terminator = httpTerminator.createHttpTerminator({
     server
@@ -60,8 +74,6 @@ const runWeb = async (config, log, options) => {
   log(`local frontend server running at ${url}`)
 
   const cleanup = () => {
-    aioLogger.debug('stopping parcel watcher...')
-    bundler.stop()
     aioLogger.debug('stopping ui server...')
     terminator.terminate()
   }
@@ -71,5 +83,7 @@ const runWeb = async (config, log, options) => {
     cleanup
   }
 }
-
-module.exports = runWeb
+module.exports = {
+  bundle,
+  serve
+}

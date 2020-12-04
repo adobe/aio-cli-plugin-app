@@ -77,6 +77,10 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
   try {
     // TODO: Is there a chance of using run cmd on actions from plugin-runtime in future?
     // In that case this backend stuff might have to go to lib-runtime ?
+
+    let parcelBundler
+    //Build Phase
+    utils.runPackageScript('pre-app-build')
     if (withBackend) {
       if (isLocal) {
         const { config: localConfig, cleanup: localCleanup } = await runDevLocal(config, log, options.verbose)
@@ -89,8 +93,9 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       }
 
       // build and deploy actions
-      log('redeploying actions..')
-      await _buildAndDeploy(devConfig, isLocal, log)
+      log('rebuilding actions..')
+      await _buildActions(devConfig)    
+      // await _buildAndDeploy(devConfig, isLocal, log)
 
       const watcher = chokidar.watch(devConfig.actions.src)
       watcher.on('change', _getActionChangeHandler(devConfig, isLocal, log, watcher))
@@ -109,10 +114,32 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       await utils.writeConfig(devConfig.web.injectedConfig, urls)
 
       if (!options.skipServe) {
-        const { url, cleanup: bundlerCleanup } = await runWeb(config, log, bundleOptions)
-        frontEndUrl = url
-        cleanup.add(() => bundlerCleanup(), 'cleaning up runWeb...')
+        const { bundler, cleanup: bundlerCleanup } = await runWeb.bundle(config, log, bundleOptions)
+        parcelBundler = bundler
+        cleanup.add(() => bundlerCleanup(), 'cleaning up runWeb.bundle...')
       }
+    }
+    utils.runPackageScript('post-app-build')
+
+    // Deploy Phase
+    if (withBackend || (hasFrontend && !options.skipServe)) {
+      utils.runPackageScript('pre-app-deploy')
+      // deploy actions
+      if (withBackend) {
+        log('redeploying actions..')
+        await _deployActions(devConfig, isLocal, log)
+        // await _buildAndDeploy(devConfig, isLocal, log)
+      }
+
+      // serve UI
+      if (hasFrontend) {
+        if (!options.skipServe) {
+          const { url, cleanup: serverCleanup } = await runWeb.serve(parcelBundler, log, bundleOptions)
+        frontEndUrl = url
+          cleanup.add(() => serverCleanup(), 'cleaning up runWeb...')
+      }
+    }
+      utils.runPackageScript('post-app-deploy')
     }
 
     log('setting up vscode debug configuration files...')
@@ -175,7 +202,7 @@ function _getActionChangeHandler (devConfig, isLocalDev, logFunc, watcher) {
     running = true
     try {
       aioLogger.debug(`${filePath} has changed. Redeploying actions.`)
-      await _buildAndDeploy(devConfig, isLocalDev, logFunc)
+      await _buildAndDeployActions(devConfig, isLocalDev, logFunc)
       aioLogger.debug('Deployment successful.')
     } catch (err) {
       logFunc('  -> Error encountered while deploying actions. Stopping auto refresh.')
@@ -192,8 +219,22 @@ function _getActionChangeHandler (devConfig, isLocalDev, logFunc, watcher) {
 }
 
 /** @private */
-async function _buildAndDeploy (devConfig, isLocalDev, logFunc) {
+async function _buildAndDeployActions (devConfig, isLocalDev, logFunc) {
+  utils.runPackageScript('pre-app-build')
+  await _buildActions(devConfig)
+  utils.runPackageScript('post-app-build')
+  utils.runPackageScript('pre-app-deploy')
+  await _deployActions(devConfig, { isLocalDev }, logFunc)
+  utils.runPackageScript('post-app-deploy')
+}
+
+async function _buildActions (devConfig) {
+  utils.runPackageScript('build-actions')
   await BuildActions(devConfig)
+}
+
+async function _deployActions ( devConfig, isLocalDev, logFunc) {
+  utils.runPackageScript('deploy-actions')
   const entities = await DeployActions(devConfig, { isLocalDev })
   if (entities.actions) {
     entities.actions.forEach(a => {
