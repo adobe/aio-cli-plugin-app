@@ -16,12 +16,13 @@ const chalk = require('chalk')
 const { cli } = require('cli-ux')
 
 const BaseCommand = require('../../BaseCommand')
+const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { flags } = require('@oclif/command')
-const { runPackageScript, wrapError, writeConfig } = require('../../lib/app-helper')
+const { runPackageScript, wrapError } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 
-class Deploy extends BaseCommand {
+class Deploy extends BuildCommand {
   async run () {
     // cli input
     const { flags } = this.parse(Deploy)
@@ -40,41 +41,7 @@ class Deploy extends BaseCommand {
     try {
       // build phase
       if (!flags['skip-build']) {
-        try {
-          await runPackageScript('pre-app-build')
-        } catch (err) {
-          this.log(err)
-        }
-
-        if (!flags['skip-actions']) {
-          if (config.app.hasBackend) {
-            // todo: this replacement seems to be working, but the one below is not yet -jm
-            // await scripts.buildActions([], { filterActions })
-            spinner.start('Building actions')
-            await rtLib.buildActions(config, filterActions)
-            spinner.succeed(chalk.green('Building actions'))
-          } else {
-            this.log('no backend, skipping action build')
-          }
-        }
-        if (!flags['skip-static']) {
-          if (config.app.hasFrontend) {
-            if (config.app.hasBackend) {
-              const urls = await rtLib.utils.getActionUrls(config)
-              await writeConfig(config.web.injectedConfig, urls)
-            }
-            spinner.start('Building web assets')
-            await webLib.buildWeb(config, onProgress)
-            spinner.succeed(chalk.green('Building web assets'))
-          } else {
-            this.log('no frontend, skipping frontend build')
-          }
-        }
-        try {
-          await runPackageScript('post-app-build')
-        } catch (err) {
-          this.log(err)
-        }
+        await this.build(config, flags, spinner)
       }
 
       // deploy phase
@@ -87,6 +54,7 @@ class Deploy extends BaseCommand {
         } catch (err) {
           this.log(err)
         }
+
         if (!flags['skip-actions']) {
           if (config.app.hasBackend) {
             let filterEntities
@@ -96,17 +64,34 @@ class Deploy extends BaseCommand {
             // todo: fix this, the following change does not work, if we call rtLib version it chokes on some actions
             // Error: EISDIR: illegal operation on a directory, read
             spinner.start('Deploying actions')
-            deployedRuntimeEntities = { ...await rtLib.deployActions(config, { filterEntities }, onProgress) }
-            spinner.succeed(chalk.green('Deploying actions'))
+            try {
+              const script = await runPackageScript('deploy-actions')
+              if (!script) {
+                deployedRuntimeEntities = { ...await rtLib.deployActions(config, { filterEntities }, onProgress) }
+              }
+              spinner.succeed(chalk.green('Deploying actions'))
+            } catch (err) {
+              spinner.fail(chalk.green('Deploying actions'))
+              throw err
+            }
           } else {
             this.log('no backend, skipping action deploy')
           }
         }
+
         if (!flags['skip-static']) {
-          if (config.app && config.app.hasFrontend) {
+          if (config.app.hasFrontend) {
             spinner.start('Deploying web assets')
-            deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
-            spinner.succeed(chalk.green('Deploying web assets'))
+            try {
+              const script = await runPackageScript('deploy-static')
+              if (!script) {
+                deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
+              }
+              spinner.succeed(chalk.green('Deploying web assets'))
+            } catch (err) {
+              spinner.fail(chalk.green('Deploying web assets'))
+              throw err
+            }
           } else {
             this.log('no frontend, skipping frontend deploy')
           }
@@ -138,12 +123,16 @@ class Deploy extends BaseCommand {
       }
 
       // final message
-      if (flags['skip-deploy']) {
-        this.log(chalk.green(chalk.bold('Build success, your app is ready to be deployed 👌')))
-      } else if (flags['skip-static']) {
-        this.log(chalk.green(chalk.bold('Well done, your actions are now online 🏄')))
-      } else {
-        this.log(chalk.green(chalk.bold('Well done, your app is now online 🏄')))
+      if (!flags['skip-deploy']) {
+        if (flags['skip-static']) {
+          if (flags['skip-actions']) {
+            this.log(chalk.green(chalk.bold('Nothing to deploy 🚫')))
+          } else {
+            this.log(chalk.green(chalk.bold('Well done, your actions are now online 🏄')))
+          }
+        } else {
+          this.log(chalk.green(chalk.bold('Well done, your app is now online 🏄')))
+        }
       }
     } catch (error) {
       spinner.stop()
@@ -171,9 +160,13 @@ Deploy.flags = {
   'skip-actions': flags.boolean({
     description: 'Skip action build & deploy'
   }),
+  'force-build': flags.boolean({
+    description: 'Forces a build even if one already exists',
+    exclusive: ['skip-build'],
+    default: false
+  }),
   action: flags.string({
     description: 'Deploy only a specific action, the flags can be specified multiple times',
-    default: '',
     exclusive: ['skip-actions'],
     char: 'a',
     multiple: true
