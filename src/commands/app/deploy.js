@@ -142,6 +142,9 @@ class Deploy extends BuildCommand {
 }
 
 Deploy.description = `Build and deploy an Adobe I/O App
+
+If a build already exists, it will not build again. 
+Use --force-build to rebuild.
 `
 
 Deploy.flags = {
@@ -161,7 +164,7 @@ Deploy.flags = {
     description: 'Skip action build & deploy'
   }),
   'force-build': flags.boolean({
-    description: 'Forces a build even if one already exists',
+    description: 'Forces a build even if one already exists (default: false)',
     exclusive: ['skip-build'],
     default: false
   }),
