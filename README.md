@@ -63,7 +63,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.0/src/commands/app/index.js)_
+_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.1/src/commands/app/index.js)_
 
 ## `aio app:add`
 
@@ -80,7 +80,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/add/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.0/src/commands/app/add/index.js)_
+_See code: [src/commands/app/add/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.1/src/commands/app/add/index.js)_
 
 ## `aio app:add:action`
 
@@ -100,7 +100,7 @@ OPTIONS
   --version       Show version
 ```
 
-_See code: [src/commands/app/add/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.0/src/commands/app/add/action.js)_
+_See code: [src/commands/app/add/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.1/src/commands/app/add/action.js)_
 
 ## `aio app:add:ci`
 
@@ -118,7 +118,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/add/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.0/src/commands/app/add/ci.js)_
+_See code: [src/commands/app/add/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.1/src/commands/app/add/ci.js)_
 
 ## `aio app:add:event`
 
@@ -138,7 +138,7 @@ OPTIONS
   --version       Show version
 ```
 
-_See code: [src/commands/app/add/event.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.0/src/commands/app/add/event.js)_
+_See code: [src/commands/app/add/event.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.1/src/commands/app/add/event.js)_
 
 ## `aio app:add:web-assets`
 
@@ -158,7 +158,7 @@ OPTIONS
   --version       Show version
 ```
 
-_See code: [src/commands/app/add/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.0/src/commands/app/add/web-assets.js)_
+_See code: [src/commands/app/add/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.1/src/commands/app/add/web-assets.js)_
 
 ## `aio app:build`
 
@@ -167,6 +167,8 @@ Build an Adobe I/O App
 ```
 Build an Adobe I/O App
 
+This will always force a rebuild unless --no-force-build is set. 
+
 
 USAGE
   $ aio app:build
@@ -174,13 +176,16 @@ USAGE
 OPTIONS
   -a, --action=action  Build only a specific action, the flags can be specified multiple times
   -v, --verbose        Verbose output
-  --[no-]force-build   Forces a build even if one already exists
+  --[no-]force-build   Forces a build even if one already exists (default: true)
   --skip-actions       Skip build of actions
   --skip-static        Skip build of static files
   --version            Show version
+
+DESCRIPTION
+  This will always force a rebuild unless --no-force-build is set.
 ```
 
-_See code: [src/commands/app/build.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.0/src/commands/app/build.js)_
+_See code: [src/commands/app/build.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.1/src/commands/app/build.js)_
 
 ## `aio app:create [PATH]`
 
@@ -202,7 +207,7 @@ OPTIONS
   --version            Show version
 ```
 
-_See code: [src/commands/app/create.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.0/src/commands/app/create.js)_
+_See code: [src/commands/app/create.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.1/src/commands/app/create.js)_
 
 ## `aio app:delete`
 
@@ -219,7 +224,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/delete/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.0/src/commands/app/delete/index.js)_
+_See code: [src/commands/app/delete/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.1/src/commands/app/delete/index.js)_
 
 ## `aio app:delete:action [ACTION-NAME]`
 
@@ -241,7 +246,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/delete/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.0/src/commands/app/delete/action.js)_
+_See code: [src/commands/app/delete/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.1/src/commands/app/delete/action.js)_
 
 ## `aio app:delete:ci`
 
@@ -260,7 +265,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/delete/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.0/src/commands/app/delete/ci.js)_
+_See code: [src/commands/app/delete/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.1/src/commands/app/delete/ci.js)_
 
 ## `aio app:delete:event EVENT-ACTION-NAME`
 
@@ -282,7 +287,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/delete/event.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.0/src/commands/app/delete/event.js)_
+_See code: [src/commands/app/delete/event.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.1/src/commands/app/delete/event.js)_
 
 ## `aio app:delete:web-assets`
 
@@ -301,7 +306,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/delete/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.0/src/commands/app/delete/web-assets.js)_
+_See code: [src/commands/app/delete/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.1/src/commands/app/delete/web-assets.js)_
 
 ## `aio app:deploy`
 
@@ -310,6 +315,8 @@ Build and deploy an Adobe I/O App
 ```
 Build and deploy an Adobe I/O App
 
+This will always force a rebuild unless --no-force-build is set. 
+
 
 USAGE
   $ aio app:deploy
@@ -317,16 +324,19 @@ USAGE
 OPTIONS
   -a, --action=action  Deploy only a specific action, the flags can be specified multiple times
   -v, --verbose        Verbose output
-  --force-build        Forces a build even if one already exists
+  --[no-]force-build   Forces a build even if one already exists (default: true)
   --open               Open the default web browser after a successful deploy, only valid if your app has a front-end
   --skip-actions       Skip action build & deploy
   --skip-build         Skip build phase
   --skip-deploy        Skip deploy phase
   --skip-static        Skip build & deployment of static files
   --version            Show version
+
+DESCRIPTION
+  This will always force a rebuild unless --no-force-build is set.
 ```
 
-_See code: [src/commands/app/deploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.0/src/commands/app/deploy.js)_
+_See code: [src/commands/app/deploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.1/src/commands/app/deploy.js)_
 
 ## `aio app:get-url [ACTION]`
 
@@ -347,7 +357,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/get-url.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.0/src/commands/app/get-url.js)_
+_See code: [src/commands/app/get-url.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.1/src/commands/app/get-url.js)_
 
 ## `aio app:init [PATH]`
 
@@ -372,7 +382,7 @@ OPTIONS
   --version            Show version
 ```
 
-_See code: [src/commands/app/init.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.0/src/commands/app/init.js)_
+_See code: [src/commands/app/init.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.1/src/commands/app/init.js)_
 
 ## `aio app:logs`
 
@@ -396,7 +406,7 @@ OPTIONS
   --version            Show version
 ```
 
-_See code: [src/commands/app/logs.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.0/src/commands/app/logs.js)_
+_See code: [src/commands/app/logs.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.1/src/commands/app/logs.js)_
 
 ## `aio app:run`
 
@@ -417,7 +427,7 @@ OPTIONS
   --version       Show version
 ```
 
-_See code: [src/commands/app/run.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.0/src/commands/app/run.js)_
+_See code: [src/commands/app/run.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.1/src/commands/app/run.js)_
 
 ## `aio app:test`
 
@@ -437,7 +447,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/test.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.0/src/commands/app/test.js)_
+_See code: [src/commands/app/test.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.1/src/commands/app/test.js)_
 
 ## `aio app:undeploy`
 
@@ -457,7 +467,7 @@ OPTIONS
   --version       Show version
 ```
 
-_See code: [src/commands/app/undeploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.0/src/commands/app/undeploy.js)_
+_See code: [src/commands/app/undeploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.1/src/commands/app/undeploy.js)_
 
 ## `aio app:use [CONFIG_FILE_PATH]`
 
@@ -480,5 +490,5 @@ OPTIONS
   --version        Show version
 ```
 
-_See code: [src/commands/app/use.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.0/src/commands/app/use.js)_
+_See code: [src/commands/app/use.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.3.1/src/commands/app/use.js)_
 <!-- commandsstop -->
