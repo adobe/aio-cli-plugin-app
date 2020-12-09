@@ -109,6 +109,8 @@ class Build extends BaseCommand {
 }
 
 Build.description = `Build an Adobe I/O App
+
+This will always force a rebuild unless --no-force-build is set. 
 `
 
 Build.flags = {
@@ -120,7 +122,7 @@ Build.flags = {
     description: 'Skip build of actions'
   }),
   'force-build': flags.boolean({
-    description: 'Forces a build even if one already exists',
+    description: 'Forces a build even if one already exists (default: true)',
     default: true,
     allowNo: true
   }),
