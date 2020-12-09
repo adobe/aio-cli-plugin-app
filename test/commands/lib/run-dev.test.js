@@ -31,6 +31,11 @@ const util = require('util')
 const sleep = util.promisify(setTimeout)
 
 jest.mock('../../../src/lib/poller')
+jest.mock('serve-static')
+jest.mock('pure-http', () => () => ({
+  use: jest.fn(),
+  listen: jest.fn()
+}))
 
 /* ****************** Mocks & beforeEach ******************* */
 let onChangeFunc
