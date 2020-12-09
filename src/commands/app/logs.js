@@ -33,13 +33,14 @@ class Logs extends BaseCommand {
       flags.limit = 50
     }
 
-    let filterActions = []
+    const filterActions = []
     if (flags.action) {
-      let actionName = flags.action
-      if (!actionName.includes('/')) {
-        actionName = config.ow.package + '/' + actionName
-      }
-      filterActions = [actionName]
+      flags.action.forEach((actionName) => {
+        if (!actionName.includes('/')) {
+          actionName = config.ow.package + '/' + actionName
+        }
+        filterActions.push(actionName)
+      })
     } else {
       Object.entries(config.manifest.full.packages).forEach((packageTuple) => {
         packageTuple[0] = packageTuple[0].replace(/__APP_PACKAGE__/g, config.ow.package)
@@ -70,7 +71,8 @@ Logs.flags = {
   }),
   action: flags.string({
     description: 'Fetch logs for a specific action',
-    char: 'a'
+    char: 'a',
+    multiple: true
   }),
   strip: flags.boolean({
     char: 'r',
