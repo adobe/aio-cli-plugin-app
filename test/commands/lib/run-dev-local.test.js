@@ -26,6 +26,12 @@ const mockLogger = require('@adobe/aio-lib-core-logging')
 const path = require('path')
 const fs = require('fs-extra')
 
+const {
+  OW_LOCAL_APIHOST,
+  OW_LOCAL_NAMESPACE,
+  OW_LOCAL_AUTH
+} = require('../../../src/lib/owlocal')
+
 jest.mock('../../../src/lib/app-helper')
 jest.mock('fs-extra')
 
@@ -115,7 +121,7 @@ test('coverage (default parameters)', async () => {
   expect(utils.runOpenWhiskJar).toHaveBeenCalled()
 })
 
-test('return value and cleanup', async () => {
+test('cleanup', async () => {
   utils.hasJavaCLI.mockResolvedValueOnce(true)
   utils.hasDockerCLI.mockResolvedValueOnce(true)
   utils.isDockerRunning.mockResolvedValueOnce(true)
@@ -127,11 +133,43 @@ test('return value and cleanup', async () => {
   })
 
   fs.existsSync
-    .mockReturnValueOnce(true)
-    .mockReturnValueOnce(true)
+    .mockReturnValueOnce(true) // openwhisk jar
+    .mockReturnValueOnce(true) // dev config envFile
 
   const { cleanup, config } = await runDevLocal(LOCAL_CONFIG, () => {}, true)
   expect(typeof cleanup).toEqual('function')
   expect(typeof config).toEqual('object')
   expect(cleanup).not.toThrow()
+})
+
+test('return value', async () => {
+  utils.hasJavaCLI.mockResolvedValueOnce(true)
+  utils.hasDockerCLI.mockResolvedValueOnce(true)
+  utils.isDockerRunning.mockResolvedValueOnce(true)
+
+  utils.runOpenWhiskJar.mockResolvedValueOnce({
+    proc: {
+      kill: jest.fn()
+    }
+  })
+
+  fs.existsSync
+    .mockReturnValueOnce(true) // openwhisk jar
+    .mockReturnValueOnce(false) // dev config envFile
+
+  const { cleanup, config } = await runDevLocal(LOCAL_CONFIG, () => {}, true)
+
+  expect(typeof cleanup).toEqual('function')
+  expect(cleanup).not.toThrow()
+
+  expect(typeof config).toEqual('object')
+  expect(config).toEqual({
+    ...LOCAL_CONFIG,
+    envFile: path.join(LOCAL_CONFIG.app.dist, '.env.local'),
+    ow: {
+      namespace: OW_LOCAL_NAMESPACE,
+      auth: OW_LOCAL_AUTH,
+      apihost: OW_LOCAL_APIHOST
+    }
+  })
 })
