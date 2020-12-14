@@ -114,3 +114,24 @@ test('coverage (default parameters)', async () => {
   await runDevLocal(LOCAL_CONFIG, () => {}, true)
   expect(utils.runOpenWhiskJar).toHaveBeenCalled()
 })
+
+test('return value and cleanup', async () => {
+  utils.hasJavaCLI.mockResolvedValueOnce(true)
+  utils.hasDockerCLI.mockResolvedValueOnce(true)
+  utils.isDockerRunning.mockResolvedValueOnce(true)
+
+  utils.runOpenWhiskJar.mockResolvedValueOnce({
+    proc: {
+      kill: jest.fn()
+    }
+  })
+
+  fs.existsSync
+    .mockReturnValueOnce(true)
+    .mockReturnValueOnce(true)
+
+  const { cleanup, config } = await runDevLocal(LOCAL_CONFIG, () => {}, true)
+  expect(typeof cleanup).toEqual('function')
+  expect(typeof config).toEqual('object')
+  expect(cleanup).not.toThrow()
+})

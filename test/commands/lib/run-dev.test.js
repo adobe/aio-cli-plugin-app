@@ -129,10 +129,6 @@ beforeEach(() => {
 
 /* ****************** Consts ******************* */
 
-const localOWCredentials = {
-  ...global.fakeConfig.local.runtime
-}
-
 const remoteOWCredentials = {
   ...global.fakeConfig.tvm.runtime,
   apihost: global.defaultOwApiHost
@@ -174,13 +170,6 @@ function posixPath (pathString) {
   return pathString
     .split(path.sep)
     .join(path.posix.sep)
-}
-
-/** @private */
-function writeFakeOwJar () {
-  global.fakeFileSystem.addJson({
-    [posixPath(OW_JAR_PATH)]: 'fakecontent'
-  })
 }
 
 // helpers for checking good path
@@ -757,108 +746,6 @@ describe('with remote actions and frontend', () => {
   })
 
   test('should still inject remote action urls into the UI if skipActions is set', async () => {
-    const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApiHost.split('https://')[1] + '/api/v1/web/sample-app-1.0.0/'
-    const retVal = {
-      action: baseUrl + 'action',
-      'action-zip': baseUrl + 'action-zip',
-      'action-sequence': baseUrl + 'action-sequence'
-    }
-    mockRuntimeLib.utils.getActionUrls.mockReturnValueOnce(retVal)
-    await runDev([], ref.config, { skipActions: true })
-    expect('/web-src/src/config.json' in global.fakeFileSystem.files()).toEqual(true)
-    expect(JSON.parse(global.fakeFileSystem.files()['/web-src/src/config.json'].toString())).toEqual(retVal)
-  })
-})
-
-describe('with local actions and no frontend', () => {
-  const ref = {}
-  beforeEach(async () => {
-    ref.devRemote = false
-    ref.config = await loadEnvScripts('sample-app', global.fakeConfig.tvm, ['/web-src/index.html'])
-    ref.appFiles = ['/dist', '/manifest.yml', '/package.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
-    // default mocks
-    // assume ow jar is already downloaded
-    writeFakeOwJar()
-    execa.mockReturnValue({
-      stdout: jest.fn(),
-      kill: jest.fn()
-    })
-
-    fetch.mockResolvedValue({
-      ok: true
-    })
-    // should expose a new config with local credentials when reloaded in the dev cmd
-    // we could also not mock aioConfig and expect it to read from .env
-    mockAIOConfig.get.mockReturnValue(global.fakeConfig.local)
-  })
-
-  runCommonTests(ref)
-  runCommonWithBackendTests(ref)
-  runCommonBackendOnlyTests(ref)
-
-  test('should not try to delete /dist/.env.local if it does not exist (branch coverage)', async () => {
-    const options = { devRemote: ref.devRemote }
-    await runDev([], ref.config, options)
-    global.fakeFileSystem.removeKeys(['/dist/.env.local'])
-    expect('/dist/.env.local' in global.fakeFileSystem.files()).toEqual(false)
-    process.emit('SIGINT')
-  })
-})
-
-describe('with local actions and frontend', () => {
-  const ref = {}
-  beforeEach(async () => {
-    ref.devRemote = false
-    ref.config = await loadEnvScripts('sample-app', global.fakeConfig.tvm)
-    ref.appFiles = ['/dist', '/manifest.yml', '/package.json', '/web-src/index.html', '/web-src/src/config.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
-    // default mocks
-    // assume ow jar is already downloaded
-    writeFakeOwJar()
-    execa.mockReturnValue({
-      stdout: jest.fn(),
-      kill: jest.fn()
-    })
-    fetch.mockResolvedValue({
-      ok: true
-    })
-    // should expose a new config with local credentials when reloaded in the dev cmd
-    // we could also not mock aioConfig and expect it to read from .env
-    mockAIOConfig.get.mockReturnValue(global.fakeConfig.local)
-  })
-
-  runCommonTests(ref)
-  runCommonWithBackendTests(ref)
-  runCommonWithFrontendTests(ref)
-
-  test('should generate a vscode debug config for actions and web-src', async () => {
-    mockHttpsServerAddressInstance.port = 9999
-    const options = { devRemote: ref.devRemote }
-    await runDev([], ref.config, options)
-    const isLocal = !ref.devRemote
-    expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
-      configurations: [
-        getExpectedActionVSCodeDebugConfig(isLocal, 'sample-app-1.0.0/action'),
-        getExpectedActionVSCodeDebugConfig(isLocal, 'sample-app-1.0.0/action-zip'),
-        getExpectedUIVSCodeDebugConfig(9999)
-      ]
-    }))
-  })
-
-  test('should inject local action urls into the UI', async () => {
-    const baseUrl = localOWCredentials.apihost + '/api/v1/web/' + localOWCredentials.namespace + '/sample-app-1.0.0/'
-    const retVal = {
-      action: baseUrl + 'action',
-      'action-zip': baseUrl + 'action-zip',
-      'action-sequence': baseUrl + 'action-sequence'
-    }
-    mockRuntimeLib.utils.getActionUrls.mockReturnValueOnce(retVal)
-    const options = { devRemote: ref.devRemote }
-    await runDev([], ref.config, options)
-    expect('/web-src/src/config.json' in global.fakeFileSystem.files()).toEqual(true)
-    expect(JSON.parse(global.fakeFileSystem.files()['/web-src/src/config.json'].toString())).toEqual(retVal)
-  })
-
-  test('should inject REMOTE action urls into the UI if skipActions is set', async () => {
     const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApiHost.split('https://')[1] + '/api/v1/web/sample-app-1.0.0/'
     const retVal = {
       action: baseUrl + 'action',
