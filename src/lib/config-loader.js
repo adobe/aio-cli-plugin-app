@@ -13,7 +13,7 @@ governing permissions and limitations under the License.
 const path = require('path')
 const yaml = require('js-yaml')
 const fs = require('fs-extra')
-const dotenv = require('dotenv')
+const validateDotEnv = require('./validate-dotenv')
 const utils = require('./app-helper')
 const aioConfig = require('@adobe/aio-lib-core-config')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:config-loader', { provider: 'debug' })
@@ -73,7 +73,7 @@ const {
  *  }
  */
 
-module.exports = () => {
+module.exports = (validateSchema = true) => {
   // init internal config
   const config = {}
   config.app = {}
@@ -87,7 +87,11 @@ module.exports = () => {
   const _abs = (p) => path.join(config.root, p)
 
   // Validate .env file
-  validateDotEnv(_abs('.env'), _abs('.env.schema'))
+  if (validateSchema) {
+    validateDotEnv(_abs('.env'), _abs('.env.schema'))
+  } else {
+    validateDotEnv(_abs('.env'))
+  }
 
   // load aio config
   aioConfig.reload()
@@ -171,78 +175,6 @@ module.exports = () => {
   return config
 }
 
-/** @private */
-function validateDotEnv (dotEnvFile, schemaFile) {
-  if (fs.existsSync(dotEnvFile) && fs.existsSync(schemaFile)) {
-    // We don't need schemaFile for dup check but we are doing this for backward compatibility
-    checkForDuplicates(dotEnvFile)
-    validateSchema(dotEnvFile, schemaFile)
-  }
-}
-/** @private */
-function validateSchema (dotEnvFile, schemaFile) {
-  const dotEnvData = loadEnvFile(dotEnvFile)
-  const configData = Object.assign(dotEnvData, process.env)
-  const schema = loadEnvFile(schemaFile)
-
-  // convert all config keys to lowercase
-  Object.keys(configData).forEach(key => {
-    const lcKey = key.toLowerCase()
-    if (key !== lcKey) {
-      configData[lcKey] = configData[key]
-      delete configData[key]
-    }
-  })
-  const configKeys = Object.keys(configData)
-  const schemaKeys = Object.keys(schema)
-
-  const missingKeys = schemaKeys.filter(function (key) {
-    return configKeys.indexOf(key.toLowerCase()) < 0
-  })
-  if (missingKeys.length) {
-    throw new Error('MISSING CONFIG VALUES: ' + missingKeys.join(', '))
-  }
-
-  const regexMismatchKeys = []
-  schemaKeys.forEach(function (key) {
-    if (schema[key]) {
-      if (!new RegExp(schema[key]).test(configData[key.toLowerCase()])) {
-        regexMismatchKeys.push([key, schema[key], configData[key.toLowerCase()]])
-      }
-    }
-  })
-  if (regexMismatchKeys.length) {
-    let errorMessage = 'REGEX MISMATCH: '
-    regexMismatchKeys.forEach((mismatch) => {
-      errorMessage = errorMessage + '\n' + mismatch[0] + '. Expected format: ' + mismatch[1] + ' Received: ' + mismatch[2]
-    })
-    throw new Error(errorMessage)
-  }
-}
-/** @private */
-function checkForDuplicates (envFile) { // Checks for duplicates in .env file
-  const NEWLINES_MATCH = /\n|\r|\r\n/
-  const RE_INI_KEY_VAL = /^\s*([\w.-]+)\s*=\s*(.*)?\s*$/ // regex for "key=val"
-  const buf = Buffer.from(fs.readFileSync(envFile, 'utf-8'))
-  const obj = {}
-  buf.toString().split(NEWLINES_MATCH).forEach(function (line, idx) {
-    const keyValueArr = line.match(RE_INI_KEY_VAL)
-    if (keyValueArr != null) {
-      const key = keyValueArr[1]
-      const keyLowerCase = key.toLowerCase()
-      if (obj[keyLowerCase]) {
-        throw new Error(`duplicate declaration of environment variable ${key} in ${envFile}`)
-      } else {
-        obj[keyLowerCase] = 'dummy'
-      }
-    }
-  })
-}
-/** @private */
-function loadEnvFile (path) {
-  const data = fs.readFileSync(path)
-  return dotenv.parse(data)
-}
 /** @private */
 function getModuleName (packagejson) {
   if (packagejson && packagejson.name) {

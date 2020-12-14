@@ -17,9 +17,9 @@ const DEFAULT_LAUNCH_PREFIX = 'https://experience.adobe.com/?devMode=true#/custo
 const loadConfig = require('./lib/config-loader')
 
 class BaseCommand extends Command {
-  getAppConfig () {
+  getAppConfig (validateSchema) {
     if (!this.appConfig) {
-      this.appConfig = loadConfig()
+      this.appConfig = loadConfig(validateSchema)
       // add on appConfig
       this.appConfig.cli = this.config
     }

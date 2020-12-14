@@ -32,7 +32,7 @@ const CONFIG_KEY = 'aio-dev.dev-keys'
 class Run extends BaseCommand {
   async run (args = []) {
     const { flags } = this.parse(Run)
-    const config = this.getAppConfig()
+    const config = this.getAppConfig(false)
 
     const hasBackend = config.app.hasBackend
     const hasFrontend = config.app.hasFrontend
@@ -80,7 +80,7 @@ class Run extends BaseCommand {
     }
 
     try {
-      const frontendUrl = await runDev(args, this.getAppConfig(), runOptions, onProgress)
+      const frontendUrl = await runDev(args, this.getAppConfig(false), runOptions, onProgress)
       try {
         await runPackageScript('post-app-run')
       } catch (err) {
