@@ -14,6 +14,7 @@ const path = require('path')
 const yaml = require('js-yaml')
 const fs = require('fs-extra')
 const validateDotEnv = require('./validate-dotenv')
+const chalk = require('chalk')
 const utils = require('./app-helper')
 const aioConfig = require('@adobe/aio-lib-core-config')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:config-loader', { provider: 'debug' })
@@ -96,14 +97,21 @@ module.exports = (validateSchema = true) => {
   // load aio config
   aioConfig.reload()
   const userConfig = aioConfig.get() || {}
-  userConfig.cna = userConfig.cna || {}
+  userConfig.app = userConfig.app || {}
+
+  // userConfig.cna deprecation warning
+  if (userConfig.cna !== undefined) {
+    aioLogger.warn(chalk.redBright(chalk.bold('The config variable \'cna\' has been deprecated. Please update it with \'app\' instead in your .aio configuration file.')))
+    Object.assign(userConfig.app, userConfig.cna)
+  }
+
   config.imsOrgId = aioConfig.get(AIO_CONFIG_IMS_ORG_ID)
 
   // 1. paths
   // 1.a defaults
-  const actions = path.normalize(userConfig.cna.actions || 'actions')
-  const dist = path.normalize(userConfig.cna.dist || 'dist')
-  const web = path.normalize(userConfig.cna.web || 'web-src')
+  const actions = path.normalize(userConfig.app.actions || 'actions')
+  const dist = path.normalize(userConfig.app.dist || 'dist')
+  const web = path.normalize(userConfig.app.web || 'web-src')
   // 1.b set config paths
   config.actions.src = _abs(actions) // todo this should be linked with manifest.yml paths
   config.actions.dist = _abs(path.join(dist, actions))
@@ -117,13 +125,13 @@ module.exports = (validateSchema = true) => {
   config.manifest.src = _abs('manifest.yml')
 
   // set s3 creds if specified
-  config.s3.creds = (typeof userConfig.cna === 'object') &&
-    (userConfig.cna.awsaccesskeyid &&
-     userConfig.cna.awssecretaccesskey &&
-     userConfig.cna.s3bucket) && {
-    accessKeyId: userConfig.cna.awsaccesskeyid,
-    secretAccessKey: userConfig.cna.awssecretaccesskey,
-    params: { Bucket: userConfig.cna.s3bucket }
+  config.s3.creds = (typeof userConfig.app === 'object') &&
+    (userConfig.app.awsaccesskeyid &&
+     userConfig.app.awssecretaccesskey &&
+     userConfig.app.s3bucket) && {
+    accessKeyId: userConfig.app.awsaccesskeyid,
+    secretAccessKey: userConfig.app.awssecretaccesskey,
+    params: { Bucket: userConfig.app.s3bucket }
   }
 
   // set for general build artifacts
@@ -144,7 +152,7 @@ module.exports = (validateSchema = true) => {
   const packagejson = JSON.parse(fs.readFileSync(_abs('package.json')))
   // semver starts at 0.1.0
   config.app.version = packagejson.version || '0.1.0'
-  config.app.name = getModuleName(packagejson) || 'unnamed-cna'
+  config.app.name = getModuleName(packagejson) || 'unnamed-app'
 
   // 4. Load manifest config
   if (config.app.hasBackend) {
@@ -163,14 +171,14 @@ module.exports = (validateSchema = true) => {
   config.ow.apiversion = config.ow.apiversion || 'v1'
   config.ow.package = `${config.app.name}-${config.app.version}`
   config.s3.folder = config.ow.namespace // this becomes the root only /
-  config.s3.tvmUrl = userConfig.cna.tvmurl || defaultTvmUrl
+  config.s3.tvmUrl = userConfig.app.tvmurl || defaultTvmUrl
   // only provide a hostname if it was given or if the app uses the tvm
-  config.app.hostname = userConfig.cna.hostname || defaultAioHostname
+  config.app.hostname = userConfig.app.hostname || defaultAioHostname
   // cache control config
-  config.app.htmlCacheDuration = userConfig.cna.htmlcacheduration || defaultHTMLCacheDuration
-  config.app.jsCacheDuration = userConfig.cna.jscacheduration || defaultJSCacheDuration
-  config.app.cssCacheDuration = userConfig.cna.csscacheduration || defaultCSSCacheDuration
-  config.app.imageCacheDuration = userConfig.cna.imagecacheduration || defaultImageCacheDuration
+  config.app.htmlCacheDuration = userConfig.app.htmlcacheduration || defaultHTMLCacheDuration
+  config.app.jsCacheDuration = userConfig.app.jscacheduration || defaultJSCacheDuration
+  config.app.cssCacheDuration = userConfig.app.csscacheduration || defaultCSSCacheDuration
+  config.app.imageCacheDuration = userConfig.app.imagecacheduration || defaultImageCacheDuration
 
   return config
 }

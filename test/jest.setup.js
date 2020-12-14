@@ -170,13 +170,13 @@ global.fakeConfig = {
       namespace: 'fake_ns',
       auth: 'fake:auth'
     },
-    cna: {
+    app: {
       s3bucket: 'customBucket',
       awsaccesskeyid: 'fakeAwsKeyId',
       awssecretaccesskey: 'fakeAwsSecretKey'
     }
   },
-  cna: {
+  app: {
     htmlCacheDuration: 60,
     jsCacheDuration: 604800,
     cssCacheDuration: 604800,

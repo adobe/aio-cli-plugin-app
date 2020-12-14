@@ -140,6 +140,18 @@ describe('run', () => {
     expect(command.error).not.toHaveBeenCalled()
   })
 
+  test('--action multiple', async () => {
+    mockFS.existsSync.mockReturnValue(true)
+    const command = new TheCommand(['--action', 'pkg1/hello', '--action', '/actionwithoutpkg'])
+    command.appConfig = fakeAppConfig
+    command.error = jest.fn()
+    command.log = jest.fn()
+
+    await command.run()
+    expect(printActionLogs).toHaveBeenCalledWith(fakeAppConfig, command.log, 1, ['pkg1/hello', '/actionwithoutpkg'], false, false)
+    expect(command.error).not.toHaveBeenCalled()
+  })
+
   test('error while getting logs', async () => {
     mockFS.existsSync.mockReturnValue(true)
     const command = new TheCommand([])

@@ -15,6 +15,7 @@ const loadConfig = require('../../../src/lib/config-loader')
 const mockAIOConfig = require('@adobe/aio-lib-core-config')
 const yaml = require('js-yaml')
 const path = require('path')
+const chalk = require('chalk')
 
 jest.mock('@adobe/aio-lib-core-logging')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:config-loader', { provider: 'debug' })
@@ -39,14 +40,21 @@ describe('load config', () => {
     expect(config.imsOrgId).toBe(undefined)
   })
 
+  test('show warning for .cna config', async () => {
+    mockAIOConfig.get.mockReturnValue({ cna: { web: 'new-web-src' } })
+    config = loadConfig()
+    expect(aioLogger.warn).toBeCalledWith(chalk.redBright(chalk.bold('The config variable \'cna\' has been deprecated. Please update it with \'app\' instead in your .aio configuration file.')))
+    expect(config.web.src).toMatch(/new-web-src/)
+  })
+
   test('with s3 creds in config', async () => {
     mockAIOConfig.get.mockReturnValue(global.fakeConfig.creds)
     config = loadConfig()
     expect(config.s3.creds).toEqual({
-      accessKeyId: global.fakeConfig.creds.cna.awsaccesskeyid,
-      secretAccessKey: global.fakeConfig.creds.cna.awssecretaccesskey,
+      accessKeyId: global.fakeConfig.creds.app.awsaccesskeyid,
+      secretAccessKey: global.fakeConfig.creds.app.awssecretaccesskey,
       params: {
-        Bucket: global.fakeConfig.creds.cna.s3bucket
+        Bucket: global.fakeConfig.creds.app.s3bucket
       }
     })
   })
