@@ -78,8 +78,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
     // TODO: Is there a chance of using run cmd on actions from plugin-runtime in future?
     // In that case this backend stuff might have to go to lib-runtime ?
 
-    let parcelBundler
-    //Build Phase
+    // Build Phase
     utils.runPackageScript('pre-app-build')
     if (withBackend) {
       if (isLocal) {
@@ -94,7 +93,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
 
       // build and deploy actions
       log('rebuilding actions..')
-      await _buildActions(devConfig)    
+      await _buildActions(devConfig)
       // await _buildAndDeploy(devConfig, isLocal, log)
 
       const watcher = chokidar.watch(devConfig.actions.src)
@@ -116,8 +115,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       if (!options.skipServe) {
         const script = await utils.runPackageScript('build-static')
         if (!script) {
-          const { bundler, cleanup: bundlerCleanup } = await runWeb.bundle(config, log, bundleOptions)
-          parcelBundler = bundler
+          const { cleanup: bundlerCleanup } = await runWeb.bundle(config, log, bundleOptions)
           cleanup.add(() => bundlerCleanup(), 'cleaning up runWeb.bundle...')
         }
       }
@@ -131,7 +129,6 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       if (withBackend) {
         log('redeploying actions..')
         await _deployActions(devConfig, isLocal, log)
-        // await _buildAndDeploy(devConfig, isLocal, log)
       }
 
       // serve UI
@@ -241,7 +238,7 @@ async function _buildActions (devConfig) {
   }
 }
 
-async function _deployActions ( devConfig, isLocalDev, logFunc) {
+async function _deployActions (devConfig, isLocalDev, logFunc) {
   const script = await utils.runPackageScript('deploy-actions')
   if (!script) {
     const entities = await DeployActions(devConfig, { isLocalDev })

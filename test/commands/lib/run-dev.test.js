@@ -25,17 +25,31 @@ const runDev = require('../../../src/lib/run-dev')
 const loadConfig = require('../../../src/lib/config-loader')
 const cloneDeep = require('lodash.clonedeep')
 const path = require('path')
-const stream = require('stream')
 const mockAIOConfig = require('@adobe/aio-lib-core-config')
 const util = require('util')
 const sleep = util.promisify(setTimeout)
 
 jest.mock('../../../src/lib/poller')
 jest.mock('serve-static')
-jest.mock('pure-http', () => () => ({
+
+const mockHttpsServerAddressInstance = {
+  port: 9090
+}
+const mockHttpsServerInstance = {
+  address: jest.fn(() => mockHttpsServerAddressInstance)
+}
+const mockHttpsCreateServer = jest.fn(() => mockHttpsServerInstance)
+
+const https = require('https')
+jest.mock('https')
+https.createServer = mockHttpsCreateServer
+
+const mockUIServerInstance = {
   use: jest.fn(),
-  listen: jest.fn()
-}))
+  listen: jest.fn(),
+  close: jest.fn()
+}
+jest.mock('pure-http', () => () => mockUIServerInstance)
 
 /* ****************** Mocks & beforeEach ******************* */
 let onChangeFunc
@@ -59,11 +73,6 @@ const mockLogger = require('@adobe/aio-lib-core-logging')
 const Bundler = require('parcel-bundler')
 jest.mock('parcel-bundler')
 
-const mockUIServerAddressInstance = { port: 1111 }
-const mockUIServerInstance = {
-  close: jest.fn(),
-  address: jest.fn().mockReturnValue(mockUIServerAddressInstance)
-}
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 const BuildActions = mockRuntimeLib.buildActions
 const DeployActions = mockRuntimeLib.deployActions
@@ -78,7 +87,6 @@ let deployActionsSpy
 
 process.exit = jest.fn()
 
-const actualSetTimeout = setTimeout
 const now = Date.now
 let time
 
@@ -94,11 +102,11 @@ beforeEach(() => {
   mockLogger.mockReset()
 
   Bundler.mockReset()
-  // mock bundler server
-  Bundler.mockServe.mockResolvedValue(mockUIServerInstance)
-  mockUIServerInstance.close.mockReset()
-  mockUIServerInstance.address.mockClear()
-  mockUIServerAddressInstance.port = 1111
+
+  mockUIServerInstance.use.mockClear()
+  mockUIServerInstance.listen.mockClear()
+  mockUIServerInstance.close.mockClear()
+  https.createServer.mockClear()
 
   process.exit.mockReset()
   process.removeAllListeners('SIGINT')
@@ -115,7 +123,6 @@ beforeEach(() => {
   Date.now.mockImplementation(() => time)
   global.setTimeout.mockImplementation((fn, d) => { time = time + d; fn() })
 
-  // deployActionsSpy = jest.spyOn(DeployActions.prototype, 'run')
   deployActionsSpy = DeployActions
   deployActionsSpy.mockResolvedValue({})
 })
@@ -131,12 +138,6 @@ const remoteOWCredentials = {
   apihost: global.defaultOwApiHost
 }
 
-const expectedLocalOWConfig = expect.objectContaining({
-  ow: expect.objectContaining({
-    ...localOWCredentials
-  })
-})
-
 const expectedRemoteOWConfig = expect.objectContaining({
   ow: expect.objectContaining({
     ...remoteOWCredentials
@@ -149,10 +150,7 @@ const CLI_CONFIG = {
 
 // those must match the ones defined in dev.js
 const OW_RUNTIMES_CONFIG = path.resolve(__dirname, '../../../bin/openwhisk-standalone-config/runtimes.json')
-const OW_JAR_URL = 'https://bintray.com/api/ui/download/adobe/generic/openwhisk/standalone-v1/openwhisk-standalone.jar'
 const OW_JAR_PATH = path.join(CLI_CONFIG.dataDir, 'openwhisk', 'standalone-v1', 'openwhisk-standalone.jar')
-const WAIT_INIT_TIME = 2000
-const WAIT_PERIOD_TIME = 500
 
 const EXECA_LOCAL_OW_ARGS = ['java', expect.arrayContaining(['-jar', OW_JAR_PATH, '-m', OW_RUNTIMES_CONFIG, '--no-ui']), expect.anything()]
 
@@ -183,11 +181,6 @@ function writeFakeOwJar () {
   global.fakeFileSystem.addJson({
     [posixPath(OW_JAR_PATH)]: 'fakecontent'
   })
-}
-
-/** @private */
-function deleteFakeOwJar () {
-  global.fakeFileSystem.removeKeys(posixPath(OW_JAR_PATH))
 }
 
 // helpers for checking good path
@@ -577,9 +570,11 @@ function runCommonWithFrontendTests (ref) {
       },
       devRemote: ref.devRemote
     }
-    const port = 8888
-    await runDev([port], ref.config, options)
-    expect(Bundler.mockServe).toHaveBeenCalledWith(port, options.parcel.https)
+    process.env.PORT = 8888
+    await runDev([], ref.config, options)
+    expect(mockUIServerInstance.listen).toHaveBeenCalledWith(parseInt(process.env.PORT))
+    expect(https.createServer).toHaveBeenCalledWith(options.parcel.https)
+    delete process.env.PORT
   })
 
   test('should cleanup ui server on SIGINT', async () => {
@@ -593,7 +588,7 @@ function runCommonWithFrontendTests (ref) {
         expect(mockUIServerInstance.close).toBeCalledTimes(0) // should not be called directly, b/c terminator does
         expect(mockTerminatorInstance.terminate).toBeCalledTimes(1)
         expect(httpTerminator.createHttpTerminator).toHaveBeenCalledWith({
-          server: mockUIServerInstance
+          server: mockHttpsServerInstance
         })
       })
     })
@@ -605,7 +600,7 @@ function runCommonWithFrontendTests (ref) {
       expect(mockUIServerInstance.close).toBeCalledTimes(0) // should not be called directly, b/c terminator does
       expect(mockTerminatorInstance.terminate).toBeCalledTimes(1)
       expect(httpTerminator.createHttpTerminator).toHaveBeenCalledWith({
-        server: mockUIServerInstance
+        server: mockHttpsServerInstance
       })
     })
   })
@@ -632,7 +627,7 @@ function runCommonWithFrontendTests (ref) {
   })
 
   test('should return another available port for the UI server if used', async () => {
-    mockUIServerAddressInstance.port = 9999
+    mockHttpsServerAddressInstance.port = 9999
     const options = {
       parcel: {
         https: {
@@ -642,13 +637,18 @@ function runCommonWithFrontendTests (ref) {
       },
       devRemote: ref.devRemote
     }
-    const resultUrl = await runDev([8888], ref.config, options)
-    expect(Bundler.mockServe).toHaveBeenCalledWith(8888, options.parcel.https)
-    expect(resultUrl).toBe('https://localhost:9999')
+
+    process.env.PORT = 8888
+    const resultUrl = await runDev([], ref.config, options)
+    expect(mockUIServerInstance.listen).toHaveBeenCalledWith(parseInt(process.env.PORT))
+    expect(https.createServer).toHaveBeenCalledWith(options.parcel.https)
+    expect(resultUrl).toBe(`https://localhost:${mockHttpsServerAddressInstance.port}`)
+    delete process.env.PORT
   })
 
   test('should return the used ui server port', async () => {
-    mockUIServerAddressInstance.port = 8888
+    const port = 8888
+    mockHttpsServerAddressInstance.port = port
     const options = {
       parcel: {
         https: {
@@ -658,229 +658,13 @@ function runCommonWithFrontendTests (ref) {
       },
       devRemote: ref.devRemote
     }
-    const resultUrl = await runDev([8888], ref.config, options)
-    expect(Bundler.mockServe).toHaveBeenCalledWith(8888, options.parcel.https)
-    expect(resultUrl).toBe('https://localhost:8888')
-  })
-}
 
-/** @private */
-function runCommonLocalTests (ref) {
-  test('should fail if java is not installed', async () => {
-    execa.mockImplementation((cmd, args) => {
-      if (cmd === 'java') {
-        throw new Error('fake error')
-      }
-      return { stdout: jest.fn() }
-    })
-    const options = { devRemote: ref.devRemote }
-    await expect(runDev([], ref.config, options)).rejects.toEqual(expect.objectContaining({ message: 'could not find java CLI, please make sure java is installed' }))
-  })
-
-  test('should fail if docker CLI is not installed', async () => {
-    execa.mockImplementation((cmd, args) => {
-      if (cmd === 'docker' && args.includes('-v')) {
-        throw new Error('fake error')
-      }
-      return { stdout: jest.fn() }
-    })
-    const options = { devRemote: ref.devRemote }
-    await expect(runDev([], ref.config, options)).rejects.toEqual(expect.objectContaining({ message: 'could not find docker CLI, please make sure docker is installed' }))
-  })
-
-  test('should fail if docker is not running', async () => {
-    execa.mockImplementation((cmd, args) => {
-      if (cmd === 'docker' && args.includes('info')) {
-        throw new Error('fake error')
-      }
-      return { stdout: jest.fn() }
-    })
-    const options = { devRemote: ref.devRemote }
-    await expect(runDev([], ref.config, options)).rejects.toEqual(expect.objectContaining({ message: 'docker is not running, please make sure to start docker' }))
-  })
-
-  test('should download openwhisk-standalone.jar on first usage', async () => {
-    // there seems to be a bug with memfs streams + mock timeouts
-    // Error [ERR_UNHANDLED_ERROR]: Unhandled error. (Error: EBADF: bad file descriptor, close)
-    // so disabling mocks for this test only, with the consequence of taking 2 seconds to run
-    // !!!! todo fix and use timer mocks to avoid bugs in new tests + performance !!!!
-    global.setTimeout = actualSetTimeout
-    Date.now = now
-
-    deleteFakeOwJar()
-    const streamBuffer = ['fake', 'ow', 'jar', null]
-    const fakeOwJarStream = stream.Readable({
-      read: function () {
-        this.push(streamBuffer.shift())
-      },
-      emitClose: true
-    })
-    fetch.mockResolvedValue({
-      ok: true,
-      body: fakeOwJarStream
-    })
-
-    await runDev([], ref.config)
-
-    expect(fetch).toHaveBeenCalledWith(OW_JAR_URL)
-    expect(posixPath(OW_JAR_PATH) in global.fakeFileSystem.files()).toEqual(true)
-    expect(global.fakeFileSystem.files()[posixPath(OW_JAR_PATH)].toString()).toEqual('fakeowjar')
-  })
-
-  test('should fail if downloading openwhisk-standalone.jar creates a stream error', async () => {
-    // restore timeouts see above
-    global.setTimeout = actualSetTimeout
-    Date.now = now
-
-    deleteFakeOwJar()
-    const fakeOwJarStream = stream.Readable({
-      read: function () {
-        this.emit('error', new Error('fake stream error'))
-      },
-      emitClose: true
-    })
-    fetch.mockResolvedValue({
-      ok: true,
-      body: fakeOwJarStream
-    })
-
-    await expect(runDev([], ref.config)).rejects.toThrow('fake stream error')
-  })
-
-  test('should fail when there is a connection error while downloading openwhisk-standalone.jar on first usage', async () => {
-    deleteFakeOwJar()
-    fetch.mockRejectedValue(new Error('fake connection error'))
-    await expect(runDev([], ref.config)).rejects.toEqual(expect.objectContaining({ message: `connection error while downloading '${OW_JAR_URL}', are you online?` }))
-  })
-
-  test('should fail if fetch fails to download openwhisk-standalone.jar on first usage because of status error', async () => {
-    deleteFakeOwJar()
-    fetch.mockResolvedValue({
-      ok: false,
-      statusText: 404
-    })
-    await expect(runDev([], ref.config)).rejects.toEqual(expect.objectContaining({ message: `unexpected response while downloading '${OW_JAR_URL}': 404` }))
-  })
-
-  test('should build and deploy actions to local ow', async () => {
-    const log = jest.fn()
-    await runDev([], ref.config, {}, log)
-    expectDevActionBuildAndDeploy(expectedLocalOWConfig)
-
-    BuildActions.mockClear()
-    DeployActions.mockClear()
-
-    jest.useFakeTimers()
-    DeployActions.mockImplementation(async () => {
-      return new Promise((resolve, reject) => {
-        setTimeout(() => {
-          resolve({})
-        }, 2000)
-      })
-    })
-    // First change
-    onChangeFunc('changed')
-    // Defensive sleep just to let the onChange handler pass through
-    await sleep(1)
-
-    // Second change
-    DeployActions.mockImplementation(async () => { throw new Error() })
-    onChangeFunc('changed')
-    await jest.runAllTimers()
-
-    // Second change should not have resulted in build & deploy yet because first deploy would take 2 secs
-    expect(BuildActions).toHaveBeenCalledTimes(1)
-    expect(DeployActions).toHaveBeenCalledTimes(1)
-
-    await jest.runAllTimers()
-    // Defensive sleep just to let the onChange handler pass through
-    await sleep(1)
-
-    // The second call to DeployActions will result in an error because of the second mock above
-    expect(log).toHaveBeenCalledWith(expect.stringContaining('Stopping'))
-    expect(BuildActions).toHaveBeenCalledTimes(2)
-    expect(DeployActions).toHaveBeenCalledTimes(2)
-  })
-
-  test('should kill openwhisk-standalone subprocess on error', async () => {
-    const owProcessMockKill = jest.fn()
-    execa.mockImplementation((cmd, args) => {
-      if (cmd === 'java' && args.includes('-jar') && args.includes(OW_JAR_PATH)) {
-        return {
-          stdout: jest.fn(),
-          kill: owProcessMockKill
-        }
-      }
-      return {
-        stdout: jest.fn(),
-        kill: jest.fn()
-      }
-    })
-    await testCleanupOnError(ref, () => {
-      expect(execa).toHaveBeenCalledWith(...EXECA_LOCAL_OW_ARGS)
-      expect(owProcessMockKill).toHaveBeenCalledTimes(1)
-    })
-  })
-
-  test('should wait for local openwhisk-standalone jar startup', async () => {
-    let waitSteps = 4
-    fetch.mockImplementation(async url => {
-      if (url === 'http://localhost:3233/api/v1') {
-        if (waitSteps > 3) {
-          // fake first call connection error
-          waitSteps--
-          throw new Error('connection error')
-        }
-        if (waitSteps > 0) {
-          // fake some calls status error
-          waitSteps--
-          return { ok: false }
-        }
-      }
-      return { ok: true }
-    })
-
-    global.fakeFileSystem.addJson({
-      'dist/somefile.txt': 'some content' // create dist folder
-    })
-
-    await runDev([], ref.config, { verbose: true })
-    expect(execa).toHaveBeenCalledWith(...EXECA_LOCAL_OW_ARGS)
-    expect(fetch).toHaveBeenCalledWith('http://localhost:3233/api/v1')
-    expect(fetch).toHaveBeenCalledTimes(5)
-    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), WAIT_INIT_TIME) // initial wait
-    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), WAIT_PERIOD_TIME) // period wait
-    expect(setTimeout).toHaveBeenCalledTimes(5)
-  })
-
-  test('should fail if local openwhisk-standalone jar startup takes 61seconds', async () => {
-    const initialTime = Date.now() // fake Date.now() only increases with setTimeout, see beginning of this file
-    fetch.mockImplementation(async url => {
-      if (url === 'http://localhost:3233/api/v1') {
-        if (Date.now() < initialTime + 61000) return { ok: false }
-      }
-      return { ok: true }
-    })
-    await expect(runDev([], ref.config)).rejects.toEqual(expect.objectContaining({ message: 'local openwhisk stack startup timed out: 60000ms' }))
-    expect(execa).toHaveBeenCalledWith(...EXECA_LOCAL_OW_ARGS)
-    expect(fetch).toHaveBeenCalledWith('http://localhost:3233/api/v1')
-    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), WAIT_INIT_TIME) // initial wait
-    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), WAIT_PERIOD_TIME) // period wait
-  })
-
-  test('should run if local openwhisk-standalone jar startup takes 59seconds', async () => {
-    const initialTime = Date.now() // fake Date.now() only increases with setTimeout, see beginning of this file
-    fetch.mockImplementation(async url => {
-      if (url === 'http://localhost:3233/api/v1') {
-        if (Date.now() < initialTime + 59000) return { ok: false }
-      }
-      return { ok: true }
-    })
-    await runDev([], ref.config)
-    expect(execa).toHaveBeenCalledWith(...EXECA_LOCAL_OW_ARGS)
-    expect(fetch).toHaveBeenCalledWith('http://localhost:3233/api/v1')
-    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), WAIT_INIT_TIME) // initial wait
-    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), WAIT_PERIOD_TIME) // period wait
+    process.env.PORT = port
+    const resultUrl = await runDev([], ref.config, options)
+    expect(mockUIServerInstance.listen).toHaveBeenCalledWith(parseInt(process.env.PORT))
+    expect(https.createServer).toHaveBeenCalledWith(options.parcel.https)
+    expect(resultUrl).toBe(`https://localhost:${process.env.PORT}`)
+    delete process.env.PORT
   })
 }
 
@@ -945,7 +729,7 @@ describe('with remote actions and frontend', () => {
   runCommonWithFrontendTests(ref)
 
   test('should generate a vscode debug config for actions and web-src', async () => {
-    mockUIServerAddressInstance.port = 9999
+    mockHttpsServerAddressInstance.port = 9999
     const options = { devRemote: ref.devRemote }
     await runDev([], ref.config, options)
     const isLocal = !ref.devRemote
@@ -1011,7 +795,6 @@ describe('with local actions and no frontend', () => {
   runCommonTests(ref)
   runCommonWithBackendTests(ref)
   runCommonBackendOnlyTests(ref)
-  runCommonLocalTests(ref)
 
   test('should not try to delete /dist/.env.local if it does not exist (branch coverage)', async () => {
     const options = { devRemote: ref.devRemote }
@@ -1046,10 +829,9 @@ describe('with local actions and frontend', () => {
   runCommonTests(ref)
   runCommonWithBackendTests(ref)
   runCommonWithFrontendTests(ref)
-  runCommonLocalTests(ref)
 
   test('should generate a vscode debug config for actions and web-src', async () => {
-    mockUIServerAddressInstance.port = 9999
+    mockHttpsServerAddressInstance.port = 9999
     const options = { devRemote: ref.devRemote }
     await runDev([], ref.config, options)
     const isLocal = !ref.devRemote
@@ -1117,7 +899,7 @@ describe('with frontend only', () => {
   })
 
   test('should generate a vscode config for ui only', async () => {
-    mockUIServerAddressInstance.port = 9999
+    mockHttpsServerAddressInstance.port = 9999
     await runDev([], ref.config)
     expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
       configurations: [

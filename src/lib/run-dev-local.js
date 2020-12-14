@@ -42,11 +42,11 @@ const OW_TIMEOUT = 60000
  * Checks the system for pre-requisites to run local Openwhisk, then runs it.
  *
  * @param {object} config the app config
- * @param {Function} log function to log application logs
- * @param {boolean} verbose set to true to have verbose logging (openwhisk)
+ * @param {Function} [log] function to log application logs
+ * @param {boolean} [verbose=false] set to true to have verbose logging (openwhisk)
  * @returns {RunDevLocalObject} the RunDevLocalObject
  */
-async function runDevLocal (config, log, verbose) {
+async function runDevLocal (config, log = () => undefined, verbose = false) {
   const devConfig = cloneDeep(config)
   devConfig.envFile = path.join(config.app.dist, '.env.local')
   const owJarFile = path.join(config.cli.dataDir, OW_JAR_PATH)

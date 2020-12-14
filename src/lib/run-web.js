@@ -16,6 +16,7 @@ const httpTerminator = require('http-terminator')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:run-web', { provider: 'debug' })
 const pureHTTP = require('pure-http')
 const sirv = require('serve-static')
+const https = require('https')
 
 /**
  * @typedef {object} RunWebObject
@@ -44,7 +45,7 @@ const bundle = async (config, log, options) => {
     logLevel: 1,
     ...options
   }
-  
+
   const bundler = new Bundler(entryFile, parcelBundleOptions)
 
   await bundler.bundle()
@@ -64,9 +65,17 @@ const serve = async (config, log, options) => {
   let actualPort = uiPort
   log('starting local frontend server ..')
 
-  const app = pureHTTP()
+  const server = https.createServer(options.https)
+  const app = pureHTTP({ server })
+
   app.use('/', sirv(path.resolve(config.web.distDev)))
   app.listen(uiPort)
+
+  const terminator = httpTerminator.createHttpTerminator({ server })
+  actualPort = server.address().port
+  if (actualPort !== uiPort) {
+    log(`Could not use port:${uiPort}, using port:${actualPort} instead`)
+  }
 
   /* const entryFile = path.join(config.web.src, 'index.html')
   const parcelBundleOptions = {
@@ -92,8 +101,8 @@ const serve = async (config, log, options) => {
   log(`local frontend server running at ${url}`)
 
   const cleanup = () => {
-    /* aioLogger.debug('stopping ui server...')
-    terminator.terminate() */
+    aioLogger.debug('stopping ui server...')
+    terminator.terminate()
   }
 
   return {
