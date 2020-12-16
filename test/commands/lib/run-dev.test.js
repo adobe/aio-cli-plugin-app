@@ -28,29 +28,18 @@ const path = require('path')
 const mockAIOConfig = require('@adobe/aio-lib-core-config')
 const util = require('util')
 const sleep = util.promisify(setTimeout)
+const bundle = require('../../../src/lib/bundle')
+const serve = require('../../../src/lib/serve')
+const buildActions = require('../../../src/lib/build-actions')
+const deployActions = require('../../../src/lib/deploy-actions')
+const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 
 jest.mock('../../../src/lib/run-dev-local')
+jest.mock('../../../src/lib/bundle')
+jest.mock('../../../src/lib/serve')
+jest.mock('../../../src/lib/build-actions')
+jest.mock('../../../src/lib/deploy-actions')
 jest.mock('../../../src/lib/poller')
-jest.mock('serve-static')
-
-const mockHttpsServerAddressInstance = {
-  port: 9090
-}
-const mockHttpsServerInstance = {
-  address: jest.fn(() => mockHttpsServerAddressInstance)
-}
-const mockHttpsCreateServer = jest.fn(() => mockHttpsServerInstance)
-
-const https = require('https')
-jest.mock('https')
-https.createServer = mockHttpsCreateServer
-
-const mockUIServerInstance = {
-  use: jest.fn(),
-  listen: jest.fn(),
-  close: jest.fn()
-}
-jest.mock('pure-http', () => () => mockUIServerInstance)
 
 /* ****************** Mocks & beforeEach ******************* */
 let onChangeFunc
@@ -71,20 +60,6 @@ jest.mock('execa')
 const fetch = require('node-fetch')
 jest.mock('node-fetch')
 const mockLogger = require('@adobe/aio-lib-core-logging')
-const Bundler = require('parcel-bundler')
-jest.mock('parcel-bundler')
-
-const mockRuntimeLib = require('@adobe/aio-lib-runtime')
-const BuildActions = mockRuntimeLib.buildActions
-const DeployActions = mockRuntimeLib.deployActions
-
-const httpTerminator = require('http-terminator')
-jest.mock('http-terminator')
-const mockTerminatorInstance = {
-  terminate: jest.fn()
-}
-
-let deployActionsSpy
 
 process.exit = jest.fn()
 
@@ -107,32 +82,29 @@ function jestTimerWorkaround () {
 beforeEach(() => {
   global.fakeFileSystem.reset()
 
-  BuildActions.mockClear()
-  DeployActions.mockClear()
+  bundle.mockReset()
+  serve.mockReset()
+  buildActions.mockReset()
+  deployActions.mockReset()
+
+  bundle.mockImplementation(() => ({
+    bundler: {},
+    cleanup: jest.fn()
+  }))
+  serve.mockImplementation(() => ({
+    url: '',
+    cleanup: jest.fn()
+  }))
 
   fetch.mockReset()
   execa.mockReset()
 
   mockLogger.mockReset()
 
-  Bundler.mockReset()
-
-  mockUIServerInstance.use.mockClear()
-  mockUIServerInstance.listen.mockClear()
-  mockUIServerInstance.close.mockClear()
-  https.createServer.mockClear()
-
   process.exit.mockReset()
   process.removeAllListeners('SIGINT')
 
-  httpTerminator.createHttpTerminator.mockReset()
-  httpTerminator.createHttpTerminator.mockImplementation(() => mockTerminatorInstance)
-  mockTerminatorInstance.terminate.mockReset()
-
   jestTimerWorkaround()
-
-  deployActionsSpy = DeployActions
-  deployActionsSpy.mockResolvedValue({})
 })
 
 /* ****************** Consts ******************* */
@@ -184,20 +156,10 @@ function posixPath (pathString) {
 /** @private */
 function expectDevActionBuildAndDeploy (expectedBuildDeployConfig) {
   // build & deploy
-  expect(BuildActions).toHaveBeenCalledTimes(1)
-  expect(BuildActions.mock.calls[0][0]).toEqual(expectedBuildDeployConfig)
-  expect(DeployActions).toHaveBeenCalledTimes(1)
-  expect(DeployActions.mock.calls[0][0]).toEqual(expectedBuildDeployConfig)
-}
-
-/** @private */
-function expectUIServer (fakeMiddleware, port) {
-  expect(Bundler.mockConstructor).toHaveBeenCalledTimes(1)
-  expect(Bundler.mockConstructor).toHaveBeenCalledWith(path.resolve('/web-src/index.html'),
-    expect.objectContaining({
-      watch: true,
-      outDir: path.resolve('/dist/web-src-dev')
-    }))
+  expect(buildActions).toHaveBeenCalledTimes(1)
+  expect(buildActions.mock.calls[0][0]).toEqual(expectedBuildDeployConfig)
+  expect(deployActions).toHaveBeenCalledTimes(1)
+  expect(deployActions.mock.calls[0][0]).toEqual(expectedBuildDeployConfig)
 }
 
 /** @private */
@@ -245,38 +207,6 @@ async function testCleanupOnError (ref, postCleanupChecks) {
   postCleanupChecks()
 }
 
-const getExpectedActionVSCodeDebugConfig = (isLocal, actionName) => {
-  const envFile = isLocal ? path.join('dist', '.env.local') : '.env'
-  return expect.objectContaining({
-    type: 'pwa-node',
-    request: 'launch',
-    name: 'Action:' + actionName,
-    attachSimplePort: 0,
-    runtimeExecutable: path.resolve('/node_modules/.bin/wskdebug'),
-    runtimeArgs: [
-      actionName,
-      expect.stringContaining(actionName.split('/')[1]),
-      '-v',
-      '--kind',
-      'nodejs:12'
-    ],
-    envFile: path.join('${workspaceFolder}', envFile), // eslint-disable-line no-template-curly-in-string
-    localRoot: path.resolve('/'),
-    remoteRoot: '/code'
-  })
-}
-
-const getExpectedUIVSCodeDebugConfig = uiPort => expect.objectContaining({
-  type: 'chrome',
-  request: 'launch',
-  name: 'Web',
-  url: `http://localhost:${uiPort}`,
-  webRoot: path.resolve('/web-src'),
-  breakOnLoad: true,
-  sourceMapPathOverrides: {
-    '*': path.resolve('/dist/web-src-dev/*')
-  }
-})
 /* ****************** Tests ******************* */
 
 test('runDev is exported', async () => {
@@ -296,7 +226,7 @@ describe('call checkOpenwhiskCredentials with right params', () => {
   }
 
   test('error before chokidar watcher gets a chance to be initialized -> codecov', async () => {
-    BuildActions.mockImplementationOnce(() => { throw new Error('error') })
+    buildActions.mockImplementationOnce(() => { throw new Error('error') })
     await expect(failMissingRuntimeConfig('auth', '1')).rejects.toThrowError('error')
   })
 
@@ -450,32 +380,14 @@ function runCommonTests (ref) {
     await runDev([], ref.config, options)
     // build & deploy constructor have been called once to init the scripts
     // here we make sure run has not been called
-    expect(BuildActions).toHaveBeenCalledTimes(0)
-    expect(DeployActions).toHaveBeenCalledTimes(0)
+    expect(buildActions).toHaveBeenCalledTimes(0)
+    expect(deployActions).toHaveBeenCalledTimes(0)
   })
 
   test('should not set vscode config for actions if skipActions is set', async () => {
     const options = { skipActions: true, devRemote: ref.devRemote }
     await runDev([], ref.config, options)
     expect(global.fakeFileSystem.files()['/.vscode/launch.json'].toString()).not.toEqual(expect.stringContaining('wskdebug'))
-  })
-}
-
-/** @private */
-function runCommonWithBackendTests (ref) {
-  test('should log actions url or name when actions are deployed', async () => {
-    DeployActions.mockResolvedValue({
-      actions: [
-        { name: 'pkg/action', url: 'https://fake.com/action' },
-        { name: 'pkg/actionNoUrl' }
-      ]
-    })
-    const log = jest.fn()
-    const options = { devRemote: ref.devRemote }
-    await runDev([], ref.config, options, log)
-
-    expect(log).toHaveBeenCalledWith(expect.stringContaining('https://fake.com/action'))
-    expect(log).toHaveBeenCalledWith(expect.stringContaining('pkg/actionNoUrl'))
   })
 }
 
@@ -487,32 +399,32 @@ function runCommonRemoteTests (ref) {
     await runDev([], ref.config, options, log)
     expectDevActionBuildAndDeploy(expectedRemoteOWConfig)
 
-    BuildActions.mockClear()
-    DeployActions.mockClear()
+    buildActions.mockClear()
+    deployActions.mockClear()
 
-    // jest.useFakeTimers()
-    // DeployActions.mockImplementation(async () => { await sleep(2000); return {} })
+    jest.useFakeTimers()
+    deployActions.mockImplementation(async () => { await sleep(2000); return {} })
 
-    // // First change
-    // onChangeFunc('changed')
-    // DeployActions.mockImplementation(async () => { throw new Error() })
+    // First change
+    onChangeFunc('changed')
+    deployActions.mockImplementation(async () => { throw new Error() })
 
-    // // Second change
-    // onChangeFunc('changed')
-    // jest.runAllTimers()
+    // Second change
+    onChangeFunc('changed')
+    jest.runAllTimers()
 
     onChangeFunc('changed')
 
     // Second change should not have resulted in build & deploy yet because first deploy would take 2 secs
-    expect(BuildActions).toHaveBeenCalledTimes(1)
-    expect(DeployActions).toHaveBeenCalledTimes(1)
+    expect(buildActions).toHaveBeenCalledTimes(1)
+    expect(deployActions).toHaveBeenCalledTimes(1)
     jest.runAllTimers()
     await sleep(3)
 
     // The second call to DeployActions will result in an error because of the second mock above
     expect(log).toHaveBeenLastCalledWith(expect.stringContaining('Stopping'))
-    expect(BuildActions).toHaveBeenCalledTimes(2)
-    expect(DeployActions).toHaveBeenCalledTimes(2)
+    expect(buildActions).toHaveBeenCalledTimes(2)
+    expect(deployActions).toHaveBeenCalledTimes(2)
   })
 
   test('should not start the local openwhisk stack', async () => {
@@ -533,20 +445,7 @@ function runCommonBackendOnlyTests (ref) {
   test('should not start a ui server', async () => {
     const options = { devRemote: ref.devRemote }
     await runDev([], ref.config, options)
-    expect(Bundler.mockConstructor).toHaveBeenCalledTimes(0)
-  })
-
-  test('should generate a vscode config for actions only', async () => {
-    const options = { devRemote: ref.devRemote }
-    await runDev([], ref.config, options)
-    const isLocal = !ref.devRemote
-    expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
-      configurations: [
-        getExpectedActionVSCodeDebugConfig(isLocal, 'sample-app-1.0.0/action'),
-        getExpectedActionVSCodeDebugConfig(isLocal, 'sample-app-1.0.0/action-zip')
-        // fails if ui config
-      ]
-    }))
+    expect(serve).toHaveBeenCalledTimes(0)
   })
 }
 
@@ -554,27 +453,8 @@ function runCommonBackendOnlyTests (ref) {
 function runCommonWithFrontendTests (ref) {
   test('should start a ui server', async () => {
     const options = { devRemote: ref.devRemote }
-    const fakeMiddleware = Symbol('fake middleware')
-    Bundler.mockMiddleware.mockReturnValue(fakeMiddleware)
     await runDev([], ref.config, options)
-    expectUIServer(fakeMiddleware, 9080)
-  })
-
-  test('should use https cert/key if passed', async () => {
-    const options = {
-      parcel: {
-        https: {
-          cert: 'cert.cert',
-          key: 'key.key'
-        }
-      },
-      devRemote: ref.devRemote
-    }
-    process.env.PORT = 8888
-    await runDev([], ref.config, options)
-    expect(mockUIServerInstance.listen).toHaveBeenCalledWith(parseInt(process.env.PORT))
-    expect(https.createServer).toHaveBeenCalledWith(options.parcel.https)
-    delete process.env.PORT
+    expect(serve).toHaveBeenCalled()
   })
 
   test('should cleanup ui server on SIGINT', async () => {
@@ -582,33 +462,41 @@ function runCommonWithFrontendTests (ref) {
       kill: jest.fn()
     }))
 
+    const mockBundlerCleanup = jest.fn()
+    bundle.mockImplementation(() => ({
+      bundler: jest.fn(),
+      cleanup: mockBundlerCleanup
+    }))
+
     return new Promise(resolve => {
       testCleanupNoErrors(resolve, ref, () => {
-        expect(Bundler.mockStop).toHaveBeenCalledTimes(1)
-        expect(mockUIServerInstance.close).toBeCalledTimes(0) // should not be called directly, b/c terminator does
-        expect(mockTerminatorInstance.terminate).toBeCalledTimes(1)
-        expect(httpTerminator.createHttpTerminator).toHaveBeenCalledWith({
-          server: mockHttpsServerInstance
-        })
+        expect(mockBundlerCleanup).toHaveBeenCalledTimes(1)
       })
     })
   })
 
   test('should cleanup ui server on error', async () => {
+    const mockBundlerCleanup = jest.fn()
+    bundle.mockImplementation(() => ({
+      bundler: jest.fn(),
+      cleanup: mockBundlerCleanup
+    }))
+
     await testCleanupOnError(ref, () => {
-      expect(Bundler.mockStop).toHaveBeenCalledTimes(1)
-      expect(mockUIServerInstance.close).toBeCalledTimes(0) // should not be called directly, b/c terminator does
-      expect(mockTerminatorInstance.terminate).toBeCalledTimes(1)
-      expect(httpTerminator.createHttpTerminator).toHaveBeenCalledWith({
-        server: mockHttpsServerInstance
-      })
+      expect(mockBundlerCleanup).toHaveBeenCalledTimes(1)
     })
   })
 
   test('should exit with 1 if there is an error in cleanup', async () => {
+    const mockBundlerCleanup = jest.fn()
+    bundle.mockImplementation(() => ({
+      bundler: jest.fn(),
+      cleanup: mockBundlerCleanup
+    }))
+
     return new Promise(resolve => {
       const theError = new Error('theerror')
-      Bundler.mockStop.mockRejectedValue(theError)
+      mockBundlerCleanup.mockRejectedValue(theError)
       process.removeAllListeners('SIGINT')
       process.exit.mockImplementation(() => {
         expect(mockLogger.error).toHaveBeenCalledWith(theError)
@@ -625,47 +513,6 @@ function runCommonWithFrontendTests (ref) {
         })
     })
   })
-
-  test('should return another available port for the UI server if used', async () => {
-    mockHttpsServerAddressInstance.port = 9999
-    const options = {
-      parcel: {
-        https: {
-          cert: 'cert.cert',
-          key: 'key.key'
-        }
-      },
-      devRemote: ref.devRemote
-    }
-
-    process.env.PORT = 8888
-    const resultUrl = await runDev([], ref.config, options)
-    expect(mockUIServerInstance.listen).toHaveBeenCalledWith(parseInt(process.env.PORT))
-    expect(https.createServer).toHaveBeenCalledWith(options.parcel.https)
-    expect(resultUrl).toBe(`https://localhost:${mockHttpsServerAddressInstance.port}`)
-    delete process.env.PORT
-  })
-
-  test('should return the used ui server port', async () => {
-    const port = 8888
-    mockHttpsServerAddressInstance.port = port
-    const options = {
-      parcel: {
-        https: {
-          cert: 'cert.cert',
-          key: 'key.key'
-        }
-      },
-      devRemote: ref.devRemote
-    }
-
-    process.env.PORT = port
-    const resultUrl = await runDev([], ref.config, options)
-    expect(mockUIServerInstance.listen).toHaveBeenCalledWith(port)
-    expect(https.createServer).toHaveBeenCalledWith(options.parcel.https)
-    expect(resultUrl).toBe(`https://localhost:${port}`)
-    delete process.env.PORT
-  })
 }
 
 describe('with remote actions and no frontend', () => {
@@ -678,7 +525,6 @@ describe('with remote actions and no frontend', () => {
   })
 
   runCommonTests(ref)
-  runCommonWithBackendTests(ref)
   runCommonRemoteTests(ref)
   runCommonBackendOnlyTests(ref)
 
@@ -725,23 +571,7 @@ describe('with remote actions and frontend', () => {
 
   runCommonTests(ref)
   runCommonRemoteTests(ref)
-  runCommonWithBackendTests(ref)
   runCommonWithFrontendTests(ref)
-
-  test('should generate a vscode debug config for actions and web-src', async () => {
-    mockHttpsServerAddressInstance.port = 9999
-    const options = { devRemote: ref.devRemote }
-    await runDev([], ref.config, options)
-    const isLocal = !ref.devRemote
-    expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
-      configurations: [
-        getExpectedActionVSCodeDebugConfig(isLocal, 'sample-app-1.0.0/action'),
-        getExpectedActionVSCodeDebugConfig(isLocal, 'sample-app-1.0.0/action-zip'),
-        getExpectedUIVSCodeDebugConfig(9999)
-      ]
-    }))
-  })
-
   test('should inject remote action urls into the UI', async () => {
     const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApiHost.split('https://')[1] + '/api/v1/web/sample-app-1.0.0/'
     const retVal = {
@@ -785,25 +615,15 @@ describe('with frontend only', () => {
 
   test('should start a ui server', async () => {
     await runDev([], ref.config)
-    expectUIServer(null, 9080)
+    expect(serve).toHaveBeenCalled()
   })
 
   test('should not call build and deploy', async () => {
     await runDev([], ref.config)
     // build & deploy constructor have been called once to init the scripts
     // here we make sure run has not been calle
-    expect(BuildActions).toHaveBeenCalledTimes(0)
-    expect(DeployActions).toHaveBeenCalledTimes(0)
-  })
-
-  test('should generate a vscode config for ui only', async () => {
-    mockHttpsServerAddressInstance.port = 9999
-    await runDev([], ref.config)
-    expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
-      configurations: [
-        getExpectedUIVSCodeDebugConfig(9999)
-      ]
-    }))
+    expect(buildActions).toHaveBeenCalledTimes(0)
+    expect(deployActions).toHaveBeenCalledTimes(0)
   })
 
   test('should create config.json = {}', async () => {
@@ -812,116 +632,8 @@ describe('with frontend only', () => {
     expect(JSON.parse(global.fakeFileSystem.files()['/web-src/src/config.json'].toString())).toEqual({})
   })
 
-  test('should not run parcel serve', async () => {
+  test('should not run serve', async () => {
     await runDev([], ref.config, { skipServe: true })
-    expect(Bundler.mockServe).not.toHaveBeenCalled()
+    expect(serve).not.toHaveBeenCalled()
   })
-})
-
-// Note: these tests can be safely deleted once the require-adobe-auth is
-// natively supported in Adobe I/O Runtime.
-test('vscode wskdebug config with require-adobe-auth annotation && apihost=https://adobeioruntime.net', async () => {
-  // create test app
-  global.addSampleAppFiles()
-  global.fakeFileSystem.removeKeys(['/web-src/index.html'])
-  mockAIOConfig.get.mockReturnValue(global.fakeConfig.tvm)
-  const devRemote = true
-  const config = loadConfig()
-  // avoid recreating a new fixture
-  config.manifest.package.actions.action.annotations = { 'require-adobe-auth': true }
-  config.ow.apihost = 'https://adobeioruntime.net'
-  const options = { devRemote }
-  await runDev([], config, options)
-
-  expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
-    configurations: expect.arrayContaining([
-      expect.objectContaining({
-        type: 'pwa-node',
-        request: 'launch',
-        name: 'Action:' + 'sample-app-1.0.0/action',
-        attachSimplePort: 0,
-        runtimeExecutable: path.resolve('/node_modules/.bin/wskdebug'),
-        runtimeArgs: [
-          'sample-app-1.0.0/__secured_action',
-          path.resolve('actions/action.js'),
-          '-v',
-          '--kind',
-          'nodejs:12'
-        ],
-        envFile: path.join('${workspaceFolder}', '.env'), // eslint-disable-line no-template-curly-in-string
-        localRoot: path.resolve('/'),
-        remoteRoot: '/code'
-      })
-    ])
-  }))
-})
-
-test('vscode wskdebug config with require-adobe-auth annotation && apihost!=https://adobeioruntime.net', async () => {
-  // create test app
-  global.addSampleAppFiles()
-  global.fakeFileSystem.removeKeys(['/web-src/index.html'])
-  mockAIOConfig.get.mockReturnValue(global.fakeConfig.tvm)
-  const devRemote = true
-  const config = loadConfig()
-  // avoid recreating a new fixture
-  config.manifest.package.actions.action.annotations = { 'require-adobe-auth': true }
-  config.ow.apihost = 'https://notadobeioruntime.net'
-  const options = { devRemote }
-  await runDev([], config, options)
-
-  expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
-    configurations: expect.arrayContaining([
-      expect.objectContaining({
-        type: 'pwa-node',
-        request: 'launch',
-        name: 'Action:' + 'sample-app-1.0.0/action',
-        attachSimplePort: 0,
-        runtimeExecutable: path.resolve('/node_modules/.bin/wskdebug'),
-        runtimeArgs: [
-          'sample-app-1.0.0/action',
-          path.resolve('actions/action.js'),
-          '-v',
-          '--kind',
-          'nodejs:12'
-        ],
-        envFile: path.join('${workspaceFolder}', '.env'), // eslint-disable-line no-template-curly-in-string
-        localRoot: path.resolve('/'),
-        remoteRoot: '/code'
-      })
-    ])
-  }))
-})
-
-test('vscode wskdebug config without runtime option', async () => {
-  // create test app
-  global.addSampleAppFiles()
-  global.fakeFileSystem.removeKeys(['/web-src/index.html'])
-  mockAIOConfig.get.mockReturnValue(global.fakeConfig.tvm)
-  const devRemote = true
-  const config = loadConfig()
-  // avoid recreating a new fixture
-  delete config.manifest.package.actions.action.runtime
-  const options = { devRemote }
-  await runDev([], config, options)
-
-  expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
-    configurations: expect.arrayContaining([
-      expect.objectContaining({
-        type: 'pwa-node',
-        request: 'launch',
-        name: 'Action:' + 'sample-app-1.0.0/action',
-        attachSimplePort: 0,
-        runtimeExecutable: path.resolve('/node_modules/.bin/wskdebug'),
-        runtimeArgs: [
-          'sample-app-1.0.0/action',
-          path.resolve('actions/action.js'),
-          '-v'
-          // no kind
-        ],
-        envFile: path.join('${workspaceFolder}', '.env'), // eslint-disable-line no-template-curly-in-string
-        localRoot: path.resolve('/'),
-        remoteRoot: '/code'
-      })
-    ])
-  }))
 })

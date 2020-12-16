@@ -14,8 +14,9 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const rtLib = require('@adobe/aio-lib-runtime')
 const rtLibUtils = rtLib.utils
 const vscode = require('./vscode')
+const bundle = require('./bundle')
+const serve = require('./serve')
 const Cleanup = require('./cleanup')
-const runWeb = require('./run-web')
 const runDevLocal = require('./run-dev-local')
 
 const buildActions = require('./build-actions')
@@ -118,8 +119,8 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       if (!options.skipServe) {
         const script = await utils.runPackageScript('build-static')
         if (!script) {
-          const { cleanup: bundlerCleanup } = await runWeb.bundle(config, log, bundleOptions)
-          cleanup.add(() => bundlerCleanup(), 'cleaning up runWeb.bundle...')
+          const { cleanup: bundlerCleanup } = await bundle(config, log, bundleOptions)
+          cleanup.add(() => bundlerCleanup(), 'cleaning up bundle...')
         }
       }
     }
@@ -137,9 +138,9 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
         if (!options.skipServe) {
           const script = await utils.runPackageScript('deploy-static')
           if (!script) {
-            const { url, cleanup: serverCleanup } = await runWeb.serve(config, log, bundleOptions)
+            const { url, cleanup: serverCleanup } = await serve(config, log, bundleOptions)
             frontEndUrl = url
-            cleanup.add(() => serverCleanup(), 'cleaning up runWeb...')
+            cleanup.add(() => serverCleanup(), 'cleaning up serve...')
           }
         }
       }
