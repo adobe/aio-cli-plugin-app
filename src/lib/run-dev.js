@@ -18,14 +18,12 @@ const Cleanup = require('./cleanup')
 const runWeb = require('./run-web')
 const runDevLocal = require('./run-dev-local')
 
-const BuildActions = require('@adobe/aio-lib-runtime').buildActions
-const DeployActions = require('@adobe/aio-lib-runtime').deployActions
+const buildActions = require('./build-actions')
+const deployActions = require('./deploy-actions')
 const utils = require('./app-helper')
 const EventPoller = require('./poller')
 const execa = require('execa')
 const chokidar = require('chokidar')
-let running = false
-let changed = false
 
 const FETCH_LOG_INTERVAL = 10000
 const eventPoller = new EventPoller(FETCH_LOG_INTERVAL)
@@ -79,7 +77,6 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
     // In that case this backend stuff might have to go to lib-runtime ?
 
     // Build Phase
-    utils.runPackageScript('pre-app-build')
     if (withBackend) {
       if (isLocal) {
         const { config: localConfig, cleanup: localCleanup } = await runDevLocal(config, log, options.verbose)
@@ -92,12 +89,18 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       }
 
       // build and deploy actions
-      log('rebuilding actions..')
-      await _buildActions(devConfig)
-      // await _buildAndDeploy(devConfig, isLocal, log)
+      log('building actions..')
+      await buildActions(devConfig)
 
+      log(`watching action files at ${devConfig.actions.src}...`)
       const watcher = chokidar.watch(devConfig.actions.src)
-      watcher.on('change', _getActionChangeHandler(devConfig, isLocal, log, watcher))
+      const watcherOptions = {
+        config: devConfig,
+        isLocal,
+        log,
+        watcher
+      }
+      watcher.on('change', _getActionChangeHandler(watcherOptions))
       cleanup.add(() => watcher.close(), 'stopping action watcher...')
     }
 
@@ -120,15 +123,13 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
         }
       }
     }
-    utils.runPackageScript('post-app-build')
 
     // Deploy Phase
     if (withBackend || (hasFrontend && !options.skipServe)) {
-      utils.runPackageScript('pre-app-deploy')
       // deploy actions
       if (withBackend) {
         log('redeploying actions..')
-        await _deployActions(devConfig, isLocal, log)
+        await deployActions(devConfig, isLocal, log)
       }
 
       // serve UI
@@ -142,7 +143,6 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
           }
         }
       }
-      utils.runPackageScript('post-app-deploy')
     }
 
     log('setting up vscode debug configuration files...')
@@ -182,10 +182,10 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
 async function logListener (pollArgs) {
   const { limit, startTime } = pollArgs.logOptions
   try {
-    const ret = await rtLib.printActionLogs(pollArgs.config, console.log, limit || 1, [], false, false, undefined, startTime)
+    const { lastActivationTime } = await rtLib.printActionLogs(pollArgs.config, console.log, limit || 1, [], false, false, undefined, startTime)
     pollArgs.logOptions = {
       limit: 30,
-      startTime: ret.lastActivationTime
+      startTime: lastActivationTime
     }
   } catch (e) {
     aioLogger.error('Error while fetching action logs ' + e)
@@ -195,7 +195,10 @@ async function logListener (pollArgs) {
 }
 
 /** @private */
-function _getActionChangeHandler (devConfig, isLocalDev, logFunc, watcher) {
+function _getActionChangeHandler (watcherOptions) {
+  const { config, isLocal, log = () => {}, watcher } = watcherOptions
+  let { running = false, changed = false } = watcherOptions
+
   return async (filePath) => {
     if (running) {
       aioLogger.debug(`${filePath} has changed. Deploy in progress. This change will be deployed after completion of current deployment.`)
@@ -205,48 +208,20 @@ function _getActionChangeHandler (devConfig, isLocalDev, logFunc, watcher) {
     running = true
     try {
       aioLogger.debug(`${filePath} has changed. Redeploying actions.`)
-      await _buildAndDeployActions(devConfig, isLocalDev, logFunc)
+      await buildActions(config)
+      await deployActions(config, isLocal, log)
       aioLogger.debug('Deployment successful.')
     } catch (err) {
-      logFunc('  -> Error encountered while deploying actions. Stopping auto refresh.')
+      log('  -> Error encountered while deploying actions. Stopping auto refresh.')
       aioLogger.debug(err)
       await watcher.close()
     }
     if (changed) {
       aioLogger.debug('Code changed during deployment. Triggering deploy again.')
       changed = running = false
-      await _getActionChangeHandler(devConfig, isLocalDev, logFunc, watcher)(devConfig.actions.src)
+      await _getActionChangeHandler({ ...watcherOptions, running, changed })(config.actions.src)
     }
     running = false
-  }
-}
-
-/** @private */
-async function _buildAndDeployActions (devConfig, isLocalDev, logFunc) {
-  utils.runPackageScript('pre-app-build')
-  await _buildActions(devConfig)
-  utils.runPackageScript('post-app-build')
-  utils.runPackageScript('pre-app-deploy')
-  await _deployActions(devConfig, { isLocalDev }, logFunc)
-  utils.runPackageScript('post-app-deploy')
-}
-
-async function _buildActions (devConfig) {
-  const script = await utils.runPackageScript('build-actions')
-  if (!script) {
-    await BuildActions(devConfig)
-  }
-}
-
-async function _deployActions (devConfig, isLocalDev, logFunc) {
-  const script = await utils.runPackageScript('deploy-actions')
-  if (!script) {
-    const entities = await DeployActions(devConfig, { isLocalDev })
-    if (entities.actions) {
-      entities.actions.forEach(a => {
-        logFunc(`  -> ${a.url || a.name}`)
-      })
-    }
   }
 }
 

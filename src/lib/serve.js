@@ -11,7 +11,6 @@ governing permissions and limitations under the License.
 */
 
 const path = require('path')
-const Bundler = require('parcel-bundler')
 const httpTerminator = require('http-terminator')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:run-web', { provider: 'debug' })
 const pureHTTP = require('pure-http')
@@ -19,62 +18,20 @@ const sirv = require('serve-static')
 const https = require('https')
 
 /**
- * @typedef {object} BundleWebObject
- * @property {object} the Parcel bundler object
- * @property {Function} cleanup callback function to cleanup available resources
- */
-
-/**
- * @typedef {object} RunWebObject
+ * @typedef {object} ServeWebObject
  * @property {string} url the front end url
  * @property {Function} cleanup callback function to cleanup available resources
  */
 
 /**
- * Builds the web source via Parcel.
- *
- * @param {object} config the app config
- * @param {Function} [log] the app logger
- * @param {object} [options] the Parcel bundler options
- * @returns {BundleWebObject} the BundleWebObject
- */
-const bundle = async (config, log = () => {}, options = {}) => {
-  log('starting local frontend server ..')
-  const entryFile = path.join(config.web.src, 'index.html')
-
-  const parcelBundleOptions = {
-    cache: false,
-    outDir: config.web.distDev,
-    contentHash: false,
-    watch: true,
-    minify: false,
-    logLevel: 1,
-    ...options
-  }
-
-  const bundler = new Bundler(entryFile, parcelBundleOptions)
-
-  await bundler.bundle()
-  const cleanup = () => {
-    aioLogger.debug('stopping parcel watcher...')
-    bundler.stop()
-  }
-
-  return {
-    bundler,
-    cleanup
-  }
-}
-
-/**
  * Serves the web source via a http server.
  *
  * @param {object} config the app config
- * @param {Function} [log] the app logger
  * @param {object} [options] the Parcel bundler options
- * @returns {RunWebObject} the RunWebObject
+ * @param {Function} [log] the app logger
+ * @returns {ServeWebObject} the ServeWebObject
  */
-const serve = async (config, log = () => {}, options = {}) => {
+module.exports = async (config, options = {}, log = () => {}) => {
   const uiPort = parseInt(process.env.PORT) || 9080
   let actualPort = uiPort
   log('starting local frontend server ..')
@@ -103,9 +60,4 @@ const serve = async (config, log = () => {}, options = {}) => {
     url,
     cleanup
   }
-}
-
-module.exports = {
-  bundle,
-  serve
 }

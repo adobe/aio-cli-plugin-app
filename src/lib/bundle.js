@@ -12,11 +12,7 @@ governing permissions and limitations under the License.
 
 const path = require('path')
 const Bundler = require('parcel-bundler')
-const httpTerminator = require('http-terminator')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:run-web', { provider: 'debug' })
-const pureHTTP = require('pure-http')
-const sirv = require('serve-static')
-const https = require('https')
 
 /**
  * @typedef {object} BundleWebObject
@@ -25,20 +21,14 @@ const https = require('https')
  */
 
 /**
- * @typedef {object} RunWebObject
- * @property {string} url the front end url
- * @property {Function} cleanup callback function to cleanup available resources
- */
-
-/**
- * Builds the web source via Parcel.
+ * Bundles the web source via Parcel.
  *
  * @param {object} config the app config
  * @param {Function} [log] the app logger
  * @param {object} [options] the Parcel bundler options
  * @returns {BundleWebObject} the BundleWebObject
  */
-const bundle = async (config, log = () => {}, options = {}) => {
+module.exports = async (config, log = () => {}, options = {}) => {
   log('starting local frontend server ..')
   const entryFile = path.join(config.web.src, 'index.html')
 
@@ -64,48 +54,4 @@ const bundle = async (config, log = () => {}, options = {}) => {
     bundler,
     cleanup
   }
-}
-
-/**
- * Serves the web source via a http server.
- *
- * @param {object} config the app config
- * @param {Function} [log] the app logger
- * @param {object} [options] the Parcel bundler options
- * @returns {RunWebObject} the RunWebObject
- */
-const serve = async (config, log = () => {}, options = {}) => {
-  const uiPort = parseInt(process.env.PORT) || 9080
-  let actualPort = uiPort
-  log('starting local frontend server ..')
-
-  const server = https.createServer(options.https)
-  const app = pureHTTP({ server })
-
-  app.use('/', sirv(path.resolve(config.web.distDev)))
-  app.listen(uiPort)
-
-  const terminator = httpTerminator.createHttpTerminator({ server })
-  actualPort = server.address().port
-  if (actualPort !== uiPort) {
-    log(`Could not use port:${uiPort}, using port:${actualPort} instead`)
-  }
-
-  const url = `${options.https ? 'https:' : 'http:'}//localhost:${actualPort}`
-  log(`local frontend server running at ${url}`)
-
-  const cleanup = () => {
-    aioLogger.debug('stopping ui server...')
-    terminator.terminate()
-  }
-
-  return {
-    url,
-    cleanup
-  }
-}
-
-module.exports = {
-  bundle,
-  serve
 }

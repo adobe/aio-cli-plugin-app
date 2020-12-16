@@ -1,5 +1,5 @@
 /*
-Copyright 2019 Adobe. All rights reserved.
+Copyright 2020 Adobe. All rights reserved.
 This file is licensed to you under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License. You may obtain a copy
 of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -10,27 +10,19 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:cleanup', { provider: 'debug' })
+const utils = require('./app-helper')
+const { buildActions } = require('@adobe/aio-lib-runtime')
 
-/** @private */
-class Cleanup {
-  constructor () {
-    this.resources = []
+/**
+ * Builds actions.
+ *
+ * @param {object} config see src/lib/config-loader.js
+ */
+module.exports = async (config) => {
+  utils.runPackageScript('pre-app-build')
+  const script = await utils.runPackageScript('build-actions')
+  if (!script) {
+    await buildActions(config)
   }
-
-  add (func, message) {
-    this.resources.push(async () => {
-      aioLogger.debug(message)
-      await func()
-    })
-  }
-
-  async run () {
-    for (const func of this.resources) {
-      await func()
-    }
-    this.resources = []
-  }
+  utils.runPackageScript('post-app-build')
 }
-
-module.exports = Cleanup
