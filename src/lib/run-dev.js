@@ -21,13 +21,11 @@ const runDevLocal = require('./run-dev-local')
 
 const buildActions = require('./build-actions')
 const deployActions = require('./deploy-actions')
-const utils = require('./app-helper')
-const EventPoller = require('./poller')
-const execa = require('execa')
-const chokidar = require('chokidar')
+const actionsWatcher = require('./actions-watcher')
 
-const FETCH_LOG_INTERVAL = 10000
-const eventPoller = new EventPoller(FETCH_LOG_INTERVAL)
+const utils = require('./app-helper')
+const execa = require('execa')
+const { run: logPoller } = require('./log-poller')
 
 /** @private */
 async function runDev (args = [], config, options = {}, log = () => {}) {
@@ -85,7 +83,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
         cleanup.add(() => localCleanup(), 'cleaning up runDevLocal')
       } else {
         // check credentials
-        rtLibUtils.checkOpenWhiskCredentials(config)
+        rtLibUtils.checkOpenWhiskCredentials(devConfig)
         log('using remote actions')
       }
 
@@ -94,15 +92,8 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       await buildActions(devConfig)
 
       log(`watching action files at ${devConfig.actions.src}...`)
-      const watcher = chokidar.watch(devConfig.actions.src)
-      const watcherOptions = {
-        config: devConfig,
-        isLocal,
-        log,
-        watcher
-      }
-      watcher.on('change', _getActionChangeHandler(watcherOptions))
-      cleanup.add(() => watcher.close(), 'stopping action watcher...')
+      const { cleanup: watcherCleanup } = await actionsWatcher({ config: devConfig, isLocal, log })
+      cleanup.add(() => watcherCleanup(), 'stopping action watcher...')
     }
 
     if (hasFrontend) {
@@ -119,7 +110,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       if (!options.skipServe) {
         const script = await utils.runPackageScript('build-static')
         if (!script) {
-          const { cleanup: bundlerCleanup } = await bundle(config, log, bundleOptions)
+          const { cleanup: bundlerCleanup } = await bundle(devConfig, log, bundleOptions)
           cleanup.add(() => bundlerCleanup(), 'cleaning up bundle...')
         }
       }
@@ -160,16 +151,8 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
     log('press CTRL+C to terminate dev environment')
 
     if (config.app.hasBackend && fetchLogs) {
-      const pollArgs = {
-        config: devConfig,
-        logOptions: {
-          startTime: Date.now()
-        }
-      }
-      // fetch action logs
-      eventPoller.onPoll(logListener)
-      eventPoller.start(pollArgs)
-      cleanup.add(() => eventPoller.stop(), 'stopping event poller...')
+      const { cleanup: pollerCleanup } = await logPoller(devConfig)
+      cleanup.add(() => pollerCleanup(), 'cleaning up log poller...')
     }
   } catch (e) {
     aioLogger.error('unexpected error, cleaning up...')
@@ -177,53 +160,6 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
     throw e
   }
   return frontEndUrl
-}
-
-/** @private */
-async function logListener (pollArgs) {
-  const { limit, startTime } = pollArgs.logOptions
-  try {
-    const { lastActivationTime } = await rtLib.printActionLogs(pollArgs.config, console.log, limit || 1, [], false, false, undefined, startTime)
-    pollArgs.logOptions = {
-      limit: 30,
-      startTime: lastActivationTime
-    }
-  } catch (e) {
-    aioLogger.error('Error while fetching action logs ' + e)
-  } finally {
-    eventPoller.start(pollArgs)
-  }
-}
-
-/** @private */
-function _getActionChangeHandler (watcherOptions) {
-  const { config, isLocal, log = () => {}, watcher } = watcherOptions
-  let { running = false, changed = false } = watcherOptions
-
-  return async (filePath) => {
-    if (running) {
-      aioLogger.debug(`${filePath} has changed. Deploy in progress. This change will be deployed after completion of current deployment.`)
-      changed = true
-      return
-    }
-    running = true
-    try {
-      aioLogger.debug(`${filePath} has changed. Redeploying actions.`)
-      await buildActions(config)
-      await deployActions(config, isLocal, log)
-      aioLogger.debug('Deployment successful.')
-    } catch (err) {
-      log('  -> Error encountered while deploying actions. Stopping auto refresh.')
-      aioLogger.debug(err)
-      await watcher.close()
-    }
-    if (changed) {
-      aioLogger.debug('Code changed during deployment. Triggering deploy again.')
-      changed = running = false
-      await _getActionChangeHandler({ ...watcherOptions, running, changed })(config.actions.src)
-    }
-    running = false
-  }
 }
 
 module.exports = runDev

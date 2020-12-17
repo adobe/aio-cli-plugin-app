@@ -12,7 +12,7 @@ governing permissions and limitations under the License.
 
 const path = require('path')
 const Bundler = require('parcel-bundler')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:run-web', { provider: 'debug' })
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:bundle', { provider: 'debug' })
 
 /**
  * @typedef {object} BundleWebObject
@@ -23,7 +23,7 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 /**
  * Bundles the web source via Parcel.
  *
- * @param {object} config the app config
+ * @param {object} config the app config (see src/lib/config-loader.js)
  * @param {Function} [log] the app logger
  * @param {object} [options] the Parcel bundler options
  * @returns {BundleWebObject} the BundleWebObject

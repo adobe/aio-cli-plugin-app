@@ -12,7 +12,7 @@ governing permissions and limitations under the License.
 
 const path = require('path')
 const httpTerminator = require('http-terminator')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:run-web', { provider: 'debug' })
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:serve', { provider: 'debug' })
 const pureHTTP = require('pure-http')
 const sirv = require('serve-static')
 const https = require('https')
@@ -26,7 +26,7 @@ const https = require('https')
 /**
  * Serves the web source via a http server.
  *
- * @param {object} config the app config
+ * @param {object} config the app config (see src/lib/config-loader.js)
  * @param {object} [options] the Parcel bundler options
  * @param {Function} [log] the app logger
  * @returns {ServeWebObject} the ServeWebObject

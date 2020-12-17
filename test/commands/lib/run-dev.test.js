@@ -22,6 +22,7 @@ governing permissions and limitations under the License.
 
 global.mockFs()
 const runDev = require('../../../src/lib/run-dev')
+const runDevLocal = require('../../../src/lib/run-dev-local')
 const loadConfig = require('../../../src/lib/config-loader')
 const cloneDeep = require('lodash.clonedeep')
 const path = require('path')
@@ -39,7 +40,7 @@ jest.mock('../../../src/lib/bundle')
 jest.mock('../../../src/lib/serve')
 jest.mock('../../../src/lib/build-actions')
 jest.mock('../../../src/lib/deploy-actions')
-jest.mock('../../../src/lib/poller')
+jest.mock('../../../src/lib/log-poller')
 
 /* ****************** Mocks & beforeEach ******************* */
 let onChangeFunc
@@ -86,6 +87,7 @@ beforeEach(() => {
   serve.mockReset()
   buildActions.mockReset()
   deployActions.mockReset()
+  runDevLocal.mockReset()
 
   bundle.mockImplementation(() => ({
     bundler: {},
@@ -403,21 +405,21 @@ function runCommonRemoteTests (ref) {
     deployActions.mockClear()
 
     jest.useFakeTimers()
-    deployActions.mockImplementation(async () => { await sleep(2000); return {} })
 
     // First change
+    deployActions.mockImplementation(async () => { await sleep(2000) })
     onChangeFunc('changed')
     deployActions.mockImplementation(async () => { throw new Error() })
 
     // Second change
     onChangeFunc('changed')
-    jest.runAllTimers()
 
-    onChangeFunc('changed')
+    await jest.runAllTimers()
 
     // Second change should not have resulted in build & deploy yet because first deploy would take 2 secs
     expect(buildActions).toHaveBeenCalledTimes(1)
     expect(deployActions).toHaveBeenCalledTimes(1)
+
     jest.runAllTimers()
     await sleep(3)
 
@@ -515,6 +517,20 @@ function runCommonWithFrontendTests (ref) {
   })
 }
 
+test('with local actions and no front-end', async () => {
+  const options = { devRemote: false }
+  const config = await loadEnvScripts('sample-app', global.fakeConfig.tvm, ['/web-src/index.html'])
+
+  const mockCleanup = jest.fn()
+  runDevLocal.mockImplementation(() => ({
+    config,
+    cleanup: mockCleanup
+  }))
+
+  await runDev([], config, options)
+  expect(runDevLocal).toHaveBeenCalledTimes(1)
+})
+
 describe('with remote actions and no frontend', () => {
   const ref = {}
   beforeEach(async () => {
@@ -572,6 +588,7 @@ describe('with remote actions and frontend', () => {
   runCommonTests(ref)
   runCommonRemoteTests(ref)
   runCommonWithFrontendTests(ref)
+
   test('should inject remote action urls into the UI', async () => {
     const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApiHost.split('https://')[1] + '/api/v1/web/sample-app-1.0.0/'
     const retVal = {
@@ -607,8 +624,10 @@ describe('with frontend only', () => {
     ref.config = await loadEnvScripts('sample-app', global.fakeConfig.tvm, ['/manifest.yml'])
     ref.appFiles = ['/package.json', '/web-src/index.html', '/web-src/src/config.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js'] // still have actions cause we only delete manifest.yml
   })
+
   runCommonTests(ref)
   runCommonWithFrontendTests(ref)
+
   test('should set hasBackend=false', async () => {
     expect(ref.config.app.hasBackend).toBe(false)
   })
