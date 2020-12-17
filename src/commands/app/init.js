@@ -63,14 +63,15 @@ class InitCommand extends BaseCommand {
           'destination-file': generatedFile,
           'access-token': accessToken,
           'ims-env': imsEnv,
-          'allow-create': true
+          'allow-create': true,
+          'cert-dir': this.config.dataDir
         })
         // trigger import
         flags.import = generatedFile
         // delete console credentials
         deleteConsoleCredentials = true
       } catch (e) {
-        this.log(chalk.red(e.message))
+        this.error(chalk.red(`${e}\nPlease run with 'DEBUG=@adobe/generator-aio-console* aio app init' to find out more`))
       }
       this.log()
     }
