@@ -158,12 +158,15 @@ module.exports = () => {
 
   // 5. deployment config
   config.ow = userConfig.runtime || {}
+  config.ow.apihostIsCustom = !!config.ow.apihost
   config.ow.apihost = config.ow.apihost || defaultOwApiHost
   config.ow.apiversion = config.ow.apiversion || 'v1'
   config.ow.package = `${config.app.name}-${config.app.version}`
+  // S3 static files deployment config
   config.s3.folder = config.ow.namespace // this becomes the root only /
   config.s3.tvmUrl = userConfig.app.tvmurl || defaultTvmUrl
-  // only provide a hostname if it was given or if the app uses the tvm
+  // set hostname for backend actions && UI
+  config.app.hostnameIsCustom = !!userConfig.app.hostname
   config.app.hostname = userConfig.app.hostname || defaultAioHostname
   // cache control config
   config.app.htmlCacheDuration = userConfig.app.htmlcacheduration || defaultHTMLCacheDuration
