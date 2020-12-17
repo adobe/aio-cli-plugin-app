@@ -36,7 +36,7 @@ const deployActions = require('./deploy-actions')
  * @returns {WatchReturnObject} the WatchReturnObject
  */
 module.exports = async (watcherOptions) => {
-  const { config, log = () => {} } = watcherOptions
+  const { config, log } = watcherOptions
 
   log(`watching action files at ${config.actions.src}...`)
   const watcher = chokidar.watch(config.actions.src)
