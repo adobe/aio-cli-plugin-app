@@ -106,12 +106,14 @@ function loadAndValidateConfigFile (fileOrBuffer) {
  * @returns {Promise} promise from writeFile call
  */
 function writeDefaultAppConfig (parentDir, flags) {
-  //write app config to .aio file
-  const appConfig = { app : {
-    actions: 'actions',
-    dist: 'dist',
-    web: 'web-src'
-  }}
+  // write app config to .aio file
+  const appConfig = {
+    app: {
+      actions: 'actions',
+      dist: 'dist',
+      web: 'web-src'
+    }
+  }
   return writeAio(appConfig, parentDir, flags)
 }
 

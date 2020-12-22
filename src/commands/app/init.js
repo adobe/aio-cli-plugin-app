@@ -112,7 +112,7 @@ class InitCommand extends BaseCommand {
       }
     }
 
-    //write default app config to .aio file
+    // write default app config to .aio file
     writeDefaultAppConfig(process.cwd(), { interactive, merge })
 
     // finalize configuration data
