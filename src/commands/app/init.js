@@ -55,18 +55,8 @@ class InitCommand extends BaseCommand {
     let deleteConsoleCredentials = false
 
     if (!flags.import && !flags.yes && flags.login) {
-      let accessToken, imsEnv
       try {
-        const info = await getCliInfo()
-        accessToken = info.accessToken
-        imsEnv = info.env
-      } catch (e) {
-        this.error(chalk.red(
-          `Error while loging in: ${e}\n` +
-          'Consider running "aio app init --no-login" to skip Adobe Developer Console config setup'
-        ))
-      }
-      try {
+        const { accessToken, env: imsEnv } = await getCliInfo()
         const generatedFile = 'console.json'
         env.register(require.resolve('@adobe/generator-aio-console'), 'gen-console')
         res = await env.run('gen-console', {
@@ -81,10 +71,9 @@ class InitCommand extends BaseCommand {
         // delete console credentials
         deleteConsoleCredentials = true
       } catch (e) {
-        this.error(chalk.red(
-          `Error while generating the config from Adobe Developer Console: ${e}\n` +
-          'Run "DEBUG=@adobe/generator-aio-console* aio app init" to find out more\n' +
-          'Or run "aio app init --no-login" to skip Console setup'
+        this.log(chalk.red(
+          `Error while generating the configuration from the Adobe Developer Console: ${e}\n` +
+          'Skipping configuration setup..'
         ))
       }
       this.log()

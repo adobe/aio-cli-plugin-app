@@ -328,7 +328,22 @@ describe('run', () => {
     mockGetCli.mockReset()
     mockGetCli.mockImplementationOnce(() => { throw new Error('Error') })
 
-    await expect(TheCommand.run(['--skip-install'])).rejects.toThrowError(Error)
+    const project = mockValidConfig()
+    await TheCommand.run(['--skip-install'])
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(1)
+    const genApp = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genApp, {
+      'skip-prompt': false,
+      'skip-install': true,
+      'project-name': project.name,
+      'adobe-services': '',
+      'supported-adobe-services': ''
+    })
+    expect(fs.ensureDirSync).not.toHaveBeenCalled()
+    expect(spyChdir).not.toHaveBeenCalled()
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
   test('no-path', async () => {
@@ -502,6 +517,38 @@ describe('run', () => {
     // we changed dir, console.json is in cwd
     expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
   })
+
+  test('no imports should write aio config', async () => {
+    // the only way we write defaults if gen-console threw an error
+    mockRun.mockImplementationOnce(() => { throw new Error('some error') })
+
+    const project = mockValidConfig()
+    await TheCommand.run([])
+
+    expect(fs.ensureDirSync).not.toHaveBeenCalled()
+    expect(spyChdir).not.toHaveBeenCalled()
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(2)
+    const genConsole = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
+      'access-token': mockAccessToken,
+      'destination-file': 'console.json',
+      'ims-env': 'prod',
+      'allow-create': true,
+      'cert-dir': certDir
+    })
+    const genApp = mockRegister.mock.calls[1][1]
+    expect(mockRun).toHaveBeenCalledWith(genApp, {
+      'skip-prompt': false,
+      'skip-install': false,
+      'project-name': project.name,
+      'adobe-services': '',
+      'supported-adobe-services': ''
+    })
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
+  })
+
   test('no-path --import file=invalid config', async () => {
     mockInvalidConfig()
     await expect(TheCommand.run(['--import', 'config.json'])).rejects.toThrow('fake error')
