@@ -20,9 +20,9 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 
 // defaults
 const {
-  defaultAioHostname,
+  defaultAppHostname,
   defaultTvmUrl,
-  defaultOwApiHost,
+  defaultOwApihost,
   defaultHTMLCacheDuration,
   defaultJSCacheDuration,
   defaultCSSCacheDuration,
@@ -158,16 +158,16 @@ module.exports = () => {
 
   // 5. deployment config
   config.ow = userConfig.runtime || {}
-  config.ow.apihostIsCustom = !!config.ow.apihost
-  config.ow.apihost = config.ow.apihost || defaultOwApiHost
+  config.ow.defaultApihost = defaultOwApihost
+  config.ow.apihost = config.ow.apihost || defaultOwApihost // set by user
   config.ow.apiversion = config.ow.apiversion || 'v1'
   config.ow.package = `${config.app.name}-${config.app.version}`
   // S3 static files deployment config
   config.s3.folder = config.ow.namespace // this becomes the root only /
   config.s3.tvmUrl = userConfig.app.tvmurl || defaultTvmUrl
   // set hostname for backend actions && UI
-  config.app.hostnameIsCustom = !!userConfig.app.hostname
-  config.app.hostname = userConfig.app.hostname || defaultAioHostname
+  config.app.defaultHostname = defaultAppHostname
+  config.app.hostname = userConfig.app.hostname || defaultAppHostname
   // cache control config
   config.app.htmlCacheDuration = userConfig.app.htmlcacheduration || defaultHTMLCacheDuration
   config.app.jsCacheDuration = userConfig.app.jscacheduration || defaultJSCacheDuration
