@@ -447,7 +447,6 @@ async function writeConsoleConfig (json) {
  * @returns {Promise} promise from writeFile call
  */
 async function writeAio (json, parentFolder, flags) {
-  console.log('-----------writting aio-------------------------')
   aioLogger.debug(`writeAio - parentFolder:${parentFolder} flags:${flags}`)
   aioLogger.debug(`writeAio - json: ${prettyPrintJson(json)}`)
 
@@ -455,7 +454,6 @@ async function writeAio (json, parentFolder, flags) {
   aioLogger.debug(`writeAio - destination: ${destination}`)
 
   const data = prettyPrintJson(json)
-  console.log('-----------done-------------------------')
   return writeFile(destination, data, flags)
 }
 
