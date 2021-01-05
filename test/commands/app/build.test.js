@@ -12,6 +12,7 @@ governing permissions and limitations under the License.
 
 const TheCommand = require('../../../src/commands/app/build')
 const BaseCommand = require('../../../src/BaseCommand')
+const path = require('path')
 
 const mockFS = require('fs-extra')
 
@@ -25,6 +26,102 @@ jest.mock('@adobe/aio-lib-core-config')
 
 jest.mock('cli-ux')
 
+const sampleAppConfig = {
+  app: {
+    hasFrontend: true,
+    hasBackend: true,
+    version: '1.0.0',
+    name: 'sample-app',
+    hostname: 'adobeio-static.net',
+    htmlCacheDuration: '60',
+    jsCacheDuration: '604800',
+    cssCacheDuration: '604800',
+    imageCacheDuration: '604800'
+  },
+  ow: {
+    namespace: 'fake_ns',
+    auth: 'fake:auth',
+    apihost: 'https://adobeioruntime.net',
+    apiversion: 'v1',
+    package: 'sample-app-1.0.0'
+  },
+  s3: {
+    credsCacheFile: '/.aws.tmp.creds.json',
+    creds: undefined,
+    folder: 'fake_ns',
+    tvmUrl: 'https://adobeio.adobeioruntime.net/apis/tvm/'
+  },
+  web: {
+    src: '/web-src',
+    distDev: '/dist/web-src-dev',
+    distProd: '/dist/web-src-prod',
+    injectedConfig: '/web-src/src/config.json'
+  },
+  manifest: {
+    src: '/manifest.yml',
+    packagePlaceholder: '__APP_PACKAGE__',
+    full: {
+      packages: {
+        __APP_PACKAGE__: {
+          license: 'Apache-2.0',
+          actions: {
+            action: {
+              function: 'actions/action.js',
+              web: 'yes',
+              runtime: 'nodejs:12'
+            },
+            'action-zip': {
+              function: 'actions/action-zip',
+              web: 'yes',
+              runtime: 'nodejs:12'
+            }
+          },
+          sequences: {
+            'action-sequence': { actions: 'action, action-zip', web: 'yes' }
+          },
+          triggers: { trigger1: null },
+          rules: {
+            rule1: { trigger: 'trigger1', action: 'action', rule: true }
+          },
+          apis: {
+            api1: {
+              base: { path: { action: { method: 'get' } } }
+            }
+          },
+          dependencies: { dependency1: { location: 'fake.com/package' } }
+        }
+      }
+    },
+    package: {
+      license: 'Apache-2.0',
+      actions: {
+        action: {
+          function: 'actions/action.js',
+          web: 'yes',
+          runtime: 'nodejs:12'
+        },
+        'action-zip': {
+          function: 'actions/action-zip',
+          web: 'yes',
+          runtime: 'nodejs:12'
+        }
+      },
+      sequences: {
+        'action-sequence': { actions: 'action, action-zip', web: 'yes' }
+      },
+      triggers: { trigger1: null },
+      rules: { rule1: { trigger: 'trigger1', action: 'action', rule: true } },
+      apis: {
+        api1: {
+          base: { path: { action: { method: 'get' } } }
+        }
+      },
+      dependencies: { dependency1: { location: 'fake.com/package' } }
+    }
+  },
+  actions: { src: '/actions', dist: '/dist/actions', devRemote: false },
+  root: path.resolve('test/__fixtures__/sample-app')
+}
 beforeEach(() => {
   mockWebLib.mockReset('deployWeb')
   mockWebLib.mockReset('buildWeb')
@@ -76,6 +173,18 @@ describe('run', () => {
     jest.clearAllMocks()
   })
 
+  test('build should write to config.json', async () => {
+    command.appConfig = sampleAppConfig
+    const mockUtils = mockRuntimeLib.utils
+    mockRuntimeLib.buildActions.mockImplementationOnce(require.requireActual('@adobe/aio-lib-runtime').buildActions)
+    mockRuntimeLib.utils = require.requireActual('@adobe/aio-lib-runtime').utils
+    await command.run()
+    mockRuntimeLib.utils = mockUtils
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
+    expect(helpers.writeConfig).toHaveBeenCalledWith('/web-src/src/config.json', { action: 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action', 'action-sequence': 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action-sequence', 'action-zip': 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action-zip', 'sample-app-1.0.0-action': 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action', 'sample-app-1.0.0-action-sequence': 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action-sequence', 'sample-app-1.0.0-action-zip': 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action-zip' })
+  })
   test('build & deploy an App with no flags', async () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
