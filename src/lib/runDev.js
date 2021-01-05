@@ -187,7 +187,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
         // note the condition: we still write backend urls EVEN if skipActions is set
         // the urls will always point to remotely deployed actions if skipActions is set
         log('injecting backend urls into frontend config')
-        urls = await rtLibUtils.getActionUrls(devConfig, true, isLocal && !skipActions)
+        urls = await rtLibUtils.getActionUrls(devConfig, true, isLocal && !skipActions, true)
       }
       await utils.writeConfig(devConfig.web.injectedConfig, urls)
 

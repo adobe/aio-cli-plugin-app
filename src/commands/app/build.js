@@ -67,7 +67,7 @@ class Build extends BaseCommand {
       if (!flags['skip-static']) {
         if (config.app.hasFrontend && (flags['force-build'] || !fs.existsSync(config.web.distProd))) {
           if (config.app.hasBackend) {
-            const urls = await RuntimeLib.utils.getActionUrls(config)
+            const urls = await RuntimeLib.utils.getActionUrls(config, false, false, true)
             await writeConfig(config.web.injectedConfig, urls)
           }
           spinner.start('Building web assets')
