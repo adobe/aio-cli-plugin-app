@@ -61,7 +61,7 @@ afterAll(() => {
 })
 
 // universal path
-const certDir = path.join('data-dir', '@adobe', 'aio-cli-plugin-app')
+const certDir = path.join('data-dir', '@adobe', 'aio-cli-plugin-app', 'entp-int-certs')
 
 describe('Command Prototype', () => {
   test('exports', async () => {

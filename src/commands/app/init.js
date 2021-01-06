@@ -21,6 +21,7 @@ const chalk = require('chalk')
 const { servicesToGeneratorInput } = require('../../lib/app-helper')
 
 const SERVICE_API_KEY_ENV = 'SERVICE_API_KEY'
+const ENTP_INT_CERTS_FOLDER = 'entp-int-certs'
 
 class InitCommand extends BaseCommand {
   async run () {
@@ -64,7 +65,7 @@ class InitCommand extends BaseCommand {
           'access-token': accessToken,
           'ims-env': imsEnv,
           'allow-create': true,
-          'cert-dir': this.config.dataDir
+          'cert-dir': path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER)
         })
         // trigger import
         flags.import = generatedFile
