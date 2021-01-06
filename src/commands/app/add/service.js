@@ -9,14 +9,16 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
+const path = require('path')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:service', { provider: 'debug' })
-const { flags } = require('@oclif/command')
 const config = require('@adobe/aio-lib-core-config')
+const chalk = require('chalk')
 
 const { getCliInfo } = require('../../../lib/app-helper')
 const BaseCommand = require('../../../BaseCommand')
 const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli')
 
+const ENTP_INT_CERTS_FOLDER = 'entp-int-certs'
 // todo embed into lib console cli
 const ApiKey = {
   prod: 'aio-cli-console-auth',
@@ -98,7 +100,14 @@ class AddServiceCommand extends BaseCommand {
       serviceProperties
     )
     if (confirm) {
-      await consoleCLI.addServicesToWorkspace(orgId, projectId, workspace, this.config.dataDir)
+      await consoleCLI.addServicesToWorkspace(
+        orgId,
+        project,
+        workspace,
+        path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER),
+        serviceProperties
+      )
+      this.log(chalk.green(chalk.bold(`Successfully updated Services Subscriptions in Workspace ${workspaceName}`)))
       return serviceProperties
     }
     return null
