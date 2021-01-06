@@ -71,8 +71,9 @@ test('flags', async () => {
   expect(typeof TheCommand.flags['skip-actions']).toBe('object')
   expect(typeof TheCommand.flags['skip-actions'].description).toBe('string')
 
-  expect(typeof TheCommand.flags['skip-static']).toBe('object')
-  expect(typeof TheCommand.flags['skip-static'].description).toBe('string')
+  expect(typeof TheCommand.flags['skip-web-assets']).toBe('object')
+  expect(typeof TheCommand.flags['skip-web-assets'].description).toBe('string')
+  expect(typeof TheCommand.flags['skip-web-assets'].description).toBe('string')
 
   expect(typeof TheCommand.flags['skip-deploy']).toBe('object')
   expect(typeof TheCommand.flags['skip-deploy'].description).toBe('string')

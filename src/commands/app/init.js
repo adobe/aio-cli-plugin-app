@@ -62,8 +62,7 @@ class InitCommand extends BaseCommand {
         res = await env.run('gen-console', {
           'destination-file': generatedFile,
           'access-token': accessToken,
-          'ims-env': imsEnv,
-          'allow-create': true
+          'ims-env': imsEnv
         })
         // trigger import
         flags.import = generatedFile
