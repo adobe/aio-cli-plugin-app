@@ -148,7 +148,7 @@ global.addSampleAppFiles = () => {
 
 global.defaultAppHostName = 'adobeio-static.net'
 global.defaultTvmUrl = 'https://adobeio.adobeioruntime.net/apis/tvm/'
-global.defaultOwApiHost = 'https://adobeioruntime.net'
+global.defaultOwApihost = 'https://adobeioruntime.net'
 global.fakeS3Bucket = 'fake-bucket'
 global.fakeConfig = {
   tvm: {
