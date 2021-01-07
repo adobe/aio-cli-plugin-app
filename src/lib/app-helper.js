@@ -229,17 +229,6 @@ async function hasJavaCLI () {
   }
   return false
 }
-// async function hasWskDebugInstalled () {
-//   // todo should test for local install as well
-//   try {
-//     const result = await execa('wskdebug', ['--version'])
-//     debug('wskdebug version : ' + result.stdout)
-//     return true
-//   } catch (error) {
-//     debug('Error spawning wskdebug info: ' + error)
-//   }
-//   return false
-// }
 
 /** @private */
 async function downloadOWJar (url, outFile) {
@@ -265,43 +254,44 @@ async function downloadOWJar (url, outFile) {
     })
   })
 }
+
+/** @private */
+async function waitForOpenWhiskReadiness (host, endTime, period, timeout) {
+  if (Date.now() > endTime) {
+    throw new Error(`local openwhisk stack startup timed out: ${timeout}ms`)
+  }
+
+  let ok
+
+  try {
+    const response = await fetch(host + '/api/v1')
+    ok = response.ok
+  } catch (e) {
+    ok = false
+  }
+
+  if (!ok) {
+    await waitFor(period)
+    return waitForOpenWhiskReadiness(host, endTime, period, timeout)
+  }
+}
+
+/** @private */
+function waitFor (t) {
+  return new Promise(resolve => setTimeout(resolve, t))
+}
+
 /** @private */
 async function runOpenWhiskJar (jarFile, runtimeConfigFile, apihost, waitInitTime, waitPeriodTime, timeout, /* istanbul ignore next */ execaOptions = {}) {
   aioLogger.debug(`runOpenWhiskJar - jarFile: ${jarFile} runtimeConfigFile ${runtimeConfigFile} apihost: ${apihost} waitInitTime: ${waitInitTime} waitPeriodTime: ${waitPeriodTime} timeout: ${timeout}`)
   const proc = execa('java', ['-jar', '-Dwhisk.concurrency-limit.max=10', jarFile, '-m', runtimeConfigFile, '--no-ui', '--disable-color-logging'], execaOptions)
-  await waitForOpenWhiskReadiness(apihost, waitInitTime, waitPeriodTime, timeout)
+
+  const endTime = Date.now() + timeout
+  await waitFor(waitInitTime)
+  await waitForOpenWhiskReadiness(apihost, endTime, waitPeriodTime, timeout)
+
   // must wrap in an object as execa return value is awaitable
   return { proc }
-
-  /** @private */
-  async function waitForOpenWhiskReadiness (host, initialWait, period, timeout) {
-    const endTime = Date.now() + timeout
-    await waitFor(initialWait)
-    await _waitForOpenWhiskReadiness(host, endTime)
-
-    /** @private */
-    async function _waitForOpenWhiskReadiness (host, endTime) {
-      if (Date.now() > endTime) {
-        throw new Error(`local openwhisk stack startup timed out: ${timeout}ms`)
-      }
-      let ok
-      try {
-        const response = await fetch(host + '/api/v1')
-        ok = response.ok
-      } catch (e) {
-        ok = false
-      }
-      if (!ok) {
-        await waitFor(period)
-        return _waitForOpenWhiskReadiness(host, endTime)
-      }
-    }
-
-    /** @private */
-    function waitFor (t) {
-      return new Promise(resolve => setTimeout(resolve, t))
-    }
-  }
 }
 
 /**
@@ -332,5 +322,6 @@ module.exports = {
   writeConfig,
   downloadOWJar,
   runOpenWhiskJar,
-  servicesToGeneratorInput
+  servicesToGeneratorInput,
+  waitForOpenWhiskReadiness
 }

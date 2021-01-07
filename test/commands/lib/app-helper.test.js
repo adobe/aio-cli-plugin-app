@@ -13,11 +13,17 @@ const which = require('which')
 const fs = require('fs-extra')
 const execa = require('execa')
 const appHelper = require('../../../src/lib/app-helper')
+const fetch = require('node-fetch')
 
+jest.mock('node-fetch')
+jest.mock('execa')
 jest.mock('process')
 
+jest.useFakeTimers()
+
 beforeEach(() => {
-  execa.mockClear()
+  execa.mockReset()
+  fetch.mockReset()
 })
 
 test('isDockerRunning', async () => {
@@ -433,4 +439,109 @@ test('checkFile', () => {
   // if not exists
   fs.lstatSync.mockReturnValue({ isFile: () => false })
   expect(() => appHelper.checkFile('no/exists')).toThrow('no/exists is not a valid file')
+})
+
+test('downloadOWJar failed (server has response, but not ok)', async () => {
+  const response = {
+    ok: false,
+    statusText: 'some error'
+  }
+  fetch.mockReturnValueOnce(response)
+
+  const url = 'https://some.url'
+  const result = appHelper.downloadOWJar(url, 'foo/bar')
+  await expect(result).rejects.toEqual(new Error(`unexpected response while downloading '${url}': ${response.statusText}`))
+})
+
+test('downloadOWJar failed (no server response, fetch exception)', async () => {
+  const err = new Error('some fetch error')
+  fetch.mockRejectedValueOnce(err)
+
+  const url = 'https://some.url'
+  const result = appHelper.downloadOWJar(url, 'foo/bar')
+  await expect(result).rejects.toEqual(new Error(`connection error while downloading '${url}', are you online?`))
+})
+
+test('downloadOWJar ok', async () => {
+  const response = {
+    ok: true,
+    statusText: 'success',
+    body: {
+      pipe: jest.fn(),
+      on: jest.fn()
+    }
+  }
+
+  const url = 'https://some.url'
+  const fileToWrite = 'foo/bar'
+
+  fs.createWriteStream.mockImplementation((outFile) => {
+    expect(outFile).toEqual(fileToWrite)
+    return {
+      on: jest.fn((eventName, fn) => {
+        if (eventName === 'finish') { // immediately call it
+          fn()
+        }
+      })
+    }
+  })
+  fetch.mockReturnValueOnce(response)
+
+  const result = appHelper.downloadOWJar(url, fileToWrite)
+  await expect(result).resolves.toBeUndefined()
+})
+
+test('downloadOWJar (server connected ok, streaming error)', async () => {
+  const streamError = new Error('stream error')
+  const response = {
+    ok: true,
+    statusText: 'success',
+    body: {
+      pipe: jest.fn(),
+      on: jest.fn((eventName, fn) => {
+        expect(eventName).toEqual('error')
+        fn(streamError) // immediately call it
+      })
+    }
+  }
+
+  const url = 'https://some.url'
+  const fileToWrite = 'foo/bar'
+
+  fetch.mockReturnValueOnce(response)
+
+  const result = appHelper.downloadOWJar(url, fileToWrite)
+  await expect(result).rejects.toEqual(streamError)
+})
+
+test('runOpenWhiskJar ok', async () => {
+  const response = {
+    ok: true
+  }
+
+  fetch.mockReturnValue(response)
+  execa.mockImplementation(() => {
+    return {
+      stdout: jest.fn()
+    }
+  })
+
+  const result = appHelper.runOpenWhiskJar()
+  jest.runAllTimers()
+
+  await expect(result).resolves.toEqual({
+    proc: expect.any(Object)
+  })
+})
+
+test('waitForOpenWhiskReadiness timeout', async () => {
+  const host = 'my-host'
+  const period = 5000
+  const timeout = 5000
+  const endTime = Date.now() - 1000 // ends now
+
+  const result = appHelper.waitForOpenWhiskReadiness(host, endTime, period, timeout)
+  jest.runAllTimers()
+
+  await expect(result).rejects.toEqual(new Error(`local openwhisk stack startup timed out: ${timeout}ms`))
 })

@@ -49,6 +49,22 @@ test('no deploy-actions app hook available (use inbuilt)', async () => {
   expect(utils.runPackageScript).toHaveBeenNthCalledWith(3, 'post-app-deploy')
 })
 
+test('use default parameters (coverage)', async () => {
+  rtDeployActions.mockResolvedValue({
+    actions: [
+      { name: 'pkg/action', url: 'https://fake.com/action' },
+      { name: 'pkg/actionNoUrl' }
+    ]
+  })
+
+  await deployActions({})
+
+  expect(rtDeployActions).toHaveBeenCalled()
+  expect(utils.runPackageScript).toHaveBeenNthCalledWith(1, 'pre-app-deploy')
+  expect(utils.runPackageScript).toHaveBeenNthCalledWith(2, 'deploy-actions')
+  expect(utils.runPackageScript).toHaveBeenNthCalledWith(3, 'post-app-deploy')
+})
+
 test('should log actions url or name when actions are deployed', async () => {
   rtDeployActions.mockResolvedValue({
     actions: [

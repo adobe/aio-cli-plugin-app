@@ -34,13 +34,27 @@ const serve = require('../../../src/lib/serve')
 const buildActions = require('../../../src/lib/build-actions')
 const deployActions = require('../../../src/lib/deploy-actions')
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
+const mockLogger = require('@adobe/aio-lib-core-logging')
+const logPoller = require('../../../src/lib/log-poller')
+const appHelper = require('../../../src/lib/app-helper')
+const execa = require('execa')
 
+jest.mock('execa')
+jest.mock('node-fetch')
 jest.mock('../../../src/lib/run-dev-local')
 jest.mock('../../../src/lib/bundle')
 jest.mock('../../../src/lib/serve')
 jest.mock('../../../src/lib/build-actions')
 jest.mock('../../../src/lib/deploy-actions')
 jest.mock('../../../src/lib/log-poller')
+
+jest.mock('../../../src/lib/app-helper', () => {
+  const moduleMock = require.requireActual('../../../src/lib/app-helper')
+  return {
+    ...moduleMock,
+    runPackageScript: jest.fn()
+  }
+})
 
 /* ****************** Mocks & beforeEach ******************* */
 let onChangeFunc
@@ -56,11 +70,6 @@ jest.mock('chokidar', () => {
     }
   }
 })
-const execa = require('execa')
-jest.mock('execa')
-const fetch = require('node-fetch')
-jest.mock('node-fetch')
-const mockLogger = require('@adobe/aio-lib-core-logging')
 
 process.exit = jest.fn()
 
@@ -80,6 +89,12 @@ function jestTimerWorkaround () {
   global.setTimeout.mockImplementation((fn, d) => { time = time + d; fn() })
 }
 
+const mockCleanup = {
+  logPoller: jest.fn(),
+  serve: jest.fn(),
+  bundle: jest.fn()
+}
+
 beforeEach(() => {
   global.fakeFileSystem.reset()
 
@@ -88,19 +103,30 @@ beforeEach(() => {
   buildActions.mockReset()
   deployActions.mockReset()
   runDevLocal.mockReset()
+  logPoller.run.mockReset()
+  appHelper.runPackageScript.mockReset()
 
+  mockCleanup.logPoller.mockReset()
+  mockCleanup.serve.mockReset()
+  mockCleanup.bundle.mockReset()
+
+  logPoller.run.mockImplementation(() => ({
+    poller: {},
+    cleanup: mockCleanup.logPoller
+  }))
   bundle.mockImplementation(() => ({
     bundler: {},
-    cleanup: jest.fn()
+    cleanup: mockCleanup.bundle
   }))
   serve.mockImplementation(() => ({
     url: '',
-    cleanup: jest.fn()
+    cleanup: mockCleanup.serve
+  }))
+  execa.mockImplementation(() => ({
+    kill: jest.fn()
   }))
 
-  fetch.mockReset()
   execa.mockReset()
-
   mockLogger.mockReset()
 
   process.exit.mockReset()
@@ -133,6 +159,40 @@ const OW_JAR_PATH = path.join(CLI_CONFIG.dataDir, 'openwhisk', 'standalone-v1', 
 const EXECA_LOCAL_OW_ARGS = ['java', expect.arrayContaining(['-jar', OW_JAR_PATH, '-m', OW_RUNTIMES_CONFIG, '--no-ui']), expect.anything()]
 
 /* ****************** Helpers ******************* */
+
+/** @private */
+const getExpectedUIVSCodeDebugConfig = uiPort => expect.objectContaining({
+  type: 'chrome',
+  request: 'launch',
+  name: 'Web',
+  url: `http://localhost:${uiPort}`,
+  webRoot: path.resolve('/web-src'),
+  breakOnLoad: true,
+  sourceMapPathOverrides: {
+    '*': path.resolve('/dist/web-src-dev/*')
+  }
+})
+
+const getExpectedActionVSCodeDebugConfig = (isLocal, actionName) => {
+  const envFile = isLocal ? path.join('dist', '.env.local') : '.env'
+  return expect.objectContaining({
+    type: 'pwa-node',
+    request: 'launch',
+    name: 'Action:' + actionName,
+    attachSimplePort: 0,
+    runtimeExecutable: path.resolve('/node_modules/.bin/wskdebug'),
+    runtimeArgs: [
+      actionName,
+      expect.stringContaining(actionName.split('/')[1]),
+      '-v',
+      '--kind',
+      'nodejs:12'
+    ],
+    envFile: path.join('${workspaceFolder}', envFile), // eslint-disable-line no-template-curly-in-string
+    localRoot: path.resolve('/'),
+    remoteRoot: '/code'
+  })
+}
 
 /** @private */
 async function loadEnvScripts (project, config, excludeFiles = []) {
@@ -174,7 +234,7 @@ function expectAppFiles (expectedFiles) {
 }
 
 /** @private */
-async function testCleanupNoErrors (done, ref, postCleanupChecks) {
+async function testCleanupNoErrors (done, ref, postCleanupChecks, options = {}) {
   // todo why do we need to remove listeners here, somehow the one in beforeEach isn't sufficient, is jest adding a listener?
   process.removeAllListeners('SIGINT')
   process.exit.mockImplementation(() => {
@@ -183,7 +243,7 @@ async function testCleanupNoErrors (done, ref, postCleanupChecks) {
     done()
   })
 
-  const options = { devRemote: ref.devRemote }
+  options.devRemote = ref.devRemote
   await runDev([], ref.config, options)
   expect(process.exit).toHaveBeenCalledTimes(0)
   // make sure we have only one listener = cleanup listener after each test + no pending promises
@@ -444,10 +504,29 @@ function runCommonRemoteTests (ref) {
 
 /** @private */
 function runCommonBackendOnlyTests (ref) {
+  test('fetchLogs', async () => {
+    const options = { devRemote: ref.devRemote, fetchLogs: true }
+    await runDev([], ref.config, options)
+    expect(serve).toHaveBeenCalledTimes(0)
+  })
+
   test('should not start a ui server', async () => {
     const options = { devRemote: ref.devRemote }
     await runDev([], ref.config, options)
     expect(serve).toHaveBeenCalledTimes(0)
+  })
+
+  test('should generate a vscode config for actions only', async () => {
+    const options = { devRemote: ref.devRemote }
+    await runDev([], ref.config, options)
+    const isLocal = !ref.devRemote
+    expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
+      configurations: [
+        getExpectedActionVSCodeDebugConfig(isLocal, 'sample-app-1.0.0/action'),
+        getExpectedActionVSCodeDebugConfig(isLocal, 'sample-app-1.0.0/action-zip')
+        // fails if ui config
+      ]
+    }))
   })
 }
 
@@ -517,18 +596,56 @@ function runCommonWithFrontendTests (ref) {
   })
 }
 
-test('with local actions and no front-end', async () => {
-  const options = { devRemote: false }
-  const config = await loadEnvScripts('sample-app', global.fakeConfig.tvm, ['/web-src/index.html'])
+describe('with local actions and frontend', () => {
+  const ref = {}
+  const mockRunDevLocalCleanup = jest.fn()
 
-  const mockCleanup = jest.fn()
-  runDevLocal.mockImplementation(() => ({
-    config,
-    cleanup: mockCleanup
-  }))
+  beforeEach(async () => {
+    ref.devRemote = false
+    ref.config = await loadEnvScripts('sample-app', global.fakeConfig.tvm)
+    ref.appFiles = ['/manifest.yml', '/package.json', '/web-src/index.html', '/web-src/src/config.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
 
-  await runDev([], config, options)
-  expect(runDevLocal).toHaveBeenCalledTimes(1)
+    mockRunDevLocalCleanup.mockReset()
+    runDevLocal.mockImplementation(() => ({
+      config: ref.config,
+      cleanup: mockRunDevLocalCleanup
+    }))
+  })
+
+  runCommonTests(ref)
+  runCommonWithFrontendTests(ref)
+
+  test('should inject REMOTE action urls into the UI if skipActions is set', async () => {
+    const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApiHost.split('https://')[1] + '/api/v1/web/sample-app-1.0.0/'
+    const retVal = {
+      action: baseUrl + 'action',
+      'action-zip': baseUrl + 'action-zip',
+      'action-sequence': baseUrl + 'action-sequence'
+    }
+    mockRuntimeLib.utils.getActionUrls.mockReturnValueOnce(retVal)
+    await runDev([], ref.config, { skipActions: true })
+    expect('/web-src/src/config.json' in global.fakeFileSystem.files()).toEqual(true)
+    expect(JSON.parse(global.fakeFileSystem.files()['/web-src/src/config.json'].toString())).toEqual(retVal)
+  })
+
+  test('skip serve and fetch logs (coverage)', async () => {
+    const options = { devRemote: ref.devRemote, skipServe: true, fetchLogs: true }
+
+    const args = undefined // coverage
+    const url = await runDev(args, ref.config, options)
+    expect(url).toBeUndefined()
+    expect(runDevLocal).toHaveBeenCalledTimes(1)
+    expect(logPoller.run).toHaveBeenCalledTimes(1)
+    expect(appHelper.runPackageScript).not.toHaveBeenCalled()
+
+    return new Promise(resolve => {
+      testCleanupNoErrors(resolve, ref, () => {
+        expect(mockCleanup.serve).toHaveBeenCalledTimes(0)
+        expect(mockRunDevLocalCleanup).toHaveBeenCalledTimes(1)
+        expect(mockCleanup.logPoller).toHaveBeenCalledTimes(1)
+      }, options)
+    })
+  })
 })
 
 describe('with remote actions and no frontend', () => {
@@ -615,6 +732,25 @@ describe('with remote actions and frontend', () => {
     expect('/web-src/src/config.json' in global.fakeFileSystem.files()).toEqual(true)
     expect(JSON.parse(global.fakeFileSystem.files()['/web-src/src/config.json'].toString())).toEqual(retVal)
   })
+
+  test('should generate a vscode debug config for actions and web-src', async () => {
+    const port = 9999
+    serve.mockImplementation(() => ({
+      url: `http://localhost:${port}`,
+      cleanup: jest.fn()
+    }))
+
+    const options = { devRemote: ref.devRemote }
+    await runDev([], ref.config, options)
+    const isLocal = !ref.devRemote
+    expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
+      configurations: [
+        getExpectedActionVSCodeDebugConfig(isLocal, 'sample-app-1.0.0/action'),
+        getExpectedActionVSCodeDebugConfig(isLocal, 'sample-app-1.0.0/action-zip'),
+        getExpectedUIVSCodeDebugConfig(port)
+      ]
+    }))
+  })
 })
 
 describe('with frontend only', () => {
@@ -627,6 +763,12 @@ describe('with frontend only', () => {
 
   runCommonTests(ref)
   runCommonWithFrontendTests(ref)
+
+  test('custom deploy and build scripts (coverage)', async () => {
+    appHelper.runPackageScript.mockResolvedValue({})
+    await runDev([], ref.config)
+    expect(appHelper.runPackageScript).toHaveBeenCalled()
+  })
 
   test('should set hasBackend=false', async () => {
     expect(ref.config.app.hasBackend).toBe(false)
@@ -654,5 +796,128 @@ describe('with frontend only', () => {
   test('should not run serve', async () => {
     await runDev([], ref.config, { skipServe: true })
     expect(serve).not.toHaveBeenCalled()
+  })
+
+  // Note: these tests can be safely deleted once the require-adobe-auth is
+  // natively supported in Adobe I/O Runtime.
+  test('vscode wskdebug config with require-adobe-auth annotation && apihost=https://adobeioruntime.net', async () => {
+  // create test app
+    global.addSampleAppFiles()
+    global.fakeFileSystem.removeKeys(['/web-src/index.html'])
+    mockAIOConfig.get.mockReturnValue(global.fakeConfig.tvm)
+    const devRemote = true
+    const config = loadConfig()
+    // avoid recreating a new fixture
+    config.manifest.package.actions.action.annotations = { 'require-adobe-auth': true }
+    config.ow.apihost = 'https://adobeioruntime.net'
+    const options = { devRemote }
+    await runDev([], config, options)
+
+    expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
+      configurations: expect.arrayContaining([
+        expect.objectContaining({
+          type: 'pwa-node',
+          request: 'launch',
+          name: 'Action:' + 'sample-app-1.0.0/action',
+          attachSimplePort: 0,
+          runtimeExecutable: path.resolve('/node_modules/.bin/wskdebug'),
+          runtimeArgs: [
+            'sample-app-1.0.0/__secured_action',
+            path.resolve('actions/action.js'),
+            '-v',
+            '--kind',
+            'nodejs:12'
+          ],
+          envFile: path.join('${workspaceFolder}', '.env'), // eslint-disable-line no-template-curly-in-string
+          localRoot: path.resolve('/'),
+          remoteRoot: '/code'
+        })
+      ])
+    }))
+  })
+
+  test('vscode wskdebug config with require-adobe-auth annotation && apihost!=https://adobeioruntime.net', async () => {
+    // create test app
+    global.addSampleAppFiles()
+    global.fakeFileSystem.removeKeys(['/web-src/index.html'])
+    mockAIOConfig.get.mockReturnValue(global.fakeConfig.tvm)
+    const devRemote = true
+    const config = loadConfig()
+    // avoid recreating a new fixture
+    config.manifest.package.actions.action.annotations = { 'require-adobe-auth': true }
+    config.ow.apihost = 'https://notadobeioruntime.net'
+    const options = { devRemote }
+    await runDev([], config, options)
+
+    expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
+      configurations: expect.arrayContaining([
+        expect.objectContaining({
+          type: 'pwa-node',
+          request: 'launch',
+          name: 'Action:' + 'sample-app-1.0.0/action',
+          attachSimplePort: 0,
+          runtimeExecutable: path.resolve('/node_modules/.bin/wskdebug'),
+          runtimeArgs: [
+            'sample-app-1.0.0/action',
+            path.resolve('actions/action.js'),
+            '-v',
+            '--kind',
+            'nodejs:12'
+          ],
+          envFile: path.join('${workspaceFolder}', '.env'), // eslint-disable-line no-template-curly-in-string
+          localRoot: path.resolve('/'),
+          remoteRoot: '/code'
+        })
+      ])
+    }))
+  })
+
+  test('vscode wskdebug config without runtime option', async () => {
+    // create test app
+    global.addSampleAppFiles()
+    global.fakeFileSystem.removeKeys(['/web-src/index.html'])
+    mockAIOConfig.get.mockReturnValue(global.fakeConfig.tvm)
+    const devRemote = true
+    const config = loadConfig()
+    // avoid recreating a new fixture
+    delete config.manifest.package.actions.action.runtime
+    const options = { devRemote }
+    await runDev([], config, options)
+
+    expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
+      configurations: expect.arrayContaining([
+        expect.objectContaining({
+          type: 'pwa-node',
+          request: 'launch',
+          name: 'Action:' + 'sample-app-1.0.0/action',
+          attachSimplePort: 0,
+          runtimeExecutable: path.resolve('/node_modules/.bin/wskdebug'),
+          runtimeArgs: [
+            'sample-app-1.0.0/action',
+            path.resolve('actions/action.js'),
+            '-v'
+            // no kind
+          ],
+          envFile: path.join('${workspaceFolder}', '.env'), // eslint-disable-line no-template-curly-in-string
+          localRoot: path.resolve('/'),
+          remoteRoot: '/code'
+        })
+      ])
+    }))
+  })
+
+  test('should generate a vscode config for ui only', async () => {
+    const port = 9999
+    serve.mockImplementation(() => ({
+      url: `http://localhost:${port}`,
+      cleanup: jest.fn()
+    }))
+
+    await runDev([], ref.config)
+    expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
+      configurations: [
+        getExpectedUIVSCodeDebugConfig(port)
+      ]
+    }))
   })
 })
