@@ -123,7 +123,7 @@ const localOWCredentials = {
 
 const remoteOWCredentials = {
   ...global.fakeConfig.tvm.runtime,
-  apihost: global.defaultOwApiHost
+  apihost: global.defaultOwApihost
 }
 
 const expectedLocalOWConfig = expect.objectContaining({
@@ -954,7 +954,7 @@ describe('with remote actions and frontend', () => {
   })
 
   test('should inject remote action urls into the UI', async () => {
-    const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApiHost.split('https://')[1] + '/api/v1/web/sample-app-1.0.0/'
+    const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApihost.split('https://')[1] + '/api/v1/web/sample-app-1.0.0/'
     const retVal = {
       action: baseUrl + 'action',
       'action-zip': baseUrl + 'action-zip',
@@ -968,7 +968,7 @@ describe('with remote actions and frontend', () => {
   })
 
   test('should still inject remote action urls into the UI if skipActions is set', async () => {
-    const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApiHost.split('https://')[1] + '/api/v1/web/sample-app-1.0.0/'
+    const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApihost.split('https://')[1] + '/api/v1/web/sample-app-1.0.0/'
     const retVal = {
       action: baseUrl + 'action',
       'action-zip': baseUrl + 'action-zip',
@@ -1072,7 +1072,7 @@ describe('with local actions and frontend', () => {
   })
 
   test('should inject REMOTE action urls into the UI if skipActions is set', async () => {
-    const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApiHost.split('https://')[1] + '/api/v1/web/sample-app-1.0.0/'
+    const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApihost.split('https://')[1] + '/api/v1/web/sample-app-1.0.0/'
     const retVal = {
       action: baseUrl + 'action',
       'action-zip': baseUrl + 'action-zip',
