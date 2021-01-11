@@ -10,6 +10,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
+const fs = require('fs-extra')
 const path = require('path')
 const httpTerminator = require('http-terminator')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:serve', { provider: 'debug' })
@@ -36,7 +37,21 @@ module.exports = async (config, options = {}, log = () => {}) => {
   let actualPort = uiPort
   log('starting local frontend server ..')
 
-  const server = https.createServer(options.https)
+  aioLogger.debug(`serve actualPort: ${uiPort} env.PORT: ${process.env.PORT}`)
+  aioLogger.debug(`serve options: ${JSON.stringify(options, null, 2)}`)
+  aioLogger.debug(`serve config.web: ${JSON.stringify(config.web, null, 2)}`)
+
+  let httpsOptions = {}
+  if (options.https) {
+    httpsOptions = {
+      cert: (await fs.readFile(options.https.cert)).toString(),
+      key: (await fs.readFile(options.https.key)).toString()
+    }
+  }
+
+  aioLogger.debug(`serve httpsOptions: ${JSON.stringify(httpsOptions, null, 2)}`)
+
+  const server = https.createServer(httpsOptions)
   const app = pureHTTP({ server })
 
   app.use('/', sirv(path.resolve(config.web.distDev)))

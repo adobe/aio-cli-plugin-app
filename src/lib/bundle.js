@@ -24,12 +24,16 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
  * Bundles the web source via Parcel.
  *
  * @param {object} config the app config (see src/lib/config-loader.js)
- * @param {Function} [log] the app logger
  * @param {object} [options] the Parcel bundler options
+ * @param {Function} [log] the app logger
  * @returns {BundleWebObject} the BundleWebObject
  */
-module.exports = async (config, log = () => {}, options = {}) => {
-  log('starting local frontend server ..')
+module.exports = async (config, options = {}, log = () => {}) => {
+  log('bundling front-end...')
+
+  aioLogger.debug(`bundle config.web: ${JSON.stringify(config.web, null, 2)}`)
+  aioLogger.debug(`bundle options: ${JSON.stringify(options, null, 2)}`)
+
   const entryFile = path.join(config.web.src, 'index.html')
 
   const parcelBundleOptions = {
@@ -42,11 +46,12 @@ module.exports = async (config, log = () => {}, options = {}) => {
     ...options
   }
 
+  aioLogger.debug(`bundle bundleOptions: ${JSON.stringify(parcelBundleOptions, null, 2)}`)
   const bundler = new Bundler(entryFile, parcelBundleOptions)
 
   await bundler.bundle()
   const cleanup = () => {
-    aioLogger.debug('stopping parcel watcher...')
+    aioLogger.debug('cleanup bundler...')
     bundler.stop()
   }
 

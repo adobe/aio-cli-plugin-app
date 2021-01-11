@@ -12,11 +12,24 @@ governing permissions and limitations under the License.
 
 const serve = require('../../../src/lib/serve')
 const path = require('path')
-
-jest.mock('serve-static')
+const https = require('https')
+const httpTerminator = require('http-terminator')
+const fs = require('fs-extra')
 
 const SERVER_DEFAULT_PORT = 9080
 let SERVER_AVAILABLE_PORT
+
+jest.mock('fs-extra')
+jest.mock('serve-static')
+jest.mock('https')
+jest.mock('http-terminator')
+jest.mock('pure-http', () => () => mockUIServerInstance)
+
+const mockUIServerInstance = {
+  use: jest.fn(),
+  listen: jest.fn(),
+  close: jest.fn()
+}
 
 const mockHttpsServerInstance = {
   address: jest.fn(() => ({
@@ -25,22 +38,11 @@ const mockHttpsServerInstance = {
 }
 const mockHttpsCreateServer = jest.fn(() => mockHttpsServerInstance)
 
-const https = require('https')
-jest.mock('https')
 https.createServer = mockHttpsCreateServer
 
-const mockUIServerInstance = {
-  use: jest.fn(),
-  listen: jest.fn(),
-  close: jest.fn()
-}
-jest.mock('pure-http', () => () => mockUIServerInstance)
-
-const httpTerminator = require('http-terminator')
 const mockTerminatorInstance = {
   terminate: jest.fn()
 }
-jest.mock('http-terminator')
 
 const LOCAL_CONFIG = {
   root: '/my-app',
@@ -62,6 +64,7 @@ beforeEach(() => {
   mockUIServerInstance.listen.mockReset()
   mockTerminatorInstance.terminate.mockReset()
   httpTerminator.createHttpTerminator.mockImplementation(() => mockTerminatorInstance)
+  fs.readFile.mockReset()
 })
 
 test('exports', () => {
@@ -76,13 +79,26 @@ test('serve https (set port not available, use default', async () => {
     }
   }
 
+  const httpsCerts = {
+    cert: 'cert-contents',
+    key: 'key-contents'
+  }
+
+  fs.readFile.mockImplementation((filename) => {
+    if (filename === options.https.cert) {
+      return httpsCerts.cert
+    } else if (filename === options.https.key) {
+      return httpsCerts.key
+    }
+  })
+
   const requestedPort = 8888
   SERVER_AVAILABLE_PORT = 9099
   process.env.PORT = requestedPort
   const { url } = await serve(LOCAL_CONFIG, options)
 
   expect(typeof url).toEqual('string')
-  expect(https.createServer).toHaveBeenCalledWith(options.https)
+  expect(https.createServer).toHaveBeenCalledWith(httpsCerts)
 
   expect(mockUIServerInstance.listen).toHaveBeenCalledWith(parseInt(requestedPort)) // requested this port
   expect(url).toBe(`https://localhost:${SERVER_AVAILABLE_PORT}`) // specificPort not available
@@ -97,13 +113,26 @@ test('serve https (set port available and used', async () => {
     }
   }
 
+  const httpsCerts = {
+    cert: 'cert-contents',
+    key: 'key-contents'
+  }
+
+  fs.readFile.mockImplementation((filename) => {
+    if (filename === options.https.cert) {
+      return httpsCerts.cert
+    } else if (filename === options.https.key) {
+      return httpsCerts.key
+    }
+  })
+
   const requestedPort = 8888
   SERVER_AVAILABLE_PORT = requestedPort
   process.env.PORT = requestedPort
   const { url } = await serve(LOCAL_CONFIG, options)
 
   expect(typeof url).toEqual('string')
-  expect(https.createServer).toHaveBeenCalledWith(options.https)
+  expect(https.createServer).toHaveBeenCalledWith(httpsCerts)
 
   expect(mockUIServerInstance.listen).toHaveBeenCalledWith(parseInt(requestedPort)) // requested this port
   expect(url).toBe(`https://localhost:${requestedPort}`) // requestedPort available

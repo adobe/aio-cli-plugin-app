@@ -110,7 +110,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       if (!options.skipServe) {
         const script = await utils.runPackageScript('build-static')
         if (!script) {
-          const { cleanup: bundlerCleanup } = await bundle(devConfig, log, bundleOptions)
+          const { cleanup: bundlerCleanup } = await bundle(devConfig, bundleOptions, log)
           cleanup.add(() => bundlerCleanup(), 'cleaning up bundle...')
         }
       }
@@ -129,7 +129,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
         if (!options.skipServe) {
           const script = await utils.runPackageScript('deploy-static')
           if (!script) {
-            const { url, cleanup: serverCleanup } = await serve(config, log, bundleOptions)
+            const { url, cleanup: serverCleanup } = await serve(devConfig, bundleOptions, log)
             frontEndUrl = url
             cleanup.add(() => serverCleanup(), 'cleaning up serve...')
           }
