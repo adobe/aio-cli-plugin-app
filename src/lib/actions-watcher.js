@@ -44,7 +44,7 @@ module.exports = async (watcherOptions) => {
   watcher.on('change', createChangeHandler({ ...watcherOptions, watcher }))
 
   const cleanup = () => {
-    aioLogger.debug('stopping ui server...')
+    aioLogger.debug('stopping action watcher...')
     watcher.close()
   }
 
