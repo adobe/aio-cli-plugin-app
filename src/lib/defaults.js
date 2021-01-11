@@ -1,9 +1,9 @@
 // defaults
 
 module.exports = {
-  defaultAioHostname: 'adobeio-static.net',
+  defaultAppHostname: 'adobeio-static.net',
   defaultTvmUrl: 'https://firefly-tvm.adobe.io',
-  defaultOwApiHost: 'https://adobeioruntime.net',
+  defaultOwApihost: 'https://adobeioruntime.net',
   defaultHTMLCacheDuration: '60',
   defaultJSCacheDuration: '604800',
   defaultCSSCacheDuration: '604800',

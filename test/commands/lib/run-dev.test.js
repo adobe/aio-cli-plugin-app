@@ -137,9 +137,13 @@ beforeEach(() => {
 
 /* ****************** Consts ******************* */
 
+const localOWCredentials = {
+  ...global.fakeConfig.local.runtime
+}
+
 const remoteOWCredentials = {
   ...global.fakeConfig.tvm.runtime,
-  apihost: global.defaultOwApiHost
+  apihost: global.defaultOwApihost
 }
 
 const expectedRemoteOWConfig = expect.objectContaining({
@@ -616,7 +620,7 @@ describe('with local actions and frontend', () => {
   runCommonWithFrontendTests(ref)
 
   test('should inject REMOTE action urls into the UI if skipActions is set', async () => {
-    const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApiHost.split('https://')[1] + '/api/v1/web/sample-app-1.0.0/'
+    const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApihost.split('https://')[1] + '/api/v1/web/sample-app-1.0.0/'
     const retVal = {
       action: baseUrl + 'action',
       'action-zip': baseUrl + 'action-zip',
@@ -707,7 +711,7 @@ describe('with remote actions and frontend', () => {
   runCommonWithFrontendTests(ref)
 
   test('should inject remote action urls into the UI', async () => {
-    const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApiHost.split('https://')[1] + '/api/v1/web/sample-app-1.0.0/'
+    const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApihost.split('https://')[1] + '/api/v1/web/sample-app-1.0.0/'
     const retVal = {
       action: baseUrl + 'action',
       'action-zip': baseUrl + 'action-zip',
@@ -721,7 +725,7 @@ describe('with remote actions and frontend', () => {
   })
 
   test('should still inject remote action urls into the UI if skipActions is set', async () => {
-    const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApiHost.split('https://')[1] + '/api/v1/web/sample-app-1.0.0/'
+    const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApihost.split('https://')[1] + '/api/v1/web/sample-app-1.0.0/'
     const retVal = {
       action: baseUrl + 'action',
       'action-zip': baseUrl + 'action-zip',
@@ -750,6 +754,33 @@ describe('with remote actions and frontend', () => {
         getExpectedUIVSCodeDebugConfig(port)
       ]
     }))
+  })
+
+  test('should inject local action urls into the UI', async () => {
+    const baseUrl = localOWCredentials.apihost + '/api/v1/web/' + localOWCredentials.namespace + '/sample-app-1.0.0/'
+    const retVal = {
+      action: baseUrl + 'action',
+      'action-zip': baseUrl + 'action-zip',
+      'action-sequence': baseUrl + 'action-sequence'
+    }
+    mockRuntimeLib.utils.getActionUrls.mockReturnValueOnce(retVal)
+    const options = { devRemote: ref.devRemote }
+    await runDev([], ref.config, options)
+    expect('/web-src/src/config.json' in global.fakeFileSystem.files()).toEqual(true)
+    expect(JSON.parse(global.fakeFileSystem.files()['/web-src/src/config.json'].toString())).toEqual(retVal)
+  })
+
+  test('should inject REMOTE action urls into the UI if skipActions is set', async () => {
+    const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApihost.split('https://')[1] + '/api/v1/web/sample-app-1.0.0/'
+    const retVal = {
+      action: baseUrl + 'action',
+      'action-zip': baseUrl + 'action-zip',
+      'action-sequence': baseUrl + 'action-sequence'
+    }
+    mockRuntimeLib.utils.getActionUrls.mockReturnValueOnce(retVal)
+    await runDev([], ref.config, { skipActions: true })
+    expect('/web-src/src/config.json' in global.fakeFileSystem.files()).toEqual(true)
+    expect(JSON.parse(global.fakeFileSystem.files()['/web-src/src/config.json'].toString())).toEqual(retVal)
   })
 })
 
