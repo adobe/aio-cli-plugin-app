@@ -19,8 +19,6 @@ jest.mock('node-fetch')
 jest.mock('execa')
 jest.mock('process')
 
-jest.useFakeTimers()
-
 beforeEach(() => {
   execa.mockReset()
   fetch.mockReset()
@@ -515,23 +513,16 @@ test('downloadOWJar (server connected ok, streaming error)', async () => {
 })
 
 test('runOpenWhiskJar ok', async () => {
-  const response = {
-    ok: true
-  }
-
-  fetch.mockReturnValue(response)
-  execa.mockImplementation(() => {
-    return {
-      stdout: jest.fn()
-    }
-  })
+  fetch.mockReturnValue({ ok: true })
+  execa.mockReturnValue({ stdout: jest.fn() })
 
   const result = appHelper.runOpenWhiskJar()
-  jest.runAllTimers()
 
   await expect(result).resolves.toEqual({
     proc: expect.any(Object)
   })
+  expect(fetch).toHaveBeenCalledTimes(1)
+  expect(execa).toHaveBeenCalledTimes(1)
 })
 
 test('waitForOpenWhiskReadiness timeout', async () => {
@@ -540,8 +531,32 @@ test('waitForOpenWhiskReadiness timeout', async () => {
   const timeout = 5000
   const endTime = Date.now() - 1000 // ends now
 
-  const result = appHelper.waitForOpenWhiskReadiness(host, endTime, period, timeout)
-  jest.runAllTimers()
+  const waitFunc = jest.fn((_period) => {
+    expect(_period).toEqual(period)
+  })
+  const result = appHelper.waitForOpenWhiskReadiness(host, endTime, period, timeout, waitFunc)
 
   await expect(result).rejects.toEqual(new Error(`local openwhisk stack startup timed out: ${timeout}ms`))
+  expect(fetch).toHaveBeenCalledTimes(0)
+  expect(waitFunc).toHaveBeenCalledTimes(0)
+})
+
+test('waitForOpenWhiskReadiness (fail, retry, then success)', async () => {
+  const host = 'my-host'
+  const period = 5000
+  const timeout = 5000
+  const endTime = Date.now() + 5000
+
+  const waitFunc = jest.fn((_period) => {
+    expect(_period).toEqual(period)
+  })
+  fetch
+    .mockRejectedValueOnce(new Error('some error')) // first fail (fetch exception)
+    .mockRejectedValueOnce({ ok: false }) // second fail (response not ok)
+    .mockResolvedValue({ ok: true }) // finally success
+  const result = appHelper.waitForOpenWhiskReadiness(host, endTime, period, timeout, waitFunc)
+
+  await expect(result).resolves.not.toBeDefined()
+  expect(fetch).toHaveBeenCalledTimes(3)
+  expect(waitFunc).toHaveBeenCalledTimes(2)
 })
