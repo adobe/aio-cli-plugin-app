@@ -127,7 +127,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       // serve UI
       if (hasFrontend) {
         if (!options.skipServe) {
-          const script = await utils.runPackageScript('deploy-static')
+          const script = await utils.runPackageScript('serve-static')
           if (!script) {
             const { url, cleanup: serverCleanup } = await serve(devConfig, bundleOptions, log)
             frontEndUrl = url
