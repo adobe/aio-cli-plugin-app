@@ -82,4 +82,23 @@ describe('load config', () => {
     config = loadConfig()
     expect(config.manifest.package).toBe(undefined)
   })
+
+  test('with custom apihost and hostname', () => {
+    mockAIOConfig.get.mockReturnValue({
+      ...global.fakeConfig.creds,
+      runtime: {
+        ...global.fakeConfig.creds.runtime,
+        apihost: 'some-fake-host'
+      },
+      app: {
+        ...global.fakeConfig.creds.app,
+        hostname: 'some-other-host'
+      }
+    })
+    config = loadConfig()
+    expect(config.ow.apihost).toEqual('some-fake-host')
+    expect(config.app.hostname).toEqual('some-other-host')
+    expect(config.ow.defaultApihost).toEqual('https://adobeioruntime.net')
+    expect(config.app.defaultHostname).toEqual('adobeio-static.net')
+  })
 })
