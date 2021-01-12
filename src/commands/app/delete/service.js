@@ -64,47 +64,24 @@ class AddServiceCommand extends BaseCommand {
       type: s.type
     })))
 
-    const currentServiceNames = currentServiceProperties.map(s => s.name)
-
-    let serviceProperties = []
-    if (op === 'select') {
-      // filter out already added services for selection
-      const currentServiceCodesSet = new Set(currentServiceProperties.map(s => s.sdkCode))
-      const filteredServices = supportedServices.filter(s => s.type === 'entp' && !currentServiceCodesSet.has(s.code))
-      if (filteredServices.length <= 0) {
-        this.error(`All supported Services in the Organization have already been added to Workspace ${workspaceName}`)
-      }
-      // prompt to manually select services
-      serviceProperties = await consoleCLI.promptForSelectServiceProperties(
-        workspaceName,
-        filteredServices
-      )
-      // now past services are appended to the selection for subscription
-      serviceProperties.push(...currentServiceProperties)
-    } else if (op === 'clone') {
-      // get latest workspaces which are not the current
-      const otherWorkspaces = (
-        await consoleCLI.getWorkspaces(orgId, projectId)
-      ).filter(w => w.id !== workspaceId)
-      // prompt to select one of those as a source for clone
-      const workspaceFrom = await consoleCLI.promptForSelectWorkspace(
-        otherWorkspaces,
-        {},
-        { allowCreate: false }
-      )
-      // get serviceProperties from source workspace
-      serviceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
-        orgId,
-        projectId,
-        workspaceFrom,
-        supportedServices
-      )
-      console.error(`Note: Service Subscriptions in Workspace ${workspaceName} will be overwritten by services in Workspace ${workspaceFrom}`)
+    if (currentServiceProperties.length <= 0) {
+      this.error(`No Services are attached to Workspace ${workspace.name}`)
     }
+
+    // todo select services to be deleted, expose function in consoleCLILib
+    // const currentServiceChoices = currentServiceProperties.map(s => ({ name: s.name, code: s.sdkCode }))
+    const servicesToRemove = ['something']
+    if (servicesToRemove.length <= 0) {
+      return null
+    }
+    // filter out services that are marked for deletion
+    const servicesToRemoveSet = new Set(servicesToRemove)
+    const filteredServiceProperties = currentServiceProperties.filter(s => servicesToRemoveSet.has(s.code))
+
     // prompt confirm the new service subscription list
     const confirm = await consoleCLI.confirmNewServiceSubscriptions(
       workspaceName,
-      serviceProperties
+      filteredServiceProperties
     )
     if (confirm) {
       // if confirmed update the services
@@ -112,17 +89,17 @@ class AddServiceCommand extends BaseCommand {
         orgId,
         project,
         workspace,
-        path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER),
-        serviceProperties
+        null, // no need to specify certDir, here we are sure that credentials are attached
+        filteredServiceProperties
       )
       // update the service configuration with the latest subscriptions
-      config.set('project.workspace.details.services', serviceProperties.map(s => ({
+      config.set('project.workspace.details.services', filteredServiceProperties.map(s => ({
         name: s.name,
         code: s.sdkCode
       })))
       // success !
-      this.log(chalk.green(chalk.bold(`Successfully updated Service Subscriptions in Workspace ${workspaceName}`)))
-      return serviceProperties
+      this.log(chalk.green(chalk.bold(`Successfully deleted selected Service Subscriptions in Workspace ${workspaceName}`)))
+      return filteredServiceProperties
     }
     // confirm == false, do nothing
     return null
