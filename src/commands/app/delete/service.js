@@ -18,13 +18,13 @@ const { getCliInfo } = require('../../../lib/app-helper')
 const BaseCommand = require('../../../BaseCommand')
 const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli')
 
-const { ENTP_INT_CERTS_FOLDER, CONSOLE_API_KEYS } = require('../../../lib/defaults')
+const { CONSOLE_API_KEYS } = require('../../../lib/defaults')
 
 class AddServiceCommand extends BaseCommand {
   async run () {
     const { flags } = this.parse(AddServiceCommand)
 
-    aioLogger.debug(`adding services to the current workspace, using flags: ${flags}`)
+    aioLogger.debug(`deleting services in the current workspace, using flags: ${flags}`)
 
     // login
     const { accessToken, env } = await getCliInfo()
@@ -64,21 +64,7 @@ class AddServiceCommand extends BaseCommand {
       type: s.type
     })))
 
-    // log currently selected services (messages on stderr)
     const currentServiceNames = currentServiceProperties.map(s => s.name)
-    console.error(`Workspace ${workspaceName} is currently subscribed to the following services:\n${JSON.stringify(currentServiceNames, null, 2)}`)
-
-    // prompt user to decide on how to add services:
-    // - select service subscription manually
-    // - or clone from existing workspace
-    const op = await consoleCLI.promptForServiceSubscriptionsOperation(
-      project.workspace.name,
-      { cloneChoice: true, nopChoice: true }
-    )
-
-    if (op === 'nop') {
-      return null
-    }
 
     let serviceProperties = []
     if (op === 'select') {

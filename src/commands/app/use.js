@@ -18,8 +18,7 @@ const { EOL } = require('os')
 const yeoman = require('yeoman-environment')
 const { getCliInfo } = require('../../lib/app-helper')
 const fs = require('fs-extra')
-
-const SERVICE_API_KEY_ENV = 'SERVICE_API_KEY'
+const { SERVICE_API_KEY_ENV } = require('../../lib/defaults')
 
 class Use extends BaseCommand {
   async consoleConfigString (consoleConfig) {
