@@ -18,12 +18,7 @@ const { getCliInfo } = require('../../../lib/app-helper')
 const BaseCommand = require('../../../BaseCommand')
 const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli')
 
-const ENTP_INT_CERTS_FOLDER = 'entp-int-certs'
-// todo embed into lib console cli
-const ApiKey = {
-  prod: 'aio-cli-console-auth',
-  stage: 'aio-cli-console-auth-stage'
-}
+const { ENTP_INT_CERTS_FOLDER, CONSOLE_API_KEYS } = require('../../../lib/defaults')
 
 class AddServiceCommand extends BaseCommand {
   async run () {
@@ -33,26 +28,50 @@ class AddServiceCommand extends BaseCommand {
 
     // login
     const { accessToken, env } = await getCliInfo()
-    const consoleCLI = await LibConsoleCLI.init({ accessToken, env, apiKey: ApiKey[env] })
+    const consoleCLI = await LibConsoleCLI.init({ accessToken, env, apiKey: CONSOLE_API_KEYS[env] })
 
     // load console configuration from .aio and .env files
     const project = config.get('project')
     if (!project) {
       this.error('Incomplete .aio configuration, please import a valid Adobe Developer Console configuration via `aio app use` first.')
     }
-    // todo check all of those and parent obj ?
     const workspace = project.workspace
     const workspaceName = workspace.name
     const workspaceId = workspace.id
     const orgId = project.org.id
     const projectId = project.id
 
-    // todo from here on all this should be moved to consoleCLI cause same code as in the generator (but getOtherWorkspaces is not)
+    // get latest support services
+    const supportedServices = await consoleCLI.getEnabledServicesForOrg(orgId)
+
+    // get current service properties
+    const currentServiceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
+      orgId,
+      projectId,
+      workspace,
+      supportedServices
+    )
+
+    // update the service config, subscriptions and supported services
+    // Note: the service config could be replaced by always fetching latest serviceProperties
+    config.set('project.workspace.details.services', currentServiceProperties.map(s => ({
+      name: s.name,
+      code: s.sdkCode
+    })))
+    config.set('project.org.details.services', supportedServices.map(s => ({
+      name: s.name,
+      code: s.code,
+      type: s.type
+    })))
+
+    // log messages on stderr
+    const currentServiceNames = currentServiceProperties.map(s => s.name)
+    console.error(`Workspace ${workspaceName} is currently subscribed to the following services:\n${JSON.stringify(currentServiceNames, null, 2)}`)
 
     // prompt user to decide on how to add services:
     // - select service subscription manually
     // - or clone from existing workspace
-    const op = await consoleCLI.promptForAddServicesOperation(
+    const op = await consoleCLI.promptForServiceSubscriptionsOperation(
       project.workspace.name,
       { cloneChoice: true, nopChoice: true }
     )
@@ -60,56 +79,66 @@ class AddServiceCommand extends BaseCommand {
     if (op === 'nop') {
       return null
     }
-    // get latest support services
-    const supportedServices = await consoleCLI.getEnabledServicesForOrg(orgId)
-
-    // TODO could do `const supportedServices = config.get('project.org.details.services')` instead
-    // const currentServicesSet = new Set(
-    //   config.get('services') || // legacy
-    //   config.get('project.workspace.details.services') ||
-    //   []
-    // )
-    // TODO get fresh current services from console !
 
     let serviceProperties = []
-    // prompt to manually select services
-    // todo support already selected services in prompt or filter out already selected services
-    // todo licenseconfigs should not be prompted for already added services
-    if (op === 'add') {
-      serviceProperties = await consoleCLI.promptForSelectServiceProperties(workspaceName, supportedServices)
+    if (op === 'select') {
+      // filter out already added services for selection
+      const currentServiceCodesSet = new Set(currentServiceProperties.map(s => s.sdkCode))
+      const filteredServices = supportedServices.filter(s => s.type === 'entp' && !currentServiceCodesSet.has(s.code))
+      if (filteredServices.length <= 0) {
+        this.error(`All supported Services in the Organization have already been added to Workspace ${workspaceName}`)
+      }
+      // prompt to manually select services
+      serviceProperties = await consoleCLI.promptForSelectServiceProperties(
+        workspaceName,
+        filteredServices
+      )
+      // now past services are appended to the selection for subscription
+      serviceProperties.push(...currentServiceProperties)
     } else if (op === 'clone') {
-      // get latest other workspaces
+      // get latest workspaces which are not the current
       const otherWorkspaces = (
         await consoleCLI.getWorkspaces(orgId, projectId)
       ).filter(w => w.id !== workspaceId)
-      // select one of those
+      // prompt to select one of those as a source for clone
       const workspaceFrom = await consoleCLI.promptForSelectWorkspace(
         otherWorkspaces,
         {},
         { allowCreate: false }
       )
+      // get serviceProperties from source workspace
       serviceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
         orgId,
         projectId,
         workspaceFrom,
         supportedServices
       )
+      console.error(`Note: Service Subscriptions in Workspace ${workspaceName} will be overwritten by services in Workspace ${workspaceFrom}`)
     }
-    const confirm = await consoleCLI.confirmAddServicesToWorkspace(
+    // prompt confirm the new service subscription list
+    const confirm = await consoleCLI.confirmNewServiceSubscriptions(
       workspaceName,
       serviceProperties
     )
     if (confirm) {
-      await consoleCLI.addServicesToWorkspace(
+      // if confirmed update the services
+      await consoleCLI.subscribeToServices(
         orgId,
         project,
         workspace,
         path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER),
         serviceProperties
       )
-      this.log(chalk.green(chalk.bold(`Successfully updated Services Subscriptions in Workspace ${workspaceName}`)))
+      // update the service configuration with the latest subscriptions
+      config.set('project.workspace.details.services', serviceProperties.map(s => ({
+        name: s.name,
+        code: s.sdkCode
+      })))
+      // success !
+      this.log(chalk.green(chalk.bold(`Successfully updated Service Subscriptions in Workspace ${workspaceName}`)))
       return serviceProperties
     }
+    // confirm == false, do nothing
     return null
   }
 }
@@ -118,15 +147,10 @@ AddServiceCommand.description = `Subscribe to services in the current Workspace
 `
 
 AddServiceCommand.flags = {
-  // TODO
-  // yes: flags.boolean({
-  //   description: 'Skip questions, and use all default values',
-  //   default: false,
-  //   char: 'y'
-  // }),
   ...BaseCommand.flags
 }
 
+AddServiceCommand.aliases = ['app:add:services']
 AddServiceCommand.args = []
 
 module.exports = AddServiceCommand
