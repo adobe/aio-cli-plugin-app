@@ -30,7 +30,7 @@ test('should generate and inject web and non web action urls into web-src/src/co
   const remoteOWCredentials = global.fakeConfig.tvm.runtime
   expect(vol.existsSync('/web-src/src/config.json')).toBe(true)
   const baseUrl = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultAppHostName + '/api/v1/web/sample-app-1.0.0/'
-  const baseUrlNonWeb = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApiHost.split('https://')[1] + '/api/v1/sample-app-1.0.0/'
+  const baseUrlNonWeb = 'https://' + remoteOWCredentials.namespace + '.' + global.defaultOwApihost.split('https://')[1] + '/api/v1/sample-app-1.0.0/'
   expect(JSON.parse(vol.readFileSync('/web-src/src/config.json').toString())).toEqual({
     action: baseUrlNonWeb + 'action', // fake non web action
     'action-zip': baseUrl + 'action-zip'

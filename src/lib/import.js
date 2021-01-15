@@ -486,7 +486,7 @@ function transformRuntime (runtime) {
     newRuntime.namespace = newRuntime.name
     delete newRuntime.name
     // apihost is not sent in console config
-    newRuntime.apihost = defaults.defaultOwApiHost
+    newRuntime.apihost = defaults.defaultOwApihost
   }
 
   return newRuntime
