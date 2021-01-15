@@ -83,12 +83,21 @@ test('writeAio', async () => {
 test('writeDefaultAppConfig', async () => {
   const parentFolder = 'my-parent-folder'
   const aioPath = path.join(parentFolder, '.aio')
+  const defaultAppConfig = {
+    app: {
+      actions: 'actions',
+      dist: 'dist',
+      web: 'web-src'
+    }
+  }
 
   writeDefaultAppConfig(parentFolder, { overwrite: true })
   await expect(fs.writeFile.mock.calls[0][0]).toMatch(aioPath)
+  await expect(JSON.parse(fs.writeFile.mock.calls[0][1])).toMatchObject(defaultAppConfig)
 
   writeDefaultAppConfig(parentFolder, { overwrite: false })
   await expect(fs.writeFile.mock.calls[1][0]).toMatch(aioPath)
+  await expect(JSON.parse(fs.writeFile.mock.calls[1][1])).toMatchObject(defaultAppConfig)
 
   return expect(fs.writeFile).toHaveBeenCalledTimes(2)
 })
