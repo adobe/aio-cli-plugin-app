@@ -37,7 +37,6 @@ class AddServiceCommand extends BaseCommand {
     }
     const workspace = project.workspace
     const workspaceName = workspace.name
-    const workspaceId = workspace.id
     const orgId = project.org.id
     const projectId = project.id
 
@@ -65,23 +64,22 @@ class AddServiceCommand extends BaseCommand {
     })))
 
     if (currentServiceProperties.length <= 0) {
-      this.error(`No Services are attached to Workspace ${workspace.name}`)
+      this.error(`No Services are attached to Workspace ${workspaceName}`)
     }
 
-    // todo select services to be deleted, expose function in consoleCLILib
     // const currentServiceChoices = currentServiceProperties.map(s => ({ name: s.name, code: s.sdkCode }))
-    const servicesToRemove = ['something']
-    if (servicesToRemove.length <= 0) {
+    const newServiceProperties = await consoleCLI.promptForRemoveServiceSubscriptions(
+      workspaceName,
+      currentServiceProperties
+    )
+    if (newServiceProperties === null) {
+      this.log('No services selected, nothing to be done')
       return null
     }
-    // filter out services that are marked for deletion
-    const servicesToRemoveSet = new Set(servicesToRemove)
-    const filteredServiceProperties = currentServiceProperties.filter(s => servicesToRemoveSet.has(s.code))
-
     // prompt confirm the new service subscription list
     const confirm = await consoleCLI.confirmNewServiceSubscriptions(
       workspaceName,
-      filteredServiceProperties
+      newServiceProperties
     )
     if (confirm) {
       // if confirmed update the services
@@ -90,16 +88,16 @@ class AddServiceCommand extends BaseCommand {
         project,
         workspace,
         null, // no need to specify certDir, here we are sure that credentials are attached
-        filteredServiceProperties
+        newServiceProperties
       )
       // update the service configuration with the latest subscriptions
-      config.set('project.workspace.details.services', filteredServiceProperties.map(s => ({
+      config.set('project.workspace.details.services', newServiceProperties.map(s => ({
         name: s.name,
         code: s.sdkCode
       })))
       // success !
       this.log(chalk.green(chalk.bold(`Successfully deleted selected Service Subscriptions in Workspace ${workspaceName}`)))
-      return filteredServiceProperties
+      return newServiceProperties
     }
     // confirm == false, do nothing
     return null
