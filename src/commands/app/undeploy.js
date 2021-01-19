@@ -44,7 +44,7 @@ class Undeploy extends BaseCommand {
           this.log('no manifest file, skipping action undeploy')
         }
       }
-      if (!flags['skip-static']) {
+      if (!flags['skip-static'] && !flags['skip-web-assets']) {
         if (config.app.hasFrontend) {
           await webLib.undeployWeb(config, onProgress)
         } else {
@@ -67,10 +67,13 @@ Undeploy.description = `Undeploys an Adobe I/O App
 Undeploy.flags = {
   ...BaseCommand.flags,
   'skip-static': flags.boolean({
-    description: 'Skip build & deployment of static files'
+    description: 'Skip undeployment of static files'
+  }),
+  'skip-web-assets': flags.boolean({
+    description: 'Skip undeployment of web assets'
   }),
   'skip-actions': flags.boolean({
-    description: 'Skip action build & deploy'
+    description: 'Skip undeployment of actions'
   })
 }
 
