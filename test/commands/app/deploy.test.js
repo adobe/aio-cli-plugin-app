@@ -74,6 +74,9 @@ test('flags', async () => {
   expect(typeof TheCommand.flags['skip-static']).toBe('object')
   expect(typeof TheCommand.flags['skip-static'].description).toBe('string')
 
+  expect(typeof TheCommand.flags['skip-web-assets']).toBe('object')
+  expect(typeof TheCommand.flags['skip-web-assets'].description).toBe('string')
+
   expect(typeof TheCommand.flags['skip-deploy']).toBe('object')
   expect(typeof TheCommand.flags['skip-deploy'].description).toBe('string')
   expect(TheCommand.flags['skip-deploy'].exclusive).toEqual(['skip-build'])
@@ -129,6 +132,16 @@ describe('run', () => {
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
     expect(command.build).toHaveBeenCalledTimes(1)
     expect(command.build).toHaveBeenCalledWith(command.appConfig, expect.objectContaining({ 'force-build': true, 'skip-static': true }), expect.anything())
+  })
+
+  test('build & deploy --skip-web-assets', async () => {
+    command.argv = ['--skip-web-assets']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
+    expect(command.build).toHaveBeenCalledTimes(1)
+    expect(command.build).toHaveBeenCalledWith(command.appConfig, expect.objectContaining({ 'force-build': true, 'skip-web-assets': true }), expect.anything())
   })
 
   test('build & deploy only some actions using --action', async () => {
