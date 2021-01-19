@@ -64,7 +64,7 @@ class Build extends BaseCommand {
           spinner.info('no backend or a build already exists, skipping action build')
         }
       }
-      if (!flags['skip-static']) {
+      if (!flags['skip-static'] && !flags['skip-web-assets']) {
         if (config.app.hasFrontend && (flags['force-build'] || !fs.existsSync(config.web.distProd))) {
           if (config.app.hasBackend) {
             const urls = await RuntimeLib.utils.getActionUrls(config, false, false, true)
@@ -92,7 +92,7 @@ class Build extends BaseCommand {
       }
 
       // final message
-      if (flags['skip-static']) {
+      if (flags['skip-static'] || flags['skip-web-assets']) {
         if (flags['skip-actions']) {
           this.log(chalk.green(chalk.bold('Nothing to build 🚫')))
         } else {
@@ -117,6 +117,9 @@ Build.flags = {
   ...BaseCommand.flags,
   'skip-static': flags.boolean({
     description: 'Skip build of static files'
+  }),
+  'skip-web-assets': flags.boolean({
+    description: 'Skip build of web assets'
   }),
   'skip-actions': flags.boolean({
     description: 'Skip build of actions'
