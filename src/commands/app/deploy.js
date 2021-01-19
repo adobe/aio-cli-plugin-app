@@ -79,7 +79,7 @@ class Deploy extends BuildCommand {
           }
         }
 
-        if (!flags['skip-static']) {
+        if (!flags['skip-static'] && !flags['skip-web-assets']) {
           if (config.app.hasFrontend) {
             spinner.start('Deploying web assets')
             try {
@@ -124,7 +124,7 @@ class Deploy extends BuildCommand {
 
       // final message
       if (!flags['skip-deploy']) {
-        if (flags['skip-static']) {
+        if (flags['skip-static'] || flags['skip-web-assets']) {
           if (flags['skip-actions']) {
             this.log(chalk.green(chalk.bold('Nothing to deploy 🚫')))
           } else {
@@ -158,6 +158,9 @@ Deploy.flags = {
   }),
   'skip-static': flags.boolean({
     description: 'Skip build & deployment of static files'
+  }),
+  'skip-web-assets': flags.boolean({
+    description: 'Skip build & deployment of web assets'
   }),
   'skip-actions': flags.boolean({
     description: 'Skip action build & deploy'
