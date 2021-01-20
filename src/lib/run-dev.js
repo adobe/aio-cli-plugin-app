@@ -54,6 +54,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
   devConfig.envFile = '.env'
 
   const cleanup = new Cleanup()
+  let needsProcessWaiter = true
 
   // bind cleanup function
   process.on('SIGINT', async () => {
@@ -72,15 +73,13 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
   })
 
   try {
-    // TODO: Is there a chance of using run cmd on actions from plugin-runtime in future?
-    // In that case this backend stuff might have to go to lib-runtime ?
-
     // Build Phase
     if (withBackend) {
       if (isLocal) {
         const { config: localConfig, cleanup: localCleanup } = await runDevLocal(config, log, options.verbose)
         devConfig = localConfig
         cleanup.add(() => localCleanup(), 'cleaning up runDevLocal')
+        needsProcessWaiter = false
       } else {
         // check credentials
         rtLibUtils.checkOpenWhiskCredentials(devConfig)
@@ -132,6 +131,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
             const { url, cleanup: serverCleanup } = await serve(devConfig, bundleOptions, log)
             frontEndUrl = url
             cleanup.add(() => serverCleanup(), 'cleaning up serve...')
+            needsProcessWaiter = false
           }
         }
       }
@@ -142,18 +142,20 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
     await vscodeConfig.update({ hasFrontend, withBackend, frontEndUrl })
     cleanup.add(() => vscodeConfig.cleanup(), 'cleaning up vscode debug configuration files...')
 
-    if (!isLocal && !hasFrontend) {
-      // not local + ow is not running => need to explicitly wait for CTRL+C
-      // trick to avoid termination
-      const dummyProc = execa('node')
-      cleanup.add(() => dummyProc.kill(), 'stopping sigint waiter...')
-    }
-    log('press CTRL+C to terminate dev environment')
-
     if (config.app.hasBackend && fetchLogs) {
       const { cleanup: pollerCleanup } = await logPoller(devConfig)
       cleanup.add(() => pollerCleanup(), 'cleaning up log poller...')
+      needsProcessWaiter = false
     }
+
+    if (needsProcessWaiter) {
+      // not local + ow is not running => need to explicitly wait for CTRL+C
+      // trick to avoid termination
+      const dummyProc = execa('node')
+      cleanup.add(async () => await dummyProc.kill(), 'stopping sigint waiter...')
+    }
+
+    log('press CTRL+C to terminate dev environment')
   } catch (e) {
     aioLogger.error('unexpected error, cleaning up...')
     await cleanup.run()
