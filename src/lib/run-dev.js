@@ -73,7 +73,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
   })
 
   try {
-    // Build Phase
+    // Build Phase - actions
     if (withBackend) {
       if (isLocal) {
         const { config: localConfig, cleanup: localCleanup } = await runDevLocal(config, log, options.verbose)
@@ -95,6 +95,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       cleanup.add(() => watcherCleanup(), 'stopping action watcher...')
     }
 
+    // Build Phase - Web Assets, build, inject action url json
     if (hasFrontend) {
       let urls = {}
       if (config.app.hasBackend) {
@@ -115,24 +116,21 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       }
     }
 
-    // Deploy Phase
-    if (withBackend || (hasFrontend && !options.skipServe)) {
-      // deploy actions
-      if (withBackend) {
-        log('redeploying actions..')
-        await deployActions(devConfig, isLocal, log)
-      }
+    // Deploy Phase - deploy actions
+    if (withBackend) {
+      log('redeploying actions..')
+      await deployActions(devConfig, isLocal, log)
+    }
 
-      // serve UI
-      if (hasFrontend) {
-        if (!options.skipServe) {
-          const script = await utils.runPackageScript('serve-static')
-          if (!script) {
-            const { url, cleanup: serverCleanup } = await serve(devConfig, bundleOptions, log)
-            frontEndUrl = url
-            cleanup.add(() => serverCleanup(), 'cleaning up serve...')
-            needsProcessWaiter = false
-          }
+    // Deploy Phase - serve the web UI
+    if (hasFrontend) {
+      if (!options.skipServe) {
+        const script = await utils.runPackageScript('serve-static')
+        if (!script) {
+          const { url, cleanup: serverCleanup } = await serve(devConfig, bundleOptions, log)
+          frontEndUrl = url
+          cleanup.add(() => serverCleanup(), 'cleaning up serve...')
+          needsProcessWaiter = false
         }
       }
     }
@@ -142,15 +140,16 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
     await vscodeConfig.update({ hasFrontend, withBackend, frontEndUrl })
     cleanup.add(() => vscodeConfig.cleanup(), 'cleaning up vscode debug configuration files...')
 
+    // automatically fetch logs if there are actions
     if (config.app.hasBackend && fetchLogs) {
       const { cleanup: pollerCleanup } = await logPoller(devConfig)
       cleanup.add(() => pollerCleanup(), 'cleaning up log poller...')
       needsProcessWaiter = false
     }
 
+    // if there is no process waiting (for example OpenWhisk, etc)
+    // we need to explicitly wait for CTRL-C with a dummy process
     if (needsProcessWaiter) {
-      // not local + ow is not running => need to explicitly wait for CTRL+C
-      // trick to avoid termination
       const dummyProc = execa('node')
       cleanup.add(async () => await dummyProc.kill(), 'stopping sigint waiter...')
     }
