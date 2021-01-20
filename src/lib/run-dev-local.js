@@ -91,11 +91,6 @@ async function runDevLocal (config, log = () => undefined, verbose = false) {
   }
   devConfig.ow = { ...devConfig.ow, ...runtime }
 
-  // delete potentially conflicting env vars
-  delete process.env.AIO_RUNTIME_APIHOST
-  delete process.env.AIO_RUNTIME_NAMESPACE
-  delete process.env.AIO_RUNTIME_AUTH
-
   log(`writing credentials to tmp wskdebug config '${devConfig.envFile}'`)
   // prepare wskprops for wskdebug
   fs.ensureDirSync(config.app.dist)
