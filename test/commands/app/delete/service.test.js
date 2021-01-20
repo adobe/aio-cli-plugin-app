@@ -119,5 +119,24 @@ describe('Run', () => {
     await expect(TheCommand.run([])).rejects.toThrow('Incomplete .aio configuration')
   })
 
-  test('selects')
+  test('no services are attached', async () => {
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockReturnValue([])
+    await expect(TheCommand.run([])).rejects.toThrow('No Services are attached')
+  })
+
+  test('no services are selected for deletion', async () => {
+    mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockReturnValue(null)
+    await expect(TheCommand.run([])).resolves.toEqual(null)
+  })
+
+  test('does not confirm deletion', async () => {
+    mockConsoleCLIInstance.confirmNewServiceSubscriptions.mockReturnValue(false)
+    await expect(TheCommand.run([])).resolves.toEqual(null)
+  })
+
+  test('selects some services for deletion', async () => {
+    // returns current service - selected for deletion
+    mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockReturnValue(dataMocks.serviceProperties)
+    await expect(TheCommand.run([])).resolves.toEqual(null)
+  })
 })
