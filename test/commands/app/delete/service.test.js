@@ -9,7 +9,7 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-const dataMocks = require('@adobe/generator-aio-console/test/data-mocks')
+const consoleDataMocks = require('@adobe/generator-aio-console/test/data-mocks')
 
 jest.mock('@adobe/generator-aio-console/lib/console-cli.js')
 const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli.js')
@@ -31,10 +31,10 @@ function resetMockConsoleCLI () {
 
 /** @private */
 function setDefaultMockConsoleCLI () {
-  mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(dataMocks.enabledServices)
-  mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockResolvedValue(dataMocks.serviceProperties.slice(1))
-  mockConsoleCLIInstance.subscribeToServices.mockResolvedValue(dataMocks.subscribeServicesResponse)
-  mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(dataMocks.serviceProperties)
+  mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(consoleDataMocks.enabledServices)
+  mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockResolvedValue(consoleDataMocks.serviceProperties.slice(1))
+  mockConsoleCLIInstance.subscribeToServices.mockResolvedValue(consoleDataMocks.subscribeServicesResponse)
+  mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(consoleDataMocks.serviceProperties)
   // mock add service confirmation to true by default to avoid infinite loops
   mockConsoleCLIInstance.confirmNewServiceSubscriptions.mockResolvedValue(true)
 }
@@ -42,41 +42,7 @@ function setDefaultMockConsoleCLI () {
 // mock config
 const config = require('@adobe/aio-lib-core-config')
 jest.mock('@adobe/aio-lib-core-config')
-const mockConfigProject = {
-  id: '1234567890123456789',
-  name: 'testp',
-  title: 'a test project',
-  org: {
-    id: '45678',
-    name: 'Adobe IO DEV',
-    ims_org_id: '6578A55456E84E247F000101@AdobeOrg',
-    details: {
-      services: []
-    }
-  },
-  workspace: {
-    id: '0123456789012345678',
-    name: 'testw',
-    title: 'a test workspace',
-    action_url: 'https://45678-testp-testw.adobeioruntime.net',
-    app_url: 'https://45678-testp-testw.adobeio-static.net',
-    details: {
-      credentials: [
-        {
-          id: '111111',
-          name: 'aio-2234567892098573738',
-          integration_type: 'service'
-        }
-      ],
-      services: [
-        {
-          code: 'FirstSDK',
-          name: 'First SDK'
-        }
-      ]
-    }
-  }
-}
+const mockConfigProject = fixtureJson('valid.config.json').project
 
 const mockWorkspace = { name: mockConfigProject.workspace.name, id: mockConfigProject.workspace.id }
 const mockProject = { name: mockConfigProject.name, id: mockConfigProject.id }
@@ -124,25 +90,25 @@ describe('Run', () => {
   })
 
   test('no services are attached', async () => {
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockReturnValue([])
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue([])
     await expect(TheCommand.run([])).rejects.toThrow('No Services are attached')
   })
 
   test('no services are selected for deletion', async () => {
-    mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockReturnValue(null)
+    mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockResolvedValue(null)
     await expect(TheCommand.run([])).resolves.toEqual(null)
   })
 
   test('does not confirm deletion', async () => {
-    mockConsoleCLIInstance.confirmNewServiceSubscriptions.mockReturnValue(false)
+    mockConsoleCLIInstance.confirmNewServiceSubscriptions.mockResolvedValue(false)
     await expect(TheCommand.run([])).resolves.toEqual(null)
     expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
   })
 
   test('selects some services for deletion and confirm', async () => {
-    const newServiceProperties = dataMocks.serviceProperties.slice(1)
+    const newServiceProperties = consoleDataMocks.serviceProperties.slice(1)
     // returns current service - selected for deletion
-    mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockReturnValue(newServiceProperties)
+    mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockResolvedValue(newServiceProperties)
     await TheCommand.run([])
     expect(mockConsoleCLIInstance.subscribeToServices).toHaveBeenCalledWith(
       mockOrgId,
@@ -163,9 +129,9 @@ describe('Run', () => {
       { name: 'sec', code: 'secs', sdkCode: 'no such field', type: 'b' },
       { name: 'third', code: 'thirds', sdkCode: 'no such field', type: 'a' }
     ]
-    mockConsoleCLIInstance.confirmNewServiceSubscriptions.mockReturnValue(false)
-    mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockReturnValue(fakeServiceProps.slice(1))
-    mockConsoleCLIInstance.getEnabledServicesForOrg.mockReturnValue(fakeOrgServices)
+    mockConsoleCLIInstance.confirmNewServiceSubscriptions.mockResolvedValue(false)
+    mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockResolvedValue(fakeServiceProps.slice(1))
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeOrgServices)
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServiceProps)
     await TheCommand.run([])
     // before adding services updates config even if no confirmation
@@ -194,9 +160,9 @@ describe('Run', () => {
       { name: 'sec', code: 'secs', sdkCode: 'no such field', type: 'b' },
       { name: 'third', code: 'thirds', sdkCode: 'no such field', type: 'a' }
     ]
-    mockConsoleCLIInstance.confirmNewServiceSubscriptions.mockReturnValue(true)
-    mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockReturnValue(fakeServiceProps.slice(1))
-    mockConsoleCLIInstance.getEnabledServicesForOrg.mockReturnValue(fakeOrgServices)
+    mockConsoleCLIInstance.confirmNewServiceSubscriptions.mockResolvedValue(true)
+    mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockResolvedValue(fakeServiceProps.slice(1))
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeOrgServices)
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServiceProps)
     await TheCommand.run([])
     // updates before and after deletion

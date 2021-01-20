@@ -70,7 +70,7 @@ class AddServiceCommand extends BaseCommand {
     // - select service subscription manually
     // - or clone from existing workspace
     const op = await consoleCLI.promptForServiceSubscriptionsOperation(
-      project.workspace.name,
+      workspace.name,
       { cloneChoice: true, nopChoice: true }
     )
 
