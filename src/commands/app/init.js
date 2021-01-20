@@ -15,7 +15,7 @@ const path = require('path')
 const fs = require('fs-extra')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
-const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
+const { loadAndValidateConfigFile, importConfigJson, writeDefaultAppConfig } = require('../../lib/import')
 const { getCliInfo } = require('../../lib/app-helper')
 const chalk = require('chalk')
 const { servicesToGeneratorInput } = require('../../lib/app-helper')
@@ -112,6 +112,9 @@ class InitCommand extends BaseCommand {
         fs.unlinkSync(flags.import)
       }
     }
+
+    // write default app config to .aio file
+    writeDefaultAppConfig(process.cwd(), { interactive, merge })
 
     // finalize configuration data
     this.log('✔ App initialization finished!')
