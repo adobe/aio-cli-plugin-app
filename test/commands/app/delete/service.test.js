@@ -78,6 +78,10 @@ const mockConfigProject = {
   }
 }
 
+const mockWorkspace = { name: mockConfigProject.workspace.name, id: mockConfigProject.workspace.id }
+const mockProject = { name: mockConfigProject.name, id: mockConfigProject.id }
+const mockOrgId = mockConfigProject.org.id
+
 // mock login - mocks underlying methods behind getCliInfo
 const mockAccessToken = 'some-access-token'
 const mockGetCli = jest.fn(() => {})
@@ -132,11 +136,89 @@ describe('Run', () => {
   test('does not confirm deletion', async () => {
     mockConsoleCLIInstance.confirmNewServiceSubscriptions.mockReturnValue(false)
     await expect(TheCommand.run([])).resolves.toEqual(null)
+    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
   })
 
-  test('selects some services for deletion', async () => {
+  test('selects some services for deletion and confirm', async () => {
+    const newServiceProperties = dataMocks.serviceProperties.slice(1)
     // returns current service - selected for deletion
-    mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockReturnValue(dataMocks.serviceProperties)
-    await expect(TheCommand.run([])).resolves.toEqual(null)
+    mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockReturnValue(newServiceProperties)
+    await TheCommand.run([])
+    expect(mockConsoleCLIInstance.subscribeToServices).toHaveBeenCalledWith(
+      mockOrgId,
+      mockProject,
+      mockWorkspace,
+      null,
+      newServiceProperties
+    )
+  })
+
+  test('updates config, no confirmation', async () => {
+    const fakeServiceProps = [
+      { name: 'first', sdkCode: 'firsts', code: 'no such field', a: 'hello', type: 'no such field' },
+      { name: 'sec', sdkCode: 'secs', code: 'no such field', b: 'hello', type: 'no such field' }
+    ]
+    const fakeOrgServices = [
+      { name: 'first', code: 'firsts', sdkCode: 'no such field', type: 'a' },
+      { name: 'sec', code: 'secs', sdkCode: 'no such field', type: 'b' },
+      { name: 'third', code: 'thirds', sdkCode: 'no such field', type: 'a' }
+    ]
+    mockConsoleCLIInstance.confirmNewServiceSubscriptions.mockReturnValue(false)
+    mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockReturnValue(fakeServiceProps.slice(1))
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockReturnValue(fakeOrgServices)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServiceProps)
+    await TheCommand.run([])
+    // before adding services updates config even if no confirmation
+    expect(config.set).toHaveBeenCalledTimes(2)
+    expect(config.set).toHaveBeenCalledWith(
+      'project.workspace.details.services', [
+        { name: 'first', code: 'firsts' },
+        { name: 'sec', code: 'secs' }
+      ]
+    )
+    expect(config.set).toHaveBeenCalledWith(
+      'project.org.details.services', [
+        { name: 'first', code: 'firsts', type: 'a' },
+        { name: 'sec', code: 'secs', type: 'b' },
+        { name: 'third', code: 'thirds', type: 'a' }
+      ]
+    )
+  })
+  test('updates config, with confirmation', async () => {
+    const fakeServiceProps = [
+      { name: 'first', sdkCode: 'firsts', code: 'no such field', a: 'hello', type: 'no such field' },
+      { name: 'sec', sdkCode: 'secs', code: 'no such field', b: 'hello', type: 'no such field' }
+    ]
+    const fakeOrgServices = [
+      { name: 'first', code: 'firsts', sdkCode: 'no such field', type: 'a' },
+      { name: 'sec', code: 'secs', sdkCode: 'no such field', type: 'b' },
+      { name: 'third', code: 'thirds', sdkCode: 'no such field', type: 'a' }
+    ]
+    mockConsoleCLIInstance.confirmNewServiceSubscriptions.mockReturnValue(true)
+    mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockReturnValue(fakeServiceProps.slice(1))
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockReturnValue(fakeOrgServices)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServiceProps)
+    await TheCommand.run([])
+    // updates before and after deletion
+    expect(config.set).toHaveBeenCalledTimes(3)
+    expect(config.set).toHaveBeenCalledWith(
+      'project.workspace.details.services', [
+        { name: 'first', code: 'firsts' },
+        { name: 'sec', code: 'secs' }
+      ]
+    )
+    expect(config.set).toHaveBeenCalledWith(
+      'project.org.details.services', [
+        { name: 'first', code: 'firsts', type: 'a' },
+        { name: 'sec', code: 'secs', type: 'b' },
+        { name: 'third', code: 'thirds', type: 'a' }
+      ]
+    )
+    // after deletion
+    expect(config.set).toHaveBeenCalledWith(
+      'project.workspace.details.services', [
+        { name: 'sec', code: 'secs' }
+      ]
+    )
   })
 })

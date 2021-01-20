@@ -31,15 +31,13 @@ class AddServiceCommand extends BaseCommand {
     const consoleCLI = await LibConsoleCLI.init({ accessToken, env, apiKey: CONSOLE_API_KEYS[env] })
 
     // load console configuration from .aio and .env files
-    const project = config.get('project')
-    if (!project) {
+    const projectConfig = config.get('project')
+    if (!projectConfig) {
       this.error('Incomplete .aio configuration, please import a valid Adobe Developer Console configuration via `aio app use` first.')
     }
-    const workspace = project.workspace
-    const workspaceName = workspace.name
-    const workspaceId = workspace.id
-    const orgId = project.org.id
-    const projectId = project.id
+    const orgId = projectConfig.org.id
+    const project = { name: projectConfig.name, id: projectConfig.id }
+    const workspace = { name: projectConfig.workspace.name, id: projectConfig.workspace.id }
 
     // get latest support services
     const supportedServices = await consoleCLI.getEnabledServicesForOrg(orgId)
@@ -47,7 +45,7 @@ class AddServiceCommand extends BaseCommand {
     // get current service properties
     const currentServiceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
       orgId,
-      projectId,
+      project.id,
       workspace,
       supportedServices
     )
@@ -66,7 +64,7 @@ class AddServiceCommand extends BaseCommand {
 
     // log currently selected services (messages on stderr)
     const currentServiceNames = currentServiceProperties.map(s => s.name)
-    console.error(`Workspace ${workspaceName} is currently subscribed to the following services:\n${JSON.stringify(currentServiceNames, null, 2)}`)
+    console.error(`Workspace ${workspace.name} is currently subscribed to the following services:\n${JSON.stringify(currentServiceNames, null, 2)}`)
 
     // prompt user to decide on how to add services:
     // - select service subscription manually
@@ -86,11 +84,11 @@ class AddServiceCommand extends BaseCommand {
       const currentServiceCodesSet = new Set(currentServiceProperties.map(s => s.sdkCode))
       const filteredServices = supportedServices.filter(s => s.type === 'entp' && !currentServiceCodesSet.has(s.code))
       if (filteredServices.length <= 0) {
-        this.error(`All supported Services in the Organization have already been added to Workspace ${workspaceName}`)
+        this.error(`All supported Services in the Organization have already been added to Workspace ${workspace.name}`)
       }
       // prompt to manually select services
       serviceProperties = await consoleCLI.promptForSelectServiceProperties(
-        workspaceName,
+        workspace.name,
         filteredServices
       )
       // now past services are appended to the selection for subscription
@@ -98,8 +96,8 @@ class AddServiceCommand extends BaseCommand {
     } else if (op === 'clone') {
       // get latest workspaces which are not the current
       const otherWorkspaces = (
-        await consoleCLI.getWorkspaces(orgId, projectId)
-      ).filter(w => w.id !== workspaceId)
+        await consoleCLI.getWorkspaces(orgId, project.id)
+      ).filter(w => w.id !== workspace.id)
       // prompt to select one of those as a source for clone
       const workspaceFrom = await consoleCLI.promptForSelectWorkspace(
         otherWorkspaces,
@@ -109,15 +107,15 @@ class AddServiceCommand extends BaseCommand {
       // get serviceProperties from source workspace
       serviceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
         orgId,
-        projectId,
+        project.id,
         workspaceFrom,
         supportedServices
       )
-      console.error(`Note: Service Subscriptions in Workspace ${workspaceName} will be overwritten by services in Workspace ${workspaceFrom}`)
+      console.error(`Note: Service Subscriptions in Workspace ${workspace.name} will be overwritten by services in Workspace ${workspaceFrom}`)
     }
     // prompt confirm the new service subscription list
     const confirm = await consoleCLI.confirmNewServiceSubscriptions(
-      workspaceName,
+      workspace.name,
       serviceProperties
     )
     if (confirm) {
@@ -135,7 +133,7 @@ class AddServiceCommand extends BaseCommand {
         code: s.sdkCode
       })))
       // success !
-      this.log(chalk.green(chalk.bold(`Successfully updated Service Subscriptions in Workspace ${workspaceName}`)))
+      this.log(chalk.green(chalk.bold(`Successfully updated Service Subscriptions in Workspace ${workspace.name}`)))
       return serviceProperties
     }
     // confirm == false, do nothing

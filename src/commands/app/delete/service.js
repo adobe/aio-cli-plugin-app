@@ -30,14 +30,13 @@ class AddServiceCommand extends BaseCommand {
     const consoleCLI = await LibConsoleCLI.init({ accessToken, env, apiKey: CONSOLE_API_KEYS[env] })
 
     // load console configuration from .aio and .env files
-    const project = config.get('project')
-    if (!project) {
+    const projectConfig = config.get('project')
+    if (!projectConfig) {
       this.error('Incomplete .aio configuration, please import a valid Adobe Developer Console configuration via `aio app use` first.')
     }
-    const workspace = project.workspace
-    const workspaceName = workspace.name
-    const orgId = project.org.id
-    const projectId = project.id
+    const orgId = projectConfig.org.id
+    const project = { name: projectConfig.name, id: projectConfig.id }
+    const workspace = { name: projectConfig.workspace.name, id: projectConfig.workspace.id }
 
     // get latest support services
     const supportedServices = await consoleCLI.getEnabledServicesForOrg(orgId)
@@ -45,7 +44,7 @@ class AddServiceCommand extends BaseCommand {
     // get current service properties
     const currentServiceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
       orgId,
-      projectId,
+      project.id,
       workspace,
       supportedServices
     )
@@ -63,12 +62,12 @@ class AddServiceCommand extends BaseCommand {
     })))
 
     if (currentServiceProperties.length <= 0) {
-      this.error(`No Services are attached to Workspace ${workspaceName}`)
+      this.error(`No Services are attached to Workspace ${workspace.name}`)
     }
 
     // const currentServiceChoices = currentServiceProperties.map(s => ({ name: s.name, code: s.sdkCode }))
     const newServiceProperties = await consoleCLI.promptForRemoveServiceSubscriptions(
-      workspaceName,
+      workspace.name,
       currentServiceProperties
     )
     if (newServiceProperties === null) {
@@ -77,7 +76,7 @@ class AddServiceCommand extends BaseCommand {
     }
     // prompt confirm the new service subscription list
     const confirm = await consoleCLI.confirmNewServiceSubscriptions(
-      workspaceName,
+      workspace.name,
       newServiceProperties
     )
     if (confirm) {
@@ -95,7 +94,7 @@ class AddServiceCommand extends BaseCommand {
         code: s.sdkCode
       })))
       // success !
-      this.log(chalk.green(chalk.bold(`Successfully deleted selected Service Subscriptions in Workspace ${workspaceName}`)))
+      this.log(chalk.green(chalk.bold(`Successfully deleted selected Service Subscriptions in Workspace ${workspace.name}`)))
       return newServiceProperties
     }
     // confirm == false, do nothing
