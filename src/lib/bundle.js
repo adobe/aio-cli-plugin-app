@@ -50,9 +50,9 @@ module.exports = async (config, options = {}, log = () => {}) => {
   const bundler = new Bundler(entryFile, parcelBundleOptions)
 
   await bundler.bundle()
-  const cleanup = () => {
+  const cleanup = async () => {
     aioLogger.debug('cleanup bundler...')
-    bundler.stop()
+    await bundler.stop()
   }
 
   return {

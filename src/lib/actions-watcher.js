@@ -43,9 +43,9 @@ module.exports = async (watcherOptions) => {
 
   watcher.on('change', createChangeHandler({ ...watcherOptions, watcher }))
 
-  const cleanup = () => {
+  const cleanup = async () => {
     aioLogger.debug('stopping action watcher...')
-    watcher.close()
+    await watcher.close()
   }
 
   return {

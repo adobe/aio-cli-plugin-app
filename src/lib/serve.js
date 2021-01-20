@@ -66,9 +66,9 @@ module.exports = async (config, options = {}, log = () => {}) => {
   const url = `${options.https ? 'https:' : 'http:'}//localhost:${actualPort}`
   log(`local frontend server running at ${url}`)
 
-  const cleanup = () => {
+  const cleanup = async () => {
     aioLogger.debug('stopping ui server...')
-    terminator.terminate()
+    await terminator.terminate()
   }
 
   return {
