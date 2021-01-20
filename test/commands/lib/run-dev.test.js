@@ -199,9 +199,14 @@ const getExpectedActionVSCodeDebugConfig = (isLocal, actionName) => {
 }
 
 /** @private */
-async function loadEnvScripts (project, config, excludeFiles = []) {
+async function loadEnvScripts (config, excludeFiles = [], customApp = false) {
   // create test app
-  global.addSampleAppFiles()
+  if (customApp) {
+    global.addSampleAppFilesCustomPackage()
+  } else {
+    global.addSampleAppFiles()
+  }
+
   excludeFiles.forEach(f => global.fakeFileSystem.removeKeys([f]))
   mockAIOConfig.get.mockReturnValue(config)
   process.chdir('/')
@@ -285,7 +290,7 @@ describe('call checkOpenwhiskCredentials with right params', () => {
     const devRemote = remoteActionsValue
     const tvmConfig = cloneDeep(global.fakeConfig.tvm) // don't override original
     delete tvmConfig.runtime[configVarName]
-    const config = await loadEnvScripts('sample-app', tvmConfig)
+    const config = await loadEnvScripts(tvmConfig)
     const options = { devRemote }
     await runDev([], config, options)
     expect(mockRuntimeLib.utils.checkOpenWhiskCredentials).toHaveBeenCalledWith(config)
@@ -524,10 +529,18 @@ function runCommonBackendOnlyTests (ref) {
     const options = { devRemote: ref.devRemote }
     await runDev([], ref.config, options)
     const isLocal = !ref.devRemote
+
+    let packageName = ref.config.ow.package
+    const packages = ref.config.manifest.full.packages
+    const packagePlaceholder = ref.config.manifest.packagePlaceholder
+    if (!packages[packagePlaceholder]) {
+      packageName = Object.keys(packages)[0]
+    }
+
     expect(JSON.parse(global.fakeFileSystem.files()['/.vscode/launch.json'].toString())).toEqual(expect.objectContaining({
       configurations: [
-        getExpectedActionVSCodeDebugConfig(isLocal, 'sample-app-1.0.0/action'),
-        getExpectedActionVSCodeDebugConfig(isLocal, 'sample-app-1.0.0/action-zip')
+        getExpectedActionVSCodeDebugConfig(isLocal, `${packageName}/action`),
+        getExpectedActionVSCodeDebugConfig(isLocal, `${packageName}/action-zip`)
         // fails if ui config
       ]
     }))
@@ -606,7 +619,7 @@ describe('with local actions and frontend', () => {
 
   beforeEach(async () => {
     ref.devRemote = false
-    ref.config = await loadEnvScripts('sample-app', global.fakeConfig.tvm)
+    ref.config = await loadEnvScripts(global.fakeConfig.tvm)
     ref.appFiles = ['/manifest.yml', '/package.json', '/web-src/index.html', '/web-src/src/config.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
 
     mockRunDevLocalCleanup.mockReset()
@@ -652,12 +665,28 @@ describe('with local actions and frontend', () => {
   })
 })
 
-describe('with remote actions and no frontend', () => {
+describe('with remote actions and no frontend (custom package)', () => {
   const ref = {}
+
   beforeEach(async () => {
     // remove '/web-src/index.html' file = no ui
     ref.devRemote = true
-    ref.config = await loadEnvScripts('sample-app', global.fakeConfig.tvm, ['/web-src/index.html'])
+    ref.config = await loadEnvScripts(global.fakeConfig.tvm, ['/web-src/index.html'], /* custom package in manifest */ true)
+    ref.appFiles = ['/manifest.yml', '/package.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
+  })
+
+  runCommonTests(ref)
+  runCommonRemoteTests(ref)
+  runCommonBackendOnlyTests(ref)
+})
+
+describe('with remote actions and no frontend', () => {
+  const ref = {}
+
+  beforeEach(async () => {
+    // remove '/web-src/index.html' file = no ui
+    ref.devRemote = true
+    ref.config = await loadEnvScripts(global.fakeConfig.tvm, ['/web-src/index.html'])
     ref.appFiles = ['/manifest.yml', '/package.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
   })
 
@@ -702,7 +731,7 @@ describe('with remote actions and frontend', () => {
   const ref = {}
   beforeEach(async () => {
     ref.devRemote = true
-    ref.config = await loadEnvScripts('sample-app', global.fakeConfig.tvm)
+    ref.config = await loadEnvScripts(global.fakeConfig.tvm)
     ref.appFiles = ['/manifest.yml', '/package.json', '/web-src/index.html', '/web-src/src/config.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
   })
 
@@ -788,7 +817,7 @@ describe('with frontend only', () => {
   const ref = {}
   beforeEach(async () => {
     // exclude manifest file = backend only (should we make a fixture app without actions/ as well?)
-    ref.config = await loadEnvScripts('sample-app', global.fakeConfig.tvm, ['/manifest.yml'])
+    ref.config = await loadEnvScripts(global.fakeConfig.tvm, ['/manifest.yml'])
     ref.appFiles = ['/package.json', '/web-src/index.html', '/web-src/src/config.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js'] // still have actions cause we only delete manifest.yml
   })
 
