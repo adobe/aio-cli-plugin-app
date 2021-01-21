@@ -60,6 +60,9 @@ test('flags', async () => {
 
   expect(typeof TheCommand.flags['skip-static']).toBe('object')
   expect(typeof TheCommand.flags['skip-static'].description).toBe('string')
+
+  expect(typeof TheCommand.flags['skip-web-assets']).toBe('object')
+  expect(typeof TheCommand.flags['skip-web-assets'].description).toBe('string')
 })
 
 describe('run', () => {
@@ -104,6 +107,14 @@ describe('run', () => {
 
   test('build & deploy --skip-static', async () => {
     command.argv = ['--skip-static']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
+  })
+
+  test('build & deploy --skip-web-assets', async () => {
+    command.argv = ['--skip-web-assets']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
