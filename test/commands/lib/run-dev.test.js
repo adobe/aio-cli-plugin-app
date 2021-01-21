@@ -22,7 +22,7 @@ governing permissions and limitations under the License.
 
 global.mockFs()
 const runDev = require('../../../src/lib/run-dev')
-const runDevLocal = require('../../../src/lib/run-dev-local')
+const runLocalRuntime = require('../../../src/lib/run-local-runtime')
 const loadConfig = require('../../../src/lib/config-loader')
 const cloneDeep = require('lodash.clonedeep')
 const path = require('path')
@@ -41,7 +41,7 @@ const execa = require('execa')
 
 jest.mock('execa')
 jest.mock('node-fetch')
-jest.mock('../../../src/lib/run-dev-local')
+jest.mock('../../../src/lib/run-local-runtime')
 jest.mock('../../../src/lib/bundle')
 jest.mock('../../../src/lib/serve')
 jest.mock('../../../src/lib/build-actions')
@@ -102,7 +102,7 @@ beforeEach(() => {
   serve.mockReset()
   buildActions.mockReset()
   deployActions.mockReset()
-  runDevLocal.mockReset()
+  runLocalRuntime.mockReset()
   logPoller.run.mockReset()
   appHelper.runPackageScript.mockReset()
 
@@ -623,7 +623,7 @@ describe('with local actions and frontend', () => {
     ref.appFiles = ['/manifest.yml', '/package.json', '/web-src/index.html', '/web-src/src/config.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
 
     mockRunDevLocalCleanup.mockReset()
-    runDevLocal.mockImplementation(() => ({
+    runLocalRuntime.mockImplementation(() => ({
       config: ref.config,
       cleanup: mockRunDevLocalCleanup
     }))
@@ -651,7 +651,7 @@ describe('with local actions and frontend', () => {
     const args = undefined // coverage
     const url = await runDev(args, ref.config, options)
     expect(url).toBeUndefined()
-    expect(runDevLocal).toHaveBeenCalledTimes(1)
+    expect(runLocalRuntime).toHaveBeenCalledTimes(1)
     expect(logPoller.run).toHaveBeenCalledTimes(1)
     expect(appHelper.runPackageScript).not.toHaveBeenCalled()
 

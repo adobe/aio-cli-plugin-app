@@ -20,7 +20,7 @@ governing permissions and limitations under the License.
 ]
 */
 
-const runDevLocal = require('../../../src/lib/run-dev-local')
+const runLocalRuntime = require('../../../src/lib/run-local-runtime')
 const utils = require('../../../src/lib/app-helper')
 const mockLogger = require('@adobe/aio-lib-core-logging')
 const path = require('path')
@@ -61,14 +61,14 @@ beforeEach(() => {
 test('should fail if java is not installed', async () => {
   utils.hasJavaCLI.mockResolvedValueOnce(false)
 
-  await expect(runDevLocal(LOCAL_CONFIG)).rejects.toEqual(expect.objectContaining({ message: 'could not find java CLI, please make sure java is installed' }))
+  await expect(runLocalRuntime(LOCAL_CONFIG)).rejects.toEqual(expect.objectContaining({ message: 'could not find java CLI, please make sure java is installed' }))
 })
 
 test('should fail if docker CLI is not installed', async () => {
   utils.hasJavaCLI.mockResolvedValueOnce(true)
   utils.hasDockerCLI.mockResolvedValueOnce(false)
 
-  await expect(runDevLocal(LOCAL_CONFIG)).rejects.toEqual(expect.objectContaining({ message: 'could not find docker CLI, please make sure docker is installed' }))
+  await expect(runLocalRuntime(LOCAL_CONFIG)).rejects.toEqual(expect.objectContaining({ message: 'could not find docker CLI, please make sure docker is installed' }))
 })
 
 test('should fail if docker is not running', async () => {
@@ -76,7 +76,7 @@ test('should fail if docker is not running', async () => {
   utils.hasDockerCLI.mockResolvedValueOnce(true)
   utils.isDockerRunning.mockResolvedValueOnce(false)
 
-  await expect(runDevLocal(LOCAL_CONFIG)).rejects.toEqual(expect.objectContaining({ message: 'docker is not running, please make sure to start docker' }))
+  await expect(runLocalRuntime(LOCAL_CONFIG)).rejects.toEqual(expect.objectContaining({ message: 'docker is not running, please make sure to start docker' }))
 })
 
 test('should download openwhisk-standalone.jar if it does not exist', async () => {
@@ -84,7 +84,7 @@ test('should download openwhisk-standalone.jar if it does not exist', async () =
   utils.hasDockerCLI.mockResolvedValueOnce(true)
   utils.isDockerRunning.mockResolvedValueOnce(true)
 
-  await runDevLocal(LOCAL_CONFIG)
+  await runLocalRuntime(LOCAL_CONFIG)
 
   expect(utils.downloadOWJar).toHaveBeenCalledWith(OW_JAR_URL, OW_JAR_PATH)
 })
@@ -98,7 +98,7 @@ test('should *not* download openwhisk-standalone.jar if it exists', async () => 
     return true
   })
 
-  await runDevLocal(LOCAL_CONFIG)
+  await runLocalRuntime(LOCAL_CONFIG)
   expect(utils.downloadOWJar).not.toHaveBeenCalled()
 })
 
@@ -107,7 +107,7 @@ test('run openwhisk jar', async () => {
   utils.hasDockerCLI.mockResolvedValueOnce(true)
   utils.isDockerRunning.mockResolvedValueOnce(true)
 
-  await runDevLocal(LOCAL_CONFIG)
+  await runLocalRuntime(LOCAL_CONFIG)
   // test first argument of first call
   expect(utils.runOpenWhiskJar.mock.calls[0][0]).toEqual(OW_JAR_PATH)
 })
@@ -117,7 +117,7 @@ test('coverage (default parameters)', async () => {
   utils.hasDockerCLI.mockResolvedValueOnce(true)
   utils.isDockerRunning.mockResolvedValueOnce(true)
 
-  await runDevLocal(LOCAL_CONFIG, () => {}, true)
+  await runLocalRuntime(LOCAL_CONFIG, () => {}, true)
   expect(utils.runOpenWhiskJar).toHaveBeenCalled()
 })
 
@@ -136,7 +136,7 @@ test('cleanup', async () => {
     .mockReturnValueOnce(true) // openwhisk jar
     .mockReturnValueOnce(true) // dev config envFile
 
-  const { cleanup, config } = await runDevLocal(LOCAL_CONFIG, () => {}, true)
+  const { cleanup, config } = await runLocalRuntime(LOCAL_CONFIG, () => {}, true)
   expect(typeof cleanup).toEqual('function')
   expect(typeof config).toEqual('object')
   expect(cleanup).not.toThrow()
@@ -157,7 +157,7 @@ test('return value', async () => {
     .mockReturnValueOnce(true) // openwhisk jar
     .mockReturnValueOnce(false) // dev config envFile
 
-  const { cleanup, config } = await runDevLocal(LOCAL_CONFIG, () => {}, true)
+  const { cleanup, config } = await runLocalRuntime(LOCAL_CONFIG, () => {}, true)
 
   expect(typeof cleanup).toEqual('function')
   expect(cleanup).not.toThrow()

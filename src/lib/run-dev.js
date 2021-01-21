@@ -17,7 +17,7 @@ const vscode = require('./vscode')
 const bundle = require('./bundle')
 const serve = require('./serve')
 const Cleanup = require('./cleanup')
-const runDevLocal = require('./run-dev-local')
+const runLocalRuntime = require('./run-local-runtime')
 
 const buildActions = require('./build-actions')
 const deployActions = require('./deploy-actions')
@@ -76,7 +76,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
     // Build Phase - actions
     if (withBackend) {
       if (isLocal) {
-        const { config: localConfig, cleanup: localCleanup } = await runDevLocal(config, log, options.verbose)
+        const { config: localConfig, cleanup: localCleanup } = await runLocalRuntime(config, log, options.verbose)
         devConfig = localConfig
         cleanup.add(() => localCleanup(), 'cleaning up runDevLocal')
         needsProcessWaiter = false
