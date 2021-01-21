@@ -165,8 +165,9 @@ describe('Run', () => {
     )
   })
 
-  test('does not confirm deletion', async () => {
+  test('does not confirm addition of services', async () => {
     mockConsoleCLIInstance.confirmNewServiceSubscriptions.mockResolvedValue(false)
+    mockConsoleCLIInstance.promptForServiceSubscriptionsOperation.mockResolvedValue('select')
     await expect(TheCommand.run([])).resolves.toEqual(null)
     expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
   })

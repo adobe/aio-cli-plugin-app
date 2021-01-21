@@ -93,7 +93,8 @@ class AddServiceCommand extends BaseCommand {
       )
       // now past services are appended to the selection for subscription
       serviceProperties.push(...currentServiceProperties)
-    } else if (op === 'clone') {
+    }
+    if (op === 'clone') {
       // get latest workspaces which are not the current
       const otherWorkspaces = (
         await consoleCLI.getWorkspaces(orgId, project.id)
