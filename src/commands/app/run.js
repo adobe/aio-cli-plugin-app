@@ -21,7 +21,7 @@ const { flags } = require('@oclif/command')
 const coreConfig = require('@adobe/aio-lib-core-config')
 
 const BaseCommand = require('../../BaseCommand')
-const runDev = require('../../lib/runDev')
+const runDev = require('../../lib/run-dev')
 const { runPackageScript, wrapError } = require('../../lib/app-helper')
 
 const DEV_KEYS_DIR = 'dist/dev-keys/'
@@ -197,9 +197,5 @@ Run.flags = {
     default: false
   })
 }
-
-// Run.args = [
-//   ...BaseCommand.args
-// ]
 
 module.exports = Run

@@ -10,30 +10,19 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const EventEmitter = require('events')
+const utils = require('./app-helper')
+const { buildActions } = require('@adobe/aio-lib-runtime')
 
-class EventPoller extends EventEmitter {
-  constructor (timeout) {
-    super()
-    this.timeout = timeout
-    this.timeoutId = null
+/**
+ * Builds actions.
+ *
+ * @param {object} config see src/lib/config-loader.js
+ */
+module.exports = async (config) => {
+  utils.runPackageScript('pre-app-build')
+  const script = await utils.runPackageScript('build-actions')
+  if (!script) {
+    await buildActions(config)
   }
-
-  stop () {
-    if (this.timeoutId) {
-      clearTimeout(this.timeoutId)
-    }
-  }
-
-  start (args) {
-    this.stop()
-    // emit event after poll interval
-    this.timeoutId = setTimeout(() => this.emit('poll', args), this.timeout)
-  }
-
-  onPoll (callback) {
-    this.on('poll', callback)
-  }
+  utils.runPackageScript('post-app-build')
 }
-
-module.exports = EventPoller
