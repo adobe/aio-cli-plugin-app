@@ -19,7 +19,9 @@ const { loadAndValidateConfigFile, importConfigJson, writeDefaultAppConfig } = r
 const { getCliInfo } = require('../../lib/app-helper')
 const chalk = require('chalk')
 const { servicesToGeneratorInput } = require('../../lib/app-helper')
+
 const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV } = require('../../lib/defaults')
+
 
 class InitCommand extends BaseCommand {
   async run () {
