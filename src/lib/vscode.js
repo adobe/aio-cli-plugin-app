@@ -14,6 +14,7 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const rtLibUtils = require('@adobe/aio-lib-runtime').utils
 const fs = require('fs-extra')
 const path = require('path')
+const cloneDeep = require('lodash.clonedeep')
 
 const LAUNCH_JSON_FILE = '.vscode/launch.json'
 const LAUNCH_JSON_FILE_BACKUP = '.vscode/launch.json.save'
@@ -63,63 +64,85 @@ function cleanup (config) {
 }
 
 /** @private */
-async function generateConfig (appConfig, props) {
-  const { hasFrontend, withBackend, frontEndUrl } = props
+function processPackageActionConfigs (appConfig, packageName, pkg) {
+  const { ow, root, envFile } = appConfig
+
   const actionConfigNames = []
+  const actionConfigs = Object.keys(pkg.actions).map(an => {
+    const name = `Action:${packageName}/${an}`
+    actionConfigNames.push(name)
+    const action = pkg.actions[an]
+    const actionPath = rtLibUtils._absApp(root, action.function)
+
+    const config = {
+      type: 'pwa-node',
+      request: 'launch',
+      name: name,
+      runtimeExecutable: rtLibUtils._absApp(root, './node_modules/.bin/wskdebug'),
+      envFile: path.join('${workspaceFolder}', envFile), // eslint-disable-line no-template-curly-in-string
+      timeout: 30000,
+      // replaces remoteRoot with localRoot to get src files
+      localRoot: rtLibUtils._absApp(root, '.'),
+      remoteRoot: '/code',
+      outputCapture: 'std',
+      attachSimplePort: 0
+    }
+
+    const actionFileStats = fs.lstatSync(actionPath)
+    if (actionFileStats.isFile()) {
+      // why is this condition here?
+    }
+    config.runtimeArgs = [
+        `${packageName}/${an}`,
+        actionPath,
+        '-v'
+    ]
+    if (actionFileStats.isDirectory()) {
+      // take package.json.main or 'index.js'
+      const zipMain = rtLibUtils.getActionEntryFile(path.join(actionPath, 'package.json'))
+      config.runtimeArgs[1] = path.join(actionPath, zipMain)
+    }
+    if (action.annotations && action.annotations['require-adobe-auth'] && ow.apihost === 'https://adobeioruntime.net') {
+      // NOTE: The require-adobe-auth annotation is a feature implemented in the
+      // runtime plugin. The current implementation replaces the action by a sequence
+      // and renames the action to __secured_<action>. The annotation will soon be
+      // natively supported in Adobe I/O Runtime, at which point this condition won't
+      // be needed anymore.
+      /* instanbul ignore next */
+      config.runtimeArgs[0] = `${packageName}/__secured_${an}`
+    }
+    if (action.runtime) {
+      config.runtimeArgs.push('--kind')
+      config.runtimeArgs.push(action.runtime)
+    }
+    return config
+  })
+
+  return [actionConfigNames, actionConfigs]
+}
+
+/** @private */
+async function generateConfig (appConfig, props) {
+  const { web } = appConfig
+  const { hasFrontend, withBackend, frontEndUrl } = props
+
+  let actionConfigNames = []
   let actionConfigs = []
 
   if (withBackend) {
-    const packageName = appConfig.ow.package
-    const manifestActions = appConfig.manifest.package.actions
+    const modifiedConfig = cloneDeep(appConfig)
+    const packages = modifiedConfig.manifest.full.packages
+    const packagePlaceholder = modifiedConfig.manifest.packagePlaceholder
+    if (packages[packagePlaceholder]) {
+      packages[modifiedConfig.ow.package] = packages[packagePlaceholder]
+      delete packages[packagePlaceholder]
+    }
 
-    actionConfigs = Object.keys(manifestActions).map(an => {
-      const name = `Action:${packageName}/${an}`
-      actionConfigNames.push(name)
-      const action = manifestActions[an]
-      const actionPath = rtLibUtils._absApp(appConfig.root, action.function)
-
-      const config = {
-        type: 'pwa-node',
-        request: 'launch',
-        name: name,
-        runtimeExecutable: rtLibUtils._absApp(appConfig.root, './node_modules/.bin/wskdebug'),
-        envFile: path.join('${workspaceFolder}', appConfig.envFile), // eslint-disable-line no-template-curly-in-string
-        timeout: 30000,
-        // replaces remoteRoot with localRoot to get src files
-        localRoot: rtLibUtils._absApp(appConfig.root, '.'),
-        remoteRoot: '/code',
-        outputCapture: 'std',
-        attachSimplePort: 0
-      }
-
-      const actionFileStats = fs.lstatSync(actionPath)
-      if (actionFileStats.isFile()) {
-        // why is this condition here?
-      }
-      config.runtimeArgs = [
-          `${packageName}/${an}`,
-          actionPath,
-          '-v'
-      ]
-      if (actionFileStats.isDirectory()) {
-        // take package.json.main or 'index.js'
-        const zipMain = rtLibUtils.getActionEntryFile(path.join(actionPath, 'package.json'))
-        config.runtimeArgs[1] = path.join(actionPath, zipMain)
-      }
-      if (action.annotations && action.annotations['require-adobe-auth'] && appConfig.ow.apihost === 'https://adobeioruntime.net') {
-        // NOTE: The require-adobe-auth annotation is a feature implemented in the
-        // runtime plugin. The current implementation replaces the action by a sequence
-        // and renames the action to __secured_<action>. The annotation will soon be
-        // natively supported in Adobe I/O Runtime, at which point this condition won't
-        // be needed anymore.
-        /* instanbul ignore next */
-        config.runtimeArgs[0] = `${packageName}/__secured_${an}`
-      }
-      if (action.runtime) {
-        config.runtimeArgs.push('--kind')
-        config.runtimeArgs.push(action.runtime)
-      }
-      return config
+    Object.keys(packages).forEach(pkg => {
+      const packageConfigs = processPackageActionConfigs(modifiedConfig, pkg, packages[pkg])
+      // merge the arrays
+      actionConfigNames = [...actionConfigNames, ...packageConfigs[0]]
+      actionConfigs = [...actionConfigs, ...packageConfigs[1]]
     })
   }
 
@@ -137,10 +160,10 @@ async function generateConfig (appConfig, props) {
       request: 'launch',
       name: 'Web',
       url: frontEndUrl,
-      webRoot: appConfig.web.src,
+      webRoot: web.src,
       breakOnLoad: true,
       sourceMapPathOverrides: {
-        '*': path.join(appConfig.web.distDev, '*')
+        '*': path.join(web.distDev, '*')
       }
     })
     debugConfig.compounds.push({
