@@ -8,7 +8,7 @@
     "@adobe/aio-lib-core-config": "^2.0.0",
     "@adobe/aio-lib-core-logging": "^1.1.0",
     "@adobe/aio-lib-ims": "^4.1.0",
-    "@adobe/aio-lib-runtime": "^1.2.2",
+    "@adobe/aio-lib-runtime": "^1.2.5",
     "@adobe/aio-lib-web": "^4.0.0",
     "@adobe/generator-aio-app": "^1.9.0",
     "@adobe/generator-aio-console": "^2.0.0",
@@ -33,6 +33,8 @@
     "node-fetch": "^2.6.0",
     "ora": "^4.0.3",
     "parcel-bundler": "^1.12.4",
+    "pure-http": "^2.0.3",
+    "serve-static": "^1.14.1",
     "which": "^2.0.1",
     "yeoman-environment": "^2.5.0"
   },

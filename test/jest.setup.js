@@ -146,6 +146,17 @@ global.addSampleAppFiles = () => {
   })
 }
 
+global.addSampleAppFilesCustomPackage = () => {
+  global.fakeFileSystem.addJson({
+    'actions/action-zip/index.js': global.fixtureFile('/sample-app/actions/action-zip/index.js'),
+    'actions/action-zip/package.json': global.fixtureFile('/sample-app/actions/action-zip/package.json'),
+    'actions/action.js': global.fixtureFile('/sample-app/actions/action.js'),
+    'web-src/index.html': global.fixtureFile('/sample-app/web-src/index.html'),
+    'manifest.yml': global.fixtureFile('/sample-app-custom-package/manifest.yml'),
+    'package.json': global.fixtureFile('/sample-app/package.json')
+  })
+}
+
 global.defaultAppHostName = 'adobeio-static.net'
 global.defaultTvmUrl = 'https://adobeio.adobeioruntime.net/apis/tvm/'
 global.defaultOwApihost = 'https://adobeioruntime.net'
