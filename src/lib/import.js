@@ -96,6 +96,28 @@ function loadAndValidateConfigFile (fileOrBuffer) {
 }
 
 /**
+ * Writes default app config to .aio file
+ *
+ * @param {string} parentDir the parent folder to write the .aio file to
+ * @param {object} [flags] flags for file writing
+ * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
+ * @param {boolean} [flags.merge=false] set to true to merge in the existing .env file (takes precedence over overwrite)
+ * @param {boolean} [flags.interactive=false] set to true to prompt the user for file overwrite
+ * @returns {Promise} promise from writeFile call
+ */
+function writeDefaultAppConfig (parentDir, flags) {
+  // write app config to .aio file
+  const appConfig = {
+    app: {
+      actions: 'actions',
+      dist: 'dist',
+      web: 'web-src'
+    }
+  }
+  return writeAio(appConfig, parentDir, flags)
+}
+
+/**
  * Pretty prints the json object as a string.
  * Delimited by 2 spaces.
  *
@@ -464,7 +486,7 @@ function transformRuntime (runtime) {
     newRuntime.namespace = newRuntime.name
     delete newRuntime.name
     // apihost is not sent in console config
-    newRuntime.apihost = defaults.defaultOwApiHost
+    newRuntime.apihost = defaults.defaultOwApihost
   }
 
   return newRuntime
@@ -598,6 +620,7 @@ module.exports = {
   loadAndValidateConfigFile,
   writeConsoleConfig,
   writeAio,
+  writeDefaultAppConfig,
   writeEnv,
   flattenObjectWithSeparator,
   importConfigJson,
