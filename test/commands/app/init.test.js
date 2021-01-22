@@ -43,6 +43,7 @@ yeoman.createEnv.mockReturnValue({
   run: mockRun
 })
 
+const savedDataDir = process.env.XDG_DATA_HOME
 beforeEach(() => {
   mockGetCli.mockReturnValue({})
   mockRegister.mockReset()
@@ -52,7 +53,15 @@ beforeEach(() => {
   fs.unlinkSync.mockClear()
   importLib.importConfigJson.mockReset()
   importLib.writeAio.mockReset()
+  // set config.dataDir in oclif
+  process.env.XDG_DATA_HOME = 'data-dir'
 })
+afterAll(() => {
+  process.env.XDG_DATA_HOME = savedDataDir
+})
+
+// universal path
+const certDir = path.join('data-dir', '@adobe', 'aio-cli-plugin-app', 'entp-int-certs')
 
 describe('Command Prototype', () => {
   test('exports', async () => {
@@ -298,7 +307,9 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true,
+      'cert-dir': certDir
     })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
@@ -348,7 +359,9 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true,
+      'cert-dir': certDir
     })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
@@ -374,7 +387,9 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true,
+      'cert-dir': certDir
     })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
@@ -400,7 +415,9 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true,
+      'cert-dir': certDir
     })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
@@ -426,7 +443,9 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true,
+      'cert-dir': certDir
     })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
@@ -452,7 +471,9 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true,
+      'cert-dir': certDir
     })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
@@ -480,7 +501,9 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true,
+      'cert-dir': certDir
     })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
@@ -511,7 +534,9 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true,
+      'cert-dir': certDir
     })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenCalledWith(genApp, {
@@ -675,7 +700,9 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true,
+      'cert-dir': certDir
     })
     expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
   })

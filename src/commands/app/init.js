@@ -21,6 +21,7 @@ const chalk = require('chalk')
 const { servicesToGeneratorInput } = require('../../lib/app-helper')
 
 const SERVICE_API_KEY_ENV = 'SERVICE_API_KEY'
+const ENTP_INT_CERTS_FOLDER = 'entp-int-certs'
 
 class InitCommand extends BaseCommand {
   async run () {
@@ -62,14 +63,19 @@ class InitCommand extends BaseCommand {
         res = await env.run('gen-console', {
           'destination-file': generatedFile,
           'access-token': accessToken,
-          'ims-env': imsEnv
+          'ims-env': imsEnv,
+          'allow-create': true,
+          'cert-dir': path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER)
         })
         // trigger import
         flags.import = generatedFile
         // delete console credentials
         deleteConsoleCredentials = true
       } catch (e) {
-        this.log(chalk.red(e.message))
+        this.log(chalk.red(
+          `Error while generating the configuration from the Adobe Developer Console: ${e}\n` +
+          'Skipping configuration setup..'
+        ))
       }
       this.log()
     }
