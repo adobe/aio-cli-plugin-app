@@ -22,7 +22,6 @@ const { servicesToGeneratorInput } = require('../../lib/app-helper')
 
 const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV } = require('../../lib/defaults')
 
-
 class InitCommand extends BaseCommand {
   async run () {
     const { args, flags } = this.parse(InitCommand)

@@ -59,7 +59,6 @@ afterAll(() => {
   process.cwd = savedCwd
 })
 
-
 const savedDataDir = process.env.XDG_DATA_HOME
 beforeEach(() => {
   mockGetCli.mockReturnValue({})
