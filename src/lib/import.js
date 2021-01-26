@@ -580,7 +580,7 @@ function credentialsReferences (credentials) {
 /**
  * Import a downloadable config and write to the appropriate .env (credentials) and .aio (non-credentials) files.
  *
- * @param {string} configFileLocation the path to the config file to import
+ * @param {string} configFileOrBuffer the path to the config file to import or a buffer
  * @param {string} [destinationFolder=the current working directory] the path to the folder to write the .env and .aio files to
  * @param {object} [flags={}] flags for file writing
  * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
@@ -589,10 +589,10 @@ function credentialsReferences (credentials) {
  *        Extra variables are treated as raw and won't be rewritten to comply with aio-lib-core-config
  * @returns {Promise} promise from writeAio call
  */
-async function importConfigJson (configFileLocation, destinationFolder = process.cwd(), flags = {}, extraEnvVars = {}) {
-  aioLogger.debug(`importConfigJson - configFileLocation: ${configFileLocation} destinationFolder:${destinationFolder} flags:${flags} extraEnvVars:${extraEnvVars}`)
+async function importConfigJson (configFileOrBuffer, destinationFolder = process.cwd(), flags = {}, extraEnvVars = {}) {
+  aioLogger.debug(`importConfigJson - configFileOrBuffer: ${configFileOrBuffer} destinationFolder:${destinationFolder} flags:${flags} extraEnvVars:${extraEnvVars}`)
 
-  const { values: config, format } = loadAndValidateConfigFile(configFileLocation)
+  const { values: config, format } = loadAndValidateConfigFile(configFileOrBuffer)
 
   aioLogger.debug(`importConfigJson - format: ${format} config:${prettyPrintJson(config)} `)
 
