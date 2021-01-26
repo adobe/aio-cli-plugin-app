@@ -137,7 +137,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
 
     log('setting up vscode debug configuration files...')
     const vscodeConfig = vscode(devConfig)
-    await vscodeConfig.update({ hasFrontend, withBackend, frontEndUrl })
+    await vscodeConfig.update({ frontEndUrl })
     cleanup.add(() => vscodeConfig.cleanup(), 'cleaning up vscode debug configuration files...')
 
     // automatically fetch logs if there are actions
