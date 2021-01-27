@@ -43,6 +43,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
   const hasFrontend = config.app.hasFrontend
   const withBackend = config.app.hasBackend && !skipActions
   const isLocal = !options.devRemote // applies only for backend
+  const uiPort = parseInt(process.env.PORT) || 9080
 
   aioLogger.debug(`hasFrontend ${hasFrontend}`)
   aioLogger.debug(`withBackend ${withBackend}`)
@@ -130,15 +131,16 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       if (!options.skipServe) {
         const script = await utils.runPackageScript('serve-static')
         if (!script) {
+          let result
           if (defaultBundler) {
-            const { url, cleanup: serverCleanup } = await bundleServe(defaultBundler, bundleOptions, log)
-            frontEndUrl = url
-            cleanup.add(() => serverCleanup(), 'cleaning up serve...')
+            result = await bundleServe(defaultBundler, uiPort, bundleOptions, log)
           } else {
-            const { url, cleanup: serverCleanup } = await serve(devConfig, bundleOptions, log)
-            frontEndUrl = url
-            cleanup.add(() => serverCleanup(), 'cleaning up serve...')
+            result = await serve(devConfig.web.distDev, uiPort, bundleOptions, log)
           }
+
+          const { url, cleanup: serverCleanup } = result
+          frontEndUrl = url
+          cleanup.add(() => serverCleanup(), 'cleaning up serve...')
           needsProcessWaiter = false
         }
       }
