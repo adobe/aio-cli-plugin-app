@@ -16,62 +16,105 @@ const inquirer = require('inquirer')
 const config = require('@adobe/aio-lib-core-config')
 const { EOL } = require('os')
 const { getCliInfo } = require('../../lib/app-helper')
-const fs = require('fs-extra')
-const { SERVICE_API_KEY_ENV, CONSOLE_API_KEYS } = require('../../lib/defaults')
+const path = require('path')
+const { SERVICE_API_KEY_ENV, CONSOLE_API_KEYS, ENTP_INT_CERTS_FOLDER } = require('../../lib/defaults')
 
 const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli')
+const chalk = require('chalk')
 
 class Use extends BaseCommand {
   async run () {
     const { flags, args } = this.parse(Use)
 
+    // load local config
+    const currentConfig = this.loadCurrentConfiguration()
+    const currentConfigString = this.consoleConfigString(currentConfig)
+
+    console.error(`You are currently in:${EOL}${currentConfigString}${EOL}`)
+
     if (args.config_file_path) {
-      return this.importConfigFile(args.config_file_path, flags)
+      await this.importConsoleConfig(args.config_file_path, flags)
+      return
     }
 
     // login will be required now
     const { accessToken, env: imsEnv } = await getCliInfo()
 
     // load global console config
-    const globalConfig = config.get(CONSOLE_CONFIG_KEY)
-    const consoleConfigString = this.consoleConfigString(globalConfig)
+    const globalConfig = this.loadGlobalConfiguration()
+    const globalConfigString = this.consoleConfigString(globalConfig, 4)
 
-    let useOperation = (flags.global && 'global') || (flags.workspace && 'workspace')
-    if (!useOperation) {
-      // no flags were provided prompt for type of use
-      useOperation = await this.promptForSwitchOperation(consoleConfigString)
-    }
-
-    // init console CLI sdk
+    // init console CLI sdk consoleCLI
     const consoleCLI = await LibConsoleCLI.init({ accessToken, imsEnv, apiKey: CONSOLE_API_KEYS[imsEnv] })
 
-    if (useOperation.global) {
-      this.useGlobalConfig(consoleCLI, globalConfig)
+    // load from global configuration or select workspace
+    let useOperation = (flags.global && 'global') || ((flags.workspace || flags['workspace-name']) && 'workspace')
+    if (!useOperation) {
+      // no flags were provided prompt for type of use
+      useOperation = await this.promptForUseOperation(globalConfigString)
     }
 
-    const file = await this.useGlobalConfig(flags)
-    if (file) {
-      const config = this.importConfigFile(file, flags)
-      // delete file only if it was downloaded
-      fs.unlinkSync(file)
-      return config
+    // load the new workspace, project, org config
+    let newConfig
+    if (useOperation === 'global') {
+      this.checkGlobalConfig(globalConfig)
+      newConfig = globalConfig
+      if (
+        newConfig.org.id === currentConfig.org.id &&
+        newConfig.project.id === currentConfig.project.id &&
+        newConfig.workspace.id === currentConfig.workspace.id
+      ) {
+        this.error('The selected configuration is the same as the current configuration')
+      }
+    } else {
+      // useOperation = 'workspace'
+      this.checkLocalConfig(currentConfig)
+      const workspace = await this.selectTargetWorkspaceInProject(
+        consoleCLI,
+        currentConfig,
+        flags['workspace-name']
+      )
+      newConfig = {
+        ...currentConfig,
+        workspace
+      }
     }
+
+    // get supported org services
+    const supportedServices = await consoleCLI.getEnabledServicesForOrg(newConfig.org.id)
+
+    // sync services in target workspace
+    await this.syncServicesToTargetWorkspace(consoleCLI, currentConfig, newConfig, supportedServices, flags)
+
+    // download the console configuration for the newly selected org, project, workspace
+    const buffer = await this.downloadConsoleConfigToBuffer(consoleCLI, newConfig, supportedServices)
+
+    await this.importConsoleConfig(buffer, flags)
   }
 
-  isCompleteConsoleConfig (globalConfig) {
-    const { org = {}, project = {}, workspace = {} } = globalConfig || {}
-    return !globalConfig || org === {} || project === {} || workspace === {}
+  loadCurrentConfiguration () {
+    const projectConfig = config.get('project')
+    const org = (projectConfig.org && { id: projectConfig.org.id, name: projectConfig.org.name }) || {}
+    const project = { name: projectConfig.name, id: projectConfig.id }
+    const workspace = (projectConfig.workspace && { name: projectConfig.workspace.name, id: projectConfig.workspace.id }) || {}
+    return { org, project, workspace }
   }
 
-  consoleConfigString (globalConfig) {
+  loadGlobalConfiguration () {
+    return config.get(CONSOLE_CONFIG_KEY)
+  }
+
+  consoleConfigString (globalConfig, spaces = 0) {
     const { org = {}, project = {}, workspace = {} } = globalConfig || {}
     const list = [
       `1. Org: ${org.name || '<no org selected>'}`,
       `2. Project: ${project.name || '<no project selected>'}`,
       `3. Workspace: ${workspace.name || '<no workspace selected>'}`
     ]
-    const error = !globalConfig || org === {} || project === {} || workspace === {}
-    return { value: list.join(EOL), error }
+
+    return list
+      .map(line => ' '.repeat(spaces) + line)
+      .join(EOL)
   }
 
   async promptForUseOperation (globalConfigString) {
@@ -81,70 +124,163 @@ class Use extends BaseCommand {
         name: 'res',
         message: 'Switch to a new Adobe Developer Console configuration:',
         choices: [
-          { name: `Use the globally selected Org/Project/Workspace configuration:${EOL}${globalConfigString}`, value: 'global' },
-          { name: 'Switch to another Workspace in the current Project', value: 'workspace' }
+          { name: `A. Use the globally selected Org/Project/Workspace configuration:${EOL}${globalConfigString}`, value: 'global' },
+          { name: 'B. Switch to another Workspace in the current Project', value: 'workspace' }
         ]
       }
     ])
     return op.res
   }
 
-  /**
-   * @param {LibConsoleCLI} consoleCLI lib console config
-   * @param {string} [workspaceName] optional workspace name, if missing will prompt for it
-   * @returns {Buffer} the Adobe Developer Console configuration file for the workspace
-   */
-  async useWorkspaceInProject (consoleCLI, workspaceName) {
-    // first step load local config from .aio and .env files
-    const projectConfig = config.get('project')
-    if (!projectConfig) {
+  isNotCompleteConfig (config) {
+    const { org = {}, project = {}, workspace = {} } = config || {}
+    return !config || org === {} || project === {} || workspace === {}
+  }
+
+  checkGlobalConfig (globalConfig) {
+    if (this.isNotCompleteConfig(globalConfig)) {
+      const message = `Your console configuration is incomplete.${EOL}`+
+        'Use the `aio console` commands to select your Organization, Project, and Workspace.'
+      this.error(message)
+    }
+  }
+
+  checkLocalConfig (currentConfig) {
+    if (this.isNotCompleteConfig(currentConfig)) {
       this.error(
-        'Incomplete .aio configuration, cannot retrieve the current project to load workspaces from.' + EOL +
+        'Incomplete .aio configuration.' + EOL +
         'Please import a valid Adobe Developer Console configuration file via `aio app use <config>.json`'
       )
     }
-    const orgId = projectConfig.org.id
-    const project = { name: projectConfig.name, id: projectConfig.id }
-    const currentWorkspace = { name: projectConfig.workspace.name, id: projectConfig.workspace.id }
+  }
+
+  /**
+   * @param {LibConsoleCLI} consoleCLI lib console config
+   * @param {object} config local configuration
+   * @param {object} flags
+   * @returns {Buffer} the Adobe Developer Console configuration file for the workspace
+   */
+  async selectTargetWorkspaceInProject (consoleCLI, config, flags) {
+    const project = { name: config.name, id: config.id }
+    const currentWorkspace = { name: config.workspace.name, id: config.workspace.id }
 
     // retrieve all workspaces
-    const workspaces = await consoleCLI.getWorkspaces()
+    const workspaces = await consoleCLI.getWorkspaces(
+      config.org.id,
+      config.project.id
+    )
     const workspacesButCurrent = workspaces.filter(w => w.id !== currentWorkspace.id)
 
     let workspace
 
-    if (workspaceName) {
+    const workspaceNameFlag = flags['workspace-name']
+    if (workspaceNameFlag) {
       // workspace name is given, make sure the workspace is in there
-      workspace = workspacesButCurrent.find(w => w.name === workspaceName)
+      workspace = workspacesButCurrent.find(w => w.name === workspaceNameFlag)
       if (!workspace) {
-        throw new Error(`Workspace name given in --workspace-name=${workspaceName} does not exist in Project ${project.name}`)
+        throw new Error(`Workspace name given in --workspace-name=${workspaceNameFlag} does not exist in Project ${project.name}`)
       }
     } else {
       // workspace name is not given, let the user choose the
       workspace = await consoleCLI.promptForSelectWorkspace(workspacesButCurrent)
     }
-
-    const getEnabledServicesForOrg
-    await consoleCLI.getWorkspaceConfig(workspace, )
+    return { name: workspace.name, id: workspace.id }
   }
 
   /**
    * @param {LibConsoleCLI} consoleCLI lib console config
-   * @param {object} globalConfig global console config
-   * @returns {Buffer} the Adobe Developer Console configuration file for the org/project/workspace selected in the global configuration
+   * @param currentConfig
+   * @param newConfig
+   * @param supportedServices
+   * @param noConfirmation
+   * @param flags
    */
-  async useGlobalConfig (consoleCLI, globalConfig) {
-    if (!this.isCompleteConsoleConfig(globalConfig)) {
-      const message = `Your console configuration is incomplete.${EOL}Use the 'aio console' commands to select your Organization, Project, and Workspace.`
-      this.error(message)
+  async syncServicesToTargetWorkspace (consoleCLI, currentConfig, newConfig, supportedServices, flags) {
+    const currentServiceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
+      currentConfig.org.id,
+      currentConfig.project.id,
+      currentConfig.workspace,
+      supportedServices
+    )
+    const serviceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
+      newConfig.org.id,
+      newConfig.project.id,
+      newConfig.workspace,
+      supportedServices
+    )
+
+    // service subscriptions are same
+    if (this.equalSets(
+      new Set(currentServiceProperties.map(s => s.sdkCode)),
+      new Set(serviceProperties.map(s => s.sdkCode))
+    )) {
+      return
     }
 
-    const { org, project, workspace } = globalConfig
+    // service subscriptions are different
+    console.error(
+      EOL,
+      chalk.bold('Services attached to the target Workspace do not match service subscriptions in the current Workspace')
+    )
 
-    const supportedServices = await consoleCLI.getEnabledServicesForOrg(org.id)
-    const workspaceConfig = await consoleCLI.getWorkspaceConfig(org.id, project.id, workspace.id, supportedServices)
+    if (flags['no-service-sync']) {
+      console.error('Skipping service sync as --no-service-sync=true')
+      return
+    }
 
-    return Buffer.from(workspaceConfig)
+    // if org is different, sync is more complex as we would need to check if the target
+    // org supports the services attached in the current workspace, for now deffer to
+    // manual selection
+    if (currentConfig.org.id !== newConfig.org.id) {
+      console.error(
+        `Target Project ${newConfig.project.name} is in a different Org (${newConfig.org.name})` +
+        ` than current Project ${currentConfig.project.name} (Org: ${currentConfig.org.name})`
+      )
+      console.error(
+        'Services cannot be synced across orgs, please make sure to subscribe' +
+        ' to missing services manually in the Adobe Developer Console.'
+      )
+      return
+    }
+
+    // go on with sync, ensure user is aware of what where are doing
+    console.error('The target Workspace is attached to the following services:')
+    console.error(JSON.stringify(serviceProperties.map(s => s.name), null, 2))
+
+    if (!flags.confirm.includes['sync-services']) {
+      if (newConfig.workspace.name === 'Production') {
+        console.error('Note you are about to replace service subscriptions in your Production workspace, make sure to understand the implications first')
+      }
+
+      // ask for confirmation, overwritting service subscriptions is a destructive operation, especially if done in Production
+      const confirm = await inquirer.prompt([{
+        type: 'confirm',
+        name: 'res',
+        message:
+          'Proposed new Service subscriptions list from current Workspace:' +
+          `${EOL}${JSON.stringify(currentServiceProperties.map(s => s.name), null, 2)}` +
+          `${EOL}Do you want to replace Services in the selected Workspace now ?`
+      }])
+
+      if (!confirm.res) {
+        // abort service sync
+        console.error('Service subscriptions will not be synced, make sure to manually add missing services from the Developer Console')
+        return
+      }
+    } else {
+      console.error('With the following Services from the current Workspace')
+      console.error(JSON.stringify(currentServiceProperties.map(s => s.sdkCode), null, 2))
+    }
+
+    await consoleCLI.subscribeToServices(
+      newConfig.org.id,
+      newConfig.project,
+      newConfig.workspace,
+      path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER),
+      currentServiceProperties
+    )
+
+    console.error(`Successful sync of Services to target Workspace ${newConfig.workspace.name} in Project ${newConfig.project.name}`)
   }
 
   async importConsoleConfig (consoleConfigFileOrBuffer, flags) {
@@ -166,12 +302,27 @@ class Use extends BaseCommand {
     return importConfigJson(consoleConfigFileOrBuffer, process.cwd(), { interactive, overwrite, merge }, extraEnvVars)
   }
 
-  // async downloadConfigToBuffer (consoleCLI, orgId, projectId, workspaceId) {
-  //   const supportedServices = await consoleCLI.getEnabledServicesForOrg(orgId)
-  //   const workspaceConfig = await consoleCLI.getWorkspaceConfig(orgId, projectId, workspaceId, supportedServices)
+  async downloadConsoleConfigToBuffer (consoleCLI, config, supportedServices) {
+    const workspaceConfig = await consoleCLI.getWorkspaceConfig(
+      config.org.id,
+      config.project.id,
+      config.workspace.id,
+      supportedServices
+    )
+    return Buffer.from(JSON.stringify(workspaceConfig))
+  }
 
-  //   return Buffer.from(workspaceConfig)
-  // }
+  equalSets (setA, setB) {
+    if (setA.size !== setB.size) {
+      return false
+    }
+    for (const a of setA) {
+      if (!setB.has(a)) {
+        return false
+      }
+    }
+    return true
+  }
 }
 
 Use.description = `Import an Adobe Developer Console configuration file
@@ -181,7 +332,7 @@ Use.flags = {
   ...BaseCommand.flags,
   overwrite: flags.boolean({
     description: 'Overwrite any .aio and .env files during import of the Adobe Developer Console configuration file',
-    char: 'w',
+    char: 'o',
     default: false
   }),
   merge: flags.boolean({
@@ -195,13 +346,24 @@ Use.flags = {
     char: 'g'
   }),
   workspace: flags.boolean({
-    description: 'Select an Adobe Developer Console Workspace in the same Project, and import the configuration for this Workspace.',
+    description: 'Select an Adobe Developer Console Workspace in the same Project, and import the configuration for this Workspace',
     default: false
-    // todo char
   }),
   'workspace-name': flags.string({
     description: 'Specify the Adobe Developer Console Workspace name to import the configuration from',
-    default: ''
+    default: '',
+    char: 'w'
+  }),
+  'no-service-sync': flags.boolean({
+    description: 'Do not sync service subscriptions from the current Workspace to the new Workspace/Project',
+    default: false
+  }),
+  // todo replace with force ? note this is a destructive operation
+  confirm: flags.string({
+    description: 'Skip and confirm specified confirmation prompts',
+    default: '',
+    multiple: true,
+    options: ['service-sync']
   })
 }
 
