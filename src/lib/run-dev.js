@@ -43,7 +43,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
   const hasFrontend = config.app.hasFrontend
   const withBackend = config.app.hasBackend && !skipActions
   const isLocal = !options.devRemote // applies only for backend
-  const uiPort = parseInt(process.env.PORT) || 9080
+  const uiPort = parseInt(process.env.PORT)
 
   aioLogger.debug(`hasFrontend ${hasFrontend}`)
   aioLogger.debug(`withBackend ${withBackend}`)

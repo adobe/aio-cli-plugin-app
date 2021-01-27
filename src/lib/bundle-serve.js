@@ -12,6 +12,7 @@ governing permissions and limitations under the License.
 
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:bundle-serve', { provider: 'debug' })
 const httpTerminator = require('http-terminator')
+const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('./defaults')
 
 /**
  * @typedef {object} BundleWebObject
@@ -28,7 +29,7 @@ const httpTerminator = require('http-terminator')
  * @param {Function} [log] the app logger
  * @returns {BundleWebObject} the BundleWebObject
  */
-module.exports = async (bundler, uiPort, options = {}, log = () => {}) => {
+module.exports = async (bundler, uiPort = SERVER_DEFAULT_PORT, options = {}, log = () => {}) => {
   log('serving front-end using bundler serve...')
   let actualPort = uiPort
 

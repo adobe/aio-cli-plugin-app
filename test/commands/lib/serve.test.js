@@ -11,12 +11,12 @@ governing permissions and limitations under the License.
 */
 
 const serve = require('../../../src/lib/serve')
-const path = require('path')
+const { defaultHttpServerPort } = require('../../../src/lib/defaults')
 const https = require('https')
 const httpTerminator = require('http-terminator')
 const fs = require('fs-extra')
 
-const SERVER_DEFAULT_PORT = 9080
+const SERVER_DEFAULT_PORT = defaultHttpServerPort
 let SERVER_AVAILABLE_PORT
 
 jest.mock('fs-extra')
@@ -44,20 +44,7 @@ const mockTerminatorInstance = {
   terminate: jest.fn()
 }
 
-const LOCAL_CONFIG = {
-  root: '/my-app',
-  envFile: '.my.env',
-  app: {
-    dist: 'dist'
-  },
-  cli: {
-    dataDir: path.join('/', 'dataDir')
-  },
-  web: {
-    distDev: 'web-src-dev',
-    src: 'web-src'
-  }
-}
+const WEB_ROOT = 'web-src-dev'
 
 beforeEach(() => {
   SERVER_AVAILABLE_PORT = SERVER_DEFAULT_PORT
@@ -95,7 +82,7 @@ test('serve https (set port not available, use default', async () => {
   const requestedPort = 8888
   SERVER_AVAILABLE_PORT = 9099
   process.env.PORT = requestedPort
-  const { url } = await serve(LOCAL_CONFIG, options)
+  const { url } = await serve(WEB_ROOT, requestedPort, options)
 
   expect(typeof url).toEqual('string')
   expect(https.createServer).toHaveBeenCalledWith(httpsCerts)
@@ -129,7 +116,7 @@ test('serve https (set port available and used', async () => {
   const requestedPort = 8888
   SERVER_AVAILABLE_PORT = requestedPort
   process.env.PORT = requestedPort
-  const { url } = await serve(LOCAL_CONFIG, options)
+  const { url } = await serve(WEB_ROOT, requestedPort, options)
 
   expect(typeof url).toEqual('string')
   expect(https.createServer).toHaveBeenCalledWith(httpsCerts)
@@ -141,7 +128,7 @@ test('serve https (set port available and used', async () => {
 
 test('serve http (and use default port)', async () => {
   const options = {}
-  const { url } = await serve(LOCAL_CONFIG, options)
+  const { url } = await serve(WEB_ROOT, undefined, options)
 
   expect(typeof url).toEqual('string')
   expect(https.createServer).toHaveBeenCalled()
@@ -152,7 +139,7 @@ test('serve http (and use default port)', async () => {
 })
 
 test('serve cleanup', async () => {
-  const { cleanup } = await serve(LOCAL_CONFIG)
+  const { cleanup } = await serve(WEB_ROOT)
 
   expect(typeof cleanup).toEqual('function')
   await cleanup()

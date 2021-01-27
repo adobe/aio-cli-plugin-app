@@ -17,6 +17,7 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const pureHTTP = require('pure-http')
 const sirv = require('serve-static')
 const https = require('https')
+const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('./defaults')
 
 /**
  * @typedef {object} ServeWebObject
@@ -33,7 +34,7 @@ const https = require('https')
  * @param {Function} [log] the app logger
  * @returns {ServeWebObject} the ServeWebObject
  */
-module.exports = async (webRoot, uiPort, options = {}, log = () => {}) => {
+module.exports = async (webRoot, uiPort = SERVER_DEFAULT_PORT, options = {}, log = () => {}) => {
   let actualPort = uiPort
   log('starting local frontend server ..')
 
