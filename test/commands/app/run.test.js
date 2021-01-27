@@ -12,6 +12,7 @@ governing permissions and limitations under the License.
 
 const RunCommand = require('../../../src/commands/app/run')
 const BaseCommand = require('../../../src/BaseCommand')
+const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('../../../src/lib/defaults')
 
 jest.mock('../../../src/lib/run-dev')
 const mockRunDev = require('../../../src/lib/run-dev')
@@ -71,7 +72,6 @@ const mockHttpsServerInstance = {
 
 beforeEach(() => {
   jest.restoreAllMocks()
-  // mockScripts.mockReset('runDev')
   mockRunDev.mockReset()
   mockAppHelper.runPackageScript.mockReset()
 
@@ -495,7 +495,7 @@ describe('run', () => {
       }
     }), expect.any(Function))
     expect(https.createServer).toHaveBeenCalledWith({ key: 'private key', cert: 'public cert' }, expect.any(Function))
-    expect(getPort).toHaveBeenCalledWith({ port: 9080 })
+    expect(getPort).toHaveBeenCalledWith({ port: SERVER_DEFAULT_PORT })
     expect(mockHttpsServerInstance.listen).toHaveBeenCalledWith(1111)
     expect(mockHttpsServerInstance.close).toHaveBeenCalledTimes(1)
     expect(mockWriteHead).toHaveBeenCalledWith(200)

@@ -30,6 +30,7 @@ const mockAIOConfig = require('@adobe/aio-lib-core-config')
 const util = require('util')
 const sleep = util.promisify(setTimeout)
 const bundle = require('../../../src/lib/bundle')
+const bundleServe = require('../../../src/lib/bundle-serve')
 const serve = require('../../../src/lib/serve')
 const buildActions = require('../../../src/lib/build-actions')
 const deployActions = require('../../../src/lib/deploy-actions')
@@ -53,6 +54,7 @@ jest.mock('execa')
 jest.mock('node-fetch')
 jest.mock('../../../src/lib/run-local-runtime')
 jest.mock('../../../src/lib/bundle')
+jest.mock('../../../src/lib/bundle-serve')
 jest.mock('../../../src/lib/serve')
 jest.mock('../../../src/lib/build-actions')
 jest.mock('../../../src/lib/deploy-actions')
@@ -110,6 +112,7 @@ beforeEach(() => {
 
   bundle.mockReset()
   serve.mockReset()
+  bundleServe.mockReset()
   buildActions.mockReset()
   deployActions.mockReset()
   runLocalRuntime.mockReset()
@@ -132,6 +135,10 @@ beforeEach(() => {
     cleanup: mockCleanup.bundle
   }))
   serve.mockImplementation(() => ({
+    url: '',
+    cleanup: mockCleanup.serve
+  }))
+  bundleServe.mockImplementation(() => ({
     url: '',
     cleanup: mockCleanup.serve
   }))
@@ -489,13 +496,15 @@ function runCommonBackendOnlyTests (ref) {
   test('fetchLogs', async () => {
     const options = { devRemote: ref.devRemote, fetchLogs: true }
     await runDev([], ref.config, options)
-    expect(serve).toHaveBeenCalledTimes(0)
+    expect(serve).not.toHaveBeenCalled()
+    expect(bundleServe).not.toHaveBeenCalled()
   })
 
   test('should not start a ui server', async () => {
     const options = { devRemote: ref.devRemote }
     await runDev([], ref.config, options)
-    expect(serve).toHaveBeenCalledTimes(0)
+    expect(serve).not.toHaveBeenCalled()
+    expect(bundleServe).not.toHaveBeenCalled()
   })
 }
 
@@ -504,7 +513,8 @@ function runCommonWithFrontendTests (ref) {
   test('should start a ui server', async () => {
     const options = { devRemote: ref.devRemote }
     await runDev([], ref.config, options)
-    expect(serve).toHaveBeenCalled()
+    expect(serve).not.toHaveBeenCalled()
+    expect(bundleServe).toHaveBeenCalled()
   })
 
   test('should cleanup ui server on SIGINT', async () => {
@@ -783,13 +793,28 @@ describe('with frontend only', () => {
     expect(appHelper.runPackageScript).toHaveBeenCalled()
   })
 
+  test('only build-static hook set (coverage for lib/serve.js)', async () => {
+    appHelper.runPackageScript.mockImplementation((scriptName) => {
+      // when build-static hook is set, we don't use our parcel bundler
+      // when we don't use our parcel bundler, we don't use the http serving
+      // capabilities of the parcel bundler, and use our own static-serve (lib/serve.js)
+      if (scriptName === 'build-static') {
+        return {}
+      }
+    })
+    await runDev([], ref.config)
+    expect(serve).toHaveBeenCalled()
+    expect(bundleServe).not.toHaveBeenCalled()
+  })
+
   test('should set hasBackend=false', async () => {
     expect(ref.config.app.hasBackend).toBe(false)
   })
 
   test('should start a ui server', async () => {
     await runDev([], ref.config)
-    expect(serve).toHaveBeenCalled()
+    expect(serve).not.toHaveBeenCalled()
+    expect(bundleServe).toHaveBeenCalled()
   })
 
   test('should not call build and deploy', async () => {
@@ -809,5 +834,6 @@ describe('with frontend only', () => {
   test('should not run serve', async () => {
     await runDev([], ref.config, { skipServe: true })
     expect(serve).not.toHaveBeenCalled()
+    expect(bundleServe).not.toHaveBeenCalled()
   })
 })
