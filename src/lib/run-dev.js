@@ -16,6 +16,7 @@ const rtLibUtils = rtLib.utils
 const vscode = require('./vscode')
 const bundle = require('./bundle')
 const bundleServe = require('./bundle-serve')
+const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('./defaults')
 const serve = require('./serve')
 const Cleanup = require('./cleanup')
 const runLocalRuntime = require('./run-local-runtime')
@@ -43,7 +44,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
   const hasFrontend = config.app.hasFrontend
   const withBackend = config.app.hasBackend && !skipActions
   const isLocal = !options.devRemote // applies only for backend
-  const uiPort = parseInt(process.env.PORT)
+  const uiPort = parseInt(process.env.PORT) || SERVER_DEFAULT_PORT
 
   aioLogger.debug(`hasFrontend ${hasFrontend}`)
   aioLogger.debug(`withBackend ${withBackend}`)
