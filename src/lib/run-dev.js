@@ -15,6 +15,7 @@ const rtLib = require('@adobe/aio-lib-runtime')
 const rtLibUtils = rtLib.utils
 const vscode = require('./vscode')
 const bundle = require('./bundle')
+const bundleServe = require('./bundle-serve')
 const serve = require('./serve')
 const Cleanup = require('./cleanup')
 const runLocalRuntime = require('./run-local-runtime')
@@ -55,6 +56,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
 
   const cleanup = new Cleanup()
   let needsProcessWaiter = true
+  let defaultBundler = null
 
   // bind cleanup function
   process.on('SIGINT', async () => {
@@ -110,7 +112,8 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       if (!options.skipServe) {
         const script = await utils.runPackageScript('build-static')
         if (!script) {
-          const { cleanup: bundlerCleanup } = await bundle(devConfig, bundleOptions, log)
+          const { bundler, cleanup: bundlerCleanup } = await bundle(devConfig, bundleOptions, log)
+          defaultBundler = bundler
           cleanup.add(() => bundlerCleanup(), 'cleaning up bundle...')
         }
       }
@@ -127,9 +130,15 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       if (!options.skipServe) {
         const script = await utils.runPackageScript('serve-static')
         if (!script) {
-          const { url, cleanup: serverCleanup } = await serve(devConfig, bundleOptions, log)
-          frontEndUrl = url
-          cleanup.add(() => serverCleanup(), 'cleaning up serve...')
+          if (defaultBundler) {
+            const { url, cleanup: serverCleanup } = await bundleServe(defaultBundler, bundleOptions, log)
+            frontEndUrl = url
+            cleanup.add(() => serverCleanup(), 'cleaning up serve...')
+          } else {
+            const { url, cleanup: serverCleanup } = await serve(devConfig, bundleOptions, log)
+            frontEndUrl = url
+            cleanup.add(() => serverCleanup(), 'cleaning up serve...')
+          }
           needsProcessWaiter = false
         }
       }
