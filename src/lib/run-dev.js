@@ -15,6 +15,8 @@ const rtLib = require('@adobe/aio-lib-runtime')
 const rtLibUtils = rtLib.utils
 const vscode = require('./vscode')
 const bundle = require('./bundle')
+const bundleServe = require('./bundle-serve')
+const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('./defaults')
 const serve = require('./serve')
 const Cleanup = require('./cleanup')
 const runLocalRuntime = require('./run-local-runtime')
@@ -42,6 +44,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
   const hasFrontend = config.app.hasFrontend
   const withBackend = config.app.hasBackend && !skipActions
   const isLocal = !options.devRemote // applies only for backend
+  const uiPort = parseInt(process.env.PORT) || SERVER_DEFAULT_PORT
 
   aioLogger.debug(`hasFrontend ${hasFrontend}`)
   aioLogger.debug(`withBackend ${withBackend}`)
@@ -55,6 +58,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
 
   const cleanup = new Cleanup()
   let needsProcessWaiter = true
+  let defaultBundler = null
 
   // bind cleanup function
   process.on('SIGINT', async () => {
@@ -110,7 +114,8 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       if (!options.skipServe) {
         const script = await utils.runPackageScript('build-static')
         if (!script) {
-          const { cleanup: bundlerCleanup } = await bundle(devConfig, bundleOptions, log)
+          const { bundler, cleanup: bundlerCleanup } = await bundle(devConfig, bundleOptions, log)
+          defaultBundler = bundler
           cleanup.add(() => bundlerCleanup(), 'cleaning up bundle...')
         }
       }
@@ -127,7 +132,14 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       if (!options.skipServe) {
         const script = await utils.runPackageScript('serve-static')
         if (!script) {
-          const { url, cleanup: serverCleanup } = await serve(devConfig, bundleOptions, log)
+          let result
+          if (defaultBundler) {
+            result = await bundleServe(defaultBundler, uiPort, bundleOptions, log)
+          } else {
+            result = await serve(devConfig.web.distDev, uiPort, bundleOptions, log)
+          }
+
+          const { url, cleanup: serverCleanup } = result
           frontEndUrl = url
           cleanup.add(() => serverCleanup(), 'cleaning up serve...')
           needsProcessWaiter = false
@@ -137,7 +149,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
 
     log('setting up vscode debug configuration files...')
     const vscodeConfig = vscode(devConfig)
-    await vscodeConfig.update({ hasFrontend, withBackend, frontEndUrl })
+    await vscodeConfig.update({ frontEndUrl })
     cleanup.add(() => vscodeConfig.cleanup(), 'cleaning up vscode debug configuration files...')
 
     // automatically fetch logs if there are actions
