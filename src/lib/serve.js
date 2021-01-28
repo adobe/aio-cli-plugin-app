@@ -17,6 +17,7 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const pureHTTP = require('pure-http')
 const sirv = require('serve-static')
 const https = require('https')
+const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('./defaults')
 
 /**
  * @typedef {object} ServeWebObject
@@ -27,19 +28,19 @@ const https = require('https')
 /**
  * Serves the web source via a http server.
  *
- * @param {object} config the app config (see src/lib/config-loader.js)
+ * @param {string} webRoot the path to the web root
+ * @param {number} uiPort the port number for the http server
  * @param {object} [options] the Parcel bundler options
  * @param {Function} [log] the app logger
  * @returns {ServeWebObject} the ServeWebObject
  */
-module.exports = async (config, options = {}, log = () => {}) => {
-  const uiPort = parseInt(process.env.PORT) || 9080
+module.exports = async (webRoot, uiPort = SERVER_DEFAULT_PORT, options = {}, log = () => {}) => {
   let actualPort = uiPort
   log('starting local frontend server ..')
 
-  aioLogger.debug(`serve actualPort: ${uiPort} env.PORT: ${process.env.PORT}`)
+  aioLogger.debug(`serve uiPort: ${uiPort}`)
   aioLogger.debug(`serve options: ${JSON.stringify(options, null, 2)}`)
-  aioLogger.debug(`serve config.web: ${JSON.stringify(config.web, null, 2)}`)
+  aioLogger.debug(`serve webRoot: ${JSON.stringify(webRoot, null, 2)}`)
 
   let httpsOptions = {}
   if (options.https) {
@@ -54,7 +55,7 @@ module.exports = async (config, options = {}, log = () => {}) => {
   const server = https.createServer(httpsOptions)
   const app = pureHTTP({ server })
 
-  app.use('/', sirv(path.resolve(config.web.distDev)))
+  app.use('/', sirv(path.resolve(webRoot)))
   app.listen(uiPort)
 
   const terminator = httpTerminator.createHttpTerminator({ server })
