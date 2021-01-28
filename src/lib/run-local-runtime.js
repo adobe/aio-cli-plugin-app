@@ -39,6 +39,13 @@ const OW_TIMEOUT = 60000
  */
 
 /**
+ * @typedef {object} RuntimeCredentials
+ * @property {string} namespace the runtime namespace
+ * @property {string} auth the runtime auth key
+ * @property {string} apihost the runtime apihost
+ */
+
+/**
  * Checks the system for pre-requisites to run local Openwhisk, then runs it.
  *
  * @param {object} config the app config
@@ -92,16 +99,7 @@ async function runDevLocal (config, log = () => undefined, verbose = false) {
   devConfig.ow = { ...devConfig.ow, ...runtime }
 
   log(`writing credentials to tmp wskdebug config '${devConfig.envFile}'`)
-  // prepare wskprops for wskdebug
-  fs.ensureDirSync(config.app.dist)
-  const envFile = rtLibUtils._absApp(devConfig.root, devConfig.envFile)
-  await fs.outputFile(envFile, dedent(`
-  # This file is auto-generated, do not edit.
-  # The items below are temporary credentials for local debugging
-  OW_NAMESPACE=${devConfig.ow.namespace}
-  OW_AUTH=${devConfig.ow.auth}
-  OW_APIHOST=${devConfig.ow.apihost}
-  `))
+  await writeLocalEnvFile(devConfig, runtime)
 
   const cleanup = () => {
     aioLogger.debug('stopping local OpenWhisk stack...')
@@ -117,6 +115,29 @@ async function runDevLocal (config, log = () => undefined, verbose = false) {
     config: devConfig,
     cleanup
   }
+}
+
+/**
+ * Writes the local debugging .env file
+ *
+ * @param {object} appConfig the app config
+ * @param {RuntimeCredentials} runtimeCredentials the runtime credentials
+ */
+async function writeLocalEnvFile (appConfig, runtimeCredentials) {
+  const { root, envFile } = appConfig
+  const { dist } = appConfig.app
+  const { namespace, auth, apihost } = runtimeCredentials
+
+  fs.ensureDirSync(dist)
+  const envFilePath = rtLibUtils._absApp(root, envFile)
+
+  await fs.outputFile(envFilePath, dedent(`
+  # This file is auto-generated, do not edit.
+  # The items below are temporary credentials for local debugging
+  OW_NAMESPACE=${namespace}
+  OW_AUTH=${auth}
+  OW_APIHOST=${apihost}
+  `))
 }
 
 module.exports = runDevLocal

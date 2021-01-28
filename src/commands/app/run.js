@@ -22,6 +22,7 @@ const coreConfig = require('@adobe/aio-lib-core-config')
 
 const BaseCommand = require('../../BaseCommand')
 const runDev = require('../../lib/run-dev')
+const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('../../lib/defaults')
 const { runPackageScript, wrapError } = require('../../lib/app-helper')
 
 const DEV_KEYS_DIR = 'dist/dev-keys/'
@@ -152,8 +153,8 @@ class Run extends BaseCommand {
       res.end('Congrats, you have accepted the certificate and can now use it for development on this machine.\n' +
       'You can close this window.')
     })
-    const port = parseInt(process.env.PORT) || 9080
-    const actualPort = await getPort({ port: port })
+    const port = parseInt(process.env.PORT) || SERVER_DEFAULT_PORT
+    const actualPort = await getPort({ port })
     server.listen(actualPort)
     this.log('A self signed development certificate has been generated, you will need to accept it in your browser in order to use it.')
     cli.open(`https://localhost:${actualPort}`)

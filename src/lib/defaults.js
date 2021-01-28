@@ -25,5 +25,6 @@ module.exports = {
   CONSOLE_API_KEYS: {
     prod: 'aio-cli-console-auth',
     stage: 'aio-cli-console-auth-stage'
-  }
+  },
+  defaultHttpServerPort: 9080
 }
