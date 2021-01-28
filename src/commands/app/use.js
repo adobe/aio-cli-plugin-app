@@ -353,7 +353,7 @@ class Use extends BaseCommand {
     const config = { org: consoleConfig.project.org, project: consoleConfig.project, workspace: consoleConfig.project.workspace }
     const configString = this.configString(config)
     this.log(chalk.green(chalk.bold(
-      `✔ Successfully imported configuration for:${EOL}${configString}`
+      `${EOL}✔ Successfully imported configuration for:${EOL}${configString}`
     )))
   }
 
