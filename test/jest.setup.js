@@ -78,7 +78,7 @@ process.on('unhandledRejection', error => {
 // dont touch the real fs
 jest.mock('fs-extra')
 // don't wait for user input in tests
-jest.mock('inquirer')
+jest.mock('inquirer', () => ({ prompt: jest.fn(), createPromptModule: jest.fn(() => jest.fn()) }))
 // make sure we mock the app scripts
 jest.mock('@adobe/aio-lib-web')
 //

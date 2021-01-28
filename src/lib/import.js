@@ -28,6 +28,11 @@ const FILE_FORMAT_ENV = 'env'
 const FILE_FORMAT_JSON = 'json'
 const CONSOLE_CONFIG_KEY = 'console'
 
+// make sure to prompt to stderr
+// Note: if this get's turned into a lib make sure to call
+// this into an init/constructor as it might create mocking issues in jest
+const prompt = inquirer.createPromptModule({ output: process.stderr })
+
 /**
  * Validate the config json
  *
@@ -136,31 +141,30 @@ function prettyPrintJson (json) {
  */
 async function checkFileConflict (filePath) {
   if (fs.existsSync(filePath)) {
-    const answer = await inquirer
-      .prompt([
-        {
-          type: 'expand',
-          message: `The file ${filePath} already exists:`,
-          name: 'conflict',
-          choices: [
-            {
-              key: 'o',
-              name: 'Overwrite',
-              value: 'overwrite'
-            },
-            {
-              key: 'm',
-              name: 'Merge',
-              value: 'merge'
-            },
-            {
-              key: 'x',
-              name: 'Abort',
-              value: 'abort'
-            }
-          ]
-        }
-      ])
+    const answer = await prompt([
+      {
+        type: 'expand',
+        message: `The file ${filePath} already exists:`,
+        name: 'conflict',
+        choices: [
+          {
+            key: 'o',
+            name: 'Overwrite',
+            value: 'overwrite'
+          },
+          {
+            key: 'm',
+            name: 'Merge',
+            value: 'merge'
+          },
+          {
+            key: 'x',
+            name: 'Abort',
+            value: 'abort'
+          }
+        ]
+      }
+    ])
 
     switch (answer.conflict) {
       case 'overwrite':
