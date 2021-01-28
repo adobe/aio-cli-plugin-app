@@ -98,6 +98,7 @@ class Run extends BaseCommand {
           this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
         }
       }
+      this.log('press CTRL+C to terminate dev environment')
     } catch (error) {
       spinner.fail()
       this.error(wrapError(error))
