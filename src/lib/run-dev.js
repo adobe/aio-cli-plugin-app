@@ -14,7 +14,7 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const rtLib = require('@adobe/aio-lib-runtime')
 const rtLibUtils = rtLib.utils
 const vscode = require('./vscode')
-const bundle = require('./bundle')
+const { bundle } = require('@adobe/aio-lib-web')
 const bundleServe = require('./bundle-serve')
 const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('./defaults')
 const serve = require('./serve')
@@ -33,7 +33,13 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
   // note: args are considered perfect here because this function is only ever called by the `app run` command
 
   /* parcel bundle options */
-  const bundleOptions = options.parcel || {}
+  const bundleOptions = {
+    cache: false,
+    contentHash: false,
+    minify: false,
+    watch: false,
+    ...options.parcel
+  }
   /* skip actions */
   const skipActions = !!options.skipActions
   /* fetch logs for actions option */
@@ -95,7 +101,8 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
       if (!options.skipServe) {
         const script = await utils.runPackageScript('build-static')
         if (!script) {
-          const { bundler, cleanup: bundlerCleanup } = await bundle(devConfig, bundleOptions, log)
+          const entryFile = config.web.src + '/index.html'
+          const { bundler, cleanup: bundlerCleanup } = await bundle(entryFile, config.web.distDev, bundleOptions, log)
           defaultBundler = bundler
           cleanup.add(() => bundlerCleanup(), 'cleaning up bundle...')
         }

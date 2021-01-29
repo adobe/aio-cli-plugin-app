@@ -48,6 +48,7 @@ class Run extends BaseCommand {
     const runOptions = {
       skipActions: flags['skip-actions'],
       skipServe: !flags.serve,
+      // todo: any other params we should add here?
       parcel: {
         logLevel: flags.verbose ? 4 : 2
       },
