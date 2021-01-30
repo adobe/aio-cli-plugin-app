@@ -11,7 +11,7 @@ governing permissions and limitations under the License.
 */
 
 const mockLibWeb = {
-  buildWeb: jest.fn(),
+  bundle: jest.fn(),
   deployWeb: jest.fn(),
   undeployWeb: jest.fn()
 }

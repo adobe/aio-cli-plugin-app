@@ -29,7 +29,8 @@ const path = require('path')
 const mockAIOConfig = require('@adobe/aio-lib-core-config')
 const util = require('util')
 const sleep = util.promisify(setTimeout)
-const bundle = require('../../../src/lib/bundle')
+// const bundle = require('../../../src/lib/bundle')
+const { bundle } = require('@adobe/aio-lib-web')
 const bundleServe = require('../../../src/lib/bundle-serve')
 const serve = require('../../../src/lib/serve')
 const buildActions = require('../../../src/lib/build-actions')
@@ -252,6 +253,7 @@ async function testCleanupNoErrors (done, ref, postCleanupChecks, options = {}) 
 async function testCleanupOnError (ref, postCleanupChecks) {
   const error = new Error('fake')
   const logFunc = (message) => {
+    console.log(' //// logFunc ', message)
     if (message.includes('CTRL+C to terminate')) {
       throw error
     } else {

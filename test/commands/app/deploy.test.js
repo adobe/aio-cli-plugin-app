@@ -41,7 +41,7 @@ const { cli } = require('cli-ux')
 
 beforeEach(() => {
   mockWebLib.mockReset('deployWeb')
-  mockWebLib.mockReset('buildWeb')
+  mockWebLib.mockReset('bundle')
   helpers.writeConfig.mockReset()
   helpers.runPackageScript.mockReset()
   jest.restoreAllMocks()

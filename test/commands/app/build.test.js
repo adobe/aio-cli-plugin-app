@@ -27,7 +27,7 @@ jest.mock('cli-ux')
 
 beforeEach(() => {
   mockWebLib.mockReset('deployWeb')
-  mockWebLib.mockReset('buildWeb')
+  mockWebLib.mockReset('bundle')
   mockFS.existsSync.mockReset()
   helpers.writeConfig.mockReset()
   helpers.runPackageScript.mockReset()
@@ -83,7 +83,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
   })
 
   test('build & deploy an App with no force-build but build exists', async () => {
@@ -94,7 +94,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.bundle).toHaveBeenCalledTimes(0)
   })
 
   test('build & deploy an App verbose', async () => {
@@ -102,7 +102,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
   })
 
   test('build & deploy --skip-static', async () => {
@@ -110,7 +110,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.bundle).toHaveBeenCalledTimes(0)
   })
 
   test('build & deploy --skip-web-assets', async () => {
@@ -118,7 +118,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.bundle).toHaveBeenCalledTimes(0)
   })
 
   test('build & deploy only some actions using --action', async () => {
@@ -127,15 +127,23 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledWith(command.appConfig, ['a', 'b', 'c'])
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.bundle).toHaveBeenCalledTimes(0)
   })
 
   test('build & deploy actions with no backend', async () => {
-    command.appConfig = { app: { hasFrontend: true, hasBackend: false } }
+    command.appConfig = {
+      app: {
+        hasFrontend: true,
+        hasBackend: false
+      },
+      web: {
+        src: 'web-src'
+      }
+    }
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
   })
 
   test('build & deploy with --skip-actions', async () => {
@@ -144,7 +152,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
   })
 
   test('build & deploy with --skip-actions with no frontend', async () => {
@@ -153,7 +161,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.bundle).toHaveBeenCalledTimes(0)
   })
 
   test('should fail if scripts.buildActions fails', async () => {
@@ -163,27 +171,27 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledWith(error)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.bundle).toHaveBeenCalledTimes(0)
   })
 
-  test('spinner should be called for progress logs on buildWeb call , with verbose', async () => {
-    mockWebLib.buildWeb.mockImplementation(async (config, onProgress) => {
+  test('spinner should be called for progress logs on bundle call , with verbose', async () => {
+    mockWebLib.bundle.mockImplementation(async (config, onProgress) => {
       onProgress('progress log')
       return 'ok'
     })
     command.argv = ['-v']
     await command.run()
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
   })
 
-  test('spinner should be called for progress logs on buildWeb call , without verbose', async () => {
-    mockWebLib.buildWeb.mockImplementation(async (config, onProgress) => {
+  test('spinner should be called for progress logs on bundle call , without verbose', async () => {
+    mockWebLib.bundle.mockImplementation(async (config, onProgress) => {
       onProgress('progress log')
       return 'ok'
     })
     await command.run()
-    expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
   })
 
   test('build (--skip-actions and --skip-static)', async () => {
