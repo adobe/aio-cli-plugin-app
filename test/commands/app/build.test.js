@@ -178,16 +178,18 @@ describe('run', () => {
 
   test('build should write to config.json', async () => {
     command.appConfig = sampleAppConfig
+    command.appConfig.ow.defaultApihost = global.defaultOwApihost
+    command.appConfig.app.defaultHostname = global.defaultAppHostName
     const mockUtils = mockRuntimeLib.utils
-    mockRuntimeLib.buildActions.mockImplementationOnce(require.requireActual('@adobe/aio-lib-runtime').buildActions)
     mockRuntimeLib.utils = require.requireActual('@adobe/aio-lib-runtime').utils
     await command.run()
     mockRuntimeLib.utils = mockUtils
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.buildWeb).toHaveBeenCalledTimes(1)
-    expect(helpers.writeConfig).toHaveBeenCalledWith('/web-src/src/config.json', { action: 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action', 'action-sequence': 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action-sequence', 'action-zip': 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action-zip', 'sample-app-1.0.0-action': 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action', 'sample-app-1.0.0-action-sequence': 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action-sequence', 'sample-app-1.0.0-action-zip': 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action-zip' })
+    expect(helpers.writeConfig).toHaveBeenCalledWith('/web-src/src/config.json', { action: 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action', 'action-sequence': 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action-sequence', 'action-zip': 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action-zip' })
   })
+
   test('build & deploy an App with no flags', async () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
