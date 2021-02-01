@@ -1,7 +1,7 @@
 {
   "name": "@adobe/aio-cli-plugin-app",
   "description": "Create, Build and Deploy Adobe I/O Applications",
-  "version": "5.3.2",
+  "version": "5.4.0",
   "author": "Adobe Inc.",
   "bugs": "https://github.com/adobe/aio-cli-plugin-app/issues",
   "dependencies": {
@@ -11,7 +11,7 @@
     "@adobe/aio-lib-runtime": "^1.2.5",
     "@adobe/aio-lib-web": "^4.0.0",
     "@adobe/generator-aio-app": "^1.9.0",
-    "@adobe/generator-aio-console": "^1.2.0",
+    "@adobe/generator-aio-console": "^2.0.1",
     "@oclif/command": "^1.5.11",
     "@oclif/config": "^1.12.9",
     "@oclif/plugin-help": "^2.2.3",
