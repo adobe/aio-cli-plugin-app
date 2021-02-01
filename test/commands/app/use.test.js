@@ -186,16 +186,9 @@ test('flags/args', async () => {
 
 describe('bad args/flags', () => {
   test('unknown', async () => {
-    const result = TheCommand.run(['.', '--wtf'])
-    expect(result instanceof Promise).toBeTruthy()
-    return new Promise((resolve, reject) => {
-      return result
-        .then(() => reject(new Error()))
-        .catch(res => {
-          expect(res).toEqual(new Error('Unexpected argument: --wtf\nSee more help with --help'))
-          resolve()
-        })
-    })
+    await expect(TheCommand.run(['.', '--wtf'])).rejects.toThrow(
+      'Unexpected argument: --wtf\nSee more help with --help'
+    )
   })
   test('arg=console.json --workspace', async () => {
     await expect(TheCommand.run(['console.json', '--workspace'])).rejects.toThrow(
