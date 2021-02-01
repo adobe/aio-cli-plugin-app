@@ -290,7 +290,7 @@ class Use extends BaseCommand {
       // operation, especially if done in Production
       if (newWorkspaceName === 'Production') {
         console.error(chalk.bold(chalk.yellow(
-          `⚠ Note you are about to overwrite Services in your Production Workspace in Project ${newProjectName}, make sure to understand the implications before continuing`
+          `⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace in Project '${newProjectName}'. This may break any Applications that currently uses existing Service subscriptions in this Production Workspace.`
         )))
       }
       const confirm = await prompt([{

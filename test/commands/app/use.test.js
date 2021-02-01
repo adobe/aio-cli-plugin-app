@@ -721,7 +721,7 @@ describe('switch to a workspace in the same org', () => {
       certDir,
       currentServices
     )
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('⚠ Note you are about to overwrite Services in your Production Workspace'))
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(`⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace in Project '${fakeCurrentConfig.name}'`))
   })
 
   test('--workspace-name not-existing', async () => {
