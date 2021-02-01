@@ -163,7 +163,7 @@ class Use extends BaseCommand {
         name: 'res',
         message: 'Switch to a new Adobe Developer Console configuration:',
         choices: [
-          { name: `A. Use the globally selected Org/Project/Workspace configuration:${EOL}${globalConfigString}`, value: 'global' },
+          { name: `A. Use the global Org / Project / Workspace configuration:${EOL}${globalConfigString}`, value: 'global' },
           { name: 'B. Switch to another Workspace in the current Project', value: 'workspace' }
         ]
       }
@@ -268,21 +268,20 @@ class Use extends BaseCommand {
     // manual selection
     if (currentConfig.org.id !== newConfig.org.id) {
       console.error(chalk.yellow(
-        `⚠ Target Project '${newProjectName}' is in a different Org ('${newConfig.org.name}')` +
-        ` than current Project '${currentProjectName}' (Org: '${currentConfig.org.name}')`
+        `⚠ Target Project '${newProjectName}' is in a different Org than current Project '${currentProjectName}'`
       ))
       console.error(chalk.yellow(
-        '⚠ Services cannot be synced across orgs, please make sure to subscribe' +
-        ' to missing services manually in the Adobe Developer Console'
+        '⚠ Services cannot be synced across Orgs, please make sure to subscribe' +
+        ' to missing Services manually in the Adobe Developer Console'
       ))
       return
     }
 
     // go on with sync, ensure user is aware of what where are doing
-    console.error(`The '${newWorkspaceName}' Workspace in Project '${newProjectName}' is attached to the following services:`)
+    console.error(`The '${newWorkspaceName}' Workspace in Project '${newProjectName}' subscribes to the following Services:`)
     console.error(JSON.stringify(serviceProperties.map(s => s.name), null, 2))
     console.error(
-      'The Service subscriptions above will be overwritten by the following list from the current Project/Workspace:' +
+      'Your project requires the following Services based on your current Project / Workspace configuration:' +
       `${EOL}${JSON.stringify(currentServiceProperties.map(s => s.name), null, 2)}`
     )
 
@@ -291,14 +290,14 @@ class Use extends BaseCommand {
       // operation, especially if done in Production
       if (newWorkspaceName === 'Production') {
         console.error(chalk.bold(chalk.yellow(
-          `⚠ Note you are about to replace service subscriptions in your Production workspace in Project ${newProjectName}, make sure to understand the implications before continuing`
+          `⚠ Note you are about to overwrite Services in your Production Workspace in Project ${newProjectName}, make sure to understand the implications before continuing`
         )))
       }
       const confirm = await prompt([{
         type: 'confirm',
         name: 'res',
         message:
-          `${EOL}Do you want to sync and replace Services for Workspace '${newWorkspaceName}' in Project '${newProjectName}' now ?`
+          `${EOL}Do you want to sync and update Services for Workspace '${newWorkspaceName}' in Project '${newProjectName}' now ?`
       }])
 
       if (!confirm.res) {
@@ -388,7 +387,7 @@ Use.flags = {
     exclusive: ['overwrite']
   }),
   global: flags.boolean({
-    description: 'Use the global Adobe Developer Console configuration, which can be set via `aio console` commands',
+    description: 'Use the global Adobe Developer Console Org / Project / Workspace configuration, which can be set via `aio console` commands',
     default: false,
     char: 'g',
     exclusive: ['workspace', 'workspace-name']

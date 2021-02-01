@@ -721,7 +721,7 @@ describe('switch to a workspace in the same org', () => {
       certDir,
       currentServices
     )
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('⚠ Note you are about to replace service subscriptions in your Production workspace'))
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('⚠ Note you are about to overwrite Services in your Production Workspace'))
   })
 
   test('--workspace-name not-existing', async () => {

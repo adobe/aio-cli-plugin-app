@@ -64,7 +64,7 @@ class AddServiceCommand extends BaseCommand {
 
     // log currently selected services (messages on stderr)
     const currentServiceNames = currentServiceProperties.map(s => s.name)
-    console.error(`Workspace ${workspace.name} is currently subscribed to the following services:\n${JSON.stringify(currentServiceNames, null, 2)}`)
+    console.error(`Workspace ${workspace.name} currently subscribes to the following services:\n${JSON.stringify(currentServiceNames, null, 2)}`)
 
     // prompt user to decide on how to add services:
     // - select service subscription manually
