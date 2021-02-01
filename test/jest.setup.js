@@ -12,6 +12,8 @@ governing permissions and limitations under the License.
 
 const { stdout, stderr } = require('stdout-stderr')
 
+jest.setTimeout(15000)
+
 const fs = require.requireActual('fs')
 const eol = require('eol')
 const path = require('path')

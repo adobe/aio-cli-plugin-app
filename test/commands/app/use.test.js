@@ -185,6 +185,11 @@ test('flags/args', async () => {
 })
 
 describe('bad args/flags', () => {
+  test('unknown', async () => {
+    await expect(TheCommand.run(['.', '--wtf'])).rejects.toThrow(
+      'Unexpected argument: --wtf\nSee more help with --help'
+    )
+  })
   test('arg=console.json --workspace', async () => {
     await expect(TheCommand.run(['console.json', '--workspace'])).rejects.toThrow(
       'Flags \'--workspace\', \'--workspace-name\' and \'--global\' cannot be used together with arg \'config_file_path\''
