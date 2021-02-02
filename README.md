@@ -31,6 +31,7 @@ $ aio app --help
 * [`aio app:add:action`](#aio-appaddaction)
 * [`aio app:add:ci`](#aio-appaddci)
 * [`aio app:add:event`](#aio-appaddevent)
+* [`aio app:add:service`](#aio-appaddservice)
 * [`aio app:add:web-assets`](#aio-appaddweb-assets)
 * [`aio app:build`](#aio-appbuild)
 * [`aio app:create [PATH]`](#aio-appcreate-path)
@@ -38,6 +39,7 @@ $ aio app --help
 * [`aio app:delete:action [ACTION-NAME]`](#aio-appdeleteaction-action-name)
 * [`aio app:delete:ci`](#aio-appdeleteci)
 * [`aio app:delete:event EVENT-ACTION-NAME`](#aio-appdeleteevent-event-action-name)
+* [`aio app:delete:service`](#aio-appdeleteservice)
 * [`aio app:delete:web-assets`](#aio-appdeleteweb-assets)
 * [`aio app:deploy`](#aio-appdeploy)
 * [`aio app:get-url [ACTION]`](#aio-appget-url-action)
@@ -140,6 +142,27 @@ OPTIONS
 
 _See code: [src/commands/app/add/event.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.4.0/src/commands/app/add/event.js)_
 
+## `aio app:add:service`
+
+Subscribe to services in the current Workspace
+
+```
+Subscribe to services in the current Workspace
+
+
+USAGE
+  $ aio app:add:service
+
+OPTIONS
+  -v, --verbose  Verbose output
+  --version      Show version
+
+ALIASES
+  $ aio app:add:services
+```
+
+_See code: [src/commands/app/add/service.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.4.0/src/commands/app/add/service.js)_
+
 ## `aio app:add:web-assets`
 
 Add web assets support
@@ -167,7 +190,7 @@ Build an Adobe I/O App
 ```
 Build an Adobe I/O App
 
-This will always force a rebuild unless --no-force-build is set. 
+This will always force a rebuild unless --no-force-build is set.
 
 
 USAGE
@@ -289,6 +312,27 @@ OPTIONS
 ```
 
 _See code: [src/commands/app/delete/event.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.4.0/src/commands/app/delete/event.js)_
+
+## `aio app:delete:service`
+
+Delete Services in the current Workspace
+
+```
+Delete Services in the current Workspace
+
+
+USAGE
+  $ aio app:delete:service
+
+OPTIONS
+  -v, --verbose  Verbose output
+  --version      Show version
+
+ALIASES
+  $ aio app:delete:services
+```
+
+_See code: [src/commands/app/delete/service.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.4.0/src/commands/app/delete/service.js)_
 
 ## `aio app:delete:web-assets`
 
@@ -474,10 +518,10 @@ _See code: [src/commands/app/undeploy.js](https://github.com/adobe/aio-cli-plugi
 
 ## `aio app:use [CONFIG_FILE_PATH]`
 
-Import an Adobe I/O Developer Console configuration file
+Import an Adobe Developer Console configuration file
 
 ```
-Import an Adobe I/O Developer Console configuration file
+Import an Adobe Developer Console configuration file
 
 
 USAGE
@@ -487,10 +531,33 @@ ARGUMENTS
   CONFIG_FILE_PATH  path to an Adobe I/O Developer Console configuration file
 
 OPTIONS
-  -m, --merge      Merge any .aio and .env files during import of the Adobe I/O Developer Console configuration file
-  -v, --verbose    Verbose output
-  -w, --overwrite  Overwrite any .aio and .env files during import of the Adobe I/O Developer Console configuration file
-  --version        Show version
+  -g, --global                         Use the global Adobe Developer Console Org / Project / Workspace configuration,
+                                       which can be set via `aio console` commands
+
+  -v, --verbose                        Verbose output
+
+  -w, --workspace-name=workspace-name  Specify the Adobe Developer Console Workspace name to import the configuration
+                                       from
+
+  --confirm-service-sync               Skip the Service sync prompt and overwrite Service subscriptions in the new
+                                       Workspace with current subscriptions
+
+  --merge                              Merge any .aio and .env files during import of the Adobe Developer Console
+                                       configuration file
+
+  --no-input                           Skip user prompts by setting --no-service-sync and --merge. Requires one of
+                                       config_file_path or --global or --workspace-name
+
+  --no-service-sync                    Skip the Service sync prompt and do not attach current Service subscriptions to
+                                       the new Workspace
+
+  --overwrite                          Overwrite any .aio and .env files during import of the Adobe Developer Console
+                                       configuration file
+
+  --version                            Show version
+
+  --workspace                          Prompt for selection of a Workspace in the same Project, and import the
+                                       configuration for this Workspace
 ```
 
 _See code: [src/commands/app/use.js](https://github.com/adobe/aio-cli-plugin-app/blob/5.4.0/src/commands/app/use.js)_
