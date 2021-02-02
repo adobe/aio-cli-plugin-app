@@ -29,9 +29,7 @@ const utils = require('./app-helper')
 const { run: logPoller } = require('./log-poller')
 
 /** @private */
-async function runDev (args = [], config, options = {}, log = () => {}) {
-  // note: args are considered perfect here because this function is only ever called by the `app run` command
-
+async function runDev (config, options = {}, log = () => {}) {
   /* parcel bundle options */
   const bundleOptions = {
     cache: false,
@@ -94,9 +92,9 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
         // note the condition: we still write backend urls EVEN if skipActions is set
         // the urls will always point to remotely deployed actions if skipActions is set
         log('injecting backend urls into frontend config')
-        urls = await rtLibUtils.getActionUrls(devConfig, true, isLocal && !skipActions)
+        urls = rtLibUtils.getActionUrls(devConfig, true, isLocal && !skipActions)
       }
-      await utils.writeConfig(devConfig.web.injectedConfig, urls)
+      utils.writeConfig(devConfig.web.injectedConfig, urls)
 
       if (!options.skipServe) {
         const script = await utils.runPackageScript('build-static')
@@ -150,6 +148,7 @@ async function runDev (args = [], config, options = {}, log = () => {}) {
     await cleanup.run()
     throw e
   }
+  log('Press CTRL+C to terminate')
   return frontEndUrl
 }
 

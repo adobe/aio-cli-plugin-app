@@ -16,17 +16,4 @@ const mockLibWeb = {
   undeployWeb: jest.fn()
 }
 
-mockLibWeb.mockReset = (script) => {
-  mockLibWeb[script].mockReset()
-  mockLibWeb[script].mockImplementation()
-}
-
-mockLibWeb.mockResolvedValue = (script, value) => {
-  mockLibWeb[script].mockImplementation(async () => { return value })
-}
-
-mockLibWeb.mockRejectedValue = (script, value) => {
-  mockLibWeb[script].mockImplementation(async () => { throw value })
-}
-
 module.exports = mockLibWeb

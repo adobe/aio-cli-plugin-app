@@ -82,7 +82,7 @@ class Run extends BaseCommand {
     }
 
     try {
-      const frontendUrl = await runDev(args, this.getAppConfig(), runOptions, onProgress)
+      const frontendUrl = await runDev(this.getAppConfig(), runOptions, onProgress)
       try {
         await runPackageScript('post-app-run')
       } catch (err) {
