@@ -191,6 +191,7 @@ class Use extends BaseCommand {
     // make sure user is not trying to switch to current workspace
     const workspaceNameFlag = flags['workspace-name']
     if (workspaceNameFlag === currentWorkspace.name) {
+      LibConsoleCLI.cleanStdOut()
       this.error(`--workspace-name=${workspaceNameFlag} is the same as the currently selected workspace, nothing to be done`)
     }
 
@@ -207,6 +208,7 @@ class Use extends BaseCommand {
       // workspace name is given, make sure the workspace is in there
       workspace = workspacesButCurrent.find(w => w.name === workspaceNameFlag)
       if (!workspace) {
+        LibConsoleCLI.cleanStdOut()
         this.error(`--workspace-name=${workspaceNameFlag} does not exist in current Project ${project.name}`)
       }
     } else {
@@ -303,7 +305,7 @@ class Use extends BaseCommand {
 
       if (!confirm.res) {
         // abort service sync
-        console.error('Service subscriptions will not be synced, make sure to manually add missing services from the Developer Console')
+        console.error('Service will not be synced, make sure to manually add missing Services from the Developer Console')
         return
       }
     }
@@ -377,13 +379,11 @@ Use.flags = {
   ...BaseCommand.flags,
   overwrite: flags.boolean({
     description: 'Overwrite any .aio and .env files during import of the Adobe Developer Console configuration file',
-    char: 'o',
     default: false,
     exclusive: ['merge']
   }),
   merge: flags.boolean({
     description: 'Merge any .aio and .env files during import of the Adobe Developer Console configuration file',
-    char: 'm',
     default: false,
     exclusive: ['overwrite']
   }),

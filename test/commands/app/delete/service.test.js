@@ -173,7 +173,8 @@ describe('Run', () => {
         { name: 'first', code: 'firsts', type: 'a' },
         { name: 'sec', code: 'secs', type: 'b' },
         { name: 'third', code: 'thirds', type: 'a' }
-      ]
+      ],
+      true
     )
   })
   test('updates config, with confirmation', async () => {
@@ -205,13 +206,15 @@ describe('Run', () => {
         { name: 'first', code: 'firsts', type: 'a' },
         { name: 'sec', code: 'secs', type: 'b' },
         { name: 'third', code: 'thirds', type: 'a' }
-      ]
+      ],
+      true
     )
     // after deletion
     expect(config.set).toHaveBeenCalledWith(
       'project.workspace.details.services', [
         { name: 'sec', code: 'secs' }
-      ]
+      ],
+      true
     )
   })
 })

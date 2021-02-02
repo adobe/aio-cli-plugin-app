@@ -66,6 +66,7 @@ class AddServiceCommand extends BaseCommand {
     aioLogger.debug(`set aio config ${AIO_CONFIG_ORG_SERVICES}: ${JSON.stringify(orgServiceConfig, null, 2)}`)
 
     if (currentServiceProperties.length <= 0) {
+      LibConsoleCLI.cleanStdOut()
       this.error(`No Services are attached to Workspace ${workspace.name}`)
     }
 

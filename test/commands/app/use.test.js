@@ -149,12 +149,10 @@ test('flags/args', async () => {
   expect(TheCommand.args[0].required).not.toEqual(true)
 
   expect(TheCommand.flags.overwrite).toBeDefined()
-  expect(TheCommand.flags.overwrite.char).toEqual('o')
   expect(TheCommand.flags.overwrite.default).toEqual(false)
   expect(TheCommand.flags.overwrite.exclusive).toEqual(['merge'])
 
   expect(TheCommand.flags.merge).toBeDefined()
-  expect(TheCommand.flags.merge.char).toEqual('m')
   expect(TheCommand.flags.merge.default).toEqual(false)
   expect(TheCommand.flags.merge.exclusive).toEqual(['overwrite'])
 

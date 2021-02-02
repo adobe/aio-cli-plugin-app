@@ -88,6 +88,7 @@ class AddServiceCommand extends BaseCommand {
       const currentServiceCodesSet = new Set(currentServiceProperties.map(s => s.sdkCode))
       const filteredServices = supportedServices.filter(s => s.type === 'entp' && !currentServiceCodesSet.has(s.code))
       if (filteredServices.length <= 0) {
+        LibConsoleCLI.cleanStdOut()
         this.error(`All supported Services in the Organization have already been added to Workspace ${workspace.name}`)
       }
       // prompt to manually select services

@@ -259,7 +259,8 @@ describe('Run', () => {
         { name: 'first', code: 'firsts', type: 'a' },
         { name: 'sec', code: 'secs', type: 'b' },
         { name: 'third', code: 'thirds', type: 'a' }
-      ]
+      ],
+      true
     )
   })
   test('updates config, with selection and update', async () => {
@@ -291,14 +292,16 @@ describe('Run', () => {
         { name: 'first', code: 'firsts', type: 'entp' },
         { name: 'sec', code: 'secs', type: 'entp' },
         { name: 'third', code: 'thirds', type: 'entp' }
-      ]
+      ],
+      true
     )
     // after addition
     expect(config.set).toHaveBeenCalledWith(
       'project.workspace.details.services', [
         { name: 'sec', code: 'secs' },
         { name: 'first', code: 'firsts' }
-      ]
+      ],
+      true
     )
   })
 })
