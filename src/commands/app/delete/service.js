@@ -18,13 +18,13 @@ const { getCliInfo } = require('../../../lib/app-helper')
 const BaseCommand = require('../../../BaseCommand')
 const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli')
 
-const { CONSOLE_API_KEYS } = require('../../../lib/defaults')
+const { CONSOLE_API_KEYS, AIO_CONFIG_ORG_SERVICES, AIO_CONFIG_WORKSPACE_SERVICES } = require('../../../lib/defaults')
 
 class AddServiceCommand extends BaseCommand {
   async run () {
     const { flags } = this.parse(AddServiceCommand)
 
-    aioLogger.debug(`deleting services in the current workspace, using flags: ${flags}`)
+    aioLogger.debug(`deleting services in the current workspace, using flags: ${JSON.stringify(flags, null, 2)}`)
 
     // login
     const { accessToken, env } = await getCliInfo()
@@ -51,16 +51,19 @@ class AddServiceCommand extends BaseCommand {
     )
 
     // update the service config, subscriptions and supported services
-    // Note: the service config could be replaced by always fetching latest serviceProperties
-    config.set('project.workspace.details.services', currentServiceProperties.map(s => ({
+    const currentServiceConfig = currentServiceProperties.map(s => ({
       name: s.name,
       code: s.sdkCode
-    })))
-    config.set('project.org.details.services', supportedServices.map(s => ({
+    }))
+    config.set(AIO_CONFIG_WORKSPACE_SERVICES, currentServiceConfig, true)
+    aioLogger.debug(`set aio config ${AIO_CONFIG_WORKSPACE_SERVICES}: ${JSON.stringify(currentServiceConfig, null, 2)}`)
+    const orgServiceConfig = supportedServices.map(s => ({
       name: s.name,
       code: s.code,
       type: s.type
-    })))
+    }))
+    config.set(AIO_CONFIG_ORG_SERVICES, orgServiceConfig, true)
+    aioLogger.debug(`set aio config ${AIO_CONFIG_ORG_SERVICES}: ${JSON.stringify(orgServiceConfig, null, 2)}`)
 
     if (currentServiceProperties.length <= 0) {
       this.error(`No Services are attached to Workspace ${workspace.name}`)
@@ -96,10 +99,12 @@ class AddServiceCommand extends BaseCommand {
         newServiceProperties
       )
       // update the service configuration with the latest subscriptions
-      config.set('project.workspace.details.services', newServiceProperties.map(s => ({
+      const newServiceConfig = newServiceProperties.map(s => ({
         name: s.name,
         code: s.sdkCode
-      })))
+      }))
+      config.set(AIO_CONFIG_WORKSPACE_SERVICES, newServiceConfig, true)
+      aioLogger.debug(`set aio config ${AIO_CONFIG_WORKSPACE_SERVICES}: ${JSON.stringify(newServiceConfig, null, 2)}`)
       // success !
       this.log(chalk.green(chalk.bold(`Successfully deleted selected Service Subscriptions in Workspace ${workspace.name}`)))
       return newServiceProperties

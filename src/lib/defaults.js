@@ -26,5 +26,7 @@ module.exports = {
     prod: 'aio-cli-console-auth',
     stage: 'aio-cli-console-auth-stage'
   },
-  defaultHttpServerPort: 9080
+  defaultHttpServerPort: 9080,
+  AIO_CONFIG_WORKSPACE_SERVICES: 'project.workspace.details.services',
+  AIO_CONFIG_ORG_SERVICES: 'project.org.details.services'
 }

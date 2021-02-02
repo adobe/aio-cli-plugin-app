@@ -251,7 +251,8 @@ describe('Run', () => {
       'project.workspace.details.services', [
         { name: 'first', code: 'firsts' },
         { name: 'sec', code: 'secs' }
-      ]
+      ],
+      true
     )
     expect(config.set).toHaveBeenCalledWith(
       'project.org.details.services', [
@@ -282,7 +283,8 @@ describe('Run', () => {
     expect(config.set).toHaveBeenCalledWith(
       'project.workspace.details.services', [
         { name: 'first', code: 'firsts' }
-      ]
+      ],
+      true
     )
     expect(config.set).toHaveBeenCalledWith(
       'project.org.details.services', [
