@@ -100,6 +100,7 @@ async function runDev (config, options = {}, log = () => {}) {
         const script = await utils.runPackageScript('build-static')
         if (!script) {
           const entryFile = config.web.src + '/index.html'
+          bundleOptions.watch = true
           const { bundler, cleanup: bundlerCleanup } = await bundle(entryFile, config.web.distDev, bundleOptions, log)
           defaultBundler = bundler
           cleanup.add(() => bundlerCleanup(), 'cleaning up bundle...')
