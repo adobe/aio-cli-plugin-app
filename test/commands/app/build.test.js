@@ -26,8 +26,8 @@ jest.mock('@adobe/aio-lib-core-config')
 jest.mock('cli-ux')
 
 beforeEach(() => {
-  mockWebLib.mockReset('deployWeb')
-  mockWebLib.mockReset('bundle')
+  mockWebLib.deployWeb.mockReset()
+  mockWebLib.bundle.mockReset()
   mockFS.existsSync.mockReset()
   helpers.writeConfig.mockReset()
   helpers.runPackageScript.mockReset()
@@ -149,10 +149,14 @@ describe('run', () => {
   test('build & deploy with --skip-actions', async () => {
     command.argv = ['--skip-actions']
     mockFS.existsSync.mockReturnValue(true)
+    mockWebLib.bundle.mockResolvedValue((inFile, dest, options, log) => {
+      log('ok, give me a sec, gonna do it next ...')
+      return { bundler: jest.fn() }
+    })
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
   })
 
   test('build & deploy with --skip-actions with no frontend', async () => {
@@ -215,6 +219,42 @@ describe('run', () => {
       .mockResolvedValueOnce(noScriptFound) // post-app-build
 
     command.argv = ['--skip-actions']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+
+    expect(command.log).toHaveBeenCalledTimes(1)
+    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Build success, your app is ready to be deployed/))
+  })
+
+  test('build (--skip-actions) calls provided log function', async () => {
+    mockWebLib.bundle.mockImplementation((a, b, c, log) => {
+      log('ok')
+    })
+
+    const noScriptFound = undefined
+    helpers.runPackageScript
+      .mockResolvedValueOnce(noScriptFound) // pre-app-build
+      .mockResolvedValueOnce(noScriptFound) // post-app-build
+
+    command.argv = ['--skip-actions']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+
+    expect(command.log).toHaveBeenCalledTimes(1)
+    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Build success, your app is ready to be deployed/))
+  })
+
+  test('build (--skip-actions, --verbose) calls provided other log function', async () => {
+    mockWebLib.bundle.mockImplementation((a, b, c, log) => {
+      log('ok')
+    })
+
+    const noScriptFound = undefined
+    helpers.runPackageScript
+      .mockResolvedValueOnce(noScriptFound) // pre-app-build
+      .mockResolvedValueOnce(noScriptFound) // post-app-build
+
+    command.argv = ['--skip-actions', '--verbose']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
 
