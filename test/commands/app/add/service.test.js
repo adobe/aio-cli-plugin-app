@@ -47,11 +47,15 @@ function setDefaultMockConsoleCLI () {
 // mock config
 const config = require('@adobe/aio-lib-core-config')
 jest.mock('@adobe/aio-lib-core-config')
-const mockConfigProject = fixtureJson('valid.config.json').project
-
-const mockWorkspace = { name: mockConfigProject.workspace.name, id: mockConfigProject.workspace.id }
-const mockProject = { name: mockConfigProject.name, id: mockConfigProject.id }
-const mockOrgId = mockConfigProject.org.id
+let mockConfigProject, mockWorkspace, mockProject, mockOrgId
+/** @private */
+function setDefaultMockConfig () {
+  mockConfigProject = fixtureJson('valid.config.json').project
+  mockWorkspace = { name: mockConfigProject.workspace.name, id: mockConfigProject.workspace.id }
+  mockProject = { name: mockConfigProject.name, id: mockConfigProject.id }
+  mockOrgId = mockConfigProject.org.id
+  config.get.mockReturnValue(mockConfigProject)
+}
 
 // mock login - mocks underlying methods behind getCliInfo
 const mockAccessToken = 'some-access-token'
@@ -73,6 +77,8 @@ process.env.XDG_DATA_HOME = 'data-dir'
 const path = require('path')
 const certDir = path.join('data-dir', '@adobe', 'aio-cli-plugin-app', 'entp-int-certs')
 
+const logSpy = jest.spyOn(console, 'error')
+
 const TheCommand = require('../../../../src/commands/app/add/service')
 const BaseCommand = require('../../../../src/BaseCommand')
 
@@ -82,7 +88,9 @@ beforeEach(() => {
 
   config.get.mockReset()
   config.set.mockReset()
-  config.get.mockReturnValue(mockConfigProject)
+  setDefaultMockConfig()
+
+  logSpy.mockClear()
 })
 afterAll(() => {
   process.env.XDG_DATA_HOME = savedDataDir
@@ -163,6 +171,57 @@ describe('Run', () => {
       certDir,
       otherServiceProps
     )
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(
+      `Service subscriptions in Workspace '${mockWorkspace.name}' will be overwritten.`
+    ))
+  })
+
+  test('clone services from another workspace into a workspace with no services', async () => {
+    const currentServiceProps = []
+    const otherServiceProps = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[2]]
+    const enabledServices = consoleDataMocks.enabledServices
+    mockConsoleCLIInstance.promptForServiceSubscriptionsOperation.mockResolvedValue('clone')
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(enabledServices)
+    // first time retrieve from current wkspce
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServiceProps)
+    // second call is to retrieve src wkspce services
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(otherServiceProps)
+    await TheCommand.run([])
+    expect(mockConsoleCLIInstance.subscribeToServices).toHaveBeenCalledWith(
+      mockOrgId,
+      mockProject,
+      mockWorkspace,
+      certDir,
+      otherServiceProps
+    )
+    expect(logSpy).not.toHaveBeenCalledWith(expect.stringContaining(
+      `Service subscriptions in Workspace '${mockWorkspace.name}' will be overwritten.`
+    ))
+  })
+
+  test('clone services from another workspace into Production Workspace', async () => {
+    const currentServiceProps = consoleDataMocks.serviceProperties.slice(2)
+    const otherServiceProps = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[2]]
+    const enabledServices = consoleDataMocks.enabledServices
+    mockConsoleCLIInstance.promptForServiceSubscriptionsOperation.mockResolvedValue('clone')
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(enabledServices)
+    // first time retrieve from current wkspce
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServiceProps)
+    // second call is to retrieve src wkspce services
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(otherServiceProps)
+    mockConfigProject.workspace.name = 'Production'
+    mockWorkspace.name = 'Production'
+    await TheCommand.run([])
+    expect(mockConsoleCLIInstance.subscribeToServices).toHaveBeenCalledWith(
+      mockOrgId,
+      mockProject,
+      mockWorkspace,
+      certDir,
+      otherServiceProps
+    )
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(
+      `⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace in Project '${mockProject.name}'.`
+    ))
   })
 
   test('does not confirm addition of services', async () => {

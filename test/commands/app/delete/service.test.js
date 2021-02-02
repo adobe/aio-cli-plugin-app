@@ -42,11 +42,15 @@ function setDefaultMockConsoleCLI () {
 // mock config
 const config = require('@adobe/aio-lib-core-config')
 jest.mock('@adobe/aio-lib-core-config')
-const mockConfigProject = fixtureJson('valid.config.json').project
-
-const mockWorkspace = { name: mockConfigProject.workspace.name, id: mockConfigProject.workspace.id }
-const mockProject = { name: mockConfigProject.name, id: mockConfigProject.id }
-const mockOrgId = mockConfigProject.org.id
+let mockConfigProject, mockWorkspace, mockProject, mockOrgId
+/** @private */
+function setDefaultMockConfig () {
+  mockConfigProject = fixtureJson('valid.config.json').project
+  mockWorkspace = { name: mockConfigProject.workspace.name, id: mockConfigProject.workspace.id }
+  mockProject = { name: mockConfigProject.name, id: mockConfigProject.id }
+  mockOrgId = mockConfigProject.org.id
+  config.get.mockReturnValue(mockConfigProject)
+}
 
 // mock login - mocks underlying methods behind getCliInfo
 const mockAccessToken = 'some-access-token'
@@ -62,6 +66,8 @@ jest.mock('@adobe/aio-lib-ims', () => {
   }
 })
 
+const logSpy = jest.spyOn(console, 'error')
+
 const TheCommand = require('../../../../src/commands/app/delete/service')
 const BaseCommand = require('../../../../src/BaseCommand')
 
@@ -71,7 +77,9 @@ beforeEach(() => {
 
   config.get.mockReset()
   config.set.mockReset()
-  config.get.mockReturnValue(mockConfigProject)
+  setDefaultMockConfig()
+
+  logSpy.mockClear()
 })
 
 describe('Command Prototype', () => {
@@ -79,7 +87,7 @@ describe('Command Prototype', () => {
     expect(typeof TheCommand).toEqual('function')
     expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
     expect(typeof TheCommand.flags).toBe('object')
-    expect(TheCommand.aliases).toEqual(['app:add:services'])
+    expect(TheCommand.aliases).toEqual(['app:delete:services'])
   })
 })
 
@@ -117,6 +125,23 @@ describe('Run', () => {
       null,
       newServiceProperties
     )
+  })
+
+  test('selects some services in the Production workspace for deletion and confirm', async () => {
+    const newServiceProperties = consoleDataMocks.serviceProperties.slice(1)
+    // returns current service - selected for deletion
+    mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockResolvedValue(newServiceProperties)
+    mockConfigProject.workspace.name = 'Production'
+    mockWorkspace.name = 'Production'
+    await TheCommand.run([])
+    expect(mockConsoleCLIInstance.subscribeToServices).toHaveBeenCalledWith(
+      mockOrgId,
+      mockProject,
+      mockWorkspace,
+      null,
+      newServiceProperties
+    )
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('⚠ Warning: you are authorizing to delete Services in your *Production* Workspace'))
   })
 
   test('updates config, no confirmation', async () => {

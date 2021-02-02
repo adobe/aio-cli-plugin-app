@@ -13,6 +13,7 @@ const path = require('path')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:service', { provider: 'debug' })
 const config = require('@adobe/aio-lib-core-config')
 const chalk = require('chalk')
+const { EOL } = require('os')
 
 const { getCliInfo } = require('../../../lib/app-helper')
 const BaseCommand = require('../../../BaseCommand')
@@ -112,7 +113,16 @@ class AddServiceCommand extends BaseCommand {
         workspaceFrom,
         supportedServices
       )
-      console.error(`Note: Service Subscriptions in Workspace ${workspace.name} will be overwritten by services in Workspace ${workspaceFrom}`)
+      if (currentServiceNames.length > 0) {
+        if (workspace.name === 'Production') {
+          console.error(chalk.bold(chalk.yellow(
+            `⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace in Project '${project.name}'.` +
+            `${EOL}This may break any Applications that currently uses existing Service subscriptions in this Production Workspace.`
+          )))
+        } else {
+          console.error(chalk.yellow(`⚠ Service subscriptions in Workspace '${workspace.name}' will be overwritten.`))
+        }
+      }
     }
     // prompt confirm the new service subscription list
     const confirm = await consoleCLI.confirmNewServiceSubscriptions(

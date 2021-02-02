@@ -48,14 +48,14 @@ class Use extends BaseCommand {
     }
 
     // login will be required now
-    const { accessToken, env: imsEnv } = await getCliInfo()
+    const { accessToken, env } = await getCliInfo()
 
     // load global console config
     const globalConfig = this.loadGlobalConfiguration()
     const globalConfigString = this.configString(globalConfig, 4)
 
     // init console CLI sdk consoleCLI
-    const consoleCLI = await LibConsoleCLI.init({ accessToken, imsEnv, apiKey: CONSOLE_API_KEYS[imsEnv] })
+    const consoleCLI = await LibConsoleCLI.init({ accessToken, env, apiKey: CONSOLE_API_KEYS[env] })
 
     // load from global configuration or select workspace
     let useOperation = (flags.global && 'global') || ((flags.workspace || flags['workspace-name']) && 'workspace')
@@ -290,7 +290,8 @@ class Use extends BaseCommand {
       // operation, especially if done in Production
       if (newWorkspaceName === 'Production') {
         console.error(chalk.bold(chalk.yellow(
-          `⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace in Project '${newProjectName}'. This may break any Applications that currently uses existing Service subscriptions in this Production Workspace.`
+          `⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace in Project '${newProjectName}'.` +
+          `${EOL}This may break any Applications that currently uses existing Service subscriptions in this Production Workspace.`
         )))
       }
       const confirm = await prompt([{

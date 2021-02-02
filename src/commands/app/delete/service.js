@@ -12,6 +12,7 @@ governing permissions and limitations under the License.
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:delete:service', { provider: 'debug' })
 const config = require('@adobe/aio-lib-core-config')
 const chalk = require('chalk')
+const { EOL } = require('os')
 
 const { getCliInfo } = require('../../../lib/app-helper')
 const BaseCommand = require('../../../BaseCommand')
@@ -74,6 +75,12 @@ class AddServiceCommand extends BaseCommand {
       this.log('No services selected, nothing to be done')
       return null
     }
+    if (workspace.name === 'Production') {
+      console.error(chalk.bold(chalk.yellow(
+        `⚠ Warning: you are authorizing to delete Services in your *Production* Workspace in Project '${project.name}'.` +
+        `${EOL}This may break any Applications that currently uses existing Service subscriptions in this Production Workspace.`
+      )))
+    }
     // prompt confirm the new service subscription list
     const confirm = await consoleCLI.confirmNewServiceSubscriptions(
       workspace.name,
@@ -102,14 +109,14 @@ class AddServiceCommand extends BaseCommand {
   }
 }
 
-AddServiceCommand.description = `Subscribe to services in the current Workspace
+AddServiceCommand.description = `Delete Services in the current Workspace
 `
 
 AddServiceCommand.flags = {
   ...BaseCommand.flags
 }
 
-AddServiceCommand.aliases = ['app:add:services']
+AddServiceCommand.aliases = ['app:delete:services']
 AddServiceCommand.args = []
 
 module.exports = AddServiceCommand
