@@ -57,10 +57,14 @@ class Use extends BaseCommand {
     // init console CLI sdk consoleCLI
     const consoleCLI = await LibConsoleCLI.init({ accessToken, env, apiKey: CONSOLE_API_KEYS[env] })
 
-    // load from global configuration or select workspace
-    let useOperation = (flags.global && 'global') || ((flags.workspace || flags['workspace-name']) && 'workspace')
+    // load from global configuration or select workspace ?
+    const globalOperationFromFlag = flags.global ? 'global' : null
+    const workspaceOperationFromFlag = (flags.workspace || flags['workspace-name']) ? 'workspace' : null
+    // did the user specify --global or --workspace or workspace-name
+    // Note: global workspace(-name) flags are exclusive (see oclif flags options)
+    let useOperation = globalOperationFromFlag || workspaceOperationFromFlag
+    // if operation was not specified via flags we need to prompt the user for it
     if (!useOperation) {
-      // no flags were provided prompt for type of use
       useOperation = await this.promptForUseOperation(prompt, globalConfigString)
     }
 
@@ -79,14 +83,14 @@ class Use extends BaseCommand {
         newConfig.project.id === currentConfig.project.id &&
         newConfig.workspace.id === currentConfig.workspace.id
       ) {
-        this.error('The selected configuration is the same as the current configuration')
+        this.error('The selected configuration is the same as the current configuration.')
       }
     } else {
       // useOperation = 'workspace'
       if (!currentConfigIsComplete) {
         this.error(
           'Incomplete .aio configuration. Cannot select a new Workspace in same Project.' + EOL +
-          'Please import a valid Adobe Developer Console configuration file via `aio app use <config>.json`'
+          'Please import a valid Adobe Developer Console configuration file via `aio app use <config>.json`.'
         )
       }
       const workspace = await this.selectTargetWorkspaceInProject(
@@ -120,7 +124,7 @@ class Use extends BaseCommand {
     if (args.config_file_path &&
       (flags.workspace || flags['workspace-name'] || flags.global)
     ) {
-      this.error('Flags \'--workspace\', \'--workspace-name\' and \'--global\' cannot be used together with arg \'config_file_path\'')
+      this.error('Flags \'--workspace\', \'--workspace-name\' and \'--global\' cannot be used together with arg \'config_file_path\'.')
     }
     if (flags['no-input']) {
       if (!args.config_file_path && !flags['workspace-name'] && !flags.global) {
@@ -181,7 +185,7 @@ class Use extends BaseCommand {
   /**
    * @param {LibConsoleCLI} consoleCLI lib console config
    * @param {object} config local configuration
-   * @param {object} flags
+   * @param {object} flags input flags
    * @returns {Buffer} the Adobe Developer Console configuration file for the workspace
    */
   async selectTargetWorkspaceInProject (consoleCLI, config, flags) {
@@ -192,7 +196,7 @@ class Use extends BaseCommand {
     const workspaceNameFlag = flags['workspace-name']
     if (workspaceNameFlag === currentWorkspace.name) {
       LibConsoleCLI.cleanStdOut()
-      this.error(`--workspace-name=${workspaceNameFlag} is the same as the currently selected workspace, nothing to be done`)
+      this.error(`--workspace-name=${workspaceNameFlag} is the same as the currently selected workspace, nothing to be done.`)
     }
 
     // retrieve all workspaces
@@ -209,7 +213,7 @@ class Use extends BaseCommand {
       workspace = workspacesButCurrent.find(w => w.name === workspaceNameFlag)
       if (!workspace) {
         LibConsoleCLI.cleanStdOut()
-        this.error(`--workspace-name=${workspaceNameFlag} does not exist in current Project ${project.name}`)
+        this.error(`--workspace-name=${workspaceNameFlag} does not exist in current Project ${project.name}.`)
       }
     } else {
       // workspace name is not given, let the user choose the
@@ -220,17 +224,12 @@ class Use extends BaseCommand {
 
   /**
    * @param {LibConsoleCLI} consoleCLI lib console config
-   * @param prompt
-   * @param currentConfig
-   * @param newConfig
-   * @param supportedServices
-   * @param noConfirmation
-   * @param flags
+   * @private
    */
   async syncServicesToTargetWorkspace (consoleCLI, prompt, currentConfig, newConfig, supportedServices, flags) {
     if (flags['no-service-sync']) {
       console.error('Skipping Services sync as \'--no-service-sync=true\'')
-      console.error('Please verify Service subscriptions manually for the new Org/Project/Workspace configuration')
+      console.error('Please verify Service subscriptions manually for the new Org/Project/Workspace configuration.')
       return
     }
     const currentServiceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
@@ -262,19 +261,19 @@ class Use extends BaseCommand {
 
     // service subscriptions are different
     console.error(
-      chalk.yellow('⚠ Services attached to the target Workspace do not match Service subscriptions in the current Workspace')
+      chalk.yellow('⚠ Services attached to the target Workspace do not match Service subscriptions in the current Workspace.')
     )
 
     // if org is different, sync is more complex as we would need to check if the target
-    // org supports the services attached in the current workspace, for now deffer to
+    // org supports the services attached in the current workspace, for now defer to
     // manual selection
     if (currentConfig.org.id !== newConfig.org.id) {
       console.error(chalk.yellow(
-        `⚠ Target Project '${newProjectName}' is in a different Org than current Project '${currentProjectName}'`
+        `⚠ Target Project '${newProjectName}' is in a different Org than the current Project '${currentProjectName}.'`
       ))
       console.error(chalk.yellow(
         '⚠ Services cannot be synced across Orgs, please make sure to subscribe' +
-        ' to missing Services manually in the Adobe Developer Console'
+        ' to missing Services manually in the Adobe Developer Console.'
       ))
       return
     }
@@ -300,7 +299,7 @@ class Use extends BaseCommand {
 
       if (!confirm.res) {
         // abort service sync
-        console.error('Service will not be synced, make sure to manually add missing Services from the Developer Console')
+        console.error('Service will not be synced, make sure to manually add missing Services from the Developer Console.')
         return
       }
     }
@@ -313,7 +312,7 @@ class Use extends BaseCommand {
       currentServiceProperties
     )
 
-    console.error('✔ Successfully synced Services to target Project/Workspace')
+    console.error('✔ Successfully synced Services to target Project/Workspace.')
   }
 
   async importConsoleConfig (consoleConfigFileOrBuffer, flags) {
@@ -350,7 +349,7 @@ class Use extends BaseCommand {
     const config = { org: consoleConfig.project.org, project: consoleConfig.project, workspace: consoleConfig.project.workspace }
     const configString = this.configString(config)
     this.log(chalk.green(chalk.bold(
-      `${EOL}✔ Successfully imported configuration for:${EOL}${configString}`
+      `${EOL}✔ Successfully imported configuration for:${EOL}${configString}.`
     )))
   }
 

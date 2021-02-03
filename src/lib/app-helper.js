@@ -319,7 +319,7 @@ function warnIfOverwriteServicesInProductionWorkspace (projectName, workspaceNam
   if (workspaceName === 'Production') {
     console.error(chalk.bold(chalk.yellow(
       `⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace in Project '${projectName}'.` +
-      `${EOL}This may break any Applications that currently uses existing Service subscriptions in this Production Workspace.`
+      `${EOL}This may break any Applications that currently use existing Service subscriptions in this Production Workspace.`
     )))
   }
 }

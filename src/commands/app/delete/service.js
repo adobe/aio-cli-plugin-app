@@ -29,7 +29,7 @@ class AddServiceCommand extends BaseCommand {
   async run () {
     const { flags } = this.parse(AddServiceCommand)
 
-    aioLogger.debug(`deleting services in the current workspace, using flags: ${JSON.stringify(flags, null, 2)}`)
+    aioLogger.debug(`deleting Services in the current workspace, using flags: ${JSON.stringify(flags, null, 2)}`)
 
     // login
     const { accessToken, env } = await getCliInfo()
@@ -70,7 +70,7 @@ class AddServiceCommand extends BaseCommand {
       currentServiceProperties
     )
     if (newServiceProperties === null) {
-      this.log('No services selected, nothing to be done')
+      this.log('No Services selected, nothing to be done')
       return null
     }
     warnIfOverwriteServicesInProductionWorkspace(project.name, workspace.name)

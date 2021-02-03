@@ -143,7 +143,7 @@ class AddServiceCommand extends BaseCommand {
   }
 }
 
-AddServiceCommand.description = `Subscribe to services in the current Workspace
+AddServiceCommand.description = `Subscribe to Services in the current Workspace
 `
 
 AddServiceCommand.flags = {
