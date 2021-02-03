@@ -312,7 +312,7 @@ class Use extends BaseCommand {
       currentServiceProperties
     )
 
-    console.error(`✔ Successfully updated Services in Project ${newConfig.project} and Workspace ${newConfig.workspace}.`)
+    console.error(`✔ Successfully updated Services in Project ${newConfig.project.name} and Workspace ${newConfig.workspace.name}.`)
   }
 
   async importConsoleConfig (consoleConfigFileOrBuffer, flags) {
