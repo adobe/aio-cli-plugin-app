@@ -14,7 +14,9 @@ const fs = require('fs-extra')
 const execa = require('execa')
 const appHelper = require('../../../src/lib/app-helper')
 const fetch = require('node-fetch')
+const config = require('@adobe/aio-lib-core-config')
 
+jest.mock('@adobe/aio-lib-core-config')
 jest.mock('node-fetch')
 jest.mock('execa')
 jest.mock('process')
@@ -22,6 +24,8 @@ jest.mock('process')
 beforeEach(() => {
   execa.mockReset()
   fetch.mockReset()
+  config.get.mockReset()
+  config.set.mockReset()
 })
 
 test('isDockerRunning', async () => {
@@ -559,4 +563,53 @@ test('waitForOpenWhiskReadiness (fail, retry, then success)', async () => {
   await expect(result).resolves.not.toBeDefined()
   expect(fetch).toHaveBeenCalledTimes(3)
   expect(waitFunc).toHaveBeenCalledTimes(2)
+})
+
+describe('warnIfOverwriteServicesInProductionWorkspace', () => {
+  const logSpy = jest.spyOn(console, 'error')
+  beforeEach(() => {
+    logSpy.mockClear()
+  })
+  test('not a prod workspace', () => {
+    appHelper.warnIfOverwriteServicesInProductionWorkspace('projectName', 'stage')
+    expect(logSpy).not.toHaveBeenCalled()
+  })
+  test('is a prod workspace', () => {
+    appHelper.warnIfOverwriteServicesInProductionWorkspace('projectName', 'Production')
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(
+      '⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace in Project \'projectName\'.'
+    ))
+  })
+})
+
+test('setWorkspaceServicesConfig', () => {
+  const fakeServiceProps = [
+    { name: 'first', sdkCode: 'firsts', code: 'no such field', a: 'hello', type: 'no such field' },
+    { name: 'sec', sdkCode: 'secs', code: 'no such field', b: 'hello', type: 'no such field' }
+  ]
+  appHelper.setWorkspaceServicesConfig(fakeServiceProps)
+  expect(config.set).toHaveBeenCalledWith(
+    'project.workspace.details.services', [
+      { name: 'first', code: 'firsts' },
+      { name: 'sec', code: 'secs' }
+    ],
+    true
+  )
+})
+
+test('setOrgServicesConfig', () => {
+  const fakeOrgServices = [
+    { name: 'first', code: 'firsts', sdkCode: 'no such field', type: 'entp' },
+    { name: 'sec', code: 'secs', sdkCode: 'no such field', type: 'entp' },
+    { name: 'third', code: 'thirds', sdkCode: 'no such field', type: 'entp' }
+  ]
+  appHelper.setOrgServicesConfig(fakeOrgServices)
+  expect(config.set).toHaveBeenCalledWith(
+    'project.org.details.services', [
+      { name: 'first', code: 'firsts', type: 'entp' },
+      { name: 'sec', code: 'secs', type: 'entp' },
+      { name: 'third', code: 'thirds', type: 'entp' }
+    ],
+    true
+  )
 })

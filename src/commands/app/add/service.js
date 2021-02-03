@@ -13,13 +13,18 @@ const path = require('path')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:service', { provider: 'debug' })
 const config = require('@adobe/aio-lib-core-config')
 const chalk = require('chalk')
-const { EOL } = require('os')
 
-const { getCliInfo } = require('../../../lib/app-helper')
+const {
+  getCliInfo,
+  setOrgServicesConfig,
+  setWorkspaceServicesConfig,
+  warnIfOverwriteServicesInProductionWorkspace
+} = require('../../../lib/app-helper')
+
 const BaseCommand = require('../../../BaseCommand')
 const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli')
 
-const { ENTP_INT_CERTS_FOLDER, CONSOLE_API_KEYS, AIO_CONFIG_WORKSPACE_SERVICES, AIO_CONFIG_ORG_SERVICES } = require('../../../lib/defaults')
+const { ENTP_INT_CERTS_FOLDER, CONSOLE_API_KEYS } = require('../../../lib/defaults')
 
 class AddServiceCommand extends BaseCommand {
   async run () {
@@ -52,19 +57,8 @@ class AddServiceCommand extends BaseCommand {
     )
 
     // update the service config, subscriptions and supported services
-    const currentServiceConfig = currentServiceProperties.map(s => ({
-      name: s.name,
-      code: s.sdkCode
-    }))
-    config.set(AIO_CONFIG_WORKSPACE_SERVICES, currentServiceConfig, true)
-    aioLogger.debug(`set aio config ${AIO_CONFIG_WORKSPACE_SERVICES}: ${JSON.stringify(currentServiceConfig, null, 2)}`)
-    const orgServiceConfig = supportedServices.map(s => ({
-      name: s.name,
-      code: s.code,
-      type: s.type
-    }))
-    config.set(AIO_CONFIG_ORG_SERVICES, orgServiceConfig, true)
-    aioLogger.debug(`set aio config ${AIO_CONFIG_ORG_SERVICES}: ${JSON.stringify(orgServiceConfig, null, 2)}`)
+    setOrgServicesConfig(supportedServices)
+    setWorkspaceServicesConfig(currentServiceProperties)
 
     // log currently selected services (messages on stderr)
     const currentServiceNames = currentServiceProperties.map(s => s.name)
@@ -82,7 +76,7 @@ class AddServiceCommand extends BaseCommand {
       return null
     }
 
-    let serviceProperties = []
+    let newServiceProperties = []
     if (op === 'select') {
       // filter out already added services for selection
       const currentServiceCodesSet = new Set(currentServiceProperties.map(s => s.sdkCode))
@@ -92,12 +86,12 @@ class AddServiceCommand extends BaseCommand {
         this.error(`All supported Services in the Organization have already been added to Workspace ${workspace.name}`)
       }
       // prompt to manually select services
-      serviceProperties = await consoleCLI.promptForSelectServiceProperties(
+      newServiceProperties = await consoleCLI.promptForSelectServiceProperties(
         workspace.name,
         filteredServices
       )
       // now past services are appended to the selection for subscription
-      serviceProperties.push(...currentServiceProperties)
+      newServiceProperties.push(...currentServiceProperties)
     }
     if (op === 'clone') {
       // get latest workspaces which are not the current
@@ -111,19 +105,15 @@ class AddServiceCommand extends BaseCommand {
         { allowCreate: false }
       )
       // get serviceProperties from source workspace
-      serviceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
+      newServiceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
         orgId,
         project.id,
         workspaceFrom,
         supportedServices
       )
       if (currentServiceNames.length > 0) {
-        if (workspace.name === 'Production') {
-          console.error(chalk.bold(chalk.yellow(
-            `⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace in Project '${project.name}'.` +
-            `${EOL}This may break any Applications that currently uses existing Service subscriptions in this Production Workspace.`
-          )))
-        } else {
+        warnIfOverwriteServicesInProductionWorkspace(project.name, workspace.name)
+        if (workspace.name !== 'Production') {
           console.error(chalk.yellow(`⚠ Service subscriptions in Workspace '${workspace.name}' will be overwritten.`))
         }
       }
@@ -131,7 +121,7 @@ class AddServiceCommand extends BaseCommand {
     // prompt confirm the new service subscription list
     const confirm = await consoleCLI.confirmNewServiceSubscriptions(
       workspace.name,
-      serviceProperties
+      newServiceProperties
     )
     if (confirm) {
       // if confirmed update the services
@@ -140,18 +130,13 @@ class AddServiceCommand extends BaseCommand {
         project,
         workspace,
         path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER),
-        serviceProperties
+        newServiceProperties
       )
       // update the service configuration with the latest subscriptions
-      const newServiceConfig = serviceProperties.map(s => ({
-        name: s.name,
-        code: s.sdkCode
-      }))
-      config.set(AIO_CONFIG_WORKSPACE_SERVICES, newServiceConfig, true)
-      aioLogger.debug(`set aio config ${AIO_CONFIG_WORKSPACE_SERVICES}: ${JSON.stringify(newServiceConfig, null, 2)}`)
+      setWorkspaceServicesConfig(newServiceProperties)
       // success !
       this.log(chalk.green(chalk.bold(`Successfully updated Service Subscriptions in Workspace ${workspace.name}`)))
-      return serviceProperties
+      return newServiceProperties
     }
     // confirm == false, do nothing
     return null

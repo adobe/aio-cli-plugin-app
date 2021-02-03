@@ -15,7 +15,7 @@ const { flags } = require('@oclif/command')
 const inquirer = require('inquirer')
 const config = require('@adobe/aio-lib-core-config')
 const { EOL } = require('os')
-const { getCliInfo } = require('../../lib/app-helper')
+const { getCliInfo, warnIfOverwriteServicesInProductionWorkspace } = require('../../lib/app-helper')
 const path = require('path')
 const { SERVICE_API_KEY_ENV, CONSOLE_API_KEYS, ENTP_INT_CERTS_FOLDER } = require('../../lib/defaults')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:use', { provider: 'debug' })
@@ -288,14 +288,9 @@ class Use extends BaseCommand {
     )
 
     if (!flags['confirm-service-sync']) {
-      // ask for confirmation, overwritting service subscriptions is a destructive
+      // ask for confirmation, overwriting service subscriptions is a destructive
       // operation, especially if done in Production
-      if (newWorkspaceName === 'Production') {
-        console.error(chalk.bold(chalk.yellow(
-          `⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace in Project '${newProjectName}'.` +
-          `${EOL}This may break any Applications that currently uses existing Service subscriptions in this Production Workspace.`
-        )))
-      }
+      warnIfOverwriteServicesInProductionWorkspace(newProjectName, newWorkspaceName)
       const confirm = await prompt([{
         type: 'confirm',
         name: 'res',

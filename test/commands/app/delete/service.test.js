@@ -141,7 +141,7 @@ describe('Run', () => {
       null,
       newServiceProperties
     )
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('⚠ Warning: you are authorizing to delete Services in your *Production* Workspace'))
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace'))
   })
 
   test('updates config, no confirmation', async () => {

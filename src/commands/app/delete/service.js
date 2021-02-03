@@ -12,13 +12,18 @@ governing permissions and limitations under the License.
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:delete:service', { provider: 'debug' })
 const config = require('@adobe/aio-lib-core-config')
 const chalk = require('chalk')
-const { EOL } = require('os')
 
-const { getCliInfo } = require('../../../lib/app-helper')
+const {
+  getCliInfo,
+  setOrgServicesConfig,
+  setWorkspaceServicesConfig,
+  warnIfOverwriteServicesInProductionWorkspace
+} = require('../../../lib/app-helper')
+
 const BaseCommand = require('../../../BaseCommand')
 const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli')
 
-const { CONSOLE_API_KEYS, AIO_CONFIG_ORG_SERVICES, AIO_CONFIG_WORKSPACE_SERVICES } = require('../../../lib/defaults')
+const { CONSOLE_API_KEYS } = require('../../../lib/defaults')
 
 class AddServiceCommand extends BaseCommand {
   async run () {
@@ -51,19 +56,8 @@ class AddServiceCommand extends BaseCommand {
     )
 
     // update the service config, subscriptions and supported services
-    const currentServiceConfig = currentServiceProperties.map(s => ({
-      name: s.name,
-      code: s.sdkCode
-    }))
-    config.set(AIO_CONFIG_WORKSPACE_SERVICES, currentServiceConfig, true)
-    aioLogger.debug(`set aio config ${AIO_CONFIG_WORKSPACE_SERVICES}: ${JSON.stringify(currentServiceConfig, null, 2)}`)
-    const orgServiceConfig = supportedServices.map(s => ({
-      name: s.name,
-      code: s.code,
-      type: s.type
-    }))
-    config.set(AIO_CONFIG_ORG_SERVICES, orgServiceConfig, true)
-    aioLogger.debug(`set aio config ${AIO_CONFIG_ORG_SERVICES}: ${JSON.stringify(orgServiceConfig, null, 2)}`)
+    setOrgServicesConfig(supportedServices)
+    setWorkspaceServicesConfig(currentServiceProperties)
 
     if (currentServiceProperties.length <= 0) {
       LibConsoleCLI.cleanStdOut()
@@ -79,12 +73,7 @@ class AddServiceCommand extends BaseCommand {
       this.log('No services selected, nothing to be done')
       return null
     }
-    if (workspace.name === 'Production') {
-      console.error(chalk.bold(chalk.yellow(
-        `⚠ Warning: you are authorizing to delete Services in your *Production* Workspace in Project '${project.name}'.` +
-        `${EOL}This may break any Applications that currently uses existing Service subscriptions in this Production Workspace.`
-      )))
-    }
+    warnIfOverwriteServicesInProductionWorkspace(project.name, workspace.name)
     // prompt confirm the new service subscription list
     const confirm = await consoleCLI.confirmNewServiceSubscriptions(
       workspace.name,
@@ -100,12 +89,7 @@ class AddServiceCommand extends BaseCommand {
         newServiceProperties
       )
       // update the service configuration with the latest subscriptions
-      const newServiceConfig = newServiceProperties.map(s => ({
-        name: s.name,
-        code: s.sdkCode
-      }))
-      config.set(AIO_CONFIG_WORKSPACE_SERVICES, newServiceConfig, true)
-      aioLogger.debug(`set aio config ${AIO_CONFIG_WORKSPACE_SERVICES}: ${JSON.stringify(newServiceConfig, null, 2)}`)
+      setWorkspaceServicesConfig(newServiceProperties)
       // success !
       this.log(chalk.green(chalk.bold(`Successfully deleted selected Service Subscriptions in Workspace ${workspace.name}`)))
       return newServiceProperties
