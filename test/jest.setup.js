@@ -12,6 +12,8 @@ governing permissions and limitations under the License.
 
 const { stdout, stderr } = require('stdout-stderr')
 
+jest.setTimeout(15000)
+
 const fs = require.requireActual('fs')
 const eol = require('eol')
 const path = require('path')
@@ -78,7 +80,7 @@ process.on('unhandledRejection', error => {
 // dont touch the real fs
 jest.mock('fs-extra')
 // don't wait for user input in tests
-jest.mock('inquirer')
+jest.mock('inquirer', () => ({ prompt: jest.fn(), createPromptModule: jest.fn(() => jest.fn()) }))
 // make sure we mock the app scripts
 jest.mock('@adobe/aio-lib-web')
 //

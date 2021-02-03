@@ -20,8 +20,7 @@ const { getCliInfo } = require('../../lib/app-helper')
 const chalk = require('chalk')
 const { servicesToGeneratorInput } = require('../../lib/app-helper')
 
-const SERVICE_API_KEY_ENV = 'SERVICE_API_KEY'
-const ENTP_INT_CERTS_FOLDER = 'entp-int-certs'
+const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV } = require('../../lib/defaults')
 
 class InitCommand extends BaseCommand {
   async run () {
