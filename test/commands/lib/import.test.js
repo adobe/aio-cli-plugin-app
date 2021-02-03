@@ -10,10 +10,15 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { importConfigJson, writeAio, writeEnv, mergeEnv, splitEnvLine, flattenObjectWithSeparator, loadConfigFile, writeDefaultAppConfig } = require('../../../src/lib/import')
 const fs = require('fs-extra')
 const path = require('path')
 const inquirer = require('inquirer')
+
+// mock prompt before import
+const mockPrompt = jest.fn()
+inquirer.createPromptModule.mockReturnValue(mockPrompt)
+
+const { importConfigJson, writeAio, writeEnv, mergeEnv, splitEnvLine, flattenObjectWithSeparator, loadConfigFile, writeDefaultAppConfig } = require('../../../src/lib/import')
 
 jest.mock('fs')
 
@@ -263,18 +268,18 @@ test('importConfigJson - interactive', async () => {
 
   fs.readFileSync.mockReturnValue(configJson)
 
-  inquirer.prompt.mockResolvedValue({ conflict: 'abort' }) // no writes
+  mockPrompt.mockResolvedValue({ conflict: 'abort' }) // no writes
   await importConfigJson(configPath, workingFolder, { interactive: true })
 
-  inquirer.prompt.mockResolvedValue({ conflict: 'merge' }) // two writes
-  await importConfigJson(configPath, workingFolder, { interactive: true })
-
-  fs.readFileSync.mockReturnValueOnce(configJson)
-  inquirer.prompt.mockResolvedValue({ conflict: 'overwrite' }) // two writes
+  mockPrompt.mockResolvedValue({ conflict: 'merge' }) // two writes
   await importConfigJson(configPath, workingFolder, { interactive: true })
 
   fs.readFileSync.mockReturnValueOnce(configJson)
-  inquirer.prompt.mockResolvedValue({ overwrite: true }) // two writes, one to .env, one to .aio
+  mockPrompt.mockResolvedValue({ conflict: 'overwrite' }) // two writes
+  await importConfigJson(configPath, workingFolder, { interactive: true })
+
+  fs.readFileSync.mockReturnValueOnce(configJson)
+  mockPrompt.mockResolvedValue({ overwrite: true }) // two writes, one to .env, one to .aio
   await importConfigJson(configPath, workingFolder, { interactive: true })
 
   fs.readFileSync.mockReturnValueOnce(configJson)
