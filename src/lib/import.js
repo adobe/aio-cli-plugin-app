@@ -28,6 +28,11 @@ const FILE_FORMAT_ENV = 'env'
 const FILE_FORMAT_JSON = 'json'
 const CONSOLE_CONFIG_KEY = 'console'
 
+// make sure to prompt to stderr
+// Note: if this get's turned into a lib make sure to call
+// this into an init/constructor as it might create mocking issues in jest
+const prompt = inquirer.createPromptModule({ output: process.stderr })
+
 /**
  * Validate the config json
  *
@@ -136,31 +141,30 @@ function prettyPrintJson (json) {
  */
 async function checkFileConflict (filePath) {
   if (fs.existsSync(filePath)) {
-    const answer = await inquirer
-      .prompt([
-        {
-          type: 'expand',
-          message: `The file ${filePath} already exists:`,
-          name: 'conflict',
-          choices: [
-            {
-              key: 'o',
-              name: 'Overwrite',
-              value: 'overwrite'
-            },
-            {
-              key: 'm',
-              name: 'Merge',
-              value: 'merge'
-            },
-            {
-              key: 'x',
-              name: 'Abort',
-              value: 'abort'
-            }
-          ]
-        }
-      ])
+    const answer = await prompt([
+      {
+        type: 'expand',
+        message: `The file ${filePath} already exists:`,
+        name: 'conflict',
+        choices: [
+          {
+            key: 'o',
+            name: 'Overwrite',
+            value: 'overwrite'
+          },
+          {
+            key: 'm',
+            name: 'Merge',
+            value: 'merge'
+          },
+          {
+            key: 'x',
+            name: 'Abort',
+            value: 'abort'
+          }
+        ]
+      }
+    ])
 
     switch (answer.conflict) {
       case 'overwrite':
@@ -580,7 +584,7 @@ function credentialsReferences (credentials) {
 /**
  * Import a downloadable config and write to the appropriate .env (credentials) and .aio (non-credentials) files.
  *
- * @param {string} configFileLocation the path to the config file to import
+ * @param {string} configFileOrBuffer the path to the config file to import or a buffer
  * @param {string} [destinationFolder=the current working directory] the path to the folder to write the .env and .aio files to
  * @param {object} [flags={}] flags for file writing
  * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
@@ -589,10 +593,10 @@ function credentialsReferences (credentials) {
  *        Extra variables are treated as raw and won't be rewritten to comply with aio-lib-core-config
  * @returns {Promise} promise from writeAio call
  */
-async function importConfigJson (configFileLocation, destinationFolder = process.cwd(), flags = {}, extraEnvVars = {}) {
-  aioLogger.debug(`importConfigJson - configFileLocation: ${configFileLocation} destinationFolder:${destinationFolder} flags:${flags} extraEnvVars:${extraEnvVars}`)
+async function importConfigJson (configFileOrBuffer, destinationFolder = process.cwd(), flags = {}, extraEnvVars = {}) {
+  aioLogger.debug(`importConfigJson - configFileOrBuffer: ${configFileOrBuffer} destinationFolder:${destinationFolder} flags:${flags} extraEnvVars:${extraEnvVars}`)
 
-  const { values: config, format } = loadAndValidateConfigFile(configFileLocation)
+  const { values: config, format } = loadAndValidateConfigFile(configFileOrBuffer)
 
   aioLogger.debug(`importConfigJson - format: ${format} config:${prettyPrintJson(config)} `)
 

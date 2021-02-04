@@ -17,6 +17,10 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
 const fetch = require('node-fetch')
+const chalk = require('chalk')
+const config = require('@adobe/aio-lib-core-config')
+const { AIO_CONFIG_WORKSPACE_SERVICES, AIO_CONFIG_ORG_SERVICES } = require('./defaults')
+const { EOL } = require('os')
 
 /** @private */
 function isNpmInstalled () {
@@ -305,6 +309,50 @@ function servicesToGeneratorInput (services) {
   return services.map(s => s.code).filter(s => s).join(',')
 }
 
+/**
+ * Log a warning when overwriting services in the Production Workspace
+ *
+ * @param {string} projectName project name, needed for warning message
+ * @param {string} workspaceName workspace name
+ */
+function warnIfOverwriteServicesInProductionWorkspace (projectName, workspaceName) {
+  if (workspaceName === 'Production') {
+    console.error(chalk.bold(chalk.yellow(
+      `⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace in Project '${projectName}'.` +
+      `${EOL}This may break any Applications that currently use existing Service subscriptions in this Production Workspace.`
+    )))
+  }
+}
+
+/**
+ * Set the services attached to the current workspace in the .aio config
+ *
+ * @param {Array} serviceProperties service properties obtained via LibConsoleCLI.prototype.getServicePropertiesFromWorkspace
+ */
+function setWorkspaceServicesConfig (serviceProperties) {
+  const serviceConfig = serviceProperties.map(s => ({
+    name: s.name,
+    code: s.sdkCode
+  }))
+  config.set(AIO_CONFIG_WORKSPACE_SERVICES, serviceConfig, true)
+  aioLogger.debug(`set aio config ${AIO_CONFIG_WORKSPACE_SERVICES}: ${JSON.stringify(serviceConfig, null, 2)}`)
+}
+
+/**
+ * Set the services supported by the organization in the .aio config
+ *
+ * @param {Array} supportedServices org services obtained via LibConsoleCLI.prototype.getEnabledServicesForOrg
+ */
+function setOrgServicesConfig (supportedServices) {
+  const orgServiceConfig = supportedServices.map(s => ({
+    name: s.name,
+    code: s.code,
+    type: s.type
+  }))
+  config.set(AIO_CONFIG_ORG_SERVICES, orgServiceConfig, true)
+  aioLogger.debug(`set aio config ${AIO_CONFIG_ORG_SERVICES}: ${JSON.stringify(orgServiceConfig, null, 2)}`)
+}
+
 module.exports = {
   isNpmInstalled,
   isGitInstalled,
@@ -323,5 +371,8 @@ module.exports = {
   downloadOWJar,
   runOpenWhiskJar,
   servicesToGeneratorInput,
-  waitForOpenWhiskReadiness
+  waitForOpenWhiskReadiness,
+  warnIfOverwriteServicesInProductionWorkspace,
+  setOrgServicesConfig,
+  setWorkspaceServicesConfig
 }

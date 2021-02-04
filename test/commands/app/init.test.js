@@ -43,6 +43,22 @@ yeoman.createEnv.mockReturnValue({
   run: mockRun
 })
 
+// mock cwd
+let fakeCwd
+const savedChdir = process.chdir
+const savedCwd = process.cwd
+beforeEach(() => {
+  fakeCwd = 'lifeisgood'
+  process.chdir = jest.fn().mockImplementation(dir => { fakeCwd = dir })
+  process.cwd = jest.fn().mockImplementation(() => fakeCwd)
+  process.chdir.mockClear()
+  process.cwd.mockClear()
+})
+afterAll(() => {
+  process.chdir = savedChdir
+  process.cwd = savedCwd
+})
+
 const savedDataDir = process.env.XDG_DATA_HOME
 beforeEach(() => {
   mockGetCli.mockReturnValue({})
@@ -180,21 +196,6 @@ function mockInvalidConfig () {
 }
 
 describe('run', () => {
-  const spyChdir = jest.spyOn(process, 'chdir')
-  const spyCwd = jest.spyOn(process, 'cwd')
-  let fakeCwd
-  beforeEach(() => {
-    fakeCwd = 'lifeisgood'
-    spyChdir.mockClear()
-    spyCwd.mockClear()
-    spyChdir.mockImplementation(dir => { fakeCwd = dir })
-    spyCwd.mockImplementation(() => fakeCwd)
-  })
-  afterAll(() => {
-    spyChdir.mockRestore()
-    spyCwd.mockRestore()
-  })
-
   test('some-path, --yes', async () => {
     mockValidConfig()
     const appFolder = 'some-path'
@@ -212,7 +213,7 @@ describe('run', () => {
       'supported-adobe-services': ''
     })
     expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
-    expect(spyChdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+    expect(process.chdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
     expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
@@ -233,7 +234,7 @@ describe('run', () => {
       'supported-adobe-services': ''
     })
     expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
-    expect(spyChdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+    expect(process.chdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
     expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
@@ -253,7 +254,7 @@ describe('run', () => {
       'supported-adobe-services': ''
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
     expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
@@ -273,7 +274,7 @@ describe('run', () => {
       'supported-adobe-services': ''
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
     expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
@@ -293,7 +294,7 @@ describe('run', () => {
       'supported-adobe-services': ''
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
     expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
@@ -320,7 +321,7 @@ describe('run', () => {
       'supported-adobe-services': 'service1SDK,service2SDK,service3SDK,service4SDK'
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
     expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
   })
 
@@ -342,7 +343,7 @@ describe('run', () => {
       'supported-adobe-services': ''
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
     expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
@@ -351,7 +352,7 @@ describe('run', () => {
     await TheCommand.run([])
 
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(2)
@@ -379,7 +380,7 @@ describe('run', () => {
     await TheCommand.run([])
 
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(2)
@@ -407,7 +408,7 @@ describe('run', () => {
     await TheCommand.run([])
 
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(2)
@@ -435,7 +436,7 @@ describe('run', () => {
     await TheCommand.run([])
 
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(2)
@@ -463,7 +464,7 @@ describe('run', () => {
     await TheCommand.run(['some-path'])
 
     expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
-    expect(spyChdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+    expect(process.chdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(2)
@@ -493,7 +494,7 @@ describe('run', () => {
     await TheCommand.run(['some-path'])
 
     expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
-    expect(spyChdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+    expect(process.chdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(2)
@@ -526,7 +527,7 @@ describe('run', () => {
     await TheCommand.run([])
 
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(2)
@@ -563,7 +564,7 @@ describe('run', () => {
 
     // no args.path
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(1)
@@ -593,7 +594,7 @@ describe('run', () => {
 
     // no args.path
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(1)
@@ -623,7 +624,7 @@ describe('run', () => {
 
     // no args.path
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(1)
@@ -652,7 +653,7 @@ describe('run', () => {
 
     // no args.path
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(1)
