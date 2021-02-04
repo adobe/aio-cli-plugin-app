@@ -149,7 +149,7 @@ async function runDev (config, options = {}, log = () => {}) {
     await cleanup.run()
     throw e
   }
-  this.log('press CTRL+C to terminate dev environment')
+  log('press CTRL+C to terminate dev environment')
   return frontEndUrl
 }
 
