@@ -21,6 +21,7 @@ const helpers = require('../../../src/lib/app-helper.js')
 
 const mockWebLib = require('@adobe/aio-lib-web')
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
+const mockBundleFunc = jest.fn()
 
 jest.mock('@adobe/aio-lib-core-config')
 
@@ -125,6 +126,8 @@ const sampleAppConfig = {
 beforeEach(() => {
   mockWebLib.deployWeb.mockReset()
   mockWebLib.bundle.mockReset()
+  mockBundleFunc.mockReset()
+  mockWebLib.bundle.mockResolvedValue({ bundler: { bundle: mockBundleFunc } })
   mockFS.existsSync.mockReset()
   helpers.writeConfig.mockReset()
   helpers.runPackageScript.mockReset()
@@ -187,6 +190,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
+    expect(mockBundleFunc).toHaveBeenCalledTimes(1)
     expect(helpers.writeConfig).toHaveBeenCalledWith('/web-src/src/config.json', { action: 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action', 'action-sequence': 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action-sequence', 'action-zip': 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action-zip' })
   })
 
@@ -199,6 +203,7 @@ describe('run', () => {
       expect.objectContaining({ cache: false, contentHash: true, logLevel: 2, minify: false, watch: false }),
       expect.any(Function)
     )
+    expect(mockBundleFunc).toHaveBeenCalledTimes(1)
   })
 
   test('build & deploy an App with --no-content-hash', async () => {
@@ -211,6 +216,7 @@ describe('run', () => {
       expect.objectContaining({ cache: false, contentHash: false, logLevel: 2, minify: false, watch: false }),
       expect.any(Function)
     )
+    expect(mockBundleFunc).toHaveBeenCalledTimes(1)
   })
 
   test('build & deploy an App with --no-content-hash --verbose', async () => {
@@ -223,6 +229,7 @@ describe('run', () => {
       expect.objectContaining({ cache: false, contentHash: false, logLevel: 4, minify: false, watch: false }),
       expect.any(Function)
     )
+    expect(mockBundleFunc).toHaveBeenCalledTimes(1)
   })
 
   test('build & deploy an App with no force-build but build exists', async () => {
@@ -288,10 +295,6 @@ describe('run', () => {
   test('build & deploy with --skip-actions', async () => {
     command.argv = ['--skip-actions']
     mockFS.existsSync.mockReturnValue(true)
-    mockWebLib.bundle.mockResolvedValue((inFile, dest, options, log) => {
-      log('ok, give me a sec, gonna do it next ...')
-      return { bundler: jest.fn() }
-    })
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
@@ -368,6 +371,7 @@ describe('run', () => {
   test('build (--skip-actions) calls provided log function', async () => {
     mockWebLib.bundle.mockImplementation((a, b, c, log) => {
       log('ok')
+      return { bundler: { bundle: mockBundleFunc } }
     })
 
     const noScriptFound = undefined
@@ -386,6 +390,7 @@ describe('run', () => {
   test('build (--skip-actions, --verbose) calls provided other log function', async () => {
     mockWebLib.bundle.mockImplementation((a, b, c, log) => {
       log('ok')
+      return { bundler: { bundle: mockBundleFunc } }
     })
 
     const noScriptFound = undefined
