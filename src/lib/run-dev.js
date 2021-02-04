@@ -33,7 +33,7 @@ async function runDev (config, options = {}, log = () => {}) {
   /* parcel bundle options */
   const bundleOptions = {
     cache: false,
-    contentHash: false,
+    contentHash: true,
     minify: false,
     watch: false,
     ...options.parcel

@@ -195,6 +195,34 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.bundle).toHaveBeenCalledWith('undefined/index.html', undefined,
+      expect.objectContaining({ cache: false, contentHash: true, logLevel: 2, minify: false, watch: false }),
+      expect.any(Function)
+    )
+  })
+
+  test('build & deploy an App with --no-content-hash', async () => {
+    command.argv = ['--no-content-hash']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.bundle).toHaveBeenCalledWith('undefined/index.html', undefined,
+      expect.objectContaining({ cache: false, contentHash: false, logLevel: 2, minify: false, watch: false }),
+      expect.any(Function)
+    )
+  })
+
+  test('build & deploy an App with --no-content-hash --verbose', async () => {
+    command.argv = ['--no-content-hash', '-v']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.bundle).toHaveBeenCalledWith('undefined/index.html', undefined,
+      expect.objectContaining({ cache: false, contentHash: false, logLevel: 4, minify: false, watch: false }),
+      expect.any(Function)
+    )
   })
 
   test('build & deploy an App with no force-build but build exists', async () => {

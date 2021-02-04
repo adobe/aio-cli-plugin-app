@@ -50,7 +50,8 @@ class Run extends BaseCommand {
       skipServe: !flags.serve,
       // todo: any other params we should add here?
       parcel: {
-        logLevel: flags.verbose ? 4 : 2
+        logLevel: flags.verbose ? 4 : 2,
+        contentHash: flags['content-hash']
       },
       fetchLogs: true,
       devRemote: !flags.local,
@@ -198,6 +199,11 @@ Run.flags = {
   open: flags.boolean({
     description: 'Open the default web browser after a successful run, only valid if your app has a front-end',
     default: false
+  }),
+  'content-hash': flags.boolean({
+    description: 'Enable content hashing in browser code (default: true)',
+    default: true,
+    allowNo: true
   })
 }
 

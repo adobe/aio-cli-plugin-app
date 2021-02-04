@@ -367,6 +367,27 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: {
+        contentHash: true,
+        logLevel: 2,
+        https: {
+          cert: PUB_CERT_PATH,
+          key: PRIVATE_KEY_PATH
+        }
+      }
+    }), expect.any(Function))
+  })
+
+  test('app:run with UI and --no-content-hash', async () => {
+    // only generate cert if the app has a UI
+    mockFSExists(['web-src/', PRIVATE_KEY_PATH, PUB_CERT_PATH])
+    command.argv = ['--no-content-hash']
+    command.appConfig = mockConfigData
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
+      parcel: {
+        contentHash: false,
         logLevel: 2,
         https: {
           cert: PUB_CERT_PATH,
@@ -387,6 +408,7 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: {
+        contentHash: true,
         logLevel: 2,
         https: {
           cert: PUB_CERT_PATH,
@@ -415,6 +437,7 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: {
+        contentHash: true,
         logLevel: 2,
         https: {
           cert: PUB_CERT_PATH,
@@ -450,6 +473,7 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: {
+        contentHash: true,
         logLevel: 2,
         https: {
           cert: PUB_CERT_PATH,
@@ -487,6 +511,7 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: {
+        contentHash: true,
         logLevel: 2,
         https: {
           cert: PUB_CERT_PATH,
@@ -522,6 +547,7 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: {
+        contentHash: true,
         logLevel: 2,
         https: {
           cert: PUB_CERT_PATH,
@@ -558,6 +584,7 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: {
+        contentHash: true,
         logLevel: 2,
         https: {
           cert: PUB_CERT_PATH,

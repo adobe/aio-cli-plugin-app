@@ -77,7 +77,7 @@ class Build extends BaseCommand {
               const entryFile = config.web.src + '/index.html'
               const bundleOptions = {
                 cache: false,
-                contentHash: false,
+                contentHash: flags['content-hash'],
                 minify: false,
                 watch: false,
                 logLevel: flags.verbose ? 4 : 2
@@ -134,6 +134,11 @@ Build.flags = {
   }),
   'force-build': flags.boolean({
     description: 'Forces a build even if one already exists (default: true)',
+    default: true,
+    allowNo: true
+  }),
+  'content-hash': flags.boolean({
+    description: 'Enable content hashing in browser code (default: true)',
     default: true,
     allowNo: true
   }),

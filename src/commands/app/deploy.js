@@ -171,6 +171,11 @@ Deploy.flags = {
     default: true,
     allowNo: true
   }),
+  'content-hash': flags.boolean({
+    description: 'Enable content hashing in browser code (default: true)',
+    default: true,
+    allowNo: true
+  }),
   action: flags.string({
     description: 'Deploy only a specific action, the flags can be specified multiple times',
     exclusive: ['skip-actions'],

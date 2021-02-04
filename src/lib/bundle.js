@@ -39,10 +39,9 @@ module.exports = async (config, options = {}, log = () => {}) => {
   const parcelBundleOptions = {
     cache: false,
     outDir: config.web.distDev,
-    contentHash: false,
+    contentHash: true,
     watch: true,
     minify: false,
-    logLevel: 1,
     ...options
   }
 
