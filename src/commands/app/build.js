@@ -17,7 +17,7 @@ const BaseCommand = require('../../BaseCommand')
 const { flags } = require('@oclif/command')
 const { runPackageScript, writeConfig, wrapError } = require('../../lib/app-helper')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
-const webLib = require('@adobe/aio-lib-web')
+const { bundle } = require('@adobe/aio-lib-web')
 const fs = require('fs-extra')
 
 class Build extends BaseCommand {
@@ -74,7 +74,16 @@ class Build extends BaseCommand {
           try {
             const script = await runPackageScript('build-static')
             if (!script) {
-              await webLib.buildWeb(config, onProgress)
+              const entryFile = config.web.src + '/index.html'
+              const bundleOptions = {
+                cache: false,
+                contentHash: flags['content-hash'],
+                minify: false,
+                watch: false,
+                logLevel: flags.verbose ? 4 : 2
+              }
+              const { bundler } = await bundle(entryFile, config.web.distProd, bundleOptions, onProgress)
+              await bundler.bundle()
             }
             spinner.succeed(chalk.green('Building web assets'))
           } catch (err) {
@@ -126,6 +135,11 @@ Build.flags = {
   }),
   'force-build': flags.boolean({
     description: 'Forces a build even if one already exists (default: true)',
+    default: true,
+    allowNo: true
+  }),
+  'content-hash': flags.boolean({
+    description: 'Enable content hashing in browser code (default: true)',
     default: true,
     allowNo: true
   }),

@@ -199,7 +199,7 @@ describe('run', () => {
 
   test('app:run calls log spinner --verbose', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    mockRunDev.mockImplementation((args, config, options, logFunc) => {
+    mockRunDev.mockImplementation((config, options, logFunc) => {
       logFunc('boo')
       expect(options.devRemote).toBe(true)
     })
@@ -212,7 +212,7 @@ describe('run', () => {
 
   test('app:run calls log spinner not verbose', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    mockRunDev.mockImplementation((args, config, options, logFunc) => {
+    mockRunDev.mockImplementation((config, options, logFunc) => {
       logFunc('boo')
       expect(options.devRemote).toBe(true)
     })
@@ -239,7 +239,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
-    expect(mockRunDev).toHaveBeenCalledWith([], mockConfigData, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: expect.objectContaining({
         logLevel: 2
       }),
@@ -252,7 +252,7 @@ describe('run', () => {
     command.argv = []
     command.appConfig = mockConfigData
     await command.run()
-    expect(mockRunDev).toHaveBeenCalledWith([], mockConfigData, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       fetchLogs: true
     }), expect.any(Function))
   })
@@ -264,7 +264,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
-    expect(mockRunDev).toHaveBeenCalledWith([], mockConfigData, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: expect.objectContaining({
         logLevel: 4
       }),
@@ -274,7 +274,7 @@ describe('run', () => {
 
   test('app:run with --local', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    mockRunDev.mockImplementation((args, config, options, logFunc) => {
+    mockRunDev.mockImplementation((config, options, logFunc) => {
       expect(options.devRemote).toBe(false)
     })
     command.argv = ['--local']
@@ -291,7 +291,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
-    expect(mockRunDev).toHaveBeenCalledWith([], mockConfigData, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: expect.objectContaining({
         logLevel: 4
       }),
@@ -365,8 +365,9 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
-    expect(mockRunDev).toHaveBeenCalledWith([], mockConfigData, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: {
+        contentHash: false,
         logLevel: 2,
         https: {
           cert: PUB_CERT_PATH,
@@ -385,8 +386,9 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
-    expect(mockRunDev).toHaveBeenCalledWith([], mockConfigData, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: {
+        contentHash: false,
         logLevel: 2,
         https: {
           cert: PUB_CERT_PATH,
@@ -413,8 +415,9 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
-    expect(mockRunDev).toHaveBeenCalledWith([], mockConfigData, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: {
+        contentHash: false,
         logLevel: 2,
         https: {
           cert: PUB_CERT_PATH,
@@ -448,8 +451,9 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
-    expect(mockRunDev).toHaveBeenCalledWith([], mockConfigData, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: {
+        contentHash: false,
         logLevel: 2,
         https: {
           cert: PUB_CERT_PATH,
@@ -485,8 +489,9 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
-    expect(mockRunDev).toHaveBeenCalledWith([], mockConfigData, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: {
+        contentHash: false,
         logLevel: 2,
         https: {
           cert: PUB_CERT_PATH,
@@ -520,8 +525,9 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
-    expect(mockRunDev).toHaveBeenCalledWith([], mockConfigData, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: {
+        contentHash: false,
         logLevel: 2,
         https: {
           cert: PUB_CERT_PATH,
@@ -556,8 +562,9 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
-    expect(mockRunDev).toHaveBeenCalledWith([], mockConfigData, expect.objectContaining({
+    expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: {
+        contentHash: false,
         logLevel: 2,
         https: {
           cert: PUB_CERT_PATH,

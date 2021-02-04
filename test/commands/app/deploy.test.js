@@ -40,8 +40,6 @@ jest.mock('cli-ux')
 const { cli } = require('cli-ux')
 
 beforeEach(() => {
-  mockWebLib.mockReset('deployWeb')
-  mockWebLib.mockReset('buildWeb')
   helpers.writeConfig.mockReset()
   helpers.runPackageScript.mockReset()
   jest.restoreAllMocks()
@@ -401,9 +399,12 @@ describe('run', () => {
     command.argv = ['--skip-actions']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-
-    expect(command.log).toHaveBeenCalledTimes(1)
-    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Well done, your app is now online/))
+    // 1. To view your deployed application: ok
+    // 2. To view your deployed application in the Experience Cloud shell:
+    //     -> http://prefix?fake=ok
+    // 3. Well done, your app is now online 🏄
+    expect(command.log).toHaveBeenCalledTimes(3)
+    expect(command.log).toHaveBeenLastCalledWith(expect.stringMatching(/Well done, your app is now online/))
   })
 
   test('deploy (--skip-static)', async () => {
@@ -415,7 +416,6 @@ describe('run', () => {
     command.argv = ['--skip-static']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-
     expect(command.log).toHaveBeenCalledTimes(1)
     expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Well done, your actions are now online/))
   })
@@ -431,7 +431,6 @@ describe('run', () => {
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-
     expect(command.log).toHaveBeenCalledTimes(1)
     expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Well done, your app is now online/))
   })

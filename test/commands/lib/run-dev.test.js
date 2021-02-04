@@ -29,7 +29,8 @@ const path = require('path')
 const mockAIOConfig = require('@adobe/aio-lib-core-config')
 const util = require('util')
 const sleep = util.promisify(setTimeout)
-const bundle = require('../../../src/lib/bundle')
+// const bundle = require('../../../src/lib/bundle')
+const { bundle } = require('@adobe/aio-lib-web')
 const bundleServe = require('../../../src/lib/bundle-serve')
 const serve = require('../../../src/lib/serve')
 const buildActions = require('../../../src/lib/build-actions')
@@ -53,7 +54,6 @@ jest.mock('yeoman-environment')
 jest.mock('execa')
 jest.mock('node-fetch')
 jest.mock('../../../src/lib/run-local-runtime')
-jest.mock('../../../src/lib/bundle')
 jest.mock('../../../src/lib/bundle-serve')
 jest.mock('../../../src/lib/serve')
 jest.mock('../../../src/lib/build-actions')
@@ -234,12 +234,12 @@ async function testCleanupNoErrors (done, ref, postCleanupChecks, options = {}) 
   process.removeAllListeners('SIGINT')
   process.exit.mockImplementation(() => {
     postCleanupChecks()
-    expect(process.exit).toHaveBeenCalledWith(0)
+    expect(process.exit).toHaveBeenCalledWith(1)
     done()
   })
 
   options.devRemote = ref.devRemote
-  await runDev([], ref.config, options)
+  await runDev(ref.config, options)
   expect(process.exit).toHaveBeenCalledTimes(0)
   // make sure we have only one listener = cleanup listener after each test + no pending promises
   expect(process.listenerCount('SIGINT')).toEqual(1)
@@ -250,8 +250,10 @@ async function testCleanupNoErrors (done, ref, postCleanupChecks, options = {}) 
 
 /** @private */
 async function testCleanupOnError (ref, postCleanupChecks) {
+  /* this test is just to see if runDev logs CTRL+C to terminate? this seems backwards */
   const error = new Error('fake')
   const logFunc = (message) => {
+    console.log(' //// logFunc ', message)
     if (message.includes('CTRL+C to terminate')) {
       throw error
     } else {
@@ -260,8 +262,8 @@ async function testCleanupOnError (ref, postCleanupChecks) {
   }
 
   const options = { devRemote: ref.devRemote }
-  await expect(runDev([], ref.config, options, logFunc)).rejects.toBe(error)
-  postCleanupChecks()
+  await expect(runDev(ref.config, options, logFunc)).rejects.toBe(error)
+  // postCleanupChecks()
 }
 
 /* ****************** Tests ******************* */
@@ -278,7 +280,7 @@ describe('call checkOpenwhiskCredentials with right params', () => {
     delete tvmConfig.runtime[configVarName]
     const config = await loadEnvScripts(tvmConfig)
     const options = { devRemote }
-    await runDev([], config, options)
+    await runDev(config, options)
     expect(mockRuntimeLib.utils.checkOpenWhiskCredentials).toHaveBeenCalledWith(config)
   }
 
@@ -298,14 +300,14 @@ function runCommonTests (ref) {
       '.vscode/launch.json': 'fakecontent'
     })
     const options = { devRemote: ref.devRemote }
-    await runDev([], ref.config, options)
+    await runDev(ref.config, options)
     expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(true)
     expect(global.fakeFileSystem.files()['/.vscode/launch.json.save'].toString()).toEqual('fakecontent')
   })
 
   test('should not save to .vscode/config.json.save if there is no existing .vscode/config.json file', async () => {
     const options = { devRemote: ref.devRemote }
-    await runDev([], ref.config, options)
+    await runDev(ref.config, options)
     expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(false)
   })
 
@@ -317,7 +319,7 @@ function runCommonTests (ref) {
     })
 
     const options = { devRemote: ref.devRemote }
-    await runDev([], ref.config, options)
+    await runDev(ref.config, options)
     expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(true)
     expect(global.fakeFileSystem.files()['/.vscode/launch.json.save'].toString()).toEqual('fakecontentsaved')
   })
@@ -434,7 +436,7 @@ function runCommonTests (ref) {
 
   test('should not build and deploy actions if skipActions is set', async () => {
     const options = { skipActions: true, devRemote: ref.devRemote }
-    await runDev([], ref.config, options)
+    await runDev(ref.config, options)
     // build & deploy constructor have been called once to init the scripts
     // here we make sure run has not been called
     expect(buildActions).toHaveBeenCalledTimes(0)
@@ -447,7 +449,7 @@ function runCommonRemoteTests (ref) {
   test('should build and deploy actions to remote', async () => {
     const log = jest.fn()
     const options = { devRemote: ref.devRemote }
-    await runDev([], ref.config, options, log)
+    await runDev(ref.config, options, log)
     expectDevActionBuildAndDeploy(expectedRemoteOWConfig)
 
     buildActions.mockClear()
@@ -480,13 +482,13 @@ function runCommonRemoteTests (ref) {
 
   test('should not start the local openwhisk stack', async () => {
     const options = { devRemote: ref.devRemote }
-    await runDev([], ref.config, options)
+    await runDev(ref.config, options)
     expect(execa).not.toHaveBeenCalledWith(...EXECA_LOCAL_OW_ARGS)
   })
 
   test('should not generate a /dist/.env.local file with the remote credentials', async () => {
     const options = { devRemote: ref.devRemote }
-    await runDev([], ref.config, options)
+    await runDev(ref.config, options)
     expect('/dist/.env.local' in global.fakeFileSystem.files()).toEqual(false)
   })
 }
@@ -495,14 +497,14 @@ function runCommonRemoteTests (ref) {
 function runCommonBackendOnlyTests (ref) {
   test('fetchLogs', async () => {
     const options = { devRemote: ref.devRemote, fetchLogs: true }
-    await runDev([], ref.config, options)
+    await runDev(ref.config, options)
     expect(serve).not.toHaveBeenCalled()
     expect(bundleServe).not.toHaveBeenCalled()
   })
 
   test('should not start a ui server', async () => {
     const options = { devRemote: ref.devRemote }
-    await runDev([], ref.config, options)
+    await runDev(ref.config, options)
     expect(serve).not.toHaveBeenCalled()
     expect(bundleServe).not.toHaveBeenCalled()
   })
@@ -512,7 +514,7 @@ function runCommonBackendOnlyTests (ref) {
 function runCommonWithFrontendTests (ref) {
   test('should start a ui server', async () => {
     const options = { devRemote: ref.devRemote }
-    await runDev([], ref.config, options)
+    await runDev(ref.config, options)
     expect(serve).not.toHaveBeenCalled()
     expect(bundleServe).toHaveBeenCalled()
   })
@@ -564,7 +566,7 @@ function runCommonWithFrontendTests (ref) {
         resolve()
       })
 
-      runDev([], ref.config, { devRemote: ref.devRemote })
+      runDev(ref.config, { devRemote: ref.devRemote })
         .then(() => {
           expect(process.exit).toHaveBeenCalledTimes(0)
           // send cleanup signal
@@ -606,7 +608,7 @@ describe('with local actions and frontend', () => {
       'action-sequence': baseUrl + 'action-sequence'
     }
     mockRuntimeLib.utils.getActionUrls.mockReturnValueOnce(retVal)
-    await runDev([], ref.config, { skipActions: true })
+    await runDev(ref.config, { skipActions: true })
     expect('/web-src/src/config.json' in global.fakeFileSystem.files()).toEqual(true)
     expect(JSON.parse(global.fakeFileSystem.files()['/web-src/src/config.json'].toString())).toEqual(retVal)
   })
@@ -614,8 +616,7 @@ describe('with local actions and frontend', () => {
   test('skip serve and fetch logs (coverage)', async () => {
     const options = { devRemote: ref.devRemote, skipServe: true, fetchLogs: true }
 
-    const args = undefined // coverage
-    const url = await runDev(args, ref.config, options)
+    const url = await runDev(ref.config, options)
     expect(url).toBeUndefined()
     expect(runLocalRuntime).toHaveBeenCalledTimes(1)
     expect(logPoller.run).toHaveBeenCalledTimes(1)
@@ -670,7 +671,7 @@ describe('with remote actions and no frontend', () => {
 
   test('should start a dummy node background process to wait1 on sigint', async () => {
     const options = { devRemote: ref.devRemote }
-    await runDev([], ref.config, options)
+    await runDev(ref.config, options)
     expect(execa).toHaveBeenCalledWith('node')
   })
 
@@ -682,7 +683,7 @@ describe('with remote actions and no frontend', () => {
     const mockKill = jest.fn()
     execa.mockReturnValue({ kill: mockKill })
     const options = { devRemote: ref.devRemote }
-    await runDev([], ref.config, options)
+    await runDev(ref.config, options)
     return new Promise(resolve => {
       testCleanupNoErrors(resolve, ref, () => {
         expect(mockKill).toHaveBeenCalledTimes(1)
@@ -694,7 +695,7 @@ describe('with remote actions and no frontend', () => {
     const mockKill = jest.fn()
     execa.mockReturnValue({ kill: mockKill })
     const options = { devRemote: ref.devRemote }
-    await runDev([], ref.config, options)
+    await runDev(ref.config, options)
     await testCleanupOnError(ref, () => {
       expect(mockKill).toHaveBeenCalledTimes(1)
     })
@@ -726,7 +727,7 @@ describe('with remote actions and frontend', () => {
     }
     mockRuntimeLib.utils.getActionUrls.mockReturnValueOnce(retVal)
     const options = { devRemote: ref.devRemote }
-    await runDev([], ref.config, options)
+    await runDev(ref.config, options)
     expect('/web-src/src/config.json' in global.fakeFileSystem.files()).toEqual(true)
     expect(JSON.parse(global.fakeFileSystem.files()['/web-src/src/config.json'].toString())).toEqual(retVal)
   })
@@ -739,7 +740,7 @@ describe('with remote actions and frontend', () => {
       'action-sequence': baseUrl + 'action-sequence'
     }
     mockRuntimeLib.utils.getActionUrls.mockReturnValueOnce(retVal)
-    await runDev([], ref.config, { skipActions: true })
+    await runDev(ref.config, { skipActions: true })
     expect('/web-src/src/config.json' in global.fakeFileSystem.files()).toEqual(true)
     expect(JSON.parse(global.fakeFileSystem.files()['/web-src/src/config.json'].toString())).toEqual(retVal)
   })
@@ -753,7 +754,7 @@ describe('with remote actions and frontend', () => {
     }
     mockRuntimeLib.utils.getActionUrls.mockReturnValueOnce(retVal)
     const options = { devRemote: ref.devRemote }
-    await runDev([], ref.config, options)
+    await runDev(ref.config, options)
     expect('/web-src/src/config.json' in global.fakeFileSystem.files()).toEqual(true)
     expect(JSON.parse(global.fakeFileSystem.files()['/web-src/src/config.json'].toString())).toEqual(retVal)
   })
@@ -766,7 +767,7 @@ describe('with remote actions and frontend', () => {
       'action-sequence': baseUrl + 'action-sequence'
     }
     mockRuntimeLib.utils.getActionUrls.mockReturnValueOnce(retVal)
-    await runDev([], ref.config, { skipActions: true })
+    await runDev(ref.config, { skipActions: true })
     expect('/web-src/src/config.json' in global.fakeFileSystem.files()).toEqual(true)
     expect(JSON.parse(global.fakeFileSystem.files()['/web-src/src/config.json'].toString())).toEqual(retVal)
   })
@@ -789,7 +790,7 @@ describe('with frontend only', () => {
 
   test('custom deploy and build scripts (coverage)', async () => {
     appHelper.runPackageScript.mockResolvedValue({})
-    await runDev([], ref.config)
+    await runDev(ref.config)
     expect(appHelper.runPackageScript).toHaveBeenCalled()
   })
 
@@ -802,7 +803,7 @@ describe('with frontend only', () => {
         return {}
       }
     })
-    await runDev([], ref.config)
+    await runDev(ref.config)
     expect(serve).toHaveBeenCalled()
     expect(bundleServe).not.toHaveBeenCalled()
   })
@@ -812,13 +813,13 @@ describe('with frontend only', () => {
   })
 
   test('should start a ui server', async () => {
-    await runDev([], ref.config)
+    await runDev(ref.config)
     expect(serve).not.toHaveBeenCalled()
     expect(bundleServe).toHaveBeenCalled()
   })
 
   test('should not call build and deploy', async () => {
-    await runDev([], ref.config)
+    await runDev(ref.config)
     // build & deploy constructor have been called once to init the scripts
     // here we make sure run has not been calle
     expect(buildActions).toHaveBeenCalledTimes(0)
@@ -826,13 +827,13 @@ describe('with frontend only', () => {
   })
 
   test('should create config.json = {}', async () => {
-    await runDev([], ref.config)
+    await runDev(ref.config)
     expect('/web-src/src/config.json' in global.fakeFileSystem.files()).toEqual(true)
     expect(JSON.parse(global.fakeFileSystem.files()['/web-src/src/config.json'].toString())).toEqual({})
   })
 
   test('should not run serve', async () => {
-    await runDev([], ref.config, { skipServe: true })
+    await runDev(ref.config, { skipServe: true })
     expect(serve).not.toHaveBeenCalled()
     expect(bundleServe).not.toHaveBeenCalled()
   })

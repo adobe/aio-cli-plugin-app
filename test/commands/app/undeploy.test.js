@@ -33,7 +33,6 @@ const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 
 beforeEach(() => {
   mockRuntimeLib.undeployActions.mockReset()
-  mockWebLib.mockReset('undeployWeb')
   mockFS.existsSync.mockReset()
   jest.restoreAllMocks()
 })
@@ -159,7 +158,7 @@ describe('run', () => {
 
   test('should fail if scripts.undeployWeb fails', async () => {
     const error = new Error('mock failure UI')
-    mockWebLib.mockRejectedValue('undeployWeb', error)
+    mockWebLib.undeployWeb.mockRejectedValue(error)
     await command.run()
     expect(command.error).toHaveBeenCalledWith(error)
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)

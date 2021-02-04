@@ -48,8 +48,11 @@ class Run extends BaseCommand {
     const runOptions = {
       skipActions: flags['skip-actions'],
       skipServe: !flags.serve,
+      // todo: any other params we should add here?
       parcel: {
-        logLevel: flags.verbose ? 4 : 2
+        logLevel: flags.verbose ? 4 : 2,
+        // always set to false on localhost to get debugging and hot reloading
+        contentHash: false
       },
       fetchLogs: true,
       devRemote: !flags.local,
@@ -81,7 +84,7 @@ class Run extends BaseCommand {
     }
 
     try {
-      const frontendUrl = await runDev(args, this.getAppConfig(), runOptions, onProgress)
+      const frontendUrl = await runDev(this.getAppConfig(), runOptions, onProgress)
       try {
         await runPackageScript('post-app-run')
       } catch (err) {
@@ -98,6 +101,7 @@ class Run extends BaseCommand {
           this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
         }
       }
+      this.log('press CTRL+C to terminate dev environment')
     } catch (error) {
       spinner.fail()
       this.error(wrapError(error))
