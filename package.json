@@ -1,17 +1,17 @@
 {
   "name": "@adobe/aio-cli-plugin-app",
   "description": "Create, Build and Deploy Adobe I/O Applications",
-  "version": "4.0.0-0",
+  "version": "6.0.0",
   "author": "Adobe Inc.",
   "bugs": "https://github.com/adobe/aio-cli-plugin-app/issues",
   "dependencies": {
     "@adobe/aio-lib-core-config": "^2.0.0",
     "@adobe/aio-lib-core-logging": "^1.1.0",
     "@adobe/aio-lib-ims": "^4.1.0",
-    "@adobe/aio-lib-runtime": "^1.0.0-0",
-    "@adobe/aio-lib-web": "^3.0.0",
-    "@adobe/generator-aio-app": "^1.7.0",
-    "@adobe/generator-aio-console": "^1.1.1",
+    "@adobe/aio-lib-runtime": "^1.3.0",
+    "@adobe/aio-lib-web": "^4.1.1",
+    "@adobe/generator-aio-app": "^1.9.0",
+    "@adobe/generator-aio-console": "^2.0.6",
     "@oclif/command": "^1.5.11",
     "@oclif/config": "^1.12.9",
     "@oclif/plugin-help": "^2.2.3",
@@ -20,6 +20,7 @@
     "chokidar": "^3.4.2",
     "cli-ux": "^5.4.5",
     "debug": "^4.1.1",
+    "dedent-js": "^1.0.1",
     "dotenv": "^8.2.0",
     "execa": "^4.0.0",
     "fs-extra": "^9.0.0",
@@ -32,6 +33,8 @@
     "node-fetch": "^2.6.0",
     "ora": "^4.0.3",
     "parcel-bundler": "^1.12.4",
+    "pure-http": "^2.0.3",
+    "serve-static": "^1.14.1",
     "which": "^2.0.1",
     "yeoman-environment": "^2.5.0"
   },
@@ -57,9 +60,12 @@
     "node": ">=10.0.0"
   },
   "files": [
-    "/oclif.manifest.json",
-    "/src",
-    "/schema/config.schema.json"
+    "bin/run",
+    "bin/run.cmd",
+    "bin/openwhisk-standalone-config/",
+    "oclif.manifest.json",
+    "src",
+    "schema/config.schema.json"
   ],
   "homepage": "https://github.com/adobe/aio-cli-plugin-app",
   "keywords": [

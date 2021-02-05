@@ -14,6 +14,7 @@ const path = require('path')
 
 const TheCommand = require('../../../src/commands/app/init')
 const BaseCommand = require('../../../src/BaseCommand')
+const runtimeLib = require('@adobe/aio-lib-runtime') // eslint-disable-line no-unused-vars
 const importLib = require('../../../src/lib/import')
 jest.mock('../../../src/lib/import')
 
@@ -42,15 +43,41 @@ yeoman.createEnv.mockReturnValue({
   run: mockRun
 })
 
+// mock cwd
+let fakeCwd
+const savedChdir = process.chdir
+const savedCwd = process.cwd
+beforeEach(() => {
+  fakeCwd = 'lifeisgood'
+  process.chdir = jest.fn().mockImplementation(dir => { fakeCwd = dir })
+  process.cwd = jest.fn().mockImplementation(() => fakeCwd)
+  process.chdir.mockClear()
+  process.cwd.mockClear()
+})
+afterAll(() => {
+  process.chdir = savedChdir
+  process.cwd = savedCwd
+})
+
+const savedDataDir = process.env.XDG_DATA_HOME
 beforeEach(() => {
   mockGetCli.mockReturnValue({})
   mockRegister.mockReset()
   mockRun.mockReset()
   yeoman.createEnv.mockClear()
   fs.ensureDirSync.mockClear()
+  fs.unlinkSync.mockClear()
   importLib.importConfigJson.mockReset()
   importLib.writeAio.mockReset()
+  // set config.dataDir in oclif
+  process.env.XDG_DATA_HOME = 'data-dir'
 })
+afterAll(() => {
+  process.env.XDG_DATA_HOME = savedDataDir
+})
+
+// universal path
+const certDir = path.join('data-dir', '@adobe', 'aio-cli-plugin-app', 'entp-int-certs')
 
 describe('Command Prototype', () => {
   test('exports', async () => {
@@ -95,15 +122,6 @@ describe('template module cannot be registered', () => {
   })
 })
 
-const fullServicesJson = [
-  { code: 'AdobeTargetSDK' },
-  { code: 'AdobeAnalyticsSDK' },
-  { code: 'CampaignSDK' },
-  { code: 'McDataServicesSdk' },
-  { code: 'AudienceManagerCustomerSDK' },
-  { code: 'AssetComputeSDK' }
-]
-
 const fakeCredentials = [
   {
     id: '1',
@@ -114,21 +132,55 @@ const fakeCredentials = [
     jwt: { client_id: 'fakeId123' }
   }
 ]
-/** @private */
-function getFullServicesList () {
-  return fullServicesJson.map(s => s.code).join(',')
-}
+
+const fakeWorkspaceServices = [
+  {
+    code: 'service1SDK',
+    name: 'the first fake service'
+  },
+  {
+    code: 'service2SDK',
+    name: 'the second fake service'
+  }
+]
+const fakeSupportedServices = [
+  {
+    code: 'service1SDK',
+    name: 'the first fake service'
+  },
+  {
+    code: 'service2SDK',
+    name: 'the second fake service'
+  },
+  {
+    code: 'service3SDK',
+    name: 'the third fake service'
+  },
+  {
+    code: 'service4SDK',
+    name: 'the fourth fake service'
+  }
+]
 
 /** @private */
-function mockValidConfig ({ name = 'lifeisgood', services = fullServicesJson, credentials = fakeCredentials } = {}) {
+function mockValidConfig ({ name = 'lifeisgood', workspaceServices = fakeWorkspaceServices, supportedServices = undefined, credentials = fakeCredentials } = {}) {
   const project = {
     name,
+    org: {
+      details: {
+        services: supportedServices
+      }
+    },
     workspace: {
       details: {
-        services,
+        services: workspaceServices,
         credentials
       }
     }
+  }
+  // note: supportedServices config is not always defined, e.g. when importing the file
+  if (supportedServices) {
+    project.org.details = { services: supportedServices }
   }
 
   importLib.loadAndValidateConfigFile.mockReturnValue({
@@ -144,21 +196,6 @@ function mockInvalidConfig () {
 }
 
 describe('run', () => {
-  const spyChdir = jest.spyOn(process, 'chdir')
-  const spyCwd = jest.spyOn(process, 'cwd')
-  let fakeCwd
-  beforeEach(() => {
-    fakeCwd = 'lifeisgood'
-    spyChdir.mockClear()
-    spyCwd.mockClear()
-    spyChdir.mockImplementation(dir => { fakeCwd = dir })
-    spyCwd.mockImplementation(() => fakeCwd)
-  })
-  afterAll(() => {
-    spyChdir.mockRestore()
-    spyCwd.mockRestore()
-  })
-
   test('some-path, --yes', async () => {
     mockValidConfig()
     const appFolder = 'some-path'
@@ -172,10 +209,12 @@ describe('run', () => {
       'skip-prompt': true,
       'skip-install': false,
       'project-name': appFolder,
-      'adobe-services': getFullServicesList()
+      'adobe-services': '',
+      'supported-adobe-services': ''
     })
     expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
-    expect(spyChdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+    expect(process.chdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
   test('some-path, --yes --skip-install', async () => {
@@ -191,10 +230,12 @@ describe('run', () => {
       'skip-prompt': true,
       'skip-install': true,
       'project-name': appFolder,
-      'adobe-services': getFullServicesList()
+      'adobe-services': '',
+      'supported-adobe-services': ''
     })
     expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
-    expect(spyChdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+    expect(process.chdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
   test('no-path, --yes', async () => {
@@ -209,10 +250,12 @@ describe('run', () => {
       'skip-prompt': true,
       'skip-install': false,
       'project-name': project.name,
-      'adobe-services': getFullServicesList()
+      'adobe-services': '',
+      'supported-adobe-services': ''
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
   test('no-path, --no-login', async () => {
@@ -227,10 +270,12 @@ describe('run', () => {
       'skip-prompt': false,
       'skip-install': false,
       'project-name': project.name,
-      'adobe-services': getFullServicesList()
+      'adobe-services': '',
+      'supported-adobe-services': ''
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
   test('no-path, --yes --skip-install', async () => {
@@ -245,14 +290,16 @@ describe('run', () => {
       'skip-prompt': true,
       'skip-install': true,
       'project-name': project.name,
-      'adobe-services': getFullServicesList()
+      'adobe-services': '',
+      'supported-adobe-services': ''
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
   test('no-path, --skip-install', async () => {
-    const project = mockValidConfig()
+    const project = mockValidConfig({ supportedServices: fakeSupportedServices })
     await TheCommand.run(['--skip-install'])
 
     expect(yeoman.createEnv).toHaveBeenCalled()
@@ -261,17 +308,21 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true,
+      'cert-dir': certDir
     })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
       'skip-prompt': false,
       'skip-install': true,
       'project-name': project.name,
-      'adobe-services': getFullServicesList()
+      'adobe-services': 'service1SDK,service2SDK',
+      'supported-adobe-services': 'service1SDK,service2SDK,service3SDK,service4SDK'
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
+    expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
   })
 
   test('getCliInfo error', async () => {
@@ -288,18 +339,20 @@ describe('run', () => {
       'skip-prompt': false,
       'skip-install': true,
       'project-name': project.name,
-      'adobe-services': getFullServicesList()
+      'adobe-services': '',
+      'supported-adobe-services': ''
     })
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
   test('no-path', async () => {
-    const project = mockValidConfig()
+    const project = mockValidConfig({ supportedServices: fakeSupportedServices })
     await TheCommand.run([])
 
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(2)
@@ -307,15 +360,163 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true,
+      'cert-dir': certDir
     })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
       'skip-prompt': false,
       'skip-install': false,
       'project-name': project.name,
-      'adobe-services': getFullServicesList()
+      'adobe-services': 'service1SDK,service2SDK',
+      'supported-adobe-services': 'service1SDK,service2SDK,service3SDK,service4SDK'
     })
+    expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
+  })
+
+  test('no path, no supported services in console config file', async () => {
+    const project = mockValidConfig({ supportedServices: [] })
+    await TheCommand.run([])
+
+    expect(fs.ensureDirSync).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(2)
+    const genConsole = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
+      'access-token': mockAccessToken,
+      'destination-file': 'console.json',
+      'ims-env': 'prod',
+      'allow-create': true,
+      'cert-dir': certDir
+    })
+    const genApp = mockRegister.mock.calls[1][1]
+    expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
+      'skip-prompt': false,
+      'skip-install': false,
+      'project-name': project.name,
+      'adobe-services': 'service1SDK,service2SDK',
+      'supported-adobe-services': ''
+    })
+    expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
+  })
+
+  test('no path, no workspace services in console config file', async () => {
+    const project = mockValidConfig({ workspaceServices: [], supportedServices: fakeSupportedServices })
+    await TheCommand.run([])
+
+    expect(fs.ensureDirSync).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(2)
+    const genConsole = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
+      'access-token': mockAccessToken,
+      'destination-file': 'console.json',
+      'ims-env': 'prod',
+      'allow-create': true,
+      'cert-dir': certDir
+    })
+    const genApp = mockRegister.mock.calls[1][1]
+    expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
+      'skip-prompt': false,
+      'skip-install': false,
+      'project-name': project.name,
+      'adobe-services': '',
+      'supported-adobe-services': 'service1SDK,service2SDK,service3SDK,service4SDK'
+    })
+    expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
+  })
+
+  test('no path, no services at all in console config file', async () => {
+    const project = mockValidConfig({ workspaceServices: [], supportedServices: [] })
+    await TheCommand.run([])
+
+    expect(fs.ensureDirSync).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(2)
+    const genConsole = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
+      'access-token': mockAccessToken,
+      'destination-file': 'console.json',
+      'ims-env': 'prod',
+      'allow-create': true,
+      'cert-dir': certDir
+    })
+    const genApp = mockRegister.mock.calls[1][1]
+    expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
+      'skip-prompt': false,
+      'skip-install': false,
+      'project-name': project.name,
+      'adobe-services': '',
+      'supported-adobe-services': ''
+    })
+    expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
+  })
+
+  test('some-path', async () => {
+    const project = mockValidConfig({ supportedServices: fakeSupportedServices })
+    await TheCommand.run(['some-path'])
+
+    expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+    expect(process.chdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(2)
+    const genConsole = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
+      'access-token': mockAccessToken,
+      'destination-file': 'console.json',
+      'ims-env': 'prod',
+      'allow-create': true,
+      'cert-dir': certDir
+    })
+    const genApp = mockRegister.mock.calls[1][1]
+    expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
+      'skip-prompt': false,
+      'skip-install': false,
+      'project-name': project.name,
+      'adobe-services': 'service1SDK,service2SDK',
+      'supported-adobe-services': 'service1SDK,service2SDK,service3SDK,service4SDK'
+    })
+
+    // we changed dir, console.json is in cwd
+    expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
+  })
+
+  test('some-path no-supported-services', async () => {
+    const project = mockValidConfig()
+    await TheCommand.run(['some-path'])
+
+    expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+    expect(process.chdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
+
+    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(mockRegister).toHaveBeenCalledTimes(2)
+    const genConsole = mockRegister.mock.calls[0][1]
+    expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
+      'access-token': mockAccessToken,
+      'destination-file': 'console.json',
+      'ims-env': 'prod',
+      'allow-create': true,
+      'cert-dir': certDir
+    })
+    const genApp = mockRegister.mock.calls[1][1]
+    expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
+      'skip-prompt': false,
+      'skip-install': false,
+      'project-name': project.name,
+      'adobe-services': 'service1SDK,service2SDK',
+      'supported-adobe-services': ''
+    })
+
+    // we changed dir, console.json is in cwd
+    expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
   })
 
   test('no imports should write aio config', async () => {
@@ -326,7 +527,7 @@ describe('run', () => {
     await TheCommand.run([])
 
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(2)
@@ -334,20 +535,19 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true,
+      'cert-dir': certDir
     })
     const genApp = mockRegister.mock.calls[1][1]
     expect(mockRun).toHaveBeenCalledWith(genApp, {
       'skip-prompt': false,
       'skip-install': false,
       'project-name': project.name,
-      'adobe-services': getFullServicesList()
+      'adobe-services': '',
+      'supported-adobe-services': ''
     })
-    expect(importLib.writeAio).toHaveBeenCalledWith(
-      { services: fullServicesJson },
-      process.cwd(),
-      { interactive: false, merge: true }
-    )
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
   test('no-path --import file=invalid config', async () => {
@@ -358,13 +558,13 @@ describe('run', () => {
   test('no-path --import file={name: lifeisgood, services:AdobeTargetSDK,CampaignSDK, credentials:fake,jwt}', async () => {
     const project = mockValidConfig({
       name: 'lifeisgood',
-      services: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }]
+      workspaceServices: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }]
     })
     await TheCommand.run(['--import', 'config.json'])
 
     // no args.path
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(1)
@@ -373,26 +573,28 @@ describe('run', () => {
       'skip-prompt': false,
       'skip-install': false,
       'project-name': project.name,
-      'adobe-services': 'AdobeTargetSDK,CampaignSDK'
+      'adobe-services': 'AdobeTargetSDK,CampaignSDK',
+      'supported-adobe-services': ''
     })
 
     expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
       process.cwd(),
       { interactive: false, merge: true },
       { SERVICE_API_KEY: 'fakeId123' })
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
-  test('no-path --import file={name: lifeisgood, services:AdobeTargetSDK,CampaignSDK, credentials:fake}', async () => {
+  test('no-path --import file={name: lifeisgood, workspaceServices:AdobeTargetSDK,CampaignSDK, credentials:fake}', async () => {
     const project = mockValidConfig({
       name: 'lifeisgood',
-      services: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }],
+      workspaceServices: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }],
       credentials: [{ id: '1', fake: { client_id: 'notjwtId' } }]
     })
     await TheCommand.run(['--import', 'config.json'])
 
     // no args.path
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(1)
@@ -401,26 +603,28 @@ describe('run', () => {
       'skip-prompt': false,
       'skip-install': false,
       'project-name': project.name,
-      'adobe-services': 'AdobeTargetSDK,CampaignSDK'
+      'adobe-services': 'AdobeTargetSDK,CampaignSDK',
+      'supported-adobe-services': ''
     })
 
     expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
       process.cwd(),
       { interactive: false, merge: true },
       { SERVICE_API_KEY: '' })
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
-  test('no-path --import file={name: lifeisgood, services:AdobeTargetSDK,CampaignSDK, credentials:null}', async () => {
+  test('no-path --import file={name: lifeisgood, workspaceServices:AdobeTargetSDK,CampaignSDK, credentials:null}', async () => {
     const project = mockValidConfig({
       name: 'lifeisgood',
-      services: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }],
+      workspaceServices: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }],
       credentials: null
     })
     await TheCommand.run(['--import', 'config.json'])
 
     // no args.path
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(1)
@@ -429,25 +633,27 @@ describe('run', () => {
       'skip-prompt': false,
       'skip-install': false,
       'project-name': project.name,
-      'adobe-services': 'AdobeTargetSDK,CampaignSDK'
+      'adobe-services': 'AdobeTargetSDK,CampaignSDK',
+      'supported-adobe-services': ''
     })
 
     expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
       process.cwd(),
       { interactive: false, merge: true },
       { SERVICE_API_KEY: '' })
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
-  test('no-path --yes --import file={name: lifeisgood, services:AdobeTargetSDK,CampaignSDK, credentials:fake,jwt}', async () => {
+  test('no-path --yes --import file={name: lifeisgood, supportedServices:AdobeTargetSDK,CampaignSDK, credentials:fake,jwt}', async () => {
     const project = mockValidConfig({
       name: 'lifeisgood',
-      services: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }]
+      supportedServices: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }]
     })
     await TheCommand.run(['--yes', '--import', 'config.json'])
 
     // no args.path
     expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(spyChdir).not.toHaveBeenCalled()
+    expect(process.chdir).not.toHaveBeenCalled()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockRegister).toHaveBeenCalledTimes(1)
@@ -456,37 +662,14 @@ describe('run', () => {
       'skip-prompt': true,
       'skip-install': false,
       'project-name': project.name,
-      'adobe-services': 'AdobeTargetSDK,CampaignSDK'
+      'adobe-services': 'service1SDK,service2SDK',
+      'supported-adobe-services': 'AdobeTargetSDK,CampaignSDK'
     })
     expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
       process.cwd(),
       { interactive: false, merge: true },
       { SERVICE_API_KEY: 'fakeId123' })
-  })
-
-  test('some-path --import file={name: lifeisgood, services:undefined, credentials:fake,jwt}', async () => {
-    const project = mockValidConfig({ name: 'lifeisgood', services: [] })
-    await TheCommand.run(['some-path', '--import', 'config.json'])
-
-    // no args.path
-    expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
-    expect(spyChdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': false,
-      'skip-install': false,
-      'project-name': project.name,
-      'adobe-services': ''
-    })
-
-    // Note here path.resolve uses another cwd than the mocked process.cwd
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
-      process.cwd(),
-      { interactive: false, merge: true },
-      { SERVICE_API_KEY: 'fakeId123' })
+    expect(fs.unlinkSync).not.toHaveBeenCalled()
   })
 
   test('some-path --import ../fake/config.json', async () => {
@@ -518,7 +701,10 @@ describe('run', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
       'access-token': mockAccessToken,
       'destination-file': 'console.json',
-      'ims-env': 'prod'
+      'ims-env': 'prod',
+      'allow-create': true,
+      'cert-dir': certDir
     })
+    expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
   })
 })

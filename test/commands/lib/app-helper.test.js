@@ -13,436 +13,603 @@ const which = require('which')
 const fs = require('fs-extra')
 const execa = require('execa')
 const appHelper = require('../../../src/lib/app-helper')
-const RuntimeLib = require('@adobe/aio-lib-runtime')
+const fetch = require('node-fetch')
+const config = require('@adobe/aio-lib-core-config')
 
-describe('exports helper methods', () => {
-  test('isNpmInstalled', () => {
-    expect(appHelper.isNpmInstalled).toBeDefined()
-    expect(appHelper.isNpmInstalled).toBeInstanceOf(Function)
-    which.sync.mockReturnValue('not-null')
-    expect(appHelper.isNpmInstalled()).toBeTruthy()
-    which.sync.mockReturnValue(null)
-    expect(appHelper.isNpmInstalled()).toBeFalsy()
+jest.mock('@adobe/aio-lib-core-config')
+jest.mock('node-fetch')
+jest.mock('execa')
+jest.mock('process')
+
+beforeEach(() => {
+  execa.mockReset()
+  fetch.mockReset()
+  config.get.mockReset()
+  config.set.mockReset()
+})
+
+test('isDockerRunning', async () => {
+  let result
+
+  expect(appHelper.isDockerRunning).toBeDefined()
+  expect(appHelper.isDockerRunning).toBeInstanceOf(Function)
+
+  execa.mockImplementation(() => {
+    return { stdout: jest.fn() }
   })
 
-  test('isGitInstalled', () => {
-    expect(appHelper.isGitInstalled).toBeDefined()
-    expect(appHelper.isGitInstalled).toBeInstanceOf(Function)
-    which.sync.mockReturnValue('not-null')
-    expect(appHelper.isGitInstalled()).toBeTruthy()
-    which.sync.mockReturnValue(null)
-    expect(appHelper.isGitInstalled()).toBeFalsy()
+  result = await appHelper.isDockerRunning()
+  expect(result).toBeTruthy()
+
+  execa.mockImplementation((cmd, args) => {
+    if (cmd === 'docker' && args.includes('info')) {
+      throw new Error('fake error')
+    }
+    return { stdout: jest.fn() }
   })
 
-  test('installPackage', async () => {
-    expect(appHelper.installPackage).toBeDefined()
-    expect(appHelper.installPackage).toBeInstanceOf(Function)
+  result = await appHelper.isDockerRunning()
+  expect(result).toBeFalsy()
+})
 
-    // throws error if dir dne => // fs.statSync(dir).isDirectory()
-    fs.statSync.mockReturnValue({
-      isDirectory: () => false
-    })
-    await expect(appHelper.installPackage('does-not-exist'))
-      .rejects.toThrow(/does-not-exist is not a directory/)
+test('hasDockerCLI', async () => {
+  let result
 
-    // throws error if dir does not contain a package.json
-    fs.statSync.mockReturnValue({
-      isDirectory: () => true
-    })
-    fs.readdirSync.mockReturnValue([])
-    await expect(appHelper.installPackage('does-not-exist'))
-      .rejects.toThrow(/does-not-exist does not contain a package.json file./)
+  expect(appHelper.hasDockerCLI).toBeDefined()
+  expect(appHelper.hasDockerCLI).toBeInstanceOf(Function)
 
-    // succeeds if npm install returns success
-    fs.readdirSync.mockReturnValue(['package.json'])
-    appHelper.installPackage('does-not-exist')
-    expect(execa).toHaveBeenCalledWith('npm', ['install'], { cwd: 'does-not-exist' })
+  execa.mockImplementation(() => {
+    return { stdout: jest.fn() }
   })
 
-  test('runPackageScript', async () => {
-    expect(appHelper.runPackageScript).toBeDefined()
-    expect(appHelper.runPackageScript).toBeInstanceOf(Function)
+  result = await appHelper.hasDockerCLI()
+  expect(result).toBeTruthy()
+
+  execa.mockImplementation((cmd, args) => {
+    if (cmd === 'docker' && args.includes('-v')) {
+      throw new Error('fake error')
+    }
+    return { stdout: jest.fn() }
   })
 
-  test('runPackageScript missing package.json', async () => {
-    // throws error if dir does not contain a package.json
-    await expect(appHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
-      .rejects.toThrow(/does-not-exist does not contain a package.json/)
+  result = await appHelper.hasDockerCLI()
+  expect(result).toBeFalsy()
+})
+
+test('hasJavaCLI', async () => {
+  let result
+
+  expect(appHelper.hasJavaCLI).toBeDefined()
+  expect(appHelper.hasJavaCLI).toBeInstanceOf(Function)
+
+  execa.mockImplementation(() => {
+    return { stdout: jest.fn() }
   })
 
-  test('runPackageScript success', async () => {
-    fs.readJSON.mockReturnValue({ scripts: { test: 'some-value' } })
-    await appHelper.runPackageScript('test', '')
-    expect(execa).toHaveBeenCalledWith('npm', ['run-script', 'test'], expect.any(Object))
+  result = await appHelper.hasJavaCLI()
+  expect(result).toBeTruthy()
+
+  execa.mockImplementation((cmd) => {
+    if (cmd === 'java') {
+      throw new Error('fake error')
+    }
+    return { stdout: jest.fn() }
   })
 
-  test('runPackageScript success with silent option', async () => {
-    // succeeds if npm run-script returns success
-    fs.readJSON.mockReturnValue({ scripts: { cmd: 'some-value' } })
+  result = await appHelper.hasJavaCLI()
+  expect(result).toBeFalsy()
+})
 
-    await appHelper.runPackageScript('cmd', '', ['--silent'])
-    expect(execa).toHaveBeenCalledWith('npm', ['run-script', 'cmd', '--silent'], expect.any(Object))
+test('isNpmInstalled', () => {
+  expect(appHelper.isNpmInstalled).toBeDefined()
+  expect(appHelper.isNpmInstalled).toBeInstanceOf(Function)
+  which.sync.mockReturnValue('not-null')
+  expect(appHelper.isNpmInstalled()).toBeTruthy()
+  which.sync.mockReturnValue(null)
+  expect(appHelper.isNpmInstalled()).toBeFalsy()
+})
+
+test('isGitInstalled', () => {
+  expect(appHelper.isGitInstalled).toBeDefined()
+  expect(appHelper.isGitInstalled).toBeInstanceOf(Function)
+  which.sync.mockReturnValue('not-null')
+  expect(appHelper.isGitInstalled()).toBeTruthy()
+  which.sync.mockReturnValue(null)
+  expect(appHelper.isGitInstalled()).toBeFalsy()
+})
+
+test('installPackage', async () => {
+  expect(appHelper.installPackage).toBeDefined()
+  expect(appHelper.installPackage).toBeInstanceOf(Function)
+
+  // throws error if dir dne => // fs.statSync(dir).isDirectory()
+  fs.statSync.mockReturnValue({
+    isDirectory: () => false
   })
+  await expect(appHelper.installPackage('does-not-exist'))
+    .rejects.toThrow(/does-not-exist is not a directory/)
 
-  test('runPackageScript rejects if package.json does not have matching script', async () => {
-    fs.readdirSync.mockReturnValue(['package.json'])
-    fs.readJSONSync.mockReturnValue({ scripts: { notest: 'some-value' } })
-    await expect(appHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
-      .rejects.toThrow(/does-not-exist/)
+  // throws error if dir does not contain a package.json
+  fs.statSync.mockReturnValue({
+    isDirectory: () => true
   })
+  fs.readdirSync.mockReturnValue([])
+  await expect(appHelper.installPackage('does-not-exist'))
+    .rejects.toThrow(/does-not-exist does not contain a package.json file./)
 
-  test('wrapError returns an a Error in any case', async () => {
-    expect(appHelper.wrapError).toBeDefined()
-    expect(appHelper.wrapError).toBeInstanceOf(Function)
+  // succeeds if npm install returns success
+  fs.readdirSync.mockReturnValue(['package.json'])
+  appHelper.installPackage('does-not-exist')
+  return expect(execa).toHaveBeenCalledWith('npm', ['install'], { cwd: 'does-not-exist' })
+})
 
-    let error = appHelper.wrapError()
-    expect(error).toBeInstanceOf(Error)
-    expect(error.message).toEqual('Unknown error')
-    expect(error.stack).toBeDefined()
+test('runPackageScript', async () => {
+  expect(appHelper.runPackageScript).toBeDefined()
+  expect(appHelper.runPackageScript).toBeInstanceOf(Function)
+})
 
-    error = appHelper.wrapError({ message: 'yolo' })
-    expect(error).toBeInstanceOf(Error)
-    expect(error.message).toEqual('yolo')
-    expect(error.stack).toBeDefined()
+test('runPackageScript success', async () => {
+  const scripts = {
+    test: 'some-script some-arg-1 some-arg-2'
+  }
+  fs.readJSON.mockReturnValue({ scripts })
 
-    error = appHelper.wrapError('yolo2')
-    expect(error).toBeInstanceOf(Error)
-    expect(error.message).toEqual('yolo2')
-    expect(error.stack).toBeDefined()
-
-    error = appHelper.wrapError(new Error('yolo3'))
-    expect(error).toBeInstanceOf(Error)
-    expect(error.message).toEqual('yolo3')
-    expect(error.stack).toBeDefined()
-  })
-
-  describe('getLogs', () => {
-    const fakeConfig = {
-      ow: {
-        apihost: 'https://fake.com',
-        apiversion: 'v0',
-        auth: 'abcde',
-        namespace: 'dude'
+  const ipcMessage = {
+    type: 'long-running-process',
+    data: {
+      pid: 123,
+      logs: {
+        stdout: 'logs/foo.sh.out.log',
+        stderr: 'logs/foo.sh.err.log'
       }
     }
-    const logger = jest.fn()
-    let rtLib
-    beforeEach(async () => {
-      RuntimeLib.mockReset()
-      rtLib = await RuntimeLib.init({ fake: 'credentials' })
-      logger.mockReset()
-    })
+  }
 
-    test('inits the runtime lib instance', async () => {
-      rtLib.mockResolved('activations.list', [])
-      rtLib.mockResolved('activations.logs', { logs: [] })
-      await appHelper.getLogs(fakeConfig, 1, logger)
-      expect(RuntimeLib.init).toHaveBeenCalledWith({
-        namespace: fakeConfig.ow.namespace,
-        apihost: fakeConfig.ow.apihost,
-        api_key: fakeConfig.ow.auth,
-        apiversion: fakeConfig.ow.apiversion
-      })
-    })
-    test('(config, limit=1, logger) and no activations', async () => {
-      rtLib.mockResolved('activations.list', [])
-      rtLib.mockResolved('activations.logs', { logs: [] })
-      await appHelper.getLogs(fakeConfig, 1, logger)
-      expect(RuntimeLib.init).toHaveBeenCalled()
-      expect(rtLib.activations.list).toHaveBeenCalledWith({ limit: 1, skip: 0 })
-      expect(rtLib.activations.logs).not.toHaveBeenCalled()
-      expect(logger).not.toHaveBeenCalled()
-    })
-    test('(config, limit=3, logger) and 3 activations and no logs', async () => {
-      rtLib.mockResolved('activations.list', [
-        { activationId: 123, start: 555555, name: 'one' },
-        { activationId: 456, start: 555666, name: 'two' },
-        { activationId: 100, start: 666666, name: 'three' }
-      ])
-      rtLib.mockResolved('activations.logs', { logs: [] })
-      await appHelper.getLogs(fakeConfig, 3, logger)
-      expect(rtLib.activations.list).toHaveBeenCalledWith({ limit: 3, skip: 0 })
-      expect(rtLib.activations.logs).toHaveBeenCalledTimes(3)
-      // reverse order
-      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(1, { activationId: 100 })
-      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(2, { activationId: 456 })
-      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(3, { activationId: 123 })
-      expect(logger).not.toHaveBeenCalled()
-    })
-    test('(config, limit=45, logger) and 3 activations and logs for 2 of them', async () => {
-      rtLib.mockResolved('activations.list', [
-        { activationId: 123, start: 555555, name: 'one' },
-        { activationId: 456, start: 555666, name: 'two' },
-        { activationId: 100, start: 666666, name: 'three' }
-      ])
-      rtLib.mockFn('activations.logs').mockImplementation(a => {
-        if (a.activationId === 100) {
-          return { logs: ['three A', 'three B', 'three C'] }
-        } else if (a.activationId === 456) {
-          return { logs: ['two A \n two B'] }
-        }
-        return { logs: [] }
-      })
-
-      await appHelper.getLogs(fakeConfig, 45, logger)
-      expect(rtLib.activations.list).toHaveBeenCalledWith({ limit: 45, skip: 0 })
-      expect(rtLib.activations.logs).toHaveBeenCalledTimes(3)
-      // reverse order
-      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(1, { activationId: 100 })
-      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(2, { activationId: 456 })
-      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(3, { activationId: 123 })
-      expect(logger).toHaveBeenCalledTimes(8)
-      expect(logger).toHaveBeenNthCalledWith(1, 'three:100')
-      expect(logger).toHaveBeenNthCalledWith(2, 'three A')
-      expect(logger).toHaveBeenNthCalledWith(3, 'three B')
-      expect(logger).toHaveBeenNthCalledWith(4, 'three C')
-      expect(logger).toHaveBeenNthCalledWith(5) // new line
-      expect(logger).toHaveBeenNthCalledWith(6, 'two:456')
-      expect(logger).toHaveBeenNthCalledWith(7, 'two A \n two B')
-    })
-
-    test('(config, limit=45, logger, startTime=bigger than first 2) and 3 activations and logs for 2 of them', async () => {
-      rtLib.mockResolved('activations.list', [
-        { activationId: 123, start: 555555, name: 'one' },
-        { activationId: 456, start: 555666, name: 'two' },
-        { activationId: 100, start: 666666, name: 'three' }
-      ])
-      rtLib.mockFn('activations.logs').mockImplementation(a => {
-        if (a.activationId === 100) {
-          return { logs: ['three A', 'three B', 'three C'] }
-        } else if (a.activationId === 456) {
-          return { logs: ['two A \n two B'] }
-        }
-        return { logs: [] }
-      })
-
-      await appHelper.getLogs(fakeConfig, 45, logger, 666665)
-      expect(rtLib.activations.list).toHaveBeenCalledWith({ limit: 45, skip: 0 })
-      expect(rtLib.activations.logs).toHaveBeenCalledTimes(1)
-      // reverse order
-      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(1, { activationId: 100 })
-      expect(logger).toHaveBeenCalledTimes(5)
-      expect(logger).toHaveBeenNthCalledWith(1, 'three:100')
-      expect(logger).toHaveBeenNthCalledWith(2, 'three A')
-      expect(logger).toHaveBeenNthCalledWith(3, 'three B')
-      expect(logger).toHaveBeenNthCalledWith(4, 'three C')
-      expect(logger).toHaveBeenNthCalledWith(5) // new line
-    })
-
-    test('(config, limit=45, no logger) and 1 activation and 1 log', async () => {
-      const spy = jest.spyOn(console, 'log')
-      spy.mockImplementation(() => {})
-
-      rtLib.mockResolved('activations.list', [
-        { activationId: 123, start: 555555, name: 'one' }
-      ])
-      rtLib.mockFn('activations.logs').mockImplementation(a => {
-        if (a.activationId === 123) {
-          return { logs: ['one A'] }
-        }
-        return { logs: [] }
-      })
-
-      await appHelper.getLogs(fakeConfig, 45)
-      expect(rtLib.activations.list).toHaveBeenCalledWith({ limit: 45, skip: 0 })
-      expect(rtLib.activations.logs).toHaveBeenCalledTimes(1)
-      // reverse order
-      expect(rtLib.activations.logs).toHaveBeenNthCalledWith(1, { activationId: 123 })
-      expect(spy).toHaveBeenCalledTimes(3)
-      expect(spy).toHaveBeenNthCalledWith(1, 'one:123')
-      expect(spy).toHaveBeenNthCalledWith(2, 'one A')
-      expect(spy).toHaveBeenNthCalledWith(3) // new line
-
-      spy.mockRestore()
-    })
-  })
-
-  describe('getActionUrls', () => {
-    let fakeConfig
-    beforeEach(() => {
-      // base
-      fakeConfig = {
-        ow: {
-          namespace: 'dude',
-          apihost: 'https://fake.com',
-          package: 'thepackage',
-          apiversion: 'v0'
-        },
-        app: {
-          hasFrontend: true,
-          hostname: 'https://cdn.com'
-        },
-        manifest: {
-          package: {
-            actions: {}
+  const mockChildProcessOn = jest.fn((eventname, fn) => {
+    if (eventname === 'message') {
+      // call it back right away, for coverage
+      fn(ipcMessage)
+      // now call with a different message type, for coverage
+      fn({
+        type: 'some-other-message',
+        data: {
+          pid: 1234,
+          logs: {
+            stdout: 'logs/bar.sh.out.log',
+            stderr: 'logs/bar.sh.err.log'
           }
         }
-      }
-    })
-    test('no actions in manifest config', () => {
-      expect(appHelper.getActionUrls(fakeConfig)).toEqual({})
-    })
-    test('6 actions, 2 web and 4 non-web and no sequence', () => {
-      fakeConfig.manifest.package.actions = {
-        one: { 'web-export': true },
-        two: { web: true },
-        three: { web: false },
-        four: { web: 'no' },
-        five: { web: 'false' },
-        six: { other: 'something' }
-      }
-      expect(appHelper.getActionUrls(fakeConfig)).toEqual({
-        five: 'https://dude.fake.com/api/v0/thepackage/five',
-        four: 'https://dude.fake.com/api/v0/thepackage/four',
-        one: 'https://dude.cdn.com/api/v0/web/thepackage/one',
-        six: 'https://dude.fake.com/api/v0/thepackage/six',
-        three: 'https://dude.fake.com/api/v0/thepackage/three',
-        two: 'https://dude.cdn.com/api/v0/web/thepackage/two'
       })
-    })
-    test('6 sequences, 2 web and 4 non-web and no actions', () => {
-      fakeConfig.manifest.package.sequences = {
-        one: { 'web-export': true },
-        two: { web: true },
-        three: { web: false },
-        four: { web: 'no' },
-        five: { web: 'false' },
-        six: { other: 'something' }
-      }
-      expect(appHelper.getActionUrls(fakeConfig)).toEqual({
-        five: 'https://dude.fake.com/api/v0/thepackage/five',
-        four: 'https://dude.fake.com/api/v0/thepackage/four',
-        one: 'https://dude.cdn.com/api/v0/web/thepackage/one',
-        six: 'https://dude.fake.com/api/v0/thepackage/six',
-        three: 'https://dude.fake.com/api/v0/thepackage/three',
-        two: 'https://dude.cdn.com/api/v0/web/thepackage/two'
-      })
-    })
-    test('2 actions and 2 sequences, one web one non-web', () => {
-      fakeConfig.manifest.package.actions = {
-        aone: { 'web-export': true },
-        atwo: {}
-      }
-      fakeConfig.manifest.package.sequences = {
-        sone: { 'web-export': true },
-        stwo: {}
-      }
-      expect(appHelper.getActionUrls(fakeConfig)).toEqual({
-        aone: 'https://dude.cdn.com/api/v0/web/thepackage/aone',
-        atwo: 'https://dude.fake.com/api/v0/thepackage/atwo',
-        sone: 'https://dude.cdn.com/api/v0/web/thepackage/sone',
-        stwo: 'https://dude.fake.com/api/v0/thepackage/stwo'
-      })
-    })
-    test('2 actions and 2 sequences, one web one non-web, app has no frontend', () => {
-      fakeConfig.manifest.package.actions = {
-        aone: { 'web-export': true },
-        atwo: {}
-      }
-      fakeConfig.manifest.package.sequences = {
-        sone: { 'web-export': true },
-        stwo: {}
-      }
-      fakeConfig.app.hasFrontend = false
-      expect(appHelper.getActionUrls(fakeConfig)).toEqual({
-        aone: 'https://dude.fake.com/api/v0/web/thepackage/aone',
-        atwo: 'https://dude.fake.com/api/v0/thepackage/atwo',
-        sone: 'https://dude.fake.com/api/v0/web/thepackage/sone',
-        stwo: 'https://dude.fake.com/api/v0/thepackage/stwo'
-      })
-    })
-    test('2 actions and 2 sequences, one web one non-web, isRemoteDev=true', () => {
-      fakeConfig.manifest.package.actions = {
-        aone: { 'web-export': true },
-        atwo: {}
-      }
-      fakeConfig.manifest.package.sequences = {
-        sone: { 'web-export': true },
-        stwo: {}
-      }
-      expect(appHelper.getActionUrls(fakeConfig, true)).toEqual({
-        aone: 'https://dude.fake.com/api/v0/web/thepackage/aone',
-        atwo: 'https://dude.fake.com/api/v0/thepackage/atwo',
-        sone: 'https://dude.fake.com/api/v0/web/thepackage/sone',
-        stwo: 'https://dude.fake.com/api/v0/thepackage/stwo'
-      })
-    })
-    test('2 actions and 2 sequences, one web one non-web, isLocalDev=true', () => {
-      fakeConfig.manifest.package.actions = {
-        aone: { 'web-export': true },
-        atwo: {}
-      }
-      fakeConfig.manifest.package.sequences = {
-        sone: { 'web-export': true },
-        stwo: {}
-      }
-      expect(appHelper.getActionUrls(fakeConfig, false, true)).toEqual({
-        aone: 'https://fake.com/api/v0/web/dude/thepackage/aone',
-        atwo: 'https://fake.com/api/v0/dude/thepackage/atwo',
-        sone: 'https://fake.com/api/v0/web/dude/thepackage/sone',
-        stwo: 'https://fake.com/api/v0/dude/thepackage/stwo'
-      })
-    })
+    }
   })
 
-  test('removeProtocol', () => {
-    let res = appHelper.removeProtocolFromURL('https://some-url')
-    expect(res).toBe('some-url')
-
-    res = appHelper.removeProtocolFromURL('https:/some-url')
-    expect(res).toBe('https:/some-url')
-
-    res = appHelper.removeProtocolFromURL('https:some-url')
-    expect(res).toBe('https:some-url')
-
-    res = appHelper.removeProtocolFromURL('https//some-url')
-    expect(res).toBe('https//some-url')
-
-    res = appHelper.removeProtocolFromURL('http://user:pass@sub.example.com:8080/p/a/t/h?query=string#hash')
-    expect(res).toBe('user:pass@sub.example.com:8080/p/a/t/h?query=string#hash')
+  process.kill = jest.fn()
+  process.on = jest.fn((eventname, fn) => {
+    if (eventname === 'exit') {
+      // call it back right away, for coverage
+      fn()
+    }
   })
 
-  test('urlJoin', () => {
-    let res = appHelper.urlJoin('a', 'b', 'c')
-    expect(res).toBe('a/b/c')
-    // keeps leading /
-    res = appHelper.urlJoin('/', 'a', 'b', 'c')
-    expect(res).toBe('/a/b/c')
-
-    res = appHelper.urlJoin('/a/b/c')
-    expect(res).toBe('/a/b/c')
-    // keeps inner /
-    res = appHelper.urlJoin('a/b/c')
-    expect(res).toBe('a/b/c')
-
-    res = appHelper.urlJoin('a/b', 'c')
-    expect(res).toBe('a/b/c')
-
-    res = appHelper.urlJoin('a/b', '/c')
-    expect(res).toBe('a/b/c')
-
-    res = appHelper.urlJoin('a/b', '/', 'c')
-    expect(res).toBe('a/b/c')
-    // collapses duplicate //
-    res = appHelper.urlJoin('a/b', '/', '/', '/', 'c')
-    expect(res).toBe('a/b/c')
-
-    res = appHelper.urlJoin('a', 'b', 'c/')
-    expect(res).toBe('a/b/c')
-
-    res = appHelper.urlJoin('a', 'b', 'c', '/')
-    expect(res).toBe('a/b/c')
+  execa.command.mockReturnValueOnce({
+    on: mockChildProcessOn
   })
 
-  test('checkFile', () => {
-    jest.mock('fs-extra')
-    const fs = require('fs-extra')
-    // if file exists
-    fs.lstatSync.mockReturnValue({ isFile: () => true })
-    expect(() => appHelper.checkFile('somepath/a/b')).not.toThrow()
-    expect(fs.lstatSync).toHaveBeenCalledWith('somepath/a/b')
-    // if not exists
-    fs.lstatSync.mockReturnValue({ isFile: () => false })
-    expect(() => appHelper.checkFile('no/exists')).toThrow('no/exists is not a valid file')
+  await appHelper.runPackageScript('test', '')
+  expect(mockChildProcessOn).toHaveBeenCalledWith('message', expect.any(Function))
+  expect(process.on).toHaveBeenCalledWith('exit', expect.any(Function))
+  expect(process.kill).toHaveBeenCalledWith(ipcMessage.data.pid, 'SIGTERM')
+  return expect(execa.command).toHaveBeenCalledWith(scripts.test, expect.any(Object))
+})
+
+test('runPackageScript success with additional command arg/flag', async () => {
+  // succeeds if npm run-script returns success
+  const scripts = {
+    cmd: 'some-script some-arg-1 some-arg-2'
+  }
+  fs.readJSON.mockReturnValue({ scripts })
+
+  const mockChildProcessOn = jest.fn()
+  execa.command.mockReturnValueOnce({
+    on: mockChildProcessOn
   })
+
+  const cmdExtraArgs = ['--my-flag']
+  await appHelper.runPackageScript('cmd', '', cmdExtraArgs)
+  expect(mockChildProcessOn).toHaveBeenCalledWith('message', expect.any(Function))
+  const finalCommand = `${scripts.cmd} ${cmdExtraArgs.join(' ')}`
+  return expect(execa.command).toHaveBeenCalledWith(finalCommand, expect.any(Object))
+})
+
+test('runPackageScript logs if package.json does not have matching script', async () => {
+  fs.readdirSync.mockReturnValue(['package.json'])
+  fs.readJSONSync.mockReturnValue({ scripts: { notest: 'some-value' } })
+  // coverage: the error is logged, no error thrown
+  await expect(appHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
+    .resolves.toBeUndefined()
+})
+
+test('wrapError returns an a Error in any case', async () => {
+  expect(appHelper.wrapError).toBeDefined()
+  expect(appHelper.wrapError).toBeInstanceOf(Function)
+
+  let error = appHelper.wrapError()
+  expect(error).toBeInstanceOf(Error)
+  expect(error.message).toEqual('Unknown error')
+  expect(error.stack).toBeDefined()
+
+  error = appHelper.wrapError({ message: 'yolo' })
+  expect(error).toBeInstanceOf(Error)
+  expect(error.message).toEqual('yolo')
+  expect(error.stack).toBeDefined()
+
+  error = appHelper.wrapError('yolo2')
+  expect(error).toBeInstanceOf(Error)
+  expect(error.message).toEqual('yolo2')
+  expect(error.stack).toBeDefined()
+
+  error = appHelper.wrapError(new Error('yolo3'))
+  expect(error).toBeInstanceOf(Error)
+  expect(error.message).toEqual('yolo3')
+  expect(error.stack).toBeDefined()
+})
+
+describe('getActionUrls', () => {
+  let fakeConfig
+  beforeEach(() => {
+    // base
+    fakeConfig = {
+      ow: {
+        namespace: 'dude',
+        apihost: 'https://fake.com',
+        package: 'thepackage',
+        apiversion: 'v0'
+      },
+      app: {
+        hasFrontend: true,
+        hostname: 'https://cdn.com'
+      },
+      manifest: {
+        package: {
+          actions: {}
+        }
+      }
+    }
+  })
+  test('no actions in manifest config', () => {
+    expect(appHelper.getActionUrls(fakeConfig)).toEqual({})
+  })
+  test('6 actions, 2 web and 4 non-web and no sequence', () => {
+    fakeConfig.manifest.package.actions = {
+      one: { 'web-export': true },
+      two: { web: true },
+      three: { web: false },
+      four: { web: 'no' },
+      five: { web: 'false' },
+      six: { other: 'something' }
+    }
+    expect(appHelper.getActionUrls(fakeConfig)).toEqual({
+      five: 'https://dude.fake.com/api/v0/thepackage/five',
+      four: 'https://dude.fake.com/api/v0/thepackage/four',
+      one: 'https://dude.cdn.com/api/v0/web/thepackage/one',
+      six: 'https://dude.fake.com/api/v0/thepackage/six',
+      three: 'https://dude.fake.com/api/v0/thepackage/three',
+      two: 'https://dude.cdn.com/api/v0/web/thepackage/two'
+    })
+  })
+  test('6 sequences, 2 web and 4 non-web and no actions', () => {
+    fakeConfig.manifest.package.sequences = {
+      one: { 'web-export': true },
+      two: { web: true },
+      three: { web: false },
+      four: { web: 'no' },
+      five: { web: 'false' },
+      six: { other: 'something' }
+    }
+    expect(appHelper.getActionUrls(fakeConfig)).toEqual({
+      five: 'https://dude.fake.com/api/v0/thepackage/five',
+      four: 'https://dude.fake.com/api/v0/thepackage/four',
+      one: 'https://dude.cdn.com/api/v0/web/thepackage/one',
+      six: 'https://dude.fake.com/api/v0/thepackage/six',
+      three: 'https://dude.fake.com/api/v0/thepackage/three',
+      two: 'https://dude.cdn.com/api/v0/web/thepackage/two'
+    })
+  })
+  test('2 actions and 2 sequences, one web one non-web', () => {
+    fakeConfig.manifest.package.actions = {
+      aone: { 'web-export': true },
+      atwo: {}
+    }
+    fakeConfig.manifest.package.sequences = {
+      sone: { 'web-export': true },
+      stwo: {}
+    }
+    expect(appHelper.getActionUrls(fakeConfig)).toEqual({
+      aone: 'https://dude.cdn.com/api/v0/web/thepackage/aone',
+      atwo: 'https://dude.fake.com/api/v0/thepackage/atwo',
+      sone: 'https://dude.cdn.com/api/v0/web/thepackage/sone',
+      stwo: 'https://dude.fake.com/api/v0/thepackage/stwo'
+    })
+  })
+  test('2 actions and 2 sequences, one web one non-web, app has no frontend', () => {
+    fakeConfig.manifest.package.actions = {
+      aone: { 'web-export': true },
+      atwo: {}
+    }
+    fakeConfig.manifest.package.sequences = {
+      sone: { 'web-export': true },
+      stwo: {}
+    }
+    fakeConfig.app.hasFrontend = false
+    expect(appHelper.getActionUrls(fakeConfig)).toEqual({
+      aone: 'https://dude.fake.com/api/v0/web/thepackage/aone',
+      atwo: 'https://dude.fake.com/api/v0/thepackage/atwo',
+      sone: 'https://dude.fake.com/api/v0/web/thepackage/sone',
+      stwo: 'https://dude.fake.com/api/v0/thepackage/stwo'
+    })
+  })
+  test('2 actions and 2 sequences, one web one non-web, isRemoteDev=true', () => {
+    fakeConfig.manifest.package.actions = {
+      aone: { 'web-export': true },
+      atwo: {}
+    }
+    fakeConfig.manifest.package.sequences = {
+      sone: { 'web-export': true },
+      stwo: {}
+    }
+    expect(appHelper.getActionUrls(fakeConfig, true)).toEqual({
+      aone: 'https://dude.fake.com/api/v0/web/thepackage/aone',
+      atwo: 'https://dude.fake.com/api/v0/thepackage/atwo',
+      sone: 'https://dude.fake.com/api/v0/web/thepackage/sone',
+      stwo: 'https://dude.fake.com/api/v0/thepackage/stwo'
+    })
+  })
+  test('2 actions and 2 sequences, one web one non-web, isLocalDev=true', () => {
+    fakeConfig.manifest.package.actions = {
+      aone: { 'web-export': true },
+      atwo: {}
+    }
+    fakeConfig.manifest.package.sequences = {
+      sone: { 'web-export': true },
+      stwo: {}
+    }
+    expect(appHelper.getActionUrls(fakeConfig, false, true)).toEqual({
+      aone: 'https://fake.com/api/v0/web/dude/thepackage/aone',
+      atwo: 'https://fake.com/api/v0/dude/thepackage/atwo',
+      sone: 'https://fake.com/api/v0/web/dude/thepackage/sone',
+      stwo: 'https://fake.com/api/v0/dude/thepackage/stwo'
+    })
+  })
+})
+
+test('removeProtocol', () => {
+  let res = appHelper.removeProtocolFromURL('https://some-url')
+  expect(res).toBe('some-url')
+
+  res = appHelper.removeProtocolFromURL('https:/some-url')
+  expect(res).toBe('https:/some-url')
+
+  res = appHelper.removeProtocolFromURL('https:some-url')
+  expect(res).toBe('https:some-url')
+
+  res = appHelper.removeProtocolFromURL('https//some-url')
+  expect(res).toBe('https//some-url')
+
+  res = appHelper.removeProtocolFromURL('http://user:pass@sub.example.com:8080/p/a/t/h?query=string#hash')
+  expect(res).toBe('user:pass@sub.example.com:8080/p/a/t/h?query=string#hash')
+})
+
+test('urlJoin', () => {
+  let res = appHelper.urlJoin('a', 'b', 'c')
+  expect(res).toBe('a/b/c')
+  // keeps leading /
+  res = appHelper.urlJoin('/', 'a', 'b', 'c')
+  expect(res).toBe('/a/b/c')
+
+  res = appHelper.urlJoin('/a/b/c')
+  expect(res).toBe('/a/b/c')
+  // keeps inner /
+  res = appHelper.urlJoin('a/b/c')
+  expect(res).toBe('a/b/c')
+
+  res = appHelper.urlJoin('a/b', 'c')
+  expect(res).toBe('a/b/c')
+
+  res = appHelper.urlJoin('a/b', '/c')
+  expect(res).toBe('a/b/c')
+
+  res = appHelper.urlJoin('a/b', '/', 'c')
+  expect(res).toBe('a/b/c')
+  // collapses duplicate //
+  res = appHelper.urlJoin('a/b', '/', '/', '/', 'c')
+  expect(res).toBe('a/b/c')
+
+  res = appHelper.urlJoin('a', 'b', 'c/')
+  expect(res).toBe('a/b/c')
+
+  res = appHelper.urlJoin('a', 'b', 'c', '/')
+  expect(res).toBe('a/b/c')
+})
+
+test('checkFile', () => {
+  jest.mock('fs-extra')
+  const fs = require('fs-extra')
+  // if file exists
+  fs.lstatSync.mockReturnValue({ isFile: () => true })
+  expect(() => appHelper.checkFile('somepath/a/b')).not.toThrow()
+  expect(fs.lstatSync).toHaveBeenCalledWith('somepath/a/b')
+  // if not exists
+  fs.lstatSync.mockReturnValue({ isFile: () => false })
+  expect(() => appHelper.checkFile('no/exists')).toThrow('no/exists is not a valid file')
+})
+
+test('downloadOWJar failed (server has response, but not ok)', async () => {
+  const response = {
+    ok: false,
+    statusText: 'some error'
+  }
+  fetch.mockReturnValueOnce(response)
+
+  const url = 'https://some.url'
+  const result = appHelper.downloadOWJar(url, 'foo/bar')
+  await expect(result).rejects.toEqual(new Error(`unexpected response while downloading '${url}': ${response.statusText}`))
+})
+
+test('downloadOWJar failed (no server response, fetch exception)', async () => {
+  const err = new Error('some fetch error')
+  fetch.mockRejectedValueOnce(err)
+
+  const url = 'https://some.url'
+  const result = appHelper.downloadOWJar(url, 'foo/bar')
+  await expect(result).rejects.toEqual(new Error(`connection error while downloading '${url}', are you online?`))
+})
+
+test('downloadOWJar ok', async () => {
+  const response = {
+    ok: true,
+    statusText: 'success',
+    body: {
+      pipe: jest.fn(),
+      on: jest.fn()
+    }
+  }
+
+  const url = 'https://some.url'
+  const fileToWrite = 'foo/bar'
+
+  fs.createWriteStream.mockImplementation((outFile) => {
+    expect(outFile).toEqual(fileToWrite)
+    return {
+      on: jest.fn((eventName, fn) => {
+        if (eventName === 'finish') { // immediately call it
+          fn()
+        }
+      })
+    }
+  })
+  fetch.mockReturnValueOnce(response)
+
+  const result = appHelper.downloadOWJar(url, fileToWrite)
+  await expect(result).resolves.toBeUndefined()
+})
+
+test('downloadOWJar (server connected ok, streaming error)', async () => {
+  const streamError = new Error('stream error')
+  const response = {
+    ok: true,
+    statusText: 'success',
+    body: {
+      pipe: jest.fn(),
+      on: jest.fn((eventName, fn) => {
+        expect(eventName).toEqual('error')
+        fn(streamError) // immediately call it
+      })
+    }
+  }
+
+  const url = 'https://some.url'
+  const fileToWrite = 'foo/bar'
+
+  fetch.mockReturnValueOnce(response)
+
+  const result = appHelper.downloadOWJar(url, fileToWrite)
+  await expect(result).rejects.toEqual(streamError)
+})
+
+test('runOpenWhiskJar ok', async () => {
+  fetch.mockReturnValue({ ok: true })
+  execa.mockReturnValue({ stdout: jest.fn() })
+
+  const result = appHelper.runOpenWhiskJar()
+
+  await expect(result).resolves.toEqual({
+    proc: expect.any(Object)
+  })
+  expect(fetch).toHaveBeenCalledTimes(1)
+  expect(execa).toHaveBeenCalledTimes(1)
+})
+
+test('waitForOpenWhiskReadiness timeout', async () => {
+  const host = 'my-host'
+  const period = 5000
+  const timeout = 5000
+  const endTime = Date.now() - 1000 // ends now
+
+  const waitFunc = jest.fn((_period) => {
+    expect(_period).toEqual(period)
+  })
+  const result = appHelper.waitForOpenWhiskReadiness(host, endTime, period, timeout, waitFunc)
+
+  await expect(result).rejects.toEqual(new Error(`local openwhisk stack startup timed out: ${timeout}ms`))
+  expect(fetch).toHaveBeenCalledTimes(0)
+  expect(waitFunc).toHaveBeenCalledTimes(0)
+})
+
+test('waitForOpenWhiskReadiness (fail, retry, then success)', async () => {
+  const host = 'my-host'
+  const period = 5000
+  const timeout = 5000
+  const endTime = Date.now() + 5000
+
+  const waitFunc = jest.fn((_period) => {
+    expect(_period).toEqual(period)
+  })
+  fetch
+    .mockRejectedValueOnce(new Error('some error')) // first fail (fetch exception)
+    .mockRejectedValueOnce({ ok: false }) // second fail (response not ok)
+    .mockResolvedValue({ ok: true }) // finally success
+  const result = appHelper.waitForOpenWhiskReadiness(host, endTime, period, timeout, waitFunc)
+
+  await expect(result).resolves.not.toBeDefined()
+  expect(fetch).toHaveBeenCalledTimes(3)
+  expect(waitFunc).toHaveBeenCalledTimes(2)
+})
+
+describe('warnIfOverwriteServicesInProductionWorkspace', () => {
+  const logSpy = jest.spyOn(console, 'error')
+  beforeEach(() => {
+    logSpy.mockClear()
+  })
+  test('not a prod workspace', () => {
+    appHelper.warnIfOverwriteServicesInProductionWorkspace('projectName', 'stage')
+    expect(logSpy).not.toHaveBeenCalled()
+  })
+  test('is a prod workspace', () => {
+    appHelper.warnIfOverwriteServicesInProductionWorkspace('projectName', 'Production')
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(
+      '⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace in Project \'projectName\'.'
+    ))
+  })
+})
+
+test('setWorkspaceServicesConfig', () => {
+  const fakeServiceProps = [
+    { name: 'first', sdkCode: 'firsts', code: 'no such field', a: 'hello', type: 'no such field' },
+    { name: 'sec', sdkCode: 'secs', code: 'no such field', b: 'hello', type: 'no such field' }
+  ]
+  appHelper.setWorkspaceServicesConfig(fakeServiceProps)
+  expect(config.set).toHaveBeenCalledWith(
+    'project.workspace.details.services', [
+      { name: 'first', code: 'firsts' },
+      { name: 'sec', code: 'secs' }
+    ],
+    true
+  )
+})
+
+test('setOrgServicesConfig', () => {
+  const fakeOrgServices = [
+    { name: 'first', code: 'firsts', sdkCode: 'no such field', type: 'entp' },
+    { name: 'sec', code: 'secs', sdkCode: 'no such field', type: 'entp' },
+    { name: 'third', code: 'thirds', sdkCode: 'no such field', type: 'entp' }
+  ]
+  appHelper.setOrgServicesConfig(fakeOrgServices)
+  expect(config.set).toHaveBeenCalledWith(
+    'project.org.details.services', [
+      { name: 'first', code: 'firsts', type: 'entp' },
+      { name: 'sec', code: 'secs', type: 'entp' },
+      { name: 'third', code: 'thirds', type: 'entp' }
+    ],
+    true
+  )
 })

@@ -12,60 +12,66 @@ governing permissions and limitations under the License.
 
 const path = require('path')
 const yaml = require('js-yaml')
-const fs = require('fs')
+const fs = require('fs-extra')
+const chalk = require('chalk')
 const utils = require('./app-helper')
 const aioConfig = require('@adobe/aio-lib-core-config')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:config-loader', { provider: 'debug' })
 
 // defaults
-const defaultAioHostname = 'adobeio-static.net'
-const defaultTvmUrl = 'https://adobeio.adobeioruntime.net/apis/tvm/'
-const defaultOwApiHost = 'https://adobeioruntime.net'
-const defaultHTMLCacheDuration = '60'
-const defaultJSCacheDuration = '604800'
-const defaultCSSCacheDuration = '604800'
-const defaultImageCacheDuration = '604800'
-const AIO_CONFIG_IMS_ORG_ID = 'project.org.ims_org_id'
+const {
+  defaultAppHostname,
+  defaultTvmUrl,
+  defaultOwApihost,
+  defaultHTMLCacheDuration,
+  defaultJSCacheDuration,
+  defaultCSSCacheDuration,
+  defaultImageCacheDuration,
+  AIO_CONFIG_IMS_ORG_ID
+} = require('./defaults')
 
-/** loading config returns following object (this config is internal, not user facing):
-{
-  app: {
-    name,
-    version,
-    hasFrontend
-  },
-  ow: {
-    apihost,
-    apiversion,
-    auth,
-    namespace,
-    package
-  },
-  s3: {
-    creds || tvmUrl,
-    credsCacheFile,
-    folder,
-  },
-  web: {
-    src,
-    injectedConfig,
-    distDev,
-    distProd,
-  },
-  manifest: {
-    full,
-    package,
-    packagePlaceholder,
-    src,
-  },
-  actions: {
-    src,
-    dist,
-    remote,
-    urls
-  }
-}
-*/
+/**
+ * loading config returns following object (this config is internal, not user facing):
+ *  {
+ *    app: {
+ *      name,
+ *      version,
+ *      hasFrontend,
+ *      hasBackend,
+ *      dist
+ *    },
+ *    ow: {
+ *      apihost,
+ *      apiversion,
+ *      auth,
+ *      namespace,
+ *      package
+ *    },
+ *    s3: {
+ *      creds || tvmUrl,
+ *      credsCacheFile,
+ *      folder,
+ *    },
+ *    web: {
+ *      src,
+ *      injectedConfig,
+ *      distDev,
+ *      distProd,
+ *    },
+ *    manifest: {
+ *      full,
+ *      package,
+ *      packagePlaceholder,
+ *      src,
+ *    },
+ *    actions: {
+ *      src,
+ *      dist,
+ *      remote,
+ *      urls
+ *    }
+ *  }
+ */
 
 module.exports = () => {
   // init internal config
@@ -82,14 +88,21 @@ module.exports = () => {
   // load aio config
   aioConfig.reload()
   const userConfig = aioConfig.get() || {}
-  userConfig.cna = userConfig.cna || {}
+  userConfig.app = userConfig.app || {}
+
+  // userConfig.cna deprecation warning
+  if (userConfig.cna !== undefined) {
+    aioLogger.warn(chalk.redBright(chalk.bold('The config variable \'cna\' has been deprecated. Please update it with \'app\' instead in your .aio configuration file.')))
+    Object.assign(userConfig.app, userConfig.cna)
+  }
+
   config.imsOrgId = aioConfig.get(AIO_CONFIG_IMS_ORG_ID)
 
   // 1. paths
   // 1.a defaults
-  const actions = path.normalize(userConfig.cna.actions || 'actions')
-  const dist = path.normalize(userConfig.cna.dist || 'dist')
-  const web = path.normalize(userConfig.cna.web || 'web-src')
+  const actions = path.normalize(userConfig.app.actions || 'actions')
+  const dist = path.normalize(userConfig.app.dist || 'dist')
+  const web = path.normalize(userConfig.app.web || 'web-src')
   // 1.b set config paths
   config.actions.src = _abs(actions) // todo this should be linked with manifest.yml paths
   config.actions.dist = _abs(path.join(dist, actions))
@@ -103,26 +116,24 @@ module.exports = () => {
   config.manifest.src = _abs('manifest.yml')
 
   // set s3 creds if specified
-  config.s3.creds = (typeof userConfig.cna === 'object') &&
-    (userConfig.cna.awsaccesskeyid &&
-     userConfig.cna.awssecretaccesskey &&
-     userConfig.cna.s3bucket) && {
-    accessKeyId: userConfig.cna.awsaccesskeyid,
-    secretAccessKey: userConfig.cna.awssecretaccesskey,
-    params: { Bucket: userConfig.cna.s3bucket }
+  config.s3.creds = (typeof userConfig.app === 'object') &&
+    (userConfig.app.awsaccesskeyid &&
+     userConfig.app.awssecretaccesskey &&
+     userConfig.app.s3bucket) && {
+    accessKeyId: userConfig.app.awsaccesskeyid,
+    secretAccessKey: userConfig.app.awssecretaccesskey,
+    params: { Bucket: userConfig.app.s3bucket }
   }
+
+  // set for general build artifacts
+  config.app.dist = dist
 
   // check if the app has a frontend, for now enforce index.html to be there
   // todo we shouldn't have any config.web config if !hasFrontend
-  config.app.hasFrontend = fs.existsSync(path.join(config.web.src, 'index.html'))
+  config.app.hasFrontend = fs.existsSync(config.web.src)
 
   // check if the app has a backend by checking presence of manifest.yml file
   config.app.hasBackend = fs.existsSync(config.manifest.src)
-
-  // todo change env var to DEV_LOCAL_ACTIONS because REMOTE_ACTIONS is only used in the context of dev cmd
-  // this creates confusion as for other commands actions are always remote although REMOTE_ACTIONS is not set
-  const remoteString = process.env.REMOTE_ACTIONS
-  config.actions.devRemote = remoteString === true || remoteString === 'true' || remoteString === 'yes' || remoteString === '1'
 
   // 2. check needed files
   aioLogger.debug('checking package.json existence')
@@ -132,7 +143,7 @@ module.exports = () => {
   const packagejson = JSON.parse(fs.readFileSync(_abs('package.json')))
   // semver starts at 0.1.0
   config.app.version = packagejson.version || '0.1.0'
-  config.app.name = getModuleName(packagejson) || 'unnamed-cna'
+  config.app.name = getModuleName(packagejson) || 'unnamed-app'
 
   // 4. Load manifest config
   if (config.app.hasBackend) {
@@ -147,22 +158,26 @@ module.exports = () => {
 
   // 5. deployment config
   config.ow = userConfig.runtime || {}
-  config.ow.apihost = config.ow.apihost || defaultOwApiHost
+  config.ow.defaultApihost = defaultOwApihost
+  config.ow.apihost = config.ow.apihost || defaultOwApihost // set by user
   config.ow.apiversion = config.ow.apiversion || 'v1'
   config.ow.package = `${config.app.name}-${config.app.version}`
+  // S3 static files deployment config
   config.s3.folder = config.ow.namespace // this becomes the root only /
-  config.s3.tvmUrl = userConfig.cna.tvmurl || defaultTvmUrl
-  // only provide a hostname if it was given or if the app uses the tvm
-  config.app.hostname = userConfig.cna.hostname || defaultAioHostname
+  config.s3.tvmUrl = userConfig.app.tvmurl || defaultTvmUrl
+  // set hostname for backend actions && UI
+  config.app.defaultHostname = defaultAppHostname
+  config.app.hostname = userConfig.app.hostname || defaultAppHostname
   // cache control config
-  config.app.htmlCacheDuration = userConfig.cna.htmlcacheduration || defaultHTMLCacheDuration
-  config.app.jsCacheDuration = userConfig.cna.jscacheduration || defaultJSCacheDuration
-  config.app.cssCacheDuration = userConfig.cna.csscacheduration || defaultCSSCacheDuration
-  config.app.imageCacheDuration = userConfig.cna.imagecacheduration || defaultImageCacheDuration
+  config.app.htmlCacheDuration = userConfig.app.htmlcacheduration || defaultHTMLCacheDuration
+  config.app.jsCacheDuration = userConfig.app.jscacheduration || defaultJSCacheDuration
+  config.app.cssCacheDuration = userConfig.app.csscacheduration || defaultCSSCacheDuration
+  config.app.imageCacheDuration = userConfig.app.imagecacheduration || defaultImageCacheDuration
 
   return config
 }
 
+/** @private */
 function getModuleName (packagejson) {
   if (packagejson && packagejson.name) {
     // turn "@company/myaction" into "myaction"

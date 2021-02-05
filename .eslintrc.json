@@ -4,9 +4,7 @@
       "fixtureFile": true,
       "fixtureJson": true,
       "fixtureHjson": true,
-      "fakeFileSystem": true,
-      "n": "readonly",
-      "r": "readonly"
+      "fakeFileSystem": true
     },
     "settings": {
         "jsdoc": {

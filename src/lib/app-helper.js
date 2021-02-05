@@ -13,12 +13,14 @@ const execa = require('execa')
 const fs = require('fs-extra')
 const path = require('path')
 const which = require('which')
-const dotenv = require('dotenv')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:lib-app-helper', { provider: 'debug' })
 const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
-const RuntimeLib = require('@adobe/aio-lib-runtime')
 const fetch = require('node-fetch')
+const chalk = require('chalk')
+const config = require('@adobe/aio-lib-core-config')
+const { AIO_CONFIG_WORKSPACE_SERVICES, AIO_CONFIG_ORG_SERVICES } = require('./defaults')
+const { EOL } = require('os')
 
 /** @private */
 function isNpmInstalled () {
@@ -54,9 +56,35 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
   aioLogger.debug(`running npm run-script ${scriptName} in dir: ${dir}`)
   const pkg = await fs.readJSON(path.join(dir, 'package.json'))
   if (pkg && pkg.scripts && pkg.scripts[scriptName]) {
-    return execa('npm', ['run-script', scriptName].concat(cmdArgs), { cwd: dir, stdio: 'inherit' })
+    let command = pkg.scripts[scriptName]
+    if (cmdArgs.length) {
+      command = `${command} ${cmdArgs.join(' ')}`
+    }
+    const child = execa.command(command, {
+      stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+      shell: true,
+      cwd: dir,
+      preferLocal: true
+    })
+    // handle IPC from possible aio-run-detached script
+    child.on('message', message => {
+      if (message.type === 'long-running-process') {
+        const { pid, logs } = message.data
+        aioLogger.debug(`Found ${scriptName} event hook long running process (pid: ${pid}). Registering for SIGTERM`)
+        aioLogger.debug(`Log locations for ${scriptName} event hook long-running process (stdout: ${logs.stdout} stderr: ${logs.stderr})`)
+        process.on('exit', () => {
+          try {
+            aioLogger.debug(`Killing ${scriptName} event hook long-running process (pid: ${pid})`)
+            process.kill(pid, 'SIGTERM')
+          } catch (_) {
+            // do nothing if pid not found
+          }
+        })
+      }
+    })
+    return child
   } else {
-    throw new Error(`${dir} does not contain a package.json or it does not contain a script named ${scriptName}`)
+    aioLogger.debug(`${dir} does not contain a package.json or it does not contain a script named ${scriptName}`)
   }
 }
 
@@ -86,42 +114,7 @@ async function getCliInfo () {
   return { accessToken, env }
 }
 
-async function getLogs (config, limit, logger, startTime = 0) {
-  // check for runtime credentials
-  RuntimeLib.utils.checkOpenWhiskCredentials(config)
-  const runtime = await RuntimeLib.init({
-    // todo make this.config.ow compatible with Openwhisk config
-    apihost: config.ow.apihost,
-    apiversion: config.ow.apiversion,
-    api_key: config.ow.auth,
-    namespace: config.ow.namespace
-  })
-
-  // get activations
-  const listOptions = { limit: limit, skip: 0 }
-  const logFunc = logger || console.log
-  const activations = await runtime.activations.list(listOptions)
-  let lastActivationTime = 0
-  // console.log('activations = ', activations)
-  for (let i = (activations.length - 1); i >= 0; i--) {
-    const activation = activations[i]
-    lastActivationTime = activation.start
-    if (lastActivationTime > startTime) {
-      const results = await runtime.activations.logs({ activationId: activation.activationId })
-      // console.log('results = ', results)
-      // send fetched logs to console
-      if (results.logs.length > 0) {
-        logFunc(activation.name + ':' + activation.activationId)
-        results.logs.forEach(function (log) {
-          logFunc(log)
-        })
-        logFunc()
-      }
-    }
-  }
-  return { lastActivationTime }
-}
-
+/** @private */
 function getActionUrls (config, isRemoteDev = false, isLocalDev = false) {
   // set action urls
   // action urls {name: url}, if !LocalDev subdomain uses namespace
@@ -201,6 +194,7 @@ function writeConfig (file, config) {
   )
 }
 
+/** @private */
 async function isDockerRunning () {
   // todo more checks
   const args = ['info']
@@ -213,6 +207,7 @@ async function isDockerRunning () {
   return false
 }
 
+/** @private */
 async function hasDockerCLI () {
   // todo check min version
   try {
@@ -225,29 +220,21 @@ async function hasDockerCLI () {
   return false
 }
 
+/** @private */
 async function hasJavaCLI () {
   // todo check min version
   try {
     const result = await execa('java', ['-version'])
-    aioLogger.debug('java version : ' + result.stdout)
+    // stderr is where the version is printed out for
+    aioLogger.debug('java version : ' + result.stderr)
     return true
   } catch (error) {
     aioLogger.debug('Error spawning java info: ' + error)
   }
   return false
 }
-// async function hasWskDebugInstalled () {
-//   // todo should test for local install as well
-//   try {
-//     const result = await execa('wskdebug', ['--version'])
-//     debug('wskdebug version : ' + result.stdout)
-//     return true
-//   } catch (error) {
-//     debug('Error spawning wskdebug info: ' + error)
-//   }
-//   return false
-// }
 
+/** @private */
 async function downloadOWJar (url, outFile) {
   aioLogger.debug(`downloadOWJar - url: ${url} outFile: ${outFile}`)
   let response
@@ -272,73 +259,98 @@ async function downloadOWJar (url, outFile) {
   })
 }
 
-async function runOpenWhiskJar (jarFile, runtimeConfigFile, apihost, waitInitTime, waitPeriodTime, timeout, /* istanbul ignore next */ execaOptions = {}) {
-  aioLogger.debug(`runOpenWhiskJar - jarFile: ${jarFile} runtimeConfigFile ${runtimeConfigFile} apihost: ${apihost} waitInitTime: ${waitInitTime} waitPeriodTime: ${waitPeriodTime} timeout: ${timeout}`)
-  const proc = execa('java', ['-jar', '-Dwhisk.concurrency-limit.max=10', jarFile, '-m', runtimeConfigFile, '--no-ui'], execaOptions)
-  await waitForOpenWhiskReadiness(apihost, waitInitTime, waitPeriodTime, timeout)
-  // must wrap in an object as execa return value is awaitable
-  return { proc }
+/** @private */
+async function waitForOpenWhiskReadiness (host, endTime, period, timeout, waitFunc) {
+  if (Date.now() > endTime) {
+    throw new Error(`local openwhisk stack startup timed out: ${timeout}ms`)
+  }
 
-  async function waitForOpenWhiskReadiness (host, initialWait, period, timeout) {
-    const endTime = Date.now() + timeout
-    await waitFor(initialWait)
-    await _waitForOpenWhiskReadiness(host, endTime)
+  let ok
 
-    async function _waitForOpenWhiskReadiness (host, endTime) {
-      if (Date.now() > endTime) {
-        throw new Error(`local openwhisk stack startup timed out: ${timeout}ms`)
-      }
-      let ok
-      try {
-        const response = await fetch(host + '/api/v1')
-        ok = response.ok
-      } catch (e) {
-        ok = false
-      }
-      if (!ok) {
-        await waitFor(period)
-        return _waitForOpenWhiskReadiness(host, endTime)
-      }
-    }
-    function waitFor (t) {
-      return new Promise(resolve => setTimeout(resolve, t))
-    }
+  try {
+    const response = await fetch(host + '/api/v1')
+    ok = response.ok
+  } catch (e) {
+    ok = false
+  }
+
+  if (!ok) {
+    await waitFunc(period)
+    return waitForOpenWhiskReadiness(host, endTime, period, timeout, waitFunc)
   }
 }
 
-function saveAndReplaceDotEnvCredentials (dotenvFile, saveFile, apihost, namespace, auth) {
-  if (fs.existsSync(saveFile)) throw new Error(`cannot save .env, please make sure to restore and delete ${saveFile}`) // todo make saveFile relative
-  fs.moveSync(dotenvFile, saveFile)
-  // Only override needed env vars and preserve other vars in .env
-  const env = dotenv.parse(fs.readFileSync(saveFile))
-  const newCredentials = {
-    RUNTIME_NAMESPACE: namespace,
-    RUNTIME_AUTH: auth,
-    RUNTIME_APIHOST: apihost
+/** @private */
+function waitFor (t) {
+  return new Promise(resolve => setTimeout(resolve, t))
+}
+
+/** @private */
+async function runOpenWhiskJar (jarFile, runtimeConfigFile, apihost, waitInitTime, waitPeriodTime, timeout, /* istanbul ignore next */ execaOptions = {}) {
+  aioLogger.debug(`runOpenWhiskJar - jarFile: ${jarFile} runtimeConfigFile ${runtimeConfigFile} apihost: ${apihost} waitInitTime: ${waitInitTime} waitPeriodTime: ${waitPeriodTime} timeout: ${timeout}`)
+  const proc = execa('java', ['-jar', '-Dwhisk.concurrency-limit.max=10', jarFile, '-m', runtimeConfigFile, '--no-ui', '--disable-color-logging'], execaOptions)
+
+  const endTime = Date.now() + timeout
+  await waitFor(waitInitTime)
+  await waitForOpenWhiskReadiness(apihost, endTime, waitPeriodTime, timeout, waitFor)
+
+  // must wrap in an object as execa return value is awaitable
+  return { proc }
+}
+
+/**
+ *
+ * Converts a service array to an input string that can be consumed by generator-aio-app
+ *
+ * @param {Array} services array of services [{ code: 'xxx', name: 'xxx' }, ...]
+ * @returns {string} 'code1,code2,code3'
+ */
+function servicesToGeneratorInput (services) {
+  return services.map(s => s.code).filter(s => s).join(',')
+}
+
+/**
+ * Log a warning when overwriting services in the Production Workspace
+ *
+ * @param {string} projectName project name, needed for warning message
+ * @param {string} workspaceName workspace name
+ */
+function warnIfOverwriteServicesInProductionWorkspace (projectName, workspaceName) {
+  if (workspaceName === 'Production') {
+    console.error(chalk.bold(chalk.yellow(
+      `⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace in Project '${projectName}'.` +
+      `${EOL}This may break any Applications that currently use existing Service subscriptions in this Production Workspace.`
+    )))
   }
+}
 
-  // remove old keys (match by normalized key name)
-  for (const key in env) {
-    // match AIO_ or AIO__ since they map to the same key
-    // see https://github.com/adobe/aio-lib-core-config/issues/49
-    const match = key.match(/^AIO__(.+)/i) || key.match(/^AIO_(.+)/i)
-    if (match) {
-      for (const newCredential in newCredentials) {
-        if (newCredential.toLowerCase() === match[1].toLowerCase()) {
-          delete env[key]
-        }
-      }
-    }
-  }
+/**
+ * Set the services attached to the current workspace in the .aio config
+ *
+ * @param {Array} serviceProperties service properties obtained via LibConsoleCLI.prototype.getServicePropertiesFromWorkspace
+ */
+function setWorkspaceServicesConfig (serviceProperties) {
+  const serviceConfig = serviceProperties.map(s => ({
+    name: s.name,
+    code: s.sdkCode
+  }))
+  config.set(AIO_CONFIG_WORKSPACE_SERVICES, serviceConfig, true)
+  aioLogger.debug(`set aio config ${AIO_CONFIG_WORKSPACE_SERVICES}: ${JSON.stringify(serviceConfig, null, 2)}`)
+}
 
-  // set the new keys
-  for (const key in newCredentials) {
-    env[`AIO_${key}`] = newCredentials[key]
-  }
-
-  const envContent = Object.keys(env).reduce((content, k) => content + `${k}=${env[k]}\n`, '')
-
-  fs.writeFileSync(dotenvFile, envContent)
+/**
+ * Set the services supported by the organization in the .aio config
+ *
+ * @param {Array} supportedServices org services obtained via LibConsoleCLI.prototype.getEnabledServicesForOrg
+ */
+function setOrgServicesConfig (supportedServices) {
+  const orgServiceConfig = supportedServices.map(s => ({
+    name: s.name,
+    code: s.code,
+    type: s.type
+  }))
+  config.set(AIO_CONFIG_ORG_SERVICES, orgServiceConfig, true)
+  aioLogger.debug(`set aio config ${AIO_CONFIG_ORG_SERVICES}: ${JSON.stringify(orgServiceConfig, null, 2)}`)
 }
 
 module.exports = {
@@ -349,7 +361,6 @@ module.exports = {
   wrapError,
   getCliInfo,
   getActionUrls,
-  getLogs,
   removeProtocolFromURL,
   urlJoin,
   checkFile,
@@ -359,5 +370,9 @@ module.exports = {
   writeConfig,
   downloadOWJar,
   runOpenWhiskJar,
-  saveAndReplaceDotEnvCredentials
+  servicesToGeneratorInput,
+  waitForOpenWhiskReadiness,
+  warnIfOverwriteServicesInProductionWorkspace,
+  setOrgServicesConfig,
+  setWorkspaceServicesConfig
 }

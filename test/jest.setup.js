@@ -12,16 +12,14 @@ governing permissions and limitations under the License.
 
 const { stdout, stderr } = require('stdout-stderr')
 
+jest.setTimeout(15000)
+
 const fs = require.requireActual('fs')
 const eol = require('eol')
 const path = require('path')
 const hjson = require('hjson')
 
 const fileSystem = require('jest-plugin-fs').default
-
-// quick normalization to test windows paths
-global.n = p => path.normalize(p)
-global.r = p => path.resolve(p)
 
 // dont touch the real fs
 global.mockFs = () => {
@@ -33,7 +31,6 @@ global.mockFs = () => {
     addJson: (json) => {
       // add to existing
       fileSystem.mock(json)
-      // console.log(json)
     },
     removeKeys: (arr) => {
       // remove from existing
@@ -83,7 +80,7 @@ process.on('unhandledRejection', error => {
 // dont touch the real fs
 jest.mock('fs-extra')
 // don't wait for user input in tests
-jest.mock('inquirer')
+jest.mock('inquirer', () => ({ prompt: jest.fn(), createPromptModule: jest.fn(() => jest.fn()) }))
 // make sure we mock the app scripts
 jest.mock('@adobe/aio-lib-web')
 //
@@ -151,9 +148,20 @@ global.addSampleAppFiles = () => {
   })
 }
 
+global.addSampleAppFilesCustomPackage = () => {
+  global.fakeFileSystem.addJson({
+    'actions/action-zip/index.js': global.fixtureFile('/sample-app/actions/action-zip/index.js'),
+    'actions/action-zip/package.json': global.fixtureFile('/sample-app/actions/action-zip/package.json'),
+    'actions/action.js': global.fixtureFile('/sample-app/actions/action.js'),
+    'web-src/index.html': global.fixtureFile('/sample-app/web-src/index.html'),
+    'manifest.yml': global.fixtureFile('/sample-app-custom-package/manifest.yml'),
+    'package.json': global.fixtureFile('/sample-app/package.json')
+  })
+}
+
 global.defaultAppHostName = 'adobeio-static.net'
 global.defaultTvmUrl = 'https://adobeio.adobeioruntime.net/apis/tvm/'
-global.defaultOwApiHost = 'https://adobeioruntime.net'
+global.defaultOwApihost = 'https://adobeioruntime.net'
 global.fakeS3Bucket = 'fake-bucket'
 global.fakeConfig = {
   tvm: {
@@ -175,13 +183,13 @@ global.fakeConfig = {
       namespace: 'fake_ns',
       auth: 'fake:auth'
     },
-    cna: {
+    app: {
       s3bucket: 'customBucket',
       awsaccesskeyid: 'fakeAwsKeyId',
       awssecretaccesskey: 'fakeAwsSecretKey'
     }
   },
-  cna: {
+  app: {
     htmlCacheDuration: 60,
     jsCacheDuration: 604800,
     cssCacheDuration: 604800,

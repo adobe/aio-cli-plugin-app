@@ -21,7 +21,8 @@ const { flags } = require('@oclif/command')
 const coreConfig = require('@adobe/aio-lib-core-config')
 
 const BaseCommand = require('../../BaseCommand')
-const runDev = require('../../lib/runDev')
+const runDev = require('../../lib/run-dev')
+const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('../../lib/defaults')
 const { runPackageScript, wrapError } = require('../../lib/app-helper')
 
 const DEV_KEYS_DIR = 'dist/dev-keys/'
@@ -32,29 +33,36 @@ const CONFIG_KEY = 'aio-dev.dev-keys'
 class Run extends BaseCommand {
   async run (args = []) {
     const { flags } = this.parse(Run)
+    const config = this.getAppConfig()
 
-    const hasFrontend = await fs.exists('web-src/')
-    const hasBackend = await fs.exists('manifest.yml')
+    const hasBackend = config.app.hasBackend
+    const hasFrontend = config.app.hasFrontend
 
     if (!hasBackend && !hasFrontend) {
-      this.error(wrapError('nothing to run.. there is no web-src/ and no manifest.yml, are you in a valid app?'))
+      this.error(wrapError('nothing to run.. there is no frontend and no manifest.yml, are you in a valid app?'))
     }
-    if (!!flags['skip-actions'] && !hasFrontend) {
-      this.error(wrapError('nothing to run.. there is no web-src/ and --skip-actions is set'))
+    if (flags['skip-actions'] && !hasFrontend) {
+      this.error(wrapError('nothing to run.. there is no frontend and --skip-actions is set'))
     }
 
     const runOptions = {
-      skipActions: !!flags['skip-actions'],
+      skipActions: flags['skip-actions'],
+      skipServe: !flags.serve,
+      // todo: any other params we should add here?
       parcel: {
-        logLevel: flags.verbose ? 4 : 2
+        logLevel: flags.verbose ? 4 : 2,
+        // always set to false on localhost to get debugging and hot reloading
+        contentHash: false
       },
-      fetchLogs: true
+      fetchLogs: true,
+      devRemote: !flags.local,
+      verbose: flags.verbose
     }
 
     try {
       await runPackageScript('pre-app-run')
     } catch (err) {
-      // this is assumed to be a missing script error
+      this.log(err)
     }
 
     // check if there are certificates available, and generate them if not ...
@@ -75,13 +83,12 @@ class Run extends BaseCommand {
       spinner.start()
     }
 
-    process.env.REMOTE_ACTIONS = !flags.local
     try {
-      const frontendUrl = await runDev(args, this.getAppConfig(), runOptions, onProgress)
+      const frontendUrl = await runDev(this.getAppConfig(), runOptions, onProgress)
       try {
         await runPackageScript('post-app-run')
       } catch (err) {
-        // this is assumed to be a missing script error
+        this.log(err)
       }
       if (frontendUrl) {
         this.log()
@@ -94,6 +101,7 @@ class Run extends BaseCommand {
           this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
         }
       }
+      this.log('press CTRL+C to terminate dev environment')
     } catch (error) {
       spinner.fail()
       this.error(wrapError(error))
@@ -107,7 +115,7 @@ class Run extends BaseCommand {
     }
 
     /* get existing certificates from file.. */
-    if (await fs.exists(PRIVATE_KEY_PATH) && await fs.exists(PUB_CERT_PATH)) {
+    if (fs.existsSync(PRIVATE_KEY_PATH) && fs.existsSync(PUB_CERT_PATH)) {
       return certs
     }
 
@@ -149,8 +157,8 @@ class Run extends BaseCommand {
       res.end('Congrats, you have accepted the certificate and can now use it for development on this machine.\n' +
       'You can close this window.')
     })
-    const port = parseInt(process.env.PORT) || 9080
-    const actualPort = await getPort({ port: port })
+    const port = parseInt(process.env.PORT) || SERVER_DEFAULT_PORT
+    const actualPort = await getPort({ port })
     server.listen(actualPort)
     this.log('A self signed development certificate has been generated, you will need to accept it in your browser in order to use it.')
     cli.open(`https://localhost:${actualPort}`)
@@ -171,27 +179,28 @@ class Run extends BaseCommand {
   }
 }
 
-Run.description = `Run an Adobe I/O App
-`
+Run.description = 'Run an Adobe I/O App'
 
 Run.flags = {
   ...BaseCommand.flags,
   local: flags.boolean({
-    description: 'run/debug actions locally',
+    description: 'run/debug actions locally ( requires Docker running )',
     exclusive: ['skip-actions']
+  }),
+  serve: flags.boolean({
+    description: 'start frontend server (experimental)',
+    default: true,
+    allowNo: true
   }),
   'skip-actions': flags.boolean({
     description: 'skip actions, only run the ui server',
-    exclusive: ['local']
+    exclusive: ['local'],
+    default: false
   }),
   open: flags.boolean({
     description: 'Open the default web browser after a successful run, only valid if your app has a front-end',
     default: false
   })
 }
-
-// Run.args = [
-//   ...BaseCommand.args
-// ]
 
 module.exports = Run

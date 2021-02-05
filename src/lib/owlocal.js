@@ -13,9 +13,11 @@ governing permissions and limitations under the License.
 const path = require('path')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:owlocal', { provider: 'debug' })
 const execa = require('execa')
+const url = require('url')
 
 const OW_LOCAL_DOCKER_PORT = 3233
 
+/** @private */
 function isWindowsOrMac () {
   return (
     process.platform === 'win32' ||
@@ -23,6 +25,27 @@ function isWindowsOrMac () {
   )
 }
 
+/** @private */
+function owJarPath (owJarUrl) {
+  const { pathname } = new url.URL(owJarUrl)
+  const idx = pathname.indexOf('/openwhisk/')
+  let jarPath
+
+  if (idx === -1) {
+    jarPath = path.join('openwhisk', 'openwhisk-standalone.jar') // default path
+    aioLogger.warn(`Could not parse openwhisk jar path from ${owJarUrl}, using default ${jarPath}`)
+  } else {
+    jarPath = pathname
+      .substring(idx + 1) // skip initial forward slash
+      .split(path.posix.sep) // split on forward slashes
+      .join(path.sep) // join on os path separator (for Windows)
+    aioLogger.debug(`Parsed openwhisk jar path from ${owJarUrl}, using ${jarPath}`)
+  }
+
+  return jarPath
+}
+
+/** @private */
 function getDockerNetworkAddress () {
   try {
     // Docker for Windows and macOS do not allow routing to the containers via
@@ -42,22 +65,22 @@ function getDockerNetworkAddress () {
 
 // gets these values if the keys are set in the environment, if not it will use the defaults set
 const {
-  OW_JAR_URL = 'https://dl.bintray.com/adobeio-firefly/aio/openwhisk-standalone.jar',
-  // This path will be relative to this module, and not the cwd, so multiple projects can use it.
-  OW_JAR_FILE = path.resolve(__dirname, '../../bin/openwhisk-standalone.jar'),
+  OW_JAR_URL = 'https://bintray.com/api/ui/download/adobe/generic/openwhisk/standalone-v1/openwhisk-standalone.jar',
   OW_CONFIG_RUNTIMES_FILE = path.resolve(__dirname, '../../bin/openwhisk-standalone-config/runtimes.json'),
   OW_LOCAL_APIHOST = getDockerNetworkAddress(),
   OW_LOCAL_NAMESPACE = 'guest',
-  OW_LOCAL_AUTH = '23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP'
+  OW_LOCAL_AUTH = '23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP',
+  OW_LOCAL_LOG_FILE
 } = process.env
 
 module.exports = {
   getDockerNetworkAddress,
   OW_LOCAL_DOCKER_PORT,
   OW_JAR_URL,
-  OW_JAR_FILE,
+  OW_JAR_PATH: owJarPath(OW_JAR_URL),
   OW_CONFIG_RUNTIMES_FILE,
   OW_LOCAL_APIHOST,
   OW_LOCAL_NAMESPACE,
-  OW_LOCAL_AUTH
+  OW_LOCAL_AUTH,
+  OW_LOCAL_LOG_FILE
 }

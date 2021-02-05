@@ -10,10 +10,15 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { importConfigJson, writeAio, writeEnv, mergeEnv, splitEnvLine, flattenObjectWithSeparator, loadConfigFile } = require('../../../src/lib/import')
 const fs = require('fs-extra')
 const path = require('path')
 const inquirer = require('inquirer')
+
+// mock prompt before import
+const mockPrompt = jest.fn()
+inquirer.createPromptModule.mockReturnValue(mockPrompt)
+
+const { importConfigJson, writeAio, writeEnv, mergeEnv, splitEnvLine, flattenObjectWithSeparator, loadConfigFile, writeDefaultAppConfig } = require('../../../src/lib/import')
 
 jest.mock('fs')
 
@@ -30,6 +35,9 @@ test('exports', () => {
 
   expect(writeEnv).toBeDefined()
   expect(writeEnv).toBeInstanceOf(Function)
+
+  expect(writeDefaultAppConfig).toBeDefined()
+  expect(writeDefaultAppConfig).toBeInstanceOf(Function)
 
   expect(flattenObjectWithSeparator).toBeDefined()
   expect(flattenObjectWithSeparator).toBeInstanceOf(Function)
@@ -75,6 +83,28 @@ test('writeAio', async () => {
   await expect(fs.writeFile.mock.calls[2][1]).toMatchFixture(destination)
 
   return expect(fs.writeFile).toHaveBeenCalledTimes(3)
+})
+
+test('writeDefaultAppConfig', async () => {
+  const parentFolder = 'my-parent-folder'
+  const aioPath = path.join(parentFolder, '.aio')
+  const defaultAppConfig = {
+    app: {
+      actions: 'actions',
+      dist: 'dist',
+      web: 'web-src'
+    }
+  }
+
+  writeDefaultAppConfig(parentFolder, { overwrite: true })
+  await expect(fs.writeFile.mock.calls[0][0]).toMatch(aioPath)
+  await expect(JSON.parse(fs.writeFile.mock.calls[0][1])).toMatchObject(defaultAppConfig)
+
+  writeDefaultAppConfig(parentFolder, { overwrite: false })
+  await expect(fs.writeFile.mock.calls[1][0]).toMatch(aioPath)
+  await expect(JSON.parse(fs.writeFile.mock.calls[1][1])).toMatchObject(defaultAppConfig)
+
+  return expect(fs.writeFile).toHaveBeenCalledTimes(2)
 })
 
 test('splitEnvLine', () => {
@@ -238,18 +268,18 @@ test('importConfigJson - interactive', async () => {
 
   fs.readFileSync.mockReturnValue(configJson)
 
-  inquirer.prompt.mockResolvedValue({ conflict: 'abort' }) // no writes
+  mockPrompt.mockResolvedValue({ conflict: 'abort' }) // no writes
   await importConfigJson(configPath, workingFolder, { interactive: true })
 
-  inquirer.prompt.mockResolvedValue({ conflict: 'merge' }) // two writes
-  await importConfigJson(configPath, workingFolder, { interactive: true })
-
-  fs.readFileSync.mockReturnValueOnce(configJson)
-  inquirer.prompt.mockResolvedValue({ conflict: 'overwrite' }) // two writes
+  mockPrompt.mockResolvedValue({ conflict: 'merge' }) // two writes
   await importConfigJson(configPath, workingFolder, { interactive: true })
 
   fs.readFileSync.mockReturnValueOnce(configJson)
-  inquirer.prompt.mockResolvedValue({ overwrite: true }) // two writes, one to .env, one to .aio
+  mockPrompt.mockResolvedValue({ conflict: 'overwrite' }) // two writes
+  await importConfigJson(configPath, workingFolder, { interactive: true })
+
+  fs.readFileSync.mockReturnValueOnce(configJson)
+  mockPrompt.mockResolvedValue({ overwrite: true }) // two writes, one to .env, one to .aio
   await importConfigJson(configPath, workingFolder, { interactive: true })
 
   fs.readFileSync.mockReturnValueOnce(configJson)

@@ -15,11 +15,12 @@ const path = require('path')
 const fs = require('fs-extra')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
-const { loadAndValidateConfigFile, importConfigJson, writeAio } = require('../../lib/import')
+const { loadAndValidateConfigFile, importConfigJson, writeDefaultAppConfig } = require('../../lib/import')
 const { getCliInfo } = require('../../lib/app-helper')
 const chalk = require('chalk')
+const { servicesToGeneratorInput } = require('../../lib/app-helper')
 
-const SERVICE_API_KEY_ENV = 'SERVICE_API_KEY'
+const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV } = require('../../lib/defaults')
 
 class InitCommand extends BaseCommand {
   async run () {
@@ -42,11 +43,16 @@ class InitCommand extends BaseCommand {
 
     // default project name and services
     let projectName = path.basename(process.cwd())
-    // list of supported service templates
-    let services = 'AdobeTargetSDK,AdobeAnalyticsSDK,CampaignSDK,McDataServicesSdk,AudienceManagerCustomerSDK,AssetComputeSDK'
+    // list of services added to the workspace
+    let workspaceServices = []
+    // list of services supported by the organization
+    let supportedServices = []
 
     // client id of the console's workspace jwt credentials
     let serviceClientId = ''
+
+    // delete console credentials only if it was generated
+    let deleteConsoleCredentials = false
 
     if (!flags.import && !flags.yes && flags.login) {
       try {
@@ -56,12 +62,19 @@ class InitCommand extends BaseCommand {
         res = await env.run('gen-console', {
           'destination-file': generatedFile,
           'access-token': accessToken,
-          'ims-env': imsEnv
+          'ims-env': imsEnv,
+          'allow-create': true,
+          'cert-dir': path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER)
         })
         // trigger import
         flags.import = generatedFile
+        // delete console credentials
+        deleteConsoleCredentials = true
       } catch (e) {
-        this.log(chalk.red(e.message))
+        this.log(chalk.red(
+          `Error while generating the configuration from the Adobe Developer Console: ${e}\n` +
+          'Skipping configuration setup..'
+        ))
       }
       this.log()
     }
@@ -69,10 +82,16 @@ class InitCommand extends BaseCommand {
     if (flags.import) {
       const { values: config } = loadAndValidateConfigFile(flags.import)
 
-      projectName = config.project.name
-      services = config.project.workspace.details.services.map(s => s.code).join(',') || ''
-      const jwtConfig = config.project.workspace.details.credentials && config.project.workspace.details.credentials.find(c => c.jwt)
+      const project = config.project
+      // get project name
+      projectName = project.name
+      // extract workspace services
+      workspaceServices = project.workspace.details.services
+      // get jwt client id
+      const jwtConfig = project.workspace.details.credentials && project.workspace.details.credentials.find(c => c.jwt)
       serviceClientId = (jwtConfig && jwtConfig.jwt.client_id) || serviceClientId // defaults to ''
+      // supportedServices are only defined when the console.json file was generated via the generator (not in downloaded file)
+      supportedServices = (project.org.details && project.org.details.services) || []
     }
 
     this.log(`You are about to initialize the project '${projectName}'`)
@@ -83,7 +102,8 @@ class InitCommand extends BaseCommand {
       'skip-install': flags['skip-install'],
       'skip-prompt': flags.yes,
       'project-name': projectName,
-      'adobe-services': services
+      'adobe-services': servicesToGeneratorInput(workspaceServices),
+      'supported-adobe-services': servicesToGeneratorInput(supportedServices)
     })
 
     // config import
@@ -92,12 +112,13 @@ class InitCommand extends BaseCommand {
     const merge = true
     if (flags.import) {
       await importConfigJson(flags.import, process.cwd(), { interactive, merge }, { [SERVICE_API_KEY_ENV]: serviceClientId })
-    } else {
-      // write default services value to .aio
-      await writeAio({
-        services: services.split(',').map(code => ({ code }))
-      }, process.cwd(), { merge, interactive })
+      if (deleteConsoleCredentials) {
+        fs.unlinkSync(flags.import)
+      }
     }
+
+    // write default app config to .aio file
+    writeDefaultAppConfig(process.cwd(), { interactive, merge })
 
     // finalize configuration data
     this.log('✔ App initialization finished!')

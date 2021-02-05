@@ -11,6 +11,7 @@ governing permissions and limitations under the License.
 
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:import', { provider: 'debug' })
 const config = require('@adobe/aio-lib-core-config')
+const defaults = require('./defaults')
 const path = require('path')
 const fs = require('fs-extra')
 const inquirer = require('inquirer')
@@ -26,6 +27,11 @@ const AIO_ENV_SEPARATOR = '_'
 const FILE_FORMAT_ENV = 'env'
 const FILE_FORMAT_JSON = 'json'
 const CONSOLE_CONFIG_KEY = 'console'
+
+// make sure to prompt to stderr
+// Note: if this get's turned into a lib make sure to call
+// this into an init/constructor as it might create mocking issues in jest
+const prompt = inquirer.createPromptModule({ output: process.stderr })
 
 /**
  * Validate the config json
@@ -95,6 +101,28 @@ function loadAndValidateConfigFile (fileOrBuffer) {
 }
 
 /**
+ * Writes default app config to .aio file
+ *
+ * @param {string} parentDir the parent folder to write the .aio file to
+ * @param {object} [flags] flags for file writing
+ * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
+ * @param {boolean} [flags.merge=false] set to true to merge in the existing .env file (takes precedence over overwrite)
+ * @param {boolean} [flags.interactive=false] set to true to prompt the user for file overwrite
+ * @returns {Promise} promise from writeFile call
+ */
+function writeDefaultAppConfig (parentDir, flags) {
+  // write app config to .aio file
+  const appConfig = {
+    app: {
+      actions: 'actions',
+      dist: 'dist',
+      web: 'web-src'
+    }
+  }
+  return writeAio(appConfig, parentDir, flags)
+}
+
+/**
  * Pretty prints the json object as a string.
  * Delimited by 2 spaces.
  *
@@ -113,31 +141,30 @@ function prettyPrintJson (json) {
  */
 async function checkFileConflict (filePath) {
   if (fs.existsSync(filePath)) {
-    const answer = await inquirer
-      .prompt([
-        {
-          type: 'expand',
-          message: `The file ${filePath} already exists:`,
-          name: 'conflict',
-          choices: [
-            {
-              key: 'o',
-              name: 'Overwrite',
-              value: 'overwrite'
-            },
-            {
-              key: 'm',
-              name: 'Merge',
-              value: 'merge'
-            },
-            {
-              key: 'x',
-              name: 'Abort',
-              value: 'abort'
-            }
-          ]
-        }
-      ])
+    const answer = await prompt([
+      {
+        type: 'expand',
+        message: `The file ${filePath} already exists:`,
+        name: 'conflict',
+        choices: [
+          {
+            key: 'o',
+            name: 'Overwrite',
+            value: 'overwrite'
+          },
+          {
+            key: 'm',
+            name: 'Merge',
+            value: 'merge'
+          },
+          {
+            key: 'x',
+            name: 'Abort',
+            value: 'abort'
+          }
+        ]
+      }
+    ])
 
     switch (answer.conflict) {
       case 'overwrite':
@@ -297,7 +324,7 @@ function mergeJson (oldData, newData) {
  */
 function mergeData (oldData, newData, fileFormat) {
   aioLogger.debug(`mergeData - oldData: ${oldData}`)
-  aioLogger.debug(`mergeData - newData:${newData}`)
+  aioLogger.debug(`mergeData - newData: ${newData}`)
 
   if (fileFormat === FILE_FORMAT_ENV) {
     return mergeEnv(oldData, newData)
@@ -328,7 +355,7 @@ async function writeFile (destination, data, flags = {}) {
 
   if (interactive) {
     answer = await checkFileConflict(destination)
-    aioLogger.debug(`writeEnv - answer (interactive): ${JSON.stringify(answer)}`)
+    aioLogger.debug(`writeFile - answer (interactive): ${JSON.stringify(answer)}`)
   }
 
   if (answer.abort) {
@@ -462,6 +489,8 @@ function transformRuntime (runtime) {
   if (newRuntime.name) {
     newRuntime.namespace = newRuntime.name
     delete newRuntime.name
+    // apihost is not sent in console config
+    newRuntime.apihost = defaults.defaultOwApihost
   }
 
   return newRuntime
@@ -555,7 +584,7 @@ function credentialsReferences (credentials) {
 /**
  * Import a downloadable config and write to the appropriate .env (credentials) and .aio (non-credentials) files.
  *
- * @param {string} configFileLocation the path to the config file to import
+ * @param {string} configFileOrBuffer the path to the config file to import or a buffer
  * @param {string} [destinationFolder=the current working directory] the path to the folder to write the .env and .aio files to
  * @param {object} [flags={}] flags for file writing
  * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
@@ -564,10 +593,10 @@ function credentialsReferences (credentials) {
  *        Extra variables are treated as raw and won't be rewritten to comply with aio-lib-core-config
  * @returns {Promise} promise from writeAio call
  */
-async function importConfigJson (configFileLocation, destinationFolder = process.cwd(), flags = {}, extraEnvVars = {}) {
-  aioLogger.debug(`importConfigJson - configFileLocation: ${configFileLocation} destinationFolder:${destinationFolder} flags:${flags} extraEnvVars:${extraEnvVars}`)
+async function importConfigJson (configFileOrBuffer, destinationFolder = process.cwd(), flags = {}, extraEnvVars = {}) {
+  aioLogger.debug(`importConfigJson - configFileOrBuffer: ${configFileOrBuffer} destinationFolder:${destinationFolder} flags:${flags} extraEnvVars:${extraEnvVars}`)
 
-  const { values: config, format } = loadAndValidateConfigFile(configFileLocation)
+  const { values: config, format } = loadAndValidateConfigFile(configFileOrBuffer)
 
   aioLogger.debug(`importConfigJson - format: ${format} config:${prettyPrintJson(config)} `)
 
@@ -595,6 +624,7 @@ module.exports = {
   loadAndValidateConfigFile,
   writeConsoleConfig,
   writeAio,
+  writeDefaultAppConfig,
   writeEnv,
   flattenObjectWithSeparator,
   importConfigJson,

@@ -12,7 +12,6 @@ governing permissions and limitations under the License.
 
 const ora = require('ora')
 const chalk = require('chalk')
-const fs = require('fs-extra')
 // const path = require('path')
 
 const { flags } = require('@oclif/command')
@@ -39,17 +38,17 @@ class Undeploy extends BaseCommand {
     try {
       // undeploy
       if (!flags['skip-actions']) {
-        if (fs.existsSync('manifest.yml')) {
+        if (config.app.hasBackend) {
           await rtLib.undeployActions(this.getAppConfig())
         } else {
           this.log('no manifest file, skipping action undeploy')
         }
       }
-      if (!flags['skip-static']) {
-        if (fs.existsSync('web-src/')) {
+      if (!flags['skip-static'] && !flags['skip-web-assets']) {
+        if (config.app.hasFrontend) {
           await webLib.undeployWeb(config, onProgress)
         } else {
-          this.log('no web-src, skipping web-src undeploy')
+          this.log('no frontend, skipping frontend undeploy')
         }
       }
 
@@ -68,10 +67,13 @@ Undeploy.description = `Undeploys an Adobe I/O App
 Undeploy.flags = {
   ...BaseCommand.flags,
   'skip-static': flags.boolean({
-    description: 'Skip build & deployment of static files'
+    description: 'Skip undeployment of static files'
+  }),
+  'skip-web-assets': flags.boolean({
+    description: 'Skip undeployment of web assets'
   }),
   'skip-actions': flags.boolean({
-    description: 'Skip action build & deploy'
+    description: 'Skip undeployment of actions'
   })
 }
 

@@ -15,6 +15,17 @@ const BaseCommand = require('../../../src/BaseCommand')
 
 const mockFS = require('fs-extra')
 
+const mockConfigData = {
+  app: {
+    hasFrontend: true,
+    hasBackend: true
+  }
+}
+
+jest.mock('../../../src/lib/config-loader', () => {
+  return () => mockConfigData
+})
+
 // mocks
 const { stdout } = require('stdout-stderr')
 const mockWebLib = require('@adobe/aio-lib-web')
@@ -22,7 +33,6 @@ const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 
 beforeEach(() => {
   mockRuntimeLib.undeployActions.mockReset()
-  mockWebLib.mockReset('undeployWeb')
   mockFS.existsSync.mockReset()
   jest.restoreAllMocks()
 })
@@ -46,6 +56,9 @@ test('flags', async () => {
 
   expect(typeof TheCommand.flags['skip-static']).toBe('object')
   expect(typeof TheCommand.flags['skip-static'].description).toBe('string')
+
+  expect(typeof TheCommand.flags['skip-web-assets']).toBe('object')
+  expect(typeof TheCommand.flags['skip-web-assets'].description).toBe('string')
 })
 
 describe('run', () => {
@@ -55,7 +68,7 @@ describe('run', () => {
     command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
-    command.appConfig = {}
+    command.appConfig = mockConfigData
   })
 
   afterEach(() => {
@@ -63,7 +76,6 @@ describe('run', () => {
   })
 
   test('undeploy an App with no flags', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
@@ -71,7 +83,6 @@ describe('run', () => {
   })
 
   test('undeploy an App with --verbose', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     command.argv = ['-v']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -80,7 +91,6 @@ describe('run', () => {
   })
 
   test('undeploy skip-actions', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     command.argv = ['--skip-actions']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -89,7 +99,6 @@ describe('run', () => {
   })
 
   test('undeploy skip-actions verbose', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     command.argv = ['--skip-actions', '-v']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -98,7 +107,6 @@ describe('run', () => {
   })
 
   test('undeploy skip static', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     command.argv = ['--skip-static']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -106,8 +114,15 @@ describe('run', () => {
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(0)
   })
 
+  test('undeploy skip web assets', async () => {
+    command.argv = ['--skip-web-assets']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(0)
+  })
+
   test('undeploy skip static verbose', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     command.argv = ['--skip-static', '-v']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -116,7 +131,7 @@ describe('run', () => {
   })
 
   test('undeploy an app with no backend', async () => {
-    mockFS.existsSync.mockImplementation(f => !f.includes('manifest'))
+    command.appConfig = { app: { hasFrontend: true, hasBackend: false } }
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(0)
@@ -125,16 +140,15 @@ describe('run', () => {
   })
 
   test('undeploy an app with no frontend', async () => {
-    mockFS.existsSync.mockImplementation(f => !f.includes('web-src'))
+    command.appConfig = { app: { hasFrontend: false, hasBackend: true } }
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(0)
-    expect(command.log).toHaveBeenCalledWith('no web-src, skipping web-src undeploy')
+    expect(command.log).toHaveBeenCalledWith('no frontend, skipping frontend undeploy')
   })
 
   test('should fail if scripts.undeployActions fails', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     const error = new Error('mock failure Actions')
     mockRuntimeLib.undeployActions.mockRejectedValue(error)
     await command.run()
@@ -143,16 +157,14 @@ describe('run', () => {
   })
 
   test('should fail if scripts.undeployWeb fails', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     const error = new Error('mock failure UI')
-    mockWebLib.mockRejectedValue('undeployWeb', error)
+    mockWebLib.undeployWeb.mockRejectedValue(error)
     await command.run()
     expect(command.error).toHaveBeenCalledWith(error)
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
   })
 
   test('spinner should be called for progress logs on undeployWeb call , with verbose', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     mockRuntimeLib.undeployActions.mockResolvedValue('ok')
     mockWebLib.undeployWeb.mockImplementation(async (config, log) => {
       log('progress log')
@@ -165,7 +177,6 @@ describe('run', () => {
   })
 
   test('spinner should be called for progress logs on undeployWeb call , without verbose', async () => {
-    mockFS.existsSync.mockReturnValue(true)
     mockRuntimeLib.undeployActions.mockResolvedValue('ok')
     mockWebLib.undeployWeb.mockImplementation(async (config, log) => {
       log('progress log')
