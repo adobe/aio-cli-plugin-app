@@ -18,7 +18,7 @@ const { flags } = require('@oclif/command')
 
 const BaseCommand = require('../../BaseCommand')
 const webLib = require('@adobe/aio-lib-web')
-const { wrapError } = require('../../lib/app-helper')
+const { runPackageScript, wrapError } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 
 class Undeploy extends BaseCommand {
@@ -37,8 +37,16 @@ class Undeploy extends BaseCommand {
     }
     try {
       // undeploy
+
+      try {
+        await runPackageScript('pre-app-undeploy')
+      } catch (err) {
+        this.log(err)
+      }
+
       if (!flags['skip-actions']) {
         if (config.app.hasBackend) {
+          await runPackageScript('undeploy-actions')
           await rtLib.undeployActions(this.getAppConfig())
         } else {
           this.log('no manifest file, skipping action undeploy')
@@ -46,6 +54,7 @@ class Undeploy extends BaseCommand {
       }
       if (!flags['skip-static'] && !flags['skip-web-assets']) {
         if (config.app.hasFrontend) {
+          await runPackageScript('undeploy-static')
           await webLib.undeployWeb(config, onProgress)
         } else {
           this.log('no frontend, skipping frontend undeploy')
@@ -54,6 +63,12 @@ class Undeploy extends BaseCommand {
 
       // final message
       this.log(chalk.green(chalk.bold('Undeploy done !')))
+
+      try {
+        await runPackageScript('post-app-undeploy')
+      } catch (err) {
+        this.log(err)
+      }
     } catch (error) {
       spinner.stop()
       this.error(wrapError(error))
