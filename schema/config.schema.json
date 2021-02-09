@@ -5,26 +5,26 @@
     "properties": {
         "project": { "$ref": "#/definitions/project" }
     },
-    "required": [ "project"],
+    "required": [ "project" ],
     "definitions": {
-        "project": { 
+        "project": {
             "type": "object",
             "properties": {
-                "id": { 
+                "id": {
                     "type": "string",
                     "pattern": "^[0-9]+$"
                 },
-                "name": { 
+                "name": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9]{0,20}$"
+                    "pattern": "^[A-Za-z0-9\u00C0-\u00D6\u00D8-\u00f6\u00f8-\u00ff]{1,20}$"
                 },
-                "title": { 
+                "title": {
                     "type": "string",
-                    "pattern": "^(?=\\S).{0,45}(?<=\\S)$"
+                    "pattern": "^(?=.*\\S)[A-Za-z0-9\u00C0-\u00D6\u00D8-\u00f6\u00f8-\u00ff\\s]{1,45}$"
                 },
-                "description": { 
+                "description": {
                     "type": "string",
-                    "pattern": "^(?=\\S).{0,1000}(?<=\\S)$"
+                    "pattern": "^$|^(?=.*\\S)[-+!'\"/\n\r#$%&*.,:;()=?\u0040-\uD800 0-9]{1,1000}$"
                 },
                 "org": { "$ref": "#/definitions/org" },
                 "workspace": { "$ref": "#/definitions/workspace" }
@@ -34,27 +34,27 @@
         "workspace": {
             "type": "object",
             "properties": {
-                "id": { 
+                "id": {
                     "type": "string",
                     "pattern": "^[0-9]+$"
                 },
-                "name": { 
+                "name": {
                     "type": "string",
-                    "pattern": "^(?=\\S).{0,20}(?<=\\S)$"
+                    "pattern": "^[A-Za-z0-9\u00C0-\u00D6\u00D8-\u00f6\u00f8-\u00ff]{1,20}$"
                 },
-                "title": { 
+                "title": {
                     "type": "string",
-                    "pattern": "^(?=\\S).{0,45}(?<=\\S)$"
+                    "pattern": "^$|^(?=.*\\S)[A-Za-z0-9\u00C0-\u00D6\u00D8-\u00f6\u00f8-\u00ff\\s]{1,45}$"
                 },
-                "description": { 
+                "description": {
                     "type": "string",
-                    "pattern": "^(?=\\S).{0,500}(?<=\\S)$"
+                    "pattern": "^$|^(?=.*\\S)[-+!'\"/\n\r#$%&*.,:;()=?\u0040-\uD800 0-9]{1,500}$"
                 },
-                "action_url": { 
+                "action_url": {
                     "type": "string",
                     "format": "uri"
                 },
-                "app_url": { 
+                "app_url": {
                     "type": "string",
                     "format": "uri"
                 },
@@ -92,15 +92,15 @@
         "org": {
             "type": "object",
             "properties": {
-                "id": { 
+                "id": {
                     "type": "string",
                     "pattern": "^[0-9]+$"
                 },
-                "name": { 
+                "name": {
                     "type": "string",
                     "pattern": "^(?=\\S).{0,255}(?<=\\S)$"
                 },
-                "ims_org_id": { 
+                "ims_org_id": {
                     "type": "string",
                     "format": "email"
                 }
@@ -111,7 +111,7 @@
             "type": "object",
             "properties": {
                 "id": { "type": "string" },
-                "name": { 
+                "name": {
                     "type": "string",
                     "pattern": "^(?=\\S).{0,255}(?<=\\S)$"
                 },
@@ -149,11 +149,11 @@
             "properties": {
                 "client_id": { "type": "string" },
                 "client_secret": { "type": "string" },
-                "defaultRedirectUri": { 
+                "defaultRedirectUri": {
                     "type": "string",
                     "format": "uri"
                 },
-                "redirect_uri": { 
+                "redirect_uri": {
                     "type": "array",
                     "items": {
                         "type": "string",
@@ -162,21 +162,21 @@
                 }
             },
             "required": [ "client_id", "client_secret", "redirect_uri", "defaultRedirectUri" ]
-        }, 
+        },
         "jwt": {
             "type": "object",
             "properties": {
                 "client_id": { "type": "string" },
                 "client_secret": { "type": "string" },
-                "technical_account_email": { 
+                "technical_account_email": {
                     "type": "string",
                     "format": "email"
                 },
-                "technical_account_id": { 
+                "technical_account_id": {
                     "type": "string",
                     "format": "email"
                 },
-                "meta_scopes": { 
+                "meta_scopes": {
                     "type": "array",
                     "items": { "type": "string" },
                     "default": []
