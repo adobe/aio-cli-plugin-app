@@ -37,7 +37,6 @@ class Undeploy extends BaseCommand {
     }
     try {
       // undeploy
-
       try {
         await runPackageScript('pre-app-undeploy')
       } catch (err) {
@@ -46,16 +45,32 @@ class Undeploy extends BaseCommand {
 
       if (!flags['skip-actions']) {
         if (config.app.hasBackend) {
-          await runPackageScript('undeploy-actions')
-          await rtLib.undeployActions(this.getAppConfig())
+          try {
+            const script = await runPackageScript('undeploy-actions')
+            if (!script) {
+              await rtLib.undeployActions(this.getAppConfig())
+            }
+            spinner.succeed(chalk.green('Un-Deploying actions'))
+          } catch (err) {
+            spinner.fail(chalk.green('Un-Deploying actions'))
+            throw err
+          }
         } else {
           this.log('no manifest file, skipping action undeploy')
         }
       }
       if (!flags['skip-static'] && !flags['skip-web-assets']) {
         if (config.app.hasFrontend) {
-          await runPackageScript('undeploy-static')
-          await webLib.undeployWeb(config, onProgress)
+          try {
+            const script = await runPackageScript('undeploy-static')
+            if (!script) {
+              await webLib.undeployWeb(config, onProgress)
+            }
+            spinner.succeed(chalk.green('Un-Deploying web assets'))
+          } catch (err) {
+            spinner.fail(chalk.green('Un-Deploying web assets'))
+            throw err
+          }
         } else {
           this.log('no frontend, skipping frontend undeploy')
         }
@@ -63,7 +78,6 @@ class Undeploy extends BaseCommand {
 
       // final message
       this.log(chalk.green(chalk.bold('Undeploy done !')))
-
       try {
         await runPackageScript('post-app-undeploy')
       } catch (err) {

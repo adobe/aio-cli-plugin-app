@@ -67,10 +67,10 @@ test('flags', async () => {
 })
 
 /**
- * @param pre
- * @param undeployActions
- * @param undeployStatic
- * @param post
+ * @param {object} pre pre-undeploy-hook script
+ * @param {object} undeployActions undeploy-actions script
+ * @param {object} undeployStatic undeploy-static script
+ * @param {object} post post-undeploy-hook script
  */
 function __setupMockHooks (pre = {}, undeployActions = {}, undeployStatic = {}, post = {}) {
   helpers.runPackageScript
@@ -94,18 +94,23 @@ describe('run', () => {
     jest.clearAllMocks()
   })
 
-  test('undeploy an App with no flags', async () => {
-    __setupMockHooks()
-
+  test('undeploy an App with no flags no hooks', async () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
   })
 
-  test('pre post undeploy hook errors --skip-actions --skip-static', async () => {
-    // __setupMockHooks()
+  test('undeploy an App with no flags with hooks', async () => {
+    __setupMockHooks()
 
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(0)
+  })
+
+  test('pre post undeploy hook errors --skip-actions --skip-static', async () => {
     helpers.runPackageScript
       .mockRejectedValueOnce('error-pre-app-undeploy') // pre-app-deploy (logs error)
       .mockRejectedValueOnce('error-post-app-undeploy') // post-app-deploy (logs error)
@@ -186,7 +191,6 @@ describe('run', () => {
   })
 
   test('should fail if scripts.undeployActions fails', async () => {
-    __setupMockHooks()
     const error = new Error('mock failure Actions')
     mockRuntimeLib.undeployActions.mockRejectedValue(error)
     await command.run()
@@ -195,7 +199,6 @@ describe('run', () => {
   })
 
   test('should fail if scripts.undeployWeb fails', async () => {
-    __setupMockHooks()
     const error = new Error('mock failure UI')
     mockWebLib.undeployWeb.mockRejectedValue(error)
     await command.run()
