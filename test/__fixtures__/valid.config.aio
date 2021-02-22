@@ -2,8 +2,8 @@
   "project": {
     "id": "123",
     "name": "TestProject123",
-    "title": "Test Title",
-    "description": "My project description",
+    "title": "Test Title ",
+    "description": "My project description ",
     "org": {
       "id": "25591412",
       "name": "Developers-Developers-Dévêlöpèrš",
@@ -12,8 +12,8 @@
     "workspace": {
       "id": "1356",
       "name": "TestWörkspacé",
-      "title": "Tést Tïtle",
-      "description": "My wörkspacè description",
+      "title": "Tést Tïtle ",
+      "description": " My wörkspacè description",
       "action_url": "https://ABCD-TestProject-TestWorkspace.adobeioruntime.net",
       "app_url": "https://ABCD-TestProject-TestWorkspace.adobestatic.net",
       "details": {
