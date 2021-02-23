@@ -13,6 +13,9 @@ governing permissions and limitations under the License.
 const TheCommand = require('../../../src/commands/app/undeploy')
 const BaseCommand = require('../../../src/BaseCommand')
 
+jest.mock('../../../src/lib/app-helper.js')
+const helpers = require('../../../src/lib/app-helper.js')
+
 const mockFS = require('fs-extra')
 
 const mockConfigData = {
@@ -33,7 +36,9 @@ const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 
 beforeEach(() => {
   mockRuntimeLib.undeployActions.mockReset()
+  helpers.runPackageScript.mockReset()
   mockFS.existsSync.mockReset()
+  helpers.wrapError.mockImplementation(msg => msg)
   jest.restoreAllMocks()
 })
 
@@ -61,6 +66,20 @@ test('flags', async () => {
   expect(typeof TheCommand.flags['skip-web-assets'].description).toBe('string')
 })
 
+/**
+ * @param {object} pre pre-undeploy-hook script
+ * @param {object} undeployActions undeploy-actions script
+ * @param {object} undeployStatic undeploy-static script
+ * @param {object} post post-undeploy-hook script
+ */
+function __setupMockHooks (pre = {}, undeployActions = {}, undeployStatic = {}, post = {}) {
+  helpers.runPackageScript
+    .mockResolvedValueOnce(pre) // pre-app-undeploy
+    .mockResolvedValueOnce(undeployActions) // undeploy-actions
+    .mockResolvedValueOnce(undeployStatic) // undeploy-static
+    .mockResolvedValueOnce(post) // post-app-undeploy
+}
+
 describe('run', () => {
   let command
   beforeEach(() => {
@@ -75,11 +94,34 @@ describe('run', () => {
     jest.clearAllMocks()
   })
 
-  test('undeploy an App with no flags', async () => {
+  test('undeploy an App with no flags no hooks', async () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
+  })
+
+  test('undeploy an App with no flags with hooks', async () => {
+    __setupMockHooks()
+
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(0)
+  })
+
+  test('pre post undeploy hook errors --skip-actions --skip-static', async () => {
+    helpers.runPackageScript
+      .mockRejectedValueOnce('error-pre-app-undeploy') // pre-app-deploy (logs error)
+      .mockRejectedValueOnce('error-post-app-undeploy') // post-app-deploy (logs error)
+
+    command.argv = ['--skip-actions', '--skip-static']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.log).toHaveBeenCalledTimes(3)
+    expect(command.log).toHaveBeenCalledWith('error-pre-app-undeploy')
+    expect(command.log).toHaveBeenCalledWith('error-post-app-undeploy')
+    expect(command.log).toHaveBeenCalledWith(expect.stringMatching('Undeploy done !'))
   })
 
   test('undeploy an App with --verbose', async () => {
