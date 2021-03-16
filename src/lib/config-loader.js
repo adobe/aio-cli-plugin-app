@@ -17,11 +17,18 @@ const chalk = require('chalk')
 const utils = require('./app-helper')
 const aioConfig = require('@adobe/aio-lib-core-config')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:config-loader', { provider: 'debug' })
+const { 
+  getCliEnv, /* function */ 
+  STAGE_ENV /* string */
+} = require('@adobe/aio-lib-env')
+
+const env = getCliEnv()
 
 // defaults
 const {
   defaultAppHostname,
   defaultTvmUrl,
+  stageTvmUrl,
   defaultOwApihost,
   defaultHTMLCacheDuration,
   defaultJSCacheDuration,
@@ -164,7 +171,7 @@ module.exports = () => {
   config.ow.package = `${config.app.name}-${config.app.version}`
   // S3 static files deployment config
   config.s3.folder = config.ow.namespace // this becomes the root only /
-  config.s3.tvmUrl = userConfig.app.tvmurl || defaultTvmUrl
+  config.s3.tvmUrl = userConfig.app.tvmurl || ( env === STAGE_ENV ? stageTvmUrl : defaultTvmUrl )
   // set hostname for backend actions && UI
   config.app.defaultHostname = defaultAppHostname
   config.app.hostname = userConfig.app.hostname || defaultAppHostname
