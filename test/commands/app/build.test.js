@@ -184,7 +184,7 @@ describe('run', () => {
     command.appConfig.ow.defaultApihost = global.defaultOwApihost
     command.appConfig.app.defaultHostname = global.defaultAppHostName
     const mockUtils = mockRuntimeLib.utils
-    mockRuntimeLib.utils = require.requireActual('@adobe/aio-lib-runtime').utils
+    mockRuntimeLib.utils = jest.requireActual('@adobe/aio-lib-runtime').utils
     await command.run()
     mockRuntimeLib.utils = mockUtils
     expect(command.error).toHaveBeenCalledTimes(0)
