@@ -164,7 +164,11 @@ module.exports = () => {
   config.ow.package = `${config.app.name}-${config.app.version}`
   // S3 static files deployment config
   config.s3.folder = config.ow.namespace // this becomes the root only /
-  config.s3.tvmUrl = userConfig.app.tvmurl || defaultTvmUrl
+  // Legacy applications set the defaultTvmUrl in .env, so we need to ignore it to not
+  // consider it as custom. The default will be set downstream by aio-lib-core-tvm.
+  if (userConfig.app.tvmurl !== defaultTvmUrl) {
+    config.s3.tvmUrl = userConfig.app.tvmurl
+  }
   // set hostname for backend actions && UI
   config.app.defaultHostname = defaultAppHostname
   config.app.hostname = userConfig.app.hostname || defaultAppHostname
