@@ -20,6 +20,9 @@ const defaults = require('../../../src/lib/defaults')
 jest.mock('@adobe/aio-lib-core-logging')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:config-loader', { provider: 'debug' })
 
+const libEnv = require('@adobe/aio-lib-env')
+jest.mock('@adobe/aio-lib-env')
+
 describe('load config', () => {
   let config
   beforeEach(async () => {
@@ -101,6 +104,41 @@ describe('load config', () => {
     expect(config.app.hostname).toEqual('some-other-host')
     expect(config.ow.defaultApihost).toEqual('https://adobeioruntime.net')
     expect(config.app.defaultHostname).toEqual('adobeio-static.net')
+  })
+
+  test('with stage env, should use stage hostname', () => {
+    mockAIOConfig.get.mockReturnValue({
+      ...global.fakeConfig.creds,
+      runtime: {
+        ...global.fakeConfig.creds.runtime,
+        apihost: 'some-fake-host'
+      },
+      app: {
+        ...global.fakeConfig.creds.app
+      }
+    })
+    libEnv.getCliEnv.mockReturnValue('stage')
+    config = loadConfig()
+    expect(config.app.hostname).toEqual('dev.runtime.adobe.io')
+    expect(config.app.defaultHostname).toEqual('dev.runtime.adobe.io')
+  })
+
+  test('with stage env and custom hostname', () => {
+    mockAIOConfig.get.mockReturnValue({
+      ...global.fakeConfig.creds,
+      runtime: {
+        ...global.fakeConfig.creds.runtime,
+        apihost: 'some-fake-host'
+      },
+      app: {
+        ...global.fakeConfig.creds.app,
+        hostname: 'some-other-host'
+      }
+    })
+    libEnv.getCliEnv.mockReturnValue('stage')
+    config = loadConfig()
+    expect(config.app.hostname).toEqual('some-other-host')
+    expect(config.app.defaultHostname).toEqual('dev.runtime.adobe.io')
   })
 
   test('Tvm url config', () => {

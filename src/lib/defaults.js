@@ -13,6 +13,7 @@ governing permissions and limitations under the License.
 
 module.exports = {
   defaultAppHostname: 'adobeio-static.net',
+  stageAppHostname: 'dev.runtime.adobe.io',
   defaultTvmUrl: 'https://firefly-tvm.adobe.io',
   defaultOwApihost: 'https://adobeioruntime.net',
   defaultHTMLCacheDuration: '60',
