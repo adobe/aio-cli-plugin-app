@@ -15,6 +15,7 @@ const loadConfig = require('../../../src/lib/config-loader')
 const mockAIOConfig = require('@adobe/aio-lib-core-config')
 const yaml = require('js-yaml')
 const chalk = require('chalk')
+const defaults = require('../../../src/lib/defaults')
 
 jest.mock('@adobe/aio-lib-core-logging')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:config-loader', { provider: 'debug' })
@@ -100,5 +101,35 @@ describe('load config', () => {
     expect(config.app.hostname).toEqual('some-other-host')
     expect(config.ow.defaultApihost).toEqual('https://adobeioruntime.net')
     expect(config.app.defaultHostname).toEqual('adobeio-static.net')
+  })
+
+  test('Tvm url config', () => {
+    // custom
+    mockAIOConfig.get.mockReturnValue({
+      ...global.fakeConfig.creds,
+      app: {
+        tvmurl: 'custom'
+      }
+    })
+    config = loadConfig()
+    expect(config.s3.tvmUrl).toEqual('custom')
+    // empty
+    mockAIOConfig.get.mockReturnValue({
+      ...global.fakeConfig.creds,
+      app: {
+        tvmurl: undefined
+      }
+    })
+    config = loadConfig()
+    expect(config.s3.tvmUrl).toEqual(undefined)
+    // default (should not set it)
+    mockAIOConfig.get.mockReturnValue({
+      ...global.fakeConfig.creds,
+      app: {
+        tvmurl: defaults.defaultTvmUrl
+      }
+    })
+    config = loadConfig()
+    expect(config.s3.tvmUrl).toEqual(undefined)
   })
 })
