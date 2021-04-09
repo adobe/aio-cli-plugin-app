@@ -15,7 +15,7 @@ const yaml = require('js-yaml')
 const fs = require('fs-extra')
 const chalk = require('chalk')
 const utils = require('./app-helper')
-const aioConfig = require('@adobe/aio-lib-core-config')
+const aioConfigLoader = require('@adobe/aio-lib-core-config')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:config-loader', { provider: 'debug' })
 
 // defaults
@@ -86,24 +86,20 @@ module.exports = () => {
 
   const _abs = (p) => path.join(config.root, p)
   // load aio config
-  aioConfig.reload()
-  const userConfig = aioConfig.get() || {}
-  userConfig.app = userConfig.app || {}
+  aioConfigLoader.reload()
+  const aioConfig = aioConfigLoader.get() || {}
 
-  // userConfig.cna deprecation warning
-  if (userConfig.cna !== undefined) {
-    aioLogger.warn(chalk.redBright(chalk.bold('The config variable \'cna\' has been deprecated. Please update it with \'app\' instead in your .aio configuration file.')))
-    Object.assign(userConfig.app, userConfig.cna)
-  }
+  // reads .aio.app and app.config.yml
+  const userConfig = loadUserConfig(aioConfig)
 
-  config.imsOrgId = aioConfig.get(AIO_CONFIG_IMS_ORG_ID)
+  config.imsOrgId = aioConfigLoader.get(AIO_CONFIG_IMS_ORG_ID)
 
-  // 1. paths
-  // 1.a defaults
-  const actions = path.normalize(userConfig.app.actions || 'actions')
-  const dist = path.normalize(userConfig.app.dist || 'dist')
-  const web = path.normalize(userConfig.app.web || 'web-src')
-  // 1.b set config paths
+  // paths
+  // defaults
+  const actions = path.normalize(userConfig.actions || 'actions')
+  const dist = path.normalize(userConfig.dist || 'dist')
+  const web = path.normalize(userConfig.web || 'web-src')
+  // set config paths
   config.actions.src = _abs(actions) // todo this should be linked with manifest.yml paths
   config.actions.dist = _abs(path.join(dist, actions))
 
@@ -113,51 +109,44 @@ module.exports = () => {
   config.web.injectedConfig = _abs(path.join(web, 'src', 'config.json'))
 
   config.s3.credsCacheFile = _abs('.aws.tmp.creds.json')
-  config.manifest.src = _abs('manifest.yml')
+
+  // load runtime manifest config, either from manifest.yml or app.config.runtime
+  config.manifest = loadRuntimeManifest(userConfig)
+
+  // load extension manifest
+  config.extension = loadExtensionManifest(userConfig)
 
   // set s3 creds if specified
-  config.s3.creds = (typeof userConfig.app === 'object') &&
-    (userConfig.app.awsaccesskeyid &&
-     userConfig.app.awssecretaccesskey &&
-     userConfig.app.s3bucket) && {
-    accessKeyId: userConfig.app.awsaccesskeyid,
-    secretAccessKey: userConfig.app.awssecretaccesskey,
-    params: { Bucket: userConfig.app.s3bucket }
+  if (userConfig.awsaccesskeyid &&
+    userConfig.awssecretaccesskey &&
+    userConfig.s3bucket) {
+    config.s3.creds = {
+      accessKeyId: userConfig.awsaccesskeyid,
+      secretAccessKey: userConfig.awssecretaccesskey,
+      params: { Bucket: userConfig.s3bucket }
+    }
   }
 
   // set for general build artifacts
   config.app.dist = dist
-
   // check if the app has a frontend, for now enforce index.html to be there
   // todo we shouldn't have any config.web config if !hasFrontend
   config.app.hasFrontend = fs.existsSync(config.web.src)
+  // check if the app has a backend by checking presence of a runtime manifest config
+  config.app.hasBackend = !!config.manifest.full
 
-  // check if the app has a backend by checking presence of manifest.yml file
-  config.app.hasBackend = fs.existsSync(config.manifest.src)
-
-  // 2. check needed files
+  // check needed files
   aioLogger.debug('checking package.json existence')
   utils.checkFile(_abs('package.json'))
 
-  // 3. load app config from package.json
+  // load app config from package.json
   const packagejson = JSON.parse(fs.readFileSync(_abs('package.json')))
   // semver starts at 0.1.0
   config.app.version = packagejson.version || '0.1.0'
   config.app.name = getModuleName(packagejson) || 'unnamed-app'
 
-  // 4. Load manifest config
-  if (config.app.hasBackend) {
-    config.manifest.packagePlaceholder = '__APP_PACKAGE__'
-    config.manifest.full = yaml.safeLoad(fs.readFileSync(config.manifest.src, 'utf8'))
-    config.manifest.package = config.manifest.full.packages[config.manifest.packagePlaceholder]
-    if (config.manifest.package) {
-      aioLogger.debug(`Use of ${config.manifest.packagePlaceholder} in manifest.yml.`)
-    }
-    // Note: we should probably set the config.manifest.package also if it's not using a placeholder
-  }
-
-  // 5. deployment config
-  config.ow = userConfig.runtime || {}
+  // deployment config
+  config.ow = aioConfig.runtime || {}
   config.ow.defaultApihost = defaultOwApihost
   config.ow.apihost = config.ow.apihost || defaultOwApihost // set by user
   config.ow.apiversion = config.ow.apiversion || 'v1'
@@ -166,17 +155,21 @@ module.exports = () => {
   config.s3.folder = config.ow.namespace // this becomes the root only /
   // Legacy applications set the defaultTvmUrl in .env, so we need to ignore it to not
   // consider it as custom. The default will be set downstream by aio-lib-core-tvm.
-  if (userConfig.app.tvmurl !== defaultTvmUrl) {
-    config.s3.tvmUrl = userConfig.app.tvmurl
+  if (userConfig.tvmurl !== defaultTvmUrl) {
+    config.s3.tvmUrl = userConfig.tvmurl
   }
   // set hostname for backend actions && UI
   config.app.defaultHostname = defaultAppHostname
-  config.app.hostname = userConfig.app.hostname || defaultAppHostname
+  config.app.hostname = userConfig.hostname || defaultAppHostname
   // cache control config
-  config.app.htmlCacheDuration = userConfig.app.htmlcacheduration || defaultHTMLCacheDuration
-  config.app.jsCacheDuration = userConfig.app.jscacheduration || defaultJSCacheDuration
-  config.app.cssCacheDuration = userConfig.app.csscacheduration || defaultCSSCacheDuration
-  config.app.imageCacheDuration = userConfig.app.imagecacheduration || defaultImageCacheDuration
+  config.app.htmlCacheDuration = userConfig.htmlcacheduration || defaultHTMLCacheDuration
+  config.app.jsCacheDuration = userConfig.jscacheduration || defaultJSCacheDuration
+  config.app.cssCacheDuration = userConfig.csscacheduration || defaultCSSCacheDuration
+  config.app.imageCacheDuration = userConfig.imagecacheduration || defaultImageCacheDuration
+
+  // TODO remove those two debugging lines
+  console.log(JSON.stringify(config, null, 2))
+  process.exit()
 
   return config
 }
@@ -188,4 +181,69 @@ function getModuleName (packagejson) {
     // OpenWhisk does not allow `@` or `/` in an entity name
     return packagejson.name.split('/').pop()
   }
+}
+
+/**
+ * @param aioConfig
+ * @param appConfig
+ */
+function loadUserConfig (aioConfig) {
+  // TODO there should be a function in aio-lib-core-config that allows to load a file by its name to support both yaml and hjson
+  const CONFIG_FILE = 'app.config.yaml'
+  let appConfig = null
+  if (fs.existsSync(CONFIG_FILE)) {
+    appConfig = yaml.safeLoad(fs.readFileSync(CONFIG_FILE, 'utf8'))
+  }
+  // aioConfig.cna deprecation warning
+  if (aioConfig.cna !== undefined) {
+    aioLogger.warn(chalk.redBright(chalk.bold('The config variable \'cna\' has been deprecated. Please update it with \'app\' instead in your .aio configuration file.')))
+    Object.assign(aioConfig.app, aioConfig.cna)
+  }
+
+  return { ...aioConfig.app, ...appConfig }
+}
+
+/**
+ * @param userConfig
+ */
+function loadRuntimeManifest (userConfig) {
+  const manifestConfig = { src: 'manifest.yml' }
+  if (userConfig.runtimeManifest) {
+    manifestConfig.full = userConfig.runtimeManifest
+  } else if (fs.existsSync(manifestConfig.src)) {
+    manifestConfig.full = yaml.safeLoad(fs.readFileSync(manifestConfig.src, 'utf8'))
+  } else {
+    // no backend
+    return manifestConfig
+  }
+  manifestConfig.packagePlaceholder = '__APP_PACKAGE__'
+  manifestConfig.package = manifestConfig.full.packages[manifestConfig.packagePlaceholder]
+  if (manifestConfig.package) {
+    aioLogger.debug(`Use of ${manifestConfig.packagePlaceholder} in manifest.yml.`)
+  }
+  // Note: we should set the config.manifest.package also if it's not using a placeholder
+  return manifestConfig
+}
+
+/**
+ * @param userConfig
+ */
+function loadExtensionManifest (userConfig) {
+  // Example config:
+  // {
+  //   "name": "1234-SleepyBear-stage",
+  //   "title": "LUMA News Realtime Analytics",
+  //   "description": "This dashboard visualizes real-time visitor traffic from LUMA News website.",
+  //   "icon": "https://ioexchange-cdn.azureedge.net/jgr/104272/70d960c5-b692-486b-95e7-4f57fca228f9.jpg",
+  //   "publisherName": "Adobe Firefly",
+  //   "endpoints": {
+  //     "firefly/excshell/1": {
+  //       "view": {
+  //         "href": "https://53444-lumareport.adobeio-static.net/"
+  //       }
+  //     }
+  //   }
+  // }
+  // TODO warning/error on missing required fields
+  return userConfig.extensionManifest
 }
