@@ -17,6 +17,9 @@ const TheCommand = require('../src/BaseCommand')
 jest.mock('@adobe/aio-lib-core-config')
 const mockConfig = require('@adobe/aio-lib-core-config')
 
+const libEnv = require('@adobe/aio-lib-env')
+jest.mock('@adobe/aio-lib-env')
+
 test('exports', async () => {
   expect(typeof TheCommand).toEqual('function')
   expect(TheCommand.prototype instanceof Command).toBeTruthy()
@@ -62,4 +65,10 @@ test('getLaunchUrlPrefix() warns on older url', async () => {
 
   mockConfig.get.mockReturnValue(null)
   expect(cmd.getLaunchUrlPrefix()).toEqual(expect.stringContaining('https://'))
+})
+
+test('getLaunchUrlPrefix() uses stage launch prefix', async () => {
+  const cmd = new TheCommand()
+  libEnv.getCliEnv.mockReturnValue('stage')
+  expect(cmd.getLaunchUrlPrefix()).toBe('https://experience-stage.adobe.com/?devMode=true#/custom-apps/?localDevUrl=')
 })
