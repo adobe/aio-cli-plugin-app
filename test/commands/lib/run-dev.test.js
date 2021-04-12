@@ -59,6 +59,7 @@ jest.mock('../../../src/lib/serve')
 jest.mock('../../../src/lib/build-actions')
 jest.mock('../../../src/lib/deploy-actions')
 jest.mock('../../../src/lib/log-poller')
+jest.mock('@adobe/aio-lib-env')
 
 jest.mock('../../../src/lib/app-helper', () => {
   const moduleMock = jest.requireActual('../../../src/lib/app-helper')
