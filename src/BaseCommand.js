@@ -47,7 +47,8 @@ class BaseCommand extends Command {
         this.log(chalk.redBright(chalk.bold(`You should update your .env file: AIO_LAUNCH_URL_PREFIX='${launchPrefix}'`)))
       }
     }
-    return (launchPrefix || (getCliEnv() === STAGE_ENV ? STAGE_LAUNCH_PREFIX : DEFAULT_LAUNCH_PREFIX))
+    const defaultLaunchPrefix = getCliEnv() === STAGE_ENV ? STAGE_LAUNCH_PREFIX : DEFAULT_LAUNCH_PREFIX
+    return (launchPrefix || defaultLaunchPrefix)
   }
 
   get pjson () {
