@@ -114,7 +114,7 @@ module.exports = () => {
   config.manifest = loadRuntimeManifest(userConfig)
 
   // load extension manifest
-  config.extension = loadExtensionManifest(userConfig)
+  config.extension = loadExtensionEndpoints(userConfig)
 
   // set s3 creds if specified
   if (userConfig.awsaccesskeyid &&
@@ -228,14 +228,16 @@ function loadRuntimeManifest (userConfig) {
 /**
  * @param userConfig
  */
-function loadExtensionManifest (userConfig) {
+function loadExtensionEndpoints (userConfig) {
   // Example config:
   // {
+  // THIS PART OF THE MANIFEST IS SET BY THE CONSOLE API
   //   "name": "1234-SleepyBear-stage",
   //   "title": "LUMA News Realtime Analytics",
   //   "description": "This dashboard visualizes real-time visitor traffic from LUMA News website.",
   //   "icon": "https://ioexchange-cdn.azureedge.net/jgr/104272/70d960c5-b692-486b-95e7-4f57fca228f9.jpg",
   //   "publisherName": "Adobe Firefly",
+  // NOTE THIS IS THE ONLY PART OF THE MANIFEST THAT IS REQUIRED
   //   "endpoints": {
   //     "firefly/excshell/1": {
   //       "view": {
@@ -244,6 +246,7 @@ function loadExtensionManifest (userConfig) {
   //     }
   //   }
   // }
-  // TODO warning/error on missing required fields
-  return userConfig.extensionManifest
+  // TODO warning/error on missing/bad fields
+
+  return userConfig.extensionEndpoints
 }
