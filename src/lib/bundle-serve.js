@@ -36,11 +36,12 @@ module.exports = async (bundler, uiPort = SERVER_DEFAULT_PORT, options = {}, log
   aioLogger.debug(`bundle-serve uiPort: ${uiPort}`)
   aioLogger.debug(`bundle-serve options: ${JSON.stringify(options, null, 2)}`)
 
-  const uiServer = await bundler.serve(uiPort, options.https)
-  actualPort = uiServer.address().port
+  // const uiServer = await bundler.serve(uiPort, options.https)
+  const uiServer = await bundler.watch()
+  /* actualPort = uiServer.address().port
   const terminator = httpTerminator.createHttpTerminator({
     server: uiServer
-  })
+  }) */
 
   if (actualPort !== uiPort) {
     log(`Could not use port:${uiPort}, using port:${actualPort} instead`)

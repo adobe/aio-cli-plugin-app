@@ -100,7 +100,16 @@ async function runDev (config, options = {}, log = () => {}) {
         const script = await utils.runPackageScript('build-static')
         if (!script) {
           const entryFile = config.web.src + '/index.html'
-          bundleOptions.watch = true
+          // bundleOptions.watch = true
+          bundleOptions.serveOptions = {
+            distDir: config.web.distDev,
+            port: uiPort,
+            https: bundleOptions.https
+          }
+          bundleOptions.additionalReporters = [
+            { packageName: '@parcel/reporter-cli', resolveFrom: __filename },
+            { packageName: '@parcel/reporter-dev-server', resolveFrom: __filename }
+          ]
           const { bundler, cleanup: bundlerCleanup } = await bundle(entryFile, config.web.distDev, bundleOptions, log)
           defaultBundler = bundler
           cleanup.add(() => bundlerCleanup(), 'cleaning up bundle...')
