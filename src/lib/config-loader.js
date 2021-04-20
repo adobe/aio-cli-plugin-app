@@ -33,180 +33,238 @@ const {
 /**
  * loading config returns following object (this config is internal, not user facing):
  *  {
- *    app: {
- *      name,
- *      version,
- *      hasFrontend,
- *      hasBackend,
- *      dist
- *    },
- *    ow: {
- *      apihost,
- *      apiversion,
- *      auth,
- *      namespace,
- *      package
- *    },
- *    s3: {
- *      creds || tvmUrl,
- *      credsCacheFile,
- *      folder,
- *    },
- *    web: {
- *      src,
- *      injectedConfig,
- *      distDev,
- *      distProd,
- *    },
- *    manifest: {
- *      full,
- *      package,
- *      packagePlaceholder,
- *      src,
- *    },
- *    actions: {
- *      src,
- *      dist,
- *      remote,
- *      urls
+ *    extensionPoints: {Manifest}
+ *    extConfigs: {
+ *      'aem/nui/1': {
+ *        app: {
+ *          name,
+ *          version,
+ *          hasFrontend,
+ *          hasBackend,
+ *          dist
+ *        },
+ *        ow: {
+ *          apihost,
+ *          apiversion,
+ *          auth,
+ *          namespace,
+ *          package
+ *        },
+ *        s3: {
+ *          creds || tvmUrl,
+ *          credsCacheFile,
+ *          folder,
+ *        },
+ *        web: {
+ *          src,
+ *          injectedConfig,
+ *          distDev,
+ *          distProd,
+ *        },
+ *        manifest: {
+ *          full,
+ *          package,
+ *          packagePlaceholder,
+ *          src,
+ *        },
+ *        actions: {
+ *          src,
+ *          dist,
+ *          remote,
+ *          urls
+ *        }
+ *      }
  *    }
  *  }
  */
 
 module.exports = () => {
-  // init internal config
-  const config = {}
-  config.app = {}
-  config.ow = {}
-  config.s3 = {}
-  config.web = {}
-  config.manifest = {}
-  config.actions = {}
-  config.root = process.cwd()
-
-  const _abs = (p) => path.join(config.root, p)
   // load aio config
   aioConfigLoader.reload()
   const aioConfig = aioConfigLoader.get() || {}
 
-  // reads .aio.app and app.config.yml
-  const userConfig = loadUserConfig(aioConfig)
+  // load top level config
+  const topConfig = loadTopConfig(aioConfig)
 
-  config.imsOrgId = aioConfigLoader.get(AIO_CONFIG_IMS_ORG_ID)
+  // load all extension point local configs
+  const extConfigs = loadAllExtConfigs(aioConfig, topConfig)
 
-  // paths
-  // defaults
-  const actions = path.normalize(userConfig.actions || 'actions')
-  const dist = path.normalize(userConfig.dist || 'dist')
-  const web = path.normalize(userConfig.web || 'web-src')
-  // set config paths
-  config.actions.src = _abs(actions) // todo this should be linked with manifest.yml paths
-  config.actions.dist = _abs(path.join(dist, actions))
-
-  config.web.src = _abs(web)
-  config.web.distDev = _abs(path.join(dist, `${web}-dev`))
-  config.web.distProd = _abs(path.join(dist, `${web}-prod`))
-  config.web.injectedConfig = _abs(path.join(web, 'src', 'config.json'))
-
-  config.s3.credsCacheFile = _abs('.aws.tmp.creds.json')
-
-  // load runtime manifest config, either from manifest.yml or app.config.runtime
-  config.manifest = loadRuntimeManifest(userConfig)
-
-  // load extension manifest
-  config.extension = loadExtensionEndpoints(userConfig)
-
-  // set s3 creds if specified
-  if (userConfig.awsaccesskeyid &&
-    userConfig.awssecretaccesskey &&
-    userConfig.s3bucket) {
-    config.s3.creds = {
-      accessKeyId: userConfig.awsaccesskeyid,
-      secretAccessKey: userConfig.awssecretaccesskey,
-      params: { Bucket: userConfig.s3bucket }
-    }
+  const config = {
+    extensionPoints: topConfig.extensionPoints,
+    extConfigs,
+    root: process.cwd()
   }
 
-  // set for general build artifacts
-  config.app.dist = dist
-  // check if the app has a frontend, for now enforce index.html to be there
-  // todo we shouldn't have any config.web config if !hasFrontend
-  config.app.hasFrontend = fs.existsSync(config.web.src)
-  // check if the app has a backend by checking presence of a runtime manifest config
-  config.app.hasBackend = !!config.manifest.full
-
-  // check needed files
-  aioLogger.debug('checking package.json existence')
-  utils.checkFile(_abs('package.json'))
-
-  // load app config from package.json
-  const packagejson = JSON.parse(fs.readFileSync(_abs('package.json')))
-  // semver starts at 0.1.0
-  config.app.version = packagejson.version || '0.1.0'
-  config.app.name = getModuleName(packagejson) || 'unnamed-app'
-
-  // deployment config
-  config.ow = aioConfig.runtime || {}
-  config.ow.defaultApihost = defaultOwApihost
-  config.ow.apihost = config.ow.apihost || defaultOwApihost // set by user
-  config.ow.apiversion = config.ow.apiversion || 'v1'
-  config.ow.package = `${config.app.name}-${config.app.version}`
-  // S3 static files deployment config
-  config.s3.folder = config.ow.namespace // this becomes the root only /
-  // Legacy applications set the defaultTvmUrl in .env, so we need to ignore it to not
-  // consider it as custom. The default will be set downstream by aio-lib-core-tvm.
-  if (userConfig.tvmurl !== defaultTvmUrl) {
-    config.s3.tvmUrl = userConfig.tvmurl
-  }
-  // set hostname for backend actions && UI
-  config.app.defaultHostname = defaultAppHostname
-  config.app.hostname = userConfig.hostname || defaultAppHostname
-  // cache control config
-  config.app.htmlCacheDuration = userConfig.htmlcacheduration || defaultHTMLCacheDuration
-  config.app.jsCacheDuration = userConfig.jscacheduration || defaultJSCacheDuration
-  config.app.cssCacheDuration = userConfig.csscacheduration || defaultCSSCacheDuration
-  config.app.imageCacheDuration = userConfig.imagecacheduration || defaultImageCacheDuration
-
-  // TODO remove those two debugging lines
-  console.log(JSON.stringify(config, null, 2))
-  process.exit()
+  // TODO remove debug statements
+  console.error(JSON.stringify(config, null, 2))
+  process.exit(1)
 
   return config
 }
 
-/** @private */
-function getModuleName (packagejson) {
-  if (packagejson && packagejson.name) {
-    // turn "@company/myaction" into "myaction"
-    // OpenWhisk does not allow `@` or `/` in an entity name
-    return packagejson.name.split('/').pop()
+/**
+ * @param aioConfig
+ */
+function loadTopConfig (aioConfig) {
+  let userConfig = loadUserConfig('./')
+  if (aioConfig.cna !== undefined || aioConfig.app !== undefined) {
+    aioLogger.warn(chalk.redBright(chalk.bold('Setting application configuration in the \'.aio\' file has been deprecated. Please move your \'.aio.app\' or \'.aio.cna\' to \'app.config.yaml\'.')))
+    Object.assign(aioConfig.app, aioConfig.cna)
+  }
+  // TODO Consider changing deprecation notice to use `aioConfig`
+  // TODO merge deeplevel
+  // TODO include legacy hooks, manifest and env ?
+  userConfig = { ...aioConfig.app, ...userConfig }
+
+  const packagejson = loadPackageJson()
+
+  const appConfig = {
+    name: getModuleName(packagejson) || 'unnamed-app',
+    version: packagejson.version || '0.1.0'
+  }
+
+  const owConfig = aioConfig.runtime || {}
+  owConfig.defaultApihost = defaultOwApihost
+  owConfig.apihost = owConfig.apihost || defaultOwApihost // set by user
+  owConfig.apiversion = owConfig.apiversion || 'v1'
+  owConfig.package = `${appConfig.name}-${appConfig.version}`
+
+  // todo env ?
+  return {
+    ...userConfig,
+    packagejson,
+    ow: owConfig,
+    extensionPoints: userConfig.extensionPoints || {},
+    aioConfig,
+    // soon not needed anymore (for old headless validator)
+    imsOrgId: aioConfigLoader.get(AIO_CONFIG_IMS_ORG_ID),
+    app: appConfig
   }
 }
 
 /**
  * @param aioConfig
- * @param appConfig
+ * @param topUserConfig
  */
-function loadUserConfig (aioConfig) {
-  // TODO there should be a function in aio-lib-core-config that allows to load a file by its name to support both yaml and hjson
-  const CONFIG_FILE = 'app.config.yaml'
-  let appConfig = null
-  if (fs.existsSync(CONFIG_FILE)) {
-    appConfig = yaml.safeLoad(fs.readFileSync(CONFIG_FILE, 'utf8'))
-  }
-  // aioConfig.cna deprecation warning
-  if (aioConfig.cna !== undefined) {
-    aioLogger.warn(chalk.redBright(chalk.bold('The config variable \'cna\' has been deprecated. Please update it with \'app\' instead in your .aio configuration file.')))
-    Object.assign(aioConfig.app, aioConfig.cna)
+function loadAllExtConfigs (aioConfig, topUserConfig) {
+  const BLANK_EXT_FOLDER = 'default'
+  const config = {}
+  const extensionPoints = topUserConfig.extensionPoints || {}
+
+  if (fs.existsSync(BLANK_EXT_FOLDER)) {
+    extensionPoints[BLANK_EXT_FOLDER] = 'default'
+    const userConfig = loadUserConfig(BLANK_EXT_FOLDER)
+    config[BLANK_EXT_FOLDER] = setFullExtConfig(BLANK_EXT_FOLDER, userConfig, aioConfig, topUserConfig)
   }
 
-  return { ...aioConfig.app, ...appConfig }
+  Object.entries(extensionPoints).forEach(([k, v]) => {
+    let extensionFolder = v.path || k
+    if (extensionFolder.endsWith('/')) {
+      extensionFolder = extensionFolder.substring(0, extensionFolder.length - 1)
+    }
+    if (extensionFolder.startsWith('/')) {
+      extensionFolder = extensionFolder.substring(1)
+    }
+    const userConfig = loadUserConfig(extensionFolder)
+    config[extensionFolder] = setFullExtConfig(extensionFolder, userConfig, aioConfig, topUserConfig)
+  })
+  // todo support root case for backwards compat if no default nor extensionPointConfig
+
+  // todo set default into the extensionPoint config
+  return config
+}
+
+/**
+ * @param folder
+ * @param extUserConfig
+ * @param aioConfig
+ * @param topConfig
+ */
+function setFullExtConfig (folder, extUserConfig, aioConfig, topConfig) {
+  const absRoot = p => path.join(process.cwd(), p)
+
+  const config = {
+    app: {},
+    ow: {},
+    s3: {},
+    web: {},
+    manifest: {},
+    actions: {},
+    // root of the extension
+    path: absRoot(folder)
+  }
+  // TODO redefine what can be set in top config and what in ext config
+  // TODO should we name app.config.yaml and ext.config.yaml to do a difference ?
+
+  const absExt = p => path.join(config.path, p)
+  const extName = folder
+
+  // specific to extension, cannot be overwritten by top config
+  const actions = path.normalize(extUserConfig.actions || 'actions')
+  const web = path.normalize(extUserConfig.web || 'web-src')
+  config.actions.src = absExt(actions)
+  config.web.src = absExt(web)
+  config.web.injectedConfig = absExt(path.join(web, 'src', 'config.json'))
+  config.manifest = loadRuntimeManifest(extUserConfig)
+  config.app.hasBackend = !!config.manifest.full
+  config.app.hasFrontend = fs.existsSync(config.web.src)
+
+  // can be shared and set by top config
+  const sharedConfig = { ...extUserConfig, ...topConfig }
+  if (sharedConfig.awsaccesskeyid &&
+    sharedConfig.awssecretaccesskey &&
+    sharedConfig.s3bucket) {
+    config.s3.creds = {
+      accessKeyId: sharedConfig.awsaccesskeyid,
+      secretAccessKey: sharedConfig.awssecretaccesskey,
+      params: { Bucket: sharedConfig.s3bucket }
+    }
+  }
+  if (sharedConfig.tvmurl !== defaultTvmUrl) {
+    // Legacy applications set the defaultTvmUrl in .env, so we need to ignore it to not
+    // consider it as custom. The default will be set downstream by aio-lib-core-tvm.
+    config.s3.tvmUrl = sharedConfig.tvmurl
+  }
+  config.app.defaultHostname = defaultAppHostname
+  config.app.hostname = sharedConfig.hostname || defaultAppHostname
+  config.app.htmlCacheDuration = sharedConfig.htmlcacheduration || defaultHTMLCacheDuration
+  config.app.jsCacheDuration = sharedConfig.jscacheduration || defaultJSCacheDuration
+  config.app.cssCacheDuration = sharedConfig.csscacheduration || defaultCSSCacheDuration
+  config.app.imageCacheDuration = sharedConfig.imagecacheduration || defaultImageCacheDuration
+
+  // set in root folder only
+  const dist = path.normalize(topConfig.dist || 'dist')
+  config.app.dist = dist
+  config.actions.dist = absRoot(path.join(dist, extName, actions))
+  config.web.distDev = absRoot(path.join(dist, extName, `${web}-dev`))
+  config.web.distProd = absRoot(path.join(dist, extName, `${web}-prod`))
+  config.s3.credsCacheFile = absRoot('.aws.tmp.creds.json')
+  config.ow = topConfig.ow
+  config.s3.folder = config.ow.namespace
+  config.imsOrgId = topConfig.imsOrgId
+  config.app.name = topConfig.app.name
+  config.app.version = topConfig.app.version
+
+  return config
+}
+
+/**
+ * @param folder
+ */
+function loadUserConfig (folder) {
+  // TODO there should be a function in aio-lib-core-config that allows to load a file by its name to support both yaml and hjson
+  const configFile = path.join(folder, 'app.config.yaml')
+  if (fs.existsSync(configFile)) {
+    return yaml.safeLoad(fs.readFileSync(configFile, 'utf8'))
+  }
+  return {}
 }
 
 /**
  * @param userConfig
  */
 function loadRuntimeManifest (userConfig) {
+  // TODO do not set src if specified in userConfig.runtimeManifest
   const manifestConfig = { src: 'manifest.yml' }
   if (userConfig.runtimeManifest) {
     manifestConfig.full = userConfig.runtimeManifest
@@ -225,28 +283,17 @@ function loadRuntimeManifest (userConfig) {
   return manifestConfig
 }
 
-/**
- * @param userConfig
- */
-function loadExtensionEndpoints (userConfig) {
-  // Example config:
-  // {
-  // THIS PART OF THE MANIFEST IS SET BY THE CONSOLE API
-  //   "name": "1234-SleepyBear-stage",
-  //   "title": "LUMA News Realtime Analytics",
-  //   "description": "This dashboard visualizes real-time visitor traffic from LUMA News website.",
-  //   "icon": "https://ioexchange-cdn.azureedge.net/jgr/104272/70d960c5-b692-486b-95e7-4f57fca228f9.jpg",
-  //   "publisherName": "Adobe Firefly",
-  // NOTE THIS IS THE ONLY PART OF THE MANIFEST THAT IS REQUIRED
-  //   "endpoints": {
-  //     "firefly/excshell/1": {
-  //       "view": {
-  //         "href": "https://53444-lumareport.adobeio-static.net/"
-  //       }
-  //     }
-  //   }
-  // }
-  // TODO warning/error on missing/bad fields
+function loadPackageJson () {
+  aioLogger.debug('checking package.json existence')
+  utils.checkFile('package.json')
+  return JSON.parse(fs.readFileSync('package.json'))
+}
 
-  return userConfig.extensionEndpoints
+/** @private */
+function getModuleName (packagejson) {
+  if (packagejson && packagejson.name) {
+    // turn "@company/myaction" into "myaction"
+    // OpenWhisk does not allow `@` or `/` in an entity name
+    return packagejson.name.split('/').pop()
+  }
 }
