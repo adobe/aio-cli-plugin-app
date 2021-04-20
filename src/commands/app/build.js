@@ -83,7 +83,7 @@ class Build extends BaseCommand {
                 logLevel: flags.verbose ? 4 : 2
               }
               const { bundler } = await bundle(entryFile, config.web.distProd, bundleOptions, onProgress)
-              await bundler.bundle()
+              await bundler.run()
             }
             spinner.succeed(chalk.green('Building web assets'))
           } catch (err) {
