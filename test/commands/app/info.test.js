@@ -12,8 +12,6 @@ governing permissions and limitations under the License.
 
 const TheCommand = require('../../../src/commands/app/info.js')
 const BaseCommand = require('../../../src/BaseCommand.js')
-const HHelp = require('@oclif/plugin-help').default
-const owlocal = require('../../../src/lib/owlocal.js')
 
 test('exports', async () => {
   expect(typeof TheCommand).toEqual('function')
