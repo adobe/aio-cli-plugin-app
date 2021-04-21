@@ -52,7 +52,7 @@ module.exports = async (bundler, uiPort = SERVER_DEFAULT_PORT, options = {}, log
 
   const cleanup = async () => {
     aioLogger.debug('cleanup bundle-serve...')
-    await terminator.terminate()
+    // await terminator.terminate()
   }
 
   return {

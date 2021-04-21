@@ -27,6 +27,7 @@ const actionsWatcher = require('./actions-watcher')
 
 const utils = require('./app-helper')
 const { run: logPoller } = require('./log-poller')
+const getPort = require('get-port')
 
 /** @private */
 async function runDev (config, options = {}, log = () => {}) {
@@ -47,7 +48,7 @@ async function runDev (config, options = {}, log = () => {}) {
   const hasFrontend = config.app.hasFrontend
   const withBackend = config.app.hasBackend && !skipActions
   const isLocal = !options.devRemote // applies only for backend
-  const uiPort = parseInt(process.env.PORT) || SERVER_DEFAULT_PORT
+  const uiPort = parseInt(process.env.PORT) || (await getPort({ port: SERVER_DEFAULT_PORT }))
 
   aioLogger.debug(`hasFrontend ${hasFrontend}`)
   aioLogger.debug(`withBackend ${withBackend}`)
