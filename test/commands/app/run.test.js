@@ -19,7 +19,7 @@ const mockRunDev = require('../../../src/lib/run-dev')
 
 jest.mock('../../../src/lib/app-helper', () => {
   return {
-    ...require.requireActual('../../../src/lib/app-helper'),
+    ...jest.requireActual('../../../src/lib/app-helper'),
     runPackageScript: jest.fn()
   }
 })
