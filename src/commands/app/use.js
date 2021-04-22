@@ -15,11 +15,10 @@ const { flags } = require('@oclif/command')
 const inquirer = require('inquirer')
 const config = require('@adobe/aio-lib-core-config')
 const { EOL } = require('os')
-const { getCliInfo, warnIfOverwriteServicesInProductionWorkspace } = require('../../lib/app-helper')
+const { warnIfOverwriteServicesInProductionWorkspace } = require('../../lib/app-helper')
 const path = require('path')
-const { SERVICE_API_KEY_ENV, CONSOLE_API_KEYS, ENTP_INT_CERTS_FOLDER } = require('../../lib/defaults')
+const { SERVICE_API_KEY_ENV, ENTP_INT_CERTS_FOLDER } = require('../../lib/defaults')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:use', { provider: 'debug' })
-const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli')
 const chalk = require('chalk')
 
 class Use extends BaseCommand {
@@ -47,15 +46,13 @@ class Use extends BaseCommand {
       return
     }
 
-    // login will be required now
-    const { accessToken, env } = await getCliInfo()
+    // init console CLI sdk consoleCLI
+    // NOTE: the user must be able to login now
+    const consoleCLI = await this.getLibConsoleCLI()
 
     // load global console config
     const globalConfig = this.loadGlobalConfiguration()
     const globalConfigString = this.configString(globalConfig, 4)
-
-    // init console CLI sdk consoleCLI
-    const consoleCLI = await LibConsoleCLI.init({ accessToken, env, apiKey: CONSOLE_API_KEYS[env] })
 
     // load from global configuration or select workspace ?
     const globalOperationFromFlag = flags.global ? 'global' : null
@@ -195,7 +192,7 @@ class Use extends BaseCommand {
     // make sure user is not trying to switch to current workspace
     const workspaceNameFlag = flags['workspace-name']
     if (workspaceNameFlag === currentWorkspace.name) {
-      LibConsoleCLI.cleanStdOut()
+      this.cleanConsoleCLIOutput()
       this.error(`--workspace-name=${workspaceNameFlag} is the same as the currently selected workspace, nothing to be done.`)
     }
 
@@ -212,7 +209,7 @@ class Use extends BaseCommand {
       // workspace name is given, make sure the workspace is in there
       workspace = workspacesButCurrent.find(w => w.name === workspaceNameFlag)
       if (!workspace) {
-        LibConsoleCLI.cleanStdOut()
+        this.cleanConsoleCLIOutput()
         this.error(`--workspace-name=${workspaceNameFlag} does not exist in current Project ${project.name}.`)
       }
     } else {

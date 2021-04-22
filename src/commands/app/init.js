@@ -25,7 +25,6 @@ const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV } = require('../../lib/defaul
 class InitCommand extends BaseCommand {
   async run () {
     const { args, flags } = this.parse(InitCommand)
-    let res
 
     if (flags.import) {
       // resolve to absolute path before any chdir
@@ -38,92 +37,269 @@ class InitCommand extends BaseCommand {
       process.chdir(destDir)
     }
 
-    const env = yeoman.createEnv()
-    aioLogger.debug(`creating new app with init command: ${flags}`)
-
-    // default project name and services
-    let projectName = path.basename(process.cwd())
-    // list of services added to the workspace
-    let workspaceServices = []
-    // list of services supported by the organization
-    let supportedServices = []
-
-    // client id of the console's workspace jwt credentials
-    let serviceClientId = ''
-
-    // delete console credentials only if it was generated
-    let deleteConsoleCredentials = false
-
-    if (!flags.import && !flags.yes && flags.login) {
-      try {
-        const { accessToken, env: imsEnv } = await getCliInfo()
-        const generatedFile = 'console.json'
-        env.register(require.resolve('@adobe/generator-aio-console'), 'gen-console')
-        res = await env.run('gen-console', {
-          'destination-file': generatedFile,
-          'access-token': accessToken,
-          'ims-env': imsEnv,
-          'allow-create': true,
-          'cert-dir': path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER)
-        })
-        // trigger import
-        flags.import = generatedFile
-        // delete console credentials
-        deleteConsoleCredentials = true
-      } catch (e) {
-        this.log(chalk.red(
-          `Error while generating the configuration from the Adobe Developer Console: ${e}\n` +
-          'Skipping configuration setup..'
-        ))
-      }
-      this.log()
-    }
-
     if (flags.import) {
-      const { values: config } = loadAndValidateConfigFile(flags.import)
-
-      const project = config.project
-      // get project name
-      projectName = project.name
-      // extract workspace services
-      workspaceServices = project.workspace.details.services
-      // get jwt client id
-      const jwtConfig = project.workspace.details.credentials && project.workspace.details.credentials.find(c => c.jwt)
-      serviceClientId = (jwtConfig && jwtConfig.jwt.client_id) || serviceClientId // defaults to ''
-      // supportedServices are only defined when the console.json file was generated via the generator (not in downloaded file)
-      supportedServices = (project.org.details && project.org.details.services) || []
+      // import a console config - no login required!
+      await initWithConsoleConfig(flags.import)
+    } else {
+      // we can login
+      await initWithLogin()
     }
 
-    this.log(`You are about to initialize the project '${projectName}'`)
-
-    // call code generator
-    env.register(require.resolve('@adobe/generator-aio-app'), 'gen-app')
-    res = await env.run('gen-app', {
-      'skip-install': flags['skip-install'],
-      'skip-prompt': flags.yes,
-      'project-name': projectName,
-      'adobe-services': servicesToGeneratorInput(workspaceServices),
-      'supported-adobe-services': servicesToGeneratorInput(supportedServices)
-    })
-
-    // config import
-    // always auto merge
-    const interactive = false
-    const merge = true
-    if (flags.import) {
-      await importConfigJson(flags.import, process.cwd(), { interactive, merge }, { [SERVICE_API_KEY_ENV]: serviceClientId })
-      if (deleteConsoleCredentials) {
-        fs.unlinkSync(flags.import)
-      }
-    }
-
-    // write default app config to .aio file
-    writeDefaultAppConfig(process.cwd(), { interactive, merge })
-
-    // finalize configuration data
     this.log('✔ App initialization finished!')
-    return res
+
+
+    // TODO need to support flags.no-login and flags.yes !!!
+    // if (!flags.import && !flags.yes && flags.login) {
+    //   try {
+    //     const { accessToken, env: imsEnv } = await getCliInfo()
+    //     const generatedFile = 'console.json'
+    //     env.register(require.resolve('@adobe/generator-aio-console'), 'gen-console')
+    //     res = await env.run('gen-console', {
+    //       'destination-file': generatedFile,
+    //       'access-token': accessToken,
+    //       'ims-env': imsEnv,
+    //       'allow-create': true,
+    //       'cert-dir': path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER)
+    //     })
+    //     // trigger import
+    //     flags.import = generatedFile
+    //     // delete console credentials
+    //     deleteConsoleCredentials = true
+    //   } catch (e) {
+    //     this.log(chalk.red(
+    //       `Error while generating the configuration from the Adobe Developer Console: ${e}\n` +
+    //       'Skipping configuration setup..'
+    //     ))
+    //   }
+    //   this.log()
+    // }
   }
+}
+
+/**
+ *
+ */
+async function initWithConsoleConfig () {
+  // 1. load console details
+  const { values: config } = loadAndValidateConfigFile(flags.import)
+  this.log(`✔ Loaded Adobe Developer Console configuration file for the Project '${config.project.title}' in the Organization '${config.project.org.name}'`)
+
+  // 2. prompt for extension points to be implemented
+  const extensionPoints = await selectExtensionPoints()
+
+  // 3. run extension point code generators
+  await runExtensionPointGenerators(extensionPoints)
+
+  // 4. import config
+  await importConsoleConfig(config)
+
+  // 5. This flow supports non logged in users so we can't now for sure if the project has
+  //    required services installed. So we output a note on required services instead.
+  const requiredServices = getRequiredServicesFromSelectedExtPoints(extensionPoints)
+  this.log(`Please ensure the following services are added to the Console Workspace: ${requiredServices}`)
+}
+
+/**
+ *
+ */
+async function initWithLogin () {
+  // this will trigger a login
+  const consoleCLI = await this.getLibConsoleCLI()
+
+  // 1. select org
+  const org = await selectConsoleOrg(consoleCLI)
+  // 2. get supported services
+  const orgSupportedServices = await consoleCLI.getEnabledServicesForOrg(org.id)
+  // 3. ask for exensionPoints, ensure services are available
+  const extensionPoints = await selectExtensionPoints()
+  const requiredServices = getRequiredServicesFromSelectedExtPoints(extensionPoints)
+  const missingServices = requiredServices.filter(s => !orgSupportedServices.some(os => os.code === s))
+  if (missingServices.length > 0) {
+    this.error(`The Organization '${org.name}' does not support required services '${missingServices}', please enable missing services or try with a different Org.`)
+  }
+  // 4. select or create project
+  const project = await selectOrCreateConsoleProject(consoleCLI, org)
+  // 5. setup workspace, default to 'Stage' workspace
+  // This will also add any required services
+  const workspace = await setupConsoleWorkspace(
+    consoleCLI,
+    org,
+    project,
+    orgSupportedServices,
+    requiredServices,
+    'Stage'
+  )
+  // 6. download workspace config
+  const consoleConfig = await consoleCLI.getWorkspaceConfig(org.id, project.id, workspace.id, orgSupportedServices)
+
+  // 7. run code generators
+  await runExtensionPointGenerators(extensionPoints, consoleConfig)
+
+  // 8. import config
+  await importConsoleConfig(consoleConfig)
+}
+
+/**
+ *
+ */
+async function selectExtensionPoints () {
+  const answers = await this.prompt([{
+    type: 'checkbox',
+    name: 'res',
+    message: 'Which extension point(s) is your application implementing ?',
+    choices: [
+      // NOTE: those are hardcoded for now
+      { name: 'Firefly Experience Cloud Shell', value: { name: 'firefly/excshell/v1', requiredServices: [] } },
+      { name: 'AEM Asset Compute v1', value: { name: 'aem/nui/v1', requiredServices: ['AssetComputeSDK'] } },
+      { name: 'Blank', value: { name: 'default', requiredServices: [] } }
+    ]
+  }])
+
+  return answers.res
+}
+
+/**
+ * @param consoleCLI
+ */
+async function selectConsoleOrg (consoleCLI) {
+  const organizations = await consoleCLI.getOrganizations()
+  const selectedOrg = await consoleCLI.promptForSelectOrganization(organizations)
+  return selectedOrg
+}
+
+/**
+ * @param consoleCLI
+ * @param org
+ */
+async function selectOrCreateConsoleProject (consoleCLI, org) {
+  // todo somehow create project is the default
+  const projects = await consoleCLI.getProjects(org.id)
+  let project = await consoleCLI.promptForSelectProject(
+    projects,
+    { allowCreate: true }
+  )
+  if (!project) {
+    // todo simplify flow only ask for project name, infer title and description
+    // user has escaped project selection prompt, let's create a new one
+    const projectDetails = await consoleCLI.promptForCreateProjectDetails()
+    project = await consoleCLI.createProject(org.id, projectDetails)
+    project.isNew = true
+  }
+  return project
+}
+
+/**
+ * @param consoleCLI
+ * @param org
+ * @param project
+ * @param orgSupportedServices
+ * @param requiredServices
+ * @param workspaceName
+ */
+async function setupConsoleWorkspace (consoleCLI, org, project, orgSupportedServices, requiredServices, workspaceName = 'Stage') {
+  // get workspace details
+  const workspaces = await consoleCLI.getWorkspaces(org.id, project.id)
+  // this won't prompt but load details for the given workspace
+  // todo support passing workspaceName as flag and create if not exist
+  const workspace = await consoleCLI.promptForSelectWorkspace(workspaces, data = { workspaceName })
+
+  // add required services if needed (for extension point)
+  const currServiceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
+    org.id,
+    project.id,
+    workspace,
+    orgSupportedServices
+  )
+  const serviceCodesToAdd = requiredServices.filter(s => !currServiceProperties.some(sp => sp.sdkCode === s))
+  if (serviceCodesToAdd.length > 0) {
+    const servicePropertiesToAdd = serviceCodesToAdd
+      .map(s => {
+        // previous check ensures orgSupportedServices has required services
+        const orgServiceDefinition = orgSupportedServices.find(os => os.code === s)
+        return {
+          sdkCode: s,
+          name: orgServiceDefinition.name,
+          roles: orgServiceDefinition.properties.roles,
+          // add all licenseConfigs
+          licenseConfig: orgServiceDefinition.properties.licenseConfigs
+        }
+      })
+
+    consoleCLI.subscribeToServices(
+      org.id,
+      project,
+      workspace,
+      // certDir if need to create integration
+      path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER),
+      // new service properties
+      currServiceProperties.concat(servicePropertiesToAdd)
+    )
+  }
+  return workspace
+}
+
+/**
+ * @param extensionPoints
+ */
+function getRequiredServicesFromSelectedExtPoints (extensionPoints) {
+  const requiredServicesWithDuplicates = extensionPoints
+    .map(e => e.requiredServices)
+  // flat not supported in node 10
+    .reduce((res, arr) => res.concat(arr), [])
+  return [...new Set(requiredServicesWithDuplicates)]
+}
+
+/**
+ * @param extensionPoints
+ * @param consoleConfig
+ */
+async function runExtensionPointGenerators (extensionPoints, consoleConfig) {
+  // extract workspace services
+  const workspaceServices = consoleConfig.project.workspace.details.services
+  // NOTE: supportedServices are only defined when the console config was generated on the
+  // fly (i.e. not downloaded from Console UI).
+  const supportedServices = (consoleConfig.project.org.details && consoleConfig.project.org.details.services) || []
+
+  // TODO !!
+
+  // const env = yeoman.createEnv()
+  // aioLogger.debug(`creating new app with init command: ${flags}`)
+
+  // // default project name and services
+  // let projectName = path.basename(process.cwd())
+
+  // this.log(`You are about to initialize the project '${projectName}'`)
+
+  // // call code generator
+  // env.register(require.resolve('@adobe/generator-aio-app'), 'gen-app')
+  // res = await env.run('gen-app', {
+  //   'skip-install': flags['skip-install'],
+  //   'skip-prompt': flags.yes,
+  //   'project-name': projectName,
+  //   'adobe-services': servicesToGeneratorInput(workspaceServices),
+  //   'supported-adobe-services': servicesToGeneratorInput(supportedServices)
+  // })
+}
+
+// console config is already loaded into object
+/**
+ * @param config
+ */
+async function importConsoleConfig (config) {
+  // get jwt client id
+  const jwtConfig = config.project.workspace.details.credentials && config.project.workspace.details.credentials.find(c => c.jwt)
+  const serviceClientId = (jwtConfig && jwtConfig.jwt.client_id) || ''
+
+  const configBuffer = Buffer.from(JSON.stringify(config))
+  const interactive = false
+  const merge = true
+  await importConfigJson(
+    // NOTE: importConfigJson should support reading json directly
+    configBuffer,
+    process.cwd(),
+    { interactive, merge },
+    { [SERVICE_API_KEY_ENV]: serviceClientId }
+  )
 }
 
 InitCommand.description = `Create a new Adobe I/O App

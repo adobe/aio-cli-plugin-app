@@ -15,8 +15,31 @@ const chalk = require('chalk')
 const coreConfig = require('@adobe/aio-lib-core-config')
 const DEFAULT_LAUNCH_PREFIX = 'https://experience.adobe.com/?devMode=true#/custom-apps/?localDevUrl='
 const loadConfig = require('./lib/config-loader')
+const inquirer = require('inquirer')
+const { CONSOLE_API_KEYS } = require('./lib/defaults')
+const { getCliInfo } = require('./lib/app-helper')
+const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli')
 
 class BaseCommand extends Command {
+  constructor () {
+    super()
+    this.prompt = inquirer.createPromptModule({ output: process.stderr })
+  }
+
+  async getLibConsoleCLI () {
+    if (!this.consoleCLI) {
+      // requires valid login
+      const { accessToken, env } = await getCliInfo()
+      // init console CLI sdk consoleCLI
+      this.consoleCLI = await LibConsoleCLI.init({ accessToken, env, apiKey: CONSOLE_API_KEYS[env] })
+    }
+    return this.consoleCLI
+  }
+
+  async cleanConsoleCLIOutput () {
+    LibConsoleCLI.cleanStdOut()
+  }
+
   getAppConfig () {
     if (!this.appConfig) {
       this.appConfig = loadConfig()
