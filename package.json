@@ -53,7 +53,7 @@
     "eslint-plugin-node": "^10.0.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
-    "jest": "^24.8.0",
+    "jest": "^26.6.3",
     "jest-plugin-fs": "^2.9.0",
     "stdout-stderr": "^0.1.9"
   },
