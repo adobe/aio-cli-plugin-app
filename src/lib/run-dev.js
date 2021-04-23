@@ -48,8 +48,11 @@ async function runDev (config, options = {}, log = () => {}) {
   const hasFrontend = config.app.hasFrontend
   const withBackend = config.app.hasBackend && !skipActions
   const isLocal = !options.devRemote // applies only for backend
-  const uiPort = parseInt(process.env.PORT) || (await getPort({ port: SERVER_DEFAULT_PORT }))
-
+  const portToUse = parseInt(process.env.PORT) || SERVER_DEFAULT_PORT
+  const uiPort = await getPort({ port: portToUse })
+  if (uiPort !== portToUse) {
+    log(`Could not use port:${portToUse}, using port:${uiPort} instead`)
+  }
   aioLogger.debug(`hasFrontend ${hasFrontend}`)
   aioLogger.debug(`withBackend ${withBackend}`)
   aioLogger.debug(`isLocal ${isLocal}`)
@@ -129,7 +132,7 @@ async function runDev (config, options = {}, log = () => {}) {
         if (!script) {
           let result
           if (defaultBundler) {
-            result = await bundleServe(defaultBundler, uiPort, bundleOptions, log)
+            result = await bundleServe(defaultBundler, bundleOptions, log)
           } else {
             result = await serve(devConfig.web.distDev, uiPort, bundleOptions, log)
           }
