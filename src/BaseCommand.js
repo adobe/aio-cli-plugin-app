@@ -9,7 +9,6 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-
 const { Command, flags } = require('@oclif/command')
 const chalk = require('chalk')
 const coreConfig = require('@adobe/aio-lib-core-config')
@@ -20,6 +19,7 @@ const inquirer = require('inquirer')
 const { CONSOLE_API_KEYS } = require('./lib/defaults')
 const { getCliInfo } = require('./lib/app-helper')
 const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app', { provider: 'debug' })
 
 const {
   getCliEnv, /* function */
@@ -27,8 +27,15 @@ const {
 } = require('@adobe/aio-lib-env')
 
 class BaseCommand extends Command {
-  constructor () {
-    super()
+  // default error handler for app commands
+  async catch (error) {
+    aioLogger.error(error) // debug log
+    this.error(error.message)
+  }
+
+  async init () {
+    super.init()
+    // setup a prompt that outputs to stderr
     this.prompt = inquirer.createPromptModule({ output: process.stderr })
   }
 

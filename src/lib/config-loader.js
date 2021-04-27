@@ -40,7 +40,7 @@ const {
  * loading config returns following object (this config is internal, not user facing):
  *  {
  *    extensionPoints: {Manifest}
- *    extConfigs: {
+ *    extensionPointsConfig: {
  *      'aem/nui/1': {
  *        app: {
  *          name,
@@ -93,17 +93,13 @@ module.exports = () => {
   const topConfig = loadTopConfig(aioConfig)
 
   // load all extension point local configs
-  const extConfigs = loadAllExtConfigs(aioConfig, topConfig)
+  const extensionPointsConfig = loadAllExtConfigs(aioConfig, topConfig)
 
   const config = {
     extensionPoints: topConfig.extensionPoints,
-    extConfigs,
+    extensionPointsConfig,
     root: process.cwd()
   }
-
-  // TODO remove debug statements
-  console.error(JSON.stringify(config, null, 2))
-  process.exit(1)
 
   return config
 }
@@ -112,10 +108,10 @@ module.exports = () => {
  * @param aioConfig
  */
 function loadTopConfig (aioConfig) {
-  let userConfig = loadUserConfig('./')
+  let userConfig = loadUserConfig('./app.config.yaml')
   if (aioConfig.cna !== undefined || aioConfig.app !== undefined) {
     aioLogger.warn(chalk.redBright(chalk.bold('Setting application configuration in the \'.aio\' file has been deprecated. Please move your \'.aio.app\' or \'.aio.cna\' to \'app.config.yaml\'.')))
-    Object.assign(aioConfig.app, aioConfig.cna)
+    aioConfig.app = { ...aioConfig.app, ...aioConfig.cna }
   }
   // TODO Consider changing deprecation notice to use `aioConfig`
   // TODO merge deeplevel
@@ -153,26 +149,22 @@ function loadTopConfig (aioConfig) {
  * @param topUserConfig
  */
 function loadAllExtConfigs (aioConfig, topUserConfig) {
-  const BLANK_EXT_FOLDER = 'default'
   const config = {}
   const extensionPoints = topUserConfig.extensionPoints || {}
 
-  if (fs.existsSync(BLANK_EXT_FOLDER)) {
-    extensionPoints[BLANK_EXT_FOLDER] = 'default'
-    const userConfig = loadUserConfig(BLANK_EXT_FOLDER)
-    config[BLANK_EXT_FOLDER] = setFullExtConfig(BLANK_EXT_FOLDER, userConfig, aioConfig, topUserConfig)
-  }
-
   Object.entries(extensionPoints).forEach(([k, v]) => {
-    let extensionFolder = v.path || k
-    if (extensionFolder.endsWith('/')) {
-      extensionFolder = extensionFolder.substring(0, extensionFolder.length - 1)
+    let extensionName = k
+    // clean up
+    if (extensionName.endsWith('/')) {
+      extensionName = extensionName.slice(0, -1)
     }
-    if (extensionFolder.startsWith('/')) {
-      extensionFolder = extensionFolder.substring(1)
+    if (extensionName.startsWith('/')) {
+      extensionName = extensionName.slice(1)
     }
-    const userConfig = loadUserConfig(extensionFolder)
-    config[extensionFolder] = setFullExtConfig(extensionFolder, userConfig, aioConfig, topUserConfig)
+    const extConfigPath = v.config
+    const extFolderPath = path.dirname(v.config)
+    const extUserConfig = loadUserConfig(extConfigPath)
+    config[extensionName] = setFullExtConfig(extFolderPath, extUserConfig, topUserConfig)
   })
   // todo support root case for backwards compat if no default nor extensionPointConfig
 
@@ -184,10 +176,12 @@ function loadAllExtConfigs (aioConfig, topUserConfig) {
  * @param folder
  * @param extUserConfig
  * @param aioConfig
- * @param topConfig
+ * @param topUserConfig
  */
-function setFullExtConfig (folder, extUserConfig, aioConfig, topConfig) {
+function setFullExtConfig (folder, extUserConfig, topUserConfig) {
   const absRoot = p => path.join(process.cwd(), p)
+  const pathToExtFolder = absRoot(folder)
+  const absExt = p => path.join(pathToExtFolder, p)
 
   const config = {
     app: {},
@@ -197,12 +191,11 @@ function setFullExtConfig (folder, extUserConfig, aioConfig, topConfig) {
     manifest: {},
     actions: {},
     // root of the extension
-    path: absRoot(folder)
+    path: pathToExtFolder
   }
   // TODO redefine what can be set in top config and what in ext config
   // TODO should we name app.config.yaml and ext.config.yaml to do a difference ?
 
-  const absExt = p => path.join(config.path, p)
   const extName = folder
 
   // specific to extension, cannot be overwritten by top config
@@ -216,7 +209,7 @@ function setFullExtConfig (folder, extUserConfig, aioConfig, topConfig) {
   config.app.hasFrontend = fs.existsSync(config.web.src)
 
   // can be shared and set by top config
-  const sharedConfig = { ...extUserConfig, ...topConfig }
+  const sharedConfig = { ...extUserConfig, ...topUserConfig }
   if (sharedConfig.awsaccesskeyid &&
     sharedConfig.awssecretaccesskey &&
     sharedConfig.s3bucket) {
@@ -237,19 +230,21 @@ function setFullExtConfig (folder, extUserConfig, aioConfig, topConfig) {
   config.app.jsCacheDuration = sharedConfig.jscacheduration || defaultJSCacheDuration
   config.app.cssCacheDuration = sharedConfig.csscacheduration || defaultCSSCacheDuration
   config.app.imageCacheDuration = sharedConfig.imagecacheduration || defaultImageCacheDuration
+  config.hooks = { ...topUserConfig.hooks, ...extUserConfig.hooks }
+  // todo env
 
   // set in root folder only
-  const dist = path.normalize(topConfig.dist || 'dist')
+  const dist = path.normalize(topUserConfig.dist || 'dist')
   config.app.dist = dist
   config.actions.dist = absRoot(path.join(dist, extName, actions))
   config.web.distDev = absRoot(path.join(dist, extName, `${web}-dev`))
   config.web.distProd = absRoot(path.join(dist, extName, `${web}-prod`))
   config.s3.credsCacheFile = absRoot('.aws.tmp.creds.json')
-  config.ow = topConfig.ow
+  config.ow = topUserConfig.ow
   config.s3.folder = config.ow.namespace
-  config.imsOrgId = topConfig.imsOrgId
-  config.app.name = topConfig.app.name
-  config.app.version = topConfig.app.version
+  config.imsOrgId = topUserConfig.imsOrgId
+  config.app.name = topUserConfig.app.name
+  config.app.version = topUserConfig.app.version
 
   return config
 }
@@ -257,9 +252,8 @@ function setFullExtConfig (folder, extUserConfig, aioConfig, topConfig) {
 /**
  * @param folder
  */
-function loadUserConfig (folder) {
+function loadUserConfig (configFile) {
   // TODO there should be a function in aio-lib-core-config that allows to load a file by its name to support both yaml and hjson
-  const configFile = path.join(folder, 'app.config.yaml')
   if (fs.existsSync(configFile)) {
     return yaml.safeLoad(fs.readFileSync(configFile, 'utf8'))
   }

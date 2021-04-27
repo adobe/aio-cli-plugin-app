@@ -20,26 +20,29 @@ class Info extends BaseCommand {
     const { flags } = this.parse(Info)
     const appConfig = this.getAppConfig()
     delete appConfig.cli
-    if (!appConfig.s3.tvmUrl) {
-      delete appConfig.s3.tvmUrl
-    }
-    // todo: mask these
-    if (!appConfig.s3.creds) {
-      delete appConfig.s3.creds
-    }
 
-    if (flags.mask) {
-      appConfig.ow.auth = appConfig.ow.auth ? '<hidden>' : 'undefined'
-    }
+    // hide credentials
+    Object.values(appConfig.extensionPointsConfig).forEach(extConfig => {
+      if (extConfig.s3.creds) {
+        extConfig.s3.creds.accessKeyId = mask(extConfig.s3.creds.accessKeyId)
+        extConfig.s3.creds.secretAccessKey = mask(extConfig.s3.creds.secretAccessKey)
+      }
+      extConfig.ow.auth = mask(extConfig.ow.auth)
+    })
 
     if (flags.json) {
       this.log(JSON.stringify(appConfig))
     } else if (flags.yml) {
       this.log(yaml.safeDump(appConfig))
     } else { // flags.hson
-      this.log(appConfig)
+      this.log(JSON.stringify(appConfig, null, 2))
     }
   }
+}
+
+/** @private */
+function mask (k) {
+  return k ? '<hidden>' : 'undefined'
 }
 
 Info.description = `Display settings/configuration in use by an Adobe I/O App
