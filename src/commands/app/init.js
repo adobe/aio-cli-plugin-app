@@ -39,14 +39,13 @@ class InitCommand extends BaseCommand {
 
     if (flags.import) {
       // import a console config - no login required!
-      await initWithConsoleConfig(flags.import)
+      await initWithConsoleConfig(flags)
     } else {
       // we can login
-      await initWithLogin()
+      await initWithLogin(flags)
     }
 
     this.log('✔ App initialization finished!')
-
 
     // TODO need to support flags.no-login and flags.yes !!!
     // if (!flags.import && !flags.yes && flags.login) {
@@ -77,21 +76,21 @@ class InitCommand extends BaseCommand {
 }
 
 /**
- *
+ * @param flags
  */
-async function initWithConsoleConfig () {
+async function initWithConsoleConfig (flags) {
   // 1. load console details
-  const { values: config } = loadAndValidateConfigFile(flags.import)
-  this.log(`✔ Loaded Adobe Developer Console configuration file for the Project '${config.project.title}' in the Organization '${config.project.org.name}'`)
+  const { values: consoleConfig } = loadAndValidateConfigFile(flags.import)
+  this.log(`✔ Loaded Adobe Developer Console configuration file for the Project '${consoleConfig.project.title}' in the Organization '${consoleConfig.project.org.name}'`)
 
   // 2. prompt for extension points to be implemented
   const extensionPoints = await selectExtensionPoints()
 
   // 3. run extension point code generators
-  await runExtensionPointGenerators(extensionPoints)
+  await runAllCodeGenerators(flags, consoleConfig, extensionPoints)
 
   // 4. import config
-  await importConsoleConfig(config)
+  await importConsoleConfig(consoleConfig)
 
   // 5. This flow supports non logged in users so we can't now for sure if the project has
   //    required services installed. So we output a note on required services instead.
@@ -133,7 +132,7 @@ async function initWithLogin () {
   const consoleConfig = await consoleCLI.getWorkspaceConfig(org.id, project.id, workspace.id, orgSupportedServices)
 
   // 7. run code generators
-  await runExtensionPointGenerators(extensionPoints, consoleConfig)
+  await runAllCodeGenerators(flags, consoleConfig, extensionPoints)
 
   // 8. import config
   await importConsoleConfig(consoleConfig)
@@ -149,9 +148,31 @@ async function selectExtensionPoints () {
     message: 'Which extension point(s) is your application implementing ?',
     choices: [
       // NOTE: those are hardcoded for now
-      { name: 'Firefly Experience Cloud Shell', value: { name: 'firefly/excshell/v1', requiredServices: [] } },
-      { name: 'AEM Asset Compute v1', value: { name: 'aem/nui/v1', requiredServices: ['AssetComputeSDK'] } },
-      { name: 'Blank', value: { name: 'default', requiredServices: [] } }
+      // TODO consider having an add-ext generator
+      {
+        name: 'Firefly Experience Cloud Shell',
+        value: {
+          name: 'firefly/excshell/v1',
+          generator: '@adobe/generator-aio-app/generators/ext/firefly-excshell-v1',
+          requiredServices: []
+        }
+      },
+      {
+        name: 'AEM Asset Compute v1',
+        value: {
+          name: 'aem/nui/v1',
+          generator: '@adobe/generator-aio-app/generators/ext/aem-nui-v1',
+          requiredServices: ['AssetComputeSDK']
+        }
+      },
+      {
+        name: 'Blank',
+        value: {
+          name: 'blank',
+          generator: '@adobe/generator-aio-app/generators/ext/blank',
+          requiredServices: []
+        }
+      }
     ]
   }])
 
@@ -201,7 +222,7 @@ async function setupConsoleWorkspace (consoleCLI, org, project, orgSupportedServ
   const workspaces = await consoleCLI.getWorkspaces(org.id, project.id)
   // this won't prompt but load details for the given workspace
   // todo support passing workspaceName as flag and create if not exist
-  const workspace = await consoleCLI.promptForSelectWorkspace(workspaces, data = { workspaceName })
+  const workspace = await consoleCLI.promptForSelectWorkspace(workspaces, { workspaceName })
 
   // add required services if needed (for extension point)
   const currServiceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
@@ -250,35 +271,33 @@ function getRequiredServicesFromSelectedExtPoints (extensionPoints) {
 }
 
 /**
- * @param extensionPoints
+ * @param flags
  * @param consoleConfig
+ * @param extensionPoints
  */
-async function runExtensionPointGenerators (extensionPoints, consoleConfig) {
-  // extract workspace services
-  const workspaceServices = consoleConfig.project.workspace.details.services
-  // NOTE: supportedServices are only defined when the console config was generated on the
-  // fly (i.e. not downloaded from Console UI).
-  const supportedServices = (consoleConfig.project.org.details && consoleConfig.project.org.details.services) || []
+async function runAllCodeGenerators (flags, consoleConfig, extensionPoints) {
+  const env = yeoman.createEnv()
+  // first run app generator that will generate the root skeleton
+  env.register(require.resolve('@adobe/generator-aio-app'), 'gen-app')
+  const appGen = env.create(require.resolve('@adobe/generator-aio-app'), {
+    options: {
+      'skip-install': flags['skip-install'],
+      'skip-prompt': flags.yes,
+      'project-name': consoleConfig.project.name
+    }
+  })
+  await env.runGenerator(appGen)
 
-  // TODO !!
-
-  // const env = yeoman.createEnv()
-  // aioLogger.debug(`creating new app with init command: ${flags}`)
-
-  // // default project name and services
-  // let projectName = path.basename(process.cwd())
-
-  // this.log(`You are about to initialize the project '${projectName}'`)
-
-  // // call code generator
-  // env.register(require.resolve('@adobe/generator-aio-app'), 'gen-app')
-  // res = await env.run('gen-app', {
-  //   'skip-install': flags['skip-install'],
-  //   'skip-prompt': flags.yes,
-  //   'project-name': projectName,
-  //   'adobe-services': servicesToGeneratorInput(workspaceServices),
-  //   'supported-adobe-services': servicesToGeneratorInput(supportedServices)
-  // })
+  // then run ext generators for each selected extension
+  for (let i = 0; i < extensionPoints.length; ++i) {
+    const extGen = env.create(require.resolve(extensionPoints[i].generator), {
+      options: {
+        'skip-install': flags['skip-install'],
+        'skip-prompt': flags.yes
+      }
+    })
+    await env.runGenerator(extGen)
+  }
 }
 
 // console config is already loaded into object
