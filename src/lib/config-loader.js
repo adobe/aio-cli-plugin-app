@@ -27,8 +27,14 @@ const {
   defaultJSCacheDuration,
   defaultCSSCacheDuration,
   defaultImageCacheDuration,
-  AIO_CONFIG_IMS_ORG_ID
+  AIO_CONFIG_IMS_ORG_ID,
+  stageAppHostname
 } = require('./defaults')
+
+const {
+  getCliEnv, /* function */
+  STAGE_ENV /* string */
+} = require('@adobe/aio-lib-env')
 
 /**
  * loading config returns following object (this config is internal, not user facing):
@@ -225,7 +231,7 @@ function setFullExtConfig (folder, extUserConfig, aioConfig, topConfig) {
     // consider it as custom. The default will be set downstream by aio-lib-core-tvm.
     config.s3.tvmUrl = sharedConfig.tvmurl
   }
-  config.app.defaultHostname = defaultAppHostname
+  config.app.defaultHostname = getCliEnv() === STAGE_ENV ? stageAppHostname : defaultAppHostname
   config.app.hostname = sharedConfig.hostname || defaultAppHostname
   config.app.htmlCacheDuration = sharedConfig.htmlcacheduration || defaultHTMLCacheDuration
   config.app.jsCacheDuration = sharedConfig.jscacheduration || defaultJSCacheDuration

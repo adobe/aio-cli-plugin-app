@@ -14,7 +14,7 @@ const { stdout, stderr } = require('stdout-stderr')
 
 jest.setTimeout(15000)
 
-const fs = require.requireActual('fs')
+const fs = jest.requireActual('fs')
 const eol = require('eol')
 const path = require('path')
 const hjson = require('hjson')

@@ -14,11 +14,17 @@ const { Command, flags } = require('@oclif/command')
 const chalk = require('chalk')
 const coreConfig = require('@adobe/aio-lib-core-config')
 const DEFAULT_LAUNCH_PREFIX = 'https://experience.adobe.com/?devMode=true#/custom-apps/?localDevUrl='
+const STAGE_LAUNCH_PREFIX = 'https://experience-stage.adobe.com/?devMode=true#/custom-apps/?localDevUrl='
 const loadConfig = require('./lib/config-loader')
 const inquirer = require('inquirer')
 const { CONSOLE_API_KEYS } = require('./lib/defaults')
 const { getCliInfo } = require('./lib/app-helper')
 const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli')
+
+const {
+  getCliEnv, /* function */
+  STAGE_ENV /* string */
+} = require('@adobe/aio-lib-env')
 
 class BaseCommand extends Command {
   constructor () {
@@ -64,7 +70,8 @@ class BaseCommand extends Command {
         this.log(chalk.redBright(chalk.bold(`You should update your .env file: AIO_LAUNCH_URL_PREFIX='${launchPrefix}'`)))
       }
     }
-    return (launchPrefix || DEFAULT_LAUNCH_PREFIX)
+    const defaultLaunchPrefix = getCliEnv() === STAGE_ENV ? STAGE_LAUNCH_PREFIX : DEFAULT_LAUNCH_PREFIX
+    return (launchPrefix || defaultLaunchPrefix)
   }
 
   get pjson () {
