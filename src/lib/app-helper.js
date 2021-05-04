@@ -289,7 +289,7 @@ function waitFor (t) {
 async function runOpenWhiskJar (jarFile, runtimeConfigFile, apihost, waitInitTime, waitPeriodTime, timeout, /* istanbul ignore next */ execaOptions = {}) {
   aioLogger.debug(`runOpenWhiskJar - jarFile: ${jarFile} runtimeConfigFile ${runtimeConfigFile} apihost: ${apihost} waitInitTime: ${waitInitTime} waitPeriodTime: ${waitPeriodTime} timeout: ${timeout}`)
   const jvmArgs = process.env.AIO_OW_JVM_ARGS ? process.env.AIO_OW_JVM_ARGS.split(' ') : [];
-  const proc = execa('java', ['-jar', ...jvmArgs, '-Dwhisk.concurrency-limit.max=10', jarFile, '-m', runtimeConfigFile, '--no-ui', '--disable-color-logging'], execaOptions)
+  const proc = execa('java', ['-jar', '-Dwhisk.concurrency-limit.max=10', ...jvmArgs, jarFile, '-m', runtimeConfigFile, '--no-ui', '--disable-color-logging'], execaOptions)
   
   const endTime = Date.now() + timeout
   await waitFor(waitInitTime)
