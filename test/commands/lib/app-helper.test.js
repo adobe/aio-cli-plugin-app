@@ -26,6 +26,7 @@ beforeEach(() => {
   fetch.mockReset()
   config.get.mockReset()
   config.set.mockReset()
+  delete process.env.AIO_OW_JVM_ARGS
 })
 
 test('isDockerRunning', async () => {
@@ -520,13 +521,28 @@ test('runOpenWhiskJar ok', async () => {
   fetch.mockReturnValue({ ok: true })
   execa.mockReturnValue({ stdout: jest.fn() })
 
-  const result = appHelper.runOpenWhiskJar()
+  const result = appHelper.runOpenWhiskJar('jar', 'conf')
 
   await expect(result).resolves.toEqual({
     proc: expect.any(Object)
   })
   expect(fetch).toHaveBeenCalledTimes(1)
-  expect(execa).toHaveBeenCalledTimes(1)
+  expect(execa).toHaveBeenCalledWith('java', ['-jar', '-Dwhisk.concurrency-limit.max=10', 'jar', '-m', 'conf', '--no-ui', '--disable-color-logging'], {});
+})
+
+test('runOpenWhiskJar with AIO_OW_JVM_ARGS env var is passed to execa', async () => {
+  fetch.mockReturnValue({ ok: true })
+  execa.mockReturnValue({ stdout: jest.fn() })
+
+  process.env.AIO_OW_JVM_ARGS = 'arg1 arg2'
+
+  const result = appHelper.runOpenWhiskJar('jar', 'conf')
+
+  await expect(result).resolves.toEqual({
+    proc: expect.any(Object)
+  })
+  expect(fetch).toHaveBeenCalledTimes(1)
+  expect(execa).toHaveBeenCalledWith('java', ['-jar', '-Dwhisk.concurrency-limit.max=10', 'arg1', 'arg2', 'jar', '-m', 'conf', '--no-ui', '--disable-color-logging'], {});
 })
 
 test('waitForOpenWhiskReadiness timeout', async () => {
