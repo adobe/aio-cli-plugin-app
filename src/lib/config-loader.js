@@ -190,8 +190,10 @@ function setFullExtConfig (folder, extUserConfig, topUserConfig) {
     web: {},
     manifest: {},
     actions: {},
-    // root of the extension
-    path: pathToExtFolder
+    // root of the ext folder
+    root: pathToExtFolder,
+    // root of the app folder
+    appRoot: process.cwd()
   }
   // TODO redefine what can be set in top config and what in ext config
   // TODO should we name app.config.yaml and ext.config.yaml to do a difference ?

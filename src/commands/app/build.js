@@ -15,23 +15,55 @@ const chalk = require('chalk')
 
 const BaseCommand = require('../../BaseCommand')
 const { flags } = require('@oclif/command')
-const { runPackageScript, writeConfig, wrapError } = require('../../lib/app-helper')
+const { runPackageScript, writeConfig } = require('../../lib/app-helper')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
 const { bundle } = require('@adobe/aio-lib-web')
 const fs = require('fs-extra')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:build', { provider: 'debug' })
 
 class Build extends BaseCommand {
   async run () {
     // cli input
     const { flags } = this.parse(Build)
     const config = this.getAppConfig()
+    flags['skip-static'] = flags['skip-static'] || !!flags.action // || flags['skip-web-assets'] ?
+
+    const buildConfigs = this.filterExtensionPointConfigs(flags, config)
 
     const spinner = ora()
 
-    await this.build(config, flags, spinner)
+    // TODO parallelize ?
+    const keys = Object.keys(buildConfigs)
+    const values = Object.values(buildConfigs)
+    for (let i = 0; i < keys.length; ++i) {
+      const k = keys[i]
+      const v = values[i]
+      await this.buildOneExt(k, v, flags, spinner)
+    }
   }
 
-  async build (config, flags, spinner) {
+  filterExtensionPointConfigs (flags, config) {
+    if (flags.extensionPoint) {
+      // case 1 we have filter flags
+      const configs = {}
+      const extPointKeys = Object.keys(config.extensionPointsConfig)
+      flags.extensionPoint.forEach(ef => {
+        const matching = extPointKeys.filter(ek => ek.includes(ef))
+        if (matching.length <= 0) {
+          throw new Error(`No matching extension point implementation found for flag '-e ${ef}'`)
+        }
+        if (matching.length > 1) {
+          throw new Error(`Flag '-e ${ef}' matches multiple extension point implementation: '${matching}'`)
+        }
+        configs[matching[0]] = (config.extensionPointsConfig[matching[0]])
+      })
+      return configs
+    }
+    // case 2 build all
+    return config.extensionPointsConfig
+  }
+
+  async buildOneExt (name, config, flags, spinner) {
     const onProgress = !flags.verbose ? info => {
       spinner.text = info
     } : info => {
@@ -39,80 +71,65 @@ class Build extends BaseCommand {
       spinner.start()
     }
 
+    const filterActions = flags.action
     try {
-      const filterActions = flags.action
-      try {
-        await runPackageScript('pre-app-build')
-      } catch (err) {
-        this.log(err)
-      }
+      // todo run hooks from config !
+      await runPackageScript('pre-app-build')
+    } catch (err) {
+      this.log(err)
+    }
 
-      if (!flags['skip-actions']) {
-        if (config.app.hasBackend && (flags['force-build'] || !fs.existsSync(config.actions.dist))) {
-          spinner.start('Building actions')
-          try {
-            const script = await runPackageScript('build-actions')
-            if (!script) {
-              await RuntimeLib.buildActions(config, filterActions)
-            }
-            spinner.succeed(chalk.green('Building actions'))
-          } catch (err) {
-            spinner.fail(chalk.green('Building actions'))
-            throw err
+    if (!flags['skip-actions']) {
+      if (config.app.hasBackend && (flags['force-build'] || !fs.existsSync(config.actions.dist))) {
+        spinner.start(`Building actions for extension point ${name}`)
+        try {
+          const script = await runPackageScript('build-actions')
+          if (!script) {
+            await RuntimeLib.buildActions(config, filterActions)
           }
-        } else {
-          spinner.info('no backend or a build already exists, skipping action build')
-        }
-      }
-      if (!flags['skip-static'] && !flags['skip-web-assets']) {
-        if (config.app.hasFrontend && (flags['force-build'] || !fs.existsSync(config.web.distProd))) {
-          if (config.app.hasBackend) {
-            const urls = await RuntimeLib.utils.getActionUrls(config)
-            await writeConfig(config.web.injectedConfig, urls)
-          }
-          spinner.start('Building web assets')
-          try {
-            const script = await runPackageScript('build-static')
-            if (!script) {
-              const entryFile = config.web.src + '/index.html'
-              const bundleOptions = {
-                cache: false,
-                contentHash: flags['content-hash'],
-                minify: false,
-                watch: false,
-                logLevel: flags.verbose ? 4 : 2
-              }
-              const { bundler } = await bundle(entryFile, config.web.distProd, bundleOptions, onProgress)
-              await bundler.bundle()
-            }
-            spinner.succeed(chalk.green('Building web assets'))
-          } catch (err) {
-            spinner.fail(chalk.green('Building web assets'))
-            throw err
-          }
-        } else {
-          spinner.info('no frontend or a build already exists, skipping frontend build')
-        }
-      }
-      try {
-        await runPackageScript('post-app-build')
-      } catch (err) {
-        this.log(err)
-      }
-
-      // final message
-      if (flags['skip-static'] || flags['skip-web-assets']) {
-        if (flags['skip-actions']) {
-          this.log(chalk.green(chalk.bold('Nothing to build 🚫')))
-        } else {
-          this.log(chalk.green(chalk.bold('Build success, your actions are ready to be deployed 👌')))
+          spinner.succeed(chalk.green(`Building actions for extension point ${name}`))
+        } catch (err) {
+          spinner.fail(chalk.green(`Building actions for extension point ${name}`))
+          throw err
         }
       } else {
-        this.log(chalk.green(chalk.bold('Build success, your app is ready to be deployed 👌')))
+        spinner.info(`no backend or a build already exists, skipping action build for extension point ${name}`)
       }
-    } catch (error) {
-      spinner.stop()
-      this.error(wrapError(error))
+    }
+    if (!flags['skip-static'] && !flags['skip-web-assets']) {
+      if (config.app.hasFrontend && (flags['force-build'] || !fs.existsSync(config.web.distProd))) {
+        if (config.app.hasBackend) {
+          const urls = await RuntimeLib.utils.getActionUrls(config)
+          await writeConfig(config.web.injectedConfig, urls)
+        }
+        spinner.start('Building web assets')
+        try {
+          const script = await runPackageScript('build-static')
+          if (!script) {
+            const entryFile = config.web.src + '/index.html'
+            const bundleOptions = {
+              cache: false,
+              contentHash: flags['content-hash'],
+              minify: false,
+              watch: false,
+              logLevel: flags.verbose ? 4 : 2
+            }
+            const { bundler } = await bundle(entryFile, config.web.distProd, bundleOptions, onProgress)
+            await bundler.bundle()
+          }
+          spinner.succeed(chalk.green(`Building web assets for extension point ${name}`))
+        } catch (err) {
+          spinner.fail(chalk.green(`Building web assets for extension point ${name}`))
+          throw err
+        }
+      } else {
+        spinner.info(`no frontend or a build already exists, skipping frontend build for extension point ${name}`)
+      }
+    }
+    try {
+      await runPackageScript('post-app-build')
+    } catch (err) {
+      this.log(err)
     }
   }
 }
@@ -134,7 +151,7 @@ Build.flags = {
     description: 'Skip build of actions'
   }),
   'force-build': flags.boolean({
-    description: 'Forces a build even if one already exists (default: true)',
+    description: 'Force a build even if one already exists (default: true)',
     default: true,
     allowNo: true
   }),
@@ -145,12 +162,16 @@ Build.flags = {
   }),
   action: flags.string({
     description: 'Build only a specific action, the flags can be specified multiple times',
-    exclusive: ['skip-actions'],
+    exclusive: ['skip-actions', 'extensionPoint'],
     char: 'a',
+    multiple: true
+  }),
+  extensionPoint: flags.string({
+    description: 'Build only a specific extension point, the flags can be specified multiple times',
+    exclusive: ['action'],
+    char: 'e',
     multiple: true
   })
 }
-
-Build.args = []
 
 module.exports = Build
