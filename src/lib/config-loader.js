@@ -98,6 +98,7 @@ module.exports = () => {
   const config = {
     extensionPoints: topConfig.extensionPoints,
     extensionPointsConfig,
+    aioConfig,
     root: process.cwd()
   }
 

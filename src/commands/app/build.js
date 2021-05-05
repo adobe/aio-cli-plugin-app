@@ -19,48 +19,33 @@ const { runPackageScript, writeConfig } = require('../../lib/app-helper')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
 const { bundle } = require('@adobe/aio-lib-web')
 const fs = require('fs-extra')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:build', { provider: 'debug' })
+// const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:build', { provider: 'debug' })
 
 class Build extends BaseCommand {
   async run () {
     // cli input
     const { flags } = this.parse(Build)
-    const config = this.getAppConfig()
     flags['skip-static'] = flags['skip-static'] || !!flags.action // || flags['skip-web-assets'] ?
 
-    const buildConfigs = this.filterExtensionPointConfigs(flags, config)
+    const buildConfigs = this.getExtensionPointConfigs(flags)
 
     const spinner = ora()
 
     // TODO parallelize ?
+    // TODO smaller pieces build all actions then all web assets
     const keys = Object.keys(buildConfigs)
     const values = Object.values(buildConfigs)
-    for (let i = 0; i < keys.length; ++i) {
-      const k = keys[i]
-      const v = values[i]
-      await this.buildOneExt(k, v, flags, spinner)
+    try {
+      for (let i = 0; i < keys.length; ++i) {
+        const k = keys[i]
+        const v = values[i]
+        await this.buildOneExt(k, v, flags, spinner)
+      }
+    } catch (error) {
+      spinner.stop()
+      // delegate to top handler
+      throw error
     }
-  }
-
-  filterExtensionPointConfigs (flags, config) {
-    if (flags.extensionPoint) {
-      // case 1 we have filter flags
-      const configs = {}
-      const extPointKeys = Object.keys(config.extensionPointsConfig)
-      flags.extensionPoint.forEach(ef => {
-        const matching = extPointKeys.filter(ek => ek.includes(ef))
-        if (matching.length <= 0) {
-          throw new Error(`No matching extension point implementation found for flag '-e ${ef}'`)
-        }
-        if (matching.length > 1) {
-          throw new Error(`Flag '-e ${ef}' matches multiple extension point implementation: '${matching}'`)
-        }
-        configs[matching[0]] = (config.extensionPointsConfig[matching[0]])
-      })
-      return configs
-    }
-    // case 2 build all
-    return config.extensionPointsConfig
   }
 
   async buildOneExt (name, config, flags, spinner) {
