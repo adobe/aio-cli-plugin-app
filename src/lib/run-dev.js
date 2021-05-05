@@ -109,7 +109,6 @@ async function runDev (config, options = {}, log = () => {}) {
             https: bundleOptions.https
           }
           bundleOptions.additionalReporters = [
-            { packageName: '@parcel/reporter-cli', resolveFrom: entryFile },
             { packageName: '@parcel/reporter-dev-server', resolveFrom: entryFile }
           ]
           const { bundler, cleanup: bundlerCleanup } = await bundle(entryFile, config.web.distDev, bundleOptions, log)

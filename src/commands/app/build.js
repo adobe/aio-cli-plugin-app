@@ -76,11 +76,10 @@ class Build extends BaseCommand {
             if (!script) {
               const entryFile = config.web.src + '/index.html'
               const bundleOptions = {
-                cache: false,
-                contentHash: flags['content-hash'],
-                minify: false,
-                watch: false,
-                logLevel: flags.verbose ? 4 : 2
+                shouldDisableCache: true,
+                shouldContentHash: flags['content-hash'],
+                shouldOptimize: false,
+                logLevel: flags.verbose ? 'verbose' : 'warn'
               }
               const { bundler } = await bundle(entryFile, config.web.distProd, bundleOptions, onProgress)
               await bundler.run()

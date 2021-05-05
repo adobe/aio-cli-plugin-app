@@ -200,7 +200,7 @@ describe('run', () => {
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledWith('undefined/index.html', undefined,
-      expect.objectContaining({ cache: false, contentHash: true, logLevel: 2, minify: false, watch: false }),
+      expect.objectContaining({ shouldDisableCache: true, shouldContentHash: true, logLevel: 'warn', shouldOptimize: false }),
       expect.any(Function)
     )
     expect(mockBundleFunc).toHaveBeenCalledTimes(1)
@@ -213,7 +213,7 @@ describe('run', () => {
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledWith('undefined/index.html', undefined,
-      expect.objectContaining({ cache: false, contentHash: false, logLevel: 2, minify: false, watch: false }),
+      expect.objectContaining({ shouldDisableCache: true, shouldContentHash: false, logLevel: 'warn', shouldOptimize: false }),
       expect.any(Function)
     )
     expect(mockBundleFunc).toHaveBeenCalledTimes(1)
@@ -226,7 +226,7 @@ describe('run', () => {
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledWith('undefined/index.html', undefined,
-      expect.objectContaining({ cache: false, contentHash: false, logLevel: 4, minify: false, watch: false }),
+      expect.objectContaining({ shouldDisableCache: true, shouldContentHash: false, logLevel: 'verbose', shouldOptimize: false }),
       expect.any(Function)
     )
     expect(mockBundleFunc).toHaveBeenCalledTimes(1)
