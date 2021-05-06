@@ -33,10 +33,9 @@ const getPort = require('get-port')
 async function runDev (config, options = {}, log = () => {}) {
   /* parcel bundle options */
   const bundleOptions = {
-    cache: false,
-    contentHash: true,
-    minify: false,
-    watch: false,
+    shouldDisableCache: true,
+    shouldContentHash: true,
+    shouldOptimize: false,
     ...options.parcel
   }
   /* skip actions */
@@ -109,7 +108,7 @@ async function runDev (config, options = {}, log = () => {}) {
             https: bundleOptions.https
           }
           bundleOptions.additionalReporters = [
-            { packageName: '@parcel/reporter-dev-server', resolveFrom: entryFile }
+            { packageName: '@parcel/reporter-dev-server', resolveFrom: __filename }
           ]
           const { bundler, cleanup: bundlerCleanup } = await bundle(entryFile, config.web.distDev, bundleOptions, log)
           defaultBundler = bundler

@@ -50,9 +50,9 @@ class Run extends BaseCommand {
       skipServe: !flags.serve,
       // todo: any other params we should add here?
       parcel: {
-        logLevel: flags.verbose ? 4 : 2,
+        logLevel: flags.verbose ? 'verbose' : 'warn',
         // always set to false on localhost to get debugging and hot reloading
-        contentHash: false
+        shouldContentHash: false
       },
       fetchLogs: true,
       devRemote: !flags.local,
