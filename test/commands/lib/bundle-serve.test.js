@@ -12,9 +12,9 @@ governing permissions and limitations under the License.
 
 const bundleServe = require('../../../src/lib/bundle-serve')
 
-const createBundler = () => {
+let createBundler = () => {
   return {
-    watch: jest.fn()
+    watch: jest.fn((cb) => { cb(); return { unsubscribe: jest.fn() } })
   }
 }
 
@@ -51,4 +51,13 @@ test('bundle-serve https', async () => {
   await cleanup()
   expect(typeof url).toEqual('string')
   expect(url).toBe(`https://localhost:${PORT}`) // specificPort not available
+})
+
+test('watch error', async () => {
+  createBundler = () => {
+    return {
+      watch: jest.fn((cb) => cb(new Error()))
+    }
+  }
+  await expect(bundleServe(createBundler(), {})).rejects.toThrowError()
 })

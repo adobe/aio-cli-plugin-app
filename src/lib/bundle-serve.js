@@ -29,13 +29,17 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 module.exports = async (bundler, options, log = () => {}) => {
   log('serving front-end using bundler serve...')
 
-  await bundler.watch()
-
+  const { unsubscribe } = await bundler.watch((err) => {
+    if (err) {
+      log(err)
+    }
+  })
   const url = `${options.serveOptions.https ? 'https:' : 'http:'}//localhost:${options.serveOptions.port}`
   log(`local frontend server running at ${url}`)
 
   const cleanup = async () => {
     aioLogger.debug('cleanup bundle-serve...')
+    await unsubscribe()
   }
 
   return {

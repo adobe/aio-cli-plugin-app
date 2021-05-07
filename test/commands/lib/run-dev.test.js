@@ -540,41 +540,41 @@ function runCommonWithFrontendTests (ref) {
       kill: jest.fn()
     }))
 
-    const mockBundlerCleanup = jest.fn()
-    bundle.mockImplementation(() => ({
-      bundler: jest.fn(),
-      cleanup: mockBundlerCleanup
+    const mockServeCleanup = jest.fn()
+    bundleServe.mockImplementation(() => ({
+      url: '',
+      cleanup: mockServeCleanup
     }))
 
     return new Promise(resolve => {
       testCleanupNoErrors(resolve, ref, () => {
-        expect(mockBundlerCleanup).toHaveBeenCalledTimes(1)
+        expect(mockServeCleanup).toHaveBeenCalledTimes(1)
       })
     })
   })
 
   test('should cleanup ui server on error', async () => {
-    const mockBundlerCleanup = jest.fn()
-    bundle.mockImplementation(() => ({
-      bundler: jest.fn(),
-      cleanup: mockBundlerCleanup
+    const mockServeCleanup = jest.fn()
+    bundleServe.mockImplementation(() => ({
+      url: '',
+      cleanup: mockServeCleanup
     }))
 
     await testCleanupOnError(ref, () => {
-      expect(mockBundlerCleanup).toHaveBeenCalledTimes(1)
+      expect(mockServeCleanup).toHaveBeenCalledTimes(1)
     })
   })
 
   test('should exit with 1 if there is an error in cleanup', async () => {
-    const mockBundlerCleanup = jest.fn()
-    bundle.mockImplementation(() => ({
-      bundler: jest.fn(),
-      cleanup: mockBundlerCleanup
+    const mockServeCleanup = jest.fn()
+    bundleServe.mockImplementation(() => ({
+      url: '',
+      cleanup: mockServeCleanup
     }))
 
     return new Promise(resolve => {
       const theError = new Error('theerror')
-      mockBundlerCleanup.mockRejectedValue(theError)
+      mockServeCleanup.mockRejectedValue(theError)
       process.removeAllListeners('SIGINT')
       process.exit.mockImplementation(() => {
         expect(mockLogger.error).toHaveBeenCalledWith(theError)

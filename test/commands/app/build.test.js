@@ -127,7 +127,7 @@ beforeEach(() => {
   mockWebLib.deployWeb.mockReset()
   mockWebLib.bundle.mockReset()
   mockBundleFunc.mockReset()
-  mockWebLib.bundle.mockResolvedValue({ bundler: { run: mockBundleFunc } })
+  mockWebLib.bundle.mockResolvedValue({ run: mockBundleFunc })
   mockFS.existsSync.mockReset()
   helpers.writeConfig.mockReset()
   helpers.runPackageScript.mockReset()
@@ -371,7 +371,7 @@ describe('run', () => {
   test('build (--skip-actions) calls provided log function', async () => {
     mockWebLib.bundle.mockImplementation((a, b, c, log) => {
       log('ok')
-      return { bundler: { run: mockBundleFunc } }
+      return { run: mockBundleFunc }
     })
 
     const noScriptFound = undefined
@@ -390,7 +390,7 @@ describe('run', () => {
   test('build (--skip-actions, --verbose) calls provided other log function', async () => {
     mockWebLib.bundle.mockImplementation((a, b, c, log) => {
       log('ok')
-      return { bundler: { run: mockBundleFunc } }
+      return { run: mockBundleFunc }
     })
 
     const noScriptFound = undefined

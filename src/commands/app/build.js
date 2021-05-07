@@ -81,7 +81,7 @@ class Build extends BaseCommand {
                 shouldOptimize: false,
                 logLevel: flags.verbose ? 'verbose' : 'warn'
               }
-              const { bundler } = await bundle(entryFile, config.web.distProd, bundleOptions, onProgress)
+              const bundler = await bundle(entryFile, config.web.distProd, bundleOptions, onProgress)
               await bundler.run()
             }
             spinner.succeed(chalk.green('Building web assets'))

@@ -110,9 +110,7 @@ async function runDev (config, options = {}, log = () => {}) {
           bundleOptions.additionalReporters = [
             { packageName: '@parcel/reporter-dev-server', resolveFrom: __filename }
           ]
-          const { bundler, cleanup: bundlerCleanup } = await bundle(entryFile, config.web.distDev, bundleOptions, log)
-          defaultBundler = bundler
-          cleanup.add(() => bundlerCleanup(), 'cleaning up bundle...')
+          defaultBundler = await bundle(entryFile, config.web.distDev, bundleOptions, log)
         }
       }
     }
