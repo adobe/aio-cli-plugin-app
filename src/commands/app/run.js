@@ -43,7 +43,6 @@ class Run extends BaseCommand {
     }
     const name = entries[0][0]
     const config = entries[0][1]
-    console.log(JSON.stringify(config, null, 2))
     // now we are good, either there is only 1 extension point or -e flag for one was provided
     await this.runOneExtensionPoint(name, config, flags, spinner)
 
@@ -51,6 +50,7 @@ class Run extends BaseCommand {
       // 2. deploy extension manifest
       if (!flags['no-publish']) {
         const fullConfig = this.getAppConfig()
+        // TODO THIS NEEDS MORE THINKING
         this.deployExtensionManifestPartial(fullConfig, name)
       }
     } catch (error) {
@@ -149,12 +149,15 @@ class Run extends BaseCommand {
           const webUri = (webArg && webArg !== 'no' && webArg !== 'false') ? 'web' : ''
           const packageWithAction = opv.impl
           // NOTE non runtime apihost do not support namespace as subdomain
+          // TODO --local ?
           const href = urlJoin('https://' + extPointConfig.ow.namespace + '.' + removeProtocolFromURL(extPointConfig.ow.apihost), 'api', extPointConfig.ow.apiversion, webUri, packageWithAction)
           return { href, ...opv.params }
         }
         // opelem.type === 'spa'
         // todo support multi spas + make url fetch util in aio-lib-web
-        return { href: `https://${extPointConfig.ow.namespace}.${extPointConfig.app.hostname}/index.html`, ...opv.params }
+        //`https://${extPointConfig.ow.namespace}.${extPointConfig.app.hostname}/index.html`
+        // todo that is going to break the deployed UI..
+        return { href: 'https://localhost:9080', ...opv.params }
       })
     })
     // todo refactor this with deploy logic
@@ -172,7 +175,7 @@ class Run extends BaseCommand {
 
     // 2. deploy to ext reg
     // TODO deploy partial - no overwrite
-    this.log(chalk.blue('Extension Registry Payload:'))
+    this.log(chalk.blue('Extension Registry Payload [NEEDS SOME MORE THINKING, DO WE WANT TO DEPLOY MANIFEST ON RUN?]:'))
     this.log(chalk.blue(JSON.stringify(extensionPayload, null, 2)))
   }
 

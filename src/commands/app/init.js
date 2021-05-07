@@ -17,8 +17,6 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const { flags } = require('@oclif/command')
 const { loadAndValidateConfigFile, importConfigJson, writeDefaultAppConfig } = require('../../lib/import')
 const { installPackage } = require('../../lib/app-helper')
-const chalk = require('chalk')
-const { servicesToGeneratorInput } = require('../../lib/app-helper')
 
 const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV } = require('../../lib/defaults')
 
@@ -300,6 +298,7 @@ class InitCommand extends BaseCommand {
 
     if (!flags['skip-install']) {
       // todo should this be in generators ?
+      this.log('Installing packages, this might take a while..')
       await installPackage('.')
     }
   }
