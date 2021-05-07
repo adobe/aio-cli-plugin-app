@@ -118,7 +118,7 @@ class Deploy extends BuildCommand {
     }
 
     // 2. deploy to ext reg
-    // TODO
+    // TODO deploy full - overwrite
     this.log(chalk.blue('Extension Registry Payload:'))
     this.log(chalk.blue(JSON.stringify(extensionPayload, null, 2)))
   }

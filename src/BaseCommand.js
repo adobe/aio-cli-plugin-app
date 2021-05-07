@@ -71,7 +71,7 @@ class BaseCommand extends Command {
       })
       return configs
     }
-    // case 2 build all
+    // case 2 get all
     return config.extensionPointsConfig
   }
 

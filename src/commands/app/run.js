@@ -23,7 +23,7 @@ const coreConfig = require('@adobe/aio-lib-core-config')
 const BaseCommand = require('../../BaseCommand')
 const runDev = require('../../lib/run-dev')
 const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('../../lib/defaults')
-const { runPackageScript, wrapError } = require('../../lib/app-helper')
+const { runPackageScript, urlJoin, removeProtocolFromURL } = require('../../lib/app-helper')
 
 const DEV_KEYS_DIR = 'dist/dev-keys/'
 const PRIVATE_KEY_PATH = DEV_KEYS_DIR + 'private.key'
@@ -31,18 +31,44 @@ const PUB_CERT_PATH = DEV_KEYS_DIR + 'cert-pub.crt'
 const CONFIG_KEY = 'aio-dev.dev-keys'
 
 class Run extends BaseCommand {
-  async run (args = []) {
+  async run () {
+    // cli input
     const { flags } = this.parse(Run)
-    const config = this.getAppConfig()
+    const spinner = ora()
 
+    const runConfigs = this.getExtensionPointConfigs(flags)
+    const entries = Object.entries(runConfigs)
+    if (entries.length > 1) {
+      this.error('You can only run one extension point implementation at the time, please provide the -e flag.')
+    }
+    const name = entries[0][0]
+    const config = entries[0][1]
+    console.log(JSON.stringify(config, null, 2))
+    // now we are good, either there is only 1 extension point or -e flag for one was provided
+    await this.runOneExtensionPoint(name, config, flags, spinner)
+
+    try {
+      // 2. deploy extension manifest
+      if (!flags['no-publish']) {
+        const fullConfig = this.getAppConfig()
+        this.deployExtensionManifestPartial(fullConfig, name)
+      }
+    } catch (error) {
+      spinner.stop()
+      // delegate to top handler
+      throw error
+    }
+  }
+
+  async runOneExtensionPoint (name, config, flags, spinner) {
     const hasBackend = config.app.hasBackend
     const hasFrontend = config.app.hasFrontend
 
     if (!hasBackend && !hasFrontend) {
-      this.error(wrapError('nothing to run.. there is no frontend and no manifest.yml, are you in a valid app?'))
+      this.error(new Error('nothing to run.. there is no frontend and no manifest.yml, are you in a valid app?'))
     }
     if (flags['skip-actions'] && !hasFrontend) {
-      this.error(wrapError('nothing to run.. there is no frontend and --skip-actions is set'))
+      this.error(new Error('nothing to run.. there is no frontend and --skip-actions is set'))
     }
 
     const runOptions = {
@@ -71,11 +97,10 @@ class Run extends BaseCommand {
       try {
         runOptions.parcel.https = await this.getOrGenerateCertificates()
       } catch (error) {
-        this.error(wrapError(error))
+        this.error(error)
       }
     }
 
-    const spinner = ora()
     const onProgress = !flags.verbose ? info => {
       spinner.text = info
     } : info => {
@@ -83,29 +108,72 @@ class Run extends BaseCommand {
       spinner.start()
     }
 
+    const frontendUrl = await runDev(config, runOptions, onProgress)
     try {
-      const frontendUrl = await runDev(this.getAppConfig(), runOptions, onProgress)
-      try {
-        await runPackageScript('post-app-run')
-      } catch (err) {
-        this.log(err)
-      }
-      if (frontendUrl) {
-        this.log()
-        this.log(chalk.blue(chalk.bold(`To view your local application:\n  -> ${frontendUrl}`)))
-        const launchUrl = this.getLaunchUrlPrefix() + frontendUrl
-        if (flags.open) {
-          this.log(chalk.blue(chalk.bold(`Opening your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
-          cli.open(launchUrl)
-        } else {
-          this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
-        }
-      }
-      this.log('press CTRL+C to terminate dev environment')
-    } catch (error) {
-      spinner.fail()
-      this.error(wrapError(error))
+      await runPackageScript('post-app-run')
+    } catch (err) {
+      this.log(err)
     }
+    if (frontendUrl) {
+      this.log()
+      this.log(chalk.blue(chalk.bold(`To view your local application:\n  -> ${frontendUrl}`)))
+      const launchUrl = this.getLaunchUrlPrefix() + frontendUrl
+      if (flags.open) {
+        this.log(chalk.blue(chalk.bold(`Opening your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
+        cli.open(launchUrl)
+      } else {
+        this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
+      }
+    }
+    this.log('press CTRL+C to terminate dev environment')
+  }
+
+  // deploys only single payload doesn't overwrite existing payloads
+  async deployExtensionManifestPartial (fullConfig, extensionPoint) {
+    // todo simplify and comment logic
+    // 1. build payload
+    const aioConfig = fullConfig.aioConfig
+    const extPointConfig = fullConfig.extensionPointsConfig[extensionPoint]
+    const extensionPointOperations = fullConfig.extensionPoints[extensionPoint].operations || {}
+    const endpointPayload = {}
+    Object.entries(extensionPointOperations).forEach(([opk, opv]) => {
+      endpointPayload[opk] = opv.map(opelem => {
+        // todo refactor this with deploy logic
+        if (opelem.type === 'headless') {
+          // todo reuse appHelper getActionUrls ?
+          // NOTE WEBURI must be extracted from package
+          const owPackage = opelem.impl.split('/')[0]
+          const owAction = opelem.impl.split('/')[1]
+          const manifestAction = extPointConfig.manifest.full.packages[owPackage].actions[owAction]
+          const webArg = manifestAction['web-export'] || manifestAction.web
+          const webUri = (webArg && webArg !== 'no' && webArg !== 'false') ? 'web' : ''
+          const packageWithAction = opv.impl
+          // NOTE non runtime apihost do not support namespace as subdomain
+          const href = urlJoin('https://' + extPointConfig.ow.namespace + '.' + removeProtocolFromURL(extPointConfig.ow.apihost), 'api', extPointConfig.ow.apiversion, webUri, packageWithAction)
+          return { href, ...opv.params }
+        }
+        // opelem.type === 'spa'
+        // todo support multi spas + make url fetch util in aio-lib-web
+        return { href: `https://${extPointConfig.ow.namespace}.${extPointConfig.app.hostname}/index.html`, ...opv.params }
+      })
+    })
+    // todo refactor this with deploy logic
+    const extensionPayload = {
+      id: 'FILL ME',
+      name: `${aioConfig.project.org.id}-${aioConfig.project.name}`,
+      endpoints: { extensionPoint: endpointPayload },
+      services: { FILL: 'ME' },
+      releaseNotes: 'FILL ME',
+      // todo do better than [0].id
+      technicalUserId: aioConfig.project.workspace.credentials && aioConfig.project.workspace.credentials[0].id,
+      appId: 'FILL ME',
+      publisherId: 'FILL ME'
+    }
+
+    // 2. deploy to ext reg
+    // TODO deploy partial - no overwrite
+    this.log(chalk.blue('Extension Registry Payload:'))
+    this.log(chalk.blue(JSON.stringify(extensionPayload, null, 2)))
   }
 
   async getOrGenerateCertificates () {
@@ -200,6 +268,14 @@ Run.flags = {
   open: flags.boolean({
     description: 'Open the default web browser after a successful run, only valid if your app has a front-end',
     default: false
+  }),
+  extensionPoint: flags.string({
+    description: 'Build only a specific extension point, the flags can be only one time',
+    char: 'e',
+    // we do not support multiple yet
+    multiple: false,
+    // not multiple but treat it as array for logic reuse
+    parse: str => [str]
   })
 }
 
