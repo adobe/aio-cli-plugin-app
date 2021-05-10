@@ -47,8 +47,8 @@ const LOCAL_CONFIG = {
 }
 
 // those must match the ones defined in dev.js
-const OW_JAR_URL = 'https://bintray.com/api/ui/download/adobe/generic/openwhisk/standalone-v1/openwhisk-standalone.jar'
-const OW_JAR_PATH = path.join(LOCAL_CONFIG.cli.dataDir, 'openwhisk', 'standalone-v1', 'openwhisk-standalone.jar')
+const OW_JAR_URL = 'https://github.com/adobe/aio-cli-plugin-app/releases/download/6.2.0/openwhisk-standalone.jar'
+const OW_JAR_PATH = path.join(LOCAL_CONFIG.cli.dataDir, 'openwhisk', 'openwhisk-standalone.jar')
 
 beforeEach(() => {
   mockLogger.mockReset()
