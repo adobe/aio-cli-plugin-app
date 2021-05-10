@@ -18,7 +18,7 @@ const { flags } = require('@oclif/command')
 
 const BaseCommand = require('../../BaseCommand')
 const webLib = require('@adobe/aio-lib-web')
-const { runPackageScript, wrapError } = require('../../lib/app-helper')
+const { runScript, wrapError } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 
 class Undeploy extends BaseCommand {
@@ -38,7 +38,7 @@ class Undeploy extends BaseCommand {
     try {
       // undeploy
       try {
-        await runPackageScript('pre-app-undeploy')
+        await runScript(config.hooks['pre-app-undeploy'])
       } catch (err) {
         this.log(err)
       }
@@ -46,7 +46,7 @@ class Undeploy extends BaseCommand {
       if (!flags['skip-actions']) {
         if (config.app.hasBackend) {
           try {
-            const script = await runPackageScript('undeploy-actions')
+            const script = await runScript(config.hooks['undeploy-actions'])
             if (!script) {
               await rtLib.undeployActions(this.getAppConfig())
             }
@@ -62,7 +62,7 @@ class Undeploy extends BaseCommand {
       if (!flags['skip-static'] && !flags['skip-web-assets']) {
         if (config.app.hasFrontend) {
           try {
-            const script = await runPackageScript('undeploy-static')
+            const script = await runScript(config.hooks['undeploy-static'])
             if (!script) {
               await webLib.undeployWeb(config, onProgress)
             }
@@ -79,7 +79,7 @@ class Undeploy extends BaseCommand {
       // final message
       this.log(chalk.green(chalk.bold('Undeploy done !')))
       try {
-        await runPackageScript('post-app-undeploy')
+        await runScript(config.hooks['post-app-undeploy'])
       } catch (err) {
         this.log(err)
       }
