@@ -13,9 +13,9 @@ const BaseCommand = require('../../BaseCommand')
 const yeoman = require('yeoman-environment')
 const path = require('path')
 const fs = require('fs-extra')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
+// const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
-const { loadAndValidateConfigFile, importConfigJson, writeDefaultAppConfig } = require('../../lib/import')
+const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
 const { installPackage } = require('../../lib/app-helper')
 
 const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV } = require('../../lib/defaults')
@@ -43,6 +43,7 @@ class InitCommand extends BaseCommand {
       await this.initWithLogin(flags)
     }
     this.log('✔ App initialization finished!')
+    this.log('You can add actions, web-assets, events and more to your project via the `aio app add` commands')
   }
 
   /**
@@ -54,10 +55,10 @@ class InitCommand extends BaseCommand {
     this.log(`✔ Loaded Adobe Developer Console configuration file for the Project '${consoleConfig.project.title}' in the Organization '${consoleConfig.project.org.name}'`)
 
     // 2. prompt for extension points to be implemented
-    const extensionPoints = await this.selectExtensionPoints()
+    const extensionPoints = await this.selectExtensionPoints(flags)
 
     // 3. run extension point code generators
-    await this.runAllCodeGenerators(flags, consoleConfig, extensionPoints)
+    await this.runCodeGenerators(flags, consoleConfig, extensionPoints)
 
     // 4. import config
     await this.importConsoleConfig(consoleConfig)
@@ -69,7 +70,7 @@ class InitCommand extends BaseCommand {
   }
 
   /**
-   *
+   * @param flags
    */
   async initWithLogin (flags) {
   // this will trigger a login
@@ -80,7 +81,7 @@ class InitCommand extends BaseCommand {
     // 2. get supported services
     const orgSupportedServices = await consoleCLI.getEnabledServicesForOrg(org.id)
     // 3. ask for exensionPoints, only allow selection for extensions that have services enabled in Org
-    const extensionPoints = await this.selectExtensionPoints(orgSupportedServices)
+    const extensionPoints = await this.selectExtensionPoints(flags, orgSupportedServices)
     // 4. select or create project
     const project = await this.selectOrCreateConsoleProject(consoleCLI, org)
     // 5. setup workspace, default to 'Stage' workspace
@@ -98,7 +99,7 @@ class InitCommand extends BaseCommand {
     const consoleConfig = await consoleCLI.getWorkspaceConfig(org.id, project.id, workspace.id, orgSupportedServices)
 
     // 7. run code generators
-    await this.runAllCodeGenerators(flags, consoleConfig, extensionPoints)
+    await this.runCodeGenerators(flags, consoleConfig, extensionPoints)
 
     // 8. import config
     await this.importConsoleConfig(consoleConfig)
@@ -107,7 +108,15 @@ class InitCommand extends BaseCommand {
   /**
    * @param orgSupportedServices
    */
-  async selectExtensionPoints (orgSupportedServices = null) {
+  async selectExtensionPoints (flags, orgSupportedServices = null) {
+    if (flags['no-extension']) {
+      return {
+        name: 'blank',
+        generator: '@adobe/generator-aio-app/generators/ext/blank',
+        requiredServices: []
+      }
+    }
+
     const choices = [
       // NOTE: those are hardcoded for now
       // TODO those need to be set by extension point providers
@@ -125,14 +134,6 @@ class InitCommand extends BaseCommand {
           name: 'aem/nui/v1',
           generator: '@adobe/generator-aio-app/generators/ext/aem-nui-v1',
           requiredServices: ['AssetComputeSDK']
-        }
-      },
-      {
-        name: 'Blank',
-        value: {
-          name: 'blank',
-          generator: '@adobe/generator-aio-app/generators/ext/blank',
-          requiredServices: []
         }
       }
     ]
@@ -268,7 +269,7 @@ class InitCommand extends BaseCommand {
    * @param consoleConfig
    * @param extensionPoints
    */
-  async runAllCodeGenerators (flags, consoleConfig, extensionPoints) {
+  async runCodeGenerators (flags, consoleConfig, extensionPoints) {
     // todo spinners !!!
 
     const env = yeoman.createEnv()
@@ -345,6 +346,11 @@ InitCommand.flags = {
   }),
   login: flags.boolean({
     description: 'Login using your Adobe ID for interacting with Adobe I/O Developer Console',
+    default: true,
+    allowNo: true
+  }),
+  extension: flags.boolean({
+    description: 'Use --no-extension to create a blank application that does not integrate with Exchange',
     default: true,
     allowNo: true
   })
