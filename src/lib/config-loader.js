@@ -116,7 +116,7 @@ function loadTopConfig (aioConfig) {
   }
   // TODO Consider changing deprecation notice to use `aioConfig`
   // TODO merge deeplevel
-  // TODO include legacy hooks, manifest and env ?
+  // ! TODO include legacy hooks, manifest and env for backwards compat
   userConfig = { ...aioConfig.app, ...userConfig }
 
   const packagejson = loadPackageJson()

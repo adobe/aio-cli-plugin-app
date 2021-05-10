@@ -23,7 +23,7 @@ const coreConfig = require('@adobe/aio-lib-core-config')
 const BaseCommand = require('../../BaseCommand')
 const runDev = require('../../lib/run-dev')
 const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('../../lib/defaults')
-const { runPackageScript, urlJoin, removeProtocolFromURL } = require('../../lib/app-helper')
+const { runScript, urlJoin, removeProtocolFromURL } = require('../../lib/app-helper')
 
 const DEV_KEYS_DIR = 'dist/dev-keys/'
 const PRIVATE_KEY_PATH = DEV_KEYS_DIR + 'private.key'
@@ -86,7 +86,7 @@ class Run extends BaseCommand {
     }
 
     try {
-      await runPackageScript('pre-app-run')
+      await runScript(config.hooks['pre-app-run'])
     } catch (err) {
       this.log(err)
     }
@@ -110,7 +110,7 @@ class Run extends BaseCommand {
 
     const frontendUrl = await runDev(config, runOptions, onProgress)
     try {
-      await runPackageScript('post-app-run')
+      await runScript(config.hooks['post-app-run'])
     } catch (err) {
       this.log(err)
     }
@@ -155,7 +155,7 @@ class Run extends BaseCommand {
         }
         // opelem.type === 'spa'
         // todo support multi spas + make url fetch util in aio-lib-web
-        //`https://${extPointConfig.ow.namespace}.${extPointConfig.app.hostname}/index.html`
+        // `https://${extPointConfig.ow.namespace}.${extPointConfig.app.hostname}/index.html`
         // todo that is going to break the deployed UI..
         return { href: 'https://localhost:9080', ...opv.params }
       })

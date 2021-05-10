@@ -15,7 +15,7 @@ const chalk = require('chalk')
 
 const BaseCommand = require('../../BaseCommand')
 const { flags } = require('@oclif/command')
-const { runPackageScript, writeConfig } = require('../../lib/app-helper')
+const { runScript, writeConfig } = require('../../lib/app-helper')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
 const { bundle } = require('@adobe/aio-lib-web')
 const fs = require('fs-extra')
@@ -59,7 +59,7 @@ class Build extends BaseCommand {
     const filterActions = flags.action
     try {
       // todo run hooks from config !
-      await runPackageScript('pre-app-build')
+      await runScript(config.hooks['pre-app-build'])
     } catch (err) {
       this.log(err)
     }
@@ -68,7 +68,7 @@ class Build extends BaseCommand {
       if (config.app.hasBackend && (flags['force-build'] || !fs.existsSync(config.actions.dist))) {
         spinner.start(`Building actions for extension point ${name}`)
         try {
-          const script = await runPackageScript('build-actions')
+          const script = await runScript(config.hooks['build-actions'])
           if (!script) {
             await RuntimeLib.buildActions(config, filterActions)
           }
@@ -89,7 +89,7 @@ class Build extends BaseCommand {
         }
         spinner.start('Building web assets')
         try {
-          const script = await runPackageScript('build-static')
+          const script = await runScript(config.hooks['build-static'])
           if (!script) {
             const entryFile = config.web.src + '/index.html'
             const bundleOptions = {
@@ -112,7 +112,7 @@ class Build extends BaseCommand {
       }
     }
     try {
-      await runPackageScript('post-app-build')
+      await await runScript(config.hooks['build-static'])
     } catch (err) {
       this.log(err)
     }

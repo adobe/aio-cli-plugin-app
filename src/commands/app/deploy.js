@@ -19,7 +19,7 @@ const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { flags } = require('@oclif/command')
-const { runPackageScript, urlJoin, removeProtocolFromURL } = require('../../lib/app-helper')
+const { runScript, urlJoin, removeProtocolFromURL } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 
 class Deploy extends BuildCommand {
@@ -144,7 +144,7 @@ class Deploy extends BuildCommand {
 
     if (!flags['skip-deploy']) {
       try {
-        await runPackageScript('pre-app-deploy')
+        await runScript(config.hooks['pre-app-deploy'])
       } catch (err) {
         this.log(err)
       }
@@ -160,7 +160,7 @@ class Deploy extends BuildCommand {
           const message = `Deploying actions for extension point ${name}`
           spinner.start(message)
           try {
-            const script = await runPackageScript('deploy-actions')
+            const script = await runScript(config.hooks['deploy-actions'])
             if (!script) {
               deployedRuntimeEntities = { ...await rtLib.deployActions(config, { filterEntities }, onProgress) }
             }
@@ -179,7 +179,7 @@ class Deploy extends BuildCommand {
           const message = `Deploying web assets for extension point ${name}`
           spinner.start(message)
           try {
-            const script = await runPackageScript('deploy-static')
+            const script = await runScript(config.hooks['deploy-static'])
             if (!script) {
               deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
             }
@@ -212,7 +212,7 @@ class Deploy extends BuildCommand {
       }
 
       try {
-        await runPackageScript('post-app-deploy')
+        await runScript(config.hooks['post-app-deploy'])
       } catch (err) {
         this.log(err)
       }

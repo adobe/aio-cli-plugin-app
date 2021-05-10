@@ -50,42 +50,55 @@ async function installPackage (dir) {
 
 /** @private */
 async function runPackageScript (scriptName, dir, cmdArgs = []) {
-  if (!dir) {
-    dir = process.cwd()
-  }
   aioLogger.debug(`running npm run-script ${scriptName} in dir: ${dir}`)
   const pkg = await fs.readJSON(path.join(dir, 'package.json'))
   if (pkg && pkg.scripts && pkg.scripts[scriptName]) {
-    let command = pkg.scripts[scriptName]
-    if (cmdArgs.length) {
-      command = `${command} ${cmdArgs.join(' ')}`
-    }
-    const child = execa.command(command, {
-      stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
-      shell: true,
-      cwd: dir,
-      preferLocal: true
-    })
-    // handle IPC from possible aio-run-detached script
-    child.on('message', message => {
-      if (message.type === 'long-running-process') {
-        const { pid, logs } = message.data
-        aioLogger.debug(`Found ${scriptName} event hook long running process (pid: ${pid}). Registering for SIGTERM`)
-        aioLogger.debug(`Log locations for ${scriptName} event hook long-running process (stdout: ${logs.stdout} stderr: ${logs.stderr})`)
-        process.on('exit', () => {
-          try {
-            aioLogger.debug(`Killing ${scriptName} event hook long-running process (pid: ${pid})`)
-            process.kill(pid, 'SIGTERM')
-          } catch (_) {
-            // do nothing if pid not found
-          }
-        })
-      }
-    })
+    const command = pkg.scripts[scriptName]
+    const child = runScript(command, dir, cmdArgs)
     return child
   } else {
     aioLogger.debug(`${dir} does not contain a package.json or it does not contain a script named ${scriptName}`)
   }
+}
+
+/**
+ * @param command
+ * @param dir
+ * @param cmdArgs
+ */
+async function runScript (command, dir, cmdArgs = []) {
+  if (!command) {
+    return null
+  }
+  if (!dir) {
+    dir = process.cwd()
+  }
+  const fullCommand = command + cmdArgs && ' ' + cmdArgs.join(' ')
+  aioLogger.debug(`running command '${fullCommand}' in dir: '${dir}'`)
+  // run
+  const child = execa.command(command, {
+    stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+    shell: true,
+    cwd: dir,
+    preferLocal: true
+  })
+  // handle IPC from possible aio-run-detached script
+  child.on('message', message => {
+    if (message.type === 'long-running-process') {
+      const { pid, logs } = message.data
+      aioLogger.debug(`Found '${fullCommand}' event hook long running process (pid: ${pid}). Registering for SIGTERM`)
+      aioLogger.debug(`Log locations for ${fullCommand} event hook long-running process (stdout: ${logs.stdout} stderr: ${logs.stderr})`)
+      process.on('exit', () => {
+        try {
+          aioLogger.debug(`Killing ${fullCommand} event hook long-running process (pid: ${pid})`)
+          process.kill(pid, 'SIGTERM')
+        } catch (_) {
+          // do nothing if pid not found
+        }
+      })
+    }
+  })
+  return child
 }
 
 /** @private */
@@ -357,6 +370,7 @@ module.exports = {
   isNpmInstalled,
   isGitInstalled,
   installPackage,
+  runScript,
   runPackageScript,
   wrapError,
   getCliInfo,
