@@ -106,6 +106,7 @@ class InitCommand extends BaseCommand {
   }
 
   /**
+   * @param flags
    * @param orgSupportedServices
    */
   async selectExtensionPoints (flags, orgSupportedServices = null) {
@@ -235,8 +236,7 @@ class InitCommand extends BaseCommand {
             licenseConfig: orgServiceDefinition.properties.licenseConfigs
           }
         })
-
-      consoleCLI.subscribeToServices(
+      await consoleCLI.subscribeToServices(
         org.id,
         project,
         workspace,
