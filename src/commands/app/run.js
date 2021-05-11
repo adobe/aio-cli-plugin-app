@@ -175,8 +175,8 @@ class Run extends BaseCommand {
 
     // 2. deploy to ext reg
     // TODO deploy partial - no overwrite
-    this.log(chalk.blue('Extension Registry Payload [NEEDS SOME MORE THINKING, DO WE WANT TO DEPLOY MANIFEST ON RUN?]:'))
-    this.log(chalk.blue(JSON.stringify(extensionPayload, null, 2)))
+    // this.log(chalk.blue('Extension Registry Payload [NEEDS SOME MORE THINKING, DO WE WANT TO DEPLOY MANIFEST ON RUN?]:'))
+    // this.log(chalk.blue(JSON.stringify(extensionPayload, null, 2)))
   }
 
   async getOrGenerateCertificates () {
