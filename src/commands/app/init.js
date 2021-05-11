@@ -42,6 +42,10 @@ class InitCommand extends BaseCommand {
       // we can login
       await this.initWithLogin(flags)
     }
+
+    // install packages, always at the end, so user can ctrl+c
+    await this.installPackages(flags)
+
     this.log('✔ App initialization finished!')
     this.log('You can add actions, web-assets, events and more to your project via the `aio app add` commands')
   }
@@ -110,12 +114,12 @@ class InitCommand extends BaseCommand {
    * @param orgSupportedServices
    */
   async selectExtensionPoints (flags, orgSupportedServices = null) {
-    if (flags['no-extension']) {
-      return {
-        name: 'blank',
-        generator: '@adobe/generator-aio-app/generators/ext/blank',
-        requiredServices: []
-      }
+    if (!flags.extensions) {
+      return [{
+        name: 'default',
+        generator: '@adobe/generator-aio-app/generators/ext/default',
+        requiredServices: [] // TODO required services should be filled based on selected actions
+      }]
     }
 
     const choices = [
@@ -236,7 +240,7 @@ class InitCommand extends BaseCommand {
             licenseConfig: orgServiceDefinition.properties.licenseConfigs
           }
         })
-      await consoleCLI.subscribeToServices(
+      const res = await consoleCLI.subscribeToServices(
         org.id,
         project,
         workspace,
@@ -245,6 +249,7 @@ class InitCommand extends BaseCommand {
         // new service properties
         currServiceProperties.concat(servicePropertiesToAdd)
       )
+      console.log(JSON.stringify(res))
     }
     return workspace
   }
@@ -288,7 +293,7 @@ class InitCommand extends BaseCommand {
       appGen.composeWith(
         require.resolve(e.generator), {
           options: {
-          // todo clear up skip-install flags
+            // todo clear up skip-install flags
             'skip-install': true,
             'skip-prompt': flags.yes
           }
@@ -296,9 +301,12 @@ class InitCommand extends BaseCommand {
     })
 
     await env.runGenerator(appGen)
+  }
 
+  async installPackages (flags) {
     if (!flags['skip-install']) {
-      // todo should this be in generators ?
+      // todo spinner + single line output
+      // todo ctrl+c handler
       this.log('Installing packages, this might take a while..')
       await installPackage('.')
     }
@@ -349,8 +357,8 @@ InitCommand.flags = {
     default: true,
     allowNo: true
   }),
-  extension: flags.boolean({
-    description: 'Use --no-extension to create a blank application that does not integrate with Exchange',
+  extensions: flags.boolean({
+    description: 'Use --no-extensions to create a blank application that does not integrate with Exchange',
     default: true,
     allowNo: true
   })
