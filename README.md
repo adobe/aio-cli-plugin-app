@@ -43,6 +43,7 @@ $ aio app --help
 * [`aio app:delete:web-assets`](#aio-appdeleteweb-assets)
 * [`aio app:deploy`](#aio-appdeploy)
 * [`aio app:get-url [ACTION]`](#aio-appget-url-action)
+* [`aio app:info`](#aio-appinfo)
 * [`aio app:init [PATH]`](#aio-appinit-path)
 * [`aio app:logs`](#aio-applogs)
 * [`aio app:run`](#aio-apprun)
@@ -407,6 +408,31 @@ OPTIONS
 
 _See code: [src/commands/app/get-url.js](https://github.com/adobe/aio-cli-plugin-app/blob/6.2.0/src/commands/app/get-url.js)_
 
+## `aio app:info`
+
+Display settings/configuration in use by an Adobe I/O App
+
+```
+Display settings/configuration in use by an Adobe I/O App
+
+
+
+USAGE
+  $ aio app:info
+
+OPTIONS
+  -h, --hson     Output human readable json
+  -j, --json     Output json
+  -v, --verbose  Verbose output
+  -y, --yml      Output yml
+  --[no-]mask    Hide known private info
+  --version      Show version
+
+DESCRIPTION
+```
+
+_See code: [src/commands/app/info.js](https://github.com/adobe/aio-cli-plugin-app/blob/6.2.0/src/commands/app/info.js)_
+
 ## `aio app:init [PATH]`
 
 Create a new Adobe I/O App
@@ -520,10 +546,16 @@ _See code: [src/commands/app/undeploy.js](https://github.com/adobe/aio-cli-plugi
 
 ## `aio app:use [CONFIG_FILE_PATH]`
 
-Import an Adobe Developer Console configuration file
+Import an Adobe Developer Console configuration file.
 
 ```
-Import an Adobe Developer Console configuration file
+Import an Adobe Developer Console configuration file.
+
+If the optional configuration file is not set, this command will retrieve the console org, project, and workspace settings from the global config.
+
+To set these global config values, see the help text for 'aio console --help'.
+
+To download the configuration file for your project, select the 'Download' button in the toolbar of your project's page in https://console.adobe.io
 
 
 USAGE
@@ -560,6 +592,15 @@ OPTIONS
 
   --workspace                          Prompt for selection of a Workspace in the same Project, and import the
                                        configuration for this Workspace
+
+DESCRIPTION
+  If the optional configuration file is not set, this command will retrieve the console org, project, and workspace 
+  settings from the global config.
+
+  To set these global config values, see the help text for 'aio console --help'.
+
+  To download the configuration file for your project, select the 'Download' button in the toolbar of your project's 
+  page in https://console.adobe.io
 ```
 
 _See code: [src/commands/app/use.js](https://github.com/adobe/aio-cli-plugin-app/blob/6.2.0/src/commands/app/use.js)_
