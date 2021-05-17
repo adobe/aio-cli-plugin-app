@@ -249,6 +249,8 @@ class InitCommand extends BaseCommand {
         // new service properties
         currServiceProperties.concat(servicePropertiesToAdd)
       )
+      // console.log(JSON.stringify(res))
+      // console.log(JSON.stringify(currServiceProperties.concat(servicePropertiessToAdd)))
     }
     return workspace
   }
