@@ -21,15 +21,18 @@ jest.mock('../../../src/lib/import')
 jest.mock('fs-extra')
 
 const mockAccessToken = 'some-access-token'
-const mockGetCli = jest.fn()
 const mockSetCli = jest.fn()
 jest.mock('@adobe/aio-lib-ims', () => {
   return {
     context: {
-      getCli: () => mockGetCli(),
       setCli: () => mockSetCli()
     },
     getToken: () => mockAccessToken
+  }
+})
+jest.mock('@adobe/aio-lib-env', () => {
+  return {
+    getCliEnv: () => 'prod'
   }
 })
 
@@ -61,7 +64,6 @@ afterAll(() => {
 
 const savedDataDir = process.env.XDG_DATA_HOME
 beforeEach(() => {
-  mockGetCli.mockReturnValue({})
   mockRegister.mockReset()
   mockRun.mockReset()
   yeoman.createEnv.mockClear()
@@ -326,8 +328,8 @@ describe('run', () => {
   })
 
   test('getCliInfo error', async () => {
-    mockGetCli.mockReset()
-    mockGetCli.mockImplementationOnce(() => { throw new Error('Error') })
+    mockSetCli.mockReset()
+    mockSetCli.mockImplementationOnce(() => { throw new Error('Error') })
 
     const project = mockValidConfig()
     await TheCommand.run(['--skip-install'])
@@ -688,23 +690,5 @@ describe('run', () => {
       process.cwd(),
       { interactive: false, merge: true },
       { SERVICE_API_KEY: 'fakeId123' })
-  })
-
-  test('no cli context', async () => {
-    mockGetCli.mockReturnValue(null)
-    mockValidConfig()
-    await TheCommand.run([])
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(2)
-    const genConsole = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
-      'access-token': mockAccessToken,
-      'destination-file': 'console.json',
-      'ims-env': 'prod',
-      'allow-create': true,
-      'cert-dir': certDir
-    })
-    expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
   })
 })
