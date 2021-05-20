@@ -65,7 +65,7 @@ function getDockerNetworkAddress () {
 
 // gets these values if the keys are set in the environment, if not it will use the defaults set
 const {
-  OW_JAR_URL = 'https://bintray.com/api/ui/download/adobe/generic/openwhisk/standalone-v1/openwhisk-standalone.jar',
+  OW_JAR_URL = 'https://github.com/adobe/aio-cli-plugin-app/releases/download/6.2.0/openwhisk-standalone.jar',
   OW_CONFIG_RUNTIMES_FILE = path.resolve(__dirname, '../../bin/openwhisk-standalone-config/runtimes.json'),
   OW_LOCAL_APIHOST = getDockerNetworkAddress(),
   OW_LOCAL_NAMESPACE = 'guest',
