@@ -20,14 +20,16 @@ class Info extends BaseCommand {
     const { flags } = this.parse(Info)
     const appConfig = this.getAppConfig()
     delete appConfig.cli
+    // includes .env secret delete all aio config for now
+    delete appConfig.aio
 
     // hide credentials
-    Object.values(appConfig.extensionPointsConfig).forEach(extConfig => {
-      if (extConfig.s3.creds) {
-        extConfig.s3.creds.accessKeyId = mask(extConfig.s3.creds.accessKeyId)
-        extConfig.s3.creds.secretAccessKey = mask(extConfig.s3.creds.secretAccessKey)
+    Object.values(appConfig.configs).forEach(config => {
+      if (config.s3.creds) {
+        config.s3.creds.accessKeyId = mask(config.s3.creds.accessKeyId)
+        config.s3.creds.secretAccessKey = mask(config.s3.creds.secretAccessKey)
       }
-      extConfig.ow.auth = mask(extConfig.ow.auth)
+      config.ow.auth = mask(config.ow.auth)
     })
 
     if (flags.json) {
