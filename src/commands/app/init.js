@@ -35,9 +35,9 @@ class InitCommand extends BaseCommand {
       process.chdir(destDir)
     }
 
-    if (flags.import) {
+    if (flags.import || !flags.login) {
       // import a console config - no login required!
-      await this.initWithConsoleConfig(flags)
+      await this.initNoLogin(flags)
     } else {
       // we can login
       await this.initWithLogin(flags)
@@ -53,19 +53,25 @@ class InitCommand extends BaseCommand {
   /**
    * @param flags
    */
-  async initWithConsoleConfig (flags) {
-  // 1. load console details
-    const { values: consoleConfig } = loadAndValidateConfigFile(flags.import)
-    this.log(`✔ Loaded Adobe Developer Console configuration file for the Project '${consoleConfig.project.title}' in the Organization '${consoleConfig.project.org.name}'`)
+  async initNoLogin (flags) {
+    // 1. load console details - if any
+    let consoleConfig
+    if (flags.import) {
+      consoleConfig = loadAndValidateConfigFile(flags.import).values
+      this.log(`✔ Loaded Adobe Developer Console configuration file for the Project '${consoleConfig.project.title}' in the Organization '${consoleConfig.project.org.name}'`)
+    }
 
     // 2. prompt for extension points to be implemented
     const extensionPoints = await this.selectExtensionPoints(flags)
 
     // 3. run extension point code generators
-    await this.runCodeGenerators(flags, consoleConfig, extensionPoints)
+    const projectName = (consoleConfig && consoleConfig.project.name) || path.basename(process.cwd())
+    await this.runCodeGenerators(flags, extensionPoints, projectName)
 
-    // 4. import config
-    await this.importConsoleConfig(consoleConfig)
+    // 4. import config - if any
+    if (flags.import) {
+      await this.importConsoleConfig(consoleConfig)
+    }
 
     // 5. This flow supports non logged in users so we can't now for sure if the project has
     //    required services installed. So we output a note on required services instead.
@@ -77,7 +83,7 @@ class InitCommand extends BaseCommand {
    * @param flags
    */
   async initWithLogin (flags) {
-  // this will trigger a login
+    // this will trigger a login
     const consoleCLI = await this.getLibConsoleCLI()
 
     // 1. select org
@@ -103,7 +109,7 @@ class InitCommand extends BaseCommand {
     const consoleConfig = await consoleCLI.getWorkspaceConfig(org.id, project.id, workspace.id, orgSupportedServices)
 
     // 7. run code generators
-    await this.runCodeGenerators(flags, consoleConfig, extensionPoints)
+    await this.runCodeGenerators(flags, extensionPoints, consoleConfig.project.name)
 
     // 8. import config
     await this.importConsoleConfig(consoleConfig)
@@ -117,7 +123,7 @@ class InitCommand extends BaseCommand {
     if (!flags.extensions) {
       return [{
         name: 'default',
-        generator: '@adobe/generator-aio-app/generators/ext/default',
+        generator: '@adobe/generator-aio-app/generators/application',
         requiredServices: [] // TODO required services should be filled based on selected actions
       }]
     }
@@ -240,7 +246,7 @@ class InitCommand extends BaseCommand {
             licenseConfig: orgServiceDefinition.properties.licenseConfigs
           }
         })
-      const res = await consoleCLI.subscribeToServices(
+      await consoleCLI.subscribeToServices(
         org.id,
         project,
         workspace,
@@ -272,21 +278,19 @@ class InitCommand extends BaseCommand {
 
   /**
    * @param flags
-   * @param consoleConfig
+   * @param projectName
    * @param extensionPoints
    */
-  async runCodeGenerators (flags, consoleConfig, extensionPoints) {
+  async runCodeGenerators (flags, extensionPoints, projectName) {
     // todo spinners !!!
-
     const env = yeoman.createEnv()
     // first run app generator that will generate the root skeleton
-    env.register(require.resolve('@adobe/generator-aio-app'), 'gen-app')
-    const appGen = env.create(require.resolve('@adobe/generator-aio-app'), {
+    const appGen = env.create(require.resolve('@adobe/generator-aio-app/generators/base'), {
       options: {
         // todo clear up skip-install flags
         'skip-install': true,
         'skip-prompt': flags.yes,
-        'project-name': consoleConfig.project.name
+        'project-name': projectName
       }
     })
 
@@ -318,7 +322,7 @@ class InitCommand extends BaseCommand {
    * @param config
    */
   async importConsoleConfig (config) {
-  // get jwt client id
+    // get jwt client id
     const jwtConfig = config.project.workspace.details.credentials && config.project.workspace.details.credentials.find(c => c.jwt)
     const serviceClientId = (jwtConfig && jwtConfig.jwt.client_id) || ''
 
@@ -326,7 +330,7 @@ class InitCommand extends BaseCommand {
     const interactive = false
     const merge = true
     await importConfigJson(
-    // NOTE: importConfigJson should support reading json directly
+      // NOTE: importConfigJson should support reading json directly
       configBuffer,
       process.cwd(),
       { interactive, merge },
