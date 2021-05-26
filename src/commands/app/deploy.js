@@ -27,16 +27,20 @@ class Deploy extends BuildCommand {
     // cli input
     const { flags } = this.parse(Deploy)
 
-    flags['skip-static'] = flags['skip-static'] || !!flags.action // || flags['skip-web-assets'] ?
-    flags['no-publish'] = flags['no-publish'] || !!flags.action
+    flags['skip-static'] = flags['skip-static'] || !!flags.action || flags['skip-web-assets']
+    flags['no-publish'] = flags['no-publish'] || !!flags.action || flags.extensions === false
 
-    const deployConfigs = this.getExtensionPointConfigs(flags)
+    const deployConfigs = this.getAppExtConfigs(flags)
 
+    const keys = Object.keys(deployConfigs)
+    const values = Object.values(deployConfigs)
+
+    if (keys.length <= 0) {
+      this.error('Nothing to deploy')
+    }
     const spinner = ora()
 
     try {
-      const keys = Object.keys(deployConfigs)
-      const values = Object.values(deployConfigs)
       // 1. build actions and web assets for each extension
       // TODO parallelize ?
       // TODO smaller pieces deploy all actions then all web assets
@@ -47,8 +51,8 @@ class Deploy extends BuildCommand {
       }
       // 2. deploy extension manifest
       if (!flags['no-publish']) {
-        const fullConfig = this.getAppConfig()
-        this.deployExtensionManifest(fullConfig, keys)
+        const aioConfig = this.getAppConfig().aio
+        this.deployExtensionManifest(deployConfigs, aioConfig)
       }
     } catch (error) {
       spinner.stop()
@@ -72,39 +76,35 @@ class Deploy extends BuildCommand {
     // }
   }
 
-  async deployExtensionManifest (fullConfig, extensionPointFilterKeys) {
-    // todo simplify and comment logic
+  async deployExtensionManifest (deployConfigs, aioConfig) {
     // 1. build payload
-    const set = new Set(extensionPointFilterKeys)
-    const extensionPoints = fullConfig.extensionPoints
-    const aioConfig = fullConfig.aioConfig
     const endpointsPayload = {}
-    Object.entries(extensionPoints).forEach(([k, v]) => {
-      if (set.has(k)) {
-        const extPointConfig = fullConfig.extensionPointsConfig[k]
-        endpointsPayload[k] = {}
-        Object.entries(extensionPoints[k].operations || {}).forEach(([opk, opv]) => {
-          endpointsPayload[k][opk] = opv.map(opelem => {
-            if (opelem.type === 'headless') {
-              // todo reuse appHelper getActionUrls ?
-              // NOTE WEBURI must be extracted from package
-              const owPackage = opelem.impl.split('/')[0]
-              const owAction = opelem.impl.split('/')[1]
-              const manifestAction = extPointConfig.manifest.full.packages[owPackage].actions[owAction]
-              const webArg = manifestAction['web-export'] || manifestAction.web
-              const webUri = (webArg && webArg !== 'no' && webArg !== 'false') ? 'web' : ''
-              const packageWithAction = opv.impl
-              // NOTE non runtime apihost do not support namespace as subdomain
-              const href = urlJoin('https://' + extPointConfig.ow.namespace + '.' + removeProtocolFromURL(extPointConfig.ow.apihost), 'api', extPointConfig.ow.apiversion, webUri, packageWithAction)
-              return { href, ...opv.params }
-            }
-            // opelem.type === 'spa'
-            // todo support multi spas + make url fetch util in aio-lib-web
-            return { href: `https://${extPointConfig.ow.namespace}.${extPointConfig.app.hostname}/index.html`, ...opv.params }
+    // TODO: the loop is deep and should be simplified and commented
+    Object.entries(deployConfigs)
+      .filter(([k, v]) => k !== 'application')
+      .forEach(([extPointName, extPointConfig]) => {
+        endpointsPayload[extPointName] = {}
+        Object.entries(extPointConfig.operations)
+          .forEach(([opName, opList]) => {
+            endpointsPayload[extPointName][opName] = opList.map(op => {
+              if (op.type === 'action') {
+                // todo modularize with getActionUrls from appHelper
+                const owPackage = op.impl.split('/')[0]
+                const owAction = op.impl.split('/')[1]
+                const manifestAction = extPointConfig.manifest.full.packages[owPackage].actions[owAction]
+                const webArg = manifestAction['web-export'] || manifestAction.web
+                const webUri = (webArg && webArg !== 'no' && webArg !== 'false') ? 'web' : ''
+                const packageWithAction = op.impl
+                // todo non runtime apihost do not support namespace as subdomain
+                const href = urlJoin('https://' + extPointConfig.ow.namespace + '.' + removeProtocolFromURL(extPointConfig.ow.apihost), 'api', extPointConfig.ow.apiversion, webUri, packageWithAction)
+                return { href, ...op.params }
+              }
+              // op.type === 'web'
+              // todo support multi spas + make url fetch util in aio-lib-web
+              return { href: `https://${extPointConfig.ow.namespace}.${extPointConfig.app.hostname}/index.html`, ...op.params }
+            })
           })
-        })
-      }
-    })
+      })
     const extensionPayload = {
       id: 'FILL ME',
       name: `${aioConfig.project.org.id}-${aioConfig.project.name}`,
@@ -265,11 +265,17 @@ Deploy.flags = {
     description: 'Open the default web browser after a successful deploy, only valid if your app has a front-end',
     default: false
   }),
-  extensionPoint: flags.string({
+  extension: flags.string({
     description: 'Deploy only a specific extension point, the flags can be specified multiple times',
     exclusive: ['action'],
     char: 'e',
     multiple: true
+  }),
+  extensions: flags.boolean({
+    description: 'Deploy only extension points, use --no-extensions to skip extension points and build only the standalone app',
+    allowNo: true,
+    default: undefined,
+    exclusive: ['extension']
   })
 }
 

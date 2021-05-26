@@ -27,14 +27,18 @@ class Build extends BaseCommand {
     const { flags } = this.parse(Build)
     flags['skip-static'] = flags['skip-static'] || !!flags.action // || flags['skip-web-assets'] ?
 
-    const buildConfigs = this.getExtensionPointConfigs(flags)
-
-    const spinner = ora()
+    const buildConfigs = this.getAppExtConfigs(flags)
 
     // TODO parallelize ?
     // TODO smaller pieces build all actions then all web assets
     const keys = Object.keys(buildConfigs)
     const values = Object.values(buildConfigs)
+
+    if (keys.length <= 0) {
+      this.error('Nothing to build')
+    }
+
+    const spinner = ora()
     try {
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
@@ -66,19 +70,19 @@ class Build extends BaseCommand {
 
     if (!flags['skip-actions']) {
       if (config.app.hasBackend && (flags['force-build'] || !fs.existsSync(config.actions.dist))) {
-        spinner.start(`Building actions for extension point ${name}`)
+        spinner.start(`Building actions for ${name}`)
         try {
           const script = await runScript(config.hooks['build-actions'])
           if (!script) {
             await RuntimeLib.buildActions(config, filterActions)
           }
-          spinner.succeed(chalk.green(`Building actions for extension point ${name}`))
+          spinner.succeed(chalk.green(`Building actions for ${name}`))
         } catch (err) {
-          spinner.fail(chalk.green(`Building actions for extension point ${name}`))
+          spinner.fail(chalk.green(`Building actions for ${name}`))
           throw err
         }
       } else {
-        spinner.info(`no backend or a build already exists, skipping action build for extension point ${name}`)
+        spinner.info(`no backend or a build already exists, skipping action build for ${name}`)
       }
     }
     if (!flags['skip-static'] && !flags['skip-web-assets']) {
@@ -102,13 +106,13 @@ class Build extends BaseCommand {
             const { bundler } = await bundle(entryFile, config.web.distProd, bundleOptions, onProgress)
             await bundler.bundle()
           }
-          spinner.succeed(chalk.green(`Building web assets for extension point ${name}`))
+          spinner.succeed(chalk.green(`Building web assets for ${name}`))
         } catch (err) {
-          spinner.fail(chalk.green(`Building web assets for extension point ${name}`))
+          spinner.fail(chalk.green(`Building web assets for ${name}`))
           throw err
         }
       } else {
-        spinner.info(`no frontend or a build already exists, skipping frontend build for extension point ${name}`)
+        spinner.info(`no frontend or a build already exists, skipping frontend build for ${name}`)
       }
     }
     try {
@@ -147,16 +151,29 @@ Build.flags = {
   }),
   action: flags.string({
     description: 'Build only a specific action, the flags can be specified multiple times',
-    exclusive: ['skip-actions', 'extensionPoint'],
+    exclusive: ['skip-actions'],
     char: 'a',
     multiple: true
   }),
-  extensionPoint: flags.string({
+  extension: flags.string({
     description: 'Build only a specific extension point, the flags can be specified multiple times',
-    exclusive: ['action'],
-    char: 'e',
-    multiple: true
+    exclusive: ['action', 'extensions'],
+    multiple: true,
+    char: 'e'
+  }),
+  extensions: flags.boolean({
+    description: 'Build only extension points, use --no-extensions to skip extension points and build only the standalone app',
+    allowNo: true,
+    default: undefined,
+    exclusive: ['extension']
   })
+  // TODO decide this or above or both
+  // app: flags.boolean({
+  //   description: 'Build only the standalone application, use --no-app to builds instead',
+  //   exclusive: ['ext', 'action'],
+  //   allowNo: true,
+  //   default: undefined
+  // })
 }
 
 module.exports = Build

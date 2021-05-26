@@ -53,13 +53,30 @@ class BaseCommand extends Command {
     LibConsoleCLI.cleanStdOut()
   }
 
-  getExtensionPointConfigs (flags) {
+  getAppExtConfigs (flags) {
     const config = this.getAppConfig()
-    if (flags.extensionPoint) {
-      // case 1 we have filter flags
+
+    // standalone app only
+    if (flags.extensions === false) {
+      // explicit check for false, flags.extensions can be undefined, meaning it should include all
+      if (config.all.application) {
+        return { application: config.all.application }
+      }
+      return {}
+    }
+
+    if (flags.extensions) {
+      // return all extension point configs but the application
+      const configs = { ...config.all, application: undefined }
+      delete configs.application
+      return configs
+    }
+
+    if (flags.extension) {
+      // return only specified extension points, e.g. -e firefly
       const configs = {}
-      const extPointKeys = Object.keys(config.extensionPointsConfig)
-      flags.extensionPoint.forEach(ef => {
+      const extPointKeys = Object.keys(config.all).filter(k => k !== 'application')
+      flags.extension.forEach(ef => {
         const matching = extPointKeys.filter(ek => ek.includes(ef))
         if (matching.length <= 0) {
           throw new Error(`No matching extension point implementation found for flag '-e ${ef}'`)
@@ -67,12 +84,13 @@ class BaseCommand extends Command {
         if (matching.length > 1) {
           throw new Error(`Flag '-e ${ef}' matches multiple extension point implementation: '${matching}'`)
         }
-        configs[matching[0]] = (config.extensionPointsConfig[matching[0]])
+        configs[matching[0]] = (config.all[matching[0]])
       })
       return configs
     }
-    // case 2 get all
-    return config.extensionPointsConfig
+
+    // no flag return them all
+    return config.all
   }
 
   getAppConfig () {

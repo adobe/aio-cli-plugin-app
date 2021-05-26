@@ -24,7 +24,7 @@ class Info extends BaseCommand {
     delete appConfig.aio
 
     // hide credentials
-    Object.values(appConfig.configs).forEach(config => {
+    Object.values(appConfig.all).forEach(config => {
       if (config.s3.creds) {
         config.s3.creds.accessKeyId = mask(config.s3.creds.accessKeyId)
         config.s3.creds.secretAccessKey = mask(config.s3.creds.secretAccessKey)

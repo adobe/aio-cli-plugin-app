@@ -98,13 +98,13 @@ module.exports = () => {
   const userConfig = loadUserConfig()
 
   // load the full standalone application configuration
-  const configs = {
+  const all = {
     ...loadAppConfig(userConfig, commonConfig),
     ...loadExtConfigs(userConfig, commonConfig)
   }
 
   return {
-    configs,
+    all,
     aio: commonConfig.aio,
     packagejson: commonConfig.packagejson,
     root: process.cwd()
@@ -331,7 +331,7 @@ function loadSingleConfig (configTag, singleUserConfig, commonConfig) {
     manifest: {},
     actions: {},
     // root of the app folder
-    appRoot: process.cwd()
+    root: process.cwd()
     // todo config root ?
   }
 
@@ -341,7 +341,7 @@ function loadSingleConfig (configTag, singleUserConfig, commonConfig) {
   const manifest = singleUserConfig.runtimeManifest
 
   config.app.hasBackend = !!manifest
-  config.app.hasFrontend = fs.existsSync(config.web.src)
+  config.app.hasFrontend = fs.existsSync(web)
   config.app.dist = dist
 
   // actions
@@ -362,8 +362,8 @@ function loadSingleConfig (configTag, singleUserConfig, commonConfig) {
   if (config.app.hasFrontend) {
     config.web.src = absRoot(web)
     config.web.injectedConfig = absRoot(path.join(web, 'src', 'config.json'))
-    config.web.distDev = absRoot(path.join(dist, configTag, `${web}-dev`))
-    config.web.distProd = absRoot(path.join(dist, configTag, `${web}-prod`))
+    config.web.distDev = absRoot(path.join(dist, configTag, 'web-dev'))
+    config.web.distProd = absRoot(path.join(dist, configTag, 'web-prod'))
     config.s3.credsCacheFile = absRoot('.aws.tmp.creds.json')
     config.s3.folder = commonConfig.ow.namespace
 
