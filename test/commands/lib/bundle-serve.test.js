@@ -11,88 +11,53 @@ governing permissions and limitations under the License.
 */
 
 const bundleServe = require('../../../src/lib/bundle-serve')
-const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('../../../src/lib/defaults')
-const httpTerminator = require('http-terminator')
 
-let SERVER_AVAILABLE_PORT
-
-jest.mock('http-terminator')
-
-const mockHttpsServerInstance = {
-  address: jest.fn(() => ({
-    port: SERVER_AVAILABLE_PORT
-  }))
-}
-
-const mockTerminatorInstance = {
-  terminate: jest.fn()
-}
-
-const createBundler = () => {
+let createBundler = () => {
   return {
-    serve: async () => mockHttpsServerInstance
+    watch: jest.fn((cb) => { cb(); return { unsubscribe: jest.fn() } })
   }
 }
 
 beforeEach(() => {
-  SERVER_AVAILABLE_PORT = SERVER_DEFAULT_PORT
-  mockTerminatorInstance.terminate.mockReset()
-  httpTerminator.createHttpTerminator.mockImplementation(() => mockTerminatorInstance)
 })
 
 test('exports', () => {
   expect(typeof bundleServe).toEqual('function')
 })
 
-test('bundle-serve https (set port not available, use default', async () => {
+test('bundle-serve', async () => {
+  const PORT = 8888
   const options = {
-    https: {
-      cert: 'cert.cert',
-      key: 'key.key'
+    serveOptions: {
+      https: false,
+      port: PORT
     }
   }
-
-  const requestedPort = 8888
-  SERVER_AVAILABLE_PORT = 9099
-  const { url } = await bundleServe(createBundler(), requestedPort, options)
-
-  expect(typeof url).toEqual('string')
-  expect(url).toBe(`https://localhost:${SERVER_AVAILABLE_PORT}`) // specificPort not available
-})
-
-test('bundle-serve https (set port available and used', async () => {
-  const options = {
-    https: {
-      cert: 'cert.cert',
-      key: 'key.key'
-    }
-  }
-
-  const requestedPort = 8888
-  SERVER_AVAILABLE_PORT = requestedPort
-  const { url } = await bundleServe(createBundler(), requestedPort, options)
-
-  expect(typeof url).toEqual('string')
-  expect(url).toBe(`https://localhost:${requestedPort}`) // requestedPort available
-})
-
-test('bundle-serve http (and use default port)', async () => {
-  const options = {}
-  const { url } = await bundleServe(createBundler(), undefined, options)
-
-  expect(typeof url).toEqual('string')
-  expect(url).toBe(`http://localhost:${SERVER_DEFAULT_PORT}`)
-  delete process.env.PORT
-})
-
-test('bundle-serve cleanup', async () => {
-  const { cleanup } = await bundleServe(createBundler())
-
-  expect(typeof cleanup).toEqual('function')
+  const { url, cleanup } = await bundleServe(createBundler(), options)
   await cleanup()
+  expect(typeof url).toEqual('string')
+  expect(url).toBe(`http://localhost:${PORT}`) // specificPort not available
+})
 
-  expect(mockTerminatorInstance.terminate).toBeCalledTimes(1)
-  expect(httpTerminator.createHttpTerminator).toHaveBeenCalledWith({
-    server: mockHttpsServerInstance
-  })
+test('bundle-serve https', async () => {
+  const PORT = 8888
+  const options = {
+    serveOptions: {
+      https: true,
+      port: PORT
+    }
+  }
+  const { url, cleanup } = await bundleServe(createBundler(), options)
+  await cleanup()
+  expect(typeof url).toEqual('string')
+  expect(url).toBe(`https://localhost:${PORT}`) // specificPort not available
+})
+
+test('watch error', async () => {
+  createBundler = () => {
+    return {
+      watch: jest.fn((cb) => cb(new Error()))
+    }
+  }
+  await expect(bundleServe(createBundler(), {})).rejects.toThrowError()
 })

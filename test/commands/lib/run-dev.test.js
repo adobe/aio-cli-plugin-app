@@ -24,6 +24,7 @@ global.mockFs()
 const runDev = require('../../../src/lib/run-dev')
 const runLocalRuntime = require('../../../src/lib/run-local-runtime')
 const loadConfig = require('../../../src/lib/config-loader')
+const defaults = require('../../../src/lib/defaults')
 const cloneDeep = require('lodash.clonedeep')
 const path = require('path')
 const mockAIOConfig = require('@adobe/aio-lib-core-config')
@@ -42,6 +43,7 @@ const appHelper = require('../../../src/lib/app-helper')
 const execa = require('execa')
 const yeoman = require('yeoman-environment')
 const fs = require('fs-extra')
+const getPort = require('get-port')
 
 const mockYeomanRegister = jest.fn()
 const mockYeomanRun = jest.fn()
@@ -60,6 +62,10 @@ jest.mock('../../../src/lib/build-actions')
 jest.mock('../../../src/lib/deploy-actions')
 jest.mock('../../../src/lib/log-poller')
 jest.mock('@adobe/aio-lib-env')
+jest.mock('get-port')
+getPort.mockImplementation(() => {
+  return defaults.defaultHttpServerPort
+})
 
 jest.mock('../../../src/lib/app-helper', () => {
   const moduleMock = jest.requireActual('../../../src/lib/app-helper')
@@ -520,46 +526,55 @@ function runCommonWithFrontendTests (ref) {
     expect(bundleServe).toHaveBeenCalled()
   })
 
+  test('should start a ui server : find available port', async () => {
+    const options = { devRemote: ref.devRemote }
+    getPort.mockImplementationOnce(() => 12345)
+    await runDev(ref.config, options)
+    expect(serve).not.toHaveBeenCalled()
+    expect(bundleServe).toHaveBeenCalled()
+    expect(bundleServe).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ serveOptions: { https: undefined, port: 12345 } }), expect.anything())
+  })
+
   test('should cleanup ui server on SIGINT', async () => {
     execa.mockImplementation(() => ({
       kill: jest.fn()
     }))
 
-    const mockBundlerCleanup = jest.fn()
-    bundle.mockImplementation(() => ({
-      bundler: jest.fn(),
-      cleanup: mockBundlerCleanup
+    const mockServeCleanup = jest.fn()
+    bundleServe.mockImplementation(() => ({
+      url: '',
+      cleanup: mockServeCleanup
     }))
 
     return new Promise(resolve => {
       testCleanupNoErrors(resolve, ref, () => {
-        expect(mockBundlerCleanup).toHaveBeenCalledTimes(1)
+        expect(mockServeCleanup).toHaveBeenCalledTimes(1)
       })
     })
   })
 
   test('should cleanup ui server on error', async () => {
-    const mockBundlerCleanup = jest.fn()
-    bundle.mockImplementation(() => ({
-      bundler: jest.fn(),
-      cleanup: mockBundlerCleanup
+    const mockServeCleanup = jest.fn()
+    bundleServe.mockImplementation(() => ({
+      url: '',
+      cleanup: mockServeCleanup
     }))
 
     await testCleanupOnError(ref, () => {
-      expect(mockBundlerCleanup).toHaveBeenCalledTimes(1)
+      expect(mockServeCleanup).toHaveBeenCalledTimes(1)
     })
   })
 
   test('should exit with 1 if there is an error in cleanup', async () => {
-    const mockBundlerCleanup = jest.fn()
-    bundle.mockImplementation(() => ({
-      bundler: jest.fn(),
-      cleanup: mockBundlerCleanup
+    const mockServeCleanup = jest.fn()
+    bundleServe.mockImplementation(() => ({
+      url: '',
+      cleanup: mockServeCleanup
     }))
 
     return new Promise(resolve => {
       const theError = new Error('theerror')
-      mockBundlerCleanup.mockRejectedValue(theError)
+      mockServeCleanup.mockRejectedValue(theError)
       process.removeAllListeners('SIGINT')
       process.exit.mockImplementation(() => {
         expect(mockLogger.error).toHaveBeenCalledWith(theError)
