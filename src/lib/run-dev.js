@@ -107,9 +107,6 @@ async function runDev (config, options = {}, log = () => {}) {
             port: uiPort,
             https: bundleOptions.https
           }
-          bundleOptions.additionalReporters = [
-            { packageName: '@parcel/reporter-dev-server', resolveFrom: __filename }
-          ]
           defaultBundler = await bundle(entryFile, config.web.distDev, bundleOptions, log)
         }
       }
