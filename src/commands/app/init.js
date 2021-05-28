@@ -20,9 +20,15 @@ const { installPackage } = require('../../lib/app-helper')
 
 const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV } = require('../../lib/defaults')
 
+const DEFAULT_WORKSPACE = 'Stage'
+
 class InitCommand extends BaseCommand {
   async run () {
     const { args, flags } = this.parse(InitCommand)
+
+    if (!flags.login && flags.workspace !== DEFAULT_WORKSPACE) {
+      this.error('--no-login and --workspace flags cannot be used together.')
+    }
 
     if (flags.import) {
       // resolve to absolute path before any chdir
@@ -94,27 +100,31 @@ class InitCommand extends BaseCommand {
     const orgSupportedServices = await consoleCLI.getEnabledServicesForOrg(org.id)
     // 3. select or create project
     const project = await this.selectOrCreateConsoleProject(consoleCLI, org)
-    // 4. ask for exensionPoints, only allow selection for extensions that have services enabled in Org
+    // 4. retrieve workspace details, defaults to Stage
+    const workspace = await this.retrieveWorkspaceFromName(consoleCLI, org, project, flags.workspace)
+    // 5. ask for exensionPoints, only allow selection for extensions that have services enabled in Org
     const extensionPoints = await this.selectExtensionPoints(flags, orgSupportedServices)
-    // 5. setup workspace, default to 'Stage' workspace
-    // This will also add any required services
+    // 6. add any required services to Workspace
     const requiredServices = this.getAllRequiredServicesFromExtPoints(extensionPoints)
-    const workspace = await this.setupConsoleWorkspace(
+    await this.addServices(
       consoleCLI,
       org,
       project,
+      workspace,
       orgSupportedServices,
-      requiredServices,
-      'Stage'
+      requiredServices
     )
-    // 6. download workspace config
+
+    // 7. download workspace config
     const consoleConfig = await consoleCLI.getWorkspaceConfig(org.id, project.id, workspace.id, orgSupportedServices)
 
-    // 7. run code generators
+    // 8. run code generators
     await this.runCodeGenerators(flags, extensionPoints, consoleConfig.project.name)
 
-    // 8. import config
+    // 9. import config
     await this.importConsoleConfig(consoleConfig)
+
+    this.log(`You are currently in Workspace ${workspace.name}, you can run 'aio app use -w <workspace>' in your application folder to switch workspace.`)
   }
 
   /**
@@ -212,21 +222,25 @@ class InitCommand extends BaseCommand {
     return project
   }
 
+  async retrieveWorkspaceFromName (consoleCLI, org, project, workspaceName) {
+    // get workspace details
+    const workspaces = await consoleCLI.getWorkspaces(org.id, project.id)
+    const workspace = workspaces.find(w => w.name.toLowerCase() === workspaceName.toLowerCase())
+    if (!workspace) {
+      throw new Error(`'--workspace=${workspaceName}' in Project ${project.name} not found.`)
+    }
+    return workspace
+  }
+
   /**
    * @param consoleCLI
    * @param org
    * @param project
+   * @param workspace
    * @param orgSupportedServices
    * @param requiredServices
-   * @param workspaceName
    */
-  async setupConsoleWorkspace (consoleCLI, org, project, orgSupportedServices, requiredServices, workspaceName = 'Stage') {
-  // get workspace details
-    const workspaces = await consoleCLI.getWorkspaces(org.id, project.id)
-    // this won't prompt but load details for the given workspace
-    // todo support passing workspaceName as flag and create if not exist
-    const workspace = await consoleCLI.promptForSelectWorkspace(workspaces, { workspaceName })
-
+  async addServices (consoleCLI, org, project, workspace, orgSupportedServices, requiredServices) {
     // add required services if needed (for extension point)
     const currServiceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
       org.id,
@@ -366,6 +380,12 @@ InitCommand.flags = {
     description: 'Use --no-extensions to create a blank application that does not integrate with Exchange',
     default: true,
     allowNo: true
+  }),
+  workspace: flags.string({
+    description: 'Specify the Adobe Developer Console Workspace to init from, defaults to Stage',
+    default: DEFAULT_WORKSPACE,
+    char: 'w',
+    exclusive: ['import']
   })
 }
 
