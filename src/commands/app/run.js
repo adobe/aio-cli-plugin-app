@@ -46,17 +46,10 @@ class Run extends BaseCommand {
     }
     const name = entries[0][0]
     const config = entries[0][1]
-    // now we are good, either there is only 1 extension point or -e flag for one was provided
-    await this.runOneExtensionPoint(name, config, flags, spinner)
 
     try {
-      // TODO THIS NEEDS MORE THINKING
-      // 2. deploy extension manifest partially ?
-      // if (!flags['no-publish']) {
-      //   const fullConfig = this.getAppConfig()
-
-      //   this.deployExtensionManifestPartial(fullConfig, name)
-      // }
+      // now we are good, either there is only 1 extension point or -e flag for one was provided
+      await this.runOneExtensionPoint(name, config, flags, spinner)
     } catch (error) {
       spinner.stop()
       // delegate to top handler

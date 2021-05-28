@@ -76,7 +76,9 @@ class InitCommand extends BaseCommand {
     // 5. This flow supports non logged in users so we can't now for sure if the project has
     //    required services installed. So we output a note on required services instead.
     const requiredServices = this.getAllRequiredServicesFromExtPoints(extensionPoints)
-    this.log(`Please ensure the following service(s) are enabled in the Organization and added to the Console Workspace: ${requiredServices}`)
+    if (requiredServices.length > 0) {
+      this.log(`Please ensure the following service(s) are enabled in the Organization and added to the Console Workspace: ${requiredServices}`)
+    }
   }
 
   /**
@@ -90,10 +92,10 @@ class InitCommand extends BaseCommand {
     const org = await this.selectConsoleOrg(consoleCLI)
     // 2. get supported services
     const orgSupportedServices = await consoleCLI.getEnabledServicesForOrg(org.id)
-    // 3. ask for exensionPoints, only allow selection for extensions that have services enabled in Org
-    const extensionPoints = await this.selectExtensionPoints(flags, orgSupportedServices)
-    // 4. select or create project
+    // 3. select or create project
     const project = await this.selectOrCreateConsoleProject(consoleCLI, org)
+    // 4. ask for exensionPoints, only allow selection for extensions that have services enabled in Org
+    const extensionPoints = await this.selectExtensionPoints(flags, orgSupportedServices)
     // 5. setup workspace, default to 'Stage' workspace
     // This will also add any required services
     const requiredServices = this.getAllRequiredServicesFromExtPoints(extensionPoints)
@@ -243,7 +245,7 @@ class InitCommand extends BaseCommand {
             name: orgServiceDefinition.name,
             roles: orgServiceDefinition.properties.roles,
             // add all licenseConfigs
-            licenseConfig: orgServiceDefinition.properties.licenseConfigs
+            licenseConfigs: orgServiceDefinition.properties.licenseConfigs
           }
         })
       await consoleCLI.subscribeToServices(
@@ -255,8 +257,6 @@ class InitCommand extends BaseCommand {
         // new service properties
         currServiceProperties.concat(servicePropertiesToAdd)
       )
-      // console.log(JSON.stringify(res))
-      // console.log(JSON.stringify(currServiceProperties.concat(servicePropertiessToAdd)))
     }
     return workspace
   }

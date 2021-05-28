@@ -57,19 +57,11 @@ class BaseCommand extends Command {
     const config = this.getAppConfig()
 
     // standalone app only
-    if (flags.extensions === false) {
-      // explicit check for false, flags.extensions can be undefined, meaning it should include all
+    if (!flags.extensions) {
       if (config.all.application) {
         return { application: config.all.application }
       }
       return {}
-    }
-
-    if (flags.extensions) {
-      // return all extension point configs but the application
-      const configs = { ...config.all, application: undefined }
-      delete configs.application
-      return configs
     }
 
     if (flags.extension) {

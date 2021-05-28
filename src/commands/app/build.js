@@ -162,9 +162,9 @@ Build.flags = {
     char: 'e'
   }),
   extensions: flags.boolean({
-    description: 'Build only extension points, use --no-extensions to skip extension points and build only the standalone app',
+    description: 'Build extension points, defaults to true, use --no-extensions to skip and build only the standalone app',
     allowNo: true,
-    default: undefined,
+    default: true,
     exclusive: ['extension']
   })
   // TODO decide this or above or both

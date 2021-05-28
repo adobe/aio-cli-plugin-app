@@ -36,7 +36,7 @@ class Deploy extends BuildCommand {
     const values = Object.values(deployConfigs)
 
     if (keys.length <= 0) {
-      this.error('Nothing to deploy')
+      this.error('Nothing to deploy 🚫')
     }
     const spinner = ora()
 
@@ -101,7 +101,7 @@ class Deploy extends BuildCommand {
               }
               // op.type === 'web'
               // todo support multi spas + make url fetch util in aio-lib-web
-              return { href: `https://${extPointConfig.ow.namespace}.${extPointConfig.app.hostname}/index.html`, ...op.params }
+              return { href: `https://${extPointConfig.ow.namespace}.${extPointConfig.app.hostname}/${op.impl}`, ...op.params }
             })
           })
       })
@@ -272,9 +272,9 @@ Deploy.flags = {
     multiple: true
   }),
   extensions: flags.boolean({
-    description: 'Deploy only extension points, use --no-extensions to skip extension points and build only the standalone app',
+    description: 'Deploy extension points, defaults to true, use --no-extensions to skip and deploy only the standalone app',
     allowNo: true,
-    default: undefined,
+    default: true,
     exclusive: ['extension']
   })
 }

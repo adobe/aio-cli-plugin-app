@@ -43,9 +43,10 @@ const INCLUDE_DIRECTIVE = '$include'
 /**
  * loading config returns following object (this config is internal, not user facing):
  *  {
- *    extensionPoints: {Manifest}
- *    extensionPointsConfig: {
- *      'aem/nui/1': {
+ *    aio: {...aioConfig...},
+ *    packagejson: {...package.json...},
+ *    all: {
+ *      OPTIONAL:'application': {
  *        app: {
  *          name,
  *          version,
@@ -84,7 +85,13 @@ const INCLUDE_DIRECTIVE = '$include'
  *          urls
  *        }
  *      }
- *    }
+ *    },
+ *    OPTIONAL:'aem/nui/v1': {
+ *       ...same as above...
+ *    },
+ *    OPTIONAL:'firefly/excshell/v1': {
+ *       ...same as above...
+ *    },
  *  }
  */
 
@@ -217,8 +224,8 @@ function loadUserConfig () {
  */
 function loadExtConfigs (userConfig, commonConfig) {
   const configs = {}
-  if (userConfig.extension) {
-    Object.entries(userConfig.extension).forEach(([extName, singleUserConfig]) => {
+  if (userConfig.extensions) {
+    Object.entries(userConfig.extensions).forEach(([extName, singleUserConfig]) => {
       const extTag = extName.replace(/\//g, '-') // used as folder in dist
       configs[extName] = loadSingleConfig(extTag, singleUserConfig, commonConfig)
       // extensions have an extra operations field
@@ -238,9 +245,9 @@ function loadExtConfigs (userConfig, commonConfig) {
 function loadAppConfig (userConfig, commonConfig) {
   // legacy user app config: manifest.yaml, package.json, .aio.app
   const legacyAppConfig = loadLegacyUserAppConfig(commonConfig)
-  userConfig.application = mergeUserAppConfigs(userConfig.application, legacyAppConfig)
-  const fullAppConfig = loadSingleConfig('application', userConfig.application, commonConfig)
-  if (!fullAppConfig.hasBackend && !fullAppConfig.hasFrontend) {
+  const mergedUserAppConfig = mergeUserAppConfigs(userConfig.application, legacyAppConfig)
+  const fullAppConfig = loadSingleConfig('application', mergedUserAppConfig, commonConfig)
+  if (!fullAppConfig.app.hasBackend && !fullAppConfig.app.hasFrontend) {
     // only set application config if there is an actuall app, meaning either some backend or frontend
     return {}
   }
@@ -286,26 +293,22 @@ function loadLegacyUserAppConfig (commonConfig) {
 }
 
 /**
- * @param appConfig
- * @param legacyAppConfig
+ * @param userAppConfig
+ * @param legacyUserAppConfig
  */
-function mergeUserAppConfigs (appConfig, legacyAppConfig) {
-  if (!appConfig && !legacyAppConfig) {
-    return null
-  }
-
+function mergeUserAppConfigs (userAppConfig, legacyUserAppConfig) {
   // merge 1 level config fields, such as 'actions': 'path/to/actions', precedence for new config
-  const merged = { ...legacyAppConfig, ...appConfig }
+  const merged = { ...legacyUserAppConfig, ...userAppConfig }
 
   // special cases if both are defined
-  if (legacyAppConfig && appConfig) {
+  if (legacyUserAppConfig && userAppConfig) {
     // for simplicity runtimeManifest is not merged, it's one or the other
-    if (legacyAppConfig.runtimeManifest && appConfig.runtimeManifest) {
+    if (legacyUserAppConfig.runtimeManifest && userAppConfig.runtimeManifest) {
       console.error(chalk.yellow('Warning: manifest.yml is ignored in favor of app.config.yaml \'runtimeManifest\' field.'))
     }
     // hooks are merged
-    if (legacyAppConfig.hooks && appConfig.hooks) {
-      merged.hooks = { ...legacyAppConfig.hooks, ...appConfig.hooks }
+    if (legacyUserAppConfig.hooks && userAppConfig.hooks) {
+      merged.hooks = { ...legacyUserAppConfig.hooks, ...userAppConfig.hooks }
     }
   }
 
