@@ -56,8 +56,8 @@ class Use extends BaseCommand {
 
     // load from global configuration or select workspace ?
     const globalOperationFromFlag = flags.global ? 'global' : null
-    const workspaceOperationFromFlag = (flags.workspace || flags['workspace-name']) ? 'workspace' : null
-    // did the user specify --global or --workspace or workspace-name
+    const workspaceOperationFromFlag = flags.workspace ? 'workspace' : null
+    // did the user specify --global or --workspace
     // Note: global workspace(-name) flags are exclusive (see oclif flags options)
     let useOperation = globalOperationFromFlag || workspaceOperationFromFlag
     // if operation was not specified via flags we need to prompt the user for it
@@ -119,13 +119,13 @@ class Use extends BaseCommand {
 
   additionalArgsFlagsProcessing (args, flags) {
     if (args.config_file_path &&
-      (flags.workspace || flags['workspace-name'] || flags.global)
+      (flags.workspace || flags.global)
     ) {
-      this.error('Flags \'--workspace\', \'--workspace-name\' and \'--global\' cannot be used together with arg \'config_file_path\'.')
+      this.error('Flags \'--workspace\' and \'--global\' cannot be used together with arg \'config_file_path\'.')
     }
     if (flags['no-input']) {
-      if (!args.config_file_path && !flags['workspace-name'] && !flags.global) {
-        this.error('Flag \'--no-input\', requires one of: arg \'config_file_path\', flag \'--workspace-name\' or flag \'--global\'')
+      if (!args.config_file_path && !flags.workspace && !flags.global) {
+        this.error('Flag \'--no-input\', requires one of: arg \'config_file_path\', flag \'--workspace\' or flag \'--global\'')
       }
       flags['no-service-sync'] = !flags['confirm-service-sync']
       flags.merge = !flags.overwrite
@@ -190,10 +190,10 @@ class Use extends BaseCommand {
     const currentWorkspace = { name: config.workspace.name, id: config.workspace.id }
 
     // make sure user is not trying to switch to current workspace
-    const workspaceNameFlag = flags['workspace-name']
-    if (workspaceNameFlag === currentWorkspace.name) {
+    const workspaceFlag = flags.workspace
+    if (workspaceFlag === currentWorkspace.name) {
       this.cleanConsoleCLIOutput()
-      this.error(`--workspace-name=${workspaceNameFlag} is the same as the currently selected workspace, nothing to be done.`)
+      this.error(`--workspace=${workspaceFlag} is the same as the currently selected workspace, nothing to be done.`)
     }
 
     // retrieve all workspaces
@@ -205,12 +205,12 @@ class Use extends BaseCommand {
 
     let workspace
 
-    if (workspaceNameFlag) {
+    if (workspaceFlag) {
       // workspace name is given, make sure the workspace is in there
-      workspace = workspacesButCurrent.find(w => w.name === workspaceNameFlag)
+      workspace = workspacesButCurrent.find(w => w.name === workspaceFlag)
       if (!workspace) {
         this.cleanConsoleCLIOutput()
-        this.error(`--workspace-name=${workspaceNameFlag} does not exist in current Project ${project.name}.`)
+        this.error(`--workspace=${workspaceFlag} does not exist in current Project ${project.name}.`)
       }
     } else {
       // workspace name is not given, let the user choose the
@@ -382,14 +382,9 @@ Use.flags = {
     description: 'Use the global Adobe Developer Console Org / Project / Workspace configuration, which can be set via `aio console` commands',
     default: false,
     char: 'g',
-    exclusive: ['workspace', 'workspace-name']
+    exclusive: ['workspace']
   }),
-  workspace: flags.boolean({
-    description: 'Prompt for selection of a Workspace in the same Project, and import the configuration for this Workspace',
-    default: false,
-    exclusive: ['global']
-  }),
-  'workspace-name': flags.string({
+  workspace: flags.string({
     description: 'Specify the Adobe Developer Console Workspace name to import the configuration from',
     default: '',
     char: 'w',
@@ -406,7 +401,7 @@ Use.flags = {
     exclusive: ['no-service-sync']
   }),
   'no-input': flags.boolean({
-    description: 'Skip user prompts by setting --no-service-sync and --merge. Requires one of config_file_path or --global or --workspace-name',
+    description: 'Skip user prompts by setting --no-service-sync and --merge. Requires one of config_file_path or --global or --workspace',
     default: false
   })
 }
