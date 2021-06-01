@@ -13,10 +13,12 @@ const BaseCommand = require('../../BaseCommand')
 const yeoman = require('yeoman-environment')
 const path = require('path')
 const fs = require('fs-extra')
+const ora = require('ora')
+const chalk = require('chalk')
 // const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
-const { installPackage } = require('../../lib/app-helper')
+const { installPackages } = require('../../lib/app-helper')
 
 const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV } = require('../../lib/defaults')
 
@@ -41,6 +43,7 @@ class InitCommand extends BaseCommand {
       process.chdir(destDir)
     }
 
+    const spinner = ora()
     if (flags.import || !flags.login) {
       // import a console config - no login required!
       await this.initNoLogin(flags)
@@ -50,10 +53,14 @@ class InitCommand extends BaseCommand {
     }
 
     // install packages, always at the end, so user can ctrl+c
-    await this.installPackages(flags)
+    if (!flags['skip-install']) {
+      await installPackages('.', { spinner, verbose: flags.verbose })
+    } else {
+      this.log('--skip-install, make sure to run \'npm install\' later on')
+    }
 
-    this.log('✔ App initialization finished!')
-    this.log('You can add actions, web-assets, events and more to your project via the `aio app add` commands')
+    this.log(chalk.bold(chalk.green('✔ App initialization finished!')))
+    this.log('> Tip: you can add more actions, web-assets and events to your project via the `aio app add` commands')
   }
 
   /**
@@ -64,7 +71,7 @@ class InitCommand extends BaseCommand {
     let consoleConfig
     if (flags.import) {
       consoleConfig = loadAndValidateConfigFile(flags.import).values
-      this.log(`✔ Loaded Adobe Developer Console configuration file for the Project '${consoleConfig.project.title}' in the Organization '${consoleConfig.project.org.name}'`)
+      this.log(chalk.green(`Loaded Adobe Developer Console configuration file for the Project '${consoleConfig.project.title}' in the Organization '${consoleConfig.project.org.name}'`))
     }
 
     // 2. prompt for extension points to be implemented
@@ -83,7 +90,7 @@ class InitCommand extends BaseCommand {
     //    required services installed. So we output a note on required services instead.
     const requiredServices = this.getAllRequiredServicesFromExtPoints(extensionPoints)
     if (requiredServices.length > 0) {
-      this.log(`Please ensure the following service(s) are enabled in the Organization and added to the Console Workspace: ${requiredServices}`)
+      this.log(chalk.bold(`Please ensure the following service(s) are enabled in the Organization and added to the Console Workspace: '${requiredServices}'`))
     }
   }
 
@@ -301,8 +308,6 @@ class InitCommand extends BaseCommand {
     // first run app generator that will generate the root skeleton
     const appGen = env.create(require.resolve('@adobe/generator-aio-app/generators/base'), {
       options: {
-        // todo clear up skip-install flags
-        'skip-install': true,
         'skip-prompt': flags.yes,
         'project-name': projectName
       }
@@ -312,23 +317,12 @@ class InitCommand extends BaseCommand {
       appGen.composeWith(
         require.resolve(e.generator), {
           options: {
-            // todo clear up skip-install flags
-            'skip-install': true,
             'skip-prompt': flags.yes
           }
         })
     })
 
     await env.runGenerator(appGen)
-  }
-
-  async installPackages (flags) {
-    if (!flags['skip-install']) {
-      // todo spinner + single line output
-      // todo ctrl+c handler
-      this.log('Installing packages, this might take a while..')
-      await installPackage('.')
-    }
   }
 
   // console config is already loaded into object

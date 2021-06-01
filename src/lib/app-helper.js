@@ -34,8 +34,14 @@ function isGitInstalled () {
 }
 
 /** @private */
-async function installPackage (dir) {
+async function installPackages (dir, options = { spinner: null, verbose: false }) {
+  // todo support for ctrl + c handler to "install later"
+
+  if (options.spinner && !options.verbose) {
+    options.spinner.start('Installing packages...')
+  }
   aioLogger.debug(`running npm install : ${dir}`)
+
   if (!(fs.statSync(dir).isDirectory())) {
     aioLogger.debug(`${dir} is not a directory`)
     throw new Error(`${dir} is not a directory`)
@@ -44,8 +50,17 @@ async function installPackage (dir) {
     aioLogger.debug(`${dir} does not contain a package.json file.`)
     throw new Error(`${dir} does not contain a package.json file.`)
   }
+  const execaOptions = { cwd: dir }
+  if (options.verbose) {
+    execaOptions.stderr = 'inherit'
+    execaOptions.stdout = 'inherit'
+  }
   // npm install
-  return execa('npm', ['install'], { cwd: dir })
+  const ret = await execa('npm', ['install'], execaOptions)
+  if (options.spinner && !options.verbose) {
+    options.spinner.stop(chalk.green('Packages installed!'))
+  }
+  return ret
 }
 
 /** @private */
@@ -369,7 +384,7 @@ function setOrgServicesConfig (supportedServices) {
 module.exports = {
   isNpmInstalled,
   isGitInstalled,
-  installPackage,
+  installPackages,
   runScript,
   runPackageScript,
   wrapError,

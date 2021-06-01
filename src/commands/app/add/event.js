@@ -13,20 +13,26 @@ const BaseCommand = require('../../../BaseCommand')
 const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:event', { provider: 'debug' })
 const { flags } = require('@oclif/command')
+const { installPackages } = require('../../../lib/app-helper')
+const ora = require('ora')
 
 class AddEventCommand extends BaseCommand {
   async run () {
     const { flags } = this.parse(AddEventCommand)
-
+    const spinner = ora()
     aioLogger.debug('adding event to the project, using flags: ', flags)
 
     const generator = '@adobe/generator-aio-app/generators/add-events'
     const env = yeoman.createEnv()
     env.register(require.resolve(generator), 'gen')
     const res = await env.run('gen', {
-      'skip-install': flags['skip-install'],
       'skip-prompt': flags.yes
     })
+    if (!flags['skip-install']) {
+      await installPackages('.', { spinner, verbose: flags.verbose })
+    } else {
+      this.log('--skip-install, make sure to run \'npm install\' later on')
+    }
     return res
   }
 }

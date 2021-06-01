@@ -13,8 +13,9 @@ const BaseCommand = require('../../../BaseCommand')
 const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
 const { flags } = require('@oclif/command')
+const ora = require('ora')
 
-const { servicesToGeneratorInput } = require('../../../lib/app-helper')
+const { servicesToGeneratorInput, installPackages } = require('../../../lib/app-helper')
 const config = require('@adobe/aio-lib-core-config')
 
 class AddActionCommand extends BaseCommand {
@@ -22,6 +23,7 @@ class AddActionCommand extends BaseCommand {
     const { args, flags } = this.parse(AddActionCommand)
 
     aioLogger.debug(`adding component ${args.component} to the project, using flags: ${flags}`)
+    const spinner = ora()
 
     const workspaceServices =
       config.get('services') || // legacy
@@ -33,11 +35,16 @@ class AddActionCommand extends BaseCommand {
     const env = yeoman.createEnv()
     env.register(require.resolve(generator), 'gen')
     const res = await env.run('gen', {
-      'skip-install': flags['skip-install'],
       'skip-prompt': flags.yes,
       'adobe-services': servicesToGeneratorInput(workspaceServices),
       'supported-adobe-services': servicesToGeneratorInput(supportedOrgServices)
     })
+
+    if (!flags['skip-install']) {
+      await installPackages('.', { spinner, verbose: flags.verbose })
+    } else {
+      this.log('--skip-install, make sure to run \'npm install\' later on')
+    }
     return res
   }
 }

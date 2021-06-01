@@ -13,13 +13,15 @@ const BaseCommand = require('../../../BaseCommand')
 const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:web-assets', { provider: 'debug' })
 const { flags } = require('@oclif/command')
+const { installPackages } = require('../../../lib/app-helper')
+const ora = require('ora')
 
 const config = require('@adobe/aio-lib-core-config')
 
 class AddWebAssetsCommand extends BaseCommand {
   async run () {
     const { args, flags } = this.parse(AddWebAssetsCommand)
-
+    const spinner = ora()
     aioLogger.debug(`adding component ${args.component} to the project, using flags: ${flags}`)
 
     const services = (config.get('services') || []).map(s => s.code).join(',')
@@ -28,10 +30,14 @@ class AddWebAssetsCommand extends BaseCommand {
     const env = yeoman.createEnv()
     env.register(require.resolve(generator), 'gen')
     const res = await env.run('gen', {
-      'skip-install': flags['skip-install'],
       'skip-prompt': flags.yes,
       'adobe-services': services
     })
+    if (!flags['skip-install']) {
+      await installPackages('.', { spinner, verbose: flags.verbose })
+    } else {
+      this.log('--skip-install, make sure to run \'npm install\' later on')
+    }
     return res
   }
 }
