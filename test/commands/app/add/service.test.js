@@ -59,15 +59,18 @@ function setDefaultMockConfig () {
 
 // mock login - mocks underlying methods behind getCliInfo
 const mockAccessToken = 'some-access-token'
-const mockGetCli = jest.fn(() => {})
 const mockSetCli = jest.fn()
 jest.mock('@adobe/aio-lib-ims', () => {
   return {
     context: {
-      getCli: () => mockGetCli(),
       setCli: () => mockSetCli()
     },
     getToken: () => mockAccessToken
+  }
+})
+jest.mock('@adobe/aio-lib-env', () => {
+  return {
+    getCliEnv: () => 'prod'
   }
 })
 

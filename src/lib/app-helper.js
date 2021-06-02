@@ -21,6 +21,7 @@ const chalk = require('chalk')
 const aioConfig = require('@adobe/aio-lib-core-config')
 const { AIO_CONFIG_WORKSPACE_SERVICES, AIO_CONFIG_ORG_SERVICES } = require('./defaults')
 const { EOL } = require('os')
+const { getCliEnv } = require('@adobe/aio-lib-env')
 
 /** @private */
 function isNpmInstalled () {
@@ -133,12 +134,12 @@ function wrapError (err) {
 
 /** @private */
 async function getCliInfo () {
-  const { env = 'prod' } = await context.getCli() || {}
   await context.setCli({ 'cli.bare-output': true }, false) // set this globally
 
   aioLogger.debug('Retrieving CLI Token')
   const accessToken = await getToken(CLI)
 
+  const env = getCliEnv()
   return { accessToken, env }
 }
 
