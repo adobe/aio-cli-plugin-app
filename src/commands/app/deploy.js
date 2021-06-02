@@ -28,31 +28,41 @@ class Deploy extends BuildCommand {
     const { flags } = this.parse(Deploy)
 
     flags['skip-static'] = flags['skip-static'] || !!flags.action || flags['skip-web-assets']
-    flags['no-publish'] = flags['no-publish'] || !!flags.action || flags.extensions === false
-
+    flags.publish = flags.publish || !flags.action
     const deployConfigs = this.getAppExtConfigs(flags)
+    let libConsoleCLI
+    if (flags.publish) {
+      // force login at beginning (if required)
+      libConsoleCLI = await this.getLibConsoleCLI()
+    }
 
     const keys = Object.keys(deployConfigs)
     const values = Object.values(deployConfigs)
 
-    if (keys.length <= 0) {
-      this.error('Nothing to deploy 🚫')
+    if (
+      keys.length <= 0 ||
+      (!flags.publish && flags['skip-static'] && flags['skip-actions']) ||
+      (!flags.publish && flags['skip-build'] && flags['skip-deploy'])
+    ) {
+      this.error('Nothing to be done 🚫')
     }
     const spinner = ora()
 
     try {
-      // 1. build actions and web assets for each extension
-      // TODO parallelize ?
-      // TODO smaller pieces deploy all actions then all web assets
+      // 1. deploy actions and web assets for each extension
+      // Possible improvements:
+      // - parallelize
+      // - break into smaller pieces deploy, allowing to first deploy all actions then all web assets
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
         const v = values[i]
-        await this.deployOneExtActionsAndWebAssets(k, v, flags, spinner)
+        await this.deploySingleConfig(k, v, flags, spinner)
       }
       // 2. deploy extension manifest
-      if (!flags['no-publish']) {
+      if (flags.publish) {
         const aioConfig = this.getAppConfig().aio
-        this.deployExtensionManifest(deployConfigs, aioConfig)
+        const payload = this.buildExtensionPointPayload(deployConfigs)
+        await this.publishExtensionPoints(libConsoleCLI, payload, aioConfig)
       }
     } catch (error) {
       spinner.stop()
@@ -76,54 +86,7 @@ class Deploy extends BuildCommand {
     // }
   }
 
-  async deployExtensionManifest (deployConfigs, aioConfig) {
-    // 1. build payload
-    const endpointsPayload = {}
-    // TODO: the loop is deep and should be simplified and commented
-    Object.entries(deployConfigs)
-      .filter(([k, v]) => k !== 'application')
-      .forEach(([extPointName, extPointConfig]) => {
-        endpointsPayload[extPointName] = {}
-        Object.entries(extPointConfig.operations)
-          .forEach(([opName, opList]) => {
-            endpointsPayload[extPointName][opName] = opList.map(op => {
-              if (op.type === 'action') {
-                // todo modularize with getActionUrls from appHelper
-                const owPackage = op.impl.split('/')[0]
-                const owAction = op.impl.split('/')[1]
-                const manifestAction = extPointConfig.manifest.full.packages[owPackage].actions[owAction]
-                const webArg = manifestAction['web-export'] || manifestAction.web
-                const webUri = (webArg && webArg !== 'no' && webArg !== 'false') ? 'web' : ''
-                const packageWithAction = op.impl
-                // todo non runtime apihost do not support namespace as subdomain
-                const href = urlJoin('https://' + extPointConfig.ow.namespace + '.' + removeProtocolFromURL(extPointConfig.ow.apihost), 'api', extPointConfig.ow.apiversion, webUri, packageWithAction)
-                return { href, ...op.params }
-              }
-              // op.type === 'web'
-              // todo support multi spas + make url fetch util in aio-lib-web
-              return { href: `https://${extPointConfig.ow.namespace}.${extPointConfig.app.hostname}/${op.impl}`, ...op.params }
-            })
-          })
-      })
-    const extensionPayload = {
-      id: 'FILL ME',
-      name: `${aioConfig.project.org.id}-${aioConfig.project.name}`,
-      endpoints: endpointsPayload,
-      services: { FILL: 'ME' },
-      releaseNotes: 'FILL ME',
-      // todo do better than [0].id
-      technicalUserId: aioConfig.project.workspace.credentials && aioConfig.project.workspace.credentials[0].id,
-      appId: 'FILL ME',
-      publisherId: 'FILL ME'
-    }
-
-    // 2. deploy to ext reg
-    // TODO deploy full - overwrite
-    this.log(chalk.blue('Extension Registry Payload, to be sent:'))
-    this.log(chalk.blue(JSON.stringify(extensionPayload, null, 2)))
-  }
-
-  async deployOneExtActionsAndWebAssets (name, config, flags, spinner) {
+  async deploySingleConfig (name, config, flags, spinner) {
     const onProgress = !flags.verbose ? info => {
       spinner.text = info
     } : info => {
@@ -155,9 +118,7 @@ class Deploy extends BuildCommand {
           if (filterActions) {
             filterEntities = { actions: filterActions }
           }
-          // todo: fix this, the following change does not work, if we call rtLib version it chokes on some actions
-          // Error: EISDIR: illegal operation on a directory, read
-          const message = `Deploying actions for extension point ${name}`
+          const message = `Deploying actions '${name}'`
           spinner.start(message)
           try {
             const script = await runScript(config.hooks['deploy-actions'])
@@ -170,13 +131,13 @@ class Deploy extends BuildCommand {
             throw err
           }
         } else {
-          this.log(`no backend, skipping action deploy for extension point ${name}`)
+          this.log(`no backend, skipping action deploy '${name}'`)
         }
       }
 
       if (!flags['skip-static'] && !flags['skip-web-assets']) {
         if (config.app.hasFrontend) {
-          const message = `Deploying web assets for extension point ${name}`
+          const message = `Deploying web assets '${name}'`
           spinner.start(message)
           try {
             const script = await runScript(config.hooks['deploy-static'])
@@ -189,7 +150,7 @@ class Deploy extends BuildCommand {
             throw err
           }
         } else {
-          this.log(`no frontend, skipping frontend deploy for extension point ${name}`)
+          this.log(`no frontend, skipping frontend deploy '${name}'`)
         }
       }
 
@@ -200,6 +161,7 @@ class Deploy extends BuildCommand {
           this.log(chalk.blue(chalk.bold(`  -> ${a.url || a.name} `)))
         })
       }
+      // TODO urls should depend on extension point, exc shell only for exc shell extension point
       if (deployedFrontendUrl) {
         this.log(chalk.blue(chalk.bold(`To view your deployed application:\n  -> ${deployedFrontendUrl}`)))
         const launchUrl = this.getLaunchUrlPrefix() + deployedFrontendUrl
@@ -218,22 +180,82 @@ class Deploy extends BuildCommand {
       }
     }
   }
+
+  async publishExtensionPoints (libConsoleCLI, endpointsPayload, aioConfig) {
+    // publish without overwritting, meaning partial publish (for a subset of ext points) are supported
+    await libConsoleCLI.updateExtensionPointsWithoutOverwrites(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, endpointsPayload)
+  }
+
+  buildExtensionPointPayload (deployConfigs) {
+    // Example input:
+    // application: {...}
+    // extensions:
+    //   firefly/excshell/v1:
+    //     operations:
+    //       view:
+    //         impl: index.html
+    //         type: web
+    //   aem/nui/v1:
+    //     operations:
+    //       worker:
+    //         impl: aem-nui-v1/ps-worker
+    //         type: action
+    //
+    // Example output:
+    // firefly/excshell/v1:
+    //  operations:
+    //    view:
+    //      href: https://namespace.adobeio-static.net/index.html # todo support for multi UI with a extname-opcode-subfolder
+    // aem/nui/v1:
+    //  operations:
+    //    worker:
+    //      href: https://namespace.adobeioruntime.net/api/v1/web/aem-nui-v1/ps-worker
+
+    const endpointsPayload = {}
+    // iterate over all configuration to deploy
+    Object.entries(deployConfigs)
+      // filter out the standalone application config, we want to publish extension points
+      .filter(([k, v]) => k !== 'application')
+      .forEach(([extPointName, extPointConfig]) => {
+        endpointsPayload[extPointName] = {}
+        Object.entries(extPointConfig.operations)
+          .forEach(([opName, opList]) => {
+            // replace operations impl and type with a href, either for an action or for a UI
+            endpointsPayload[extPointName][opName] = opList.map(op => {
+              if (op.type === 'action') {
+                // todo modularize with getActionUrls from appHelper
+                const owPackage = op.impl.split('/')[0]
+                const owAction = op.impl.split('/')[1]
+                const manifestAction = extPointConfig.manifest.full.packages[owPackage].actions[owAction]
+                const webArg = manifestAction['web-export'] || manifestAction.web
+                const webUri = (webArg && webArg !== 'no' && webArg !== 'false') ? 'web' : ''
+                const packageWithAction = op.impl
+                // todo non runtime apihost do not support namespace as subdomain
+                const href = urlJoin('https://' + extPointConfig.ow.namespace + '.' + removeProtocolFromURL(extPointConfig.ow.apihost), 'api', extPointConfig.ow.apiversion, webUri, packageWithAction)
+                return { href, ...op.params }
+              }
+              // op.type === 'web'
+              // todo support for multi UI with a extname-opcode-subfolder
+              return { href: `https://${extPointConfig.ow.namespace}.${extPointConfig.app.hostname}/${op.impl}`, ...op.params }
+            })
+          })
+      })
+    return endpointsPayload
+  }
 }
 
 Deploy.description = `Build and deploy an Adobe I/O App
 
-This will always force a rebuild unless --no-force-build is set. 
+This will always force a rebuild unless --no-force-build is set.
 `
 
 Deploy.flags = {
   ...BaseCommand.flags,
   'skip-build': flags.boolean({
-    description: 'Skip build phase',
-    exclusive: ['skip-deploy']
+    description: 'Skip build phase'
   }),
   'skip-deploy': flags.boolean({
-    description: 'Skip deploy phase',
-    exclusive: ['skip-build']
+    description: 'Skip deploy phase'
   }),
   'skip-static': flags.boolean({
     description: 'Skip build & deployment of static files'
@@ -266,16 +288,15 @@ Deploy.flags = {
     default: false
   }),
   extension: flags.string({
-    description: 'Deploy only a specific extension point, the flags can be specified multiple times',
+    description: 'Deploy only a specific Extension, the flags can be specified multiple times',
     exclusive: ['action'],
     char: 'e',
     multiple: true
   }),
-  extensions: flags.boolean({
-    description: 'Deploy extension points, defaults to true, use --no-extensions to skip and deploy only the standalone app',
+  publish: flags.string({
+    description: 'Publish the Extension(s) to Exchange, defaults to true unless -a is set, use --no-publish to skip the publish step',
     allowNo: true,
-    default: true,
-    exclusive: ['extension']
+    default: true
   })
 }
 

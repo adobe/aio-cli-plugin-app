@@ -62,7 +62,6 @@ class Build extends BaseCommand {
 
     const filterActions = flags.action
     try {
-      // todo run hooks from config !
       await runScript(config.hooks['pre-app-build'])
     } catch (err) {
       this.log(err)
@@ -70,19 +69,19 @@ class Build extends BaseCommand {
 
     if (!flags['skip-actions']) {
       if (config.app.hasBackend && (flags['force-build'] || !fs.existsSync(config.actions.dist))) {
-        spinner.start(`Building actions for ${name}`)
+        spinner.start(`Building actions for '${name}'`)
         try {
           const script = await runScript(config.hooks['build-actions'])
           if (!script) {
             await RuntimeLib.buildActions(config, filterActions)
           }
-          spinner.succeed(chalk.green(`Building actions for ${name}`))
+          spinner.succeed(chalk.green(`Building actions for '${name}'`))
         } catch (err) {
-          spinner.fail(chalk.green(`Building actions for ${name}`))
+          spinner.fail(chalk.green(`Building actions for '${name}'`))
           throw err
         }
       } else {
-        spinner.info(`no backend or a build already exists, skipping action build for ${name}`)
+        spinner.info(`no backend or a build already exists, skipping action build for '${name}'`)
       }
     }
     if (!flags['skip-static'] && !flags['skip-web-assets']) {
@@ -105,13 +104,13 @@ class Build extends BaseCommand {
             const { bundler } = await bundle(entryFile, config.web.distProd, bundleOptions, onProgress)
             await bundler.bundle()
           }
-          spinner.succeed(chalk.green(`Building web assets for ${name}`))
+          spinner.succeed(chalk.green(`Building web assets for '${name}'`))
         } catch (err) {
-          spinner.fail(chalk.green(`Building web assets for ${name}`))
+          spinner.fail(chalk.green(`Building web assets for '${name}'`))
           throw err
         }
       } else {
-        spinner.info(`no frontend or a build already exists, skipping frontend build for ${name}`)
+        spinner.info(`no frontend or a build already exists, skipping frontend build for '${name}'`)
       }
     }
     try {
@@ -159,20 +158,7 @@ Build.flags = {
     exclusive: ['action', 'extensions'],
     multiple: true,
     char: 'e'
-  }),
-  extensions: flags.boolean({
-    description: 'Build extension points, defaults to true, use --no-extensions to skip and build only the standalone app',
-    allowNo: true,
-    default: true,
-    exclusive: ['extension']
   })
-  // TODO decide this or above or both
-  // app: flags.boolean({
-  //   description: 'Build only the standalone application, use --no-app to builds instead',
-  //   exclusive: ['ext', 'action'],
-  //   allowNo: true,
-  //   default: undefined
-  // })
 }
 
 module.exports = Build

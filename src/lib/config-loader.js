@@ -99,6 +99,7 @@ module.exports = () => {
   // configuration that is shared for application and each extension config
   // holds things like ow credentials, packagejson and aioConfig
   const commonConfig = loadCommonConfig()
+  checkCommonConfig(commonConfig)
 
   // user configuration is specified in app.config.yaml and holds both standalone app and extension configuration
   // note that `$includes` directive will be resolved here
@@ -150,6 +151,15 @@ function loadCommonConfig () {
     aio: aioConfig,
     // soon not needed anymore (for old headless validator)
     imsOrgId: aioConfigLoader.get(AIO_CONFIG_IMS_ORG_ID)
+  }
+}
+
+/**
+ * @param commonConfig
+ */
+function checkCommonConfig (commonConfig) {
+  if (!commonConfig.aio.project || !commonConfig.ow.auth) {
+    throw new Error('Missing project configuration, import a valid Console configuration first via \'aio app use\'')
   }
 }
 

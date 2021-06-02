@@ -56,18 +56,14 @@ class BaseCommand extends Command {
   getAppExtConfigs (flags) {
     const config = this.getAppConfig()
 
-    // standalone app only
-    if (!flags.extensions) {
-      if (config.all.application) {
-        return { application: config.all.application }
-      }
-      return {}
-    }
+    // NOTE: for now we can abuse the -e flag with -e application, do we need an explicit
+    // flag to be able to only build/run/deploy the standalone app, like --no-extensions or
+    // --only-app?
 
     if (flags.extension) {
       // return only specified extension points, e.g. -e firefly
       const configs = {}
-      const extPointKeys = Object.keys(config.all).filter(k => k !== 'application')
+      const extPointKeys = Object.keys(config.all)
       flags.extension.forEach(ef => {
         const matching = extPointKeys.filter(ek => ek.includes(ef))
         if (matching.length <= 0) {

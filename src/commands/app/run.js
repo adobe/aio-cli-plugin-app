@@ -71,7 +71,6 @@ class Run extends BaseCommand {
     const runOptions = {
       skipActions: flags['skip-actions'],
       skipServe: !flags.serve,
-      // todo: any other params we should add here?
       parcel: {
         logLevel: flags.verbose ? 'verbose' : 'warn',
         // always set to false on localhost to get debugging and hot reloading
@@ -225,12 +224,6 @@ Run.flags = {
     multiple: false,
     // not multiple but treat it as array for logic reuse
     parse: str => [str]
-  }),
-  extensions: flags.boolean({
-    description: 'Deploy only extension points, use --no-extensions to skip extension points and build only the standalone app',
-    allowNo: true,
-    default: undefined,
-    exclusive: ['extension']
   })
 }
 
