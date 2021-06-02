@@ -27,15 +27,15 @@ const actionsWatcher = require('./actions-watcher')
 
 const utils = require('./app-helper')
 const { run: logPoller } = require('./log-poller')
+const getPort = require('get-port')
 
 /** @private */
 async function runDev (config, options = {}, log = () => {}) {
   /* parcel bundle options */
   const bundleOptions = {
-    cache: false,
-    contentHash: true,
-    minify: false,
-    watch: false,
+    shouldDisableCache: true,
+    shouldContentHash: true,
+    shouldOptimize: false,
     ...options.parcel
   }
   /* skip actions */
@@ -47,8 +47,11 @@ async function runDev (config, options = {}, log = () => {}) {
   const hasFrontend = config.app.hasFrontend
   const withBackend = config.app.hasBackend && !skipActions
   const isLocal = !options.devRemote // applies only for backend
-  const uiPort = parseInt(process.env.PORT) || SERVER_DEFAULT_PORT
-
+  const portToUse = parseInt(process.env.PORT) || SERVER_DEFAULT_PORT
+  const uiPort = await getPort({ port: portToUse })
+  if (uiPort !== portToUse) {
+    log(`Could not use port:${portToUse}, using port:${uiPort} instead`)
+  }
   aioLogger.debug(`hasFrontend ${hasFrontend}`)
   aioLogger.debug(`withBackend ${withBackend}`)
   aioLogger.debug(`isLocal ${isLocal}`)
@@ -100,10 +103,11 @@ async function runDev (config, options = {}, log = () => {}) {
         const script = await utils.runScript(config.hooks['build-static'])
         if (!script) {
           const entryFile = config.web.src + '/index.html'
-          bundleOptions.watch = true
-          const { bundler, cleanup: bundlerCleanup } = await bundle(entryFile, config.web.distDev, bundleOptions, log)
-          defaultBundler = bundler
-          cleanup.add(() => bundlerCleanup(), 'cleaning up bundle...')
+          bundleOptions.serveOptions = {
+            port: uiPort,
+            https: bundleOptions.https
+          }
+          defaultBundler = await bundle(entryFile, config.web.distDev, bundleOptions, log)
         }
       }
     }
@@ -121,7 +125,7 @@ async function runDev (config, options = {}, log = () => {}) {
         if (!script) {
           let result
           if (defaultBundler) {
-            result = await bundleServe(defaultBundler, uiPort, bundleOptions, log)
+            result = await bundleServe(defaultBundler, bundleOptions, log)
           } else {
             result = await serve(devConfig.web.distDev, uiPort, bundleOptions, log)
           }

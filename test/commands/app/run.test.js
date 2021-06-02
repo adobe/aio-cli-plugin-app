@@ -241,7 +241,7 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: expect.objectContaining({
-        logLevel: 2
+        logLevel: 'warn'
       }),
       devRemote: true
     }), expect.any(Function))
@@ -266,7 +266,7 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: expect.objectContaining({
-        logLevel: 4
+        logLevel: 'verbose'
       }),
       devRemote: true
     }), expect.any(Function))
@@ -293,7 +293,7 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: expect.objectContaining({
-        logLevel: 4
+        logLevel: 'verbose'
       }),
       devRemote: false
     }), expect.any(Function))
@@ -367,8 +367,8 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: {
-        contentHash: false,
-        logLevel: 2,
+        shouldContentHash: false,
+        logLevel: 'warn',
         https: {
           cert: PUB_CERT_PATH,
           key: PRIVATE_KEY_PATH
@@ -388,8 +388,8 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: {
-        contentHash: false,
-        logLevel: 2,
+        shouldContentHash: false,
+        logLevel: 'warn',
         https: {
           cert: PUB_CERT_PATH,
           key: PRIVATE_KEY_PATH
@@ -417,8 +417,8 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: {
-        contentHash: false,
-        logLevel: 2,
+        shouldContentHash: false,
+        logLevel: 'warn',
         https: {
           cert: PUB_CERT_PATH,
           key: PRIVATE_KEY_PATH
@@ -453,8 +453,8 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: {
-        contentHash: false,
-        logLevel: 2,
+        shouldContentHash: false,
+        logLevel: 'warn',
         https: {
           cert: PUB_CERT_PATH,
           key: PRIVATE_KEY_PATH
@@ -491,8 +491,8 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: {
-        contentHash: false,
-        logLevel: 2,
+        shouldContentHash: false,
+        logLevel: 'warn',
         https: {
           cert: PUB_CERT_PATH,
           key: PRIVATE_KEY_PATH
@@ -527,8 +527,8 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: {
-        contentHash: false,
-        logLevel: 2,
+        shouldContentHash: false,
+        logLevel: 'warn',
         https: {
           cert: PUB_CERT_PATH,
           key: PRIVATE_KEY_PATH
@@ -564,8 +564,8 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       parcel: {
-        contentHash: false,
-        logLevel: 2,
+        shouldContentHash: false,
+        logLevel: 'warn',
         https: {
           cert: PUB_CERT_PATH,
           key: PRIVATE_KEY_PATH

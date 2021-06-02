@@ -127,7 +127,7 @@ beforeEach(() => {
   mockWebLib.deployWeb.mockReset()
   mockWebLib.bundle.mockReset()
   mockBundleFunc.mockReset()
-  mockWebLib.bundle.mockResolvedValue({ bundler: { bundle: mockBundleFunc } })
+  mockWebLib.bundle.mockResolvedValue({ run: mockBundleFunc })
   mockFS.existsSync.mockReset()
   helpers.writeConfig.mockReset()
   helpers.runPackageScript.mockReset()
@@ -200,7 +200,7 @@ describe('run', () => {
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledWith('undefined/index.html', undefined,
-      expect.objectContaining({ cache: false, contentHash: true, logLevel: 2, minify: false, watch: false }),
+      expect.objectContaining({ shouldDisableCache: true, shouldContentHash: true, logLevel: 'warn', shouldOptimize: false }),
       expect.any(Function)
     )
     expect(mockBundleFunc).toHaveBeenCalledTimes(1)
@@ -213,7 +213,7 @@ describe('run', () => {
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledWith('undefined/index.html', undefined,
-      expect.objectContaining({ cache: false, contentHash: false, logLevel: 2, minify: false, watch: false }),
+      expect.objectContaining({ shouldDisableCache: true, shouldContentHash: false, logLevel: 'warn', shouldOptimize: false }),
       expect.any(Function)
     )
     expect(mockBundleFunc).toHaveBeenCalledTimes(1)
@@ -226,7 +226,7 @@ describe('run', () => {
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledWith('undefined/index.html', undefined,
-      expect.objectContaining({ cache: false, contentHash: false, logLevel: 4, minify: false, watch: false }),
+      expect.objectContaining({ shouldDisableCache: true, shouldContentHash: false, logLevel: 'verbose', shouldOptimize: false }),
       expect.any(Function)
     )
     expect(mockBundleFunc).toHaveBeenCalledTimes(1)
@@ -371,7 +371,7 @@ describe('run', () => {
   test('build (--skip-actions) calls provided log function', async () => {
     mockWebLib.bundle.mockImplementation((a, b, c, log) => {
       log('ok')
-      return { bundler: { bundle: mockBundleFunc } }
+      return { run: mockBundleFunc }
     })
 
     const noScriptFound = undefined
@@ -390,7 +390,7 @@ describe('run', () => {
   test('build (--skip-actions, --verbose) calls provided other log function', async () => {
     mockWebLib.bundle.mockImplementation((a, b, c, log) => {
       log('ok')
-      return { bundler: { bundle: mockBundleFunc } }
+      return { run: mockBundleFunc }
     })
 
     const noScriptFound = undefined
