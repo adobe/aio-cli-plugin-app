@@ -11,8 +11,6 @@ governing permissions and limitations under the License.
 */
 
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:bundle-serve', { provider: 'debug' })
-const httpTerminator = require('http-terminator')
-const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('./defaults')
 
 /**
  * @typedef {object} BundleWebObject
@@ -24,34 +22,24 @@ const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('./defaults')
  * Serves the bundled web source via Parcel.
  *
  * @param {object} bundler the Parcel bundler object
- * @param {number} uiPort the port number for the http server
  * @param {object} [options] the Parcel bundler options
  * @param {Function} [log] the app logger
  * @returns {BundleWebObject} the BundleWebObject
  */
-module.exports = async (bundler, uiPort = SERVER_DEFAULT_PORT, options = {}, log = () => {}) => {
+module.exports = async (bundler, options, log = () => {}) => {
   log('serving front-end using bundler serve...')
-  let actualPort = uiPort
 
-  aioLogger.debug(`bundle-serve uiPort: ${uiPort}`)
-  aioLogger.debug(`bundle-serve options: ${JSON.stringify(options, null, 2)}`)
-
-  const uiServer = await bundler.serve(uiPort, options.https)
-  actualPort = uiServer.address().port
-  const terminator = httpTerminator.createHttpTerminator({
-    server: uiServer
+  const { unsubscribe } = await bundler.watch((err) => {
+    if (err) {
+      log(err)
+    }
   })
-
-  if (actualPort !== uiPort) {
-    log(`Could not use port:${uiPort}, using port:${actualPort} instead`)
-  }
-
-  const url = `${options.https ? 'https:' : 'http:'}//localhost:${actualPort}`
+  const url = `${options.serveOptions.https ? 'https:' : 'http:'}//localhost:${options.serveOptions.port}`
   log(`local frontend server running at ${url}`)
 
   const cleanup = async () => {
     aioLogger.debug('cleanup bundle-serve...')
-    await terminator.terminate()
+    await unsubscribe()
   }
 
   return {

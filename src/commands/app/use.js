@@ -366,7 +366,13 @@ class Use extends BaseCommand {
   }
 }
 
-Use.description = `Import an Adobe Developer Console configuration file
+Use.description = `Import an Adobe Developer Console configuration file.
+
+If the optional configuration file is not set, this command will retrieve the console org, project, and workspace settings from the global config.
+
+To set these global config values, see the help text for 'aio console --help'.
+
+To download the configuration file for your project, select the 'Download' button in the toolbar of your project's page in https://console.adobe.io
 `
 
 Use.flags = {
