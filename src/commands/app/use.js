@@ -399,7 +399,7 @@ Use.flags = {
     exclusive: ['global', 'workspace-name']
   }),
   'workspace-name': flags.string({
-    description: 'Deprecated, use --workspace instead',
+    description: '[DEPRECATED]: please use --workspace instead',
     default: '',
     char: 'w',
     exclusive: ['global', 'workspace']

@@ -25,7 +25,9 @@ class Build extends BaseCommand {
   async run () {
     // cli input
     const { flags } = this.parse(Build)
-    flags['skip-static'] = flags['skip-static'] || !!flags.action // || flags['skip-web-assets'] ?
+    // flags
+    flags['web-assets'] = flags['web-assets'] && !flags['skip-static'] && !flags['skip-web-assets'] && !flags.action
+    flags.actions = flags.actions && !flags['skip-actions']
 
     const buildConfigs = this.getAppExtConfigs(flags)
 
@@ -67,7 +69,7 @@ class Build extends BaseCommand {
       this.log(err)
     }
 
-    if (!flags['skip-actions']) {
+    if (flags.actions) {
       if (config.app.hasBackend && (flags['force-build'] || !fs.existsSync(config.actions.dist))) {
         spinner.start(`Building actions for '${name}'`)
         try {
@@ -84,7 +86,7 @@ class Build extends BaseCommand {
         spinner.info(`no backend or a build already exists, skipping action build for '${name}'`)
       }
     }
-    if (!flags['skip-static'] && !flags['skip-web-assets']) {
+    if (flags['web-assets']) {
       if (config.app.hasFrontend && (flags['force-build'] || !fs.existsSync(config.web.distProd))) {
         if (config.app.hasBackend) {
           const urls = await RuntimeLib.utils.getActionUrls(config)
@@ -95,11 +97,11 @@ class Build extends BaseCommand {
           const script = await runScript(config.hooks['build-static'])
           if (!script) {
             const entryFile = config.web.src + '/index.html'
-             const bundleOptions = {
-                shouldDisableCache: true,
-                shouldContentHash: flags['content-hash'],
-                shouldOptimize: false,
-                logLevel: flags.verbose ? 'verbose' : 'warn'
+            const bundleOptions = {
+              shouldDisableCache: true,
+              shouldContentHash: flags['content-hash'],
+              shouldOptimize: false,
+              logLevel: flags.verbose ? 'verbose' : 'warn'
             }
             const { bundler } = await bundle(entryFile, config.web.distProd, bundleOptions, onProgress)
             await bundler.bundle()
@@ -129,33 +131,44 @@ This will always force a rebuild unless --no-force-build is set.
 Build.flags = {
   ...BaseCommand.flags,
   'skip-static': flags.boolean({
-    description: 'Skip build of static files'
+    description: '[deprecated] Please use --no-web-assets'
   }),
   'skip-web-assets': flags.boolean({
-    description: 'Skip build of web assets'
+    description: '[deprecated] Please use --no-web-assets'
   }),
   'skip-actions': flags.boolean({
-    description: 'Skip build of actions'
+    description: '[deprecated] Please use --no-actions'
+  }),
+  actions: flags.boolean({
+    description: '[default: true] Build actions if any',
+    default: true,
+    allowNo: true,
+    exclusive: ['action'] // should be action exclusive --no-action but see https://github.com/oclif/oclif/issues/600
+  }),
+  action: flags.string({
+    description: 'Build only a specific action, the flags can be specified multiple times, this will set --no-publish',
+    char: 'a',
+    exclusive: ['extension'],
+    multiple: true
+  }),
+  'web-assets': flags.boolean({
+    description: '[default: true] Build web-assets if any',
+    default: true,
+    allowNo: true
   }),
   'force-build': flags.boolean({
-    description: 'Force a build even if one already exists (default: true)',
+    description: '[default: true] Force a build even if one already exists',
     default: true,
     allowNo: true
   }),
   'content-hash': flags.boolean({
-    description: 'Enable content hashing in browser code (default: true)',
+    description: '[default: true] Enable content hashing in browser code',
     default: true,
     allowNo: true
   }),
-  action: flags.string({
-    description: 'Build only a specific action, the flags can be specified multiple times',
-    exclusive: ['skip-actions'],
-    char: 'a',
-    multiple: true
-  }),
   extension: flags.string({
     description: 'Build only a specific extension point, the flags can be specified multiple times',
-    exclusive: ['action', 'extensions'],
+    exclusive: ['action'],
     multiple: true,
     char: 'e'
   })

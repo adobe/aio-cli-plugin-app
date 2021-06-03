@@ -34,6 +34,9 @@ class Run extends BaseCommand {
   async run () {
     // cli input
     const { flags } = this.parse(Run)
+    // aliases
+    flags.actions = flags.actions && !flags['skip-actions']
+
     const spinner = ora()
 
     const runConfigs = this.getAppExtConfigs(flags)
@@ -69,7 +72,7 @@ class Run extends BaseCommand {
     }
 
     const runOptions = {
-      skipActions: flags['skip-actions'],
+      skipActions: !!flags.actions,
       skipServe: !flags.serve,
       parcel: {
         logLevel: flags.verbose ? 'verbose' : 'warn',
@@ -200,25 +203,31 @@ Run.description = 'Run an Adobe I/O App'
 Run.flags = {
   ...BaseCommand.flags,
   local: flags.boolean({
-    description: 'run/debug actions locally ( requires Docker running )',
+    description: 'Run/debug actions locally ( requires Docker running )',
     exclusive: ['skip-actions']
   }),
   serve: flags.boolean({
-    description: 'start frontend server (experimental)',
+    description: '[default: true] Start frontend server (experimental)',
     default: true,
     allowNo: true
   }),
   'skip-actions': flags.boolean({
-    description: 'skip actions, only run the ui server',
+    description: '[deprecated] Please use --no-actions',
     exclusive: ['local'],
     default: false
+  }),
+  actions: flags.boolean({
+    description: '[default: true] Run actions, defaults to true, to skip actions use --no-actions',
+    exclusive: ['local'], // no-actions and local don't work together
+    default: true,
+    allowNo: true
   }),
   open: flags.boolean({
     description: 'Open the default web browser after a successful run, only valid if your app has a front-end',
     default: false
   }),
   extension: flags.string({
-    description: 'Build only a specific extension point, the flags can be only one time',
+    description: 'Run only a specific extension, this flag can only be specified once',
     char: 'e',
     // we do not support multiple yet
     multiple: false,

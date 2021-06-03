@@ -27,8 +27,12 @@ class Deploy extends BuildCommand {
     // cli input
     const { flags } = this.parse(Deploy)
 
-    flags['skip-static'] = flags['skip-static'] || !!flags.action || flags['skip-web-assets']
-    flags.publish = flags.publish || !flags.action
+    // flags
+    flags['web-assets'] = flags['web-assets'] && !flags['skip-web-assets'] && !flags['skip-web-assets'] && !flags.action
+    flags.actions = flags.actions && !flags['skip-actions']
+    flags.publish = flags.publish && !flags.action
+    flags.build = flags.build && !flags['skip-build']
+
     const deployConfigs = this.getAppExtConfigs(flags)
     let libConsoleCLI
     if (flags.publish) {
@@ -41,8 +45,9 @@ class Deploy extends BuildCommand {
 
     if (
       keys.length <= 0 ||
-      (!flags.publish && flags['skip-static'] && flags['skip-actions']) ||
-      (!flags.publish && flags['skip-build'] && flags['skip-deploy'])
+      (!flags.publish && !!flags['web-assets'] && !!flags.actions) ||
+      // NOTE skip deploy is deprecated
+      (!flags.publish && flags.build && flags['skip-deploy'])
     ) {
       this.error('Nothing to be done 🚫')
     }
@@ -74,8 +79,8 @@ class Deploy extends BuildCommand {
     // TODO make it depending on flags
     this.log(chalk.green(chalk.bold('Deployment is GREAT SUCCESS 🏄')))
     // if (!flags['skip-deploy']) {
-    //   if (flags['skip-static'] || flags['skip-web-assets']) {
-    //     if (flags['skip-actions']) {
+    //   if (!flags['web-assets'] || flags['skip-web-assets']) {
+    //     if (!flags['actions']) {
     //       this.log(chalk.green(chalk.bold('Nothing to deploy 🚫')))
     //     } else {
     //       this.log(chalk.green(chalk.bold('Well done, your actions are now online 🏄')))
@@ -95,7 +100,7 @@ class Deploy extends BuildCommand {
     }
 
     // build phase
-    if (!flags['skip-build']) {
+    if (flags.build) {
       await this.buildOneExt(name, config, flags, spinner)
     }
 
@@ -112,7 +117,7 @@ class Deploy extends BuildCommand {
         this.log(err)
       }
 
-      if (!flags['skip-actions']) {
+      if (flags.actions) {
         if (config.app.hasBackend) {
           let filterEntities
           if (filterActions) {
@@ -135,7 +140,7 @@ class Deploy extends BuildCommand {
         }
       }
 
-      if (!flags['skip-static'] && !flags['skip-web-assets']) {
+      if (flags['web-assets']) {
         if (config.app.hasFrontend) {
           const message = `Deploying web assets '${name}'`
           spinner.start(message)
@@ -252,51 +257,68 @@ This will always force a rebuild unless --no-force-build is set.
 Deploy.flags = {
   ...BaseCommand.flags,
   'skip-build': flags.boolean({
-    description: 'Skip build phase'
+    description: '[deprecated] Please use --no-build'
   }),
   'skip-deploy': flags.boolean({
-    description: 'Skip deploy phase'
+    description: '[deprecated] Please use \'aio app build\''
   }),
   'skip-static': flags.boolean({
-    description: 'Skip build & deployment of static files'
+    description: '[deprecated] Please use --no-web-assets'
   }),
   'skip-web-assets': flags.boolean({
-    description: 'Skip build & deployment of web assets'
+    description: '[deprecated] Please use --no-web-assets'
   }),
   'skip-actions': flags.boolean({
-    description: 'Skip action build & deploy'
+    description: '[deprecated] Please use --no-actions'
+  }),
+  actions: flags.boolean({
+    description: '[default: true] Deploy actions if any',
+    default: true,
+    allowNo: true,
+    exclusive: ['action'] // should be action exclusive --no-action but see https://github.com/oclif/oclif/issues/600
+  }),
+  action: flags.string({
+    description: 'Deploy only a specific action, the flags can be specified multiple times, this will set --no-publish',
+    char: 'a',
+    exclusive: ['extension'],
+    multiple: true
+  }),
+  'web-assets': flags.boolean({
+    description: '[default: true] Deploy web-assets if any',
+    default: true,
+    allowNo: true
+  }),
+  build: flags.boolean({
+    description: '[default: true] Run the build phase before deployment',
+    default: true,
+    allowNo: true
   }),
   'force-build': flags.boolean({
-    description: 'Forces a build even if one already exists (default: true)',
-    exclusive: ['skip-build'],
+    description: '[default: true] Forces a build even if one already exists',
+    exclusive: ['no-build'], // no-build
     default: true,
     allowNo: true
   }),
   'content-hash': flags.boolean({
-    description: 'Enable content hashing in browser code (default: true)',
+    description: '[default: true] Enable content hashing in browser code',
     default: true,
     allowNo: true
-  }),
-  action: flags.string({
-    description: 'Deploy only a specific action, the flags can be specified multiple times',
-    exclusive: ['skip-actions'],
-    char: 'a',
-    multiple: true
   }),
   open: flags.boolean({
     description: 'Open the default web browser after a successful deploy, only valid if your app has a front-end',
     default: false
   }),
   extension: flags.string({
-    description: 'Deploy only a specific Extension, the flags can be specified multiple times',
+    description: 'Deploy only a specific extension, the flags can be specified multiple times',
     exclusive: ['action'],
     char: 'e',
     multiple: true
   }),
-  publish: flags.string({
-    description: 'Publish the Extension(s) to Exchange, defaults to true unless -a is set, use --no-publish to skip the publish step',
+  publish: flags.boolean({
+    description: '[default: true] Publish extension(s) to Exchange',
     allowNo: true,
-    default: true
+    default: true,
+    exclusive: ['action']
   })
 }
 
