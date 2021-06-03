@@ -136,10 +136,11 @@ function wrapError (err) {
 async function getCliInfo () {
   await context.setCli({ 'cli.bare-output': true }, false) // set this globally
 
-  aioLogger.debug('Retrieving CLI Token')
+  const env = getCliEnv()
+
+  aioLogger.debug(`Retrieving CLI Token using env=${env}`)
   const accessToken = await getToken(CLI)
 
-  const env = getCliEnv()
   return { accessToken, env }
 }
 

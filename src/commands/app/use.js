@@ -25,6 +25,8 @@ class Use extends BaseCommand {
   async run () {
     const { flags, args } = this.parse(Use)
 
+    flags.workspace = flags.workspace || flags['workspace-name'] || ''
+
     aioLogger.debug(`args: ${JSON.stringify(args, null, 2)}, flags: ${JSON.stringify(flags, null, 2)}`)
 
     // some additional checks and updates of flags and args on top of what oclif provides
@@ -394,7 +396,13 @@ Use.flags = {
     description: 'Specify the Adobe Developer Console Workspace name to import the configuration from',
     default: '',
     char: 'w',
-    exclusive: ['global']
+    exclusive: ['global', 'workspace-name']
+  }),
+  'workspace-name': flags.string({
+    description: 'Deprecated, use --workspace instead',
+    default: '',
+    char: 'w',
+    exclusive: ['global', 'workspace']
   }),
   'no-service-sync': flags.boolean({
     description: 'Skip the Service sync prompt and do not attach current Service subscriptions to the new Workspace',
