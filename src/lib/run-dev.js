@@ -107,6 +107,9 @@ async function runDev (config, options = {}, log = () => {}) {
             port: uiPort,
             https: bundleOptions.https
           }
+          bundleOptions.hmrOptions = {
+            port: portToUse
+          }
           defaultBundler = await bundle(entryFile, config.web.distDev, bundleOptions, log)
         }
       }
