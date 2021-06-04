@@ -31,13 +31,15 @@ class Build extends BaseCommand {
 
     const buildConfigs = this.getAppExtConfigs(flags)
 
-    // TODO parallelize ?
-    // TODO smaller pieces build all actions then all web assets
+    // 1. build actions and web assets for each extension
     const keys = Object.keys(buildConfigs)
     const values = Object.values(buildConfigs)
 
-    if (keys.length <= 0) {
-      this.error('Nothing to build')
+    if (
+      keys.length <= 0 ||
+      (!flags['web-assets'] && !flags.actions)
+    ) {
+      this.error('Nothing to be built 🚫')
     }
 
     const spinner = ora()

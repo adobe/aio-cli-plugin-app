@@ -385,6 +385,69 @@ function setOrgServicesConfig (supportedServices) {
   aioLogger.debug(`set aio config ${AIO_CONFIG_ORG_SERVICES}: ${JSON.stringify(orgServiceConfig, null, 2)}`)
 }
 
+/**
+ * Build extension points payload from configuration all extension configurations
+ *
+ * @param {Array} extConfigs array resulting from BaseCommand.getAppExtConfigs
+ * @returns {object} extension registry payload
+ */
+function buildExtensionPointPayload (extConfigs) {
+  // Example input:
+  // application: {...}
+  // extensions:
+  //   firefly/excshell/v1:
+  //     operations:
+  //       view:
+  //         impl: index.html
+  //         type: web
+  //   aem/nui/v1:
+  //     operations:
+  //       worker:
+  //         impl: aem-nui-v1/ps-worker
+  //         type: action
+  //
+  // Example output:
+  // firefly/excshell/v1:
+  //  operations:
+  //    view:
+  //      href: https://namespace.adobeio-static.net/index.html # todo support for multi UI with a extname-opcode-subfolder
+  // aem/nui/v1:
+  //  operations:
+  //    worker:
+  //      href: https://namespace.adobeioruntime.net/api/v1/web/aem-nui-v1/ps-worker
+
+  const endpointsPayload = {}
+  // iterate over all configuration to deploy
+  Object.entries(extConfigs)
+    // filter out the standalone application config, we want to publish extension points
+    .filter(([k, v]) => k !== 'application')
+    .forEach(([extPointName, extPointConfig]) => {
+      endpointsPayload[extPointName] = {}
+      Object.entries(extPointConfig.operations)
+        .forEach(([opName, opList]) => {
+          // replace operations impl and type with a href, either for an action or for a UI
+          endpointsPayload[extPointName][opName] = opList.map(op => {
+            if (op.type === 'action') {
+              // todo modularize with getActionUrls from appHelper
+              const owPackage = op.impl.split('/')[0]
+              const owAction = op.impl.split('/')[1]
+              const manifestAction = extPointConfig.manifest.full.packages[owPackage].actions[owAction]
+              const webArg = manifestAction['web-export'] || manifestAction.web
+              const webUri = (webArg && webArg !== 'no' && webArg !== 'false') ? 'web' : ''
+              const packageWithAction = op.impl
+              // todo non runtime apihost do not support namespace as subdomain
+              const href = urlJoin('https://' + extPointConfig.ow.namespace + '.' + removeProtocolFromURL(extPointConfig.ow.apihost), 'api', extPointConfig.ow.apiversion, webUri, packageWithAction)
+              return { href, ...op.params }
+            }
+            // op.type === 'web'
+            // todo support for multi UI with a extname-opcode-subfolder
+            return { href: `https://${extPointConfig.ow.namespace}.${extPointConfig.app.hostname}/${op.impl}`, ...op.params }
+          })
+        })
+    })
+  return endpointsPayload
+}
+
 module.exports = {
   isNpmInstalled,
   isGitInstalled,
@@ -407,5 +470,6 @@ module.exports = {
   waitForOpenWhiskReadiness,
   warnIfOverwriteServicesInProductionWorkspace,
   setOrgServicesConfig,
-  setWorkspaceServicesConfig
+  setWorkspaceServicesConfig,
+  buildExtensionPointPayload
 }

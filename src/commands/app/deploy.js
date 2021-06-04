@@ -19,7 +19,7 @@ const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { flags } = require('@oclif/command')
-const { runScript, urlJoin, removeProtocolFromURL } = require('../../lib/app-helper')
+const { runScript, buildExtensionPointPayload } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 
 class Deploy extends BuildCommand {
@@ -45,7 +45,7 @@ class Deploy extends BuildCommand {
 
     if (
       keys.length <= 0 ||
-      (!flags.publish && !!flags['web-assets'] && !!flags.actions) ||
+      (!flags.publish && !flags['web-assets'] && !flags.actions) ||
       // NOTE skip deploy is deprecated
       (!flags.publish && flags.build && flags['skip-deploy'])
     ) {
@@ -66,8 +66,7 @@ class Deploy extends BuildCommand {
       // 2. deploy extension manifest
       if (flags.publish) {
         const aioConfig = this.getAppConfig().aio
-        const payload = this.buildExtensionPointPayload(deployConfigs)
-        await this.publishExtensionPoints(libConsoleCLI, payload, aioConfig)
+        await this.publishExtensionPoints(libConsoleCLI, deployConfigs, aioConfig, flags)
       }
     } catch (error) {
       spinner.stop()
@@ -186,66 +185,14 @@ class Deploy extends BuildCommand {
     }
   }
 
-  async publishExtensionPoints (libConsoleCLI, endpointsPayload, aioConfig) {
+  async publishExtensionPoints (libConsoleCLI, deployConfigs, aioConfig, flags) {
+    const payload = buildExtensionPointPayload(deployConfigs)
+    if (flags['force-publish']) {
+      // publish and overwrite any previous published endpoints (delete them)
+      await libConsoleCLI.updateExtensionPoints(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, payload)
+    }
     // publish without overwritting, meaning partial publish (for a subset of ext points) are supported
-    await libConsoleCLI.updateExtensionPointsWithoutOverwrites(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, endpointsPayload)
-  }
-
-  buildExtensionPointPayload (deployConfigs) {
-    // Example input:
-    // application: {...}
-    // extensions:
-    //   firefly/excshell/v1:
-    //     operations:
-    //       view:
-    //         impl: index.html
-    //         type: web
-    //   aem/nui/v1:
-    //     operations:
-    //       worker:
-    //         impl: aem-nui-v1/ps-worker
-    //         type: action
-    //
-    // Example output:
-    // firefly/excshell/v1:
-    //  operations:
-    //    view:
-    //      href: https://namespace.adobeio-static.net/index.html # todo support for multi UI with a extname-opcode-subfolder
-    // aem/nui/v1:
-    //  operations:
-    //    worker:
-    //      href: https://namespace.adobeioruntime.net/api/v1/web/aem-nui-v1/ps-worker
-
-    const endpointsPayload = {}
-    // iterate over all configuration to deploy
-    Object.entries(deployConfigs)
-      // filter out the standalone application config, we want to publish extension points
-      .filter(([k, v]) => k !== 'application')
-      .forEach(([extPointName, extPointConfig]) => {
-        endpointsPayload[extPointName] = {}
-        Object.entries(extPointConfig.operations)
-          .forEach(([opName, opList]) => {
-            // replace operations impl and type with a href, either for an action or for a UI
-            endpointsPayload[extPointName][opName] = opList.map(op => {
-              if (op.type === 'action') {
-                // todo modularize with getActionUrls from appHelper
-                const owPackage = op.impl.split('/')[0]
-                const owAction = op.impl.split('/')[1]
-                const manifestAction = extPointConfig.manifest.full.packages[owPackage].actions[owAction]
-                const webArg = manifestAction['web-export'] || manifestAction.web
-                const webUri = (webArg && webArg !== 'no' && webArg !== 'false') ? 'web' : ''
-                const packageWithAction = op.impl
-                // todo non runtime apihost do not support namespace as subdomain
-                const href = urlJoin('https://' + extPointConfig.ow.namespace + '.' + removeProtocolFromURL(extPointConfig.ow.apihost), 'api', extPointConfig.ow.apiversion, webUri, packageWithAction)
-                return { href, ...op.params }
-              }
-              // op.type === 'web'
-              // todo support for multi UI with a extname-opcode-subfolder
-              return { href: `https://${extPointConfig.ow.namespace}.${extPointConfig.app.hostname}/${op.impl}`, ...op.params }
-            })
-          })
-      })
-    return endpointsPayload
+    await libConsoleCLI.updateExtensionPointsWithoutOverwrites(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, payload)
   }
 }
 
@@ -319,6 +266,11 @@ Deploy.flags = {
     allowNo: true,
     default: true,
     exclusive: ['action']
+  }),
+  'force-publish': flags.boolean({
+    description: 'Force publish extension(s) to Exchange, delete previously published extension points',
+    default: false,
+    exclusive: ['action', 'publish'] // no-publish is excluded
   })
 }
 
