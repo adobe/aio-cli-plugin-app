@@ -55,7 +55,6 @@ class BaseCommand extends Command {
 
   getAppExtConfigs (flags) {
     const config = this.getAppConfig()
-
     // NOTE: for now we can abuse the -e flag with -e application, do we need an explicit
     // flag to be able to only build/run/deploy the standalone app, like --no-extensions or
     // --only-app?

@@ -42,7 +42,7 @@ class Run extends BaseCommand {
     const runConfigs = this.getAppExtConfigs(flags)
     const entries = Object.entries(runConfigs)
     if (entries.length > 1) {
-      this.error('You can only run one implementation at the time, please filter with the \'-e\' or \'--(no-)extensions\' flags.')
+      this.error('You can only run one implementation at the time, please filter with the \'-e\' flag.')
     }
     if (entries.length <= 0) {
       this.error('Nothing to run')

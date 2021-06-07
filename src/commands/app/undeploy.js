@@ -140,7 +140,6 @@ class Undeploy extends BaseCommand {
     await libConsoleCLI.removeSelectedExtensionPoints(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, payload)
   }
 }
-}
 
 Undeploy.description = `Undeploys an Adobe I/O App
 `
