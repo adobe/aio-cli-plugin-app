@@ -54,33 +54,43 @@ class BaseCommand extends Command {
   }
 
   getAppExtConfigs (flags) {
-    const config = this.getAppConfig()
-    // NOTE: for now we can abuse the -e flag with -e application, do we need an explicit
-    // flag to be able to only build/run/deploy the standalone app, like --no-extensions or
-    // --only-app?
-
-    if (flags.extension) {
-      // return only specified extension points, e.g. -e firefly
+    /**
+     * might be useful somewhere else
+     * @private
+     */
+    function filterConfigsFromExtFlags (allConfigs, extensionFlags) {
+      // e.g `app deploy -e excshell -e asset-compute`
+      // NOTE: for now we abuse -e, with -e application for referencing the standalone app
       const configs = {}
-      const extPointKeys = Object.keys(config.all)
-      flags.extension.forEach(ef => {
+      const extPointKeys = Object.keys(allConfigs)
+      extensionFlags.forEach(ef => {
         const matching = extPointKeys.filter(ek => ek.includes(ef))
         if (matching.length <= 0) {
-          throw new Error(`No matching extension point implementation found for flag '-e ${ef}'`)
+          throw new Error(`No matching extension implementation found for flag '-e ${ef}'`)
         }
         if (matching.length > 1) {
-          throw new Error(`Flag '-e ${ef}' matches multiple extension point implementation: '${matching}'`)
+          throw new Error(`Flag '-e ${ef}' matches multiple extension implementation: '${matching}'`)
         }
-        configs[matching[0]] = (config.all[matching[0]])
+        configs[matching[0]] = (allConfigs[matching[0]])
       })
       return configs
     }
 
-    // no flag return them all
-    return config.all
+    const config = this.getFullConfig()
+    let configs = config.all
+    if (flags.extension) {
+      // return only specified extension points, e.g. -e firefly
+      configs = filterConfigsFromExtFlags(config.all, flags.extension)
+    }
+
+    if (Object.keys(configs).length <= 0) {
+      throw new Error(`Couldn't find configuration in '${process.env.cwd()}', make sure to implement at least one extension or a standalone app`)
+    }
+
+    return configs
   }
 
-  getAppConfig () {
+  getFullConfig () {
     if (!this.appConfig) {
       this.appConfig = loadConfig()
       // add on appConfig

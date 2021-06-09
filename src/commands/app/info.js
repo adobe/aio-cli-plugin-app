@@ -18,7 +18,7 @@ class Info extends BaseCommand {
   async run () {
     // cli input
     const { flags } = this.parse(Info)
-    const appConfig = this.getAppConfig()
+    const appConfig = this.getFullConfig()
     delete appConfig.cli
     // includes .env secret delete all aio config for now
     delete appConfig.aio

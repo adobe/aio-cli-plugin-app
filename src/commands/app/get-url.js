@@ -30,7 +30,7 @@ class GetUrlCommand extends BaseCommand {
       options.cdn = flags.cdn
 
       const urls = {}
-      const configCopy = this.getAppConfig()
+      const configCopy = this.getFullConfig()
       if (options.action) {
         const action = configCopy.manifest.package.actions[options.action]
         if (!action) {

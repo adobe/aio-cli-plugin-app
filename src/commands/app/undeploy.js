@@ -42,7 +42,6 @@ class Undeploy extends BaseCommand {
     const values = Object.values(undeployConfigs)
 
     if (
-      keys.length <= 0 ||
       (!flags.unpublish && !flags['web-assets'] && !flags.actions)
     ) {
       this.error('Nothing to be done 🚫')
@@ -56,9 +55,11 @@ class Undeploy extends BaseCommand {
         await this.undeployOneExt(k, v, flags, spinner)
       }
       // 2. unpublish extension manifest
-      if (flags.unpublish) {
-        const aioConfig = this.getAppConfig().aio
+      if (flags.unpublish && !(keys.length === 1 && keys[0] === 'application')) {
+        const aioConfig = this.getFullConfig().aio
         await this.unpublishExtensionPoints(libConsoleCLI, undeployConfigs, aioConfig, flags)
+      } else {
+        this.log('skipping unpublish phase...')
       }
     } catch (error) {
       spinner.stop()

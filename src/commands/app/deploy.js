@@ -44,7 +44,6 @@ class Deploy extends BuildCommand {
     const values = Object.values(deployConfigs)
 
     if (
-      keys.length <= 0 ||
       (!flags.publish && !flags['web-assets'] && !flags.actions) ||
       // NOTE skip deploy is deprecated
       (!flags.publish && flags.build && flags['skip-deploy'])
@@ -64,9 +63,11 @@ class Deploy extends BuildCommand {
         await this.deploySingleConfig(k, v, flags, spinner)
       }
       // 2. deploy extension manifest
-      if (flags.publish) {
-        const aioConfig = this.getAppConfig().aio
+      if (flags.publish && !(keys.length === 1 && keys[0] === 'application')) {
+        const aioConfig = this.getFullConfig().aio
         await this.publishExtensionPoints(libConsoleCLI, deployConfigs, aioConfig, flags)
+      } else {
+        this.log('skipping publish phase...')
       }
     } catch (error) {
       spinner.stop()
@@ -175,7 +176,6 @@ class Deploy extends BuildCommand {
   }
 
   async publishExtensionPoints (libConsoleCLI, deployConfigs, aioConfig, flags) {
-    this.log('yo')
     const payload = buildExtensionPointPayload(deployConfigs)
     if (flags['force-publish']) {
       // publish and overwrite any previous published endpoints (delete them)

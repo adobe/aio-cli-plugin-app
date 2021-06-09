@@ -44,9 +44,6 @@ class Run extends BaseCommand {
     if (entries.length > 1) {
       this.error('You can only run one implementation at the time, please filter with the \'-e\' flag.')
     }
-    if (entries.length <= 0) {
-      this.error('Nothing to run')
-    }
     const name = entries[0][0]
     const config = entries[0][1]
 

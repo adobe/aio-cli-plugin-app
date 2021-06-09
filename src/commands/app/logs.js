@@ -20,7 +20,7 @@ const fs = require('fs-extra')
 class Logs extends BaseCommand {
   async run () {
     const { flags } = this.parse(Logs)
-    const config = this.getAppConfig()
+    const config = this.getFullConfig()
     if (!fs.existsSync('manifest.yml')) {
       this.error(wrapError(new Error('no manifest.yml')))
     }

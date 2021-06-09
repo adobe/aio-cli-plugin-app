@@ -167,39 +167,57 @@ function checkCommonConfig (commonConfig) {
  *
  */
 function loadUserConfig () {
-  // TODO includes need to convert relative paths in included config !!!!
-
   if (!fs.existsSync(USER_CONFIG_FILE)) {
     // no error, support for legacy configuration
     return {}
   }
 
+  // this code is traversing app.config.yaml recursively to resolve all $includes directives
+
+  // SETUP
+  // the config with $includes to be resolved
   const config = yaml.safeLoad(fs.readFileSync(USER_CONFIG_FILE, 'utf8'))
-
-  // this code is traversing app.config.yaml recursively to resolve $includes directives
+  // keep an index that will map keys like 'extensions.abc.runtimeManifest' to the config file where there are defined
+  const includeIndex = {}
+  // keep a cache for common included files - avoid to read a same file twice
   const configCache = {}
-  // alreadyIncluded is used for cycle detection
-  const buildStackEntries = (obj, alreadyIncluded, filterKeys = null) =>
+  // stack entries to be added for new iterations
+  /** @private */
+  function buildStackEntries (obj, fullKeyParent, includedFiles, filterKeys = null) {
     Object.keys(obj)
-      // only add filter keys if filter is defined
+      // include filtered keys only
       .filter(key => !filterKeys || filterKeys.includes(key))
-      .map(key => ({ parentObj: obj, alreadyIncluded, key }))
-  const traverseStack = buildStackEntries(config, [USER_CONFIG_FILE])
+      // parentObj will be filled with $includes files
+      // includedFiles keep track of already included files, for cycle detection and building the index
+      // key, if its $includes will be loaded, if array or object will be recursively followed
+      // fullKey keeps track of all parents, used for building the index
+      .map(key => ({ parentObj: obj, includedFiles, key, fullKey: fullKeyParent.concat(key) }))
+  }
+  // start with top level object
+  const traverseStack = buildStackEntries(config, '', [USER_CONFIG_FILE])
 
+  // ITERATIONS
+  // iterate until there are no entries
   while (traverseStack.length > 0) {
-    const { parentObj, key, alreadyIncluded } = traverseStack.pop()
+    const { parentObj, key, includedFiles, fullKey } = traverseStack.pop()
+
+    // add to the index
+    includeIndex[fullKey] = includedFiles[includedFiles.length - 1]
+
     const value = parentObj[key]
+
     if (typeof value === 'object') {
-      // value is object or array
-      traverseStack.push(...buildStackEntries(value, alreadyIncluded))
+      // if value is an object or an array, add entries for to stack
+      traverseStack.push(...buildStackEntries(value, fullKey, includedFiles))
       continue
     }
+
     if (key === INCLUDE_DIRECTIVE) {
       // $include: 'configFile', value is string pointing to config file
       const configFile = value
       // 1. check for include cycles
-      if (alreadyIncluded.includes(configFile)) {
-        throw new Error(`Detected '${INCLUDE_DIRECTIVE}' cycle: '${[...alreadyIncluded, configFile].toString()}', please make sure that your configuration has no cycles.`)
+      if (includedFiles.includes(configFile)) {
+        throw new Error(`Detected '${INCLUDE_DIRECTIVE}' cycle: '${[...includedFiles, configFile].toString()}', please make sure that your configuration has no cycles.`)
       }
       // 2. check if file exists
       if (!configCache[configFile] && !fs.existsSync(configFile)) {
@@ -219,13 +237,17 @@ function loadUserConfig () {
       // 6. set the cache to avoid reading the file twice
       configCache[configFile] = loadedConfig
       // 7. add included to cycle detection, note the alreadyIncluded array should not be modified
-      const newAlreadyIncluded = alreadyIncluded.concat(configFile)
+      const newAlreadyIncluded = includedFiles.concat(configFile)
       // 8. set new loop entries, only include new once
-      traverseStack.push(...buildStackEntries(parentObj, newAlreadyIncluded, Object.keys(loadedConfig)))
+      traverseStack.push(...buildStackEntries(parentObj, fullKey, newAlreadyIncluded, Object.keys(loadedConfig)))
     }
+
     // else primitive types: do nothing
   }
-  return config
+
+  // RETURN
+  // $includes are now resolved
+  return { config, includeIndex }
 }
 
 /**

@@ -35,11 +35,8 @@ class Build extends BaseCommand {
     const keys = Object.keys(buildConfigs)
     const values = Object.values(buildConfigs)
 
-    if (
-      keys.length <= 0 ||
-      (!flags['web-assets'] && !flags.actions)
-    ) {
-      this.error('Nothing to be built 🚫')
+    if (!flags['web-assets'] && !flags.actions) {
+      this.error('Nothing to be done 🚫')
     }
 
     const spinner = ora()

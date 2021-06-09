@@ -16,7 +16,7 @@ const { flags } = require('@oclif/command')
 const ora = require('ora')
 
 const { servicesToGeneratorInput, installPackages } = require('../../../lib/app-helper')
-const config = require('@adobe/aio-lib-core-config')
+const aioConfigLoader = require('@adobe/aio-lib-core-config')
 
 class AddActionCommand extends BaseCommand {
   async run () {
@@ -25,11 +25,18 @@ class AddActionCommand extends BaseCommand {
     aioLogger.debug(`adding component ${args.component} to the project, using flags: ${flags}`)
     const spinner = ora()
 
+    const configs = this.getAppExtConfigs(flags)
+    const entries = Object.entries(configs)
+    if (entries.length > 1) {
+      this.error('You can only add actions to one implementation at the time, please filter with the \'-e\' flag.')
+    }
+
+    // todo add to legacy config must update manifest.. and not app.config.yaml
     const workspaceServices =
-      config.get('services') || // legacy
-      config.get('project.workspace.details.services') ||
+      aioConfigLoader.get('services') || // legacy
+      aioConfigLoader.get('project.workspace.details.services') ||
       []
-    const supportedOrgServices = config.get('project.org.details.services') || []
+    const supportedOrgServices = aioConfigLoader.get('project.org.details.services') || []
 
     const generator = '@adobe/generator-aio-app/generators/add-action'
     const env = yeoman.createEnv()
@@ -61,6 +68,12 @@ AddActionCommand.flags = {
   'skip-install': flags.boolean({
     description: 'Skip npm installation after files are created',
     default: false
+  }),
+  extension: flags.string({
+    description: 'Add actions to a specific extension',
+    char: 'e',
+    multiple: false,
+    parse: str => [str]
   }),
   ...BaseCommand.flags
 }
