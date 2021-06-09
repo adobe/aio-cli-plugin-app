@@ -148,21 +148,20 @@ class InitCommand extends BaseCommand {
     }
 
     const choices = [
-      // NOTE: those are hardcoded for now
-      // TODO those need to be set by extension point providers
+      // TODO: those are hardcoded for now, but should be discovered from xt registry
       {
         name: 'Firefly Experience Cloud Shell',
         value: {
-          name: 'firefly/excshell/v1',
-          generator: '@adobe/generator-aio-app/generators/ext/firefly-excshell-v1',
+          name: 'dx/excshell/1',
+          generator: '@adobe/generator-aio-app/generators/ext/dx-excshell-1',
           requiredServices: []
         }
       },
       {
-        name: 'AEM Asset Compute v1',
+        name: 'DX Asset Compute Worker v1',
         value: {
-          name: 'aem/nui/v1',
-          generator: '@adobe/generator-aio-app/generators/ext/aem-nui-v1',
+          name: 'dx/asset-compute/worker/1',
+          generator: '@adobe/generator-aio-app/generators/ext/dx-asset-compute-worker-1',
           requiredServices: ['AssetComputeSDK']
         }
       }

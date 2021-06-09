@@ -86,10 +86,10 @@ const INCLUDE_DIRECTIVE = '$include'
  *        }
  *      }
  *    },
- *    OPTIONAL:'aem/nui/v1': {
+ *    OPTIONAL:'dx/asset-compute/worker/1': {
  *       ...same as above...
  *    },
- *    OPTIONAL:'firefly/excshell/v1': {
+ *    OPTIONAL:'dx/excshell/1': {
  *       ...same as above...
  *    },
  *  }

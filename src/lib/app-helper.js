@@ -395,23 +395,23 @@ function buildExtensionPointPayload (extConfigs) {
   // Example input:
   // application: {...}
   // extensions:
-  //   firefly/excshell/v1:
+  //   dx/excshell/1:
   //     operations:
   //       view:
   //         impl: index.html
   //         type: web
-  //   aem/nui/v1:
+  //   dx/asset-compute/worker/1:
   //     operations:
   //       worker:
   //         impl: aem-nui-v1/ps-worker
   //         type: action
   //
   // Example output:
-  // firefly/excshell/v1:
+  // dx/excshell/1:
   //  operations:
   //    view:
   //      href: https://namespace.adobeio-static.net/index.html # todo support for multi UI with a extname-opcode-subfolder
-  // aem/nui/v1:
+  // dx/asset-compute/worker/1:
   //  operations:
   //    worker:
   //      href: https://namespace.adobeioruntime.net/api/v1/web/aem-nui-v1/ps-worker
