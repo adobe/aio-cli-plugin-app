@@ -75,19 +75,8 @@ class Deploy extends BuildCommand {
     }
 
     // final message
-    // TODO make it depending on flags
-    this.log(chalk.green(chalk.bold('Deployment is GREAT SUCCESS 🏄')))
-    // if (!flags['skip-deploy']) {
-    //   if (!flags['web-assets'] || flags['skip-web-assets']) {
-    //     if (!flags['actions']) {
-    //       this.log(chalk.green(chalk.bold('Nothing to deploy 🚫')))
-    //     } else {
-    //       this.log(chalk.green(chalk.bold('Well done, your actions are now online 🏄')))
-    //     }
-    //   } else {
-    //     this.log(chalk.green(chalk.bold('Well done, your app is now online 🏄')))
-    //   }
-    // }
+    // TODO better output depending on which ext points/app and flags
+    this.log(chalk.green(chalk.bold('Successfull deployment 🏄')))
   }
 
   async deploySingleConfig (name, config, flags, spinner) {
@@ -186,6 +175,7 @@ class Deploy extends BuildCommand {
   }
 
   async publishExtensionPoints (libConsoleCLI, deployConfigs, aioConfig, flags) {
+    this.log('yo')
     const payload = buildExtensionPointPayload(deployConfigs)
     if (flags['force-publish']) {
       // publish and overwrite any previous published endpoints (delete them)
@@ -241,7 +231,7 @@ Deploy.flags = {
     allowNo: true
   }),
   'force-build': flags.boolean({
-    description: '[default: true] Forces a build even if one already exists',
+    description: '[default: true] Force a build even if one already exists',
     exclusive: ['no-build'], // no-build
     default: true,
     allowNo: true

@@ -32,7 +32,7 @@ class Undeploy extends BaseCommand {
 
     const undeployConfigs = this.getAppExtConfigs(flags)
     let libConsoleCLI
-    if (flags.publish) {
+    if (flags.unpublish) {
       // force login at beginning (if required)
       libConsoleCLI = await this.getLibConsoleCLI()
     }
@@ -88,7 +88,7 @@ class Undeploy extends BaseCommand {
         try {
           const script = await runScript(config.hooks['undeploy-actions'])
           if (!script) {
-            await rtLib.undeployActions(this.getAppConfig())
+            await rtLib.undeployActions(config)
           }
           spinner.succeed(chalk.green(`Un-Deploying actions for ${extName}`))
         } catch (err) {
