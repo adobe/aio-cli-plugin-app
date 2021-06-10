@@ -28,17 +28,19 @@ const {
   defaultCSSCacheDuration,
   defaultImageCacheDuration,
   AIO_CONFIG_IMS_ORG_ID,
-  stageAppHostname
+  stageAppHostname,
+  USER_CONFIG_FILE,
+  LEGACY_RUNTIME_MANIFEST,
+  INCLUDE_DIRECTIVE,
+  LEGACY_CONFIG_REF,
+  APPLICATION_CONFIG_KEY,
+  EXTENSIONS_CONFIG_KEY
 } = require('./defaults')
 
 const {
   getCliEnv, /* function */
   STAGE_ENV /* string */
 } = require('@adobe/aio-lib-env')
-
-const USER_CONFIG_FILE = 'app.config.yaml'
-const LEGACY_RUNTIME_MANIFEST = 'manifest.yml'
-const INCLUDE_DIRECTIVE = '$include'
 
 /**
  * loading config returns following object (this config is internal, not user facing):
@@ -103,16 +105,25 @@ module.exports = () => {
 
   // user configuration is specified in app.config.yaml and holds both standalone app and extension configuration
   // note that `$includes` directive will be resolved here
-  const userConfig = loadUserConfig()
+  const { config: userConfig, includeIndex } = loadUserConfig()
 
-  // load the full standalone application configuration
+  // load the full standalone application and extension configurations
   const all = {
     ...loadAppConfig(userConfig, commonConfig),
     ...loadExtConfigs(userConfig, commonConfig)
   }
 
+  const implements = Object.keys(all)
+  if (implements.length <= 0) {
+    throw new Error(`Couldn't find configuration in '${process.env.cwd()}', make sure to implement at least one extension or a standalone app`)
+  }
+
   return {
     all,
+    implements, // e.g. 'dx/excshell/1', 'application'
+    // includeIndex keeps a map from config keys to files that includes them, e.g. 'extension.dx/excshell/1.runtimeManifest => src/dx-excshell-1/ext.config.yaml'
+    // NOTE: the index returns undefined if the key is loaded from a legacy configuration file
+    includeIndex,
     aio: commonConfig.aio,
     packagejson: commonConfig.packagejson,
     root: process.cwd()
@@ -184,14 +195,14 @@ function loadUserConfig () {
   // stack entries to be added for new iterations
   /** @private */
   function buildStackEntries (obj, fullKeyParent, includedFiles, filterKeys = null) {
-    Object.keys(obj)
+    return Object.keys(obj)
       // include filtered keys only
       .filter(key => !filterKeys || filterKeys.includes(key))
       // parentObj will be filled with $includes files
       // includedFiles keep track of already included files, for cycle detection and building the index
       // key, if its $includes will be loaded, if array or object will be recursively followed
       // fullKey keeps track of all parents, used for building the index
-      .map(key => ({ parentObj: obj, includedFiles, key, fullKey: fullKeyParent.concat(key) }))
+      .map(key => ({ parentObj: obj, includedFiles, key, fullKey: fullKeyParent.concat(`.${key}`) }))
   }
   // start with top level object
   const traverseStack = buildStackEntries(config, '', [USER_CONFIG_FILE])
@@ -201,8 +212,8 @@ function loadUserConfig () {
   while (traverseStack.length > 0) {
     const { parentObj, key, includedFiles, fullKey } = traverseStack.pop()
 
-    // add to the index
-    includeIndex[fullKey] = includedFiles[includedFiles.length - 1]
+    // add full key to the index, slice(1) to remove initial dot
+    includeIndex[fullKey.slice(1)] = includedFiles[includedFiles.length - 1]
 
     const value = parentObj[key]
 
@@ -238,8 +249,8 @@ function loadUserConfig () {
       configCache[configFile] = loadedConfig
       // 7. add included to cycle detection, note the alreadyIncluded array should not be modified
       const newAlreadyIncluded = includedFiles.concat(configFile)
-      // 8. set new loop entries, only include new once
-      traverseStack.push(...buildStackEntries(parentObj, fullKey, newAlreadyIncluded, Object.keys(loadedConfig)))
+      // 8. set new loop entries, only include new once, remove .$include from index key
+      traverseStack.push(...buildStackEntries(parentObj, fullKey.split(`.${INCLUDE_DIRECTIVE}`).join(''), newAlreadyIncluded, Object.keys(loadedConfig)))
     }
 
     // else primitive types: do nothing
@@ -256,10 +267,10 @@ function loadUserConfig () {
  */
 function loadExtConfigs (userConfig, commonConfig) {
   const configs = {}
-  if (userConfig.extensions) {
-    Object.entries(userConfig.extensions).forEach(([extName, singleUserConfig]) => {
+  if (userConfig[EXTENSIONS_CONFIG_KEY]) {
+    Object.entries(userConfig[EXTENSIONS_CONFIG_KEY]).forEach(([extName, singleUserConfig]) => {
       const extTag = extName.replace(/\//g, '-') // used as folder in dist
-      configs[extName] = loadSingleConfig(extTag, singleUserConfig, commonConfig)
+      configs[extName] = buildSingleConfig(extTag, singleUserConfig, commonConfig)
       // extensions have an extra operations field
       configs[extName].operations = singleUserConfig.operations
       if (!configs[extName].operations) {
@@ -277,8 +288,12 @@ function loadExtConfigs (userConfig, commonConfig) {
 function loadAppConfig (userConfig, commonConfig) {
   // legacy user app config: manifest.yaml, package.json, .aio.app
   const legacyAppConfig = loadLegacyUserAppConfig(commonConfig)
-  const mergedUserAppConfig = mergeUserAppConfigs(userConfig.application, legacyAppConfig)
-  const fullAppConfig = loadSingleConfig('application', mergedUserAppConfig, commonConfig)
+  const mergedUserAppConfig = mergeUserAppConfigs(userConfig[APPLICATION_CONFIG_KEY], legacyAppConfig)
+  const fullAppConfig = {
+    ...buildSingleConfig('application', mergedUserAppConfig, commonConfig),
+    // keep track of fields that are legacy
+    [LEGACY_CONFIG_REF]: legacyAppConfig
+  }
   if (!fullAppConfig.app.hasBackend && !fullAppConfig.app.hasFrontend) {
     // only set application config if there is an actuall app, meaning either some backend or frontend
     return {}
@@ -296,7 +311,9 @@ function loadLegacyUserAppConfig (commonConfig) {
   const appConfig = { ...commonConfig.aio.app }
 
   // 2. load legacy manifest.yaml
-  appConfig.runtimeManifest = fs.existsSync(LEGACY_RUNTIME_MANIFEST) && yaml.safeLoad(fs.readFileSync(LEGACY_RUNTIME_MANIFEST, 'utf8'))
+  if (fs.existsSync(LEGACY_RUNTIME_MANIFEST)) {
+    appConfig.runtimeManifest = yaml.safeLoad(fs.readFileSync(LEGACY_RUNTIME_MANIFEST, 'utf8'))
+  }
 
   // 3. load legacy hooks
   const pkgjsonscripts = commonConfig.packagejson.scripts
@@ -318,7 +335,9 @@ function loadLegacyUserAppConfig (commonConfig) {
     hooks['pre-app-run'] = pkgjsonscripts['pre-app-build']
     hooks['post-app-run'] = pkgjsonscripts['post-app-build']
     hooks['serve-static'] = pkgjsonscripts['serve-static']
-    appConfig.hooks = hooks
+    if (Object.keys(hooks).length > 0) {
+      appConfig.hooks = hooks
+    }
   }
 
   return appConfig
@@ -354,10 +373,8 @@ function mergeUserAppConfigs (userAppConfig, legacyUserAppConfig) {
  * @param commonConfig
  * @param preConfig
  */
-function loadSingleConfig (configTag, singleUserConfig, commonConfig) {
+function buildSingleConfig (configTag, singleUserConfig, commonConfig) {
   const absRoot = p => path.join(process.cwd(), p)
-  // todo handle default path for config root ?
-
   const config = {
     app: {},
     ow: {},
@@ -367,7 +384,7 @@ function loadSingleConfig (configTag, singleUserConfig, commonConfig) {
     actions: {},
     // root of the app folder
     root: process.cwd()
-    // todo config root ?
+    // todo handle relative paths from included config files - would need to use index - carreful to legacy config
   }
 
   const actions = path.normalize(singleUserConfig.actions || 'actions')
@@ -380,8 +397,8 @@ function loadSingleConfig (configTag, singleUserConfig, commonConfig) {
   config.app.dist = dist
 
   // actions
+  config.actions.src = absRoot(actions) // needed for app add first action
   if (config.app.hasBackend) {
-    config.actions.src = absRoot(actions)
     config.actions.dist = absRoot(path.join(dist, configTag, 'actions'))
     config.manifest = { src: 'manifest.yml' } // even if a legacy config path, it is required for runtime sync
     config.manifest.full = manifest
@@ -394,8 +411,8 @@ function loadSingleConfig (configTag, singleUserConfig, commonConfig) {
   }
 
   // web
+  config.web.src = absRoot(web) // needed for app add first web-assets
   if (config.app.hasFrontend) {
-    config.web.src = absRoot(web)
     config.web.injectedConfig = absRoot(path.join(web, 'src', 'config.json'))
     config.web.distDev = absRoot(path.join(dist, configTag, 'web-dev'))
     config.web.distProd = absRoot(path.join(dist, configTag, 'web-prod'))

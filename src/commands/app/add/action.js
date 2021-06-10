@@ -14,45 +14,65 @@ const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 const ora = require('ora')
+const path = require('path')
 
 const { servicesToGeneratorInput, installPackages } = require('../../../lib/app-helper')
 const aioConfigLoader = require('@adobe/aio-lib-core-config')
+const { APPLICATION_CONFIG_KEY, EXTENSIONS_CONFIG_KEY } = require('../../../lib/defaults')
 
 class AddActionCommand extends BaseCommand {
   async run () {
-    const { args, flags } = this.parse(AddActionCommand)
+    const { flags } = this.parse(AddActionCommand)
 
-    aioLogger.debug(`adding component ${args.component} to the project, using flags: ${flags}`)
+    aioLogger.debug(`adding component actions to the project, using flags: ${JSON.stringify(flags)}`)
     const spinner = ora()
 
-    const configs = this.getAppExtConfigs(flags)
-    const entries = Object.entries(configs)
+    // guaranteed to have at least one, otherwise would throw in config load or in matching the ext name
+    const entries = Object.entries(this.getAppExtConfigs(flags))
     if (entries.length > 1) {
       this.error('You can only add actions to one implementation at the time, please filter with the \'-e\' flag.')
     }
 
-    // todo add to legacy config must update manifest.. and not app.config.yaml
+    const configName = entries[0][0]
+    const config = entries[0][1]
+    const actionFolder = path.relative(config.root, config.actions.src)
+    let configKey
+    if (configName === APPLICATION_CONFIG_KEY) {
+      configKey = APPLICATION_CONFIG_KEY
+    } else {
+      configKey = `${EXTENSIONS_CONFIG_KEY}.${configName}`
+    }
+    // take path to config file that holds runtimeManifest OR if there is none (no actions yet) take the path to the ext/app config
+    const configPath = this.getConfigFileForKey(`${configKey}.runtimeManifest`) || this.getConfigFileForKey(`${configKey}`)
+
+    // NOTE: we could get fresh data from console if we know that user is logged in
     const workspaceServices =
       aioConfigLoader.get('services') || // legacy
       aioConfigLoader.get('project.workspace.details.services') ||
       []
     const supportedOrgServices = aioConfigLoader.get('project.org.details.services') || []
 
-    const generator = '@adobe/generator-aio-app/generators/add-action'
     const env = yeoman.createEnv()
-    env.register(require.resolve(generator), 'gen')
-    const res = await env.run('gen', {
-      'skip-prompt': flags.yes,
-      'adobe-services': servicesToGeneratorInput(workspaceServices),
-      'supported-adobe-services': servicesToGeneratorInput(supportedOrgServices)
+    // first run app generator that will generate the root skeleton
+    const addActionGen = env.create(require.resolve('@adobe/generator-aio-app/generators/add-action'), {
+      options: {
+        'skip-prompt': flags.yes,
+        'action-folder': actionFolder,
+        'config-path': configPath,
+        'adobe-services': servicesToGeneratorInput(workspaceServices),
+        'supported-adobe-services': servicesToGeneratorInput(supportedOrgServices),
+        // force overwrites, no useless prompts, this is a feature exposed by yeoman itself
+        force: true
+      }
     })
+
+    await env.runGenerator(addActionGen)
 
     if (!flags['skip-install']) {
       await installPackages('.', { spinner, verbose: flags.verbose })
     } else {
       this.log('--skip-install, make sure to run \'npm install\' later on')
     }
-    return res
   }
 }
 

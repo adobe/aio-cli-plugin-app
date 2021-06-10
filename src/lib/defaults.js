@@ -9,7 +9,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-// defaults
+// defaults & constants
 
 module.exports = {
   defaultAppHostname: 'adobeio-static.net',
@@ -29,5 +29,11 @@ module.exports = {
   },
   defaultHttpServerPort: 9080,
   AIO_CONFIG_WORKSPACE_SERVICES: 'project.workspace.details.services',
-  AIO_CONFIG_ORG_SERVICES: 'project.org.details.services'
+  AIO_CONFIG_ORG_SERVICES: 'project.org.details.services',
+  USER_CONFIG_FILE: 'app.config.yaml',
+  LEGACY_RUNTIME_MANIFEST: 'manifest.yml',
+  INCLUDE_DIRECTIVE: '$include',
+  LEGACY_CONFIG_REF: '$legacy',
+  APPLICATION_CONFIG_KEY: 'application',
+  EXTENSIONS_CONFIG_KEY: 'extensions'
 }

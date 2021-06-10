@@ -16,7 +16,7 @@ const DEFAULT_LAUNCH_PREFIX = 'https://experience.adobe.com/?devMode=true#/custo
 const STAGE_LAUNCH_PREFIX = 'https://experience-stage.adobe.com/?devMode=true#/custom-apps/?localDevUrl='
 const loadConfig = require('./lib/config-loader')
 const inquirer = require('inquirer')
-const { CONSOLE_API_KEYS } = require('./lib/defaults')
+const { CONSOLE_API_KEYS, APPLICATION_CONFIG_KEY } = require('./lib/defaults')
 const { getCliInfo } = require('./lib/app-helper')
 const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app', { provider: 'debug' })
@@ -54,40 +54,65 @@ class BaseCommand extends Command {
   }
 
   getAppExtConfigs (flags) {
-    /**
-     * might be useful somewhere else
-     * @private
-     */
-    function filterConfigsFromExtFlags (allConfigs, extensionFlags) {
+    const all = this.getFullConfig().all
+
+    // default case: no flags, return all
+    let ret = all
+
+    if (flags.extension) {
       // e.g `app deploy -e excshell -e asset-compute`
-      // NOTE: for now we abuse -e, with -e application for referencing the standalone app
-      const configs = {}
-      const extPointKeys = Object.keys(allConfigs)
-      extensionFlags.forEach(ef => {
-        const matching = extPointKeys.filter(ek => ek.includes(ef))
+      // NOTE: this includes 'application', for now we abuse -e, with -e application for referencing the standalone app
+      ret = flags.extension.reduce((obj, ef) => {
+        const matching = all.filter(name => name.includes(ef))
         if (matching.length <= 0) {
           throw new Error(`No matching extension implementation found for flag '-e ${ef}'`)
         }
         if (matching.length > 1) {
           throw new Error(`Flag '-e ${ef}' matches multiple extension implementation: '${matching}'`)
         }
-        configs[matching[0]] = (allConfigs[matching[0]])
-      })
-      return configs
+        const implName = matching[0]
+        aioLogger.debug(`-e '${ef}' => '${implName}'`)
+
+        obj[implName] = all[implName]
+        return obj
+      }, {})
     }
 
-    const config = this.getFullConfig()
-    let configs = config.all
-    if (flags.extension) {
-      // return only specified extension points, e.g. -e firefly
-      configs = filterConfigsFromExtFlags(config.all, flags.extension)
+    aioLogger.debug(`found matching implementations: '${Object.keys(ret)}'`)
+
+    // no filter flags
+    return ret
+  }
+
+  getConfigFileForKey (fullKey) {
+    // NOTE: the index returns undefined if the key is loaded from a legacy configuration file
+    const fullConfig = this.getFullConfig()
+    // full key like 'extension.dx/excshell/1.runtimeManifest'
+    let configPath = fullConfig.includeIndex[fullKey]
+    if (configPath === undefined && fullKey.startsWith('application.')) {
+      // check legacy configuration
+      const keys = fullKey.split('.').slice(1) // skip the first application key which is implied in legacy config
+      const isLegacyKey = !!keys.reduce((obj, key) => obj && obj[key], fullConfig[APPLICATION_CONFIG_KEY].$legacy)
+      if (isLegacyKey) {
+        switch (keys[0]) {
+          case 'runtimeManifest':
+            configPath = 'manifest.yml'
+            break
+          case 'hooks':
+            configPath = 'package.json'
+            break
+          default:
+            configPath = '.aio'
+            break
+        }
+      }
     }
 
-    if (Object.keys(configs).length <= 0) {
-      throw new Error(`Couldn't find configuration in '${process.env.cwd()}', make sure to implement at least one extension or a standalone app`)
-    }
+    configPath
+      ? aioLogger.debug(`found configuration file '${configPath}' for key ${fullKey}`)
+      : aioLogger.debug(`could not find any configuration file for key ${fullKey}`)
 
-    return configs
+    return configPath
   }
 
   getFullConfig () {
