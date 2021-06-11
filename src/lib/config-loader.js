@@ -194,32 +194,35 @@ function loadUserConfig () {
   const configCache = {}
   // stack entries to be added for new iterations
   /** @private */
-  function buildStackEntries (obj, fullKeyParent, includedFiles, filterKeys = null) {
+  function buildStackEntries (obj, fullKeyParent, relativeFullKeyParent, includedFiles, filterKeys = null) {
     return Object.keys(obj)
       // include filtered keys only
       .filter(key => !filterKeys || filterKeys.includes(key))
       // parentObj will be filled with $includes files
       // includedFiles keep track of already included files, for cycle detection and building the index
       // key, if its $includes will be loaded, if array or object will be recursively followed
-      // fullKey keeps track of all parents, used for building the index
-      .map(key => ({ parentObj: obj, includedFiles, key, fullKey: fullKeyParent.concat(`.${key}`) }))
+      // fullKey keeps track of all parents, used for building the index, relativeFullKey keeps track of the key in the included file
+      .map(key => ({ parentObj: obj, includedFiles, key, fullKey: fullKeyParent.concat(`.${key}`), relativeFullKey: relativeFullKeyParent.concat(`.${key}`) }))
   }
   // start with top level object
-  const traverseStack = buildStackEntries(config, '', [USER_CONFIG_FILE])
+  const traverseStack = buildStackEntries(config, '', '', [USER_CONFIG_FILE])
 
   // ITERATIONS
   // iterate until there are no entries
   while (traverseStack.length > 0) {
-    const { parentObj, key, includedFiles, fullKey } = traverseStack.pop()
+    const { parentObj, key, includedFiles, fullKey, relativeFullKey } = traverseStack.pop()
 
     // add full key to the index, slice(1) to remove initial dot
-    includeIndex[fullKey.slice(1)] = includedFiles[includedFiles.length - 1]
+    includeIndex[fullKey.slice(1)] = {
+      file: includedFiles[includedFiles.length - 1],
+      key: relativeFullKey.slice(1)
+    }
 
     const value = parentObj[key]
 
     if (typeof value === 'object') {
       // if value is an object or an array, add entries for to stack
-      traverseStack.push(...buildStackEntries(value, fullKey, includedFiles))
+      traverseStack.push(...buildStackEntries(value, fullKey, relativeFullKey, includedFiles))
       continue
     }
 
@@ -249,8 +252,8 @@ function loadUserConfig () {
       configCache[configFile] = loadedConfig
       // 7. add included to cycle detection, note the alreadyIncluded array should not be modified
       const newAlreadyIncluded = includedFiles.concat(configFile)
-      // 8. set new loop entries, only include new once, remove .$include from index key
-      traverseStack.push(...buildStackEntries(parentObj, fullKey.split(`.${INCLUDE_DIRECTIVE}`).join(''), newAlreadyIncluded, Object.keys(loadedConfig)))
+      // 8. set new loop entries, only include new once, remove .$include from index key, reset relative key
+      traverseStack.push(...buildStackEntries(parentObj, fullKey.split(`.${INCLUDE_DIRECTIVE}`).join(''), '', newAlreadyIncluded, Object.keys(loadedConfig)))
     }
 
     // else primitive types: do nothing

@@ -448,6 +448,13 @@ function buildExtensionPointPayload (extConfigs) {
   return endpointsPayload
 }
 
+function atLeastOne (input) {
+  if (input.length === 0) {
+    return 'please choose at least one option'
+  }
+  return true
+}
+
 module.exports = {
   isNpmInstalled,
   isGitInstalled,
@@ -471,5 +478,6 @@ module.exports = {
   warnIfOverwriteServicesInProductionWorkspace,
   setOrgServicesConfig,
   setWorkspaceServicesConfig,
-  buildExtensionPointPayload
+  buildExtensionPointPayload,
+  atLeastOne
 }

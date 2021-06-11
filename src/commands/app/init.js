@@ -18,7 +18,7 @@ const chalk = require('chalk')
 // const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
-const { installPackages } = require('../../lib/app-helper')
+const { installPackages, atLeastOne } = require('../../lib/app-helper')
 
 const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV } = require('../../lib/defaults')
 
@@ -185,13 +185,7 @@ class InitCommand extends BaseCommand {
       name: 'res',
       message: 'Which extension point(s) do you wish to implement ?',
       choices,
-      // todo make until
-      validate: function atLeastOne (input) {
-        if (input.length === 0) {
-          return 'please choose at least one option'
-        }
-        return true
-      }
+      validate: atLeastOne
     }])
 
     return answers.res
