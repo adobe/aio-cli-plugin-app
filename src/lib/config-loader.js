@@ -121,8 +121,8 @@ module.exports = () => {
   return {
     all,
     implements, // e.g. 'dx/excshell/1', 'application'
-    // includeIndex keeps a map from config keys to files that includes them, e.g. 'extension.dx/excshell/1.runtimeManifest => src/dx-excshell-1/ext.config.yaml'
-    // NOTE: the index returns undefined if the key is loaded from a legacy configuration file
+    // includeIndex keeps a map from config keys to files that includes them and the relative key in the file.
+    // e.g. 'extension.dx/excshell/1.runtimeManifest.packages' => { path: 'src/dx-excshell-1/ext.config.yaml', key: 'runtimeManifest.packages' }
     includeIndex,
     aio: commonConfig.aio,
     packagejson: commonConfig.packagejson,

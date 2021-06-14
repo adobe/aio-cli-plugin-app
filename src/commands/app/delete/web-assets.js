@@ -10,27 +10,65 @@ governing permissions and limitations under the License.
 */
 
 const BaseCommand = require('../../../BaseCommand')
-const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
 const { flags } = require('@oclif/command')
+const fs = require('fs-extra')
+const inquirer = require('inquirer')
+const { atLeastOne } = require('../../../lib/app-helper')
 
 class DeleteWebAssetsCommand extends BaseCommand {
   async run () {
     const { flags } = this.parse(DeleteWebAssetsCommand)
 
-    aioLogger.debug(`deleting web assets from the project, using flags: ${flags}`)
+    aioLogger.debug(`deleting web assets from the project, using flags: ${JSON.stringify(flags)}`)
 
-    // NOTE: this is only deleting the files, no un-deployment happens here
-
-    const generator = '@adobe/generator-aio-app/generators/delete-web-assets'
-
-    const env = yeoman.createEnv()
-    env.register(require.resolve(generator), 'gen')
-    const res = await env.run('gen', {
-      'skip-prompt': flags.yes
+    const fullConfig = this.getFullConfig()
+    const webAssetsByImpl = this.getAllWebAssets(fullConfig)
+    // prompt user
+    const choices = []
+    Object.entries(webAssetsByImpl).forEach(([implName, webAssets]) => {
+      choices.push(new inquirer.Separator(`-- web assets for '${implName}' --`))
+      choices.push(...webAssets.map(w => ({ name: w.src, value: w })))
     })
+    const res = await this.prompt([
+      {
+        type: 'checkbox',
+        name: 'web-assets',
+        message: 'Which web-assets do you wish to delete from this project?\nselect web-assets to delete',
+        choices,
+        validate: atLeastOne
+      }
+    ])
+    const toBeDeleted = res['web-assets']
 
-    return res
+    const resConfirm = await this.prompt([
+      {
+        type: 'confirm',
+        name: 'delete',
+        message: `Please confirm the deletion of '${toBeDeleted.map(w => w.src)}', this will delete the source code`,
+        when: !flags.yes
+      }
+    ])
+    if (!flags.yes && !resConfirm.delete) {
+      this.log('aborting..')
+    }
+    toBeDeleted.forEach(w => {
+      // remove folders
+      const folder = w.src
+      fs.removeSync(w)
+      aioLogger.debug(`deleted '${folder}'`)
+    })
+  }
+
+  getAllWebAssets (config) {
+    const webAssetsByImpl = {}
+    Object.entries(config.all).forEach(([implName, implConfig]) => {
+      if (implConfig.app.hasFrontend) {
+        // for now we only support one web assets per impl
+        webAssetsByImpl[implName] = [{ src: implConfig.web.src }]
+      }
+    })
+    return webAssetsByImpl
   }
 }
 

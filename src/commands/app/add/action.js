@@ -24,26 +24,32 @@ class AddActionCommand extends BaseCommand {
   async run () {
     const { flags } = this.parse(AddActionCommand)
 
-    aioLogger.debug(`adding component actions to the project, using flags: ${JSON.stringify(flags)}`)
+    aioLogger.debug(`add actions with flags: ${JSON.stringify(flags)}`)
     const spinner = ora()
 
     // guaranteed to have at least one, otherwise would throw in config load or in matching the ext name
     const entries = Object.entries(this.getAppExtConfigs(flags))
     if (entries.length > 1) {
-      this.error('You can only add actions to one implementation at the time, please filter with the \'-e\' flag.')
+      this.error('Please use the \'-e\' flag to specify to which implementation you want to add actions to.')
     }
-
     const configName = entries[0][0]
     const config = entries[0][1]
+
     const actionFolder = path.relative(config.root, config.actions.src)
+
+    // find the config file that stores the runtime manifest
     let configKey
     if (configName === APPLICATION_CONFIG_KEY) {
       configKey = APPLICATION_CONFIG_KEY
     } else {
       configKey = `${EXTENSIONS_CONFIG_KEY}.${configName}`
     }
-    // take path to config file that holds runtimeManifest OR if there is none (no actions yet) take the path to the ext/app config
-    const configPath = this.getConfigFileForKey(`${configKey}.runtimeManifest`) || this.getConfigFileForKey(`${configKey}`)
+    let configData = this.getConfigFileForKey(`${configKey}.runtimeManifest`) || this.getConfigFileForKey(`${configKey}`)
+    if (!configData.path) {
+      // first action manifest is not defined
+      configData = this.getConfigFileForKey(`${configKey}`)
+      configData.key = configData.key + '.runtimeManifest'
+    }
 
     // NOTE: we could get fresh data from console if we know that user is logged in
     const workspaceServices =
@@ -53,19 +59,18 @@ class AddActionCommand extends BaseCommand {
     const supportedOrgServices = aioConfigLoader.get('project.org.details.services') || []
 
     const env = yeoman.createEnv()
-    // first run app generator that will generate the root skeleton
     const addActionGen = env.create(require.resolve('@adobe/generator-aio-app/generators/add-action'), {
       options: {
         'skip-prompt': flags.yes,
         'action-folder': actionFolder,
-        'config-path': configPath,
+        'config-path': configData.path,
         'adobe-services': servicesToGeneratorInput(workspaceServices),
         'supported-adobe-services': servicesToGeneratorInput(supportedOrgServices),
+        'full-key-to-manifest': configData.key,
         // force overwrites, no useless prompts, this is a feature exposed by yeoman itself
         force: true
       }
     })
-
     await env.runGenerator(addActionGen)
 
     if (!flags['skip-install']) {

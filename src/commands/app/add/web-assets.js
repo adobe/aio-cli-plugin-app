@@ -13,32 +13,49 @@ const BaseCommand = require('../../../BaseCommand')
 const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:web-assets', { provider: 'debug' })
 const { flags } = require('@oclif/command')
-const { installPackages } = require('../../../lib/app-helper')
+const { installPackages, servicesToGeneratorInput } = require('../../../lib/app-helper')
 const ora = require('ora')
 
-const config = require('@adobe/aio-lib-core-config')
+const aioConfigLoader = require('@adobe/aio-lib-core-config')
 
 class AddWebAssetsCommand extends BaseCommand {
   async run () {
-    const { args, flags } = this.parse(AddWebAssetsCommand)
+    const { flags } = this.parse(AddWebAssetsCommand)
     const spinner = ora()
-    aioLogger.debug(`adding component ${args.component} to the project, using flags: ${flags}`)
+    aioLogger.debug(`add web-assets with flags: ${JSON.stringify(flags)}`)
 
-    const services = (config.get('services') || []).map(s => s.code).join(',')
+    const projectName = this.getFullConfig().packagejson.name
+    // guaranteed to have at least one, otherwise would throw in config load or in matching the ext name
+    const entries = Object.entries(this.getAppExtConfigs(flags))
+    if (entries.length > 1) {
+      this.error('Please use the \'-e\' flag to specify to which implementation you want to add web-assets to.')
+    }
+    const config = entries[0][1]
+    const webSrcFolder = config.web.src
 
-    const generator = '@adobe/generator-aio-app/generators/add-web-assets'
+    const workspaceServices =
+      aioConfigLoader.get('services') || // legacy
+      aioConfigLoader.get('project.workspace.details.services') ||
+      []
+
     const env = yeoman.createEnv()
-    env.register(require.resolve(generator), 'gen')
-    const res = await env.run('gen', {
-      'skip-prompt': flags.yes,
-      'adobe-services': services
+    const addActionGen = env.create(require.resolve('@adobe/generator-aio-app/generators/add-web-assets'), {
+      options: {
+        'skip-prompt': flags.yes,
+        'project-name': projectName,
+        'web-src-folder': webSrcFolder,
+        'adobe-services': servicesToGeneratorInput(workspaceServices),
+        // force overwrites, no useless prompts, this is a feature exposed by yeoman itself
+        force: true
+      }
     })
+    await env.runGenerator(addActionGen)
+
     if (!flags['skip-install']) {
       await installPackages('.', { spinner, verbose: flags.verbose })
     } else {
       this.log('--skip-install, make sure to run \'npm install\' later on')
     }
-    return res
   }
 }
 
@@ -54,6 +71,12 @@ AddWebAssetsCommand.flags = {
   'skip-install': flags.boolean({
     description: 'Skip npm installation after files are created',
     default: false
+  }),
+  extension: flags.string({
+    description: 'Add web-assets to a specific extension',
+    char: 'e',
+    multiple: false,
+    parse: str => [str]
   }),
   ...BaseCommand.flags
 }
