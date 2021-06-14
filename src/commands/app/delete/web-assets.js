@@ -15,6 +15,8 @@ const { flags } = require('@oclif/command')
 const fs = require('fs-extra')
 const inquirer = require('inquirer')
 const { atLeastOne } = require('../../../lib/app-helper')
+const chalk = require('chalk')
+const { EOL } = require('os')
 
 class DeleteWebAssetsCommand extends BaseCommand {
   async run () {
@@ -58,6 +60,11 @@ class DeleteWebAssetsCommand extends BaseCommand {
       fs.removeSync(w)
       aioLogger.debug(`deleted '${folder}'`)
     })
+
+    this.log(chalk.bold(chalk.green(
+      `✔ Successfully deleted webassets '${toBeDeleted.map(w => w.src)}'` + EOL +
+      '  => please make sure to cleanup associated dependencies and to undeploy any deleted UI'
+    )))
   }
 
   getAllWebAssets (config) {
