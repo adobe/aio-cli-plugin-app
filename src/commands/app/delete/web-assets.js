@@ -17,6 +17,7 @@ const inquirer = require('inquirer')
 const { atLeastOne } = require('../../../lib/app-helper')
 const chalk = require('chalk')
 const { EOL } = require('os')
+const path = require('path')
 
 class DeleteWebAssetsCommand extends BaseCommand {
   async run () {
@@ -30,7 +31,7 @@ class DeleteWebAssetsCommand extends BaseCommand {
     const choices = []
     Object.entries(webAssetsByImpl).forEach(([implName, webAssets]) => {
       choices.push(new inquirer.Separator(`-- web assets for '${implName}' --`))
-      choices.push(...webAssets.map(w => ({ name: w.src, value: w })))
+      choices.push(...webAssets.map(w => ({ name: w.relSrc, value: w })))
     })
     const res = await this.prompt([
       {
@@ -47,7 +48,7 @@ class DeleteWebAssetsCommand extends BaseCommand {
       {
         type: 'confirm',
         name: 'delete',
-        message: `Please confirm the deletion of '${toBeDeleted.map(w => w.src)}', this will delete the source code`,
+        message: `Please confirm the deletion of '${toBeDeleted.map(w => w.relSrc)}', this will delete the source code`,
         when: !flags.yes
       }
     ])
@@ -57,12 +58,12 @@ class DeleteWebAssetsCommand extends BaseCommand {
     toBeDeleted.forEach(w => {
       // remove folders
       const folder = w.src
-      fs.removeSync(w)
+      fs.removeSync(w.src)
       aioLogger.debug(`deleted '${folder}'`)
     })
 
     this.log(chalk.bold(chalk.green(
-      `✔ Successfully deleted webassets '${toBeDeleted.map(w => w.src)}'` + EOL +
+      `✔ Successfully deleted webassets '${toBeDeleted.map(w => w.relSrc)}'` + EOL +
       '  => please make sure to cleanup associated dependencies and to undeploy any deleted UI'
     )))
   }
@@ -72,7 +73,7 @@ class DeleteWebAssetsCommand extends BaseCommand {
     Object.entries(config.all).forEach(([implName, implConfig]) => {
       if (implConfig.app.hasFrontend) {
         // for now we only support one web assets per impl
-        webAssetsByImpl[implName] = [{ src: implConfig.web.src }]
+        webAssetsByImpl[implName] = [{ src: implConfig.web.src, relSrc: path.relative(implConfig.root, implConfig.web.src) }]
       }
     })
     return webAssetsByImpl

@@ -24,7 +24,7 @@ class DeleteActionCommand extends BaseCommand {
   async run () {
     const { args, flags } = this.parse(DeleteActionCommand)
 
-    aioLogger.debug(`deleting an action from the project, with args ${args}, and flags: ${flags}`)
+    aioLogger.debug(`deleting actions from the project, with args ${JSON.stringify(args)}, and flags: ${JSON.stringify(flags)}`)
 
     // is there an oclif mechanism for flag depends on arg?
     if (flags.yes && !args['action-name']) {
@@ -37,8 +37,8 @@ class DeleteActionCommand extends BaseCommand {
       this.error('There are no actions in this project!')
     }
     let actionsToBeDeleted
-    if (flags['action-name']) {
-      const actionsToBeDeletedString = flags['action-name'].split(',')
+    if (args['action-name']) {
+      const actionsToBeDeletedString = args['action-name'].split(',')
       const notExist = actionsToBeDeletedString.filter(ad => !actions.some(a => a.name === ad))
       if (notExist.length > 0) {
         throw new Error(`actions '${notExist}' do not exists`)
@@ -135,7 +135,7 @@ class DeleteActionCommand extends BaseCommand {
   }
 }
 
-DeleteActionCommand.description = `Delete an existing action
+DeleteActionCommand.description = `Delete existing actions
 `
 
 DeleteActionCommand.flags = {

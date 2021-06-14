@@ -16,7 +16,7 @@ const DEFAULT_LAUNCH_PREFIX = 'https://experience.adobe.com/?devMode=true#/custo
 const STAGE_LAUNCH_PREFIX = 'https://experience-stage.adobe.com/?devMode=true#/custom-apps/?localDevUrl='
 const loadConfig = require('./lib/config-loader')
 const inquirer = require('inquirer')
-const { CONSOLE_API_KEYS, APPLICATION_CONFIG_KEY } = require('./lib/defaults')
+const { CONSOLE_API_KEYS, APPLICATION_CONFIG_KEY, EXTENSIONS_CONFIG_KEY } = require('./lib/defaults')
 const { getCliInfo } = require('./lib/app-helper')
 const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app', { provider: 'debug' })
@@ -84,10 +84,26 @@ class BaseCommand extends Command {
     return ret
   }
 
+  getRuntimeManifestConfigFile (implName) {
+    let configKey
+    if (implName === APPLICATION_CONFIG_KEY) {
+      configKey = APPLICATION_CONFIG_KEY
+    } else {
+      configKey = `${EXTENSIONS_CONFIG_KEY}.${implName}`
+    }
+    let configData = this.getConfigFileForKey(`${configKey}.runtimeManifest`)
+    if (!configData.file) {
+      // first action manifest is not defined
+      configData = this.getConfigFileForKey(`${configKey}`)
+      configData.key = configData.key + '.runtimeManifest'
+    }
+    return configData
+  }
+
   getConfigFileForKey (fullKey) {
     // NOTE: the index returns undefined if the key is loaded from a legacy configuration file
     const fullConfig = this.getFullConfig()
-    // full key like 'extension.dx/excshell/1.runtimeManifest'
+    // full key like 'extensions.dx/excshell/1.runtimeManifest'
     let configData = fullConfig.includeIndex[fullKey]
     if (configData === undefined && fullKey.startsWith('application.')) {
       // check legacy configuration

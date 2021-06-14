@@ -18,7 +18,6 @@ const path = require('path')
 
 const { servicesToGeneratorInput, installPackages } = require('../../../lib/app-helper')
 const aioConfigLoader = require('@adobe/aio-lib-core-config')
-const { APPLICATION_CONFIG_KEY, EXTENSIONS_CONFIG_KEY } = require('../../../lib/defaults')
 
 class AddActionCommand extends BaseCommand {
   async run () {
@@ -37,19 +36,7 @@ class AddActionCommand extends BaseCommand {
 
     const actionFolder = path.relative(config.root, config.actions.src)
 
-    // find the config file that stores the runtime manifest
-    let configKey
-    if (configName === APPLICATION_CONFIG_KEY) {
-      configKey = APPLICATION_CONFIG_KEY
-    } else {
-      configKey = `${EXTENSIONS_CONFIG_KEY}.${configName}`
-    }
-    let configData = this.getConfigFileForKey(`${configKey}.runtimeManifest`) || this.getConfigFileForKey(`${configKey}`)
-    if (!configData.path) {
-      // first action manifest is not defined
-      configData = this.getConfigFileForKey(`${configKey}`)
-      configData.key = configData.key + '.runtimeManifest'
-    }
+    const configData = this.getRuntimeManifestConfigFile(configName)
 
     // NOTE: we could get fresh data from console if we know that user is logged in
     const workspaceServices =
@@ -63,7 +50,7 @@ class AddActionCommand extends BaseCommand {
       options: {
         'skip-prompt': flags.yes,
         'action-folder': actionFolder,
-        'config-path': configData.path,
+        'config-path': configData.file,
         'adobe-services': servicesToGeneratorInput(workspaceServices),
         'supported-adobe-services': servicesToGeneratorInput(supportedOrgServices),
         'full-key-to-manifest': configData.key,
@@ -81,7 +68,7 @@ class AddActionCommand extends BaseCommand {
   }
 }
 
-AddActionCommand.description = `Add a new action
+AddActionCommand.description = `Add new actions
 `
 
 AddActionCommand.flags = {
