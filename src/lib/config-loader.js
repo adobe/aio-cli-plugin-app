@@ -440,7 +440,7 @@ function buildSingleConfig (configTag, singleUserConfig, commonConfig) {
 
   config.ow = commonConfig.ow
   config.app.defaultHostname = getCliEnv() === STAGE_ENV ? stageAppHostname : defaultAppHostname
-  config.app.hostname = singleUserConfig.hostname || defaultAppHostname
+  config.app.hostname = singleUserConfig.hostname || config.app.defaultHostname
   config.app.htmlCacheDuration = singleUserConfig.htmlcacheduration || defaultHTMLCacheDuration
   config.app.jsCacheDuration = singleUserConfig.jscacheduration || defaultJSCacheDuration
   config.app.cssCacheDuration = singleUserConfig.csscacheduration || defaultCSSCacheDuration
