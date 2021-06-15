@@ -22,6 +22,7 @@ const aioConfig = require('@adobe/aio-lib-core-config')
 const { AIO_CONFIG_WORKSPACE_SERVICES, AIO_CONFIG_ORG_SERVICES } = require('./defaults')
 const { EOL } = require('os')
 const { getCliEnv } = require('@adobe/aio-lib-env')
+const yaml = require('js-yaml')
 
 /** @private */
 function isNpmInstalled () {
@@ -455,6 +456,15 @@ function atLeastOne (input) {
   return true
 }
 
+function deleteUserConfig (configData) {
+  const phyConfig = yaml.safeLoad(fs.readFileSync(configData.file))
+  const interKeys = configData.key.split('.')
+  const phyActionConfigParent = interKeys.slice(0, -1).reduce((obj, k) => obj && obj[k], phyConfig)
+  // like delete configFile.runtimeManifest.packages.actions.theaction
+  delete phyActionConfigParent[interKeys.slice(-1)]
+  fs.writeFileSync(configData.file, yaml.safeDump(phyConfig))
+}
+
 module.exports = {
   isNpmInstalled,
   isGitInstalled,
@@ -479,5 +489,6 @@ module.exports = {
   setOrgServicesConfig,
   setWorkspaceServicesConfig,
   buildExtensionPointPayload,
-  atLeastOne
+  atLeastOne,
+  deleteUserConfig
 }

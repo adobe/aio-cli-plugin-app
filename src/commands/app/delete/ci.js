@@ -18,7 +18,7 @@ class DeleteCICommand extends BaseCommand {
   async run () {
     const { flags } = this.parse(DeleteCICommand)
 
-    aioLogger.debug(`deleting CI files from the project, using flags: ${flags}`)
+    aioLogger.debug(`deleting CI files from the project, using flags: ${JSON.stringify(flags)}`)
 
     const generator = '@adobe/generator-aio-app/generators/delete-ci'
 

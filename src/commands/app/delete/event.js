@@ -13,6 +13,7 @@ const BaseCommand = require('../../../BaseCommand')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:delete:event', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 const DeleteActionCommand = require('./action')
+const chalk = require('chalk')
 
 class DeleteEventCommand extends BaseCommand {
   async run () {
@@ -23,7 +24,8 @@ class DeleteEventCommand extends BaseCommand {
     // NOTE: this command only wraps app delete action, events will have more than actions later on
 
     if (!args['event-action-name']) {
-      this.log('Running delete action command, please select events actions.')
+      this.log(chalk.bold(chalk.blue('NOTE: this is running the \'app delete action\' command, please select events actions.')))
+      this.log()
     }
 
     const cmdLineArgs = []
@@ -56,5 +58,7 @@ DeleteEventCommand.args = [
     required: false
   }
 ]
+
+DeleteEventCommand.aliases = ['app:delete:events']
 
 module.exports = DeleteEventCommand

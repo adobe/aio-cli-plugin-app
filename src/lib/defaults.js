@@ -35,5 +35,34 @@ module.exports = {
   INCLUDE_DIRECTIVE: '$include',
   LEGACY_CONFIG_REF: '$legacy',
   APPLICATION_CONFIG_KEY: 'application',
-  EXTENSIONS_CONFIG_KEY: 'extensions'
+  EXTENSIONS_CONFIG_KEY: 'extensions',
+  implPromptChoices: [
+    // we abuse the extension command to also let users add a standalone app
+    {
+      name: 'Standalone Application',
+      value: {
+        name: 'application',
+        generator: '@adobe/generator-aio-app/generators/application',
+        requiredServices: [] // TODO required services should be filled based on selected actions
+      }
+    },
+    // extensions
+    // TODO this list should not be hardcoded but fetched from xt reg
+    {
+      name: 'Firefly Experience Cloud Shell',
+      value: {
+        name: 'dx/excshell/1',
+        generator: '@adobe/generator-aio-app/generators/ext/dx-excshell-1',
+        requiredServices: []
+      }
+    },
+    {
+      name: 'DX Asset Compute Worker v1',
+      value: {
+        name: 'dx/asset-compute/worker/1',
+        generator: '@adobe/generator-aio-app/generators/ext/dx-asset-compute-worker-1',
+        requiredServices: ['AssetComputeSDK']
+      }
+    }
+  ]
 }

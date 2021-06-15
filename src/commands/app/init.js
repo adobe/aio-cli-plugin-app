@@ -20,7 +20,7 @@ const { flags } = require('@oclif/command')
 const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
 const { installPackages, atLeastOne } = require('../../lib/app-helper')
 
-const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV } = require('../../lib/defaults')
+const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV, implPromptChoices } = require('../../lib/defaults')
 
 const DEFAULT_WORKSPACE = 'Stage'
 
@@ -140,32 +140,10 @@ class InitCommand extends BaseCommand {
    */
   async selectExtensionPoints (flags, orgSupportedServices = null) {
     if (!flags.extensions) {
-      return [{
-        name: 'default',
-        generator: '@adobe/generator-aio-app/generators/application',
-        requiredServices: [] // TODO required services should be filled based on selected actions
-      }]
+      return implPromptChoices.find(i => i.value.name === 'application').value
     }
 
-    const choices = [
-      // TODO: those are hardcoded for now, but should be discovered from xt registry
-      {
-        name: 'Firefly Experience Cloud Shell',
-        value: {
-          name: 'dx/excshell/1',
-          generator: '@adobe/generator-aio-app/generators/ext/dx-excshell-1',
-          requiredServices: []
-        }
-      },
-      {
-        name: 'DX Asset Compute Worker v1',
-        value: {
-          name: 'dx/asset-compute/worker/1',
-          generator: '@adobe/generator-aio-app/generators/ext/dx-asset-compute-worker-1',
-          requiredServices: ['AssetComputeSDK']
-        }
-      }
-    ]
+    const choices = implPromptChoices.filter(i => i.value.name !== 'application')
 
     // disable extensions that lack required services
     if (orgSupportedServices) {

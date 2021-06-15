@@ -90,6 +90,7 @@ AddActionCommand.flags = {
   ...BaseCommand.flags
 }
 
+AddActionCommand.aliases = ['app:add:actions']
 AddActionCommand.args = []
 
 module.exports = AddActionCommand

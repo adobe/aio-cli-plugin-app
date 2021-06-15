@@ -69,7 +69,7 @@ class Run extends BaseCommand {
     }
 
     const runOptions = {
-      skipActions: !!flags.actions,
+      skipActions: !flags.actions,
       skipServe: !flags.serve,
       parcel: {
         logLevel: flags.verbose ? 'verbose' : 'warn',

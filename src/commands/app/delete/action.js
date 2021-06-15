@@ -15,10 +15,9 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const { flags } = require('@oclif/command')
 const fs = require('fs-extra')
 const path = require('path')
-const yaml = require('js-yaml')
 const chalk = require('chalk')
 const { EOL } = require('os')
-const { atLeastOne } = require('../../../lib/app-helper')
+const { atLeastOne, deleteUserConfig } = require('../../../lib/app-helper')
 
 class DeleteActionCommand extends BaseCommand {
   async run () {
@@ -90,12 +89,7 @@ class DeleteActionCommand extends BaseCommand {
       aioLogger.debug(`deleted '${pathToUnitTests}'`)
 
       // delete manifest action config
-      const phyConfig = yaml.safeLoad(fs.readFileSync(a.configFile))
-      const interKeys = a.relativeKey.split('.')
-      const phyActionConfigParent = interKeys.slice(0, -1).reduce((obj, k) => obj && obj[k], phyConfig)
-      // like delete configFile.runtimeManifest.packages.actions.theaction
-      delete phyActionConfigParent[interKeys.slice(-1)]
-      fs.writeFileSync(a.configFile, yaml.safeDump(phyConfig))
+      deleteUserConfig(a.configData)
 
       this.log(chalk.green(`✔ Deleted '${a.name}'`))
     })
@@ -122,8 +116,7 @@ class DeleteActionCommand extends BaseCommand {
               actionsDir: path.relative(implConfig.root, implConfig.actions.src),
               name: fullActionName,
               actionName,
-              configFile: configData.file,
-              relativeKey: configData.key
+              configData
             }
             actions.push(actionObj)
             actionsByImpl[implName].push(actionObj)
@@ -155,5 +148,7 @@ DeleteActionCommand.args = [
     required: false
   }
 ]
+
+DeleteActionCommand.aliases = ['app:delete:actions']
 
 module.exports = DeleteActionCommand

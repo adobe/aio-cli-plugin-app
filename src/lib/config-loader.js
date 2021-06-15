@@ -97,7 +97,7 @@ const {
  *  }
  */
 
-module.exports = () => {
+module.exports = ({ allowNoImpl = false }) => {
   // configuration that is shared for application and each extension config
   // holds things like ow credentials, packagejson and aioConfig
   const commonConfig = loadCommonConfig()
@@ -114,8 +114,8 @@ module.exports = () => {
   }
 
   const implements = Object.keys(all)
-  if (implements.length <= 0) {
-    throw new Error(`Couldn't find configuration in '${process.env.cwd()}', make sure to implement at least one extension or a standalone app`)
+  if (!allowNoImpl && implements.length <= 0) {
+    throw new Error(`Couldn't find configuration in '${process.cwd()}', make sure to add least one extension or a standalone app`)
   }
 
   return {
@@ -195,7 +195,7 @@ function loadUserConfig () {
   // stack entries to be added for new iterations
   /** @private */
   function buildStackEntries (obj, fullKeyParent, relativeFullKeyParent, includedFiles, filterKeys = null) {
-    return Object.keys(obj)
+    return Object.keys(obj || {})
       // include filtered keys only
       .filter(key => !filterKeys || filterKeys.includes(key))
       // parentObj will be filled with $includes files

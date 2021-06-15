@@ -53,8 +53,8 @@ class BaseCommand extends Command {
     LibConsoleCLI.cleanStdOut()
   }
 
-  getAppExtConfigs (flags) {
-    const all = this.getFullConfig().all
+  getAppExtConfigs (flags, options = {}) {
+    const all = this.getFullConfig(options).all
 
     // default case: no flags, return all
     let ret = all
@@ -63,7 +63,7 @@ class BaseCommand extends Command {
       // e.g `app deploy -e excshell -e asset-compute`
       // NOTE: this includes 'application', for now we abuse -e, with -e application for referencing the standalone app
       ret = flags.extension.reduce((obj, ef) => {
-        const matching = all.filter(name => name.includes(ef))
+        const matching = Object.keys(all).filter(name => name.includes(ef))
         if (matching.length <= 0) {
           throw new Error(`No matching extension implementation found for flag '-e ${ef}'`)
         }
@@ -105,10 +105,14 @@ class BaseCommand extends Command {
     const fullConfig = this.getFullConfig()
     // full key like 'extensions.dx/excshell/1.runtimeManifest'
     let configData = fullConfig.includeIndex[fullKey]
-    if (configData === undefined && fullKey.startsWith('application.')) {
+    if (
+      configData === undefined &&
+      fullKey.startsWith(`${APPLICATION_CONFIG_KEY}.`) &&
+      fullConfig.all[APPLICATION_CONFIG_KEY]
+    ) {
       // check legacy configuration
       const keys = fullKey.split('.').slice(1) // skip the first application key which is implied in legacy config
-      const isLegacyKey = !!keys.reduce((obj, key) => obj && obj[key], fullConfig[APPLICATION_CONFIG_KEY].$legacy)
+      const isLegacyKey = !!keys.reduce((obj, key) => obj && obj[key], fullConfig.all[APPLICATION_CONFIG_KEY].$legacy)
       if (isLegacyKey) {
         const relativeKey = keys[1] ? '.' + keys.slice(1).join('.') : ''
         switch (keys[0]) {
@@ -132,9 +136,9 @@ class BaseCommand extends Command {
     return configData || {}
   }
 
-  getFullConfig () {
+  getFullConfig (options = {}) {
     if (!this.appConfig) {
-      this.appConfig = loadConfig()
+      this.appConfig = loadConfig(options)
       // add on appConfig
       this.appConfig.cli = this.config
     }
