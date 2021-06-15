@@ -107,6 +107,13 @@ async function runDev (config, options = {}, log = () => {}) {
             port: uiPort,
             https: bundleOptions.https
           }
+          bundleOptions.hmrOptions = {
+            port: uiPort
+          }
+          // TODO: Move this and bundleServe to aio-lib-web so we can remove the parcel dependency
+          bundleOptions.additionalReporters = [
+            { packageName: '@parcel/reporter-cli', resolveFrom: __filename }
+          ]
           defaultBundler = await bundle(entryFile, config.web.distDev, bundleOptions, log)
         }
       }
