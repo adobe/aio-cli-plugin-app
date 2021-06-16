@@ -13,10 +13,10 @@ const BaseCommand = require('../../../BaseCommand')
 const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:web-assets', { provider: 'debug' })
 const { flags } = require('@oclif/command')
-const { installPackages, servicesToGeneratorInput } = require('../../../lib/app-helper')
 const ora = require('ora')
-
+const generators = require('@adobe/generator-aio-app')
 const aioConfigLoader = require('@adobe/aio-lib-core-config')
+const { installPackages, servicesToGeneratorInput } = require('../../../lib/app-helper')
 
 class AddWebAssetsCommand extends BaseCommand {
   async run () {
@@ -39,7 +39,7 @@ class AddWebAssetsCommand extends BaseCommand {
       []
 
     const env = yeoman.createEnv()
-    const addActionGen = env.create(require.resolve('@adobe/generator-aio-app/generators/add-web-assets'), {
+    const gen = env.instantiate(generators['add-web-assets'], {
       options: {
         'skip-prompt': flags.yes,
         'project-name': projectName,
@@ -49,7 +49,7 @@ class AddWebAssetsCommand extends BaseCommand {
         force: true
       }
     })
-    await env.runGenerator(addActionGen)
+    await env.runGenerator(gen)
 
     if (!flags['skip-install']) {
       await installPackages('.', { spinner, verbose: flags.verbose })

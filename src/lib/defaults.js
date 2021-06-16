@@ -10,6 +10,7 @@ governing permissions and limitations under the License.
 */
 
 // defaults & constants
+const generators = require('@adobe/generator-aio-app')
 
 module.exports = {
   defaultAppHostname: 'adobeio-static.net',
@@ -42,7 +43,7 @@ module.exports = {
       name: 'Standalone Application',
       value: {
         name: 'application',
-        generator: '@adobe/generator-aio-app/generators/application',
+        generator: generators.application,
         requiredServices: [] // TODO required services should be filled based on selected actions
       }
     },
@@ -52,7 +53,7 @@ module.exports = {
       name: 'Firefly Experience Cloud Shell',
       value: {
         name: 'dx/excshell/1',
-        generator: '@adobe/generator-aio-app/generators/ext/dx-excshell-1',
+        generator: generators.extensions['dx/excshell/1'],
         requiredServices: []
       }
     },
@@ -60,7 +61,7 @@ module.exports = {
       name: 'DX Asset Compute Worker v1',
       value: {
         name: 'dx/asset-compute/worker/1',
-        generator: '@adobe/generator-aio-app/generators/ext/dx-asset-compute-worker-1',
+        generator: generators.extensions['dx/asset-compute/worker/1'],
         requiredServices: ['AssetComputeSDK']
       }
     }

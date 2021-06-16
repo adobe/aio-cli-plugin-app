@@ -15,6 +15,7 @@ const rtLibUtils = require('@adobe/aio-lib-runtime').utils
 const fs = require('fs-extra')
 const path = require('path')
 const yeoman = require('yeoman-environment')
+const generators = require('@adobe/generator-aio-app')
 
 const LAUNCH_JSON_FILE = '.vscode/launch.json'
 const LAUNCH_JSON_FILE_BACKUP = '.vscode/launch.json.save'
@@ -39,16 +40,14 @@ function update (config) {
       }
     }
 
-    const generator = '@adobe/generator-aio-app/generators/add-vscode-config'
     const env = yeoman.createEnv()
-    env.register(require.resolve(generator), 'gen')
-
-    await env.run('gen', {
+    const gen = env.instantiate(generators['add-vscode-config'], {
       'app-config': config,
       'env-file': config.envFile,
       'frontend-url': props.frontEndUrl,
       'skip-prompt': true
     })
+    await env.runGenerator(gen)
   }
 }
 

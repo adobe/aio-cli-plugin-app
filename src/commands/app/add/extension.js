@@ -97,7 +97,7 @@ class AddExtensionCommand extends BaseCommand {
     const env = yeoman.createEnv()
     for (let i = 0; i < implementations.length; ++i) {
       const implementation = implementations[i]
-      const gen = env.create(require.resolve(implementation.generator),
+      const gen = env.instantiate(implementation.generator,
         {
           options: {
             'skip-prompt': flags.yes,

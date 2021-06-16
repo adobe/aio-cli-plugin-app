@@ -13,6 +13,7 @@ const BaseCommand = require('../../../BaseCommand')
 const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
 const { flags } = require('@oclif/command')
+const generators = require('@adobe/generator-aio-app')
 
 class DeleteCICommand extends BaseCommand {
   async run () {
@@ -20,15 +21,11 @@ class DeleteCICommand extends BaseCommand {
 
     aioLogger.debug(`deleting CI files from the project, using flags: ${JSON.stringify(flags)}`)
 
-    const generator = '@adobe/generator-aio-app/generators/delete-ci'
-
     const env = yeoman.createEnv()
-    env.register(require.resolve(generator), 'gen')
-    const res = await env.run('gen', {
+    const gen = env.instantiate(generators['delete-ci'], {
       'skip-prompt': flags.yes
     })
-
-    return res
+    await env.runGenerator(gen)
   }
 }
 

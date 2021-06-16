@@ -17,6 +17,8 @@ const ora = require('ora')
 const chalk = require('chalk')
 // const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
+const generators = require('@adobe/generator-aio-app')
+
 const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
 const { installPackages, atLeastOne } = require('../../lib/app-helper')
 
@@ -277,23 +279,27 @@ class InitCommand extends BaseCommand {
     // todo spinners !!!
     const env = yeoman.createEnv()
     // first run app generator that will generate the root skeleton
-    const appGen = env.create(require.resolve('@adobe/generator-aio-app/generators/base'), {
+    const appGen = env.instantiate(generators['base-app'], {
       options: {
         'skip-prompt': flags.yes,
         'project-name': projectName
       }
     })
+    await env.runGenerator(appGen)
 
-    extensionPoints.forEach(e => {
-      appGen.composeWith(
-        require.resolve(e.generator), {
+    // try to use appGen.composeWith
+    for (let i = 0; i < extensionPoints.length; ++i) {
+      const extGen = env.instantiate(
+        extensionPoints[i].generator,
+        {
           options: {
-            'skip-prompt': flags.yes
+            'skip-prompt': flags.yes,
+            // do not prompt for overwrites
+            force: true
           }
         })
-    })
-
-    await env.runGenerator(appGen)
+      await env.runGenerator(extGen)
+    }
   }
 
   // console config is already loaded into object

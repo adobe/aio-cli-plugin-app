@@ -15,7 +15,7 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const { flags } = require('@oclif/command')
 const ora = require('ora')
 const path = require('path')
-
+const generators = require('@adobe/generator-aio-app')
 const { servicesToGeneratorInput, installPackages } = require('../../../lib/app-helper')
 const aioConfigLoader = require('@adobe/aio-lib-core-config')
 
@@ -46,7 +46,7 @@ class AddActionCommand extends BaseCommand {
     const supportedOrgServices = aioConfigLoader.get('project.org.details.services') || []
 
     const env = yeoman.createEnv()
-    const addActionGen = env.create(require.resolve('@adobe/generator-aio-app/generators/add-action'), {
+    const addActionGen = env.instantiate(generators['add-action'], {
       options: {
         'skip-prompt': flags.yes,
         'action-folder': actionFolder,

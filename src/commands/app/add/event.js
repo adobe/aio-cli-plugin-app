@@ -16,6 +16,7 @@ const { flags } = require('@oclif/command')
 const { installPackages } = require('../../../lib/app-helper')
 const ora = require('ora')
 const path = require('path')
+const generators = require('@adobe/generator-aio-app')
 
 class AddEventCommand extends BaseCommand {
   async run () {
@@ -35,7 +36,7 @@ class AddEventCommand extends BaseCommand {
     const configData = this.getRuntimeManifestConfigFile(configName)
 
     const env = yeoman.createEnv()
-    const eventsGen = env.create(require.resolve('@adobe/generator-aio-app/generators/add-events'), {
+    const eventsGen = env.instantiate(generators['add-events'], {
       options: {
         'skip-prompt': flags.yes,
         'action-folder': actionFolder,
