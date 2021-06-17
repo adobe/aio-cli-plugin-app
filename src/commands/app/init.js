@@ -65,9 +65,7 @@ class InitCommand extends BaseCommand {
     this.log('> Tip: you can add more actions, web-assets and events to your project via the `aio app add` commands')
   }
 
-  /**
-   * @param flags
-   */
+  /** @private */
   async initNoLogin (flags) {
     // 1. load console details - if any
     let consoleConfig
@@ -96,9 +94,6 @@ class InitCommand extends BaseCommand {
     }
   }
 
-  /**
-   * @param flags
-   */
   async initWithLogin (flags) {
     // this will trigger a login
     const consoleCLI = await this.getLibConsoleCLI()
@@ -133,16 +128,12 @@ class InitCommand extends BaseCommand {
     // 9. import config
     await this.importConsoleConfig(consoleConfig)
 
-    this.log(`You are currently in Workspace ${workspace.name}, you can run 'aio app use -w <workspace>' in your application folder to switch workspace.`)
+    this.log(chalk.blue(chalk.bold(`Project initialized for Workspace ${workspace.name}, you can run 'aio app use -w <workspace>' to switch workspace.`)))
   }
 
-  /**
-   * @param flags
-   * @param orgSupportedServices
-   */
   async selectExtensionPoints (flags, orgSupportedServices = null) {
     if (!flags.extensions) {
-      return implPromptChoices.find(i => i.value.name === 'application').value
+      return [implPromptChoices.find(i => i.value.name === 'application').value]
     }
 
     const choices = implPromptChoices.filter(i => i.value.name !== 'application')
@@ -171,19 +162,12 @@ class InitCommand extends BaseCommand {
     return answers.res
   }
 
-  /**
-   * @param consoleCLI
-   */
   async selectConsoleOrg (consoleCLI) {
     const organizations = await consoleCLI.getOrganizations()
     const selectedOrg = await consoleCLI.promptForSelectOrganization(organizations)
     return selectedOrg
   }
 
-  /**
-   * @param consoleCLI
-   * @param org
-   */
   async selectOrCreateConsoleProject (consoleCLI, org) {
   // todo somehow create project is the default
     const projects = await consoleCLI.getProjects(org.id)
@@ -212,14 +196,6 @@ class InitCommand extends BaseCommand {
     return workspace
   }
 
-  /**
-   * @param consoleCLI
-   * @param org
-   * @param project
-   * @param workspace
-   * @param orgSupportedServices
-   * @param requiredServices
-   */
   async addServices (consoleCLI, org, project, workspace, orgSupportedServices, requiredServices) {
     // add required services if needed (for extension point)
     const currServiceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
@@ -255,13 +231,10 @@ class InitCommand extends BaseCommand {
     return workspace
   }
 
-  /**
-   * @param extensionPoints
-   */
   getAllRequiredServicesFromExtPoints (extensionPoints) {
     const requiredServicesWithDuplicates = extensionPoints
       .map(e => e.requiredServices)
-    // flat not supported in node 10
+      // flat not supported in node 10
       .reduce((res, arr) => res.concat(arr), [])
     return [...new Set(requiredServicesWithDuplicates)]
   }
@@ -270,11 +243,6 @@ class InitCommand extends BaseCommand {
     return requiredServices.filter(s => !orgSupportedServices.some(os => os.code === s))
   }
 
-  /**
-   * @param flags
-   * @param projectName
-   * @param extensionPoints
-   */
   async runCodeGenerators (flags, extensionPoints, projectName) {
     // todo spinners !!!
     const env = yeoman.createEnv()
@@ -303,9 +271,6 @@ class InitCommand extends BaseCommand {
   }
 
   // console config is already loaded into object
-  /**
-   * @param config
-   */
   async importConsoleConfig (config) {
     // get jwt client id
     const jwtConfig = config.project.workspace.details.credentials && config.project.workspace.details.credentials.find(c => c.jwt)
