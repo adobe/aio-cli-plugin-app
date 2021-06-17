@@ -34,7 +34,6 @@ module.exports = {
   USER_CONFIG_FILE: 'app.config.yaml',
   LEGACY_RUNTIME_MANIFEST: 'manifest.yml',
   INCLUDE_DIRECTIVE: '$include',
-  LEGACY_CONFIG_REF: '$legacy',
   APPLICATION_CONFIG_KEY: 'application',
   EXTENSIONS_CONFIG_KEY: 'extensions',
   implPromptChoices: [

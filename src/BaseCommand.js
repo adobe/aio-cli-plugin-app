@@ -104,30 +104,8 @@ class BaseCommand extends Command {
     // NOTE: the index returns undefined if the key is loaded from a legacy configuration file
     const fullConfig = this.getFullConfig()
     // full key like 'extensions.dx/excshell/1.runtimeManifest'
-    let configData = fullConfig.includeIndex[fullKey]
-    if (
-      configData === undefined &&
-      fullKey.startsWith(`${APPLICATION_CONFIG_KEY}.`) &&
-      fullConfig.all[APPLICATION_CONFIG_KEY]
-    ) {
-      // check legacy configuration
-      const keys = fullKey.split('.').slice(1) // skip the first application key which is implied in legacy config
-      const isLegacyKey = !!keys.reduce((obj, key) => obj && obj[key], fullConfig.all[APPLICATION_CONFIG_KEY].$legacy)
-      if (isLegacyKey) {
-        const relativeKey = keys[1] ? '.' + keys.slice(1).join('.') : ''
-        switch (keys[0]) {
-          case 'runtimeManifest':
-            configData = { file: 'manifest.yml', key: relativeKey }
-            break
-          case 'hooks':
-            configData = { file: 'package.json', key: 'scripts' + relativeKey }
-            break
-          default:
-            configData = { file: '.aio', key: fullKey }
-            break
-        }
-      }
-    }
+    // returns { key: relKey, file: configFile}
+    const configData = fullConfig.includeIndex[fullKey]
 
     configData
       ? aioLogger.debug(`found configuration file '${configData.file}' for key ${fullKey}`)

@@ -53,9 +53,8 @@ class AddActionCommand extends BaseCommand {
         'config-path': configData.file,
         'adobe-services': servicesToGeneratorInput(workspaceServices),
         'supported-adobe-services': servicesToGeneratorInput(supportedOrgServices),
-        'full-key-to-manifest': configData.key,
-        // force overwrites, no useless prompts, this is a feature exposed by yeoman itself
-        force: true
+        'full-key-to-manifest': configData.key
+        // force: true
       }
     })
     await env.runGenerator(addActionGen)

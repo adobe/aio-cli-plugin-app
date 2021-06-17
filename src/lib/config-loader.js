@@ -32,7 +32,6 @@ const {
   USER_CONFIG_FILE,
   LEGACY_RUNTIME_MANIFEST,
   INCLUDE_DIRECTIVE,
-  LEGACY_CONFIG_REF,
   APPLICATION_CONFIG_KEY,
   EXTENSIONS_CONFIG_KEY
 } = require('./defaults')
@@ -41,6 +40,7 @@ const {
   getCliEnv, /* function */
   STAGE_ENV /* string */
 } = require('@adobe/aio-lib-env')
+const cloneDeep = require('lodash.clonedeep')
 
 /**
  * loading config returns following object (this config is internal, not user facing):
@@ -105,13 +105,11 @@ module.exports = ({ allowNoImpl = false }) => {
 
   // user configuration is specified in app.config.yaml and holds both standalone app and extension configuration
   // note that `$includes` directive will be resolved here
-  const { config: userConfig, includeIndex } = loadUserConfig()
+  // also this will load and merge the standalone legacy configuration system if any
+  const { config: userConfig, includeIndex } = loadUserConfig(commonConfig)
 
   // load the full standalone application and extension configurations
-  const all = {
-    ...loadAppConfig(userConfig, commonConfig),
-    ...loadExtConfigs(userConfig, commonConfig)
-  }
+  const all = buildAllConfigs(userConfig, commonConfig, includeIndex)
 
   const implements = Object.keys(all)
   if (!allowNoImpl && implements.length <= 0) {
@@ -130,18 +128,11 @@ module.exports = ({ allowNoImpl = false }) => {
   }
 }
 
-/**
- *
- */
+/** @private */
 function loadCommonConfig () {
   // load aio config (mostly runtime and console config)
   aioConfigLoader.reload()
   const aioConfig = aioConfigLoader.get() || {}
-
-  if (aioConfig.cna !== undefined || aioConfig.app !== undefined) {
-    aioLogger.warn(chalk.redBright(chalk.bold('Setting application configuration in the \'.aio\' file has been deprecated. Please move your \'.aio.app\' or \'.aio.cna\' to \'app.config.yaml\'.')))
-    aioConfig.app = { ...aioConfig.app, ...aioConfig.cna }
-  }
 
   const packagejson = loadPackageJson()
 
@@ -165,19 +156,30 @@ function loadCommonConfig () {
   }
 }
 
-/**
- * @param commonConfig
- */
+/** @private */
 function checkCommonConfig (commonConfig) {
-  if (!commonConfig.aio.project || !commonConfig.ow.auth) {
-    throw new Error('Missing project configuration, import a valid Console configuration first via \'aio app use\'')
-  }
+  // todo this depends on the commands, expose a throwOnMissingConsoleInfo ?
+  // if (!commonConfig.aio.project || !commonConfig.ow.auth) {
+  //   throw new Error('Missing project configuration, import a valid Console configuration first via \'aio app use\'')
+  // }
 }
 
-/**
- *
- */
-function loadUserConfig () {
+/** @private */
+function loadUserConfig (commonConfig) {
+  const { config: legacyConfig, includeIndex: legacyIncludeIndex } = loadUserConfigLegacy(commonConfig)
+  const { config, includeIndex } = loadUserConfigAppYaml()
+
+  const ret = {}
+  // include legacy application configuration
+  ret.config = mergeLegacyUserConfig(config, legacyConfig)
+  // merge includeIndexes, new config index takes precedence
+  ret.includeIndex = { ...legacyIncludeIndex, ...includeIndex }
+
+  return ret
+}
+
+/** @private */
+function loadUserConfigAppYaml () {
   if (!fs.existsSync(USER_CONFIG_FILE)) {
     // no error, support for legacy configuration
     return {}
@@ -264,58 +266,38 @@ function loadUserConfig () {
   return { config, includeIndex }
 }
 
-/**
- * @param userConfig
- * @param commonConfig
- */
-function loadExtConfigs (userConfig, commonConfig) {
-  const configs = {}
-  if (userConfig[EXTENSIONS_CONFIG_KEY]) {
-    Object.entries(userConfig[EXTENSIONS_CONFIG_KEY]).forEach(([extName, singleUserConfig]) => {
-      const extTag = extName.replace(/\//g, '-') // used as folder in dist
-      configs[extName] = buildSingleConfig(extTag, singleUserConfig, commonConfig)
-      // extensions have an extra operations field
-      configs[extName].operations = singleUserConfig.operations
-      if (!configs[extName].operations) {
-        throw new Error(`Missing 'operations' config field for extension point ${extName}`)
-      }
-    })
-  }
-  return configs
-}
-
-/**
- * @param userConfig
- * @param commonConfig
- */
-function loadAppConfig (userConfig, commonConfig) {
-  // legacy user app config: manifest.yaml, package.json, .aio.app
-  const legacyAppConfig = loadLegacyUserAppConfig(commonConfig)
-  const mergedUserAppConfig = mergeUserAppConfigs(userConfig[APPLICATION_CONFIG_KEY], legacyAppConfig)
-  const fullAppConfig = {
-    ...buildSingleConfig('application', mergedUserAppConfig, commonConfig),
-    // keep track of fields that are legacy
-    [LEGACY_CONFIG_REF]: legacyAppConfig
-  }
-  if (!fullAppConfig.app.hasBackend && !fullAppConfig.app.hasFrontend) {
-    // only set application config if there is an actuall app, meaning either some backend or frontend
-    return {}
-  }
-  return { application: fullAppConfig }
-}
-
-/**
- * @param commonConfig
- */
-function loadLegacyUserAppConfig (commonConfig) {
+/** @private */
+function loadUserConfigLegacy (commonConfig) {
   // load legacy user app config from manifest.yaml, package.json, .aio.app
+  const includeIndex = {}
+  const legacyAppConfig = {}
 
   // 1. load .aio.app config
-  const appConfig = { ...commonConfig.aio.app }
-
+  if (commonConfig.aio.cna !== undefined || commonConfig.aio.app !== undefined) {
+    warn('App config in \'.aio\' file is deprecated. Please move your \'.aio.app\' or \'.aio.cna\' to \'app.config.yaml\'.')
+    const appConfig = { ...commonConfig.aio.app, ...commonConfig.aio.cna }
+    Object.entries(appConfig).map(([k, v]) => {
+      legacyAppConfig[k] = v
+      includeIndex[`${APPLICATION_CONFIG_KEY}.${k}`] = { file: '.aio', key: `app.${k}` }
+    })
+  }
   // 2. load legacy manifest.yaml
   if (fs.existsSync(LEGACY_RUNTIME_MANIFEST)) {
-    appConfig.runtimeManifest = yaml.safeLoad(fs.readFileSync(LEGACY_RUNTIME_MANIFEST, 'utf8'))
+    warn('\'manifest.yaml\' is deprecated. Please move your manifest to \'app.config.yaml\' under the \'runtimeManifest\' key')
+    const runtimeManifest = yaml.safeLoad(fs.readFileSync(LEGACY_RUNTIME_MANIFEST, 'utf8'))
+    legacyAppConfig.runtimeManifest = runtimeManifest
+    // populate index
+    const baseKey = `${APPLICATION_CONFIG_KEY}.runtimeManifest`
+    const stack = Object.keys(runtimeManifest).map(rtk => ({ key: rtk, parent: runtimeManifest, fullKey: '' }))
+    while (stack.length > 0) {
+      const { key, parent, fullKey } = stack.pop()
+      const newFullKey = fullKey.concat(`.${key}`)
+      includeIndex[baseKey + newFullKey] = { file: 'manifest.yaml', key: newFullKey }
+      if (typeof parent[key] === 'object') {
+        // includes arrays
+        stack.push(...Object.keys(parent[key]).map(rtk => ({ key: rtk, parent: parent[key], fullKey: newFullKey })))
+      }
+    }
   }
 
   // 3. load legacy hooks
@@ -338,46 +320,96 @@ function loadLegacyUserAppConfig (commonConfig) {
     hooks['pre-app-run'] = pkgjsonscripts['pre-app-build']
     hooks['post-app-run'] = pkgjsonscripts['post-app-build']
     hooks['serve-static'] = pkgjsonscripts['serve-static']
-    if (Object.keys(hooks).length > 0) {
-      appConfig.hooks = hooks
+    const keys = Object.entries(hooks).filter(([k, v]) => !!v).map(([k, v]) => k)
+    if (keys.length > 0) {
+      warn('hooks in \'package.json\' are deprecated. Please move your hooks to \'app.config.yaml\' under the \'hooks\' key')
+      legacyAppConfig.hooks = hooks
+      // build index
+      keys.forEach((hk) => {
+        const fullKey = `${APPLICATION_CONFIG_KEY}.hooks.${hk}`
+        includeIndex[fullKey] = {
+          file: 'package.json',
+          key: `scripts.${hk}`
+        }
+      })
     }
   }
 
-  return appConfig
+  return { includeIndex, config: { [APPLICATION_CONFIG_KEY]: legacyAppConfig } }
 }
 
-/**
- * @param userAppConfig
- * @param legacyUserAppConfig
- */
-function mergeUserAppConfigs (userAppConfig, legacyUserAppConfig) {
+/** @private */
+function mergeLegacyUserConfig (userConfig, legacyUserConfig) {
+  // NOTE: here we do a simplified merge, deep merge with copy might be wanted in future
+
+  // only need to merge application configs as legacy config system only works for standalone apps
+  const userConfigApp = userConfig[APPLICATION_CONFIG_KEY]
+  const legacyUserConfigApp = legacyUserConfig[APPLICATION_CONFIG_KEY]
+
   // merge 1 level config fields, such as 'actions': 'path/to/actions', precedence for new config
-  const merged = { ...legacyUserAppConfig, ...userAppConfig }
+  const mergedApp = { ...legacyUserConfigApp, ...userConfigApp }
 
   // special cases if both are defined
-  if (legacyUserAppConfig && userAppConfig) {
+  if (legacyUserConfigApp && userConfigApp) {
     // for simplicity runtimeManifest is not merged, it's one or the other
-    if (legacyUserAppConfig.runtimeManifest && userAppConfig.runtimeManifest) {
-      console.error(chalk.yellow('Warning: manifest.yml is ignored in favor of app.config.yaml \'runtimeManifest\' field.'))
+    if (legacyUserConfigApp.runtimeManifest && userConfigApp.runtimeManifest) {
+      warn('\'manifest.yml\' is ignored in favor of key \'runtimeManifest\' in \'app.config.yaml\'.')
     }
     // hooks are merged
-    if (legacyUserAppConfig.hooks && userAppConfig.hooks) {
-      merged.hooks = { ...legacyUserAppConfig.hooks, ...userAppConfig.hooks }
+    if (legacyUserConfigApp.hooks && userConfigApp.hooks) {
+      mergedApp.hooks = { ...legacyUserConfigApp.hooks, ...userConfigApp.hooks }
     }
   }
 
-  return merged
+  return {
+    ...userConfig,
+    [APPLICATION_CONFIG_KEY]: mergedApp
+  }
+}
+/** @private */
+function buildAllConfigs (userConfig, commonConfig, includeIndex) {
+  return {
+    ...buildAppConfig(userConfig, commonConfig, includeIndex),
+    ...buildExtConfigs(userConfig, commonConfig, includeIndex)
+  }
 }
 
-/**
- * @param userConfig
- * @param configTag
- * @param singleUserConfig
- * @param commonConfig
- * @param preConfig
- */
-function buildSingleConfig (configTag, singleUserConfig, commonConfig) {
+/** @private */
+function buildExtConfigs (userConfig, commonConfig, includeIndex) {
+  const configs = {}
+  if (userConfig[EXTENSIONS_CONFIG_KEY]) {
+    Object.entries(userConfig[EXTENSIONS_CONFIG_KEY]).forEach(([extName, singleUserConfig]) => {
+      configs[extName] = buildSingleConfig(extName, singleUserConfig, commonConfig, includeIndex)
+      // extensions have an extra operations field
+      configs[extName].operations = singleUserConfig.operations
+      if (!configs[extName].operations) {
+        throw new Error(`Missing 'operations' config field for extension point ${extName}`)
+      }
+    })
+  }
+  return configs
+}
+
+/** @private */
+function buildAppConfig (userConfig, commonConfig, includeIndex) {
+  const fullAppConfig = buildSingleConfig(APPLICATION_CONFIG_KEY, userConfig[APPLICATION_CONFIG_KEY], commonConfig, includeIndex)
+
+  if (!fullAppConfig.app.hasBackend && !fullAppConfig.app.hasFrontend) {
+    // only set application config if there is an actuall app, meaning either some backend or frontend
+    return {}
+  }
+  return { [APPLICATION_CONFIG_KEY]: fullAppConfig }
+}
+
+/** @private */
+function buildSingleConfig (configName, singleUserConfig, commonConfig, includeIndex) {
   const absRoot = p => path.join(process.cwd(), p)
+
+  // used as subfolder folder in dist, converts to a single dir, e.g. dx/excshell/1 =>
+  // dx-excshell-1 and dist/dx-excshell-1/actions/action-xyz.zip
+  const subFolderName = configName.replace(/\//g, '-')
+  const fullKeyPrefix = configName === APPLICATION_CONFIG_KEY ? APPLICATION_CONFIG_KEY : `${EXTENSIONS_CONFIG_KEY}.${configName}`
+
   const config = {
     app: {},
     ow: {},
@@ -386,25 +418,35 @@ function buildSingleConfig (configTag, singleUserConfig, commonConfig) {
     manifest: {},
     actions: {},
     // root of the app folder
-    root: process.cwd()
-    // todo handle relative paths from included config files - would need to use index - carreful to legacy config
+    root: process.cwd(),
+    name: configName
   }
 
-  const actions = path.normalize(singleUserConfig.actions || 'actions')
-  const web = path.normalize(singleUserConfig.web || 'web-src')
-  const dist = path.normalize(singleUserConfig.dist || 'dist')
+  if (!includeIndex[fullKeyPrefix]) {
+    // config does not exist, return empty config
+    return config
+  }
+
+  const defaultActionPath = pathConfigValueToRelRoot('actions/', fullKeyPrefix, includeIndex) // relative to config file holding parent object
+  const defaultWebPath = pathConfigValueToRelRoot('web-src/', fullKeyPrefix, includeIndex) // relative to config file holding parent object
+  const defaultDistPath = 'dist/' // relative to root
+
+  const actions = pathConfigValueToRelRoot(singleUserConfig.actions, fullKeyPrefix + '.actions', includeIndex) || defaultActionPath
+  const web = pathConfigValueToRelRoot(singleUserConfig.web, fullKeyPrefix + '.web', includeIndex) || defaultWebPath
+  const dist = pathConfigValueToRelRoot(singleUserConfig.dist, fullKeyPrefix + '.dist', includeIndex) || defaultDistPath
+
   const manifest = singleUserConfig.runtimeManifest
 
   config.app.hasBackend = !!manifest
   config.app.hasFrontend = fs.existsSync(web)
-  config.app.dist = dist
+  config.app.dist = absRoot(path.join(dist, dist === defaultDistPath ? subFolderName : ''))
 
   // actions
-  config.actions.src = absRoot(actions) // needed for app add first action
+  config.actions.src = absRoot(actions)// needed for app add first action
   if (config.app.hasBackend) {
-    config.actions.dist = absRoot(path.join(dist, configTag, 'actions'))
+    config.actions.dist = path.join(config.app.dist, 'actions')
     config.manifest = { src: 'manifest.yml' } // even if a legacy config path, it is required for runtime sync
-    config.manifest.full = manifest
+    config.manifest.full = rewriteRuntimeManifestPathsToRelRoot(manifest, fullKeyPrefix + '.runtimeManifest', includeIndex)
     config.manifest.packagePlaceholder = '__APP_PACKAGE__'
     config.manifest.package = config.manifest.full.packages[config.manifest.packagePlaceholder]
     if (config.manifest.package) {
@@ -417,8 +459,9 @@ function buildSingleConfig (configTag, singleUserConfig, commonConfig) {
   config.web.src = absRoot(web) // needed for app add first web-assets
   if (config.app.hasFrontend) {
     config.web.injectedConfig = absRoot(path.join(web, 'src', 'config.json'))
-    config.web.distDev = absRoot(path.join(dist, configTag, 'web-dev'))
-    config.web.distProd = absRoot(path.join(dist, configTag, 'web-prod'))
+    // only add subfolder name if dist is default value
+    config.web.distDev = path.join(config.app.dist, 'web-dev')
+    config.web.distProd = path.join(config.app.dist, 'web-prod')
     config.s3.credsCacheFile = absRoot('.aws.tmp.creds.json')
     config.s3.folder = commonConfig.ow.namespace
 
@@ -454,9 +497,41 @@ function buildSingleConfig (configTag, singleUserConfig, commonConfig) {
   return config
 }
 
-/**
- *
- */
+/** @private */
+function rewriteRuntimeManifestPathsToRelRoot (manifestConfig = {}, fullKeyToManifest, includeIndex) {
+  const manifestCopy = cloneDeep(manifestConfig)
+
+  Object.entries(manifestCopy.packages || {}).forEach(([pkgName, pkg = {}]) => {
+    Object.entries(pkg.actions || {}).forEach(([actionName, action]) => {
+      const fullKeyToAction = `${fullKeyToManifest}.packages.${pkgName}.actions.${actionName}`
+      if (action.function) {
+        action.function = pathConfigValueToRelRoot(action.function, fullKeyToAction + '.function', includeIndex)
+      }
+      if (action.include) {
+        action.include.forEach((arr, i) => {
+          action.include[i][0] = pathConfigValueToRelRoot(action.include[i][0], fullKeyToAction + `.include.${i}.0`, includeIndex)
+        })
+      }
+    })
+  })
+
+  return manifestCopy
+}
+
+// Because of the $include directives, config paths (e.g actions: './path/to/actions') can
+// be relative to config files in any subfolder. Config keys that define path values are
+// identified and their value is rewritten relative to the root folder.
+/** @private */
+function pathConfigValueToRelRoot (pathValue, fullKeyToPathValue, includeIndex) {
+  if (!pathValue) {
+    return undefined
+  }
+  // if path value is defined and fullKeyToPathValyue is correct then index has an entry
+  const configPath = includeIndex[fullKeyToPathValue].file
+  return path.join(path.dirname(configPath), pathValue)
+}
+
+/** @private */
 function loadPackageJson () {
   aioLogger.debug('checking package.json existence')
   utils.checkFile('package.json')
@@ -470,4 +545,9 @@ function getModuleName (packagejson) {
     // OpenWhisk does not allow `@` or `/` in an entity name
     return packagejson.name.split('/').pop()
   }
+}
+
+/** @private */
+function warn (message) {
+  console.error(chalk.redBright(chalk.bold('Warning: ' + message)))
 }

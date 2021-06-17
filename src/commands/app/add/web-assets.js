@@ -44,9 +44,8 @@ class AddWebAssetsCommand extends BaseCommand {
         'skip-prompt': flags.yes,
         'project-name': projectName,
         'web-src-folder': webSrcFolder,
-        'adobe-services': servicesToGeneratorInput(workspaceServices),
-        // force overwrites, no useless prompts, this is a feature exposed by yeoman itself
-        force: true
+        'adobe-services': servicesToGeneratorInput(workspaceServices)
+        // force: true
       }
     })
     await env.runGenerator(gen)
