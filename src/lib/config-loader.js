@@ -429,13 +429,14 @@ function buildSingleConfig (configName, singleUserConfig, commonConfig, includeI
   // The default action and web path are relative to the folder holding the config file.
   // Let's search the config path that defines a key in the same config object level as 'web' or
   // 'action'
-  const defaultActionPath = pathConfigValueToRelRoot('actions/', `${fullKeyPrefix}.${otherKeyInObject}`, includeIndex)
-  const defaultWebPath = pathConfigValueToRelRoot('web-src/', `${fullKeyPrefix}.${otherKeyInObject}`, includeIndex)
+  const defaultActionPath = pathConfigValueToAbs('actions/', `${fullKeyPrefix}.${otherKeyInObject}`, includeIndex)
+  const defaultWebPath = pathConfigValueToAbs('web-src/', `${fullKeyPrefix}.${otherKeyInObject}`, includeIndex)
   const defaultDistPath = 'dist/' // relative to root
 
-  const actions = pathConfigValueToRelRoot(singleUserConfig.actions, fullKeyPrefix + '.actions', includeIndex) || defaultActionPath
-  const web = pathConfigValueToRelRoot(singleUserConfig.web, fullKeyPrefix + '.web', includeIndex) || defaultWebPath
-  const dist = pathConfigValueToRelRoot(singleUserConfig.dist, fullKeyPrefix + '.dist', includeIndex) || defaultDistPath
+  // absolut paths
+  const actions = pathConfigValueToAbs(singleUserConfig.actions, fullKeyPrefix + '.actions', includeIndex) || defaultActionPath
+  const web = pathConfigValueToAbs(singleUserConfig.web, fullKeyPrefix + '.web', includeIndex) || defaultWebPath
+  const dist = pathConfigValueToAbs(singleUserConfig.dist, fullKeyPrefix + '.dist', includeIndex) || defaultDistPath
 
   const manifest = singleUserConfig.runtimeManifest
 
@@ -507,11 +508,13 @@ function rewriteRuntimeManifestPathsToRelRoot (manifestConfig = {}, fullKeyToMan
     Object.entries(pkg.actions || {}).forEach(([actionName, action]) => {
       const fullKeyToAction = `${fullKeyToManifest}.packages.${pkgName}.actions.${actionName}`
       if (action.function) {
-        action.function = pathConfigValueToRelRoot(action.function, fullKeyToAction + '.function', includeIndex)
+        // absolut path
+        action.function = pathConfigValueToAbs(action.function, fullKeyToAction + '.function', includeIndex)
       }
       if (action.include) {
         action.include.forEach((arr, i) => {
-          action.include[i][0] = pathConfigValueToRelRoot(action.include[i][0], fullKeyToAction + `.include.${i}.0`, includeIndex)
+          // absolut path
+          action.include[i][0] = pathConfigValueToAbs(action.include[i][0], fullKeyToAction + `.include.${i}.0`, includeIndex)
         })
       }
     })
@@ -524,14 +527,15 @@ function rewriteRuntimeManifestPathsToRelRoot (manifestConfig = {}, fullKeyToMan
 // be relative to config files in any subfolder. Config keys that define path values are
 // identified and their value is rewritten relative to the root folder.
 /** @private */
-function pathConfigValueToRelRoot (pathValue, fullKeyToPathValue, includeIndex) {
+function pathConfigValueToAbs (pathValue, fullKeyToPathValue, includeIndex) {
   const configData = includeIndex[fullKeyToPathValue]
   if (!pathValue || !configData) {
     return undefined
   }
   // if path value is defined and fullKeyToPathValyue is correct then index has an entry
   const configPath = configData.file
-  // path.resolve => support both absolut pathValue and relative (relative joins, absolut returns pathValue)
+  // path.resolve => support both absolut pathValue and relative (relative joins with
+  // config dir and process.cwd, absolut returns pathValue)
   return path.resolve(path.dirname(configPath), pathValue)
 }
 

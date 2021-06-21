@@ -10,18 +10,18 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-// expected return values from config loader for match fixtures in __fixtures__
-module.exports = {
-  excshell,
-  app,
-  excshellAndAssetComputeAndApp,
-  excshellAndAppWithComplexIncludPattern
-}
-
 const excshell = {}
 
 const app = {}
 
 const excshellAndAssetComputeAndApp = {}
 
-const excshellAndAppWithComplexIncludPattern = {}
+const excshellAndAppWithComplexIncludePattern = {}
+
+// expected return values from config loader for match fixtures in __fixtures__
+module.exports = {
+  excshell,
+  app,
+  excshellAndAssetComputeAndApp,
+  excshellAndAppWithComplexIncludePattern
+}
