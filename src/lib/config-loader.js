@@ -427,8 +427,12 @@ function buildSingleConfig (configName, singleUserConfig, commonConfig, includeI
     return config
   }
 
-  const defaultActionPath = pathConfigValueToRelRoot('actions/', fullKeyPrefix, includeIndex) // relative to config file holding parent object
-  const defaultWebPath = pathConfigValueToRelRoot('web-src/', fullKeyPrefix, includeIndex) // relative to config file holding parent object
+  const otherKeyInObject = Object.keys(singleUserConfig)[0]
+  // The default action and web path are relative to the folder holding the config file.
+  // Let's search the config path that defines a key in the same config object level as 'web' or
+  // 'action'
+  const defaultActionPath = pathConfigValueToRelRoot('actions/', `${fullKeyPrefix}.${otherKeyInObject}`, includeIndex)
+  const defaultWebPath = pathConfigValueToRelRoot('web-src/', `${fullKeyPrefix}.${otherKeyInObject}`, includeIndex)
   const defaultDistPath = 'dist/' // relative to root
 
   const actions = pathConfigValueToRelRoot(singleUserConfig.actions, fullKeyPrefix + '.actions', includeIndex) || defaultActionPath
@@ -523,11 +527,12 @@ function rewriteRuntimeManifestPathsToRelRoot (manifestConfig = {}, fullKeyToMan
 // identified and their value is rewritten relative to the root folder.
 /** @private */
 function pathConfigValueToRelRoot (pathValue, fullKeyToPathValue, includeIndex) {
-  if (!pathValue) {
+  const configData = includeIndex[fullKeyToPathValue]
+  if (!pathValue || !configData) {
     return undefined
   }
   // if path value is defined and fullKeyToPathValyue is correct then index has an entry
-  const configPath = includeIndex[fullKeyToPathValue].file
+  const configPath = configData.file
   return path.join(path.dirname(configPath), pathValue)
 }
 
