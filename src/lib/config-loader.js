@@ -403,7 +403,7 @@ function buildAppConfig (userConfig, commonConfig, includeIndex) {
 
 /** @private */
 function buildSingleConfig (configName, singleUserConfig, commonConfig, includeIndex) {
-  const absRoot = p => path.join(process.cwd(), p)
+  const absRoot = p => path.resolve(process.cwd(), p)
 
   // used as subfolder folder in dist, converts to a single dir, e.g. dx/excshell/1 =>
   // dx-excshell-1 and dist/dx-excshell-1/actions/action-xyz.zip
@@ -533,7 +533,8 @@ function pathConfigValueToRelRoot (pathValue, fullKeyToPathValue, includeIndex) 
   }
   // if path value is defined and fullKeyToPathValyue is correct then index has an entry
   const configPath = configData.file
-  return path.join(path.dirname(configPath), pathValue)
+  // path.resolve => support both absolut pathValue and relative (relative joins, absolut returns pathValue)
+  return path.resolve(path.dirname(configPath), pathValue)
 }
 
 /** @private */
