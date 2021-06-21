@@ -75,7 +75,6 @@ class DeleteExtensionCommand extends BaseCommand {
 
   deleteImplementations (configs) {
     Object.entries(configs).forEach(([id, c]) => {
-      console.log(JSON.stringify(c))
       if (c.app.hasBackend) {
         fs.removeSync(c.actions.src)
       }

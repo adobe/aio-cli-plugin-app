@@ -23,7 +23,9 @@ class DeleteCICommand extends BaseCommand {
 
     const env = yeoman.createEnv()
     const gen = env.instantiate(generators['delete-ci'], {
-      'skip-prompt': flags.yes
+      options: {
+        'skip-prompt': flags.yes
+      }
     })
     await env.runGenerator(gen)
   }

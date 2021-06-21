@@ -42,10 +42,12 @@ function update (config) {
 
     const env = yeoman.createEnv()
     const gen = env.instantiate(generators['add-vscode-config'], {
-      'app-config': config,
-      'env-file': config.envFile,
-      'frontend-url': props.frontEndUrl,
-      'skip-prompt': true
+      options: {
+        'app-config': config,
+        'env-file': config.envFile,
+        'frontend-url': props.frontEndUrl,
+        'skip-prompt': true
+      }
     })
     await env.runGenerator(gen)
   }
