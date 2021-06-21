@@ -403,8 +403,6 @@ function buildAppConfig (userConfig, commonConfig, includeIndex) {
 
 /** @private */
 function buildSingleConfig (configName, singleUserConfig, commonConfig, includeIndex) {
-  const absRoot = p => path.resolve(process.cwd(), p)
-
   // used as subfolder folder in dist, converts to a single dir, e.g. dx/excshell/1 =>
   // dx-excshell-1 and dist/dx-excshell-1/actions/action-xyz.zip
   const subFolderName = configName.replace(/\//g, '-')
@@ -443,10 +441,10 @@ function buildSingleConfig (configName, singleUserConfig, commonConfig, includeI
 
   config.app.hasBackend = !!manifest
   config.app.hasFrontend = fs.existsSync(web)
-  config.app.dist = absRoot(path.join(dist, dist === defaultDistPath ? subFolderName : ''))
+  config.app.dist = path.resolve(dist, dist === defaultDistPath ? subFolderName : '')
 
   // actions
-  config.actions.src = absRoot(actions)// needed for app add first action
+  config.actions.src = path.resolve(actions)// needed for app add first action
   if (config.app.hasBackend) {
     config.actions.dist = path.join(config.app.dist, 'actions')
     config.manifest = { src: 'manifest.yml' } // even if a legacy config path, it is required for runtime sync
@@ -460,13 +458,13 @@ function buildSingleConfig (configName, singleUserConfig, commonConfig, includeI
   }
 
   // web
-  config.web.src = absRoot(web) // needed for app add first web-assets
+  config.web.src = path.resolve(web) // needed for app add first web-assets
   if (config.app.hasFrontend) {
-    config.web.injectedConfig = absRoot(path.join(web, 'src', 'config.json'))
+    config.web.injectedConfig = path.resolve(path.join(web, 'src', 'config.json'))
     // only add subfolder name if dist is default value
     config.web.distDev = path.join(config.app.dist, 'web-dev')
     config.web.distProd = path.join(config.app.dist, 'web-prod')
-    config.s3.credsCacheFile = absRoot('.aws.tmp.creds.json')
+    config.s3.credsCacheFile = path.resolve('.aws.tmp.creds.json')
     config.s3.folder = commonConfig.ow.namespace
 
     if (singleUserConfig.awsaccesskeyid &&
