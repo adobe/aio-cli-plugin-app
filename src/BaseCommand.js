@@ -117,8 +117,12 @@ class BaseCommand extends Command {
   getFullConfig (options = {}) {
     if (!this.appConfig) {
       this.appConfig = loadConfig(options)
-      // add on appConfig
-      this.appConfig.cli = this.config
+      // add needed cli configuration to all single configs
+      Object.values(this.appConfig.all).forEach(v => {
+        v.cli = {
+          dataDir: this.config.dataDir
+        }
+      })
     }
     return this.appConfig
   }
