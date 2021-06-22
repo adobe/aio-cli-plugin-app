@@ -393,7 +393,7 @@ function setOrgServicesConfig (supportedServices) {
  * @param {object} aioConfig loaded aio config
  * @returns {object} op['view'] metadata OR null
  */
-async function buildExcShellExtensionMetadata (libConsoleCLI, aioConfig) {
+async function buildExcShellViewExtensionMetadata (libConsoleCLI, aioConfig) {
   const serviceProperties = await libConsoleCLI.getServicePropertiesFromWorkspace(
     aioConfig.project.org.id,
     aioConfig.project.id,
@@ -434,14 +434,15 @@ function buildExtensionPointPayloadWoMetadata (extConfigs) {
   //         type: action
   //
   // Example output:
-  // dx/excshell/1:
-  //  operations:
-  //    view:
-  //      href: https://namespace.adobeio-static.net/index.html # todo support for multi UI with a extname-opcode-subfolder
-  // dx/asset-compute/worker/1:
-  //  operations:
-  //    worker:
-  //      href: https://namespace.adobeioruntime.net/api/v1/web/aem-nui-v1/ps-worker
+  // endpoints:
+  //   dx/excshell/1:
+  //    operations:
+  //      view:
+  //        href: https://namespace.adobeio-static.net/index.html # todo support for multi UI with a extname-opcode-subfolder
+  //   dx/asset-compute/worker/1:
+  //    operations:
+  //      worker:
+  //        href: https://namespace.adobeioruntime.net/api/v1/web/aem-nui-v1/ps-worker
 
   const endpointsPayload = {}
   // iterate over all configuration to deploy
@@ -477,7 +478,7 @@ function buildExtensionPointPayloadWoMetadata (extConfigs) {
           })
         })
     })
-  return endpointsPayload
+  return { endpoints: endpointsPayload }
 }
 
 /**
@@ -526,7 +527,7 @@ module.exports = {
   setOrgServicesConfig,
   setWorkspaceServicesConfig,
   buildExtensionPointPayloadWoMetadata,
-  buildExcShellExtensionMetadata,
+  buildExcShellViewExtensionMetadata,
   atLeastOne,
   deleteUserConfig
 }

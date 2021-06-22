@@ -57,7 +57,8 @@ class Undeploy extends BaseCommand {
       // 2. unpublish extension manifest
       if (flags.unpublish && !(keys.length === 1 && keys[0] === 'application')) {
         const aioConfig = this.getFullConfig().aio
-        await this.unpublishExtensionPoints(libConsoleCLI, undeployConfigs, aioConfig, flags)
+        const payload = await this.unpublishExtensionPoints(libConsoleCLI, undeployConfigs, aioConfig, flags)
+        this.log(chalk.blue(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': [${Object.keys(payload.endpoints)}]`))
       } else {
         this.log('skipping unpublish phase...')
       }
@@ -122,8 +123,6 @@ class Undeploy extends BaseCommand {
       }
     }
 
-    // final message
-    this.log(chalk.green(chalk.bold('Undeploy done !')))
     try {
       await runScript(config.hooks['post-app-undeploy'])
     } catch (err) {
@@ -133,12 +132,14 @@ class Undeploy extends BaseCommand {
 
   async unpublishExtensionPoints (libConsoleCLI, deployConfigs, aioConfig, flags) {
     const payload = buildExtensionPointPayloadWoMetadata(deployConfigs)
+    let res
     if (flags['force-publish']) {
       // publish and overwrite any previous published endpoints (delete them)
-      await libConsoleCLI.updateExtensionPoints(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, {})
+      res = await libConsoleCLI.updateExtensionPoints(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, { endpoints: {} })
     }
     // publish without overwritting, meaning partial publish (for a subset of ext points) are supported
-    await libConsoleCLI.removeSelectedExtensionPoints(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, payload)
+    res = await libConsoleCLI.removeSelectedExtensionPoints(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, payload)
+    return res
   }
 }
 
