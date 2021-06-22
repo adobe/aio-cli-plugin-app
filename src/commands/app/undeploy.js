@@ -84,7 +84,7 @@ class Undeploy extends BaseCommand {
       this.log(err)
     }
 
-    if (!flags['skip-actions']) {
+    if (flags.actions) {
       if (config.app.hasBackend) {
         try {
           const script = await runScript(config.hooks['undeploy-actions'])
