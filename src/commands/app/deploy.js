@@ -19,7 +19,7 @@ const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { flags } = require('@oclif/command')
-const { runScript, buildExtensionPointPayload } = require('../../lib/app-helper')
+const { runScript, buildExtensionPointPayloadWoMetadata, buildExcShellExtensionMetadata } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 
 class Deploy extends BuildCommand {
@@ -176,7 +176,11 @@ class Deploy extends BuildCommand {
   }
 
   async publishExtensionPoints (libConsoleCLI, deployConfigs, aioConfig, flags) {
-    const payload = buildExtensionPointPayload(deployConfigs, aioConfig)
+    const payload = buildExtensionPointPayloadWoMetadata(deployConfigs)
+    // build metadata
+    if (payload['dx/excshell/1']) {
+      payload['dx/excshell/1'].metadata = await buildExcShellExtensionMetadata(libConsoleCLI, aioConfig)
+    }
     if (flags['force-publish']) {
       // publish and overwrite any previous published endpoints (delete them)
       await libConsoleCLI.updateExtensionPoints(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, payload)

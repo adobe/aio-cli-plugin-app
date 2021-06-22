@@ -385,24 +385,31 @@ function setOrgServicesConfig (supportedServices) {
   aioConfig.set(AIO_CONFIG_ORG_SERVICES, orgServiceConfig, true)
   aioLogger.debug(`set aio config ${AIO_CONFIG_ORG_SERVICES}: ${JSON.stringify(orgServiceConfig, null, 2)}`)
 }
+
 /**
- * Gets metadata to be associated with the view operation for dx/excshell/1 extensions
+ * Gets fresh service list from Console Workspace and builds metadata to be associated with the view operation for dx/excshell/1 extensions
  *
- * @param {Object} extConfigs the extension config being published/deployed
- * @param {Object} aioConfig the project's config containing service list
+ * @param {object} libConsoleCLI an instance of LibConsoleCli to get latest services, the user must be logged in
+ * @param {object} aioConfig loaded aio config
  * @returns {object} op['view'] metadata OR null
  */
-function getExtensionMetadata (extConfig, aioConfig) {
-  if(extConfig.name === 'dx/excshell/1') {
-    return {
-      services: Object.assign([], aioConfig.project.workspace.details.services),
-      profile: {
-        client_id: 'firefly-app',
-        scope: 'ab.manage,additional_info.job_function,additional_info.projectedProductContext,additional_info.roles,additional_info,AdobeID,adobeio_api,adobeio.appregistry.read,audiencemanager_api,creative_cloud,mps,openid,read_organizations,read_pc.acp,read_pc.dma_tartan,read_pc,session'
-      }
+async function buildExcShellExtensionMetadata (libConsoleCLI, aioConfig) {
+  const serviceProperties = await libConsoleCLI.getServicePropertiesFromWorkspace(
+    aioConfig.project.org.id,
+    aioConfig.project.id,
+    aioConfig.project.workspace
+  )
+  const services = serviceProperties.map(s => ({
+    name: s.name,
+    code: s.sdkCode
+  }))
+  return {
+    services: Object.assign([], services),
+    profile: {
+      client_id: 'firefly-app',
+      scope: 'ab.manage,additional_info.job_function,additional_info.projectedProductContext,additional_info.roles,additional_info,AdobeID,adobeio_api,adobeio.appregistry.read,audiencemanager_api,creative_cloud,mps,openid,read_organizations,read_pc.acp,read_pc.dma_tartan,read_pc,session'
     }
   }
-  aioLogger.debug(`getExtensionMetadata: extension name [${extConfig.name}] is not 'dx/excshell/1', returning null`)
 }
 
 /**
@@ -411,7 +418,7 @@ function getExtensionMetadata (extConfig, aioConfig) {
  * @param {Array} extConfigs array resulting from BaseCommand.getAppExtConfigs
  * @returns {object} extension registry payload
  */
-function buildExtensionPointPayload (extConfigs, aioConfig) {
+function buildExtensionPointPayloadWoMetadata (extConfigs) {
   // Example input:
   // application: {...}
   // extensions:
@@ -436,7 +443,6 @@ function buildExtensionPointPayload (extConfigs, aioConfig) {
   //    worker:
   //      href: https://namespace.adobeioruntime.net/api/v1/web/aem-nui-v1/ps-worker
 
-
   const endpointsPayload = {}
   // iterate over all configuration to deploy
   Object.entries(extConfigs)
@@ -444,7 +450,6 @@ function buildExtensionPointPayload (extConfigs, aioConfig) {
     .filter(([k, v]) => k !== 'application')
     .forEach(([extPointName, extPointConfig]) => {
       endpointsPayload[extPointName] = {}
-      const metadata = getExtensionMetadata(extPointConfig, aioConfig)
       Object.entries(extPointConfig.operations)
         .forEach(([opName, opList]) => {
           // replace operations impl and type with a href, either for an action or for a UI
@@ -460,14 +465,13 @@ function buildExtensionPointPayload (extConfigs, aioConfig) {
               // todo non runtime apihost do not support namespace as subdomain
               const href = urlJoin('https://' + extPointConfig.ow.namespace + '.' + removeProtocolFromURL(extPointConfig.ow.apihost), 'api', extPointConfig.ow.apiversion, webUri, packageWithAction)
               return { href, ...op.params }
-            }
-            else if (op.type === 'web') {
+            } else if (op.type === 'web') {
               // todo support for multi UI with a extname-opcode-subfolder
               return {
                 href: `https://${extPointConfig.ow.namespace}.${extPointConfig.app.hostname}/${op.impl}`,
-                metadata, ...op.params }
-            }
-            else {
+                ...op.params
+              }
+            } else {
               throw new Error(`unexpected op.type encountered => ${op.type}`)
             }
           })
@@ -476,6 +480,9 @@ function buildExtensionPointPayload (extConfigs, aioConfig) {
   return endpointsPayload
 }
 
+/**
+ * @param input
+ */
 function atLeastOne (input) {
   if (input.length === 0) {
     return 'please choose at least one option'
@@ -483,6 +490,9 @@ function atLeastOne (input) {
   return true
 }
 
+/**
+ * @param configData
+ */
 function deleteUserConfig (configData) {
   const phyConfig = yaml.safeLoad(fs.readFileSync(configData.file))
   const interKeys = configData.key.split('.')
@@ -514,8 +524,8 @@ module.exports = {
   waitForOpenWhiskReadiness,
   warnIfOverwriteServicesInProductionWorkspace,
   setOrgServicesConfig,
-  setWorkspaceServicesConfig,
-  buildExtensionPointPayload,
+  buildExtensionPointPayloadWoMetadata,
+  buildExcShellExtensionMetadata,
   atLeastOne,
   deleteUserConfig
 }

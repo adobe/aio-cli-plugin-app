@@ -18,7 +18,7 @@ const { flags } = require('@oclif/command')
 
 const BaseCommand = require('../../BaseCommand')
 const webLib = require('@adobe/aio-lib-web')
-const { runScript, buildExtensionPointPayload } = require('../../lib/app-helper')
+const { runScript, buildExtensionPointPayloadWoMetadata } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 
 class Undeploy extends BaseCommand {
@@ -132,7 +132,7 @@ class Undeploy extends BaseCommand {
   }
 
   async unpublishExtensionPoints (libConsoleCLI, deployConfigs, aioConfig, flags) {
-    const payload = buildExtensionPointPayload(deployConfigs)
+    const payload = buildExtensionPointPayloadWoMetadata(deployConfigs)
     if (flags['force-publish']) {
       // publish and overwrite any previous published endpoints (delete them)
       await libConsoleCLI.updateExtensionPoints(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, {})
