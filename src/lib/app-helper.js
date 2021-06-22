@@ -524,6 +524,7 @@ module.exports = {
   waitForOpenWhiskReadiness,
   warnIfOverwriteServicesInProductionWorkspace,
   setOrgServicesConfig,
+  setWorkspaceServicesConfig,
   buildExtensionPointPayloadWoMetadata,
   buildExcShellExtensionMetadata,
   atLeastOne,
