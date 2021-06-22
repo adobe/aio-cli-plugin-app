@@ -176,7 +176,7 @@ class Deploy extends BuildCommand {
   }
 
   async publishExtensionPoints (libConsoleCLI, deployConfigs, aioConfig, flags) {
-    const payload = buildExtensionPointPayload(deployConfigs)
+    const payload = buildExtensionPointPayload(deployConfigs, aioConfig)
     if (flags['force-publish']) {
       // publish and overwrite any previous published endpoints (delete them)
       await libConsoleCLI.updateExtensionPoints(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, payload)
