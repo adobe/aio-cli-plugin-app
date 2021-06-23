@@ -182,7 +182,7 @@ function loadUserConfig (commonConfig) {
 function loadUserConfigAppYaml () {
   if (!fs.existsSync(USER_CONFIG_FILE)) {
     // no error, support for legacy configuration
-    return {}
+    return { config: {}, includeIndex: {} }
   }
 
   // this code is traversing app.config.yaml recursively to resolve all $includes directives
@@ -288,11 +288,12 @@ function loadUserConfigLegacy (commonConfig) {
     legacyAppConfig.runtimeManifest = runtimeManifest
     // populate index
     const baseKey = `${APPLICATION_CONFIG_KEY}.runtimeManifest`
+    includeIndex[baseKey] = { file: 'manifest.yml', key: '' }
     const stack = Object.keys(runtimeManifest).map(rtk => ({ key: rtk, parent: runtimeManifest, fullKey: '' }))
     while (stack.length > 0) {
       const { key, parent, fullKey } = stack.pop()
       const newFullKey = fullKey.concat(`.${key}`)
-      includeIndex[baseKey + newFullKey] = { file: 'manifest.yaml', key: newFullKey }
+      includeIndex[baseKey + newFullKey] = { file: 'manifest.yml', key: newFullKey.slice(1) } // remove first dot
       if (typeof parent[key] === 'object') {
         // includes arrays
         stack.push(...Object.keys(parent[key]).map(rtk => ({ key: rtk, parent: parent[key], fullKey: newFullKey })))
@@ -325,6 +326,7 @@ function loadUserConfigLegacy (commonConfig) {
       warn('hooks in \'package.json\' are deprecated. Please move your hooks to \'app.config.yaml\' under the \'hooks\' key')
       legacyAppConfig.hooks = hooks
       // build index
+      includeIndex[`${APPLICATION_CONFIG_KEY}.hooks`] = { file: 'package.json', key: 'scripts' }
       keys.forEach((hk) => {
         const fullKey = `${APPLICATION_CONFIG_KEY}.hooks.${hk}`
         includeIndex[fullKey] = {
@@ -333,6 +335,11 @@ function loadUserConfigLegacy (commonConfig) {
         }
       })
     }
+  }
+
+  if (Object.keys(includeIndex).length > 0) {
+    // add the top key
+    includeIndex[`${APPLICATION_CONFIG_KEY}`] = { file: '.aio', key: 'app' }
   }
 
   return { includeIndex, config: { [APPLICATION_CONFIG_KEY]: legacyAppConfig } }
@@ -366,6 +373,7 @@ function mergeLegacyUserConfig (userConfig, legacyUserConfig) {
     [APPLICATION_CONFIG_KEY]: mergedApp
   }
 }
+
 /** @private */
 function buildAllConfigs (userConfig, commonConfig, includeIndex) {
   return {
@@ -445,7 +453,7 @@ function buildSingleConfig (configName, singleUserConfig, commonConfig, includeI
   config.app.dist = path.resolve(dist, dist === defaultDistPath ? subFolderName : '')
 
   // actions
-  config.actions.src = path.resolve(actions)// needed for app add first action
+  config.actions.src = path.resolve(actions) // needed for app add first action
   if (config.app.hasBackend) {
     config.actions.dist = path.join(config.app.dist, 'actions')
     config.manifest = { src: 'manifest.yml' } // even if a legacy config path, it is required for runtime sync

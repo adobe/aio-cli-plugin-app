@@ -113,7 +113,7 @@ class Deploy extends BuildCommand {
           if (filterActions) {
             filterEntities = { actions: filterActions }
           }
-          const message = `Deploying actions '${name}'`
+          const message = `Deploying actions for '${name}'`
           spinner.start(message)
           try {
             const script = await runScript(config.hooks['deploy-actions'])
@@ -132,7 +132,7 @@ class Deploy extends BuildCommand {
 
       if (flags['web-assets']) {
         if (config.app.hasFrontend) {
-          const message = `Deploying web assets '${name}'`
+          const message = `Deploying web assets for '${name}'`
           spinner.start(message)
           try {
             const script = await runScript(config.hooks['deploy-static'])
@@ -156,7 +156,7 @@ class Deploy extends BuildCommand {
           this.log(chalk.blue(chalk.bold(`  -> ${a.url || a.name} `)))
         })
       }
-      // TODO urls should depend on extension point, exc shell only for exc shell extension point
+      // TODO urls should depend on extension point, exc shell only for exc shell extension point - use a post-app-deploy hook ?
       if (deployedFrontendUrl) {
         this.log(chalk.blue(chalk.bold(`To view your deployed application:\n  -> ${deployedFrontendUrl}`)))
         const launchUrl = this.getLaunchUrlPrefix() + deployedFrontendUrl
