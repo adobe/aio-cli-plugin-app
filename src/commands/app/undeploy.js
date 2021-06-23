@@ -58,7 +58,7 @@ class Undeploy extends BaseCommand {
       if (flags.unpublish && !(keys.length === 1 && keys[0] === 'application')) {
         const aioConfig = this.getFullConfig().aio
         const payload = await this.unpublishExtensionPoints(libConsoleCLI, undeployConfigs, aioConfig, flags)
-        this.log(chalk.blue(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': [${Object.keys(payload.endpoints)}]`))
+        this.log(chalk.blue(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': '${Object.keys(payload.endpoints)}'`))
       } else {
         this.log('skipping unpublish phase...')
       }

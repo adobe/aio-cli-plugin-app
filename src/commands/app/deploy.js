@@ -66,7 +66,7 @@ class Deploy extends BuildCommand {
       if (flags.publish && !(keys.length === 1 && keys[0] === 'application')) {
         const aioConfig = this.getFullConfig().aio
         const payload = await this.publishExtensionPoints(libConsoleCLI, deployConfigs, aioConfig, flags)
-        this.log(chalk.blue(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': [${Object.keys(payload.endpoints)}]`))
+        this.log(chalk.blue(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': '${Object.keys(payload.endpoints)}'`))
       } else {
         this.log('skipping publish phase...')
       }

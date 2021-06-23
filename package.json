@@ -90,5 +90,8 @@
     "prepack": "oclif-dev manifest && oclif-dev readme",
     "test": "jest -c ./jest.config.js",
     "version": "oclif-dev readme && git add README.md"
+  },
+  "bin": {
+    "aio-next": "./bin/run"
   }
 }
