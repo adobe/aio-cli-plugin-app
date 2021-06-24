@@ -49,7 +49,7 @@ module.exports = {
     // extensions
     // TODO this list should not be hardcoded but fetched from xt reg
     {
-      name: 'Firefly Experience Cloud Shell',
+      name: 'DX Experience Cloud SPA v1',
       value: {
         name: 'dx/excshell/1',
         generator: generators.extensions['dx/excshell/1'],
