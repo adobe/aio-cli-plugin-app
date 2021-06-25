@@ -1,0 +1,42 @@
+packages:
+  mypackage:
+    license: 'Apache-2.0'
+    actions:
+      action:
+        function: 'myactions/action.js'
+        web: 'yes'
+        runtime: 'nodejs:12'
+        inputs:
+          LOG_LEVEL: 'debug'
+        annotations:
+          'require-adobe-auth': true,
+          final: true
+        include:
+          - 'somefile.txt'
+          - 'file.txt'
+        limits:
+          concurrency: 189
+      'action-zip':
+        function: 'myactions/action-zip'
+        web: 'yes'
+        runtime: 'nodejs:14'
+    sequences:
+      'action-sequence':
+        actions: 'action, action-zip'
+        web: 'yes'
+    triggers:
+      trigger1: null
+    rules:
+      rule1:
+        trigger: 'trigger1'
+        action: 'action'
+        rule: true
+    apis:
+      api1:
+        base:
+          path:
+            action:
+              method: 'get'
+    dependencies:
+      dependency1:
+        location: 'fake.com/package'

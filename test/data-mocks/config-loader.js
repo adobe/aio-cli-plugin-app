@@ -10,9 +10,16 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
+const upath = require('upath')
+
 // todo needs to be passed in as mock
 const root = process.cwd()
 const dataDir = 'fakeDir'
+
+const packagejson = {
+  version: '1.0.0',
+  name: 'sample-app'
+}
 
 // fake
 const imsOrgId = '00000000000000000100000@AdobeOrg'
@@ -21,7 +28,107 @@ const owCreds = {
   namespace: '123-project-workspace'
 }
 
-const excshellSingleConfig = {
+/** @private */
+function fullFakeRuntimeManifest (pathToActionFolder) {
+  return {
+    packages: {
+      mypackage: {
+        license: 'Apache-2.0',
+        actions: {
+          action: {
+            function: upath.toUnix(`${pathToActionFolder}/action.js`),
+            web: 'yes',
+            runtime: 'nodejs:14',
+            inputs: {
+              LOG_LEVEL: 'debug'
+            },
+            annotations: {
+              'require-adobe-auth': true,
+              final: true
+            },
+            include: [
+              'somefile.txt', 'file.txt'
+            ],
+            limits: {
+              concurrency: 189
+            }
+          },
+          'action-zip': {
+            function: upath.toUnix(`${pathToActionFolder}/action-zip`),
+            web: 'yes',
+            runtime: 'nodejs:14'
+          }
+        },
+        sequences: {
+          'action-sequence': {
+            actions: 'action, action-zip',
+            web: 'yes'
+          }
+        },
+        triggers: {
+          trigger1: null
+        },
+        rules: {
+          rule1: {
+            trigger: 'trigger1',
+            action: 'action',
+            rule: true
+          }
+        },
+        apis: {
+          api1: {
+            base: {
+              path: {
+                action: {
+                  method: 'get'
+                }
+              }
+            }
+          }
+        },
+        dependencies: {
+          dependency1: {
+            location: 'fake.com/package'
+          }
+        }
+      }
+    }
+  }
+}
+
+/** @private */
+function oneActionRuntimeManifest (pathToActionFolder) {
+  return {
+    packages: {
+      mypackage: {
+        license: 'Apache-2.0',
+        actions: {
+          action: {
+            function: upath.toUnix(`${pathToActionFolder}/action.js`),
+            web: 'yes',
+            runtime: 'nodejs:14',
+            inputs: {
+              LOG_LEVEL: 'debug'
+            },
+            annotations: {
+              'require-adobe-auth': true,
+              final: true
+            },
+            include: [
+              'somefile.txt', 'file.txt'
+            ],
+            limits: {
+              concurrency: 189
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+const excActionsFolder = `${root}/src/dx-excshell-1/actions`
+const excSingleConfig = {
   'dx/excshell/1': {
     app: {
       hasBackend: true,
@@ -33,7 +140,7 @@ const excshellSingleConfig = {
       jsCacheDuration: '604800',
       cssCacheDuration: '604800',
       imageCacheDuration: '604800',
-      name: 'NEWTESTPOCEXTREG',
+      name: 'sample-app',
       version: '0.0.1'
     },
     ow: {
@@ -41,11 +148,11 @@ const excshellSingleConfig = {
       apihost: 'https://adobeioruntime.net',
       defaultApihost: 'https://adobeioruntime.net',
       apiversion: 'v1',
-      package: 'NEWTESTPOCEXTREG-0.0.1'
+      package: 'sample-app-0.0.1'
     },
     s3: {
       credsCacheFile: `${root}/.aws.tmp.creds.json`,
-      folder: 'development-918-newtestpocextreg'
+      folder: owCreds.namespace
     },
     web: {
       src: `${root}/src/dx-excshell-1/web-src`,
@@ -55,35 +162,18 @@ const excshellSingleConfig = {
     },
     manifest: {
       src: 'manifest.yml',
-      full: {
-        packages: {
-          'dx-excshell-1': {
-            license: 'Apache-2.0',
-            actions: {
-              generic: {
-                function: `${root}/src/dx-excshell-1/actions/generic/index.js`,
-                web: 'yes',
-                runtime: 'nodejs:14',
-                inputs: {
-                  LOG_LEVEL: 'debug'
-                },
-                annotations: {
-                  final: true
-                }
-              }
-            }
-          }
-        }
-      },
+      full: oneActionRuntimeManifest(excActionsFolder),
       packagePlaceholder: '__APP_PACKAGE__'
     },
     actions: {
-      src: `${root}/src/dx-excshell-1/actions`,
+      src: excActionsFolder,
       dist: `${root}/dist/dx-excshell-1/actions`
     },
     root: `${root}`,
     name: 'dx/excshell/1',
-    hooks: {},
+    hooks: {
+      'post-app-deploy': 'echo hello'
+    },
     imsOrgId,
     operations: {
       view: [
@@ -99,7 +189,8 @@ const excshellSingleConfig = {
   }
 }
 
-const assetComputeSingleConfig = {
+const nuiActionsFolder = `${root}/src/dx-asset-compute-worker-1/actions`
+const nuiSingleConfig = {
   'dx/asset-compute/worker/1': {
     app: {
       hasBackend: true,
@@ -111,7 +202,7 @@ const assetComputeSingleConfig = {
       jsCacheDuration: '604800',
       cssCacheDuration: '604800',
       imageCacheDuration: '604800',
-      name: 'NEWTESTPOCEXTREG',
+      name: 'sample-app',
       version: '0.0.1'
     },
     ow: {
@@ -119,7 +210,7 @@ const assetComputeSingleConfig = {
       apihost: 'https://adobeioruntime.net',
       defaultApihost: 'https://adobeioruntime.net',
       apiversion: 'v1',
-      package: 'NEWTESTPOCEXTREG-0.0.1'
+      package: 'sample-app-0.0.1'
     },
     s3: {},
     web: {
@@ -127,30 +218,11 @@ const assetComputeSingleConfig = {
     },
     manifest: {
       src: 'manifest.yml',
-      full: {
-        packages: {
-          'dx-asset-compute-worker-1': {
-            license: 'Apache-2.0',
-            actions: {
-              worker: {
-                function: `${root}/src/dx-asset-compute-worker-1/actions/worker/index.js`,
-                web: 'yes',
-                runtime: 'nodejs:14',
-                limits: {
-                  concurrency: 10
-                },
-                annotations: {
-                  'require-adobe-auth': true
-                }
-              }
-            }
-          }
-        }
-      },
+      full: oneActionRuntimeManifest(nuiActionsFolder),
       packagePlaceholder: '__APP_PACKAGE__'
     },
     actions: {
-      src: `${root}/src/dx-asset-compute-worker-1/actions`,
+      src: nuiActionsFolder,
       dist: `${root}/dist/dx-asset-compute-worker-1/actions`
     },
     root: `${root}`,
@@ -173,6 +245,7 @@ const assetComputeSingleConfig = {
   }
 }
 
+const appActionsFolder = `${root}/myactions`
 const applicationSingleConfig = {
   application: {
     app: {
@@ -185,7 +258,7 @@ const applicationSingleConfig = {
       jsCacheDuration: '604800',
       cssCacheDuration: '604800',
       imageCacheDuration: '604800',
-      name: 'NEWTESTPOCEXTREG',
+      name: 'sample-app',
       version: '0.0.1'
     },
     ow: {
@@ -193,11 +266,11 @@ const applicationSingleConfig = {
       apihost: 'https://adobeioruntime.net',
       defaultApihost: 'https://adobeioruntime.net',
       apiversion: 'v1',
-      package: 'NEWTESTPOCEXTREG-0.0.1'
+      package: 'sample-app-0.0.1'
     },
     s3: {
       credsCacheFile: `${root}/.aws.tmp.creds.json`,
-      folder: 'development-918-newtestpocextreg-stage'
+      folder: owCreds.namespace
     },
     web: {
       src: `${root}/web-src`,
@@ -207,38 +280,18 @@ const applicationSingleConfig = {
     },
     manifest: {
       src: 'manifest.yml',
-      full: {
-        packages: {
-          demoappassetcompute: {
-            license: 'Apache-2.0',
-            actions: {
-              analytics: {
-                function: `${root}/actions/analytics/index.js`,
-                web: 'yes',
-                runtime: 'nodejs:14',
-                inputs: {
-                  LOG_LEVEL: 'debug',
-                  companyId: '$ANALYTICS_COMPANY_ID',
-                  apiKey: '$SERVICE_API_KEY'
-                },
-                annotations: {
-                  'require-adobe-auth': true,
-                  final: true
-                }
-              }
-            }
-          }
-        }
-      },
+      full: fullFakeRuntimeManifest(appActionsFolder),
       packagePlaceholder: '__APP_PACKAGE__'
     },
     actions: {
-      src: `${root}/actions`,
+      src: appActionsFolder,
       dist: `${root}/dist/application/actions`
     },
     root: `${root}`,
     name: 'application',
-    hooks: {},
+    hooks: {
+      'pre-app-run': 'echo hello'
+    },
     imsOrgId,
     cli: {
       dataDir
@@ -246,23 +299,66 @@ const applicationSingleConfig = {
   }
 }
 
-const packagejson = {
-  version: '1.0.0',
-  name: 'sample-app'
+const applicationNoActionsSingleConfig = {
+  application: {
+    app: {
+      hasBackend: false,
+      hasFrontend: true,
+      dist: `${root}/dist/application`,
+      defaultHostname: 'adobeio-static.net',
+      hostname: 'adobeio-static.net',
+      htmlCacheDuration: '60',
+      jsCacheDuration: '604800',
+      cssCacheDuration: '604800',
+      imageCacheDuration: '604800',
+      name: 'sample-app',
+      version: '0.0.1'
+    },
+    ow: {
+      ...owCreds,
+      apihost: 'https://adobeioruntime.net',
+      defaultApihost: 'https://adobeioruntime.net',
+      apiversion: 'v1',
+      package: 'sample-app-0.0.1'
+    },
+    s3: {
+      credsCacheFile: `${root}/.aws.tmp.creds.json`,
+      folder: owCreds.namespace
+    },
+    web: {
+      src: `${root}/web-src`,
+      injectedConfig: `${root}/web-src/src/config.json`,
+      distDev: `${root}/dist/application/web-dev`,
+      distProd: `${root}/dist/application/web-prod`
+    },
+    manifest: {},
+    actions: {
+      src: `${root}/actions`
+    },
+    root: `${root}`,
+    name: 'application',
+    hooks: {
+      'pre-app-run': 'echo hello'
+    },
+    imsOrgId,
+    cli: {
+      dataDir
+    }
+  }
 }
 
 // expected return values from config loader for match fixtures in __fixtures__
 module.exports = {
   // TODO s3 credentials, index, .., legacy
-  app1: {
-    all: { ...excshellSingleConfig },
+  exc: {
+    all: { ...excSingleConfig },
     implements: [
       'dx/excshell/1'
     ],
     packagejson,
     root
   },
-  app2: {
+  app: {
     all: { ...applicationSingleConfig },
     implements: [
       'application'
@@ -270,8 +366,8 @@ module.exports = {
     packagejson,
     root
   },
-  app3: {
-    all: { ...excshellSingleConfig, ...assetComputeSingleConfig, ...applicationSingleConfig },
+  appExcNui: {
+    all: { ...excSingleConfig, ...nuiSingleConfig, ...applicationSingleConfig },
     implements: [
       'application',
       'dx/asset-compute/worker/1',
@@ -279,9 +375,29 @@ module.exports = {
     ],
     packagejson,
     root
-  }
-  legacy: {
-
+  },
+  appNoActions: {
+    all: { ...applicationNoActionsSingleConfig },
+    implements: [
+      'application'
+    ],
+    packagejson,
+    root
+  },
+  excComplexIncludes: {
+    all: { ...excSingleConfig },
+    implements: [
+      'dx/excshell/1'
+    ],
+    packagejson,
+    root
+  },
+  legacyApp: {
+    all: { ...applicationSingleConfig },
+    implements: [
+      'application'
+    ],
+    packagejson,
+    root
   }
 }
-

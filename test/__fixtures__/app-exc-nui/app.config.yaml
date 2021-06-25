@@ -1,0 +1,73 @@
+application:
+  action: './myactions'
+  hooks:
+    "post-app-run": "echo hello"
+  runtimeManifest:
+    packages:
+      mypackage:
+        license: 'Apache-2.0'
+        actions:
+          action:
+            function: 'myactions/action.js'
+            web: 'yes'
+            runtime: 'nodejs:12'
+            inputs:
+              LOG_LEVEL: 'debug'
+            annotations:
+              'require-adobe-auth': true,
+              final: true
+            include:
+              - 'somefile.txt'
+              - 'file.txt'
+            limits:
+              concurrency: 189
+          'action-zip':
+            function: 'myactions/action-zip'
+            web: 'yes'
+            runtime: 'nodejs:14'
+        sequences:
+          'action-sequence':
+            actions: 'action, action-zip'
+            web: 'yes'
+        triggers:
+          trigger1: null
+        rules:
+          rule1:
+            trigger: 'trigger1'
+            action: 'action'
+            rule: true
+        apis:
+          api1:
+            base:
+              path:
+                action:
+                  method: 'get'
+        dependencies:
+          dependency1:
+            location: 'fake.com/package'
+extensions:
+  'dx/excshell/1':
+      $include: src/dx-excshell-1/ext.config.yaml
+  'dx/asset-compute/worker/1':
+    actions: src/dx-asset-compute-worker-1/actions
+    hooks:
+      'post-app-run': 'adobe-asset-compute devtool'
+    runtimeManifest:
+      packages:
+        mypackage:
+          license: 'Apache-2.0'
+          actions:
+            action:
+            function: 'src/dx-asset-compute-worker-1/actions/action.js'
+            web: 'yes'
+            runtime: 'nodejs:14'
+            inputs:
+              LOG_LEVEL: 'debug'
+            annotations:
+              'require-adobe-auth': true
+              final: true
+            include:
+              -'./src/dx-asset-compute-worker-1/actions/somefile.txt'
+              -'file.txt'
+            limits:
+              concurrency: 189

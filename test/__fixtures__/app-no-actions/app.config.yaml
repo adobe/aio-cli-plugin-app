@@ -1,0 +1,3 @@
+application:
+  hooks:
+    "post-app-run": "echo hello"
