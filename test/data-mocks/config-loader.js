@@ -11,21 +11,23 @@ governing permissions and limitations under the License.
 */
 
 const upath = require('upath')
-
-// todo needs to be passed in as mock
-const root = process.cwd()
-const dataDir = 'fakeDir'
+const root = '/'
+// const dataDir = 'fakeDir'
 
 const packagejson = {
   version: '1.0.0',
   name: 'sample-app'
 }
 
-// fake
-const imsOrgId = '00000000000000000100000@AdobeOrg'
-const owCreds = {
-  auth: 'xxxxxxxxxxxx:ttttttttttttttt',
-  namespace: '123-project-workspace'
+const ow = {
+  // known later on
+  auth: null,
+  namespace: null,
+  apihost: null,
+
+  defaultApihost: 'https://adobeioruntime.net',
+  apiversion: 'v1',
+  package: `${packagejson.name}-${packagejson.version}`
 }
 
 /** @private */
@@ -127,38 +129,31 @@ function oneActionRuntimeManifest (pathToActionFolder) {
   }
 }
 
-const excActionsFolder = `${root}/src/dx-excshell-1/actions`
+const excActionsFolder = `${root}src/dx-excshell-1/actions`
 const excSingleConfig = {
   'dx/excshell/1': {
     app: {
       hasBackend: true,
       hasFrontend: true,
-      dist: `${root}/dist/dx-excshell-1`,
+      dist: `${root}dist/dx-excshell-1`,
       defaultHostname: 'adobeio-static.net',
       hostname: 'adobeio-static.net',
       htmlCacheDuration: '60',
       jsCacheDuration: '604800',
       cssCacheDuration: '604800',
       imageCacheDuration: '604800',
-      name: 'sample-app',
-      version: '0.0.1'
+      name: packagejson.name,
+      version: packagejson.version
     },
-    ow: {
-      ...owCreds,
-      apihost: 'https://adobeioruntime.net',
-      defaultApihost: 'https://adobeioruntime.net',
-      apiversion: 'v1',
-      package: 'sample-app-0.0.1'
-    },
+    ow,
     s3: {
-      credsCacheFile: `${root}/.aws.tmp.creds.json`,
-      folder: owCreds.namespace
+      credsCacheFile: `${root}.aws.tmp.creds.json`
     },
     web: {
-      src: `${root}/src/dx-excshell-1/web-src`,
-      injectedConfig: `${root}/src/dx-excshell-1/web-src/src/config.json`,
-      distDev: `${root}/dist/dx-excshell-1/web-dev`,
-      distProd: `${root}/dist/dx-excshell-1/web-prod`
+      src: `${root}src/dx-excshell-1/web-src`,
+      injectedConfig: `${root}src/dx-excshell-1/web-src/src/config.json`,
+      distDev: `${root}dist/dx-excshell-1/web-dev`,
+      distProd: `${root}dist/dx-excshell-1/web-prod`
     },
     manifest: {
       src: 'manifest.yml',
@@ -167,14 +162,13 @@ const excSingleConfig = {
     },
     actions: {
       src: excActionsFolder,
-      dist: `${root}/dist/dx-excshell-1/actions`
+      dist: `${root}dist/dx-excshell-1/actions`
     },
     root: `${root}`,
     name: 'dx/excshell/1',
     hooks: {
       'post-app-deploy': 'echo hello'
     },
-    imsOrgId,
     operations: {
       view: [
         {
@@ -182,39 +176,30 @@ const excSingleConfig = {
           impl: 'index.html'
         }
       ]
-    },
-    cli: {
-      dataDir
     }
   }
 }
 
-const nuiActionsFolder = `${root}/src/dx-asset-compute-worker-1/actions`
+const nuiActionsFolder = `${root}src/dx-asset-compute-worker-1/actions`
 const nuiSingleConfig = {
   'dx/asset-compute/worker/1': {
     app: {
       hasBackend: true,
       hasFrontend: false,
-      dist: `${root}/dist/dx-asset-compute-worker-1`,
+      dist: `${root}dist/dx-asset-compute-worker-1`,
       defaultHostname: 'adobeio-static.net',
       hostname: 'adobeio-static.net',
       htmlCacheDuration: '60',
       jsCacheDuration: '604800',
       cssCacheDuration: '604800',
       imageCacheDuration: '604800',
-      name: 'sample-app',
-      version: '0.0.1'
+      name: packagejson.name,
+      version: packagejson.version
     },
-    ow: {
-      ...owCreds,
-      apihost: 'https://adobeioruntime.net',
-      defaultApihost: 'https://adobeioruntime.net',
-      apiversion: 'v1',
-      package: 'sample-app-0.0.1'
-    },
+    ow,
     s3: {},
     web: {
-      src: `${root}/src/dx-asset-compute-worker-1/web-src`
+      src: `${root}src/dx-asset-compute-worker-1/web-src`
     },
     manifest: {
       src: 'manifest.yml',
@@ -223,14 +208,13 @@ const nuiSingleConfig = {
     },
     actions: {
       src: nuiActionsFolder,
-      dist: `${root}/dist/dx-asset-compute-worker-1/actions`
+      dist: `${root}dist/dx-asset-compute-worker-1/actions`
     },
     root: `${root}`,
     name: 'dx/asset-compute/worker/1',
     hooks: {
       'post-app-run': 'adobe-asset-compute devtool'
     },
-    imsOrgId,
     operations: {
       worker: [
         {
@@ -238,45 +222,35 @@ const nuiSingleConfig = {
           impl: 'dx-asset-compute-worker-1/worker'
         }
       ]
-    },
-    cli: {
-      dataDir
     }
   }
 }
 
-const appActionsFolder = `${root}/myactions`
+const appActionsFolder = `${root}myactions`
 const applicationSingleConfig = {
   application: {
     app: {
       hasBackend: true,
       hasFrontend: true,
-      dist: `${root}/dist/application`,
+      dist: `${root}dist/application`,
       defaultHostname: 'adobeio-static.net',
       hostname: 'adobeio-static.net',
       htmlCacheDuration: '60',
       jsCacheDuration: '604800',
       cssCacheDuration: '604800',
       imageCacheDuration: '604800',
-      name: 'sample-app',
-      version: '0.0.1'
+      name: packagejson.name,
+      version: packagejson.version
     },
-    ow: {
-      ...owCreds,
-      apihost: 'https://adobeioruntime.net',
-      defaultApihost: 'https://adobeioruntime.net',
-      apiversion: 'v1',
-      package: 'sample-app-0.0.1'
-    },
+    ow,
     s3: {
-      credsCacheFile: `${root}/.aws.tmp.creds.json`,
-      folder: owCreds.namespace
+      credsCacheFile: `${root}.aws.tmp.creds.json`
     },
     web: {
-      src: `${root}/web-src`,
-      injectedConfig: `${root}/web-src/src/config.json`,
-      distDev: `${root}/dist/application/web-dev`,
-      distProd: `${root}/dist/application/web-prod`
+      src: `${root}web-src`,
+      injectedConfig: `${root}web-src/src/config.json`,
+      distDev: `${root}dist/application/web-dev`,
+      distProd: `${root}dist/application/web-prod`
     },
     manifest: {
       src: 'manifest.yml',
@@ -285,16 +259,12 @@ const applicationSingleConfig = {
     },
     actions: {
       src: appActionsFolder,
-      dist: `${root}/dist/application/actions`
+      dist: `${root}dist/application/actions`
     },
     root: `${root}`,
     name: 'application',
     hooks: {
-      'pre-app-run': 'echo hello'
-    },
-    imsOrgId,
-    cli: {
-      dataDir
+      'post-app-run': 'echo hello'
     }
   }
 }
@@ -304,52 +274,40 @@ const applicationNoActionsSingleConfig = {
     app: {
       hasBackend: false,
       hasFrontend: true,
-      dist: `${root}/dist/application`,
+      dist: `${root}dist/application`,
       defaultHostname: 'adobeio-static.net',
       hostname: 'adobeio-static.net',
       htmlCacheDuration: '60',
       jsCacheDuration: '604800',
       cssCacheDuration: '604800',
       imageCacheDuration: '604800',
-      name: 'sample-app',
-      version: '0.0.1'
+      name: packagejson.name,
+      version: packagejson.version
     },
-    ow: {
-      ...owCreds,
-      apihost: 'https://adobeioruntime.net',
-      defaultApihost: 'https://adobeioruntime.net',
-      apiversion: 'v1',
-      package: 'sample-app-0.0.1'
-    },
+    ow,
     s3: {
-      credsCacheFile: `${root}/.aws.tmp.creds.json`,
-      folder: owCreds.namespace
+      credsCacheFile: `${root}.aws.tmp.creds.json`
     },
     web: {
-      src: `${root}/web-src`,
-      injectedConfig: `${root}/web-src/src/config.json`,
-      distDev: `${root}/dist/application/web-dev`,
-      distProd: `${root}/dist/application/web-prod`
+      src: `${root}web-src`,
+      injectedConfig: `${root}web-src/src/config.json`,
+      distDev: `${root}dist/application/web-dev`,
+      distProd: `${root}dist/application/web-prod`
     },
     manifest: {},
     actions: {
-      src: `${root}/actions`
+      src: `${root}actions`
     },
     root: `${root}`,
     name: 'application',
     hooks: {
       'pre-app-run': 'echo hello'
-    },
-    imsOrgId,
-    cli: {
-      dataDir
     }
   }
 }
 
-// expected return values from config loader for match fixtures in __fixtures__
-module.exports = {
-  // TODO s3 credentials, index, .., legacy
+// expected return values from config loader for matching fixtures in __fixtures__
+const expectedConfigs = {
   exc: {
     all: { ...excSingleConfig },
     implements: [
@@ -366,7 +324,7 @@ module.exports = {
     packagejson,
     root
   },
-  appExcNui: {
+  'app-exc-nui': {
     all: { ...excSingleConfig, ...nuiSingleConfig, ...applicationSingleConfig },
     implements: [
       'application',
@@ -376,7 +334,7 @@ module.exports = {
     packagejson,
     root
   },
-  appNoActions: {
+  'app-no-actions': {
     all: { ...applicationNoActionsSingleConfig },
     implements: [
       'application'
@@ -384,7 +342,7 @@ module.exports = {
     packagejson,
     root
   },
-  excComplexIncludes: {
+  'exc-complex-includes': {
     all: { ...excSingleConfig },
     implements: [
       'dx/excshell/1'
@@ -392,12 +350,31 @@ module.exports = {
     packagejson,
     root
   },
-  legacyApp: {
+  'legacy-app': {
     all: { ...applicationSingleConfig },
     implements: [
       'application'
     ],
     packagejson,
     root
+  }
+}
+
+// get config for fixture - that works
+module.exports = (appFixtureName, mockedAIOConfig, includeIndex) => {
+  // set some more bits based on aio config - kind of ugly, do better
+  ow.auth = mockedAIOConfig.runtime.auth
+  ow.namespace = mockedAIOConfig.runtime.namespace
+  ow.apihost = mockedAIOConfig.runtime.apihost
+  const config = expectedConfigs[appFixtureName]
+  Object.values(config.all).forEach(v => {
+    v.s3.folder = ow.namespace
+    v.imsOrgId = mockedAIOConfig.project.org.ims_org_id
+  })
+  return {
+    ...expectedConfigs[appFixtureName],
+    aio: mockedAIOConfig,
+    // note: include index is not mocked nor tested we assume it is correct
+    includeIndex
   }
 }

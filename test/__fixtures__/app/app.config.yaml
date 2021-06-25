@@ -1,5 +1,5 @@
 application:
-  action: './myactions'
+  actions: 'myactions'
   hooks:
     "post-app-run": "echo hello"
   runtimeManifest:
@@ -10,11 +10,11 @@ application:
           action:
             function: 'myactions/action.js'
             web: 'yes'
-            runtime: 'nodejs:12'
+            runtime: 'nodejs:14'
             inputs:
               LOG_LEVEL: 'debug'
             annotations:
-              'require-adobe-auth': true,
+              'require-adobe-auth': true
               final: true
             include:
               - 'somefile.txt'

@@ -9,7 +9,7 @@ packages:
         inputs:
           LOG_LEVEL: 'debug'
         annotations:
-          'require-adobe-auth': true,
+          'require-adobe-auth': true
           final: true
         include:
           - 'somefile.txt'

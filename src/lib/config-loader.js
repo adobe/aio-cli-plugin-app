@@ -111,14 +111,14 @@ module.exports = ({ allowNoImpl = false }) => {
   // load the full standalone application and extension configurations
   const all = buildAllConfigs(userConfig, commonConfig, includeIndex)
 
-  const implements = Object.keys(all)
-  if (!allowNoImpl && implements.length <= 0) {
-    throw new Error(`Couldn't find configuration in '${process.cwd()}', make sure to add least one extension or a standalone app`)
+  const impl = Object.keys(all)
+  if (!allowNoImpl && impl.length <= 0) {
+    throw new Error(`Couldn't find configuration in '${process.cwd()}', make sure to add at least one extension or a standalone app`)
   }
 
   return {
     all,
-    implements, // e.g. 'dx/excshell/1', 'application'
+    implements: impl, // e.g. 'dx/excshell/1', 'application'
     // includeIndex keeps a map from config keys to files that includes them and the relative key in the file.
     // e.g. 'extension.dx/excshell/1.runtimeManifest.packages' => { path: 'src/dx-excshell-1/ext.config.yaml', key: 'runtimeManifest.packages' }
     includeIndex,

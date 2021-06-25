@@ -1,4 +1,4 @@
-action:
+actions:
   function: '../action.js'
   web: 'yes'
   runtime: 'nodejs:14'
