@@ -23,7 +23,7 @@ governing permissions and limitations under the License.
 global.mockFs()
 const runDev = require('../../../src/lib/run-dev')
 const runLocalRuntime = require('../../../src/lib/run-local-runtime')
-const loadConfig = require('../../../src/lib/config-loader')
+const { loadConfig } = require('../../../src/lib/config-loader')
 const defaults = require('../../../src/lib/defaults')
 const cloneDeep = require('lodash.clonedeep')
 const path = require('path')

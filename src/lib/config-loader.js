@@ -95,9 +95,12 @@ const cloneDeep = require('lodash.clonedeep')
  *       ...same as above...
  *    },
  *  }
+ *
+ * @param {object} options options to loadConfig
+ * @param {boolean} options.allowNoImpl do not throw if there is no implementation
+ * @returns {object} the config
  */
-
-module.exports = ({ allowNoImpl = false }) => {
+function loadConfig (options = { allowNoImpl: false }) {
   // configuration that is shared for application and each extension config
   // holds things like ow credentials, packagejson and aioConfig
   const commonConfig = loadCommonConfig()
@@ -112,7 +115,7 @@ module.exports = ({ allowNoImpl = false }) => {
   const all = buildAllConfigs(userConfig, commonConfig, includeIndex)
 
   const impl = Object.keys(all).sort() // sort for predictable configuration
-  if (!allowNoImpl && impl.length <= 0) {
+  if (!options.allowNoImpl && impl.length <= 0) {
     throw new Error(`Couldn't find configuration in '${process.cwd()}', make sure to add at least one extension or a standalone app`)
   }
 
@@ -575,3 +578,5 @@ function getModuleName (packagejson) {
 function warn (message) {
   console.error(chalk.redBright(chalk.bold('Warning: ' + message)))
 }
+
+module.exports = { loadConfig }

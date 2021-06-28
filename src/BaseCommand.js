@@ -14,7 +14,7 @@ const chalk = require('chalk')
 const coreConfig = require('@adobe/aio-lib-core-config')
 const DEFAULT_LAUNCH_PREFIX = 'https://experience.adobe.com/?devMode=true#/custom-apps/?localDevUrl='
 const STAGE_LAUNCH_PREFIX = 'https://experience-stage.adobe.com/?devMode=true#/custom-apps/?localDevUrl='
-const loadConfig = require('./lib/config-loader')
+const { loadConfig } = require('./lib/config-loader')
 const inquirer = require('inquirer')
 const { CONSOLE_API_KEYS, APPLICATION_CONFIG_KEY, EXTENSIONS_CONFIG_KEY } = require('./lib/defaults')
 const { getCliInfo } = require('./lib/app-helper')
@@ -117,12 +117,6 @@ class BaseCommand extends Command {
   getFullConfig (options = {}) {
     if (!this.appConfig) {
       this.appConfig = loadConfig(options)
-      // add needed cli configuration to all single configs
-      Object.values(this.appConfig.all).forEach(v => {
-        v.cli = {
-          dataDir: this.config.dataDir
-        }
-      })
     }
     return this.appConfig
   }

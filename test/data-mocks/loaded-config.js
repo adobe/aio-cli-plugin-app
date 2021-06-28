@@ -391,17 +391,23 @@ const expectedConfigs = {
 }
 
 // get config for fixture - that works
-module.exports = (appFixtureName, mockedAIOConfig) => {
+module.exports = (appFixtureName, mockedAIOConfig, extraConfig = {}) => {
   // set some more bits based on aio config - kind of ugly, do better
   ow.auth = mockedAIOConfig.runtime.auth
   ow.namespace = mockedAIOConfig.runtime.namespace
   ow.apihost = mockedAIOConfig.runtime.apihost
   const config = expectedConfigs[appFixtureName]
-  Object.values(config.all).forEach(v => {
-    if (v.app.hasFrontend) {
-      v.s3.folder = ow.namespace
+  Object.keys(config.all).forEach(k => {
+    if (config.all[k].app.hasFrontend) {
+      config.all[k].s3.folder = ow.namespace
     }
-    v.imsOrgId = mockedAIOConfig.project.org.ims_org_id
+    config.all[k].imsOrgId = mockedAIOConfig.project.org.ims_org_id
+    // add some extra mocked config
+    config.all[k] = {
+      // todo deep merge
+      ...config.all[k],
+      ...extraConfig
+    }
   })
   return {
     ...expectedConfigs[appFixtureName],

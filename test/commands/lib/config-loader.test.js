@@ -11,19 +11,18 @@ governing permissions and limitations under the License.
 */
 
 global.mockFs()
-const loadConfig = require('../../../src/lib/config-loader')
+const { loadConfig } = require('../../../src/lib/config-loader')
 const mockAIOConfig = require('@adobe/aio-lib-core-config')
-const yaml = require('js-yaml')
-const chalk = require('chalk')
-const defaults = require('../../../src/lib/defaults')
+// const yaml = require('js-yaml')
+// const chalk = require('chalk')
+// const defaults = require('../../../src/lib/defaults')
 
-jest.mock('@adobe/aio-lib-core-logging')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:config-loader', { provider: 'debug' })
+// jest.mock('@adobe/aio-lib-core-logging')
+// const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:config-loader', { provider: 'debug' })
 
-const libEnv = require('@adobe/aio-lib-env')
-jest.mock('@adobe/aio-lib-env')
+// const libEnv = require('@adobe/aio-lib-env')
 
-const getExpectedConfig = require('../../data-mocks/loaded-config')
+const getMockConfig = require('../../data-mocks/loaded-config')
 describe('load config', () => {
   let config
   beforeEach(async () => {
@@ -39,31 +38,31 @@ describe('load config', () => {
   test('standalone app config', async () => {
     global.loadFixtureApp('app')
     config = loadConfig({})
-    expect(config).toEqual(getExpectedConfig('app', global.fakeConfig.tvm))
+    expect(config).toEqual(getMockConfig('app', global.fakeConfig.tvm))
   })
 
   test('exc extension config', async () => {
     global.loadFixtureApp('exc')
     config = loadConfig({})
-    expect(config).toEqual(getExpectedConfig('exc', global.fakeConfig.tvm))
+    expect(config).toEqual(getMockConfig('exc', global.fakeConfig.tvm))
   })
 
   test('standalone app, exc and nui extension config', async () => {
     global.loadFixtureApp('app-exc-nui')
     config = loadConfig({})
-    expect(config).toEqual(getExpectedConfig('app-exc-nui', global.fakeConfig.tvm))
+    expect(config).toEqual(getMockConfig('app-exc-nui', global.fakeConfig.tvm))
   })
 
   test('standalone app with no actions', async () => {
     global.loadFixtureApp('app-no-actions')
     config = loadConfig({})
-    expect(config).toEqual(getExpectedConfig('app-no-actions', global.fakeConfig.tvm))
+    expect(config).toEqual(getMockConfig('app-no-actions', global.fakeConfig.tvm))
   })
 
   test('exc with complex include pattern', async () => {
     global.loadFixtureApp('exc-complex-includes')
     config = loadConfig({})
-    expect(config).toEqual(getExpectedConfig('exc-complex-includes', global.fakeConfig.tvm))
+    expect(config).toEqual(getMockConfig('exc-complex-includes', global.fakeConfig.tvm))
   })
 
   test('standalone application with legacy configuration system', async () => {
@@ -78,7 +77,7 @@ describe('load config', () => {
       }
     })
     config = loadConfig({})
-    expect(config).toEqual(getExpectedConfig('legacy-app', fullAioConfig))
+    expect(config).toEqual(getMockConfig('legacy-app', fullAioConfig))
   })
 })
 

@@ -78,8 +78,6 @@ process.on('unhandledRejection', error => {
   throw error
 })
 
-// dont touch the real fs
-jest.mock('fs-extra')
 // don't wait for user input in tests
 jest.mock('inquirer', () => ({ prompt: jest.fn(), createPromptModule: jest.fn(() => jest.fn()) }))
 // make sure we mock the app scripts
@@ -90,6 +88,8 @@ jest.mock('ora')
 jest.mock('which')
 //
 jest.mock('execa')
+
+jest.mock('@adobe/aio-lib-env')
 
 /* global fixtureFile, fixtureJson */
 
@@ -181,6 +181,7 @@ global.fakeConfig = {
       auth: '23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP'
     }
   },
+  // todo delete those should not be passed via aio now
   creds: {
     project: { org: { ims_org_id: global.fakeOrgId } },
     runtime: {
@@ -193,6 +194,7 @@ global.fakeConfig = {
       awssecretaccesskey: 'fakeAwsSecretKey'
     }
   },
+  // todo delete those should not be passed via aio now
   app: {
     htmlCacheDuration: 60,
     jsCacheDuration: 604800,
@@ -204,6 +206,19 @@ global.fakeConfig = {
 // mocked .aio.app config for __fixtures__/legacy-app
 global.aioLegacyAppConfig = {
   actions: './myactions'
+}
+
+global.extraConfig = {
+  s3Creds: {
+    s3: {
+      folder: global.fakeConfig.tvm.runtime.namespace,
+      creds: {
+        s3bucket: 'customBucket',
+        accessKeyId: 'fakeAwsKeyId',
+        secretAccessKey: 'fakeAwsSecretKey'
+      }
+    }
+  }
 }
 
 global.fakeTVMResponse = {

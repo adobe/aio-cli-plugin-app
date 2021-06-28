@@ -30,7 +30,7 @@ const { run: logPoller } = require('./log-poller')
 const getPort = require('get-port')
 
 /** @private */
-async function runDev (config, options = {}, log = () => {}) {
+async function runDev (config, dataDir, options = {}, log = () => {}) {
   /* parcel bundle options */
   const bundleOptions = {
     shouldDisableCache: true,
@@ -69,7 +69,7 @@ async function runDev (config, options = {}, log = () => {}) {
     // Build Phase - actions
     if (withBackend) {
       if (isLocal) {
-        const { config: localConfig, cleanup: localCleanup } = await runLocalRuntime(config, log, options.verbose)
+        const { config: localConfig, cleanup: localCleanup } = await runLocalRuntime(config, dataDir, log, options.verbose)
         devConfig = localConfig
         cleanup.add(() => localCleanup(), 'cleaning up runDevLocal')
       } else {
