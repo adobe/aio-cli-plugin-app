@@ -32,6 +32,8 @@ describe('load config', () => {
       k && k.includes('ims_org_id') ? global.fakeConfig.tvm.project.org.ims_org_id : global.fakeConfig.tvm
     )
     process.chdir('/')
+    // empty all fake files
+    global.fakeFileSystem.clear()
   })
 
   test('standalone app config', async () => {
@@ -50,6 +52,33 @@ describe('load config', () => {
     global.loadFixtureApp('app-exc-nui')
     config = loadConfig({})
     expect(config).toEqual(getExpectedConfig('app-exc-nui', global.fakeConfig.tvm))
+  })
+
+  test('standalone app with no actions', async () => {
+    global.loadFixtureApp('app-no-actions')
+    config = loadConfig({})
+    expect(config).toEqual(getExpectedConfig('app-no-actions', global.fakeConfig.tvm))
+  })
+
+  test('exc with complex include pattern', async () => {
+    global.loadFixtureApp('exc-complex-includes')
+    config = loadConfig({})
+    expect(config).toEqual(getExpectedConfig('exc-complex-includes', global.fakeConfig.tvm))
+  })
+
+  test('standalone application with legacy configuration system', async () => {
+    global.loadFixtureApp('legacy-app')
+    const fullAioConfig = { app: global.aioLegacyAppConfig, ...global.fakeConfig.tvm }
+    // mock app config
+    mockAIOConfig.get.mockImplementation(k => {
+      if (k && k.includes('ims_org_id')) {
+        return global.fakeConfig.tvm.project.org.ims_org_id
+      } else {
+        return fullAioConfig
+      }
+    })
+    config = loadConfig({})
+    expect(config).toEqual(getExpectedConfig('legacy-app', fullAioConfig))
   })
 })
 

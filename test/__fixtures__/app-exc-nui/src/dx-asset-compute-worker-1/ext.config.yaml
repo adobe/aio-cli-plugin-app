@@ -20,7 +20,6 @@ runtimeManifest:
             'require-adobe-auth': true
             final: true
           include:
-            - 'somefile.txt'
-            - 'file.txt'
+            - [ 'actions/somefile.txt', 'file.txt' ]
           limits:
             concurrency: 189

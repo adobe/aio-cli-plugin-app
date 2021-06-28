@@ -1,19 +1,18 @@
 packages:
-  __APP_PACKAGE_:
+  __APP_PACKAGE__:
     license: 'Apache-2.0'
     actions:
       action:
         function: 'myactions/action.js'
         web: 'yes'
-        runtime: 'nodejs:12'
+        runtime: 'nodejs:14'
         inputs:
           LOG_LEVEL: 'debug'
         annotations:
           'require-adobe-auth': true
           final: true
         include:
-          - 'somefile.txt'
-          - 'file.txt'
+          - [ 'myactions/somefile.txt', 'file.txt' ]
         limits:
           concurrency: 189
       'action-zip':

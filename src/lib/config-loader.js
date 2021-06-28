@@ -321,16 +321,21 @@ function loadUserConfigLegacy (commonConfig) {
     hooks['post-app-undeploy'] = pkgjsonscripts['post-app-undeploy']
     hooks['undeploy-actions'] = pkgjsonscripts['undeploy-actions']
     hooks['undeploy-static'] = pkgjsonscripts['undeploy-static']
-    hooks['pre-app-run'] = pkgjsonscripts['pre-app-build']
-    hooks['post-app-run'] = pkgjsonscripts['post-app-build']
+    hooks['pre-app-run'] = pkgjsonscripts['pre-app-run']
+    hooks['post-app-run'] = pkgjsonscripts['post-app-run']
     hooks['serve-static'] = pkgjsonscripts['serve-static']
-    const keys = Object.entries(hooks).filter(([k, v]) => !!v).map(([k, v]) => k)
-    if (keys.length > 0) {
+    // remove undefined hooks
+    Object.entries(hooks).forEach(([k, v]) => {
+      if (!hooks[k]) {
+        delete hooks[k]
+      }
+    })
+    if (Object.keys(hooks).length > 0) {
       warn('hooks in \'package.json\' are deprecated. Please move your hooks to \'app.config.yaml\' under the \'hooks\' key')
       legacyAppConfig.hooks = hooks
       // build index
       includeIndex[`${APPLICATION_CONFIG_KEY}.hooks`] = { file: 'package.json', key: 'scripts' }
-      keys.forEach((hk) => {
+      Object.keys(hooks).forEach((hk) => {
         const fullKey = `${APPLICATION_CONFIG_KEY}.hooks.${hk}`
         includeIndex[fullKey] = {
           file: 'package.json',

@@ -17,8 +17,7 @@ application:
               'require-adobe-auth': true
               final: true
             include:
-              - 'somefile.txt'
-              - 'file.txt'
+            - [ 'myactions/somefile.txt', 'file.txt' ]
             limits:
               concurrency: 189
           'action-zip':

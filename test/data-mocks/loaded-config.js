@@ -57,7 +57,7 @@ function fullFakeRuntimeManifest (pathToActionFolder, pkgName1) {
               final: true
             },
             include: [
-              'somefile.txt', 'file.txt'
+              [`${pathToActionFolder}/somefile.txt`, 'file.txt']
             ],
             limits: {
               concurrency: 189
@@ -125,7 +125,7 @@ function oneActionRuntimeManifest (pathToActionFolder, pkgName1) {
               final: true
             },
             include: [
-              'somefile.txt', 'file.txt'
+              [`${pathToActionFolder}/somefile.txt`, 'file.txt']
             ],
             limits: {
               concurrency: 189
@@ -174,9 +174,7 @@ const excSingleConfig = {
     },
     root: `${root}`,
     name: 'dx/excshell/1',
-    hooks: {
-      'post-app-deploy': 'echo hello'
-    },
+    hooks: {},
     operations: {
       view: [
         {
@@ -278,13 +276,15 @@ const applicationSingleConfig = {
   }
 }
 
-const legacyManifest = fullFakeRuntimeManifest(appActionsFolder, '__APP_PACKAGE_')
+const legacyManifest = fullFakeRuntimeManifest(appActionsFolder, '__APP_PACKAGE__')
 const applicationLegacyConfig = {
-  ...applicationSingleConfig,
-  manifest: {
-    ...applicationSingleConfig.manifest,
-    full: legacyManifest,
-    package: legacyManifest.packages.__APP_PACKAGE_
+  application: {
+    ...applicationSingleConfig.application,
+    manifest: {
+      ...applicationSingleConfig.application.manifest,
+      full: legacyManifest,
+      package: legacyManifest.packages.__APP_PACKAGE__
+    }
   }
 }
 
@@ -380,7 +380,12 @@ const expectedConfigs = {
       'application'
     ],
     includeIndex: legacyIncludeIndex,
-    packagejson,
+    packagejson: {
+      ...packagejson,
+      scripts: {
+        'post-app-run': 'echo hello'
+      }
+    },
     root
   }
 }

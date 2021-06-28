@@ -8,9 +8,9 @@ const appNoActionsIncludeIndex = {
     file: 'app.config.yaml',
     key: 'application.hooks'
   },
-  'application.hooks.post-app-run': {
+  'application.hooks.pre-app-run': {
     file: 'app.config.yaml',
-    key: 'application.hooks.post-app-run'
+    key: 'application.hooks.pre-app-run'
   }
 }
 
@@ -147,9 +147,13 @@ const appIncludeIndex = {
     file: 'app.config.yaml',
     key: 'application.runtimeManifest.packages.my-app-package.actions.action.include'
   },
-  'application.runtimeManifest.packages.my-app-package.actions.action.include.1': {
+  'application.runtimeManifest.packages.my-app-package.actions.action.include.0.0': {
     file: 'app.config.yaml',
-    key: 'application.runtimeManifest.packages.my-app-package.actions.action.include.1'
+    key: 'application.runtimeManifest.packages.my-app-package.actions.action.include.0.0'
+  },
+  'application.runtimeManifest.packages.my-app-package.actions.action.include.0.1': {
+    file: 'app.config.yaml',
+    key: 'application.runtimeManifest.packages.my-app-package.actions.action.include.0.1'
   },
   'application.runtimeManifest.packages.my-app-package.actions.action.include.0': {
     file: 'app.config.yaml',
@@ -250,9 +254,13 @@ const excIncludeIndex = {
     file: 'src/dx-excshell-1/ext.config.yaml',
     key: 'runtimeManifest.packages.my-exc-package.actions.action.include'
   },
-  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.action.include.1': {
+  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.action.include.0.1': {
     file: 'src/dx-excshell-1/ext.config.yaml',
-    key: 'runtimeManifest.packages.my-exc-package.actions.action.include.1'
+    key: 'runtimeManifest.packages.my-exc-package.actions.action.include.0.1'
+  },
+  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.action.include.0.0': {
+    file: 'src/dx-excshell-1/ext.config.yaml',
+    key: 'runtimeManifest.packages.my-exc-package.actions.action.include.0.0'
   },
   'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.action.include.0': {
     file: 'src/dx-excshell-1/ext.config.yaml',
@@ -293,14 +301,6 @@ const excIncludeIndex = {
   'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.license': {
     file: 'src/dx-excshell-1/ext.config.yaml',
     key: 'runtimeManifest.packages.my-exc-package.license'
-  },
-  'extensions.dx/excshell/1.hooks': {
-    file: 'src/dx-excshell-1/ext.config.yaml',
-    key: 'hooks'
-  },
-  'extensions.dx/excshell/1.hooks.post-app-deploy': {
-    file: 'src/dx-excshell-1/ext.config.yaml',
-    key: 'hooks.post-app-deploy'
   },
   'extensions.dx/excshell/1.web': {
     file: 'src/dx-excshell-1/ext.config.yaml',
@@ -375,9 +375,13 @@ const appExcNuiIncludeIndex = {
     file: 'src/dx-asset-compute-worker-1/ext.config.yaml',
     key: 'runtimeManifest.packages.my-nui-package.actions.action.include'
   },
-  'extensions.dx/asset-compute/worker/1.runtimeManifest.packages.my-nui-package.actions.action.include.1': {
+  'extensions.dx/asset-compute/worker/1.runtimeManifest.packages.my-nui-package.actions.action.include.0.0': {
     file: 'src/dx-asset-compute-worker-1/ext.config.yaml',
-    key: 'runtimeManifest.packages.my-nui-package.actions.action.include.1'
+    key: 'runtimeManifest.packages.my-nui-package.actions.action.include.0.0'
+  },
+  'extensions.dx/asset-compute/worker/1.runtimeManifest.packages.my-nui-package.actions.action.include.0.1': {
+    file: 'src/dx-asset-compute-worker-1/ext.config.yaml',
+    key: 'runtimeManifest.packages.my-nui-package.actions.action.include.0.1'
   },
   'extensions.dx/asset-compute/worker/1.runtimeManifest.packages.my-nui-package.actions.action.include.0': {
     file: 'src/dx-asset-compute-worker-1/ext.config.yaml',
@@ -466,169 +470,181 @@ const legacyIncludeIndex = {
     file: 'manifest.yml',
     key: 'packages'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_'
+    key: 'packages.__APP_PACKAGE__'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.dependencies': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.dependencies': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.dependencies'
+    key: 'packages.__APP_PACKAGE__.dependencies'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.dependencies.dependency1': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.dependencies.dependency1': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.dependencies.dependency1'
+    key: 'packages.__APP_PACKAGE__.dependencies.dependency1'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.dependencies.dependency1.location': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.dependencies.dependency1.location': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.dependencies.dependency1.location'
+    key: 'packages.__APP_PACKAGE__.dependencies.dependency1.location'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.apis': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.apis': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.apis'
+    key: 'packages.__APP_PACKAGE__.apis'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.apis.api1': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.apis.api1': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.apis.api1'
+    key: 'packages.__APP_PACKAGE__.apis.api1'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.apis.api1.base': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.apis.api1.base': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.apis.api1.base'
+    key: 'packages.__APP_PACKAGE__.apis.api1.base'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.apis.api1.base.path': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.apis.api1.base.path': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.apis.api1.base.path'
+    key: 'packages.__APP_PACKAGE__.apis.api1.base.path'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.apis.api1.base.path.action': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.apis.api1.base.path.action': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.apis.api1.base.path.action'
+    key: 'packages.__APP_PACKAGE__.apis.api1.base.path.action'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.apis.api1.base.path.action.method': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.apis.api1.base.path.action.method': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.apis.api1.base.path.action.method'
+    key: 'packages.__APP_PACKAGE__.apis.api1.base.path.action.method'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.rules': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.rules': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.rules'
+    key: 'packages.__APP_PACKAGE__.rules'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.rules.rule1': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.rules.rule1': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.rules.rule1'
+    key: 'packages.__APP_PACKAGE__.rules.rule1'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.rules.rule1.rule': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.rules.rule1.rule': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.rules.rule1.rule'
+    key: 'packages.__APP_PACKAGE__.rules.rule1.rule'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.rules.rule1.action': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.rules.rule1.action': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.rules.rule1.action'
+    key: 'packages.__APP_PACKAGE__.rules.rule1.action'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.rules.rule1.trigger': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.rules.rule1.trigger': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.rules.rule1.trigger'
+    key: 'packages.__APP_PACKAGE__.rules.rule1.trigger'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.triggers': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.triggers': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.triggers'
+    key: 'packages.__APP_PACKAGE__.triggers'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.triggers.trigger1': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.triggers.trigger1': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.triggers.trigger1'
+    key: 'packages.__APP_PACKAGE__.triggers.trigger1'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.sequences': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.sequences': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.sequences'
+    key: 'packages.__APP_PACKAGE__.sequences'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.sequences.action-sequence': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.sequences.action-sequence': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.sequences.action-sequence'
+    key: 'packages.__APP_PACKAGE__.sequences.action-sequence'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.sequences.action-sequence.web': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.sequences.action-sequence.web': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.sequences.action-sequence.web'
+    key: 'packages.__APP_PACKAGE__.sequences.action-sequence.web'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.sequences.action-sequence.actions': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.sequences.action-sequence.actions': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.sequences.action-sequence.actions'
+    key: 'packages.__APP_PACKAGE__.sequences.action-sequence.actions'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.actions': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.actions': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.actions'
+    key: 'packages.__APP_PACKAGE__.actions'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.actions.action-zip': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.actions.action-zip': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.actions.action-zip'
+    key: 'packages.__APP_PACKAGE__.actions.action-zip'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.actions.action-zip.runtime': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.actions.action-zip.runtime': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.actions.action-zip.runtime'
+    key: 'packages.__APP_PACKAGE__.actions.action-zip.runtime'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.actions.action-zip.web': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.actions.action-zip.web': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.actions.action-zip.web'
+    key: 'packages.__APP_PACKAGE__.actions.action-zip.web'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.actions.action-zip.function': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.actions.action-zip.function': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.actions.action-zip.function'
+    key: 'packages.__APP_PACKAGE__.actions.action-zip.function'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.actions.action': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.actions.action': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.actions.action'
+    key: 'packages.__APP_PACKAGE__.actions.action'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.actions.action.limits': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.actions.action.limits': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.actions.action.limits'
+    key: 'packages.__APP_PACKAGE__.actions.action.limits'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.actions.action.limits.concurrency': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.actions.action.limits.concurrency': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.actions.action.limits.concurrency'
+    key: 'packages.__APP_PACKAGE__.actions.action.limits.concurrency'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.actions.action.include': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.actions.action.include': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.actions.action.include'
+    key: 'packages.__APP_PACKAGE__.actions.action.include'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.actions.action.include.1': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.actions.action.include.0': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.actions.action.include.1'
+    key: 'packages.__APP_PACKAGE__.actions.action.include.0'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.actions.action.include.0': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.actions.action.include.0.1': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.actions.action.include.0'
+    key: 'packages.__APP_PACKAGE__.actions.action.include.0.1'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.actions.action.annotations': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.actions.action.include.0.0': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.actions.action.annotations'
+    key: 'packages.__APP_PACKAGE__.actions.action.include.0.0'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.actions.action.annotations.final': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.actions.action.annotations': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.actions.action.annotations.final'
+    key: 'packages.__APP_PACKAGE__.actions.action.annotations'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.actions.action.annotations.require-adobe-auth': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.actions.action.annotations.final': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.actions.action.annotations.require-adobe-auth'
+    key: 'packages.__APP_PACKAGE__.actions.action.annotations.final'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.actions.action.inputs': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.actions.action.annotations.require-adobe-auth': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.actions.action.inputs'
+    key: 'packages.__APP_PACKAGE__.actions.action.annotations.require-adobe-auth'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.actions.action.inputs.LOG_LEVEL': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.actions.action.inputs': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.actions.action.inputs.LOG_LEVEL'
+    key: 'packages.__APP_PACKAGE__.actions.action.inputs'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.actions.action.runtime': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.actions.action.inputs.LOG_LEVEL': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.actions.action.runtime'
+    key: 'packages.__APP_PACKAGE__.actions.action.inputs.LOG_LEVEL'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.actions.action.web': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.actions.action.runtime': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.actions.action.web'
+    key: 'packages.__APP_PACKAGE__.actions.action.runtime'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.actions.action.function': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.actions.action.web': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.actions.action.function'
+    key: 'packages.__APP_PACKAGE__.actions.action.web'
   },
-  'application.runtimeManifest.packages.__APP_PACKAGE_.license': {
+  'application.runtimeManifest.packages.__APP_PACKAGE__.actions.action.function': {
     file: 'manifest.yml',
-    key: 'packages.__APP_PACKAGE_.license'
+    key: 'packages.__APP_PACKAGE__.actions.action.function'
+  },
+  'application.runtimeManifest.packages.__APP_PACKAGE__.license': {
+    file: 'manifest.yml',
+    key: 'packages.__APP_PACKAGE__.license'
+  },
+  'application.hooks': {
+    file: 'package.json',
+    key: 'scripts'
+  },
+  'application.hooks.post-app-run': {
+    file: 'package.json',
+    key: 'scripts.post-app-run'
   },
   application: {
     file: '.aio',
@@ -677,69 +693,69 @@ const excComplexIncludeIndex = {
     file: 'src/dx-excshell-1/actions/pkg.manifest.yaml',
     key: 'packages.my-exc-package.actions.$include'
   },
-  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.actions': {
+  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.action': {
     file: 'src/dx-excshell-1/actions/sub/action.manifest.yaml',
-    key: 'actions'
+    key: 'action'
   },
-  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.actions.action': {
+  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.action.limits': {
     file: 'src/dx-excshell-1/actions/sub/action.manifest.yaml',
-    key: 'actions.action'
+    key: 'action.limits'
   },
-  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.actions.action.limits': {
+  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.action.limits.concurrency': {
     file: 'src/dx-excshell-1/actions/sub/action.manifest.yaml',
-    key: 'actions.action.limits'
+    key: 'action.limits.concurrency'
   },
-  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.actions.action.limits.concurrency': {
+  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.action.include': {
     file: 'src/dx-excshell-1/actions/sub/action.manifest.yaml',
-    key: 'actions.action.limits.concurrency'
+    key: 'action.include'
   },
-  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.actions.action.include': {
+  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.action.include.0': {
     file: 'src/dx-excshell-1/actions/sub/action.manifest.yaml',
-    key: 'actions.action.include'
+    key: 'action.include.0'
   },
-  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.actions.action.annotations': {
+  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.action.include.0.1': {
     file: 'src/dx-excshell-1/actions/sub/action.manifest.yaml',
-    key: 'actions.action.annotations'
+    key: 'action.include.0.1'
   },
-  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.actions.action.annotations.final': {
+  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.action.include.0.0': {
     file: 'src/dx-excshell-1/actions/sub/action.manifest.yaml',
-    key: 'actions.action.annotations.final'
+    key: 'action.include.0.0'
   },
-  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.actions.action.annotations.require-adobe-auth': {
+  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.action.annotations': {
     file: 'src/dx-excshell-1/actions/sub/action.manifest.yaml',
-    key: 'actions.action.annotations.require-adobe-auth'
+    key: 'action.annotations'
   },
-  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.actions.action.inputs': {
+  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.action.annotations.final': {
     file: 'src/dx-excshell-1/actions/sub/action.manifest.yaml',
-    key: 'actions.action.inputs'
+    key: 'action.annotations.final'
   },
-  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.actions.action.inputs.LOG_LEVEL': {
+  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.action.annotations.require-adobe-auth': {
     file: 'src/dx-excshell-1/actions/sub/action.manifest.yaml',
-    key: 'actions.action.inputs.LOG_LEVEL'
+    key: 'action.annotations.require-adobe-auth'
   },
-  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.actions.action.runtime': {
+  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.action.inputs': {
     file: 'src/dx-excshell-1/actions/sub/action.manifest.yaml',
-    key: 'actions.action.runtime'
+    key: 'action.inputs'
   },
-  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.actions.action.web': {
+  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.action.inputs.LOG_LEVEL': {
     file: 'src/dx-excshell-1/actions/sub/action.manifest.yaml',
-    key: 'actions.action.web'
+    key: 'action.inputs.LOG_LEVEL'
   },
-  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.actions.action.function': {
+  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.action.runtime': {
     file: 'src/dx-excshell-1/actions/sub/action.manifest.yaml',
-    key: 'actions.action.function'
+    key: 'action.runtime'
+  },
+  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.action.web': {
+    file: 'src/dx-excshell-1/actions/sub/action.manifest.yaml',
+    key: 'action.web'
+  },
+  'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.actions.action.function': {
+    file: 'src/dx-excshell-1/actions/sub/action.manifest.yaml',
+    key: 'action.function'
   },
   'extensions.dx/excshell/1.runtimeManifest.packages.my-exc-package.license': {
     file: 'src/dx-excshell-1/actions/pkg.manifest.yaml',
     key: 'packages.my-exc-package.license'
-  },
-  'extensions.dx/excshell/1.hooks': {
-    file: 'src/dx-excshell-1/ext.config.yaml',
-    key: 'hooks'
-  },
-  'extensions.dx/excshell/1.hooks.post-app-deploy': {
-    file: 'src/dx-excshell-1/ext.config.yaml',
-    key: 'hooks.post-app-deploy'
   },
   'extensions.dx/excshell/1.web': {
     file: 'src/dx-excshell-1/ext.config.yaml',

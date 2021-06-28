@@ -4,7 +4,5 @@ operations:
       impl: index.html
 actions: ./actions
 web: ./web-src
-hooks:
-  "post-app-deploy": "echo hello"
 runtimeManifest:
   $include: ./actions/pkg.manifest.yaml

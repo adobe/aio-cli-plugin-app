@@ -4,8 +4,6 @@ operations:
       impl: index.html
 actions: ./actions
 web: ./web-src
-hooks:
-  "post-app-deploy": "echo hello"
 runtimeManifest:
   packages:
     my-exc-package:
@@ -21,7 +19,6 @@ runtimeManifest:
             'require-adobe-auth': true
             final: true
           include:
-            - 'somefile.txt'
-            - 'file.txt'
+            - [ 'actions/somefile.txt', 'file.txt' ]
           limits:
             concurrency: 189

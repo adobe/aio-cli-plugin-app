@@ -166,14 +166,14 @@ global.fakeS3Bucket = 'fake-bucket'
 global.fakeOrgId = '00000000000000000100000@AdobeOrg'
 global.fakeConfig = {
   tvm: {
-    project: { org: { ims_org_id: global.fakeOrgId }},
+    project: { org: { ims_org_id: global.fakeOrgId } },
     runtime: {
       namespace: 'fake_ns',
       auth: 'fake:auth'
     }
   },
   local: {
-    project: { org: { ims_org_id: global.fakeOrgId }},
+    project: { org: { ims_org_id: global.fakeOrgId } },
     runtime: {
       // those must match the once set by dev cmd
       apihost: 'http://localhost:3233',
@@ -182,7 +182,7 @@ global.fakeConfig = {
     }
   },
   creds: {
-    project: { org: { ims_org_id: global.fakeOrgId }},
+    project: { org: { ims_org_id: global.fakeOrgId } },
     runtime: {
       namespace: 'fake_ns',
       auth: 'fake:auth'
@@ -199,6 +199,11 @@ global.fakeConfig = {
     cssCacheDuration: 604800,
     imageCacheDuration: 604800
   }
+}
+
+// mocked .aio.app config for __fixtures__/legacy-app
+global.aioLegacyAppConfig = {
+  actions: './myactions'
 }
 
 global.fakeTVMResponse = {

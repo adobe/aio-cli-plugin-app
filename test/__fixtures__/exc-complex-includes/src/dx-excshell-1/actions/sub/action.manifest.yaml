@@ -1,15 +1,13 @@
-actions:
-  action:
-    function: '../action.js'
-    web: 'yes'
-    runtime: 'nodejs:14'
-    inputs:
-      LOG_LEVEL: 'debug'
-    annotations:
-      'require-adobe-auth': true
-      final: true
-    include:
-      -'../../somefile.txt'
-      -'file.txt'
-    limits:
-      concurrency: 189
+action:
+  function: '../action.js'
+  web: 'yes'
+  runtime: 'nodejs:14'
+  inputs:
+    LOG_LEVEL: 'debug'
+  annotations:
+    'require-adobe-auth': true
+    final: true
+  include:
+    - [ '../somefile.txt', 'file.txt' ]
+  limits:
+    concurrency: 189
