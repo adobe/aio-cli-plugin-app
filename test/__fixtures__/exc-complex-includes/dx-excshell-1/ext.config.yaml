@@ -1,6 +1,0 @@
-actions: ./actions
-web: ./web-src
-hooks:
-  "post-app-deploy": "echo hello"
-runtimeManifest:
-  $include: manifest.yaml

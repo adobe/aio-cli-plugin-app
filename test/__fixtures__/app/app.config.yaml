@@ -4,7 +4,7 @@ application:
     "post-app-run": "echo hello"
   runtimeManifest:
     packages:
-      mypackage:
+      my-app-package:
         license: 'Apache-2.0'
         actions:
           action:

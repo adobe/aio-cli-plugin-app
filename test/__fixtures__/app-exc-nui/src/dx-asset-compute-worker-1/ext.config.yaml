@@ -1,18 +1,17 @@
 operations:
-  view:
-    - type: web
-      impl: index.html
+  worker:
+    - type: action
+      impl: my-nui-package/action
 actions: ./actions
-web: ./web-src
 hooks:
-  "post-app-deploy": "echo hello"
+  'post-app-run': 'adobe-asset-compute devtool'
 runtimeManifest:
   packages:
-    my-exc-package:
+    my-nui-package:
       license: 'Apache-2.0'
       actions:
         action:
-          function: 'actions/action.js'
+          function: './actions/action.js'
           web: 'yes'
           runtime: 'nodejs:14'
           inputs:

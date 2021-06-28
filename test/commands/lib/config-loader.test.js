@@ -23,7 +23,7 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const libEnv = require('@adobe/aio-lib-env')
 jest.mock('@adobe/aio-lib-env')
 
-const getExpectedConfig = require('../../data-mocks/config-loader')
+const getExpectedConfig = require('../../data-mocks/loaded-config')
 describe('load config', () => {
   let config
   beforeEach(async () => {
@@ -37,8 +37,19 @@ describe('load config', () => {
   test('standalone app config', async () => {
     global.loadFixtureApp('app')
     config = loadConfig({})
-    // includeIndex is not tested nor mocked for now we just assume it is correctly generated
-    expect(config).toEqual(getExpectedConfig('app', global.fakeConfig.tvm, config.includeIndex))
+    expect(config).toEqual(getExpectedConfig('app', global.fakeConfig.tvm))
+  })
+
+  test('exc extension config', async () => {
+    global.loadFixtureApp('exc')
+    config = loadConfig({})
+    expect(config).toEqual(getExpectedConfig('exc', global.fakeConfig.tvm))
+  })
+
+  test('standalone app, exc and nui extension config', async () => {
+    global.loadFixtureApp('app-exc-nui')
+    config = loadConfig({})
+    expect(config).toEqual(getExpectedConfig('app-exc-nui', global.fakeConfig.tvm))
   })
 })
 

@@ -13,6 +13,14 @@ governing permissions and limitations under the License.
 const upath = require('upath')
 const root = '/'
 // const dataDir = 'fakeDir'
+const {
+  excComplexIncludeIndex,
+  appExcNuiIncludeIndex,
+  appIncludeIndex,
+  appNoActionsIncludeIndex,
+  excIncludeIndex,
+  legacyIncludeIndex
+} = require('./loaded-config-include-indexes')
 
 const packagejson = {
   version: '1.0.0',
@@ -31,10 +39,10 @@ const ow = {
 }
 
 /** @private */
-function fullFakeRuntimeManifest (pathToActionFolder) {
+function fullFakeRuntimeManifest (pathToActionFolder, pkgName1) {
   return {
     packages: {
-      mypackage: {
+      [pkgName1]: {
         license: 'Apache-2.0',
         actions: {
           action: {
@@ -99,10 +107,10 @@ function fullFakeRuntimeManifest (pathToActionFolder) {
 }
 
 /** @private */
-function oneActionRuntimeManifest (pathToActionFolder) {
+function oneActionRuntimeManifest (pathToActionFolder, pkgName1) {
   return {
     packages: {
-      mypackage: {
+      [pkgName1]: {
         license: 'Apache-2.0',
         actions: {
           action: {
@@ -157,7 +165,7 @@ const excSingleConfig = {
     },
     manifest: {
       src: 'manifest.yml',
-      full: oneActionRuntimeManifest(excActionsFolder),
+      full: oneActionRuntimeManifest(excActionsFolder, 'my-exc-package'),
       packagePlaceholder: '__APP_PACKAGE__'
     },
     actions: {
@@ -203,7 +211,7 @@ const nuiSingleConfig = {
     },
     manifest: {
       src: 'manifest.yml',
-      full: oneActionRuntimeManifest(nuiActionsFolder),
+      full: oneActionRuntimeManifest(nuiActionsFolder, 'my-nui-package'),
       packagePlaceholder: '__APP_PACKAGE__'
     },
     actions: {
@@ -219,7 +227,7 @@ const nuiSingleConfig = {
       worker: [
         {
           type: 'action',
-          impl: 'dx-asset-compute-worker-1/worker'
+          impl: 'my-nui-package/action'
         }
       ]
     }
@@ -254,8 +262,9 @@ const applicationSingleConfig = {
     },
     manifest: {
       src: 'manifest.yml',
-      full: fullFakeRuntimeManifest(appActionsFolder),
-      packagePlaceholder: '__APP_PACKAGE__'
+      full: fullFakeRuntimeManifest(appActionsFolder, 'my-app-package'),
+      packagePlaceholder: '__APP_PACKAGE__',
+      package: undefined
     },
     actions: {
       src: appActionsFolder,
@@ -266,6 +275,16 @@ const applicationSingleConfig = {
     hooks: {
       'post-app-run': 'echo hello'
     }
+  }
+}
+
+const legacyManifest = fullFakeRuntimeManifest(appActionsFolder, '__APP_PACKAGE_')
+const applicationLegacyConfig = {
+  ...applicationSingleConfig,
+  manifest: {
+    ...applicationSingleConfig.manifest,
+    full: legacyManifest,
+    package: legacyManifest.packages.__APP_PACKAGE_
   }
 }
 
@@ -313,6 +332,7 @@ const expectedConfigs = {
     implements: [
       'dx/excshell/1'
     ],
+    includeIndex: excIncludeIndex,
     packagejson,
     root
   },
@@ -321,6 +341,7 @@ const expectedConfigs = {
     implements: [
       'application'
     ],
+    includeIndex: appIncludeIndex,
     packagejson,
     root
   },
@@ -331,6 +352,7 @@ const expectedConfigs = {
       'dx/asset-compute/worker/1',
       'dx/excshell/1'
     ],
+    includeIndex: appExcNuiIncludeIndex,
     packagejson,
     root
   },
@@ -339,6 +361,7 @@ const expectedConfigs = {
     implements: [
       'application'
     ],
+    includeIndex: appNoActionsIncludeIndex,
     packagejson,
     root
   },
@@ -347,34 +370,36 @@ const expectedConfigs = {
     implements: [
       'dx/excshell/1'
     ],
+    includeIndex: excComplexIncludeIndex,
     packagejson,
     root
   },
   'legacy-app': {
-    all: { ...applicationSingleConfig },
+    all: { ...applicationLegacyConfig },
     implements: [
       'application'
     ],
+    includeIndex: legacyIncludeIndex,
     packagejson,
     root
   }
 }
 
 // get config for fixture - that works
-module.exports = (appFixtureName, mockedAIOConfig, includeIndex) => {
+module.exports = (appFixtureName, mockedAIOConfig) => {
   // set some more bits based on aio config - kind of ugly, do better
   ow.auth = mockedAIOConfig.runtime.auth
   ow.namespace = mockedAIOConfig.runtime.namespace
   ow.apihost = mockedAIOConfig.runtime.apihost
   const config = expectedConfigs[appFixtureName]
   Object.values(config.all).forEach(v => {
-    v.s3.folder = ow.namespace
+    if (v.app.hasFrontend) {
+      v.s3.folder = ow.namespace
+    }
     v.imsOrgId = mockedAIOConfig.project.org.ims_org_id
   })
   return {
     ...expectedConfigs[appFixtureName],
-    aio: mockedAIOConfig,
-    // note: include index is not mocked nor tested we assume it is correct
-    includeIndex
+    aio: mockedAIOConfig
   }
 }

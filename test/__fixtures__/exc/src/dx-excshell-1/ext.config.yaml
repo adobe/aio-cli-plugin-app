@@ -1,23 +1,27 @@
+operations:
+  view:
+    - type: web
+      impl: index.html
 actions: ./actions
 web: ./web-src
 hooks:
   "post-app-deploy": "echo hello"
 runtimeManifest:
   packages:
-    mypackage:
+    my-exc-package:
       license: 'Apache-2.0'
       actions:
         action:
-        function: 'actions/action.js'
-        web: 'yes'
-        runtime: 'nodejs:14'
-        inputs:
-          LOG_LEVEL: 'debug'
-        annotations:
-          'require-adobe-auth': true
-          final: true
-        include:
-          -'somefile.txt'
-          -'file.txt'
-        limits:
-          concurrency: 189
+          function: 'actions/action.js'
+          web: 'yes'
+          runtime: 'nodejs:14'
+          inputs:
+            LOG_LEVEL: 'debug'
+          annotations:
+            'require-adobe-auth': true
+            final: true
+          include:
+            - 'somefile.txt'
+            - 'file.txt'
+          limits:
+            concurrency: 189

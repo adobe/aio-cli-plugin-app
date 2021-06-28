@@ -22,7 +22,7 @@ class Info extends BaseCommand {
     // includes .env secret delete all aio config for now
     delete appConfig.aio
     // remove noisy configs
-    delete appConfig.includeIndex
+    //delete appConfig.includeIndex
 
     // hide credentials
     Object.values(appConfig.all).forEach(config => {

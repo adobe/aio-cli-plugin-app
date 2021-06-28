@@ -4,13 +4,13 @@ application:
     "post-app-run": "echo hello"
   runtimeManifest:
     packages:
-      mypackage:
+      my-app-package:
         license: 'Apache-2.0'
         actions:
           action:
             function: 'myactions/action.js'
             web: 'yes'
-            runtime: 'nodejs:12'
+            runtime: 'nodejs:14'
             inputs:
               LOG_LEVEL: 'debug'
             annotations:
@@ -49,25 +49,5 @@ extensions:
   'dx/excshell/1':
       $include: src/dx-excshell-1/ext.config.yaml
   'dx/asset-compute/worker/1':
-    actions: src/dx-asset-compute-worker-1/actions
-    hooks:
-      'post-app-run': 'adobe-asset-compute devtool'
-    runtimeManifest:
-      packages:
-        mypackage:
-          license: 'Apache-2.0'
-          actions:
-            action:
-            function: 'src/dx-asset-compute-worker-1/actions/action.js'
-            web: 'yes'
-            runtime: 'nodejs:14'
-            inputs:
-              LOG_LEVEL: 'debug'
-            annotations:
-              'require-adobe-auth': true
-              final: true
-            include:
-              -'./src/dx-asset-compute-worker-1/actions/somefile.txt'
-              -'file.txt'
-            limits:
-              concurrency: 189
+      $include: src/dx-asset-compute-worker-1/ext.config.yaml
+

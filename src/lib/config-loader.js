@@ -111,7 +111,7 @@ module.exports = ({ allowNoImpl = false }) => {
   // load the full standalone application and extension configurations
   const all = buildAllConfigs(userConfig, commonConfig, includeIndex)
 
-  const impl = Object.keys(all)
+  const impl = Object.keys(all).sort() // sort for predictable configuration
   if (!allowNoImpl && impl.length <= 0) {
     throw new Error(`Couldn't find configuration in '${process.cwd()}', make sure to add at least one extension or a standalone app`)
   }
@@ -214,9 +214,11 @@ function loadUserConfigAppYaml () {
   while (traverseStack.length > 0) {
     const { parentObj, key, includedFiles, fullKey, relativeFullKey } = traverseStack.pop()
 
+    const currConfigFile = includedFiles[includedFiles.length - 1]
+
     // add full key to the index, slice(1) to remove initial dot
     includeIndex[fullKey.slice(1)] = {
-      file: includedFiles[includedFiles.length - 1],
+      file: currConfigFile,
       key: relativeFullKey.slice(1)
     }
 
@@ -230,7 +232,8 @@ function loadUserConfigAppYaml () {
 
     if (key === INCLUDE_DIRECTIVE) {
       // $include: 'configFile', value is string pointing to config file
-      const configFile = value
+      // includes are relative to the current config file
+      const configFile = path.join(path.dirname(currConfigFile), value)
       // 1. check for include cycles
       if (includedFiles.includes(configFile)) {
         throw new Error(`Detected '${INCLUDE_DIRECTIVE}' cycle: '${[...includedFiles, configFile].toString()}', please make sure that your configuration has no cycles.`)
@@ -294,7 +297,7 @@ function loadUserConfigLegacy (commonConfig) {
       const { key, parent, fullKey } = stack.pop()
       const newFullKey = fullKey.concat(`.${key}`)
       includeIndex[baseKey + newFullKey] = { file: 'manifest.yml', key: newFullKey.slice(1) } // remove first dot
-      if (typeof parent[key] === 'object') {
+      if (typeof parent[key] === 'object' && parent[key] !== null) {
         // includes arrays
         stack.push(...Object.keys(parent[key]).map(rtk => ({ key: rtk, parent: parent[key], fullKey: newFullKey })))
       }
