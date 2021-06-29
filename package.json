@@ -89,7 +89,8 @@
     "lint": "eslint src test",
     "posttest": "npm run lint",
     "prepack": "oclif-dev manifest && oclif-dev readme",
-    "test": "jest -c ./jest.config.js",
+    "test": "npm run unit-tests",
+    "unit-tests": "jest -c ./jest.config.js",
     "version": "oclif-dev readme && git add README.md"
   },
   "bin": {
