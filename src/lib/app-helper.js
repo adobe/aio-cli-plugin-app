@@ -78,18 +78,16 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
   }
 }
 
-/**
- * @param command
- * @param dir
- * @param cmdArgs
- */
-async function runScript (command, dir, cmdArgs = []) {
-  if (!command) {
+/** @private */
+async function runScript (scriptName, dir, cmdArgs = []) {
+  if (!scriptName) {
     return null
   }
   if (!dir) {
     dir = process.cwd()
   }
+
+  const pkg = await fs.readJSON(path.join(dir, 'package.json'))
   let command = pkg.scripts[scriptName]
   if (cmdArgs.length) {
     command = `${command} ${cmdArgs.join(' ')}`
