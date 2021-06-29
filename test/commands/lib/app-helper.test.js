@@ -22,7 +22,9 @@ jest.mock('execa')
 jest.mock('process')
 
 beforeEach(() => {
+  Object.defineProperty(process, 'platform', { value: 'linux' })
   execa.mockReset()
+  execa.command.mockReset()
   fetch.mockReset()
   config.get.mockReset()
   config.set.mockReset()
@@ -199,7 +201,30 @@ test('runPackageScript success', async () => {
   expect(mockChildProcessOn).toHaveBeenCalledWith('message', expect.any(Function))
   expect(process.on).toHaveBeenCalledWith('exit', expect.any(Function))
   expect(process.kill).toHaveBeenCalledWith(ipcMessage.data.pid, 'SIGTERM')
-  return expect(execa.command).toHaveBeenCalledWith(scripts.test, expect.any(Object))
+
+  return expect(execa.command).toHaveBeenCalledWith(scripts.test,
+    expect.objectContaining({
+      stdio: ['inherit', 'inherit', 'inherit', 'ipc']
+    }))
+})
+
+test('runPackageScript success (os is Windows)', async () => {
+  const scripts = {
+    test: 'some-script some-arg-1 some-arg-2'
+  }
+  fs.readJSON.mockReturnValue({ scripts })
+
+  Object.defineProperty(process, 'platform', { value: 'win32' })
+
+  execa.command.mockReturnValueOnce({
+    on: jest.fn()
+  })
+
+  await appHelper.runPackageScript('test', '')
+  return expect(execa.command).toHaveBeenCalledWith(scripts.test,
+    expect.objectContaining({
+      stdio: ['inherit', 'inherit', 'inherit', null]
+    }))
 })
 
 test('runPackageScript success with additional command arg/flag', async () => {

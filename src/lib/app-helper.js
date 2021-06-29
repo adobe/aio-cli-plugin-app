@@ -90,31 +90,44 @@ async function runScript (command, dir, cmdArgs = []) {
   if (!dir) {
     dir = process.cwd()
   }
-  const fullCommand = command + cmdArgs && ' ' + cmdArgs.join(' ')
-  aioLogger.debug(`running command '${fullCommand}' in dir: '${dir}'`)
-  // run
+  let command = pkg.scripts[scriptName]
+  if (cmdArgs.length) {
+    command = `${command} ${cmdArgs.join(' ')}`
+  }
+
+  // we have to disable IPC for Windows (see link in debug line below)
+  const isWindows = process.platform === 'win32'
+  const ipc = isWindows ? null : 'ipc'
+
   const child = execa.command(command, {
-    stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+    stdio: ['inherit', 'inherit', 'inherit', ipc],
     shell: true,
     cwd: dir,
     preferLocal: true
   })
-  // handle IPC from possible aio-run-detached script
-  child.on('message', message => {
-    if (message.type === 'long-running-process') {
-      const { pid, logs } = message.data
-      aioLogger.debug(`Found '${fullCommand}' event hook long running process (pid: ${pid}). Registering for SIGTERM`)
-      aioLogger.debug(`Log locations for ${fullCommand} event hook long-running process (stdout: ${logs.stdout} stderr: ${logs.stderr})`)
-      process.on('exit', () => {
-        try {
-          aioLogger.debug(`Killing ${fullCommand} event hook long-running process (pid: ${pid})`)
-          process.kill(pid, 'SIGTERM')
-        } catch (_) {
+
+  if (isWindows) {
+    aioLogger.debug(`os is Windows, so we can't use ipc when running npm script ${scriptName}`)
+    aioLogger.debug('see: https://github.com/adobe/aio-cli-plugin-app/issues/372')
+  } else {
+    // handle IPC from possible aio-run-detached script
+    child.on('message', message => {
+      if (message.type === 'long-running-process') {
+        const { pid, logs } = message.data
+        aioLogger.debug(`Found ${scriptName} event hook long running process (pid: ${pid}). Registering for SIGTERM`)
+        aioLogger.debug(`Log locations for ${scriptName} event hook long-running process (stdout: ${logs.stdout} stderr: ${logs.stderr})`)
+        process.on('exit', () => {
+          try {
+            aioLogger.debug(`Killing ${scriptName} event hook long-running process (pid: ${pid})`)
+            process.kill(pid, 'SIGTERM')
+          } catch (_) {
           // do nothing if pid not found
-        }
-      })
-    }
-  })
+          }
+        })
+      }
+    })
+  }
+
   return child
 }
 
