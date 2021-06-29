@@ -20,9 +20,9 @@ const { flags } = require('@oclif/command')
 const generators = require('@adobe/generator-aio-app')
 
 const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
-const { installPackages, atLeastOne } = require('../../lib/app-helper')
+const { installPackages, atLeastOne, getImplPromptChoices } = require('../../lib/app-helper')
 
-const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV, implPromptChoices } = require('../../lib/defaults')
+const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV } = require('../../lib/defaults')
 
 const DEFAULT_WORKSPACE = 'Stage'
 
@@ -132,11 +132,13 @@ class InitCommand extends BaseCommand {
   }
 
   async selectExtensionPoints (flags, orgSupportedServices = null) {
+    const consoleCLI = await this.getLibConsoleCLI()
+    const availableChoices = await getImplPromptChoices(consoleCLI)
     if (!flags.extensions) {
-      return [implPromptChoices.find(i => i.value.name === 'application').value]
+      return [availableChoices.find(i => i.value.name === 'application').value]
     }
 
-    const choices = implPromptChoices.filter(i => i.value.name !== 'application')
+    const choices = availableChoices.filter(i => i.value.name !== 'application')
 
     // disable extensions that lack required services
     if (orgSupportedServices) {

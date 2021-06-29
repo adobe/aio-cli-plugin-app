@@ -13,8 +13,7 @@ const BaseCommand = require('../../../BaseCommand')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 
-const { atLeastOne, deleteUserConfig } = require('../../../lib/app-helper')
-const { implPromptChoices } = require('../../../lib/defaults')
+const { atLeastOne, deleteUserConfig, getImplPromptChoices } = require('../../../lib/app-helper')
 const chalk = require('chalk')
 const fs = require('fs-extra')
 const { EOL } = require('os')
@@ -59,7 +58,9 @@ class DeleteExtensionCommand extends BaseCommand {
       throw new Error('There are no implementations left in the project')
     }
     if (!flags.extension) {
-      const alreadyImplementedChoices = implPromptChoices.filter(i => alreadyImplemented.includes(i.value.name))
+      const consoleCLI = await this.getLibConsoleCLI()
+      const availableChoices = await getImplPromptChoices(consoleCLI)
+      const alreadyImplementedChoices = availableChoices.filter(i => alreadyImplemented.includes(i.value.name))
       // prompt
       const answers = await this.prompt([{
         type: 'checkbox',

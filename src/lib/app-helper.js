@@ -22,6 +22,7 @@ const aioConfig = require('@adobe/aio-lib-core-config')
 const { AIO_CONFIG_WORKSPACE_SERVICES, AIO_CONFIG_ORG_SERVICES } = require('./defaults')
 const { EOL } = require('os')
 const { getCliEnv } = require('@adobe/aio-lib-env')
+const { implPromptChoices, extensionDefaults } = require('./defaults')
 const yaml = require('js-yaml')
 
 /** @private */
@@ -516,6 +517,32 @@ function deleteUserConfig (configData) {
   fs.writeFileSync(configData.file, yaml.safeDump(phyConfig))
 }
 
+/** Get ALL Extension Point List for the selected org
+ *
+ * @param consoleCLI
+ */
+async function getAllExtensionPoints (consoleCLI) {
+  const projectConfig = aioConfig.get('project')
+  const extensionPoints = await consoleCLI.getAllExtensionPoints(projectConfig.org.id, 'dx')
+  return extensionPoints
+}
+
+/** Get promt choices for app
+ *
+ * @param consoleCLI
+ */
+async function getImplPromptChoices (consoleCLI) {
+  const defaultList = implPromptChoices
+  const projectConfig = aioConfig.get('project')
+  const extensionPoints = await consoleCLI.getAllExtensionPoints(projectConfig.org.id, 'dx')
+  if (extensionPoints) {
+    extensionPoints.forEach(extension => {
+      defaultList.push(extensionDefaults[extension.name]) // get app plugin specific details for the given extension
+    })
+  }
+  return defaultList
+}
+
 module.exports = {
   isNpmInstalled,
   isGitInstalled,
@@ -542,5 +569,7 @@ module.exports = {
   buildExtensionPointPayloadWoMetadata,
   buildExcShellViewExtensionMetadata,
   atLeastOne,
-  deleteUserConfig
+  deleteUserConfig,
+  getAllExtensionPoints,
+  getImplPromptChoices
 }
