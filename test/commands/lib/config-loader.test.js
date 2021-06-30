@@ -196,8 +196,8 @@ describe('load config', () => {
     expect(config).toEqual(getMockConfig('legacy-app', fullAioConfig, {
       'all.application.manifest.full': {
         packages: { thepackage: 'takesover' },
-        package: undefined
       },
+      'all.application.manifest.package': undefined,
       'all.application.hooks': {
         // already there
         'post-app-run': 'echo hello',
