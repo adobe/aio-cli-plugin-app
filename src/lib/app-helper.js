@@ -524,7 +524,7 @@ function deleteUserConfig (configData) {
 async function getAllExtensionPoints (consoleCLI, config) {
   const projectConfig = config.console.project
   const extensionPoints = await consoleCLI.getAllExtensionPoints(projectConfig.org_id, 'dx')
-  return extensionPoints.endpoints.data
+  return extensionPoints.data
 }
 
 /** Get promt choices for app
