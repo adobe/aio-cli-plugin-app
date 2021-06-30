@@ -31,7 +31,7 @@ class ListExtensionPointsCommand extends BaseCommand {
     if (extPointList) {
       extPointList.forEach(extPoint => {
         const obj = {}
-        obj.name = extPoint.name
+        obj.name = extPoint.serviceCode + '/' + extPoint.name + '/' + extPoint.idVer
         obj.operations = extPoint.operations
         extList.push(obj)
       })
@@ -47,7 +47,10 @@ class ListExtensionPointsCommand extends BaseCommand {
         this.log(chalk.bold('Extensions Points'))
         extList.forEach(ext => {
           this.log(ext.name)
-          this.log(' operations -> ' + ext.operations)
+          this.log(' operations')
+          ext.operations.forEach(opr => {
+            this.log('  -> ' + opr)
+          })
         })
       } else {
         this.log('No extension points found')
