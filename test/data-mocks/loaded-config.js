@@ -10,6 +10,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
+const cloneDeep = require('lodash.clonedeep')
 const upath = require('upath')
 const root = '/'
 // const dataDir = 'fakeDir'
@@ -28,12 +29,8 @@ const packagejson = {
 }
 
 const ow = {
-  // known later on
-  auth: null,
-  namespace: null,
-  apihost: null,
-
   defaultApihost: 'https://adobeioruntime.net',
+  apihost: 'https://adobeioruntime.net',
   apiversion: 'v1',
   package: `${packagejson.name}-${packagejson.version}`
 }
@@ -391,26 +388,40 @@ const expectedConfigs = {
 }
 
 // get config for fixture - that works
-module.exports = (appFixtureName, mockedAIOConfig, extraConfig = {}) => {
-  // set some more bits based on aio config - kind of ugly, do better
-  ow.auth = mockedAIOConfig.runtime.auth
-  ow.namespace = mockedAIOConfig.runtime.namespace
-  ow.apihost = mockedAIOConfig.runtime.apihost
-  const config = expectedConfigs[appFixtureName]
+module.exports = (appFixtureName, mockedAIOConfig, rewriteMockConfig = {}) => {
+  // important deepCopy to modify mock
+  const config = cloneDeep(expectedConfigs[appFixtureName])
+
+  // set some more bits based on aio config
   Object.keys(config.all).forEach(k => {
-    if (config.all[k].app.hasFrontend) {
-      config.all[k].s3.folder = ow.namespace
+    if (mockedAIOConfig && mockedAIOConfig.runtime) {
+      if (config.all[k].app.hasFrontend) {
+        config.all[k].s3.folder = mockedAIOConfig.runtime.namespace
+      }
+      config.all[k].ow.auth = mockedAIOConfig.runtime.auth
+      config.all[k].ow.namespace = mockedAIOConfig.runtime.namespace
+      config.all[k].ow.apihost = mockedAIOConfig.runtime.apihost || config.all[k].ow.apihost
     }
-    config.all[k].imsOrgId = mockedAIOConfig.project.org.ims_org_id
-    // add some extra mocked config
-    config.all[k] = {
-      // todo deep merge
-      ...config.all[k],
-      ...extraConfig
+    if (mockedAIOConfig && mockedAIOConfig.project && mockedAIOConfig.project.org) {
+      config.all[k].imsOrgId = mockedAIOConfig.project.org.ims_org_id
+    }
+  })
+
+  // apply extra configuration e.g. { packagejson.name: 'another', all.dx/excshell/1.app.name: 'another' }
+  Object.entries(rewriteMockConfig).forEach(([k, v]) => {
+    const keys = k.split('.')
+    const parentObj = keys.slice(0, -1).reduce((obj, k) => {
+      if (!obj[k]) {
+        obj[k] = {}
+      }
+      return obj[k]
+    }, config)
+    if (parentObj) {
+      parentObj[keys.slice(-1)] = v
     }
   })
   return {
-    ...expectedConfigs[appFixtureName],
+    ...config,
     aio: mockedAIOConfig
   }
 }

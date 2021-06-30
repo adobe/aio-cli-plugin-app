@@ -208,15 +208,17 @@ global.aioLegacyAppConfig = {
   actions: './myactions'
 }
 
+global.fakeS3Creds = {
+  s3bucket: 'customBucket',
+  accessKeyId: 'fakeAwsKeyId',
+  secretAccessKey: 'fakeAwsSecretKey'
+}
+
 global.extraConfig = {
-  s3Creds: {
-    s3: {
-      folder: global.fakeConfig.tvm.runtime.namespace,
-      creds: {
-        s3bucket: 'customBucket',
-        accessKeyId: 'fakeAwsKeyId',
-        secretAccessKey: 'fakeAwsSecretKey'
-      }
+  s3Creds: (extName) => {
+    return {
+      [`all.${extName}.s3.creds`]: global.fakeS3Creds,
+      [`all.${extName}.s3.folder`]: global.fakeConfig.tvm.runtime.namespace
     }
   }
 }

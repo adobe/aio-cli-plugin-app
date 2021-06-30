@@ -155,7 +155,7 @@ function loadCommonConfig () {
     ow: owConfig,
     aio: aioConfig,
     // soon not needed anymore (for old headless validator)
-    imsOrgId: aioConfigLoader.get(AIO_CONFIG_IMS_ORG_ID)
+    imsOrgId: aioConfig && aioConfig.project && aioConfig.project.org && aioConfig.project.org.ims_org_id
   }
 }
 
@@ -243,7 +243,7 @@ function loadUserConfigAppYaml () {
       }
       // 2. check if file exists
       if (!configCache[configFile] && !fs.existsSync(configFile)) {
-        throw new Error(`${INCLUDE_DIRECTIVE}: ${configFile} cannot be resolved, please make sure the file exists.`)
+        throw new Error(`'${INCLUDE_DIRECTIVE}: ${configFile}' cannot be resolved, please make sure the file exists.`)
       }
       // 3. delete the $include directive to be replaced
       delete parentObj[key]

@@ -63,8 +63,8 @@ describe('run', () => {
   })
   const checkHiddenSecrets = (logMock) => {
     expect(logMock).not.toHaveBeenCalledWith(expect.stringContaining(global.fakeConfig.creds.runtime.auth))
-    expect(logMock).not.toHaveBeenCalledWith(expect.stringContaining(global.extraConfig.s3Creds.s3.creds.accessKeyId))
-    expect(logMock).not.toHaveBeenCalledWith(expect.stringContaining(global.extraConfig.s3Creds.s3.creds.secretAccessKey))
+    expect(logMock).not.toHaveBeenCalledWith(expect.stringContaining(global.fakeS3Creds.accessKeyId))
+    expect(logMock).not.toHaveBeenCalledWith(expect.stringContaining(global.fakeS3Creds.secretAccessKey))
   }
 
   const checkJunkConfig = (logMock, json) => {
@@ -89,7 +89,9 @@ describe('run', () => {
 
   test('json flag', () => {
     // add s3 credentials to mocked config - to be hidden
-    mockConfigLoader.loadConfig.mockReturnValue(getMockConfig('exc', global.fakeConfig.tvm, global.extraConfig.s3Creds))
+    mockConfigLoader.loadConfig.mockReturnValue(
+      getMockConfig('exc', global.fakeConfig.tvm, global.extraConfig.s3Creds('dx/excshell/1'))
+    )
 
     const command = new TheCommand(['--json'])
     command.error = jest.fn()
@@ -104,8 +106,9 @@ describe('run', () => {
 
   test('yml flag', () => {
     // add s3 credentials to mocked config - to be hidden
-    mockConfigLoader.loadConfig.mockReturnValue(getMockConfig('exc', global.fakeConfig.tvm, global.extraConfig.s3Creds))
-
+    mockConfigLoader.loadConfig.mockReturnValue(
+      getMockConfig('exc', global.fakeConfig.tvm, global.extraConfig.s3Creds('dx/excshell/1'))
+    )
     const command = new TheCommand(['--yml'])
     command.error = jest.fn()
     command.log = jest.fn()
@@ -114,6 +117,22 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     checkHiddenSecrets(command.log)
     const json = yaml.load(command.log.mock.calls[0][0])
+    checkJunkConfig(command.log, json)
+  })
+
+  test('for coverage, undefined key to hide', () => {
+    // add s3 credentials to mocked config - to be hidden
+    mockConfigLoader.loadConfig.mockReturnValue(
+      getMockConfig('exc', global.fakeConfig.tvm, { 'all.dx/excshell/1.ow.auth': undefined })
+    )
+    const command = new TheCommand([])
+    command.error = jest.fn()
+    command.log = jest.fn()
+    command.run()
+    expect(mockConfigLoader.loadConfig).toHaveBeenCalledWith({ allowNoImpl: true })
+    expect(command.error).toHaveBeenCalledTimes(0)
+    checkHiddenSecrets(command.log)
+    const json = JSON.parse(command.log.mock.calls[0][0])
     checkJunkConfig(command.log, json)
   })
 })
