@@ -133,7 +133,8 @@ class InitCommand extends BaseCommand {
 
   async selectExtensionPoints (flags, orgSupportedServices = null) {
     const consoleCLI = await this.getLibConsoleCLI()
-    const availableChoices = await getImplPromptChoices(consoleCLI)
+    const fullConfig = this.getFullConfig({ allowNoImpl: true })
+    const availableChoices = await getImplPromptChoices(consoleCLI, fullConfig.aio)
     if (!flags.extensions) {
       return [availableChoices.find(i => i.value.name === 'application').value]
     }

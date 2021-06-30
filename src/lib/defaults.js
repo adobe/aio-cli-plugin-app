@@ -36,6 +36,10 @@ module.exports = {
   INCLUDE_DIRECTIVE: '$include',
   APPLICATION_CONFIG_KEY: 'application',
   EXTENSIONS_CONFIG_KEY: 'extensions',
+  EXTENSION_POINT_LIST: [ // Extension point list for easy access to all supported extension points
+    'dx/excshell/1',
+    'dx/asset-compute/worker/1'
+  ],
   // we still need some details for extensions, we add them to the promt choices later
   extensionDefaults: {
     'dx/excshell/1':

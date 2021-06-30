@@ -22,8 +22,9 @@ class ListExtensionPointsCommand extends BaseCommand {
   async run () {
     const { flags } = this.parse(ListExtensionPointsCommand)
     aioLogger.debug(`list all extensions points with flags: ${JSON.stringify(flags)}`)
+    const fullConfig = this.getFullConfig({ allowNoImpl: true })
     const consoleCLI = await this.getLibConsoleCLI()
-    const extPointList = await getAllExtensionPoints(consoleCLI)
+    const extPointList = await getAllExtensionPoints(consoleCLI, fullConfig.aio)
 
     const extList = []
     // select meaningful properties from extension point def

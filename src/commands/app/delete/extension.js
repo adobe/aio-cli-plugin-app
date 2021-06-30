@@ -59,7 +59,7 @@ class DeleteExtensionCommand extends BaseCommand {
     }
     if (!flags.extension) {
       const consoleCLI = await this.getLibConsoleCLI()
-      const availableChoices = await getImplPromptChoices(consoleCLI)
+      const availableChoices = await getImplPromptChoices(consoleCLI, config.aio)
       const alreadyImplementedChoices = availableChoices.filter(i => alreadyImplemented.includes(i.value.name))
       // prompt
       const answers = await this.prompt([{

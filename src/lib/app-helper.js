@@ -22,7 +22,7 @@ const aioConfig = require('@adobe/aio-lib-core-config')
 const { AIO_CONFIG_WORKSPACE_SERVICES, AIO_CONFIG_ORG_SERVICES } = require('./defaults')
 const { EOL } = require('os')
 const { getCliEnv } = require('@adobe/aio-lib-env')
-const { implPromptChoices, extensionDefaults } = require('./defaults')
+const { implPromptChoices, extensionDefaults, EXTENSION_POINT_LIST } = require('./defaults')
 const yaml = require('js-yaml')
 
 /** @private */
@@ -521,22 +521,23 @@ function deleteUserConfig (configData) {
  *
  * @param consoleCLI
  */
-async function getAllExtensionPoints (consoleCLI) {
-  const projectConfig = aioConfig.get('project')
-  const extensionPoints = await consoleCLI.getAllExtensionPoints(projectConfig.org.id, 'dx')
-  return extensionPoints
+async function getAllExtensionPoints (consoleCLI, config) {
+  const projectConfig = config.console.project
+  const extensionPoints = await consoleCLI.getAllExtensionPoints(projectConfig.org_id, 'dx')
+  return extensionPoints.endpoints.data
 }
 
 /** Get promt choices for app
  *
  * @param consoleCLI
  */
-async function getImplPromptChoices (consoleCLI) {
+async function getImplPromptChoices (consoleCLI, config) {
   const defaultList = implPromptChoices
-  const projectConfig = aioConfig.get('project')
-  const extensionPoints = await consoleCLI.getAllExtensionPoints(projectConfig.org.id, 'dx')
+  const projectConfig = config.console.project
+  const extensionPoints = await consoleCLI.getAllExtensionPoints(projectConfig.org_id, 'dx')
   if (extensionPoints) {
-    extensionPoints.forEach(extension => {
+    // we need to use extensionPoints.endpoints.data here once its o/p is fixed
+    EXTENSION_POINT_LIST.forEach(extension => {
       defaultList.push(extensionDefaults[extension.name]) // get app plugin specific details for the given extension
     })
   }

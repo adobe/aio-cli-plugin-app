@@ -59,7 +59,7 @@ class AddExtensionCommand extends BaseCommand {
   async selectImplementations (flags, config) {
     const alreadyImplemented = config.implements
     const consoleCLI = await this.getLibConsoleCLI()
-    const availableChoices = await getImplPromptChoices(consoleCLI)
+    const availableChoices = await getImplPromptChoices(consoleCLI, config.aio)
     const availableImplementations = availableChoices.map(i => i.value.name)
 
     const possibleChoices = availableChoices.filter(i => !alreadyImplemented.includes(i.value.name))
