@@ -22,7 +22,7 @@ const aioConfig = require('@adobe/aio-lib-core-config')
 const { AIO_CONFIG_WORKSPACE_SERVICES, AIO_CONFIG_ORG_SERVICES } = require('./defaults')
 const { EOL } = require('os')
 const { getCliEnv } = require('@adobe/aio-lib-env')
-const { implPromptChoices, extensionDefaults, EXTENSION_POINT_LIST } = require('./defaults')
+const { implPromptChoices, extensionDefaults } = require('./defaults')
 const yaml = require('js-yaml')
 
 /** @private */
@@ -517,31 +517,58 @@ function deleteUserConfig (configData) {
   fs.writeFileSync(configData.file, yaml.safeDump(phyConfig))
 }
 
-/** Get ALL Extension Point List for the selected org
+/**
+ * Get ALL Extension Point List for the selected org
  *
  * @param consoleCLI
+ * @param orgId
  */
-async function getAllExtensionPoints (consoleCLI, config) {
-  const projectConfig = config.console.project
-  const extensionPoints = await consoleCLI.getAllExtensionPoints(projectConfig.org_id, 'dx')
-  return extensionPoints.data
+async function getAllExtensionPoints (consoleCLI, orgId) {
+  const extensionPoints = await consoleCLI.getAllExtensionPoints(orgId, 'dx')
+  const result = []
+  if (extensionPoints) {
+    const processedExtensions = {}
+    extensionPoints.data.forEach(xp => {
+      const fullName = getFullExtensionName(xp)
+      // filter out repeated extensions
+      if (!processedExtensions[fullName]) {
+        processedExtensions[fullName] = xp
+        result.push(xp)
+      }
+    })
+  }
+  return result
 }
 
-/** Get promt choices for app
+/**
+ * Get promt choices for app
  *
  * @param consoleCLI
+ * @param orgId
  */
-async function getImplPromptChoices (consoleCLI, config) {
+async function getImplPromptChoices (consoleCLI, orgId) {
   const defaultList = implPromptChoices
-  const projectConfig = config.console.project
-  const extensionPoints = await consoleCLI.getAllExtensionPoints(projectConfig.org_id, 'dx')
+  const extensionPoints = await getAllExtensionPoints(consoleCLI, orgId)
   if (extensionPoints) {
-    // we need to use extensionPoints.endpoints.data here once its o/p is fixed
-    EXTENSION_POINT_LIST.forEach(extension => {
-      defaultList.push(extensionDefaults[extension.name]) // get app plugin specific details for the given extension
+    extensionPoints.forEach(xp => {
+      const fullName = getFullExtensionName(xp)
+      const ext = extensionDefaults[fullName] // get app plugin specific details for the given extension
+      if (ext) {
+        defaultList.push(ext)
+      }
     })
   }
   return defaultList
+}
+
+/* Returns full extension point name with service code and version
+* @param xp extensionpoint  object
+*/
+/**
+ * @param xp
+ */
+function getFullExtensionName (xp) {
+  return xp.serviceCode + '/' + xp.name + '/' + xp.idVer
 }
 
 module.exports = {
@@ -572,5 +599,6 @@ module.exports = {
   atLeastOne,
   deleteUserConfig,
   getAllExtensionPoints,
-  getImplPromptChoices
+  getImplPromptChoices,
+  getFullExtensionName
 }

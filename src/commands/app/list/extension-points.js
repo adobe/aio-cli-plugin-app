@@ -14,7 +14,7 @@ const BaseCommand = require('../../../BaseCommand')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:list:extension-points', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 
-const { getAllExtensionPoints } = require('../../../lib/app-helper')
+const { getAllExtensionPoints, getFullExtensionName } = require('../../../lib/app-helper')
 const chalk = require('chalk')
 const yaml = require('js-yaml')
 
@@ -24,14 +24,14 @@ class ListExtensionPointsCommand extends BaseCommand {
     aioLogger.debug(`list all extensions points with flags: ${JSON.stringify(flags)}`)
     const fullConfig = this.getFullConfig({ allowNoImpl: true })
     const consoleCLI = await this.getLibConsoleCLI()
-    const extPointList = await getAllExtensionPoints(consoleCLI, fullConfig.aio)
+    const extPointList = await getAllExtensionPoints(consoleCLI, fullConfig.aio.console.project.org_id)
 
     const extList = []
     // select meaningful properties from extension point def
     if (extPointList) {
       extPointList.forEach(extPoint => {
         const obj = {}
-        obj.name = extPoint.serviceCode + '/' + extPoint.name + '/' + extPoint.idVer
+        obj.name = getFullExtensionName(extPoint)
         obj.operations = extPoint.operations
         extList.push(obj)
       })
