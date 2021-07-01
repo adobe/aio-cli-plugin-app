@@ -22,7 +22,7 @@ const mockAIOConfig = require('@adobe/aio-lib-core-config')
 
 // const libEnv = require('@adobe/aio-lib-env')
 
-const getMockConfig = require('../../data-mocks/loaded-config')
+const getMockConfig = require('../../data-mocks/config-loader')
 describe('load config', () => {
   let config
   beforeEach(async () => {
@@ -84,22 +84,22 @@ describe('load config', () => {
       'all.dx/excshell/1.app.version': '0.1.0',
       'all.dx/excshell/1.ow.package': 'unnamed-app-0.1.0',
       'packagejson.name': 'unnamed-app',
-      'packagejson.version': '0.1.0',
+      'packagejson.version': '0.1.0'
     }))
   })
 
   test('no implementation - allowNoImpl=false', async () => {
     global.fakeFileSystem.addJson({ '/package.json': '{}', '/app.config.yaml': '{}' })
-    expect(() => loadConfig({})).toThrow(`Couldn't find configuration in '/'`)
+    expect(() => loadConfig({})).toThrow('Couldn\'t find configuration in \'/\'')
   })
 
   test('no implementation - allowNoImpl=true', async () => {
     global.fakeFileSystem.addJson({ '/package.json': '{}', '/app.config.yaml': '{}' })
     config = loadConfig({ allowNoImpl: true })
     expect(config).toEqual(getMockConfig('exc', global.fakeConfig.tvm, {
-      'all': {},
-      'implements': [],
-      'includeIndex': {},
+      all: {},
+      implements: [],
+      includeIndex: {},
       'packagejson.name': 'unnamed-app',
       'packagejson.version': '0.1.0'
     }))
@@ -123,10 +123,10 @@ describe('load config', () => {
 `runtimeManifest:
   $include: dir/c.yaml`,
         '/dir/c.yaml':
-`$include: ../b.yaml`
+'$include: ../b.yaml'
       }
     )
-    expect(() => loadConfig({})).toThrow(`Detected '$include' cycle: 'app.config.yaml,b.yaml,dir/c.yaml,b.yaml'`)
+    expect(() => loadConfig({})).toThrow('Detected \'$include\' cycle: \'app.config.yaml,b.yaml,dir/c.yaml,b.yaml\'')
   })
 
   test('include does not exist', async () => {
@@ -136,7 +136,7 @@ describe('load config', () => {
         '/app.config.yaml': '$include: b.yaml'
       }
     )
-    expect(() => loadConfig({})).toThrow(`'$include: b.yaml' cannot be resolved`)
+    expect(() => loadConfig({})).toThrow('\'$include: b.yaml\' cannot be resolved')
   })
 
   test('include does not resolve to object - string', async () => {
@@ -147,7 +147,7 @@ describe('load config', () => {
         '/b.yaml': 'string'
       }
     )
-    expect(() => loadConfig({})).toThrow(`'$include: b.yaml' does not resolve to an object`)
+    expect(() => loadConfig({})).toThrow('\'$include: b.yaml\' does not resolve to an object')
   })
 
   test('include does not resolve to object - arraay', async () => {
@@ -158,7 +158,7 @@ describe('load config', () => {
         '/b.yaml': '[1,2,3]'
       }
     )
-    expect(() => loadConfig({})).toThrow(`'$include: b.yaml' does not resolve to an object`)
+    expect(() => loadConfig({})).toThrow('\'$include: b.yaml\' does not resolve to an object')
   })
 
   test('legacy-app - no hooks', async () => {
@@ -173,8 +173,8 @@ describe('load config', () => {
     config = loadConfig({})
     expect(config).toEqual(getMockConfig('legacy-app', fullAioConfig, {
       'all.application.hooks': {},
-      'includeIndex': expect.any(Object),
-      'packagejson.scripts': {},
+      includeIndex: expect.any(Object),
+      'packagejson.scripts': {}
     }))
   })
 
@@ -195,7 +195,7 @@ describe('load config', () => {
     config = loadConfig({})
     expect(config).toEqual(getMockConfig('legacy-app', fullAioConfig, {
       'all.application.manifest.full': {
-        packages: { thepackage: 'takesover' },
+        packages: { thepackage: 'takesover' }
       },
       'all.application.manifest.package': undefined,
       'all.application.hooks': {
@@ -204,8 +204,7 @@ describe('load config', () => {
         // new one
         'another-hook': 'will be merged'
       },
-      'includeIndex': expect.any(Object)
+      includeIndex: expect.any(Object)
     }))
   })
 })
-

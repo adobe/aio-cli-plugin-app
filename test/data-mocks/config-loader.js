@@ -10,9 +10,11 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
+const path = require('path')
+const winCompat = p => path.normalize(p)
+
 const cloneDeep = require('lodash.clonedeep')
-const upath = require('upath')
-const root = '/'
+const root = winCompat('/')
 // const dataDir = 'fakeDir'
 const {
   excComplexIncludeIndex,
@@ -21,7 +23,7 @@ const {
   appNoActionsIncludeIndex,
   excIncludeIndex,
   legacyIncludeIndex
-} = require('./loaded-config-include-indexes')
+} = require('./config-loader-include-index')
 
 const packagejson = {
   version: '1.0.0',
@@ -43,7 +45,7 @@ function fullFakeRuntimeManifest (pathToActionFolder, pkgName1) {
         license: 'Apache-2.0',
         actions: {
           action: {
-            function: upath.toUnix(`${pathToActionFolder}/action.js`),
+            function: winCompat(`${pathToActionFolder}/action.js`),
             web: 'yes',
             runtime: 'nodejs:14',
             inputs: {
@@ -54,14 +56,14 @@ function fullFakeRuntimeManifest (pathToActionFolder, pkgName1) {
               final: true
             },
             include: [
-              [`${pathToActionFolder}/somefile.txt`, 'file.txt']
+              [winCompat(`${pathToActionFolder}/somefile.txt`), 'file.txt']
             ],
             limits: {
               concurrency: 189
             }
           },
           'action-zip': {
-            function: upath.toUnix(`${pathToActionFolder}/action-zip`),
+            function: winCompat(`${pathToActionFolder}/action-zip`),
             web: 'yes',
             runtime: 'nodejs:14'
           }
@@ -111,7 +113,7 @@ function oneActionRuntimeManifest (pathToActionFolder, pkgName1) {
         license: 'Apache-2.0',
         actions: {
           action: {
-            function: upath.toUnix(`${pathToActionFolder}/action.js`),
+            function: winCompat(`${pathToActionFolder}/action.js`),
             web: 'yes',
             runtime: 'nodejs:14',
             inputs: {
@@ -134,13 +136,13 @@ function oneActionRuntimeManifest (pathToActionFolder, pkgName1) {
   }
 }
 
-const excActionsFolder = `${root}src/dx-excshell-1/actions`
+const excActionsFolder = winCompat(`${root}src/dx-excshell-1/actions`)
 const excSingleConfig = {
   'dx/excshell/1': {
     app: {
       hasBackend: true,
       hasFrontend: true,
-      dist: `${root}dist/dx-excshell-1`,
+      dist: winCompat(`${root}dist/dx-excshell-1`),
       defaultHostname: 'adobeio-static.net',
       hostname: 'adobeio-static.net',
       htmlCacheDuration: '60',
@@ -152,13 +154,13 @@ const excSingleConfig = {
     },
     ow,
     s3: {
-      credsCacheFile: `${root}.aws.tmp.creds.json`
+      credsCacheFile: winCompat(`${root}.aws.tmp.creds.json`)
     },
     web: {
-      src: `${root}src/dx-excshell-1/web-src`,
-      injectedConfig: `${root}src/dx-excshell-1/web-src/src/config.json`,
-      distDev: `${root}dist/dx-excshell-1/web-dev`,
-      distProd: `${root}dist/dx-excshell-1/web-prod`
+      src: winCompat(`${root}src/dx-excshell-1/web-src`),
+      injectedConfig: winCompat(`${root}src/dx-excshell-1/web-src/src/config.json`),
+      distDev: winCompat(`${root}dist/dx-excshell-1/web-dev`),
+      distProd: winCompat(`${root}dist/dx-excshell-1/web-prod`)
     },
     manifest: {
       src: 'manifest.yml',
@@ -167,7 +169,7 @@ const excSingleConfig = {
     },
     actions: {
       src: excActionsFolder,
-      dist: `${root}dist/dx-excshell-1/actions`
+      dist: winCompat(`${root}dist/dx-excshell-1/actions`)
     },
     root: `${root}`,
     name: 'dx/excshell/1',
@@ -183,13 +185,13 @@ const excSingleConfig = {
   }
 }
 
-const nuiActionsFolder = `${root}src/dx-asset-compute-worker-1/actions`
+const nuiActionsFolder = winCompat(`${root}src/dx-asset-compute-worker-1/actions`)
 const nuiSingleConfig = {
   'dx/asset-compute/worker/1': {
     app: {
       hasBackend: true,
       hasFrontend: false,
-      dist: `${root}dist/dx-asset-compute-worker-1`,
+      dist: winCompat(`${root}dist/dx-asset-compute-worker-1`),
       defaultHostname: 'adobeio-static.net',
       hostname: 'adobeio-static.net',
       htmlCacheDuration: '60',
@@ -202,7 +204,7 @@ const nuiSingleConfig = {
     ow,
     s3: {},
     web: {
-      src: `${root}src/dx-asset-compute-worker-1/web-src`
+      src: winCompat(`${root}src/dx-asset-compute-worker-1/web-src`)
     },
     manifest: {
       src: 'manifest.yml',
@@ -211,7 +213,7 @@ const nuiSingleConfig = {
     },
     actions: {
       src: nuiActionsFolder,
-      dist: `${root}dist/dx-asset-compute-worker-1/actions`
+      dist: winCompat(`${root}dist/dx-asset-compute-worker-1/actions`)
     },
     root: `${root}`,
     name: 'dx/asset-compute/worker/1',
@@ -229,13 +231,13 @@ const nuiSingleConfig = {
   }
 }
 
-const appActionsFolder = `${root}myactions`
+const appActionsFolder = winCompat(`${root}myactions`)
 const applicationSingleConfig = {
   application: {
     app: {
       hasBackend: true,
       hasFrontend: true,
-      dist: `${root}dist/application`,
+      dist: winCompat(`${root}dist/application`),
       defaultHostname: 'adobeio-static.net',
       hostname: 'adobeio-static.net',
       htmlCacheDuration: '60',
@@ -247,13 +249,13 @@ const applicationSingleConfig = {
     },
     ow,
     s3: {
-      credsCacheFile: `${root}.aws.tmp.creds.json`
+      credsCacheFile: winCompat(`${root}.aws.tmp.creds.json`)
     },
     web: {
-      src: `${root}web-src`,
-      injectedConfig: `${root}web-src/src/config.json`,
-      distDev: `${root}dist/application/web-dev`,
-      distProd: `${root}dist/application/web-prod`
+      src: winCompat(`${root}web-src`),
+      injectedConfig: winCompat(`${root}web-src/src/config.json`),
+      distDev: winCompat(`${root}dist/application/web-dev`),
+      distProd: winCompat(`${root}dist/application/web-prod`)
     },
     manifest: {
       src: 'manifest.yml',
@@ -263,7 +265,7 @@ const applicationSingleConfig = {
     },
     actions: {
       src: appActionsFolder,
-      dist: `${root}dist/application/actions`
+      dist: winCompat(`${root}dist/application/actions`)
     },
     root: `${root}`,
     name: 'application',
@@ -290,7 +292,7 @@ const applicationNoActionsSingleConfig = {
     app: {
       hasBackend: false,
       hasFrontend: true,
-      dist: `${root}dist/application`,
+      dist: winCompat(`${root}dist/application`),
       defaultHostname: 'adobeio-static.net',
       hostname: 'adobeio-static.net',
       htmlCacheDuration: '60',
@@ -302,17 +304,17 @@ const applicationNoActionsSingleConfig = {
     },
     ow,
     s3: {
-      credsCacheFile: `${root}.aws.tmp.creds.json`
+      credsCacheFile: winCompat(`${root}.aws.tmp.creds.json`)
     },
     web: {
-      src: `${root}web-src`,
-      injectedConfig: `${root}web-src/src/config.json`,
-      distDev: `${root}dist/application/web-dev`,
-      distProd: `${root}dist/application/web-prod`
+      src: winCompat(`${root}web-src`),
+      injectedConfig: winCompat(`${root}web-src/src/config.json`),
+      distDev: winCompat(`${root}dist/application/web-dev`),
+      distProd: winCompat(`${root}dist/application/web-prod`)
     },
     manifest: {},
     actions: {
-      src: `${root}actions`
+      src: winCompat(`${root}actions`)
     },
     root: `${root}`,
     name: 'application',

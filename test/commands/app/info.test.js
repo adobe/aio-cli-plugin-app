@@ -17,7 +17,7 @@ const yaml = require('js-yaml')
 
 const mockConfigLoader = require('../../../src/lib/config-loader.js')
 jest.mock('../../../src/lib/config-loader.js')
-const getMockConfig = require('../../data-mocks/loaded-config')
+const getMockConfig = require('../../data-mocks/config-loader')
 
 test('exports', async () => {
   expect(typeof TheCommand).toEqual('function')

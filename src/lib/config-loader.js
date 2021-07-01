@@ -27,7 +27,6 @@ const {
   defaultJSCacheDuration,
   defaultCSSCacheDuration,
   defaultImageCacheDuration,
-  AIO_CONFIG_IMS_ORG_ID,
   stageAppHostname,
   USER_CONFIG_FILE,
   LEGACY_RUNTIME_MANIFEST,
