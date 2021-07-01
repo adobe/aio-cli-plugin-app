@@ -13,7 +13,7 @@ governing permissions and limitations under the License.
 const path = require('path')
 const winCompat = p => {
   p = path.normalize(p)
-  if (p.startsWith('/') && process.platform === 'win32') {
+  if (p.startsWith('\\') && process.platform === 'win32') {
     return 'C:' + p
   }
   return p
