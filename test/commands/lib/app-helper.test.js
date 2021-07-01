@@ -20,7 +20,7 @@ jest.mock('@adobe/aio-lib-core-config')
 jest.mock('node-fetch')
 jest.mock('execa')
 jest.mock('process')
-
+jest.mock('fs-extra') // do not touch the real fs
 beforeEach(() => {
   Object.defineProperty(process, 'platform', { value: 'linux' })
   execa.mockReset()
