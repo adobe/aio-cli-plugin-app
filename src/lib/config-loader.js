@@ -17,6 +17,7 @@ const chalk = require('chalk')
 const utils = require('./app-helper')
 const aioConfigLoader = require('@adobe/aio-lib-core-config')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:config-loader', { provider: 'debug' })
+const upath = require('upath')
 
 // defaults
 const {
@@ -235,7 +236,9 @@ function loadUserConfigAppYaml () {
     if (key === INCLUDE_DIRECTIVE) {
       // $include: 'configFile', value is string pointing to config file
       // includes are relative to the current config file
-      const configFile = path.join(path.dirname(currConfigFile), value)
+      // config path in index always as unix path, it doesn't matter but makes it easier to generate testing mock data
+      const configFile = upath.toUnix(path.join(path.dirname(currConfigFile), value))
+
       // 1. check for include cycles
       if (includedFiles.includes(configFile)) {
         throw new Error(`Detected '${INCLUDE_DIRECTIVE}' cycle: '${[...includedFiles, configFile].toString()}', please make sure that your configuration has no cycles.`)

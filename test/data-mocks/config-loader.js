@@ -11,7 +11,13 @@ governing permissions and limitations under the License.
 */
 
 const path = require('path')
-const winCompat = p => path.normalize(p)
+const winCompat = p => {
+  p = path.normalize(p)
+  if (p.startsWith('/') && process.platform === 'win32') {
+    return 'C:' + p
+  }
+  return p
+}
 
 const cloneDeep = require('lodash.clonedeep')
 const root = winCompat('/')
