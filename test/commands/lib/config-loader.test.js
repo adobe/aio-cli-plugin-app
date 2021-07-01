@@ -13,15 +13,18 @@ governing permissions and limitations under the License.
 global.mockFs()
 const { loadConfig } = require('../../../src/lib/config-loader')
 const mockAIOConfig = require('@adobe/aio-lib-core-config')
-// const yaml = require('js-yaml')
+const yaml = require('js-yaml')
+const path = require('path')
+
 // const chalk = require('chalk')
 // const defaults = require('../../../src/lib/defaults')
 
 // jest.mock('@adobe/aio-lib-core-logging')
 // const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:config-loader', { provider: 'debug' })
 
-// const libEnv = require('@adobe/aio-lib-env')
+const libEnv = require('@adobe/aio-lib-env')
 
+jest.mock('@adobe/aio-lib-env')
 const getMockConfig = require('../../data-mocks/config-loader')
 describe('load config', () => {
   let config
@@ -31,6 +34,7 @@ describe('load config', () => {
     process.chdir('/')
     // empty all fake files
     global.fakeFileSystem.clear()
+    libEnv.getCliEnv.mockReturnValue('prod')
   })
 
   // main cases
@@ -73,7 +77,7 @@ describe('load config', () => {
     expect(config).toEqual(getMockConfig('legacy-app', fullAioConfig))
   })
 
-  // corner cases
+  // corner cases - coverage
   test('exc with default package.json name & version', async () => {
     global.loadFixtureApp('exc')
     global.fakeFileSystem.addJson({ '/package.json': '{}' })
@@ -88,9 +92,112 @@ describe('load config', () => {
     }))
   })
 
+  test('exc with custom dist folder', async () => {
+    global.loadFixtureApp('exc')
+    // rewrite configuration
+    const userConfig = yaml.load(global.fixtureFile('exc/app.config.yaml'))
+    userConfig.extensions['dx/excshell/1'].dist = 'new/dist/for/excshell'
+    global.fakeFileSystem.addJson({ '/app.config.yaml': yaml.dump(userConfig) })
+
+    config = loadConfig({})
+    expect(config).toEqual(getMockConfig('exc', global.fakeConfig.tvm, {
+      'all.dx/excshell/1.app.dist': path.normalize('/new/dist/for/excshell'),
+      'all.dx/excshell/1.actions.dist': path.normalize('/new/dist/for/excshell/actions'),
+      'all.dx/excshell/1.web.distDev': path.normalize('/new/dist/for/excshell/web-dev'),
+      'all.dx/excshell/1.web.distProd': path.normalize('/new/dist/for/excshell/web-prod'),
+      includeIndex: expect.any(Object)
+    }))
+  })
+
+  test('exc with byo aws credentials', async () => {
+    global.loadFixtureApp('exc')
+    // rewrite configuration
+    const userConfig = yaml.load(global.fixtureFile('exc/app.config.yaml'))
+    userConfig.extensions['dx/excshell/1'].awsaccesskeyid = 'fakeid'
+    userConfig.extensions['dx/excshell/1'].awssecretaccesskey = 'fakesecret'
+    userConfig.extensions['dx/excshell/1'].s3bucket = 'fakebucket'
+    global.fakeFileSystem.addJson({ '/app.config.yaml': yaml.dump(userConfig) })
+
+    config = loadConfig({})
+    expect(config).toEqual(getMockConfig('exc', global.fakeConfig.tvm, {
+      'all.dx/excshell/1.s3.creds': {
+        accessKeyId: 'fakeid',
+        secretAccessKey: 'fakesecret',
+        params: { Bucket: 'fakebucket' }
+      },
+      includeIndex: expect.any(Object)
+    }))
+  })
+
+  test('exc with custom tvm url', async () => {
+    global.loadFixtureApp('exc')
+    // rewrite configuration
+    const userConfig = yaml.load(global.fixtureFile('exc/app.config.yaml'))
+    userConfig.extensions['dx/excshell/1'].tvmurl = 'customurl'
+    global.fakeFileSystem.addJson({ '/app.config.yaml': yaml.dump(userConfig) })
+
+    config = loadConfig({})
+    expect(config).toEqual(getMockConfig('exc', global.fakeConfig.tvm, {
+      'all.dx/excshell/1.s3.tvmUrl': 'customurl',
+      includeIndex: expect.any(Object)
+    }))
+  })
+
+  test('exc with default tvm url', async () => {
+    global.loadFixtureApp('exc')
+    // rewrite configuration
+    const userConfig = yaml.load(global.fixtureFile('exc/app.config.yaml'))
+    userConfig.extensions['dx/excshell/1'].tvmurl = 'https://firefly-tvm.adobe.io'
+    global.fakeFileSystem.addJson({ '/app.config.yaml': yaml.dump(userConfig) })
+
+    config = loadConfig({})
+    expect(config).toEqual(getMockConfig('exc', global.fakeConfig.tvm, {
+      includeIndex: expect.any(Object)
+    }))
+  })
+
+  test('exc with an action that has no function', async () => {
+    global.loadFixtureApp('exc')
+    // rewrite configuration
+    const userConfig = yaml.load(global.fixtureFile('exc/src/dx-excshell-1/ext.config.yaml'))
+    userConfig.runtimeManifest.packages['my-exc-package'].actions.newAction = { web: 'yes' }
+    global.fakeFileSystem.addJson({ '/src/dx-excshell-1/ext.config.yaml': yaml.dump(userConfig) })
+
+    config = loadConfig({})
+    expect(config).toEqual(getMockConfig('exc', global.fakeConfig.tvm, {
+      'all.dx/excshell/1.manifest.full.packages.my-exc-package.actions.newAction': { web: 'yes' },
+      includeIndex: expect.any(Object)
+    }))
+  })
+
+  test('exc env = stage', async () => {
+    libEnv.getCliEnv.mockReturnValue('stage')
+    global.loadFixtureApp('exc')
+
+    config = loadConfig({})
+    expect(config).toEqual(getMockConfig('exc', global.fakeConfig.tvm, {
+      'all.dx/excshell/1.app.defaultHostname': 'dev.runtime.adobe.io',
+      'all.dx/excshell/1.app.hostname': 'dev.runtime.adobe.io',
+      includeIndex: expect.any(Object)
+    }))
+  })
+
+  test('missing extension operation', async () => {
+    global.fakeFileSystem.addJson({
+      '/package.json': '{}',
+      '/app.config.yaml':
+`
+extensions:
+  dx/excshell/1:
+    no: 'operations'
+`
+    })
+    expect(() => loadConfig({})).toThrow('Missing \'operations\'')
+  })
+
   test('no implementation - allowNoImpl=false', async () => {
     global.fakeFileSystem.addJson({ '/package.json': '{}', '/app.config.yaml': '{}' })
-    expect(() => loadConfig({})).toThrow('Couldn\'t find configuration in \'/\'')
+    expect(() => loadConfig({})).toThrow('Couldn\'t find configuration')
   })
 
   test('no implementation - allowNoImpl=true', async () => {
@@ -126,7 +233,7 @@ describe('load config', () => {
 '$include: ../b.yaml'
       }
     )
-    expect(() => loadConfig({})).toThrow('Detected \'$include\' cycle: \'app.config.yaml,b.yaml,dir/c.yaml,b.yaml\'')
+    expect(() => loadConfig({})).toThrow(`Detected '$include' cycle: 'app.config.yaml,b.yaml,${path.normalize('dir/c.yaml')},b.yaml'`)
   })
 
   test('include does not exist', async () => {
