@@ -25,16 +25,10 @@ const {
   legacyIncludeIndex
 } = require('./config-loader-include-index')
 
-const packagejson = {
-  version: '1.0.0',
-  name: 'sample-app'
-}
-
 const ow = {
   defaultApihost: 'https://adobeioruntime.net',
   apihost: 'https://adobeioruntime.net',
-  apiversion: 'v1',
-  package: `${packagejson.name}-${packagejson.version}`
+  apiversion: 'v1'
 }
 
 /** @private */
@@ -148,9 +142,7 @@ const excSingleConfig = {
       htmlCacheDuration: '60',
       jsCacheDuration: '604800',
       cssCacheDuration: '604800',
-      imageCacheDuration: '604800',
-      name: packagejson.name,
-      version: packagejson.version
+      imageCacheDuration: '604800'
     },
     ow,
     s3: {
@@ -197,9 +189,7 @@ const nuiSingleConfig = {
       htmlCacheDuration: '60',
       jsCacheDuration: '604800',
       cssCacheDuration: '604800',
-      imageCacheDuration: '604800',
-      name: packagejson.name,
-      version: packagejson.version
+      imageCacheDuration: '604800'
     },
     ow,
     s3: {},
@@ -243,9 +233,7 @@ const applicationSingleConfig = {
       htmlCacheDuration: '60',
       jsCacheDuration: '604800',
       cssCacheDuration: '604800',
-      imageCacheDuration: '604800',
-      name: packagejson.name,
-      version: packagejson.version
+      imageCacheDuration: '604800'
     },
     ow,
     s3: {
@@ -298,9 +286,7 @@ const applicationNoActionsSingleConfig = {
       htmlCacheDuration: '60',
       jsCacheDuration: '604800',
       cssCacheDuration: '604800',
-      imageCacheDuration: '604800',
-      name: packagejson.name,
-      version: packagejson.version
+      imageCacheDuration: '604800'
     },
     ow,
     s3: {
@@ -332,7 +318,10 @@ const expectedConfigs = {
       'dx/excshell/1'
     ],
     includeIndex: excIncludeIndex,
-    packagejson,
+    packagejson: {
+      version: '1.0.0',
+      name: 'exc'
+    },
     root
   },
   app: {
@@ -341,7 +330,10 @@ const expectedConfigs = {
       'application'
     ],
     includeIndex: appIncludeIndex,
-    packagejson,
+    packagejson: {
+      version: '1.0.0',
+      name: 'app'
+    },
     root
   },
   'app-exc-nui': {
@@ -352,7 +344,10 @@ const expectedConfigs = {
       'dx/excshell/1'
     ],
     includeIndex: appExcNuiIncludeIndex,
-    packagejson,
+    packagejson: {
+      version: '1.0.0',
+      name: 'app-exc-nui'
+    },
     root
   },
   'app-no-actions': {
@@ -361,7 +356,10 @@ const expectedConfigs = {
       'application'
     ],
     includeIndex: appNoActionsIncludeIndex,
-    packagejson,
+    packagejson: {
+      version: '1.0.0',
+      name: 'app-no-actions'
+    },
     root
   },
   'exc-complex-includes': {
@@ -370,7 +368,10 @@ const expectedConfigs = {
       'dx/excshell/1'
     ],
     includeIndex: excComplexIncludeIndex,
-    packagejson,
+    packagejson: {
+      version: '1.0.0',
+      name: 'exc-complex-includes'
+    },
     root
   },
   'legacy-app': {
@@ -380,7 +381,8 @@ const expectedConfigs = {
     ],
     includeIndex: legacyIncludeIndex,
     packagejson: {
-      ...packagejson,
+      version: '1.0.0',
+      name: 'legacy-app',
       scripts: {
         'post-app-run': 'echo hello'
       }
@@ -407,6 +409,9 @@ module.exports = (appFixtureName, mockedAIOConfig, rewriteMockConfig = {}) => {
     if (mockedAIOConfig && mockedAIOConfig.project && mockedAIOConfig.project.org) {
       config.all[k].imsOrgId = mockedAIOConfig.project.org.ims_org_id
     }
+    config.all[k].ow.package = `${config.packagejson.name}-${config.packagejson.version}`
+    config.all[k].app.name = config.packagejson.name
+    config.all[k].app.version = config.packagejson.version
   })
 
   // apply extra configuration e.g. { packagejson.name: 'another', all.dx/excshell/1.app.name: 'another' }

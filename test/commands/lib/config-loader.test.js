@@ -272,7 +272,7 @@ extensions:
     global.loadFixtureApp('legacy-app')
     global.fakeFileSystem.addJson({
       // replace legacy app package.json which has hooks defined
-      '/package.json': '{"name": "sample-app", "version": "1.0.0", "scripts": {}}'
+      '/package.json': '{"name": "legacy-app", "version": "1.0.0", "scripts": {}}'
     })
     const fullAioConfig = { app: global.aioLegacyAppConfig, ...global.fakeConfig.tvm }
     // mock app config
