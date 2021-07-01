@@ -101,10 +101,10 @@ describe('load config', () => {
 
     config = loadConfig({})
     expect(config).toEqual(getMockConfig('exc', global.fakeConfig.tvm, {
-      'all.dx/excshell/1.app.dist': path.normalize('/new/dist/for/excshell'),
-      'all.dx/excshell/1.actions.dist': path.normalize('/new/dist/for/excshell/actions'),
-      'all.dx/excshell/1.web.distDev': path.normalize('/new/dist/for/excshell/web-dev'),
-      'all.dx/excshell/1.web.distProd': path.normalize('/new/dist/for/excshell/web-prod'),
+      'all.dx/excshell/1.app.dist': path.resolve('/new/dist/for/excshell'),
+      'all.dx/excshell/1.actions.dist': path.resolve('/new/dist/for/excshell/actions'),
+      'all.dx/excshell/1.web.distDev': path.resolve('/new/dist/for/excshell/web-dev'),
+      'all.dx/excshell/1.web.distProd': path.resolve('/new/dist/for/excshell/web-prod'),
       includeIndex: expect.any(Object)
     }))
   })
