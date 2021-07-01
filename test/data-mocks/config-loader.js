@@ -124,7 +124,7 @@ function oneActionRuntimeManifest (pathToActionFolder, pkgName1) {
               final: true
             },
             include: [
-              [`${pathToActionFolder}/somefile.txt`, 'file.txt']
+              [winCompat(`${pathToActionFolder}/somefile.txt`), 'file.txt']
             ],
             limits: {
               concurrency: 189

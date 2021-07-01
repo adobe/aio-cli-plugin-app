@@ -233,7 +233,7 @@ extensions:
 '$include: ../b.yaml'
       }
     )
-    expect(() => loadConfig({})).toThrow(`Detected '$include' cycle: 'app.config.yaml,b.yaml,${path.normalize('dir/c.yaml')},b.yaml'`)
+    expect(() => loadConfig({})).toThrow('Detected \'$include\' cycle: \'app.config.yaml,b.yaml,dir/c.yaml,b.yaml\'')
   })
 
   test('include does not exist', async () => {
