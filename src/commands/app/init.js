@@ -75,7 +75,7 @@ class InitCommand extends BaseCommand {
     }
 
     // 2. prompt for extension points to be implemented
-    const extensionPoints = await this.selectExtensionPoints(flags, null, consoleConfig.project.org_id)
+    const extensionPoints = await this.selectExtensionPoints(flags, null, consoleConfig.project.org.id)
 
     // 3. run extension point code generators
     const projectName = (consoleConfig && consoleConfig.project.name) || path.basename(process.cwd())
