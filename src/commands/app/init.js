@@ -75,7 +75,7 @@ class InitCommand extends BaseCommand {
     }
 
     // 2. prompt for extension points to be implemented
-    const extensionPoints = await this.selectExtensionPoints(flags, null, consoleConfig.project.org.id)
+    const extensionPoints = await this.selectExtensionPoints(flags, null)
 
     // 3. run extension point code generators
     const projectName = (consoleConfig && consoleConfig.project.name) || path.basename(process.cwd())
@@ -107,7 +107,7 @@ class InitCommand extends BaseCommand {
     // 4. retrieve workspace details, defaults to Stage
     const workspace = await this.retrieveWorkspaceFromName(consoleCLI, org, project, flags.workspace)
     // 5. ask for exensionPoints, only allow selection for extensions that have services enabled in Org
-    const extensionPoints = await this.selectExtensionPoints(flags, orgSupportedServices, org.id)
+    const extensionPoints = await this.selectExtensionPoints(flags, orgSupportedServices, { login:true, orgId: org.id})
     // 6. add any required services to Workspace
     const requiredServices = this.getAllRequiredServicesFromExtPoints(extensionPoints)
     await this.addServices(
@@ -131,9 +131,12 @@ class InitCommand extends BaseCommand {
     this.log(chalk.blue(chalk.bold(`Project initialized for Workspace ${workspace.name}, you can run 'aio app use -w <workspace>' to switch workspace.`)))
   }
 
-  async selectExtensionPoints (flags, orgSupportedServices = null, orgId) {
-    const consoleCLI = await this.getLibConsoleCLI()
-    const availableChoices = await getImplPromptChoices(consoleCLI, orgId)
+  async selectExtensionPoints (flags, orgSupportedServices = null, options = {}) {
+    let consoleCLI
+    if(options.login) {
+      consoleCLI = await this.getLibConsoleCLI()
+    }
+    const availableChoices = await getImplPromptChoices(consoleCLI, options.orgId)
     if (!flags.extensions) {
       return [availableChoices.find(i => i.value.name === 'application').value]
     }

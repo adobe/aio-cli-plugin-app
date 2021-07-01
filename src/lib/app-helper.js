@@ -22,7 +22,7 @@ const aioConfig = require('@adobe/aio-lib-core-config')
 const { AIO_CONFIG_WORKSPACE_SERVICES, AIO_CONFIG_ORG_SERVICES } = require('./defaults')
 const { EOL } = require('os')
 const { getCliEnv } = require('@adobe/aio-lib-env')
-const { implPromptChoices, extensionDefaults } = require('./defaults')
+const { implPromptChoices, extensionDefaults, EXTENSION_POINT_LIST } = require('./defaults')
 const yaml = require('js-yaml')
 
 /** @private */
@@ -548,11 +548,19 @@ async function getAllExtensionPoints (consoleCLI, orgId) {
  */
 async function getImplPromptChoices (consoleCLI, orgId) {
   const defaultList = implPromptChoices
-  const extensionPoints = await getAllExtensionPoints(consoleCLI, orgId)
-  if (extensionPoints) {
-    extensionPoints.forEach(xp => {
-      const fullName = getFullExtensionName(xp)
-      const ext = extensionDefaults[fullName] // get app plugin specific details for the given extension
+  let xpList = EXTENSION_POINT_LIST
+  if (consoleCLI && orgId) {
+    const extensionPoints = await getAllExtensionPoints(consoleCLI, orgId)
+    if(extensionPoints) {
+      xpList = []
+      extensionPoints.forEach(xp => {
+        xpList.push(getFullExtensionName(xp))
+      })
+    }
+  }
+  if (xpList) {
+    xpList.forEach(xp => {
+      const ext = extensionDefaults[xp] // get app plugin specific details for the given extension
       if (ext) {
         defaultList.push(ext)
       }
