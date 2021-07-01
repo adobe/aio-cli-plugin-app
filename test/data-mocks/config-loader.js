@@ -14,7 +14,7 @@ const path = require('path')
 const winCompat = p => {
   p = path.normalize(p)
   if (p.startsWith('\\') && process.platform === 'win32') {
-    return 'C:' + p
+    return path.parse(process.cwd()).root + p
   }
   return p
 }
