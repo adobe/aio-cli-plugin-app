@@ -78,11 +78,7 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
   }
 }
 
-/**
- * @param command
- * @param dir
- * @param cmdArgs
- */
+/** @private */
 async function runScript (command, dir, cmdArgs = []) {
   if (!command) {
     return null
@@ -494,9 +490,7 @@ function buildExtensionPointPayloadWoMetadata (extConfigs) {
   return { endpoints: endpointsPayload }
 }
 
-/**
- * @param input
- */
+/** @private */
 function atLeastOne (input) {
   if (input.length === 0) {
     return 'please choose at least one option'
@@ -504,9 +498,7 @@ function atLeastOne (input) {
   return true
 }
 
-/**
- * @param configData
- */
+/** @private */
 function deleteUserConfig (configData) {
   const phyConfig = yaml.safeLoad(fs.readFileSync(configData.file))
   const interKeys = configData.key.split('.')
