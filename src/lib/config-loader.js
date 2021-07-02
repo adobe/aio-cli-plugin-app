@@ -436,6 +436,7 @@ function buildSingleConfig (configName, singleUserConfig, commonConfig, includeI
     web: {},
     manifest: {},
     actions: {},
+    tests: {},
     // root of the app folder
     root: process.cwd(),
     name: configName
@@ -453,17 +454,25 @@ function buildSingleConfig (configName, singleUserConfig, commonConfig, includeI
   const defaultActionPath = pathConfigValueToAbs('actions/', `${fullKeyPrefix}.${otherKeyInObject}`, includeIndex)
   const defaultWebPath = pathConfigValueToAbs('web-src/', `${fullKeyPrefix}.${otherKeyInObject}`, includeIndex)
   const defaultDistPath = 'dist/' // relative to root
+  const defaultUnitTestPath = 'test/src/' // relative to root
+  const defaultE2eTestPath = 'e2e/src/' // relative to root
 
-  // absolut paths
+  // absolute paths
   const actions = pathConfigValueToAbs(singleUserConfig.actions, fullKeyPrefix + '.actions', includeIndex) || defaultActionPath
   const web = pathConfigValueToAbs(singleUserConfig.web, fullKeyPrefix + '.web', includeIndex) || defaultWebPath
   const dist = pathConfigValueToAbs(singleUserConfig.dist, fullKeyPrefix + '.dist', includeIndex) || defaultDistPath
+  const unitTest = pathConfigValueToAbs(singleUserConfig.test, fullKeyPrefix + '.test', includeIndex) || defaultUnitTestPath
+  const e2eTest = pathConfigValueToAbs(singleUserConfig.e2e, fullKeyPrefix + '.e2e', includeIndex) || defaultE2eTestPath
 
   const manifest = singleUserConfig.runtimeManifest
 
   config.app.hasBackend = !!manifest
   config.app.hasFrontend = fs.existsSync(web)
   config.app.dist = path.resolve(dist, dist === defaultDistPath ? subFolderName : '')
+
+  // tests
+  config.tests.unit = path.resolve(unitTest, unitTest === defaultUnitTestPath ? subFolderName : '')
+  config.tests.e2e = path.resolve(e2eTest, e2eTest === defaultE2eTestPath ? subFolderName : '')
 
   // actions
   config.actions.src = path.resolve(actions) // needed for app add first action
