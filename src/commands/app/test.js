@@ -30,46 +30,106 @@ class Test extends BaseCommand {
     }
 
     const buildConfigs = this.getAppExtConfigs(flags)
-
     for (const extensionName of Object.keys(buildConfigs)) {
       await this.runExtensionTest(extensionName, buildConfigs[extensionName], { unit, e2e, action })
     }
   }
 
-  forwardSlashEscape (windowsPath) {
-    // on Windows you need to escape forward slashes
-    return windowsPath.replace(/\\/g, '\\\\')
+  normalizedActionList (extensionConfig) {
+    const actionList = []
+    const packages = extensionConfig.manifest.full.packages
+    for (const [packageName, pkg] of Object.entries(packages)) {
+      const actions = pkg.actions
+
+      for (const actionName of Object.keys(actions)) {
+        actionList.push([packageName, actionName])
+      }
+    }
+    return actionList
+  }
+
+  escapeBackslashes (pathString) {
+    // for Jest:
+    // - replace backslashes with forward slashes,
+    // - OR on Windows you need to escape forward slashes
+    return pathString.replace(/\\/g, '\\\\')
+  }
+
+  testFolders (extensionConfig) {
+    return {
+      unit: this.escapeBackslashes(extensionConfig.tests.unit),
+      e2e: this.escapeBackslashes(extensionConfig.tests.e2e)
+    }
+  }
+
+  filterActions (actionFilters, extensionConfig, flags) {
+    const { unit, e2e } = flags
+    const commandList = []
+    const { unit: unitTestFolder, e2e: e2eTestFolder } = this.testFolders(extensionConfig)
+
+    // filter by action(s)
+    const actionList = this.normalizedActionList(extensionConfig)
+      .filter(([packageName, actionName]) => {
+        const actionFullName = `${packageName}/${actionName}`
+        return actionFilters
+          .filter(actionFilter => {
+            return actionFullName.includes(actionFilter)
+          })
+          .length > 0
+      })
+
+    actionList.forEach(([, actionName]) => {
+      const pattern = `.*/${actionName}.test.js`
+      if (unit) {
+        commandList.push({
+          type: 'unit',
+          command: 'jest',
+          args: ['--passWithNoTests', '--testPathPattern', `${unitTestFolder}/${pattern}`]
+        })
+      }
+      if (e2e) {
+        commandList.push({
+          type: 'e2e',
+          command: 'jest',
+          args: ['--passWithNoTests', '--testPathPattern', `${e2eTestFolder}/${pattern}`]
+        })
+      }
+    })
+
+    return commandList
   }
 
   async runExtensionTest (extensionName, extensionConfig, flags) {
     const { unit, e2e, action } = flags
     const commandList = []
+    const { unit: unitTestFolder, e2e: e2eTestFolder } = this.testFolders(extensionConfig)
 
-    // if unit and hooks.test available, we run that instead
+    // if hooks.test available, we run that instead
     if (extensionConfig.hooks.test) {
       commandList.push({
         type: 'hook',
         command: extensionConfig.hooks.test
       })
-    } else {
-      if (action) { // filter by action
-        // if flags.action, we get a list of all the extension-name/action-name for everything, and match
-        // if it's a match, we run the <action-name>.test.js in the appropriate unit or e2e folder
-      } else { // run everything
-        if (unit) {
-          commandList.push({
-            type: 'unit',
-            command: 'jest',
-            args: ['--passWithNoTests', this.forwardSlashEscape(extensionConfig.tests.unit)]
-          })
-        }
-        if (e2e) {
-          commandList.push({
-            type: 'e2e',
-            command: 'jest',
-            args: ['--passWithNoTests', this.forwardSlashEscape(extensionConfig.tests.e2e)]
-          })
-        }
+    } else if (action) { // filter by ext/action name
+      const commands = await this.filterActions(action, extensionConfig, flags)
+      if (commands.length === 0) {
+        this.log(`No package and action matches action filter(s): ${JSON.stringify(action)}`)
+      }
+      commandList.push(...commands)
+    } else { // run everything
+      if (unit) {
+        commandList.push({
+          type: 'unit',
+          command: 'jest',
+          args: ['--passWithNoTests', unitTestFolder]
+        })
+      }
+      if (e2e) {
+        commandList.push({
+          type: 'e2e',
+          command: 'jest',
+          args: ['--passWithNoTests', e2eTestFolder]
+        })
       }
     }
 
@@ -110,5 +170,6 @@ Test.flags = {
 }
 
 Test.description = `Run tests for an Adobe I/O App
+If the extension has a hook called 'test' in its ext.config.yaml, the script specified will be run instead.
 `
 module.exports = Test
