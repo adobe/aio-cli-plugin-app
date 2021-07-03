@@ -14,11 +14,12 @@ const { runScript } = require('../../lib/app-helper')
 const { flags } = require('@oclif/command')
 const BaseCommand = require('../../BaseCommand')
 const chalk = require('chalk')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:test', { provider: 'debug' })
 
 class Test extends BaseCommand {
   async run () {
     const { flags } = this.parse(Test)
-    let { all, unit, e2e, action } = flags
+    let { all, unit, e2e, action, extension } = flags
 
     // 'all' overrides the setting of either the unit or e2e flag
     if (all) {
@@ -29,7 +30,9 @@ class Test extends BaseCommand {
       unit = true
     }
 
-    const buildConfigs = this.getAppExtConfigs(flags)
+    const buildConfigs = this.getAppExtConfigs({ extension })
+    aioLogger.debug(`run buildConfigs:${JSON.stringify(buildConfigs, null, 2)}`)
+
     for (const extensionName of Object.keys(buildConfigs)) {
       await this.runExtensionTest(extensionName, buildConfigs[extensionName], { unit, e2e, action })
     }
@@ -67,10 +70,15 @@ class Test extends BaseCommand {
     const commandList = []
     const { unit: unitTestFolder, e2e: e2eTestFolder } = this.testFolders(extensionConfig)
 
+    aioLogger.debug(`filterActions actionFilters:${actionFilters} extensionConfig:${JSON.stringify(extensionConfig, null, 2)} flags:${JSON.stringify(flags)}`)
+    aioLogger.debug(`filterActions:testFolders unit:${unitTestFolder} e2e:${e2eTestFolder}`)
+
     // filter by action(s)
     const actionList = this.normalizedActionList(extensionConfig)
       .filter(([packageName, actionName]) => {
         const actionFullName = `${packageName}/${actionName}`
+        aioLogger.debug(`filterActions actionFullName:${actionFullName}`)
+
         return actionFilters
           .filter(actionFilter => {
             return actionFullName.includes(actionFilter)
@@ -80,6 +88,8 @@ class Test extends BaseCommand {
 
     actionList.forEach(([, actionName]) => {
       const pattern = `.*/${actionName}.test.js`
+      aioLogger.debug(`filterActions pattern:${pattern}`)
+
       if (unit) {
         commandList.push({
           type: 'unit',
@@ -103,6 +113,10 @@ class Test extends BaseCommand {
     const { unit, e2e, action } = flags
     const commandList = []
     const { unit: unitTestFolder, e2e: e2eTestFolder } = this.testFolders(extensionConfig)
+
+    aioLogger.debug(`runExtensionTest extensionName:${extensionName} extensionConfig:${JSON.stringify(extensionConfig, null, 2)} flags:${JSON.stringify(flags)}`)
+    aioLogger.debug(`runExtensionTest:testFolders unit:${unitTestFolder} e2e:${e2eTestFolder}`)
+    aioLogger.debug(`runExtensionTest hooks.test:${extensionConfig.hooks.test}`)
 
     // if hooks.test available, we run that instead
     if (extensionConfig.hooks.test) {
@@ -135,6 +149,7 @@ class Test extends BaseCommand {
 
     for (const cmd of commandList) {
       console.log(chalk.yellow(`Running ${cmd.type} tests for ${extensionName}...`))
+      aioLogger.debug(`runExtensionTest:runScript cwd:${extensionConfig.root} cmd:${JSON.stringify(cmd)}`)
       await runScript(cmd.command, extensionConfig.root, cmd.args)
     }
   }
