@@ -15,6 +15,7 @@ const { flags } = require('@oclif/command')
 const BaseCommand = require('../../BaseCommand')
 const chalk = require('chalk')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:test', { provider: 'debug' })
+const path = require('path')
 
 class Test extends BaseCommand {
   async run () {
@@ -55,13 +56,15 @@ class Test extends BaseCommand {
     // for Jest:
     // - replace backslashes with forward slashes,
     // - OR on Windows you need to escape forward slashes
-    return pathString.replace(/\\/g, '\\\\')
+    return pathString.replace(/\\/g, '/')
   }
 
   testFolders (extensionConfig) {
+    const extRoot = path.dirname(extensionConfig.actions.src)
+    const relativeRoot = path.relative(extensionConfig.root, extRoot)
     return {
-      unit: this.escapeBackslashes(extensionConfig.tests.unit),
-      e2e: this.escapeBackslashes(extensionConfig.tests.e2e)
+      unit: this.escapeBackslashes(path.join(relativeRoot, 'test')),
+      e2e: this.escapeBackslashes(path.join(relativeRoot, 'e2e'))
     }
   }
 
@@ -87,7 +90,8 @@ class Test extends BaseCommand {
       })
 
     actionList.forEach(([, actionName]) => {
-      const pattern = `.*/${actionName}.test.js`
+      // if the action is foo: matches foo.*.test.js
+      const pattern = `.*/*${actionName}.*\\.test\\.js`
       aioLogger.debug(`filterActions pattern:${pattern}`)
 
       if (unit) {
@@ -150,7 +154,11 @@ class Test extends BaseCommand {
     for (const cmd of commandList) {
       console.log(chalk.yellow(`Running ${cmd.type} tests for ${extensionName}...`))
       aioLogger.debug(`runExtensionTest:runScript cwd:${extensionConfig.root} cmd:${JSON.stringify(cmd)}`)
-      await runScript(cmd.command, extensionConfig.root, cmd.args)
+      try {
+        await runScript(cmd.command, extensionConfig.root, cmd.args)
+      } catch (e) {
+        aioLogger.debug(`runExtensionTest:runScript exception:${e.toString()}`)
+      }
     }
   }
 }

@@ -11,7 +11,7 @@
     "@adobe/aio-lib-ims": "^4.1.0",
     "@adobe/aio-lib-runtime": "next",
     "@adobe/aio-lib-web": "^5.0.0",
-    "@adobe/generator-aio-app": "next",
+    "@adobe/generator-aio-app": "github:adobe/generator-aio-app#aio-app-test-fixes",
     "@adobe/generator-aio-console": "next",
     "@oclif/command": "^1.5.11",
     "@oclif/config": "^1.12.9",
