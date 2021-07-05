@@ -54,9 +54,10 @@ class Test extends BaseCommand {
     if (totalResults.length > 0) {
       const greenCheckMark = chalk.green('√')
       const redX = chalk.red('×')
+
       this.log('app:test results:')
       totalResults.forEach(result => {
-        const name = chalk.gray(`${result.extensionName} (${result.type})`)
+        const name = chalk.gray(`${result.extensionName}/${result.actionName} (${result.type})`)
         this.log(`    ${result.passed ? greenCheckMark : redX} ${name}`)
       })
     } else {
@@ -121,6 +122,7 @@ class Test extends BaseCommand {
 
       if (unit) {
         commandList.push({
+          actionName,
           type: 'unit',
           command: 'jest',
           args: ['--passWithNoTests', '--testPathPattern', `${unitTestFolder}/${pattern}`]
@@ -128,6 +130,7 @@ class Test extends BaseCommand {
       }
       if (e2e) {
         commandList.push({
+          actionName,
           type: 'e2e',
           command: 'jest',
           args: ['--passWithNoTests', '--testPathPattern', `${e2eTestFolder}/${pattern}`]
@@ -142,6 +145,7 @@ class Test extends BaseCommand {
     const { unit, e2e, action } = flags
     const commandList = []
     const { unit: unitTestFolder, e2e: e2eTestFolder } = this.testFolders(extensionConfig)
+    const actionName = '*'
 
     aioLogger.debug(`runExtensionTest extensionName:${extensionName} extensionConfig:${JSON.stringify(extensionConfig, null, 2)} flags:${JSON.stringify(flags)}`)
     aioLogger.debug(`runExtensionTest:testFolders unit:${unitTestFolder} e2e:${e2eTestFolder}`)
@@ -150,6 +154,7 @@ class Test extends BaseCommand {
     // if hooks.test available, we run that instead
     if (extensionConfig.hooks.test) {
       commandList.push({
+        actionName,
         type: 'hook',
         command: extensionConfig.hooks.test
       })
@@ -162,6 +167,7 @@ class Test extends BaseCommand {
     } else { // run everything
       if (unit) {
         commandList.push({
+          actionName,
           type: 'unit',
           command: 'jest',
           args: ['--passWithNoTests', unitTestFolder]
@@ -169,6 +175,7 @@ class Test extends BaseCommand {
       }
       if (e2e) {
         commandList.push({
+          actionName,
           type: 'e2e',
           command: 'jest',
           args: ['--passWithNoTests', e2eTestFolder]
@@ -178,7 +185,7 @@ class Test extends BaseCommand {
 
     const results = []
     for (const cmd of commandList) {
-      this.log(chalk.yellow(`${extensionName} (${cmd.type}) - running tests...`))
+      this.log(chalk.yellow(`${extensionName}/${cmd.actionName} (${cmd.type}) - running tests...`))
 
       aioLogger.debug(`runExtensionTest:runScript cwd:${extensionConfig.root} cmd:${JSON.stringify(cmd)}`)
       try {
