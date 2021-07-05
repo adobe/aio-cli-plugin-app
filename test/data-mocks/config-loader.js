@@ -213,7 +213,7 @@ const nuiSingleConfig = {
       'post-app-run': 'adobe-asset-compute devtool'
     },
     operations: {
-      worker: [
+      apply: [
         {
           type: 'action',
           impl: 'my-nui-package/action'

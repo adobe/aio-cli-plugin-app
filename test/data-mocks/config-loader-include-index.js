@@ -439,21 +439,21 @@ const appExcNuiIncludeIndex = {
     file: 'src/dx-asset-compute-worker-1/ext.config.yaml',
     key: 'operations'
   },
-  'extensions.dx/asset-compute/worker/1.operations.worker': {
+  'extensions.dx/asset-compute/worker/1.operations.apply': {
     file: 'src/dx-asset-compute-worker-1/ext.config.yaml',
-    key: 'operations.worker'
+    key: 'operations.apply'
   },
-  'extensions.dx/asset-compute/worker/1.operations.worker.0': {
+  'extensions.dx/asset-compute/worker/1.operations.apply.0': {
     file: 'src/dx-asset-compute-worker-1/ext.config.yaml',
-    key: 'operations.worker.0'
+    key: 'operations.apply.0'
   },
-  'extensions.dx/asset-compute/worker/1.operations.worker.0.impl': {
+  'extensions.dx/asset-compute/worker/1.operations.apply.0.impl': {
     file: 'src/dx-asset-compute-worker-1/ext.config.yaml',
-    key: 'operations.worker.0.impl'
+    key: 'operations.apply.0.impl'
   },
-  'extensions.dx/asset-compute/worker/1.operations.worker.0.type': {
+  'extensions.dx/asset-compute/worker/1.operations.apply.0.type': {
     file: 'src/dx-asset-compute-worker-1/ext.config.yaml',
-    key: 'operations.worker.0.type'
+    key: 'operations.apply.0.type'
   }
 }
 

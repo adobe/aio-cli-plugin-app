@@ -442,7 +442,7 @@ function buildExtensionPointPayloadWoMetadata (extConfigs) {
   //         type: web
   //   dx/asset-compute/worker/1:
   //     operations:
-  //       worker:
+  //       apply:
   //         impl: aem-nui-v1/ps-worker
   //         type: action
   //
@@ -454,7 +454,7 @@ function buildExtensionPointPayloadWoMetadata (extConfigs) {
   //        href: https://namespace.adobeio-static.net/index.html # todo support for multi UI with a extname-opcode-subfolder
   //   dx/asset-compute/worker/1:
   //    operations:
-  //      worker:
+  //      apply:
   //        href: https://namespace.adobeioruntime.net/api/v1/web/aem-nui-v1/ps-worker
 
   const endpointsPayload = {}
