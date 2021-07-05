@@ -36,8 +36,8 @@ class Test extends BaseCommand {
 
     const totalResults = []
     let exitCode = 0
-    for (const extensionName of Object.keys(buildConfigs)) {
-      const results = await this.runExtensionTest(extensionName, buildConfigs[extensionName], { unit, e2e, action })
+    for (const [extensionName, extensionConfig] of Object.entries(buildConfigs)) {
+      const results = await this.runExtensionTest(extensionName, extensionConfig, { unit, e2e, action })
       totalResults.push(...results)
 
       const failures = results.filter(result => !result.passed)
