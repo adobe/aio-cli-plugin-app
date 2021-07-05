@@ -34,8 +34,33 @@ class Test extends BaseCommand {
     const buildConfigs = this.getAppExtConfigs({ extension })
     aioLogger.debug(`run buildConfigs:${JSON.stringify(buildConfigs, null, 2)}`)
 
+    const totalResults = []
+    let exitCode = 0
     for (const extensionName of Object.keys(buildConfigs)) {
-      await this.runExtensionTest(extensionName, buildConfigs[extensionName], { unit, e2e, action })
+      const results = await this.runExtensionTest(extensionName, buildConfigs[extensionName], { unit, e2e, action })
+      totalResults.push(...results)
+
+      const failures = results.filter(result => !result.passed)
+      if (failures.length > 0) {
+        exitCode += failures.length
+      }
+    }
+
+    this.printReport(totalResults)
+    process.exitCode = exitCode
+  }
+
+  printReport (totalResults) {
+    if (totalResults.length > 0) {
+      const greenCheckMark = chalk.green('√')
+      const redX = chalk.red('×')
+      this.log('app:test results:')
+      totalResults.forEach(result => {
+        const name = chalk.gray(`${result.extensionName} (${result.type})`)
+        this.log(`    ${result.passed ? greenCheckMark : redX} ${name}`)
+      })
+    } else {
+      this.log('No test results.')
     }
   }
 
@@ -151,15 +176,22 @@ class Test extends BaseCommand {
       }
     }
 
+    const results = []
     for (const cmd of commandList) {
-      console.log(chalk.yellow(`Running ${cmd.type} tests for ${extensionName}...`))
+      this.log(chalk.yellow(`${extensionName} (${cmd.type}) - running tests...`))
+
       aioLogger.debug(`runExtensionTest:runScript cwd:${extensionConfig.root} cmd:${JSON.stringify(cmd)}`)
       try {
         await runScript(cmd.command, extensionConfig.root, cmd.args)
+        results.push({ ...cmd, extensionName, passed: true })
       } catch (e) {
+        results.push({ ...cmd, extensionName, passed: false })
         aioLogger.debug(`runExtensionTest:runScript exception:${e.toString()}`)
       }
+      this.log()
     }
+
+    return results
   }
 }
 
