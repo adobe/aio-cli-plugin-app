@@ -10,13 +10,58 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
+/* eslint jest/expect-expect: [
+  "error",
+  {
+    "assertFunctionNames": [
+        "expect", "expectFlagError", "expectNoErrors", "expectErrors"
+    ]
+  }
+]
+*/
+
 const TheCommand = require('../../../src/commands/app/test')
 const BaseCommand = require('../../../src/BaseCommand')
 const appHelper = require('../../../src/lib/app-helper')
 
 // mocks
-appHelper.runPackageScript = jest.fn()
+jest.mock('../../../src/lib/app-helper')
 jest.mock('fs')
+
+const mockGetAppExtConfigs = jest.fn()
+
+beforeAll(() => {
+  jest.spyOn(BaseCommand.prototype, 'getAppExtConfigs').mockImplementation(mockGetAppExtConfigs)
+})
+
+afterAll(() => {
+  jest.restoreAllMocks()
+})
+
+/** @private */
+function createMockExtension ({ name, root, actions = [], hooks = {} }) {
+  const actionsObject = {}
+  actions.forEach(action => {
+    actionsObject[action] = {}
+  })
+
+  return {
+    actions: {
+      src: `${root}/src/${name}`
+    },
+    hooks,
+    root,
+    manifest: {
+      full: {
+        packages: {
+          [name]: {
+            actions: actionsObject
+          }
+        }
+      }
+    }
+  }
+}
 
 describe('Command Prototype', () => {
   test('exports', async () => {
@@ -36,40 +81,51 @@ describe('Command Prototype', () => {
 
   test('flags', async () => {
     expect(typeof TheCommand.flags.unit).toBe('object')
-    expect(TheCommand.flags.unit.char).toBe('u')
     expect(typeof TheCommand.flags.unit.description).toBe('string')
-    expect(TheCommand.flags.unit.exclusive).toEqual(['e2e'])
-    expect(TheCommand.flags.unit.default).toEqual(true)
+    expect(TheCommand.flags.unit.default).toBe(false)
 
     expect(typeof TheCommand.flags.e2e).toBe('object')
-    expect(TheCommand.flags.e2e.char).toBe('e')
     expect(typeof TheCommand.flags.e2e.description).toBe('string')
-    expect(TheCommand.flags.e2e.exclusive).toEqual(['unit'])
+    expect(TheCommand.flags.e2e.default).toBe(false)
+
+    expect(typeof TheCommand.flags.all).toBe('object')
+    expect(typeof TheCommand.flags.all.description).toBe('string')
+    expect(TheCommand.flags.all.default).toBe(false)
+
+    expect(typeof TheCommand.flags.extension).toBe('object')
+    expect(typeof TheCommand.flags.extension.description).toBe('string')
+    expect(TheCommand.flags.extension.char).toBe('e')
+    expect(TheCommand.flags.extension.multiple).toBe(true)
+    expect(TheCommand.flags.extension.exclusive).toStrictEqual(['action'])
+
+    expect(typeof TheCommand.flags.action).toBe('object')
+    expect(typeof TheCommand.flags.action.description).toBe('string')
+    expect(TheCommand.flags.action.char).toBe('a')
+    expect(TheCommand.flags.action.multiple).toBe(true)
+    expect(TheCommand.flags.action.exclusive).toStrictEqual(['extension'])
   })
 
   describe('bad flags', () => {
+    beforeEach(() => {
+      mockGetAppExtConfigs.mockClear()
+    })
+
     const expectFlagError = async (argv, message) => {
       const command = new TheCommand([])
       command.argv = argv
       await expect(command.run()).rejects.toEqual(expect.objectContaining({ message: expect.stringContaining(message) }))
     }
 
-    // eslint-disable-next-line jest/expect-expect
     test('unknown', async () => {
       expectFlagError(['--wtf'], 'Unexpected argument: --wtf\nSee more help with --help')
     })
 
-    // eslint-disable-next-line jest/expect-expect
-    test('-e,-u should fail if both flags are present', async () => {
+    test('-a,-e should fail if both flags are present', async () => {
       const errMsg = 'cannot also be provided when using'
-      await expectFlagError(['-e', '-u'], errMsg)
-      await expectFlagError(['--e2e', '-u'], errMsg)
-      await expectFlagError(['-e', '--unit'], errMsg)
-      await expectFlagError(['--e2e', '--unit'], errMsg)
-      await expectFlagError(['-u', '-e'], errMsg)
-      await expectFlagError(['-u', '--e2e'], errMsg)
-      await expectFlagError(['--unit', '-e'], errMsg)
-      await expectFlagError(['--unit', '--e2e'], errMsg)
+      await expectFlagError(['-a', 'my-action', '-e', 'my-extension'], errMsg)
+      await expectFlagError(['--extension', 'my-extension', '--action', 'my-action'], errMsg)
+      await expectFlagError(['-e', 'my-extension', '--action', 'my-action'], errMsg)
+      await expectFlagError(['--extension', 'my-extension', '-a', 'my-action'], errMsg)
     })
   })
 })
@@ -80,68 +136,131 @@ describe('run', () => {
     command = new TheCommand([])
     command.error = jest.fn()
 
-    appHelper.runPackageScript.mockReset()
-    appHelper.runPackageScript.mockResolvedValue({ exitCode: 0 })
+    appHelper.runScript.mockClear()
+    appHelper.runScript.mockResolvedValue({ exitCode: 0 })
   })
 
-  const expectNoErrors = async (argv, testCmd) => {
+  const expectNoErrors = async (argv, runScriptCalledTimes = 1) => {
+    mockGetAppExtConfigs.mockReturnValue(
+      {
+        application: createMockExtension({
+          name: 'application',
+          root: '/some/root',
+          actions: ['action1']
+        })
+      }
+    )
+
     command.argv = argv
     await command.run()
-    expect(appHelper.runPackageScript).toHaveBeenCalledWith(testCmd, expect.any(String))
+    expect(appHelper.runScript).toHaveBeenCalledTimes(runScriptCalledTimes)
   }
+
   const expectErrors = async (argv, errorCode) => {
     const error = new Error('fake error')
     error.exitCode = 42
-    appHelper.runPackageScript.mockRejectedValue(error)
+    appHelper.runScript.mockRejectedValue(error)
     command.argv = argv
     await command.run()
-    expect(command.error).toHaveBeenCalledWith(error.message, { exit: error.exitCode })
+    expect(process.exitCode).toBeGreaterThan(0)
   }
 
-  test('no flags', () => expectNoErrors([], 'test')) // eslint-disable-line jest/expect-expect
-  test('--unit', () => expectNoErrors(['--unit'], 'test')) // eslint-disable-line jest/expect-expect
-  test('-u', () => expectNoErrors(['-u'], 'test')) // eslint-disable-line jest/expect-expect
-  test('--e2e', () => expectNoErrors(['--e2e'], 'e2e')) // eslint-disable-line jest/expect-expect
-  test('-e', () => expectNoErrors(['-e'], 'e2e')) // eslint-disable-line jest/expect-expect
+  test('no flags', () => expectNoErrors([]))
+  test('--unit', () => expectNoErrors(['--unit']))
+  test('--e2e', () => expectNoErrors(['--e2e']))
+  test('--all', () => expectNoErrors(['--all'], 2))
 
-  test('--e2e fails', () => expectErrors(['--e2e'])) // eslint-disable-line jest/expect-expect
-  test('-e fails', () => expectErrors(['-e'])) // eslint-disable-line jest/expect-expect
-  test('--unit fails', () => expectErrors(['--unit'])) // eslint-disable-line jest/expect-expect
-  test('-u fails', () => expectErrors(['-u'])) // eslint-disable-line jest/expect-expect
+  test('--unit fails', () => expectErrors(['--unit']))
+  test('--e2e fails', () => expectErrors(['--e2e']))
+  test('--all fails', () => expectErrors(['--all']))
 
-  test('verbose flag', async () => {
-    command.argv = ['--verbose']
+  test('empty config', async () => {
+    mockGetAppExtConfigs.mockReturnValue({})
+
+    command.argv = []
     await command.run()
-    expect(appHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String))
+    expect(appHelper.runScript).toHaveBeenCalledTimes(0)
   })
 
-  test('-v flag', async () => {
-    command.argv = ['-v']
+  test('action filter match 1 --all', async () => {
+    mockGetAppExtConfigs.mockReturnValue(
+      {
+        application: createMockExtension({
+          name: 'application',
+          root: '/some/root',
+          actions: ['action1', 'another1', 'foo', 'bar']
+        })
+      }
+    )
+    command.argv = ['--all', '--action', 'action1']
     await command.run()
-    expect(appHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String))
+    // --all calls unit and e2e test for each action found. in this case 1 action is matched
+    expect(appHelper.runScript).toHaveBeenCalledTimes(2)
   })
 
-  test('--verbose --unit flag', async () => {
-    command.argv = ['--verbose', '--unit']
+  test('action filter match 1 --unit', async () => {
+    mockGetAppExtConfigs.mockReturnValue(
+      {
+        application: createMockExtension({
+          name: 'application',
+          root: '/some/root',
+          actions: ['action1', 'another1', 'foo', 'bar']
+        })
+      }
+    )
+    command.argv = ['--unit', '--action', 'action1']
     await command.run()
-    expect(appHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String))
+    expect(appHelper.runScript).toHaveBeenCalledTimes(1)
   })
 
-  test('-v -u flags', async () => {
-    command.argv = ['-v', '-u']
+  test('action filter match 1 --e2e', async () => {
+    mockGetAppExtConfigs.mockReturnValue(
+      {
+        application: createMockExtension({
+          name: 'application',
+          root: '/some/root',
+          actions: ['action1', 'another1', 'foo', 'bar']
+        })
+      }
+    )
+    command.argv = ['--e2e', '--action', 'action1']
     await command.run()
-    expect(appHelper.runPackageScript).toHaveBeenCalledWith('test', expect.any(String))
+    expect(appHelper.runScript).toHaveBeenCalledTimes(1)
   })
 
-  test('--verbose --e2e flag', async () => {
-    command.argv = ['--verbose', '--e2e']
+
+  test('action filter match none', async () => {
+    mockGetAppExtConfigs.mockReturnValue(
+      {
+        application: createMockExtension({
+          name: 'application',
+          root: '/some/root',
+          actions: ['action1', 'another1', 'foo', 'bar']
+        })
+      }
+    )
+    command.argv = ['--all', '--action', 'xray']
     await command.run()
-    expect(appHelper.runPackageScript).toHaveBeenCalledWith('e2e', expect.any(String))
+    // --all calls unit and e2e test for each action found. in this case no action is matched
+    expect(appHelper.runScript).toHaveBeenCalledTimes(0)
   })
 
-  test('-v -e flags', async () => {
-    command.argv = ['-v', '-e']
+  test('hooks.test found for a config', async () => {
+    mockGetAppExtConfigs.mockReturnValue(
+      {
+        application: createMockExtension({
+          name: 'application',
+          root: '/some/root',
+          actions: ['action1', 'another1', 'foo', 'bar'],
+          hooks: {
+            test: 'echo test'
+          }
+        })
+      }
+    )
+    command.argv = ['--all']
     await command.run()
-    expect(appHelper.runPackageScript).toHaveBeenCalledWith('e2e', expect.any(String))
+    // since hooks.test is found, it skips all other matches
+    expect(appHelper.runScript).toHaveBeenCalledTimes(1)
   })
 })
