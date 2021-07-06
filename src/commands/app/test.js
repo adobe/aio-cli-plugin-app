@@ -86,11 +86,9 @@ class Test extends BaseCommand {
   }
 
   testFolders (extensionConfig) {
-    const extRoot = path.dirname(extensionConfig.actions.src)
-    const relativeRoot = path.relative(extensionConfig.root, extRoot)
     return { // add leading period path for jest
-      unit: './' + this.escapeBackslashes(path.join(relativeRoot, 'test')),
-      e2e: './' + this.escapeBackslashes(path.join(relativeRoot, 'e2e'))
+      unit: './' + this.escapeBackslashes(path.relative(extensionConfig.root, extensionConfig.tests.unit)),
+      e2e: './' + this.escapeBackslashes(path.relative(extensionConfig.root, extensionConfig.tests.e2e))
     }
   }
 

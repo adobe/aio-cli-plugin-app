@@ -47,7 +47,11 @@ function createMockExtension ({ name, root, actions = [], hooks = {} }) {
 
   return {
     actions: {
-      src: `${root}/src/${name}`
+      src: `${root}/src/${name}/actions`
+    },
+    tests: {
+      unit: `${root}/src/${name}/test`,
+      e2e: `${root}/src/${name}/e2e`
     },
     hooks,
     root,

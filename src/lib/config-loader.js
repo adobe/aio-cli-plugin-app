@@ -436,6 +436,7 @@ function buildSingleConfig (configName, singleUserConfig, commonConfig, includeI
     web: {},
     manifest: {},
     actions: {},
+    tests: {},
     // root of the app folder
     root: process.cwd(),
     name: configName
@@ -452,12 +453,19 @@ function buildSingleConfig (configName, singleUserConfig, commonConfig, includeI
   // 'action'
   const defaultActionPath = pathConfigValueToAbs('actions/', `${fullKeyPrefix}.${otherKeyInObject}`, includeIndex)
   const defaultWebPath = pathConfigValueToAbs('web-src/', `${fullKeyPrefix}.${otherKeyInObject}`, includeIndex)
+  const defaultUnitTestPath = pathConfigValueToAbs('test/', `${fullKeyPrefix}.${otherKeyInObject}`, includeIndex)
+  const defaultE2eTestPath = pathConfigValueToAbs('e2e/', `${fullKeyPrefix}.${otherKeyInObject}`, includeIndex)
   const defaultDistPath = 'dist/' // relative to root
 
   // absolute paths
   const actions = pathConfigValueToAbs(singleUserConfig.actions, fullKeyPrefix + '.actions', includeIndex) || defaultActionPath
   const web = pathConfigValueToAbs(singleUserConfig.web, fullKeyPrefix + '.web', includeIndex) || defaultWebPath
+  const unitTest = pathConfigValueToAbs(singleUserConfig.unitTest, fullKeyPrefix + '.web', includeIndex) || defaultUnitTestPath
+  const e2eTest = pathConfigValueToAbs(singleUserConfig.e2eTest, fullKeyPrefix + '.web', includeIndex) || defaultE2eTestPath
   const dist = pathConfigValueToAbs(singleUserConfig.dist, fullKeyPrefix + '.dist', includeIndex) || defaultDistPath
+
+  config.tests.unit = path.resolve(unitTest)
+  config.tests.e2e = path.resolve(e2eTest)
 
   const manifest = singleUserConfig.runtimeManifest
 
