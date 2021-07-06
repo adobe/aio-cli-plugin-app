@@ -228,7 +228,6 @@ describe('run', () => {
     expect(appHelper.runScript).toHaveBeenCalledTimes(1)
   })
 
-
   test('action filter match none', async () => {
     mockGetAppExtConfigs.mockReturnValue(
       {
