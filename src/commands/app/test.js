@@ -221,17 +221,20 @@ Test.flags = {
   }),
   e2e: flags.boolean({
     description: 'run e2e tests',
-    default: false,
-    allowNo: true
+    default: false
   }),
   unit: flags.boolean({
     description: 'run unit tests',
-    default: false,
-    allowNo: true
+    default: false
   })
 }
 
 Test.description = `Run tests for an Adobe I/O App
-If the extension has a hook called 'test' in its ext.config.yaml, the script specified will be run instead.
+If no flags are specified, by default only unit-tests are run.
+
+For the --action flag, it tries a substring search on the 'extension-name/action-name' pair for an action.
+For the --extension flag, it tries a substring search on the 'extension-name' only.
+If the extension has a hook called 'test' in its 'ext.config.yaml', the script specified will be run instead.
+
 `
 module.exports = Test
