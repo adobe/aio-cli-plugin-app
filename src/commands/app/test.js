@@ -42,7 +42,7 @@ class Test extends BaseCommand {
 
       const failures = results.filter(result => !result.passed)
       if (failures.length > 0) {
-        exitCode += failures.length
+        exitCode = 1
       }
     }
 
