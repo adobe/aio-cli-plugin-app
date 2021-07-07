@@ -230,7 +230,7 @@ Test.flags = {
 Test.description = `Run tests for an Adobe I/O App
 If no flags are specified, by default only unit-tests are run.
 
-For the --action flag, it tries a substring search on the 'extension-name/action-name' pair for an action.
+For the --action flag, it tries a substring search on the 'package-name/action-name' pair for an action.
 For the --extension flag, it tries a substring search on the 'extension-name' only.
 If the extension has a hook called 'test' in its 'ext.config.yaml', the script specified will be run instead.
 
