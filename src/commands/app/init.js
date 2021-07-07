@@ -23,6 +23,7 @@ const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/impor
 const { installPackages, atLeastOne } = require('../../lib/app-helper')
 
 const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV, implPromptChoices } = require('../../lib/defaults')
+const cloneDeep = require('lodash.clonedeep')
 
 const DEFAULT_WORKSPACE = 'Stage'
 
@@ -136,7 +137,7 @@ class InitCommand extends BaseCommand {
       return [implPromptChoices.find(i => i.value.name === 'application').value]
     }
 
-    const choices = implPromptChoices.filter(i => i.value.name !== 'application')
+    const choices = cloneDeep(implPromptChoices).filter(i => i.value.name !== 'application')
 
     // disable extensions that lack required services
     if (orgSupportedServices) {
@@ -169,7 +170,6 @@ class InitCommand extends BaseCommand {
   }
 
   async selectOrCreateConsoleProject (consoleCLI, org) {
-  // todo somehow create project is the default
     const projects = await consoleCLI.getProjects(org.id)
     let project = await consoleCLI.promptForSelectProject(
       projects,
@@ -177,8 +177,7 @@ class InitCommand extends BaseCommand {
       { allowCreate: true }
     )
     if (!project) {
-    // todo simplify flow only ask for project name, infer title and description
-    // user has escaped project selection prompt, let's create a new one
+      // user has escaped project selection prompt, let's create a new one
       const projectDetails = await consoleCLI.promptForCreateProjectDetails()
       project = await consoleCLI.createProject(org.id, projectDetails)
       project.isNew = true
@@ -191,7 +190,7 @@ class InitCommand extends BaseCommand {
     const workspaces = await consoleCLI.getWorkspaces(org.id, project.id)
     const workspace = workspaces.find(w => w.name.toLowerCase() === workspaceName.toLowerCase())
     if (!workspace) {
-      throw new Error(`'--workspace=${workspaceName}' in Project ${project.name} not found.`)
+      throw new Error(`'--workspace=${workspaceName}' in Project '${project.name}' not found.`)
     }
     return workspace
   }
@@ -239,12 +238,7 @@ class InitCommand extends BaseCommand {
     return [...new Set(requiredServicesWithDuplicates)]
   }
 
-  getMissingSupportedServices (requiredServices, orgSupportedServices) {
-    return requiredServices.filter(s => !orgSupportedServices.some(os => os.code === s))
-  }
-
   async runCodeGenerators (flags, extensionPoints, projectName) {
-    // todo spinners !!!
     const env = yeoman.createEnv()
     // first run app generator that will generate the root skeleton
     const appGen = env.instantiate(generators['base-app'], {
@@ -321,7 +315,7 @@ InitCommand.flags = {
     description: 'Specify the Adobe Developer Console Workspace to init from, defaults to Stage',
     default: DEFAULT_WORKSPACE,
     char: 'w',
-    exclusive: ['import']
+    exclusive: ['import'] // also no-login
   })
 }
 
