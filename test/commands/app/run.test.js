@@ -10,9 +10,12 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const RunCommand = require('../../../src/commands/app/run')
+const TheCommand = require('../../../src/commands/app/run')
 const BaseCommand = require('../../../src/BaseCommand')
 const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('../../../src/lib/defaults')
+const dataMocks = require('../../data-mocks/config-loader')
+
+const mockGetAppExtConfigs = jest.fn()
 
 jest.mock('../../../src/lib/run-dev')
 const mockRunDev = require('../../../src/lib/run-dev')
@@ -44,6 +47,7 @@ const CONFIG_KEY = 'aio-dev.dev-keys'
 
 // mocks
 const mockFS = require('fs-extra')
+jest.mock('fs-extra')
 
 jest.mock('@adobe/aio-lib-core-config')
 const mockConfig = require('@adobe/aio-lib-core-config')
@@ -70,6 +74,12 @@ const mockHttpsServerInstance = {
   args: null
 }
 
+const createLegacyAppConfig = (aioConfig = {}) => {
+  const appConfig = dataMocks('legacy-app', aioConfig).all
+  appConfig.application = { ...appConfig.application, ...aioConfig }
+  return appConfig
+}
+
 beforeEach(() => {
   jest.restoreAllMocks()
   mockRunDev.mockReset()
@@ -93,7 +103,7 @@ beforeEach(() => {
   mockFindCommandLoad.mockClear()
   mockFindCommandRun.mockReset()
 
-  command = new RunCommand()
+  command = new TheCommand()
   command.error = jest.fn()
   command.log = jest.fn()
   command.config = {
@@ -114,33 +124,36 @@ beforeEach(() => {
   getPort.mockReset()
 
   delete process.env.PORT
+
+  jest.spyOn(BaseCommand.prototype, 'getAppExtConfigs').mockImplementation(mockGetAppExtConfigs)
 })
 
 afterEach(() => {
+  mockGetAppExtConfigs.mockClear()
   jest.clearAllMocks()
 })
 
 describe('run command definition', () => {
   test('exports', async () => {
-    expect(typeof RunCommand).toEqual('function')
-    expect(RunCommand.prototype instanceof BaseCommand).toBeTruthy()
+    expect(typeof TheCommand).toEqual('function')
+    expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
   })
 
   test('description', async () => {
-    expect(RunCommand.description).toBeDefined()
+    expect(TheCommand.description).toBeDefined()
   })
 
   test('aliases', async () => {
-    expect(RunCommand.aliases).toEqual([])
+    expect(TheCommand.aliases).toEqual([])
   })
 
   test('flags', async () => {
-    expect(typeof RunCommand.flags.local).toBe('object')
-    expect(typeof RunCommand.flags.local.description).toBe('string')
-    expect(RunCommand.flags.local.exclusive).toEqual(['skip-actions'])
-    expect(typeof RunCommand.flags['skip-actions']).toBe('object')
-    expect(typeof RunCommand.flags['skip-actions'].description).toBe('string')
-    expect(RunCommand.flags['skip-actions'].exclusive).toEqual(['local'])
+    expect(typeof TheCommand.flags.local).toBe('object')
+    expect(typeof TheCommand.flags.local.description).toBe('string')
+    expect(TheCommand.flags.local.exclusive).toEqual(['skip-actions'])
+    expect(typeof TheCommand.flags['skip-actions']).toBe('object')
+    expect(typeof TheCommand.flags['skip-actions'].description).toBe('string')
+    expect(TheCommand.flags['skip-actions'].exclusive).toEqual(['local'])
   })
 })
 
@@ -167,23 +180,20 @@ function mockFSExists (files) {
 }
 
 describe('run', () => {
-  test('app:run with no ui and no manifest should fail', async () => {
-    command.argv = []
-    command.appConfig = { app: { hasFrontend: false, hasBackend: false } }
-    await command.run()
-    expect(command.error).toHaveBeenCalledWith(Error('nothing to run.. there is no frontend and no manifest.yml, are you in a valid app?'))
-  })
-
   test('app:run with no ui and no manifest should fail: default config', async () => {
     command.argv = []
-    command.appConfig = { app: { hasFrontend: false, hasBackend: false } }
+    const aioConfig = { app: { hasFrontend: false, hasBackend: false } }
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledWith(Error('nothing to run.. there is no frontend and no manifest.yml, are you in a valid app?'))
   })
 
   test('app:run with no web-src and --skip-actions should fail', async () => {
     command.argv = ['--skip-actions']
-    command.appConfig = { app: { hasFrontend: false, hasBackend: true } }
+    const aioConfig = { app: { hasFrontend: false, hasBackend: true } }
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledWith(Error('nothing to run.. there is no frontend and --skip-actions is set'))
     // await expect(command.run()).rejects.toThrow('nothing to run.. there is no frontend and --skip-actions is set')
@@ -191,7 +201,9 @@ describe('run', () => {
 
   test('app:run with web-src and --skip-actions', async () => {
     command.argv = []
-    command.appConfig = { app: { hasFrontend: false, hasBackend: true } }
+    const aioConfig = { app: { hasFrontend: false, hasBackend: true } }
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
@@ -199,12 +211,14 @@ describe('run', () => {
 
   test('app:run calls log spinner --verbose', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    mockRunDev.mockImplementation((config, options, logFunc) => {
+    mockRunDev.mockImplementation((config, dataDir, options, logFunc) => {
       logFunc('boo')
       expect(options.devRemote).toBe(true)
     })
     command.argv = ['--verbose']
-    command.appConfig = mockConfigData
+    const aioConfig = mockConfigData
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
@@ -212,12 +226,14 @@ describe('run', () => {
 
   test('app:run calls log spinner not verbose', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    mockRunDev.mockImplementation((config, options, logFunc) => {
+    mockRunDev.mockImplementation((config, dataDir, options, logFunc) => {
       logFunc('boo')
       expect(options.devRemote).toBe(true)
     })
     command.argv = []
-    command.appConfig = mockConfigData
+    const aioConfig = mockConfigData
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
@@ -226,7 +242,9 @@ describe('run', () => {
   test('app:run with manifest and no certificates', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     command.argv = []
-    command.appConfig = mockConfigData
+    const aioConfig = mockConfigData
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
@@ -235,7 +253,9 @@ describe('run', () => {
   test('app:run with web src and manifest', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     command.argv = []
-    command.appConfig = mockConfigData
+    const aioConfig = mockConfigData
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
@@ -250,7 +270,9 @@ describe('run', () => {
   test('app:run check if fetchLogs flag is set when calling scripts', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     command.argv = []
-    command.appConfig = mockConfigData
+    const aioConfig = mockConfigData
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(mockRunDev).toHaveBeenCalledWith(mockConfigData, expect.objectContaining({
       fetchLogs: true
@@ -260,7 +282,9 @@ describe('run', () => {
   test('app:run with -verbose', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     command.argv = ['--verbose']
-    command.appConfig = mockConfigData
+    const aioConfig = mockConfigData
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
@@ -287,7 +311,9 @@ describe('run', () => {
   test('app:run with --local --verbose', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     command.argv = ['--local', '--verbose']
-    command.appConfig = mockConfigData
+    const aioConfig = mockConfigData
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
@@ -303,7 +329,9 @@ describe('run', () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     mockRunDev.mockRejectedValue('error')
     command.argv = []
-    command.appConfig = mockConfigData
+    const aioConfig = mockConfigData
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(1)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
@@ -314,7 +342,9 @@ describe('run', () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     mockRunDev.mockResolvedValue('http://localhost:1111')
     command.argv = []
-    command.appConfig = mockConfigData
+    const aioConfig = mockConfigData
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://localhost:1111'))
@@ -325,7 +355,9 @@ describe('run', () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     mockRunDev.mockResolvedValue('http://localhost:1111')
     command.argv = ['--open']
-    command.appConfig = mockConfigData
+    const aioConfig = mockConfigData
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://localhost:1111'))
@@ -337,7 +369,9 @@ describe('run', () => {
     mockConfig.get.mockReturnValue('http://prefix?fake=')
     mockRunDev.mockResolvedValue('http://localhost:1111')
     command.argv = []
-    command.appConfig = mockConfigData
+    const aioConfig = mockConfigData
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://localhost:1111'))
@@ -349,7 +383,9 @@ describe('run', () => {
     mockConfig.get.mockReturnValue('http://prefix?fake=')
     mockRunDev.mockResolvedValue('http://localhost:1111')
     command.argv = ['--open']
-    command.appConfig = mockConfigData
+    const aioConfig = mockConfigData
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://localhost:1111'))
@@ -361,7 +397,9 @@ describe('run', () => {
     // only generate cert if the app has a UI
     mockFSExists(['web-src/', PRIVATE_KEY_PATH, PUB_CERT_PATH])
     command.argv = []
-    command.appConfig = mockConfigData
+    const aioConfig = mockConfigData
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
@@ -382,7 +420,9 @@ describe('run', () => {
     mockConfig.get.mockReturnValue({ publicCert: 'pub cert', privateKey: 'private key' })
 
     command.argv = []
-    command.appConfig = mockConfigData
+    const aioConfig = mockConfigData
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
@@ -411,7 +451,9 @@ describe('run', () => {
     })
 
     command.argv = []
-    command.appConfig = mockConfigData
+    const aioConfig = mockConfigData
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
@@ -447,7 +489,9 @@ describe('run', () => {
     })
 
     command.argv = []
-    command.appConfig = mockConfigData
+    const aioConfig = mockConfigData
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
@@ -485,7 +529,9 @@ describe('run', () => {
     getPort.mockReturnValue(1111)
 
     command.argv = []
-    command.appConfig = mockConfigData
+    const aioConfig = mockConfigData
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
@@ -521,7 +567,9 @@ describe('run', () => {
     process.env.PORT = 9999
 
     command.argv = []
-    command.appConfig = mockConfigData
+    const aioConfig = mockConfigData
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
@@ -558,7 +606,9 @@ describe('run', () => {
     }
 
     command.argv = []
-    command.appConfig = mockConfigData
+    const aioConfig = mockConfigData
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
@@ -591,9 +641,10 @@ describe('run', () => {
     })
 
     command.argv = []
-    command.appConfig = mockConfigData
-    await expect(command.run()).rejects.toThrow('error while generating certificate - no certificate:generate command found')
+    const aioConfig = mockConfigData
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
 
+    await expect(command.run()).rejects.toThrow('error while generating certificate - no certificate:generate command found')
     expect(command.error).toHaveBeenCalledTimes(1)
     expect(mockRunDev).toHaveBeenCalledTimes(0)
     spy.mockRestore()
@@ -606,7 +657,9 @@ describe('run', () => {
 
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     command.argv = []
-    command.appConfig = mockConfigData
+    const aioConfig = mockConfigData
+    mockGetAppExtConfigs.mockReturnValueOnce(createLegacyAppConfig(aioConfig))
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith('error-1')
