@@ -442,6 +442,38 @@ describe('run', () => {
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
   })
 
+  test('app hook sequence', async () => {
+    const aioConfig = sampleAppConfig
+    const appConfig = createAppConfig(aioConfig)
+    mockGetAppExtConfigs.mockReturnValueOnce(appConfig)
+
+    // set hooks (command the same as hook name, for easy reference)
+    appConfig.application.hooks = {
+      'pre-app-build': 'pre-app-build',
+      'build-actions': 'build-actions',
+      'build-static': 'build-static',
+      'post-app-build': 'post-app-build'
+    }
+
+    const scriptSequence = []
+    helpers.runScript.mockImplementation(script => {
+      scriptSequence.push(script)
+    })
+
+    command.argv = []
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
+
+    expect(helpers.runScript).toHaveBeenCalledTimes(4)
+    expect(scriptSequence.length).toEqual(4)
+    expect(scriptSequence[0]).toEqual('pre-app-build')
+    expect(scriptSequence[1]).toEqual('build-actions')
+    expect(scriptSequence[2]).toEqual('build-static')
+    expect(scriptSequence[3]).toEqual('post-app-build')
+  })
+
   test('build (--skip-actions and --skip-static)', async () => {
     const aioConfig = sampleAppConfig
     mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
