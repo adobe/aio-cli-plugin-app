@@ -141,7 +141,7 @@ beforeEach(() => {
   mockWebLib.bundle.mockResolvedValue({ run: mockBundleFunc })
   mockFS.existsSync.mockReset()
   helpers.writeConfig.mockReset()
-  helpers.runPackageScript.mockReset()
+  helpers.runScript.mockReset()
   jest.restoreAllMocks()
 
   helpers.wrapError.mockImplementation(msg => msg)
@@ -212,7 +212,6 @@ describe('run', () => {
     command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
-    command.appConfig = { app: { hasFrontend: true, hasBackend: true }, web: { injectedConfig: 'config.json' } }
     mockRuntimeLib.buildActions.mockReset()
   })
 
@@ -270,7 +269,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.bundle).toHaveBeenCalledWith('undefined/index.html', undefined,
+    expect(mockWebLib.bundle).toHaveBeenCalledWith('/web-src/index.html', '/dist/web-src-prod',
       expect.objectContaining({ shouldDisableCache: true, shouldContentHash: false, logLevel: 'warn', shouldOptimize: false }),
       expect.any(Function)
     )
@@ -286,7 +285,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.bundle).toHaveBeenCalledWith('undefined/index.html', undefined,
+    expect(mockWebLib.bundle).toHaveBeenCalledWith('/web-src/index.html', '/dist/web-src-prod',
       expect.objectContaining({ shouldDisableCache: true, shouldContentHash: false, logLevel: 'verbose', shouldOptimize: false }),
       expect.any(Function)
     )
@@ -294,12 +293,20 @@ describe('run', () => {
   })
 
   test('build & deploy an App with no force-build but build exists', async () => {
-    const aioConfig = sampleAppConfig
+    const newConfig = {
+      actions: {
+        ...sampleAppConfig.actions,
+        dist: 'actions'
+      },
+      web: {
+        ...sampleAppConfig.web,
+        distProd: 'dist'
+      }
+    }
+    const aioConfig = { ...sampleAppConfig, ...newConfig }
     mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
 
     command.argv = ['--no-force-build']
-    command.appConfig.actions = { dist: 'actions' }
-    command.appConfig.web.distProd = 'dist'
     mockFS.existsSync.mockReturnValue(true)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -342,13 +349,14 @@ describe('run', () => {
 
   test('build & deploy only some actions using --action', async () => {
     const aioConfig = sampleAppConfig
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    const appConfig = createAppConfig(aioConfig)
+    mockGetAppExtConfigs.mockReturnValueOnce(appConfig)
 
     command.argv = ['--skip-static', '-a', 'a', '-a', 'b', '--action', 'c']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledWith(command.appConfig, ['a', 'b', 'c'])
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledWith(appConfig.application, ['a', 'b', 'c'])
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(0)
   })
 
@@ -386,11 +394,18 @@ describe('run', () => {
   })
 
   test('build & deploy with --skip-actions with no frontend', async () => {
-    const aioConfig = sampleAppConfig
+    const newConfig = {
+      app: {
+        ...sampleAppConfig.app,
+        hasFrontend: false,
+        hasBackend: true
+      }
+    }
+
+    const aioConfig = { ...sampleAppConfig, ...newConfig }
     mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
 
     command.argv = ['--skip-actions']
-    command.appConfig = { app: { hasFrontend: false, hasBackend: true } }
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
@@ -404,8 +419,7 @@ describe('run', () => {
     mockFS.existsSync.mockReturnValue(true)
     const error = new Error('mock failure')
     mockRuntimeLib.buildActions.mockRejectedValue(error)
-    await command.run()
-    expect(command.error).toHaveBeenCalledWith(error)
+    await expect(command.run()).rejects.toThrow(error)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(0)
   })
@@ -414,10 +428,6 @@ describe('run', () => {
     const aioConfig = sampleAppConfig
     mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
 
-    mockWebLib.bundle.mockImplementation(async (config, onProgress) => {
-      onProgress('progress log')
-      return 'ok'
-    })
     command.argv = ['-v']
     await command.run()
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
@@ -428,10 +438,6 @@ describe('run', () => {
     const aioConfig = sampleAppConfig
     mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
 
-    mockWebLib.bundle.mockImplementation(async (config, onProgress) => {
-      onProgress('progress log')
-      return 'ok'
-    })
     await command.run()
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
   })
@@ -441,36 +447,38 @@ describe('run', () => {
     mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
 
     const noScriptFound = undefined
-    helpers.runPackageScript
+    helpers.runScript
       .mockResolvedValueOnce(noScriptFound) // pre-app-build
       .mockResolvedValueOnce(noScriptFound) // post-app-build
 
     command.argv = ['--skip-actions', '--skip-static']
     await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-
-    expect(command.log).toHaveBeenCalledTimes(1)
-    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Nothing to build/))
+    expect(command.error).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledWith(expect.stringMatching(/Nothing to be done/))
   })
 
   test('build (--skip-actions)', async () => {
     const aioConfig = sampleAppConfig
     mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
 
+    mockWebLib.bundle.mockImplementation((a, b, c, log) => {
+      log('ok')
+      return { run: mockBundleFunc }
+    })
+
     const noScriptFound = undefined
-    helpers.runPackageScript
+    helpers.runScript
       .mockResolvedValueOnce(noScriptFound) // pre-app-build
       .mockResolvedValueOnce(noScriptFound) // post-app-build
 
     command.argv = ['--skip-actions']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-
-    expect(command.log).toHaveBeenCalledTimes(1)
-    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Build success, your app is ready to be deployed/))
+    expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
   })
 
-  test('build (--skip-actions) calls provided log function', async () => {
+  test('build (--skip-actions, --verbose) (coverage)', async () => {
     const aioConfig = sampleAppConfig
     mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
 
@@ -480,38 +488,15 @@ describe('run', () => {
     })
 
     const noScriptFound = undefined
-    helpers.runPackageScript
-      .mockResolvedValueOnce(noScriptFound) // pre-app-build
-      .mockResolvedValueOnce(noScriptFound) // post-app-build
-
-    command.argv = ['--skip-actions']
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-
-    expect(command.log).toHaveBeenCalledTimes(1)
-    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Build success, your app is ready to be deployed/))
-  })
-
-  test('build (--skip-actions, --verbose) calls provided other log function', async () => {
-    const aioConfig = sampleAppConfig
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
-
-    mockWebLib.bundle.mockImplementation((a, b, c, log) => {
-      log('ok')
-      return { run: mockBundleFunc }
-    })
-
-    const noScriptFound = undefined
-    helpers.runPackageScript
+    helpers.runScript
       .mockResolvedValueOnce(noScriptFound) // pre-app-build
       .mockResolvedValueOnce(noScriptFound) // post-app-build
 
     command.argv = ['--skip-actions', '--verbose']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-
-    expect(command.log).toHaveBeenCalledTimes(1)
-    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Build success, your app is ready to be deployed/))
+    expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
   })
 
   test('build (--skip-static)', async () => {
@@ -519,16 +504,15 @@ describe('run', () => {
     mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
 
     const noScriptFound = undefined
-    helpers.runPackageScript
+    helpers.runScript
       .mockResolvedValueOnce(noScriptFound) // pre-app-build
       .mockResolvedValueOnce(noScriptFound) // post-app-build
 
     command.argv = ['--skip-static']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-
-    expect(command.log).toHaveBeenCalledTimes(1)
-    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Build success, your actions are ready to be deployed/))
+    expect(mockWebLib.bundle).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
   })
 
   test('build (has build-actions and build-static hooks)', async () => {
@@ -537,7 +521,7 @@ describe('run', () => {
 
     const noScriptFound = undefined
     const childProcess = {}
-    helpers.runPackageScript
+    helpers.runScript
       .mockResolvedValueOnce(noScriptFound) // pre-app-build
       .mockResolvedValueOnce(childProcess) // build-actions (uses hook)
       .mockResolvedValueOnce(childProcess) // build-static (uses hook)
@@ -545,62 +529,57 @@ describe('run', () => {
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-
-    expect(command.log).toHaveBeenCalledTimes(1)
-    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Build success, your app is ready to be deployed/))
+    expect(mockWebLib.bundle).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
   })
 
   test('build (pre and post hooks have errors, --skip-actions and --skip-static)', async () => {
     const aioConfig = sampleAppConfig
     mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
 
-    helpers.runPackageScript
+    helpers.runScript
       .mockRejectedValueOnce('error-pre-app-build') // pre-app-build (logs error)
       .mockRejectedValueOnce('error-post-app-build') // post-app-build (logs error)
 
     command.argv = ['--skip-actions', '--skip-static']
     await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.error).toHaveBeenCalledTimes(1) // nothing to be done, because of the flags
+    expect(command.error).toHaveBeenCalledWith(expect.stringMatching(/Nothing to be done/))
+    expect(mockWebLib.bundle).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
 
-    expect(command.log).toHaveBeenCalledTimes(3)
+    expect(command.log).toHaveBeenCalledTimes(2)
     expect(command.log).toHaveBeenCalledWith('error-pre-app-build')
     expect(command.log).toHaveBeenCalledWith('error-post-app-build')
-    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Nothing to build/))
   })
 
   test('build (build-actions hook has an error)', async () => {
     const aioConfig = sampleAppConfig
     mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
 
+    const errorString = 'error-build-actions'
     const noScriptFound = undefined
-    helpers.runPackageScript
+    helpers.runScript
       .mockResolvedValueOnce(noScriptFound) // pre-app-build (no error)
-      .mockRejectedValueOnce('error-build-actions') // build-actions (rethrows error)
+      .mockRejectedValueOnce(errorString) // build-actions (rethrows error)
       .mockResolvedValueOnce(noScriptFound) // build-static (will not reach here)
       .mockResolvedValueOnce(noScriptFound) // post-app-build (will not reach here)
 
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(1)
-    expect(command.error).toHaveBeenCalledWith('error-build-actions')
-
-    expect(command.log).toHaveBeenCalledTimes(0)
+    await expect(command.run()).rejects.toEqual(errorString)
   })
 
   test('build (build-static hook has an error)', async () => {
     const aioConfig = sampleAppConfig
     mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
 
+    const errorString = 'error-build-static'
     const noScriptFound = undefined
-    helpers.runPackageScript
+    helpers.runScript
       .mockResolvedValueOnce(noScriptFound) // pre-app-build (no error)
       .mockResolvedValueOnce(noScriptFound) // build-actions (uses inbuilt, no error)
-      .mockRejectedValueOnce('error-build-static') // build-static (rethrows error)
+      .mockRejectedValueOnce(errorString) // build-static (rethrows error)
       .mockResolvedValueOnce(noScriptFound) // post-app-build (will not reach here)
 
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(1)
-    expect(command.error).toHaveBeenCalledWith('error-build-static')
-
-    expect(command.log).toHaveBeenCalledTimes(0)
+    await expect(command.run()).rejects.toEqual(errorString)
   })
 })
