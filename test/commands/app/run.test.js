@@ -695,7 +695,6 @@ describe('run', () => {
     const extFilter = 'excshell'
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     const aioConfig = mockConfigData
-    // mockGetAppExtConfigs.mockReturnValueOnce()
 
     mockGetAppExtConfigs.mockImplementationOnce(flags => {
       expect(flags.extension).toEqual([extFilter])
