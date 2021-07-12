@@ -216,8 +216,8 @@ describe('run', () => {
     expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
     expect(mockImport.importConfigJson).not.toHaveBeenCalled()
 
-    expect(fs.ensureDirSync).toHaveBeenCalledWith('/otherdir')
-    expect(process.chdir).toHaveBeenCalledWith('/otherdir')
+    expect(fs.ensureDirSync).toHaveBeenCalledWith(path.resolve('/otherdir'))
+    expect(process.chdir).toHaveBeenCalledWith(path.resolve('/otherdir'))
   })
 
   test('--no-login, select both', async () => {
