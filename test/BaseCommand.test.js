@@ -32,10 +32,19 @@ LibConsoleCLI.init.mockResolvedValue({})
 
 const TheCommand = require('../src/BaseCommand')
 
+jest.mock('inquirer')
+const inquirer = require('inquirer')
+const mockExtensionPrompt = jest.fn()
+inquirer.createPromptModule = jest.fn().mockReturnValue(mockExtensionPrompt)
+
 beforeEach(() => {
   libEnv.getCliEnv.mockReturnValue('prod')
   mockConfigLoader.loadConfig.mockReset()
   LibConsoleCLI.init.mockClear()
+  LibConsoleCLI.cleanStdOut.mockClear()
+
+  inquirer.createPromptModule.mockClear()
+  mockExtensionPrompt.mockReset()
 })
 
 test('exports', async () => {
@@ -211,4 +220,33 @@ describe('getLibConsoleCLI', () => {
     await cmd.getLibConsoleCLI()
     expect(LibConsoleCLI.init).toHaveBeenCalledWith({ env: 'stage', accessToken: 'hola', apiKey: expect.any(String) })
   })
+})
+
+test('init', async () => {
+  const cmd = new TheCommand([])
+  cmd.config = {}
+  await cmd.init()
+  expect(cmd.prompt).toBe(mockExtensionPrompt)
+  expect(inquirer.createPromptModule).toHaveBeenCalledWith({ output: process.stderr })
+})
+
+test('catch', async () => {
+  const cmd = new TheCommand([])
+  cmd.error = jest.fn()
+  await cmd.catch(new Error('fake error'))
+  expect(cmd.error).toHaveBeenCalledWith('fake error')
+})
+
+test('pjson', async () => {
+  const cmd = new TheCommand([])
+  cmd.config = { pjson: { name: 'fake', version: '0' } }
+  expect(cmd.pjson).toEqual({ name: 'fake', version: '0' })
+  expect(cmd.appName).toEqual('fake')
+  expect(cmd.appVersion).toEqual('0')
+})
+
+test('cleanConsoleCLIOutput', async () => {
+  const cmd = new TheCommand([])
+  await cmd.cleanConsoleCLIOutput()
+  expect(LibConsoleCLI.cleanStdOut).toHaveBeenCalled()
 })

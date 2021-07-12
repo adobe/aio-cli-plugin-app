@@ -472,7 +472,7 @@ function buildSingleConfig (configName, singleUserConfig, commonConfig, includeI
     config.manifest = { src: 'manifest.yml' } // even if a legacy config path, it is required for runtime sync
     config.manifest.full = rewriteRuntimeManifestPathsToRelRoot(manifest, fullKeyPrefix + '.runtimeManifest', includeIndex)
     config.manifest.packagePlaceholder = '__APP_PACKAGE__'
-    config.manifest.package = config.manifest.full.packages[config.manifest.packagePlaceholder]
+    config.manifest.package = config.manifest.full.packages && config.manifest.full.packages[config.manifest.packagePlaceholder]
     if (config.manifest.package) {
       aioLogger.debug(`Use of ${config.manifest.packagePlaceholder} in manifest.yml.`)
     }
@@ -522,10 +522,10 @@ function buildSingleConfig (configName, singleUserConfig, commonConfig, includeI
 }
 
 /** @private */
-function rewriteRuntimeManifestPathsToRelRoot (manifestConfig = {}, fullKeyToManifest, includeIndex) {
+function rewriteRuntimeManifestPathsToRelRoot (manifestConfig, fullKeyToManifest, includeIndex) {
   const manifestCopy = cloneDeep(manifestConfig)
 
-  Object.entries(manifestCopy.packages || {}).forEach(([pkgName, pkg = {}]) => {
+  Object.entries(manifestCopy.packages || {}).forEach(([pkgName, pkg]) => {
     Object.entries(pkg.actions || {}).forEach(([actionName, action]) => {
       const fullKeyToAction = `${fullKeyToManifest}.packages.${pkgName}.actions.${actionName}`
       if (action.function) {
