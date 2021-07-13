@@ -12,6 +12,9 @@ governing permissions and limitations under the License.
 
 const TheCommand = require('../../../src/commands/app/deploy')
 const BaseCommand = require('../../../src/BaseCommand')
+const dataMocks = require('../../data-mocks/config-loader')
+
+const mockGetAppExtConfigs = jest.fn()
 
 jest.mock('../../../src/lib/app-helper.js')
 const helpers = require('../../../src/lib/app-helper.js')
@@ -45,6 +48,11 @@ beforeEach(() => {
   jest.restoreAllMocks()
 
   helpers.wrapError.mockImplementation(msg => msg)
+  jest.spyOn(BaseCommand.prototype, 'getAppExtConfigs').mockImplementation(mockGetAppExtConfigs)
+})
+
+afterEach(() => {
+  mockGetAppExtConfigs.mockClear()
 })
 
 test('exports', async () => {
@@ -64,7 +72,7 @@ test('flags', async () => {
   expect(typeof TheCommand.flags.action).toBe('object')
   expect(TheCommand.flags.action.char).toBe('a')
   expect(typeof TheCommand.flags.action.description).toBe('string')
-  expect(TheCommand.flags.action.exclusive).toEqual(['skip-actions'])
+  expect(TheCommand.flags.action.exclusive).toEqual(['extension'])
 
   expect(typeof TheCommand.flags['skip-actions']).toBe('object')
   expect(typeof TheCommand.flags['skip-actions'].description).toBe('string')
@@ -77,11 +85,56 @@ test('flags', async () => {
 
   expect(typeof TheCommand.flags['skip-deploy']).toBe('object')
   expect(typeof TheCommand.flags['skip-deploy'].description).toBe('string')
-  expect(TheCommand.flags['skip-deploy'].exclusive).toEqual(['skip-build'])
-
+  
   expect(typeof TheCommand.flags['skip-build']).toBe('object')
   expect(typeof TheCommand.flags['skip-build'].description).toBe('string')
-  expect(TheCommand.flags['skip-build'].exclusive).toEqual(['skip-deploy'])
+  
+  expect(typeof TheCommand.flags['web-assets']).toBe('object')
+  expect(typeof TheCommand.flags['web-assets'].description).toBe('string')
+  expect(TheCommand.flags['web-assets'].default).toEqual(true)
+  expect(TheCommand.flags['web-assets'].allowNo).toEqual(true)
+
+  expect(typeof TheCommand.flags['force-build']).toBe('object')
+  expect(typeof TheCommand.flags['force-build'].description).toBe('string')
+  expect(TheCommand.flags['force-build'].default).toEqual(true)
+  expect(TheCommand.flags['force-build'].allowNo).toEqual(true)
+
+  expect(typeof TheCommand.flags['content-hash']).toBe('object')
+  expect(typeof TheCommand.flags['content-hash'].description).toBe('string')
+  expect(TheCommand.flags['content-hash'].default).toEqual(true)
+  expect(TheCommand.flags['content-hash'].allowNo).toEqual(true)
+
+  expect(typeof TheCommand.flags.extension).toBe('object')
+  expect(typeof TheCommand.flags.extension.description).toBe('string')
+  expect(TheCommand.flags.extension.exclusive).toEqual(['action'])
+
+  expect(typeof TheCommand.flags.publish).toBe('object')
+  expect(typeof TheCommand.flags.publish.description).toBe('string')
+  expect(TheCommand.flags.publish.default).toEqual(true)
+  expect(TheCommand.flags.publish.allowNo).toEqual(true)
+  expect(TheCommand.flags.publish.exclusive).toEqual(['action'])
+
+  expect(typeof TheCommand.flags['force-publish']).toBe('object')
+  expect(typeof TheCommand.flags['force-publish'].description).toBe('string')
+  expect(TheCommand.flags['force-publish'].default).toEqual(false)
+  expect(TheCommand.flags['force-publish'].exclusive).toEqual(['action', 'publish'])
+
+  expect(typeof TheCommand.flags.open).toBe('object')
+  expect(typeof TheCommand.flags.open.description).toBe('string')
+  expect(TheCommand.flags.open.default).toEqual(false)
+
+  expect(typeof TheCommand.flags.build).toBe('object')
+  expect(typeof TheCommand.flags.build.description).toBe('string')
+  expect(TheCommand.flags.build.default).toEqual(true)
+  expect(TheCommand.flags.build.allowNo).toEqual(true)
+
+  expect(typeof TheCommand.flags.actions).toBe('object')
+  expect(typeof TheCommand.flags.actions.description).toBe('string')
+  expect(TheCommand.flags.actions.default).toEqual(true)
+  expect(TheCommand.flags.actions.allowNo).toEqual(true)
+  expect(TheCommand.flags.actions.exclusive).toEqual(['action'])
+
+  // 5 more: publish, force-publish, open, build, actions
 })
 
 describe('run', () => {
@@ -103,7 +156,15 @@ describe('run', () => {
     jest.clearAllMocks()
   })
 
+  const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
+    const appConfig = dataMocks(appFixtureName, aioConfig).all
+    appConfig.application = { ...appConfig.application, ...aioConfig }
+    return appConfig
+  }
+
   test('build & deploy an App with no flags', async () => {
+    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig())
+
     await command.run()
     // expect(command.error).toHaveBeenCalledWith(0)
     expect(command.error).toHaveBeenCalledTimes(0)
