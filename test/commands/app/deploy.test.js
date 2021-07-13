@@ -153,6 +153,8 @@ describe('run', () => {
     command.buildOneExt = jest.fn()
     command.getAppExtConfigs = jest.fn()
     command.getLibConsoleCLI = jest.fn()
+    command.publishExtensionPoints = jest.fn()
+    command.getFullConfig = jest.fn()
 
     mockRuntimeLib.deployActions.mockResolvedValue({})
     mockWebLib.bundle.mockResolvedValue({ run: mockBundleFunc })
@@ -614,5 +616,41 @@ describe('run', () => {
 
     await expect(command.run()).rejects.toEqual('error-deploy-static')
     expect(command.log).toHaveBeenCalledTimes(0)
+  })
+
+  test('nothing to be published (--no-publish, --no-web-assets, --no-actions)', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+
+    command.argv = ['--no-publish', '--no-web-assets', '--no-actions']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledWith(expect.stringMatching(/Nothing to be done/))
+  })
+
+  test('nothing to be published (--no-publish, --build, --skip-deploy)', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+
+    command.argv = ['--no-publish', '--build', '--skip-deploy']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledWith(expect.stringMatching(/Nothing to be done/))
+  })
+
+  test('publish phase', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig({}, 'app-exc-nui'))
+    command.publishExtensionPoints.mockReturnValue({ endpoints: {} })
+    command.getFullConfig.mockReturnValue({
+      aio: {
+        project: {
+          workspace: {
+            name: 'foo'
+          }
+        }
+      }
+    })
+    command.argv = []
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.publishExtensionPoints).toHaveBeenCalledTimes(1)
   })
 })
