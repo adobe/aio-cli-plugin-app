@@ -40,7 +40,7 @@ describe('load config', () => {
   // main cases
   test('standalone app config', async () => {
     global.loadFixtureApp('app')
-    config = loadConfig({})
+    config = loadConfig() // {} or not for coverage
     expect(config).toEqual(getMockConfig('app', global.fakeConfig.tvm))
   })
 
@@ -313,5 +313,20 @@ extensions:
       },
       includeIndex: expect.any(Object)
     }))
+  })
+
+  test('manifest with no packages', async () => {
+    global.fakeFileSystem.addJson(
+      {
+        '/package.json': '{}',
+        '/app.config.yaml': `
+application:
+  runtimeManifest:
+    iam: empty
+`
+      }
+    )
+    config = loadConfig({})
+    expect(config.all.application.manifest.full).toEqual({ iam: 'empty' })
   })
 })
