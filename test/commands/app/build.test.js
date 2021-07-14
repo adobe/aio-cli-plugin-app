@@ -13,9 +13,8 @@ governing permissions and limitations under the License.
 const TheCommand = require('../../../src/commands/app/build')
 const BaseCommand = require('../../../src/BaseCommand')
 const path = require('path')
+const cloneDeep = require('lodash.clonedeep')
 const dataMocks = require('../../data-mocks/config-loader')
-
-const mockGetAppExtConfigs = jest.fn()
 
 const mockFS = require('fs-extra')
 jest.mock('fs-extra')
@@ -145,12 +144,6 @@ beforeEach(() => {
   jest.restoreAllMocks()
 
   helpers.wrapError.mockImplementation(msg => msg)
-
-  jest.spyOn(BaseCommand.prototype, 'getAppExtConfigs').mockImplementation(mockGetAppExtConfigs)
-})
-
-afterEach(() => {
-  mockGetAppExtConfigs.mockClear()
 })
 
 test('exports', async () => {
@@ -212,6 +205,9 @@ describe('run', () => {
     command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
+    command.getAppExtConfigs = jest.fn()
+    command.appConfig = cloneDeep(sampleAppConfig)
+
     mockRuntimeLib.buildActions.mockReset()
   })
 
@@ -220,19 +216,10 @@ describe('run', () => {
   })
 
   test('build should write to config.json', async () => {
-    const newConfig = {
-      ow: {
-        ...sampleAppConfig.ow,
-        defaultApihost: global.defaultOwApihost
-      },
-      app: {
-        ...sampleAppConfig.app,
-        defaultHostname: global.defaultAppHostName
-      }
-    }
-    const aioConfig = { ...sampleAppConfig, ...newConfig }
+    command.appConfig.ow.defaultApihost = global.defaultOwApihost
+    command.appConfig.app.defaultHostname = global.defaultAppHostName
 
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const mockUtils = mockRuntimeLib.utils
     mockRuntimeLib.utils = jest.requireActual('@adobe/aio-lib-runtime').utils
     await command.run()
@@ -246,8 +233,7 @@ describe('run', () => {
   })
 
   test('build & deploy an App with no flags', async () => {
-    const aioConfig = sampleAppConfig
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -261,8 +247,7 @@ describe('run', () => {
   })
 
   test('build & deploy an App with --no-content-hash', async () => {
-    const aioConfig = sampleAppConfig
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     command.argv = ['--no-content-hash']
     await command.run()
@@ -277,8 +262,7 @@ describe('run', () => {
   })
 
   test('build & deploy an App with --no-content-hash --verbose', async () => {
-    const aioConfig = sampleAppConfig
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     command.argv = ['--no-content-hash', '-v']
     await command.run()
@@ -293,18 +277,9 @@ describe('run', () => {
   })
 
   test('build & deploy an App with no force-build but build exists', async () => {
-    const newConfig = {
-      actions: {
-        ...sampleAppConfig.actions,
-        dist: 'actions'
-      },
-      web: {
-        ...sampleAppConfig.web,
-        distProd: 'dist'
-      }
-    }
-    const aioConfig = { ...sampleAppConfig, ...newConfig }
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.appConfig.actions.dist = 'actions'
+    command.appConfig.web.distProd = 'dist'
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     command.argv = ['--no-force-build']
     mockFS.existsSync.mockReturnValue(true)
@@ -315,8 +290,7 @@ describe('run', () => {
   })
 
   test('build & deploy an App verbose', async () => {
-    const aioConfig = sampleAppConfig
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     command.argv = ['-v']
     await command.run()
@@ -326,8 +300,7 @@ describe('run', () => {
   })
 
   test('build & deploy --skip-static', async () => {
-    const aioConfig = sampleAppConfig
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     command.argv = ['--skip-static']
     await command.run()
@@ -337,8 +310,7 @@ describe('run', () => {
   })
 
   test('build & deploy --skip-web-assets', async () => {
-    const aioConfig = sampleAppConfig
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     command.argv = ['--skip-web-assets']
     await command.run()
@@ -348,9 +320,8 @@ describe('run', () => {
   })
 
   test('build & deploy only some actions using --action', async () => {
-    const aioConfig = sampleAppConfig
-    const appConfig = createAppConfig(aioConfig)
-    mockGetAppExtConfigs.mockReturnValueOnce(appConfig)
+    const appConfig = createAppConfig(command.appConfig)
+    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
 
     command.argv = ['--skip-static', '-a', 'a', '-a', 'b', '--action', 'c']
     await command.run()
@@ -361,19 +332,10 @@ describe('run', () => {
   })
 
   test('build & deploy actions with no backend', async () => {
-    const newConfig = {
-      app: {
-        ...sampleAppConfig.app,
-        hasFrontend: true,
-        hasBackend: false
-      },
-      web: {
-        ...sampleAppConfig.web,
-        src: 'web-src'
-      }
-    }
-    const aioConfig = { ...sampleAppConfig, ...newConfig }
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.appConfig.app.hasFrontend = true
+    command.appConfig.app.hasBackend = false
+    command.appConfig.web.src = 'web-src'
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -382,8 +344,7 @@ describe('run', () => {
   })
 
   test('build & deploy with --skip-actions', async () => {
-    const aioConfig = sampleAppConfig
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     command.argv = ['--skip-actions']
     mockFS.existsSync.mockReturnValue(true)
@@ -394,16 +355,9 @@ describe('run', () => {
   })
 
   test('build & deploy with --skip-actions with no frontend', async () => {
-    const newConfig = {
-      app: {
-        ...sampleAppConfig.app,
-        hasFrontend: false,
-        hasBackend: true
-      }
-    }
-
-    const aioConfig = { ...sampleAppConfig, ...newConfig }
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.appConfig.app.hasFrontend = false
+    command.appConfig.app.hasBackend = true
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     command.argv = ['--skip-actions']
     await command.run()
@@ -413,8 +367,7 @@ describe('run', () => {
   })
 
   test('should fail if scripts.buildActions fails', async () => {
-    const aioConfig = sampleAppConfig
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     mockFS.existsSync.mockReturnValue(true)
     const error = new Error('mock failure')
@@ -425,8 +378,7 @@ describe('run', () => {
   })
 
   test('spinner should be called for progress logs on bundle call , with verbose', async () => {
-    const aioConfig = sampleAppConfig
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     command.argv = ['-v']
     await command.run()
@@ -435,17 +387,15 @@ describe('run', () => {
   })
 
   test('spinner should be called for progress logs on bundle call , without verbose', async () => {
-    const aioConfig = sampleAppConfig
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
   })
 
   test('app hook sequence', async () => {
-    const aioConfig = sampleAppConfig
-    const appConfig = createAppConfig(aioConfig)
-    mockGetAppExtConfigs.mockReturnValueOnce(appConfig)
+    const appConfig = createAppConfig(command.appConfig)
+    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
 
     // set hooks (command the same as hook name, for easy reference)
     appConfig.application.hooks = {
@@ -475,8 +425,7 @@ describe('run', () => {
   })
 
   test('build (--skip-actions and --skip-static)', async () => {
-    const aioConfig = sampleAppConfig
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     const noScriptFound = undefined
     helpers.runScript
@@ -490,8 +439,7 @@ describe('run', () => {
   })
 
   test('build (--skip-actions)', async () => {
-    const aioConfig = sampleAppConfig
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     mockWebLib.bundle.mockImplementation((a, b, c, log) => {
       log('ok')
@@ -511,8 +459,7 @@ describe('run', () => {
   })
 
   test('build (--skip-actions, --verbose) (coverage)', async () => {
-    const aioConfig = sampleAppConfig
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     mockWebLib.bundle.mockImplementation((a, b, c, log) => {
       log('ok')
@@ -532,8 +479,7 @@ describe('run', () => {
   })
 
   test('build (--skip-static)', async () => {
-    const aioConfig = sampleAppConfig
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     const noScriptFound = undefined
     helpers.runScript
@@ -548,8 +494,7 @@ describe('run', () => {
   })
 
   test('build (has build-actions and build-static hooks)', async () => {
-    const aioConfig = sampleAppConfig
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     const noScriptFound = undefined
     const childProcess = {}
@@ -566,8 +511,7 @@ describe('run', () => {
   })
 
   test('build (pre and post hooks have errors, --skip-actions and --skip-static)', async () => {
-    const aioConfig = sampleAppConfig
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     helpers.runScript
       .mockRejectedValueOnce('error-pre-app-build') // pre-app-build (logs error)
@@ -586,8 +530,7 @@ describe('run', () => {
   })
 
   test('build (build-actions hook has an error)', async () => {
-    const aioConfig = sampleAppConfig
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     const errorString = 'error-build-actions'
     const noScriptFound = undefined
@@ -601,8 +544,7 @@ describe('run', () => {
   })
 
   test('build (build-static hook has an error)', async () => {
-    const aioConfig = sampleAppConfig
-    mockGetAppExtConfigs.mockReturnValueOnce(createAppConfig(aioConfig))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     const errorString = 'error-build-static'
     const noScriptFound = undefined
