@@ -118,6 +118,7 @@ test('flags', async () => {
 
   expect(typeof TheCommand.flags.extension).toBe('object')
   expect(typeof TheCommand.flags.extension.description).toBe('string')
+  expect(TheCommand.flags.extension.char).toEqual('e')
   expect(TheCommand.flags.extension.exclusive).toEqual(['action'])
 
   expect(typeof TheCommand.flags.publish).toBe('object')
