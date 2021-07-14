@@ -144,9 +144,30 @@ describe('run command definition', () => {
     expect(typeof TheCommand.flags.local).toBe('object')
     expect(typeof TheCommand.flags.local.description).toBe('string')
     expect(TheCommand.flags.local.exclusive).toEqual(['skip-actions'])
+
+    expect(typeof TheCommand.flags.serve).toBe('object')
+    expect(typeof TheCommand.flags.serve.description).toBe('string')
+    expect(TheCommand.flags.serve.default).toEqual(true)
+    expect(TheCommand.flags.serve.allowNo).toEqual(true)
+
     expect(typeof TheCommand.flags['skip-actions']).toBe('object')
     expect(typeof TheCommand.flags['skip-actions'].description).toBe('string')
     expect(TheCommand.flags['skip-actions'].exclusive).toEqual(['local'])
+
+    expect(typeof TheCommand.flags.actions).toBe('object')
+    expect(typeof TheCommand.flags.actions.description).toBe('string')
+    expect(TheCommand.flags.actions.exclusive).toEqual(['local'])
+    expect(TheCommand.flags.actions.default).toEqual(true)
+    expect(TheCommand.flags.actions.allowNo).toEqual(true)
+
+    expect(typeof TheCommand.flags.open).toBe('object')
+    expect(typeof TheCommand.flags.open.description).toBe('string')
+    expect(TheCommand.flags.open.default).toEqual(false)
+
+    expect(typeof TheCommand.flags.extension).toBe('object')
+    expect(typeof TheCommand.flags.extension.description).toBe('string')
+    expect(TheCommand.flags.extension.multiple).toEqual(false)
+    expect(TheCommand.flags.extension.char).toEqual('e')
   })
 })
 
