@@ -19,13 +19,8 @@ const cloneDeep = require('lodash.clonedeep')
 jest.mock('../../../src/lib/run-dev')
 const mockRunDev = require('../../../src/lib/run-dev')
 
-jest.mock('../../../src/lib/app-helper', () => {
-  return {
-    ...jest.requireActual('../../../src/lib/app-helper'),
-    runScript: jest.fn()
-  }
-})
-const mockAppHelper = require('../../../src/lib/app-helper')
+jest.mock('../../../src/lib/app-helper.js')
+const helpers = require('../../../src/lib/app-helper.js')
 
 const mockConfigData = {
   app: {
@@ -82,7 +77,7 @@ const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
 beforeEach(() => {
   jest.restoreAllMocks()
   mockRunDev.mockReset()
-  mockAppHelper.runScript.mockReset()
+  helpers.runScript.mockReset()
 
   mockConfig.get = jest.fn().mockReturnValue({ globalConfig: 'seems-legit' })
 
@@ -643,7 +638,7 @@ describe('run', () => {
   })
 
   test('app:run with missing app hooks', async () => {
-    mockAppHelper.runScript
+    helpers.runScript
       .mockRejectedValueOnce('error-1')
       .mockRejectedValueOnce('error-2')
 
@@ -683,5 +678,32 @@ describe('run', () => {
 
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
+  })
+
+  test('app hook sequence', async () => {
+    mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
+    const appConfig = createAppConfig()
+    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+
+    // set hooks (command the same as hook name, for easy reference)
+    appConfig.application.hooks = {
+      'pre-app-run': 'pre-app-run',
+      'post-app-run': 'post-app-run'
+    }
+
+    const scriptSequence = []
+    helpers.runScript.mockImplementation(script => {
+      scriptSequence.push(script)
+    })
+
+    command.argv = []
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+
+    expect(helpers.runScript).toHaveBeenCalledTimes(2)
+    expect(scriptSequence.length).toEqual(2)
+    expect(scriptSequence[0]).toEqual('pre-app-run')
+    expect(scriptSequence[1]).toEqual('post-app-run')
   })
 })
