@@ -12,6 +12,7 @@ governing permissions and limitations under the License.
 
 const TheCommand = require('../../../src/commands/app/deploy')
 const BaseCommand = require('../../../src/BaseCommand')
+const cloneDeep = require('lodash.clonedeep')
 const dataMocks = require('../../data-mocks/config-loader')
 
 const mockBundleFunc = jest.fn()
@@ -154,7 +155,7 @@ describe('run', () => {
     command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
-    command.appConfig = mockConfigData
+    command.appConfig = cloneDeep(mockConfigData)
     command.appConfig.actions = { dist: 'actions' }
     command.appConfig.web.distProd = 'dist'
     command.config = { runCommand: jest.fn() }
@@ -172,7 +173,7 @@ describe('run', () => {
   })
 
   test('build & deploy an App with no flags', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     // expect(command.error).toHaveBeenCalledWith(0)
@@ -183,7 +184,7 @@ describe('run', () => {
   })
 
   test('build & deploy an App verbose', async () => {
-    const appConfig = createAppConfig()
+    const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
 
     command.argv = ['-v']
@@ -196,7 +197,7 @@ describe('run', () => {
   })
 
   test('build & deploy --skip-static', async () => {
-    const appConfig = createAppConfig()
+    const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
 
     command.argv = ['--skip-static']
@@ -209,7 +210,7 @@ describe('run', () => {
   })
 
   test('build & deploy --skip-web-assets', async () => {
-    const appConfig = createAppConfig()
+    const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
 
     command.argv = ['--skip-web-assets']
@@ -222,7 +223,7 @@ describe('run', () => {
   })
 
   test('build & deploy only some actions using --action', async () => {
-    const appConfig = createAppConfig()
+    const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
 
     command.argv = ['--skip-static', '-a', 'a', '-a', 'b', '--action', 'c']
@@ -240,13 +241,9 @@ describe('run', () => {
   })
 
   test('build & deploy actions with no actions folder and no manifest', async () => {
-    const aioConfig = {
-      app: {
-        hasFrontend: true,
-        hasBackend: false
-      }
-    }
-    const appConfig = createAppConfig(aioConfig)
+    command.appConfig.app.hasFrontend = true
+    command.appConfig.app.hasBackend = false
+    const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
 
     command.argv = ['--skip-static']
@@ -259,7 +256,7 @@ describe('run', () => {
   })
 
   test('build & deploy actions with no actions folder but with a manifest', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     command.argv = ['--skip-static']
     await command.run()
@@ -270,7 +267,7 @@ describe('run', () => {
   })
 
   test('build & deploy with --skip-actions', async () => {
-    const appConfig = createAppConfig()
+    const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
 
     command.argv = ['--skip-actions']
@@ -283,13 +280,9 @@ describe('run', () => {
   })
 
   test('build & deploy with --skip-actions with no static folder', async () => {
-    const aioConfig = {
-      app: {
-        hasFrontend: false,
-        hasBackend: false
-      }
-    }
-    const appConfig = createAppConfig(aioConfig)
+    command.appConfig.app.hasFrontend = false
+    command.appConfig.app.hasBackend = false
+    const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
 
     command.argv = ['--skip-actions']
@@ -302,13 +295,9 @@ describe('run', () => {
   })
 
   test('build & deploy with no manifest.yml', async () => {
-    const aioConfig = {
-      app: {
-        hasFrontend: true,
-        hasBackend: false
-      }
-    }
-    const appConfig = createAppConfig(aioConfig)
+    command.appConfig.app.hasFrontend = true
+    command.appConfig.app.hasBackend = false
+    const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
 
     await command.run()
@@ -320,7 +309,7 @@ describe('run', () => {
   })
 
   test('--skip-deploy', async () => {
-    const appConfig = createAppConfig()
+    const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
 
     command.argv = ['--skip-deploy']
@@ -332,7 +321,7 @@ describe('run', () => {
   })
 
   test('--skip-deploy --verbose', async () => {
-    const appConfig = createAppConfig()
+    const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
 
     command.argv = ['--skip-deploy', '--verbose']
@@ -345,7 +334,7 @@ describe('run', () => {
   })
 
   test('--skip-deploy --skip-static', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     command.argv = ['--skip-deploy', '--skip-static']
     await command.run()
@@ -356,7 +345,7 @@ describe('run', () => {
   })
 
   test('--skip-build', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     command.argv = ['--skip-build']
     await command.run()
@@ -367,7 +356,7 @@ describe('run', () => {
   })
 
   test('--skip-build --verbose', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     command.argv = ['--skip-build', '--verbose']
     await command.run()
@@ -378,7 +367,7 @@ describe('run', () => {
   })
 
   test('--skip-build --skip-actions', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     command.argv = ['--skip-build', '--skip-actions']
     await command.run()
@@ -389,7 +378,7 @@ describe('run', () => {
   })
 
   test('--skip-build --skip-static', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     command.argv = ['--skip-build', '--skip-static']
     await command.run()
@@ -400,7 +389,7 @@ describe('run', () => {
   })
 
   test('--no-force-build', async () => {
-    const appConfig = createAppConfig()
+    const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
 
     command.argv = ['--no-force-build']
@@ -413,7 +402,7 @@ describe('run', () => {
   })
 
   test('deploy should show ui url', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     mockWebLib.deployWeb.mockResolvedValue('https://example.com')
 
     command.argv = []
@@ -423,7 +412,7 @@ describe('run', () => {
   })
 
   test('deploy should open ui url with --open', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     cli.open = jest.fn()
     mockWebLib.deployWeb.mockResolvedValue('https://example.com')
 
@@ -435,7 +424,7 @@ describe('run', () => {
   })
 
   test('deploy should show ui and exc url if AIO_LAUNCH_PREFIX_URL is set', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     mockWebLib.deployWeb.mockResolvedValue('https://example.com')
     mockConfig.get.mockReturnValue('http://prefix?fake=')
 
@@ -447,7 +436,7 @@ describe('run', () => {
   })
 
   test('deploy should show ui and open exc url if AIO_LAUNCH_PREFIX_URL is set and --open', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     mockWebLib.deployWeb.mockResolvedValue('https://example.com')
     mockConfig.get.mockReturnValue('http://prefix?fake=')
     cli.open = jest.fn()
@@ -461,7 +450,7 @@ describe('run', () => {
   })
 
   test('deploy should show action urls', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     mockRuntimeLib.deployActions.mockResolvedValue({
       actions: [
         { name: 'pkg/action', url: 'https://fake.com/action' },
@@ -477,7 +466,7 @@ describe('run', () => {
   })
 
   test('should fail if scripts.deployActions fails', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const error = new Error('mocklfailure')
     mockRuntimeLib.deployActions.mockRejectedValue(error)
 
@@ -487,7 +476,7 @@ describe('run', () => {
   })
 
   test('should fail if scripts.deployWeb fails', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const error = new Error('mock failure')
     mockRuntimeLib.deployActions.mockResolvedValue('ok')
     mockWebLib.deployWeb.mockRejectedValue(error)
@@ -497,7 +486,7 @@ describe('run', () => {
   })
 
   test('spinner should be called for progress logs on deployWeb call , with verbose', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     mockRuntimeLib.deployActions.mockResolvedValue('ok')
     mockWebLib.deployWeb.mockImplementation(async (config, log) => {
       log('progress log')
@@ -525,7 +514,7 @@ describe('run', () => {
   })
 
   test('deploy (--skip-actions and --skip-static)', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
     helpers.runScript
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
@@ -540,7 +529,7 @@ describe('run', () => {
   })
 
   test('deploy (--skip-actions)', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
     helpers.runScript
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
@@ -554,7 +543,7 @@ describe('run', () => {
   })
 
   test('deploy (--skip-static)', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
     helpers.runScript
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
@@ -568,7 +557,7 @@ describe('run', () => {
   })
 
   test('deploy (has deploy-actions and deploy-static hooks)', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
     const childProcess = {}
     helpers.runScript
@@ -584,7 +573,7 @@ describe('run', () => {
   })
 
   test('deploy (pre and post hooks have errors, --skip-actions and --skip-static)', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     helpers.runScript
       .mockRejectedValueOnce('error-pre-app-deploy') // pre-app-deploy (logs error)
       .mockRejectedValueOnce('error-post-app-deploy') // post-app-deploy (logs error)
@@ -600,7 +589,7 @@ describe('run', () => {
   })
 
   test('deploy (deploy-actions hook has an error)', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
     helpers.runScript
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy (no error)
@@ -613,7 +602,7 @@ describe('run', () => {
   })
 
   test('deploy (deploy-static hook has an error)', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
     helpers.runScript
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy (no error)
@@ -626,7 +615,7 @@ describe('run', () => {
   })
 
   test('nothing to be published (--no-publish, --no-web-assets, --no-actions)', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     command.argv = ['--no-publish', '--no-web-assets', '--no-actions']
     await command.run()
@@ -635,7 +624,7 @@ describe('run', () => {
   })
 
   test('nothing to be published (--no-publish, --build, --skip-deploy)', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     command.argv = ['--no-publish', '--build', '--skip-deploy']
     await command.run()
@@ -644,7 +633,7 @@ describe('run', () => {
   })
 
   test('publish phase (no force, exc-shell payload)', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig({}, 'app-exc-nui'))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig, 'app-exc-nui'))
     command.getFullConfig.mockReturnValue({
       aio: {
         project: {
@@ -675,7 +664,7 @@ describe('run', () => {
   })
 
   test('publish phase (--force-publish, no exc-shell payload)', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig({}, 'app-exc-nui'))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig, 'app-exc-nui'))
     command.getFullConfig.mockReturnValue({
       aio: {
         project: {
@@ -701,7 +690,7 @@ describe('run', () => {
   })
 
   test('app hook sequence', async () => {
-    const appConfig = createAppConfig()
+    const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
 
     // set hooks (command the same as hook name, for easy reference)
