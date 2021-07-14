@@ -95,16 +95,16 @@ describe('load config', () => {
   test('exc with custom dist folder', async () => {
     global.loadFixtureApp('exc')
     // rewrite configuration
-    const userConfig = yaml.load(global.fixtureFile('exc/app.config.yaml'))
-    userConfig.extensions['dx/excshell/1'].dist = 'new/dist/for/excshell'
-    global.fakeFileSystem.addJson({ '/app.config.yaml': yaml.dump(userConfig) })
+    const userConfig = yaml.load(global.fixtureFile('exc/src/dx-excshell-1/ext.config.yaml'))
+    userConfig.dist = 'new/dist/for/excshell'
+    global.fakeFileSystem.addJson({ '/src/dx-excshell-1/ext.config.yaml': yaml.dump(userConfig) })
 
     config = loadConfig({})
     expect(config).toEqual(getMockConfig('exc', global.fakeConfig.tvm, {
-      'all.dx/excshell/1.app.dist': path.resolve('/new/dist/for/excshell'),
-      'all.dx/excshell/1.actions.dist': path.resolve('/new/dist/for/excshell/actions'),
-      'all.dx/excshell/1.web.distDev': path.resolve('/new/dist/for/excshell/web-dev'),
-      'all.dx/excshell/1.web.distProd': path.resolve('/new/dist/for/excshell/web-prod'),
+      'all.dx/excshell/1.app.dist': path.resolve('/src/dx-excshell-1/new/dist/for/excshell'),
+      'all.dx/excshell/1.actions.dist': path.resolve('/src/dx-excshell-1/new/dist/for/excshell/actions'),
+      'all.dx/excshell/1.web.distDev': path.resolve('/src/dx-excshell-1/new/dist/for/excshell/web-dev'),
+      'all.dx/excshell/1.web.distProd': path.resolve('/src/dx-excshell-1/new/dist/for/excshell/web-prod'),
       includeIndex: expect.any(Object)
     }))
   })
@@ -112,11 +112,11 @@ describe('load config', () => {
   test('exc with byo aws credentials', async () => {
     global.loadFixtureApp('exc')
     // rewrite configuration
-    const userConfig = yaml.load(global.fixtureFile('exc/app.config.yaml'))
-    userConfig.extensions['dx/excshell/1'].awsaccesskeyid = 'fakeid'
-    userConfig.extensions['dx/excshell/1'].awssecretaccesskey = 'fakesecret'
-    userConfig.extensions['dx/excshell/1'].s3bucket = 'fakebucket'
-    global.fakeFileSystem.addJson({ '/app.config.yaml': yaml.dump(userConfig) })
+    const userConfig = yaml.load(global.fixtureFile('exc/src/dx-excshell-1/ext.config.yaml'))
+    userConfig.awsaccesskeyid = 'fakeid'
+    userConfig.awssecretaccesskey = 'fakesecret'
+    userConfig.s3bucket = 'fakebucket'
+    global.fakeFileSystem.addJson({ '/src/dx-excshell-1/ext.config.yaml': yaml.dump(userConfig) })
 
     config = loadConfig({})
     expect(config).toEqual(getMockConfig('exc', global.fakeConfig.tvm, {
@@ -132,9 +132,9 @@ describe('load config', () => {
   test('exc with custom tvm url', async () => {
     global.loadFixtureApp('exc')
     // rewrite configuration
-    const userConfig = yaml.load(global.fixtureFile('exc/app.config.yaml'))
-    userConfig.extensions['dx/excshell/1'].tvmurl = 'customurl'
-    global.fakeFileSystem.addJson({ '/app.config.yaml': yaml.dump(userConfig) })
+    const userConfig = yaml.load(global.fixtureFile('exc/src/dx-excshell-1/ext.config.yaml'))
+    userConfig.tvmurl = 'customurl'
+    global.fakeFileSystem.addJson({ '/src/dx-excshell-1/ext.config.yaml': yaml.dump(userConfig) })
 
     config = loadConfig({})
     expect(config).toEqual(getMockConfig('exc', global.fakeConfig.tvm, {
@@ -146,9 +146,9 @@ describe('load config', () => {
   test('exc with default tvm url', async () => {
     global.loadFixtureApp('exc')
     // rewrite configuration
-    const userConfig = yaml.load(global.fixtureFile('exc/app.config.yaml'))
-    userConfig.extensions['dx/excshell/1'].tvmurl = 'https://firefly-tvm.adobe.io'
-    global.fakeFileSystem.addJson({ '/app.config.yaml': yaml.dump(userConfig) })
+    const userConfig = yaml.load(global.fixtureFile('exc/src/dx-excshell-1/ext.config.yaml'))
+    userConfig.tvmurl = 'https://firefly-tvm.adobe.io'
+    global.fakeFileSystem.addJson({ '/src/dx-excshell-1/ext.config.yaml': yaml.dump(userConfig) })
 
     config = loadConfig({})
     expect(config).toEqual(getMockConfig('exc', global.fakeConfig.tvm, {

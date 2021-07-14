@@ -23,6 +23,7 @@ const { AIO_CONFIG_WORKSPACE_SERVICES, AIO_CONFIG_ORG_SERVICES } = require('./de
 const { EOL } = require('os')
 const { getCliEnv } = require('@adobe/aio-lib-env')
 const yaml = require('js-yaml')
+const RuntimeLib = require('@adobe/aio-lib-runtime')
 
 /** @private */
 function isNpmInstalled () {
@@ -152,31 +153,6 @@ async function getCliInfo () {
   const accessToken = await getToken(CLI)
 
   return { accessToken, env }
-}
-
-/** @private */
-function getActionUrls (config, isRemoteDev = false, isLocalDev = false) {
-  // set action urls
-  // action urls {name: url}, if !LocalDev subdomain uses namespace
-  return Object.entries({ ...config.manifest.package.actions, ...(config.manifest.package.sequences || {}) }).reduce((obj, [name, action]) => {
-    const webArg = action['web-export'] || action.web
-    const webUri = (webArg && webArg !== 'no' && webArg !== 'false') ? 'web' : ''
-    if (isLocalDev) {
-      // http://localhost:3233/api/v1/web/<ns>/<package>/<action>
-      obj[name] = urlJoin(config.ow.apihost, 'api', config.ow.apiversion, webUri, config.ow.namespace, config.ow.package, name)
-    } else if (isRemoteDev || !webUri || !config.app.hasFrontend) {
-      // - if remote dev we don't care about same domain as the UI runs on localhost
-      // - if action is non web it cannot be called from the UI and we can point directly to ApiHost domain
-      // - if action has no UI no need to use the CDN url
-      // NOTE this will not work for apihosts that do not support <ns>.apihost url
-      // https://<ns>.adobeioruntime.net/api/v1/web/<package>/<action>
-      obj[name] = urlJoin('https://' + config.ow.namespace + '.' + removeProtocolFromURL(config.ow.apihost), 'api', config.ow.apiversion, webUri, config.ow.package, name)
-    } else {
-      // https://<ns>.adobe-static.net/api/v1/web/<package>/<action>
-      obj[name] = urlJoin('https://' + config.ow.namespace + '.' + removeProtocolFromURL(config.app.hostname), 'api', config.ow.apiversion, webUri, config.ow.package, name)
-    }
-    return obj
-  }, {})
 }
 
 /**
@@ -429,8 +405,7 @@ async function buildExcShellViewExtensionMetadata (libConsoleCLI, aioConfig) {
  */
 function buildExtensionPointPayloadWoMetadata (extConfigs) {
   // Example input:
-  // application: {...}
-  // extensions:
+  //   application: {...}
   //   dx/excshell/1:
   //     operations:
   //       view:
@@ -460,20 +435,20 @@ function buildExtensionPointPayloadWoMetadata (extConfigs) {
     .filter(([k, v]) => k !== 'application')
     .forEach(([extPointName, extPointConfig]) => {
       endpointsPayload[extPointName] = {}
+      let actionUrls = {}
+      if (extPointConfig.app.hasBackend) {
+        actionUrls = RuntimeLib.utils.getActionUrls(extPointConfig, false, false)
+      }
       Object.entries(extPointConfig.operations)
         .forEach(([opName, opList]) => {
           // replace operations impl and type with a href, either for an action or for a UI
           endpointsPayload[extPointName][opName] = opList.map(op => {
             if (op.type === 'action') {
-              // todo modularize with getActionUrls from appHelper
-              const owPackage = op.impl.split('/')[0]
-              const owAction = op.impl.split('/')[1]
-              const manifestAction = extPointConfig.manifest.full.packages[owPackage].actions[owAction]
-              const webArg = manifestAction['web-export'] || manifestAction.web
-              const webUri = (webArg && webArg !== 'no' && webArg !== 'false') ? 'web' : ''
-              const packageWithAction = op.impl
-              // todo non runtime apihost do not support namespace as subdomain
-              const href = urlJoin('https://' + extPointConfig.ow.namespace + '.' + removeProtocolFromURL(extPointConfig.ow.apihost), 'api', extPointConfig.ow.apiversion, webUri, packageWithAction)
+              const actionAndPkgName = op.impl
+              const actionName = actionAndPkgName.split('/')[1]
+              // Note: if the package is the first package in the url getActionUrls will return actionName as key
+              // this should be fixed in runtime lib: https://github.com/adobe/aio-lib-runtime/issues/64
+              const href = actionUrls[actionName] || actionUrls[actionAndPkgName]
               return { href, ...op.params }
             } else if (op.type === 'web') {
               // todo support for multi UI with a extname-opcode-subfolder
@@ -482,7 +457,7 @@ function buildExtensionPointPayloadWoMetadata (extConfigs) {
                 ...op.params
               }
             } else {
-              throw new Error(`unexpected op.type encountered => ${op.type}`)
+              throw new Error(`unexpected op.type encountered => '${op.type}'`)
             }
           })
         })
@@ -516,7 +491,6 @@ module.exports = {
   runPackageScript,
   wrapError,
   getCliInfo,
-  getActionUrls,
   removeProtocolFromURL,
   urlJoin,
   checkFile,

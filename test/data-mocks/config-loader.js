@@ -165,6 +165,10 @@ const excSingleConfig = {
       src: excActionsFolder,
       dist: winCompat(`${root}dist/dx-excshell-1/actions`)
     },
+    tests: {
+      e2e: winCompat(`${root}/src/dx-excshell-1/e2e`),
+      unit: winCompat(`${root}/src/dx-excshell-1/test`)
+    },
     root: `${root}`,
     name: 'dx/excshell/1',
     hooks: {},
@@ -206,6 +210,10 @@ const nuiSingleConfig = {
     actions: {
       src: nuiActionsFolder,
       dist: winCompat(`${root}dist/dx-asset-compute-worker-1/actions`)
+    },
+    tests: {
+      e2e: winCompat(`${root}/src/dx-asset-compute-worker-1/e2e`),
+      unit: winCompat(`${root}/src/dx-asset-compute-worker-1/test`)
     },
     root: `${root}`,
     name: 'dx/asset-compute/worker/1',
@@ -257,6 +265,10 @@ const applicationSingleConfig = {
       src: appActionsFolder,
       dist: winCompat(`${root}dist/application/actions`)
     },
+    tests: {
+      e2e: winCompat(`${root}e2e`),
+      unit: winCompat(`${root}test`)
+    },
     root: `${root}`,
     name: 'application',
     hooks: {
@@ -303,6 +315,10 @@ const applicationNoActionsSingleConfig = {
     manifest: {},
     actions: {
       src: winCompat(`${root}actions`)
+    },
+    tests: {
+      e2e: winCompat(`${root}e2e`),
+      unit: winCompat(`${root}test`)
     },
     root: `${root}`,
     name: 'application',
