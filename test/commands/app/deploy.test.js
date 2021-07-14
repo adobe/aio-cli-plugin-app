@@ -48,6 +48,11 @@ const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
   return appConfig
 }
 
+const mockLibConsoleCLI = {
+  updateExtensionPoints: jest.fn(),
+  updateExtensionPointsWithoutOverwrites: jest.fn()
+}
+
 afterAll(() => {
   jest.restoreAllMocks()
 })
@@ -55,6 +60,8 @@ afterAll(() => {
 beforeEach(() => {
   helpers.writeConfig.mockReset()
   helpers.runScript.mockReset()
+  helpers.buildExtensionPointPayloadWoMetadata.mockReset()
+  helpers.buildExcShellViewExtensionMetadata.mockReset()
   jest.restoreAllMocks()
 
   helpers.wrapError.mockImplementation(msg => msg)
@@ -152,8 +159,7 @@ describe('run', () => {
     command.config = { runCommand: jest.fn() }
     command.buildOneExt = jest.fn()
     command.getAppExtConfigs = jest.fn()
-    command.getLibConsoleCLI = jest.fn()
-    command.publishExtensionPoints = jest.fn()
+    command.getLibConsoleCLI = jest.fn(() => mockLibConsoleCLI)
     command.getFullConfig = jest.fn()
 
     mockRuntimeLib.deployActions.mockResolvedValue({})
@@ -636,9 +642,8 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledWith(expect.stringMatching(/Nothing to be done/))
   })
 
-  test('publish phase', async () => {
+  test('publish phase (no force, exc-shell payload)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig({}, 'app-exc-nui'))
-    command.publishExtensionPoints.mockReturnValue({ endpoints: {} })
     command.getFullConfig.mockReturnValue({
       aio: {
         project: {
@@ -648,9 +653,80 @@ describe('run', () => {
         }
       }
     })
+    const payload = {
+      endpoints: {
+        'dx/excshell/1': {
+          view: [
+            { metadata: {} }
+          ]
+        }
+      }
+    }
+    helpers.buildExtensionPointPayloadWoMetadata.mockReturnValueOnce(payload)
+    mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites.mockReturnValueOnce(payload)
+
     command.argv = []
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(command.publishExtensionPoints).toHaveBeenCalledTimes(1)
+    expect(helpers.buildExcShellViewExtensionMetadata).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(1)
+  })
+
+  test('publish phase (--force-publish, no exc-shell payload)', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig({}, 'app-exc-nui'))
+    command.getFullConfig.mockReturnValue({
+      aio: {
+        project: {
+          workspace: {
+            name: 'foo'
+          }
+        }
+      }
+    })
+    const payload = {
+      endpoints: {
+      }
+    }
+    helpers.buildExtensionPointPayloadWoMetadata.mockReturnValueOnce(payload)
+    mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites.mockReturnValueOnce(payload)
+
+    command.argv = ['--force-publish']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(helpers.buildExcShellViewExtensionMetadata).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(1)
+  })
+
+  test('app hook sequence', async () => {
+    const appConfig = createAppConfig()
+    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+
+    // set hooks (command the same as hook name, for easy reference)
+    appConfig.application.hooks = {
+      'pre-app-deploy': 'pre-app-deploy',
+      'deploy-actions': 'deploy-actions',
+      'deploy-static': 'deploy-static',
+      'post-app-deploy': 'post-app-deploy'
+    }
+
+    const scriptSequence = []
+    helpers.runScript.mockImplementation(script => {
+      scriptSequence.push(script)
+    })
+
+    command.argv = []
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+
+    expect(helpers.runScript).toHaveBeenCalledTimes(4)
+    expect(scriptSequence.length).toEqual(4)
+    expect(scriptSequence[0]).toEqual('pre-app-deploy')
+    expect(scriptSequence[1]).toEqual('deploy-actions')
+    expect(scriptSequence[2]).toEqual('deploy-static')
+    expect(scriptSequence[3]).toEqual('post-app-deploy')
   })
 })
