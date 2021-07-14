@@ -435,7 +435,10 @@ function buildExtensionPointPayloadWoMetadata (extConfigs) {
     .filter(([k, v]) => k !== 'application')
     .forEach(([extPointName, extPointConfig]) => {
       endpointsPayload[extPointName] = {}
-      const urls = RuntimeLib.utils.getActionUrls(extPointConfig, false, false)
+      let actionUrls = {}
+      if (extPointConfig.app.hasBackend) {
+        actionUrls = RuntimeLib.utils.getActionUrls(extPointConfig, false, false)
+      }
       Object.entries(extPointConfig.operations)
         .forEach(([opName, opList]) => {
           // replace operations impl and type with a href, either for an action or for a UI
@@ -445,7 +448,7 @@ function buildExtensionPointPayloadWoMetadata (extConfigs) {
               const actionName = actionAndPkgName.split('/')[1]
               // Note: if the package is the first package in the url getActionUrls will return actionName as key
               // this should be fixed in runtime lib: https://github.com/adobe/aio-lib-runtime/issues/64
-              const href = urls[actionName] || urls[actionAndPkgName]
+              const href = actionUrls[actionName] || actionUrls[actionAndPkgName]
               return { href, ...op.params }
             } else if (op.type === 'web') {
               // todo support for multi UI with a extname-opcode-subfolder
@@ -454,7 +457,7 @@ function buildExtensionPointPayloadWoMetadata (extConfigs) {
                 ...op.params
               }
             } else {
-              throw new Error(`unexpected op.type encountered => ${op.type}`)
+              throw new Error(`unexpected op.type encountered => '${op.type}'`)
             }
           })
         })

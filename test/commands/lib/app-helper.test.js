@@ -13,18 +13,23 @@ governing permissions and limitations under the License.
 // unmock to test proper returned urls from getActionUrls
 jest.unmock('@adobe/aio-lib-runtime')
 
+jest.mock('@adobe/aio-lib-core-config')
+jest.mock('node-fetch')
+jest.mock('execa')
+jest.mock('process')
+jest.mock('fs-extra') // do not touch the real fs
+jest.mock('@adobe/aio-lib-env')
+jest.mock('@adobe/aio-lib-ims')
+
 const which = require('which')
 const fs = require('fs-extra')
 const execa = require('execa')
 const appHelper = require('../../../src/lib/app-helper')
 const fetch = require('node-fetch')
 const aioConfig = require('@adobe/aio-lib-core-config')
+const libEnv = require('@adobe/aio-lib-env')
+const libIms = require('@adobe/aio-lib-ims')
 
-jest.mock('@adobe/aio-lib-core-config')
-jest.mock('node-fetch')
-jest.mock('execa')
-jest.mock('process')
-jest.mock('fs-extra') // do not touch the real fs
 beforeEach(() => {
   Object.defineProperty(process, 'platform', { value: 'linux' })
   execa.mockReset()
@@ -32,6 +37,8 @@ beforeEach(() => {
   fetch.mockReset()
   aioConfig.get.mockReset()
   aioConfig.set.mockReset()
+  libEnv.getCliEnv.mockReset()
+  libIms.getToken.mockReset()
 })
 
 const getMockConfig = require('../../data-mocks/config-loader')
@@ -146,9 +153,23 @@ test('installPackages', async () => {
     .rejects.toThrow(/does-not-exist does not contain a package.json file./)
 
   // succeeds if npm install returns success
+  execa.mockReset()
   fs.readdirSync.mockReturnValue(['package.json'])
-  appHelper.installPackages('does-not-exist')
-  return expect(execa).toHaveBeenCalledWith('npm', ['install'], { cwd: 'does-not-exist' })
+  await appHelper.installPackages('does-not-exist')
+  expect(execa).toHaveBeenCalledWith('npm', ['install'], { cwd: 'does-not-exist' })
+
+  // verbose option
+  execa.mockReset()
+  await appHelper.installPackages('somedir', { verbose: true })
+  expect(execa).toHaveBeenCalledWith('npm', ['install'], { cwd: 'somedir', stderr: 'inherit', stdout: 'inherit' })
+
+  // spinner option
+  execa.mockReset()
+  const spinner = { start: jest.fn(), stop: jest.fn() }
+  await appHelper.installPackages('somedir', { spinner, verbose: false })
+  expect(execa).toHaveBeenCalledWith('npm', ['install'], { cwd: 'somedir' })
+  expect(spinner.start).toHaveBeenCalled()
+  expect(spinner.stop).toHaveBeenCalled()
 })
 
 test('runPackageScript', async () => {
@@ -258,6 +279,23 @@ test('runPackageScript logs if package.json does not have matching script', asyn
   // coverage: the error is logged, no error thrown
   await expect(appHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
     .resolves.toBeUndefined()
+})
+
+test('runScript with empty command', async () => {
+  await appHelper.runScript(undefined, 'dir')
+  expect(execa.command).not.toHaveBeenCalled()
+})
+
+test('runScript with defined dir', async () => {
+  execa.command.mockReturnValue({ on: () => {} })
+  await appHelper.runScript('somecommand', 'somedir')
+  expect(execa.command).toHaveBeenCalledWith('somecommand', expect.objectContaining({ cwd: 'somedir' }))
+})
+
+test('runScript with empty dir => process.cwd', async () => {
+  execa.command.mockReturnValue({ on: () => {} })
+  await appHelper.runScript('somecommand', undefined)
+  expect(execa.command).toHaveBeenCalledWith('somecommand', expect.objectContaining({ cwd: process.cwd() }))
 })
 
 test('wrapError returns an a Error in any case', async () => {
@@ -619,6 +657,7 @@ describe('buildExtensionPointPayloadWoMetadata', () => {
             apiversion: 'v1'
           },
           app: {
+            hasBackend: true,
             hostname: 'fake.com',
             defaultHostname: 'another'
           },
@@ -647,5 +686,95 @@ describe('buildExtensionPointPayloadWoMetadata', () => {
     }
     expect(appHelper.buildExtensionPointPayloadWoMetadata(fakeConfig.all))
       .toEqual({ endpoints: { fake: { one: [{ href: 'https://hola.fake.com/api/v1/web/pkg1/action1' }], two: [{ href: 'https://some.com/api/v1/hola/pkg2/action2' }] } } })
+  })
+
+  test('fake extension with bad operation type', () => {
+    const fakeConfig = {
+      all: {
+        fake: {
+          operations: {
+            one: [{
+              type: 'notsupported',
+              impl: 'pkg1/action1'
+            }]
+          },
+          manifest: {},
+          app: {},
+          ow: {}
+        }
+      }
+    }
+    expect(() => appHelper.buildExtensionPointPayloadWoMetadata(fakeConfig.all))
+      .toThrow('unexpected op.type encountered => \'notsupported\'')
+  })
+})
+
+describe('atLeastOne', () => {
+  test('no input', () => {
+    expect(appHelper.atLeastOne([])).toEqual('please choose at least one option')
+  })
+  test('some input', () => {
+    expect(appHelper.atLeastOne(['some', 'input'])).toEqual(true)
+  })
+})
+
+describe('deleteUserConfig', () => {
+  beforeEach(() => {
+    fs.writeFileSync.mockReset()
+    fs.readFileSync.mockReset()
+  })
+
+  test('rewrite config', () => {
+    fs.readFileSync.mockReturnValue(Buffer.from(`
+some:
+  config:
+    in: 'a yaml file'
+`))
+    appHelper.deleteUserConfig({ file: 'fake.file', key: 'some.config.in' })
+    expect(fs.readFileSync).toHaveBeenLastCalledWith('fake.file')
+    expect(fs.writeFileSync).toHaveBeenCalledWith('fake.file', `some:
+  config: {}
+`)
+  })
+})
+
+describe('serviceToGeneratorInput', () => {
+  test('list with empty codes', () => {
+    expect(appHelper.servicesToGeneratorInput(
+      [{ name: 'hello', code: 'hellocode' },
+        { name: 'bonjour', code: 'bonjourcode' },
+        { name: 'nocode' }]
+    )).toEqual('hellocode,bonjourcode')
+  })
+})
+
+describe('writeConfig', () => {
+  beforeEach(() => {
+    fs.writeFileSync.mockReset()
+    fs.ensureDirSync.mockReset()
+  })
+  test('write a json to a file', () => {
+    appHelper.writeConfig('the/dir/some.file', { some: 'config' })
+    expect(fs.ensureDirSync).toHaveBeenCalledWith('the/dir')
+    expect(fs.writeFileSync).toHaveBeenCalledWith('the/dir/some.file', '{"some":"config"}', { encoding: 'utf-8' })
+  })
+})
+
+describe('getCliInfo', () => {
+  test('prod', async () => {
+    libEnv.getCliEnv.mockReturnValue('prod')
+    libIms.getToken.mockResolvedValue('token')
+    const res = await appHelper.getCliInfo()
+    expect(res).toEqual(
+      { accessToken: 'token', env: 'prod' }
+    )
+  })
+  test('stage', async () => {
+    libEnv.getCliEnv.mockReturnValue('stage')
+    libIms.getToken.mockResolvedValue('stoken')
+    const res = await appHelper.getCliInfo()
+    expect(res).toEqual(
+      { accessToken: 'stoken', env: 'stage' }
+    )
   })
 })
