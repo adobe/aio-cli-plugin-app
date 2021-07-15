@@ -28,7 +28,7 @@ class Deploy extends BuildCommand {
     const { flags } = this.parse(Deploy)
 
     // flags
-    flags['web-assets'] = flags['web-assets'] && !flags['skip-web-assets'] && !flags['skip-web-assets'] && !flags.action
+    flags['web-assets'] = flags['web-assets'] && !flags['skip-web-assets'] && !flags['skip-static'] && !flags.action
     flags.actions = flags.actions && !flags['skip-actions']
     flags.publish = flags.publish && !flags.action
     flags.build = flags.build && !flags['skip-build']

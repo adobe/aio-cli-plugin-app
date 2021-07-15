@@ -54,12 +54,14 @@ class Build extends BaseCommand {
   }
 
   async buildOneExt (name, config, flags, spinner) {
-    const onProgress = !flags.verbose ? info => {
-      spinner.text = info
-    } : info => {
-      spinner.info(chalk.dim(`${info}`))
-      spinner.start()
-    }
+    const onProgress = !flags.verbose
+      ? info => {
+        spinner.text = info
+      }
+      : info => {
+        spinner.info(chalk.dim(`${info}`))
+        spinner.start()
+      }
 
     const filterActions = flags.action
     try {
@@ -115,7 +117,7 @@ class Build extends BaseCommand {
       }
     }
     try {
-      await await runScript(config.hooks['build-static'])
+      await runScript(config.hooks['post-app-build'])
     } catch (err) {
       this.log(err)
     }

@@ -1,0 +1,30 @@
+# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
+# this is meant for pull-requests who have a base branch as a release branch (prefix release-) and will run the unit-tests npm script
+
+name: Release Branch CI
+
+on:
+  pull_request:
+    branches: [ 'release-*' ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node-version: [12.x, 14.x]
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: npm i --package-lock --package-lock-only
+    - run: npm ci
+    - run: npm run build --if-present
+    - run: npm run unit-tests
+    - run: npm run lint

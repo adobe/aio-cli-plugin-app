@@ -24,6 +24,7 @@ const { EOL } = require('os')
 const { getCliEnv } = require('@adobe/aio-lib-env')
 const { implPromptChoices, extensionDefaults, EXTENSION_POINT_LIST } = require('./defaults')
 const yaml = require('js-yaml')
+const RuntimeLib = require('@adobe/aio-lib-runtime')
 
 /** @private */
 function isNpmInstalled () {
@@ -79,11 +80,7 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
   }
 }
 
-/**
- * @param command
- * @param dir
- * @param cmdArgs
- */
+/** @private */
 async function runScript (command, dir, cmdArgs = []) {
   if (!command) {
     return null
@@ -91,7 +88,7 @@ async function runScript (command, dir, cmdArgs = []) {
   if (!dir) {
     dir = process.cwd()
   }
-  let command = pkg.scripts[scriptName]
+
   if (cmdArgs.length) {
     command = `${command} ${cmdArgs.join(' ')}`
   }
@@ -108,18 +105,18 @@ async function runScript (command, dir, cmdArgs = []) {
   })
 
   if (isWindows) {
-    aioLogger.debug(`os is Windows, so we can't use ipc when running npm script ${scriptName}`)
+    aioLogger.debug(`os is Windows, so we can't use ipc when running ${command}`)
     aioLogger.debug('see: https://github.com/adobe/aio-cli-plugin-app/issues/372')
   } else {
     // handle IPC from possible aio-run-detached script
     child.on('message', message => {
       if (message.type === 'long-running-process') {
         const { pid, logs } = message.data
-        aioLogger.debug(`Found ${scriptName} event hook long running process (pid: ${pid}). Registering for SIGTERM`)
-        aioLogger.debug(`Log locations for ${scriptName} event hook long-running process (stdout: ${logs.stdout} stderr: ${logs.stderr})`)
+        aioLogger.debug(`Found ${command} event hook long running process (pid: ${pid}). Registering for SIGTERM`)
+        aioLogger.debug(`Log locations for ${command} event hook long-running process (stdout: ${logs.stdout} stderr: ${logs.stderr})`)
         process.on('exit', () => {
           try {
-            aioLogger.debug(`Killing ${scriptName} event hook long-running process (pid: ${pid})`)
+            aioLogger.debug(`Killing ${command} event hook long-running process (pid: ${pid})`)
             process.kill(pid, 'SIGTERM')
           } catch (_) {
           // do nothing if pid not found
@@ -157,31 +154,6 @@ async function getCliInfo () {
   const accessToken = await getToken(CLI)
 
   return { accessToken, env }
-}
-
-/** @private */
-function getActionUrls (config, isRemoteDev = false, isLocalDev = false) {
-  // set action urls
-  // action urls {name: url}, if !LocalDev subdomain uses namespace
-  return Object.entries({ ...config.manifest.package.actions, ...(config.manifest.package.sequences || {}) }).reduce((obj, [name, action]) => {
-    const webArg = action['web-export'] || action.web
-    const webUri = (webArg && webArg !== 'no' && webArg !== 'false') ? 'web' : ''
-    if (isLocalDev) {
-      // http://localhost:3233/api/v1/web/<ns>/<package>/<action>
-      obj[name] = urlJoin(config.ow.apihost, 'api', config.ow.apiversion, webUri, config.ow.namespace, config.ow.package, name)
-    } else if (isRemoteDev || !webUri || !config.app.hasFrontend) {
-      // - if remote dev we don't care about same domain as the UI runs on localhost
-      // - if action is non web it cannot be called from the UI and we can point directly to ApiHost domain
-      // - if action has no UI no need to use the CDN url
-      // NOTE this will not work for apihosts that do not support <ns>.apihost url
-      // https://<ns>.adobeioruntime.net/api/v1/web/<package>/<action>
-      obj[name] = urlJoin('https://' + config.ow.namespace + '.' + removeProtocolFromURL(config.ow.apihost), 'api', config.ow.apiversion, webUri, config.ow.package, name)
-    } else {
-      // https://<ns>.adobe-static.net/api/v1/web/<package>/<action>
-      obj[name] = urlJoin('https://' + config.ow.namespace + '.' + removeProtocolFromURL(config.app.hostname), 'api', config.ow.apiversion, webUri, config.ow.package, name)
-    }
-    return obj
-  }, {})
 }
 
 /**
@@ -434,8 +406,7 @@ async function buildExcShellViewExtensionMetadata (libConsoleCLI, aioConfig) {
  */
 function buildExtensionPointPayloadWoMetadata (extConfigs) {
   // Example input:
-  // application: {...}
-  // extensions:
+  //   application: {...}
   //   dx/excshell/1:
   //     operations:
   //       view:
@@ -443,7 +414,7 @@ function buildExtensionPointPayloadWoMetadata (extConfigs) {
   //         type: web
   //   dx/asset-compute/worker/1:
   //     operations:
-  //       worker:
+  //       apply:
   //         impl: aem-nui-v1/ps-worker
   //         type: action
   //
@@ -455,7 +426,7 @@ function buildExtensionPointPayloadWoMetadata (extConfigs) {
   //        href: https://namespace.adobeio-static.net/index.html # todo support for multi UI with a extname-opcode-subfolder
   //   dx/asset-compute/worker/1:
   //    operations:
-  //      worker:
+  //      apply:
   //        href: https://namespace.adobeioruntime.net/api/v1/web/aem-nui-v1/ps-worker
 
   const endpointsPayload = {}
@@ -465,20 +436,20 @@ function buildExtensionPointPayloadWoMetadata (extConfigs) {
     .filter(([k, v]) => k !== 'application')
     .forEach(([extPointName, extPointConfig]) => {
       endpointsPayload[extPointName] = {}
+      let actionUrls = {}
+      if (extPointConfig.app.hasBackend) {
+        actionUrls = RuntimeLib.utils.getActionUrls(extPointConfig, false, false)
+      }
       Object.entries(extPointConfig.operations)
         .forEach(([opName, opList]) => {
           // replace operations impl and type with a href, either for an action or for a UI
           endpointsPayload[extPointName][opName] = opList.map(op => {
             if (op.type === 'action') {
-              // todo modularize with getActionUrls from appHelper
-              const owPackage = op.impl.split('/')[0]
-              const owAction = op.impl.split('/')[1]
-              const manifestAction = extPointConfig.manifest.full.packages[owPackage].actions[owAction]
-              const webArg = manifestAction['web-export'] || manifestAction.web
-              const webUri = (webArg && webArg !== 'no' && webArg !== 'false') ? 'web' : ''
-              const packageWithAction = op.impl
-              // todo non runtime apihost do not support namespace as subdomain
-              const href = urlJoin('https://' + extPointConfig.ow.namespace + '.' + removeProtocolFromURL(extPointConfig.ow.apihost), 'api', extPointConfig.ow.apiversion, webUri, packageWithAction)
+              const actionAndPkgName = op.impl
+              const actionName = actionAndPkgName.split('/')[1]
+              // Note: if the package is the first package in the url getActionUrls will return actionName as key
+              // this should be fixed in runtime lib: https://github.com/adobe/aio-lib-runtime/issues/64
+              const href = actionUrls[actionName] || actionUrls[actionAndPkgName]
               return { href, ...op.params }
             } else if (op.type === 'web') {
               // todo support for multi UI with a extname-opcode-subfolder
@@ -487,7 +458,7 @@ function buildExtensionPointPayloadWoMetadata (extConfigs) {
                 ...op.params
               }
             } else {
-              throw new Error(`unexpected op.type encountered => ${op.type}`)
+              throw new Error(`unexpected op.type encountered => '${op.type}'`)
             }
           })
         })
@@ -495,9 +466,7 @@ function buildExtensionPointPayloadWoMetadata (extConfigs) {
   return { endpoints: endpointsPayload }
 }
 
-/**
- * @param input
- */
+/** @private */
 function atLeastOne (input) {
   if (input.length === 0) {
     return 'please choose at least one option'
@@ -505,9 +474,7 @@ function atLeastOne (input) {
   return true
 }
 
-/**
- * @param configData
- */
+/** @private */
 function deleteUserConfig (configData) {
   const phyConfig = yaml.safeLoad(fs.readFileSync(configData.file))
   const interKeys = configData.key.split('.')
@@ -587,7 +554,6 @@ module.exports = {
   runPackageScript,
   wrapError,
   getCliInfo,
-  getActionUrls,
   removeProtocolFromURL,
   urlJoin,
   checkFile,

@@ -10,8 +10,13 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const upath = require('upath')
-const root = '/'
+const path = require('path')
+const winCompat = p => {
+  return p.startsWith('/') ? path.resolve(p) : path.normalize(p) // path.resolve to get C or D
+}
+
+const cloneDeep = require('lodash.clonedeep')
+const root = winCompat('/')
 // const dataDir = 'fakeDir'
 const {
   excComplexIncludeIndex,
@@ -20,22 +25,12 @@ const {
   appNoActionsIncludeIndex,
   excIncludeIndex,
   legacyIncludeIndex
-} = require('./loaded-config-include-indexes')
-
-const packagejson = {
-  version: '1.0.0',
-  name: 'sample-app'
-}
+} = require('./config-loader-include-index')
 
 const ow = {
-  // known later on
-  auth: null,
-  namespace: null,
-  apihost: null,
-
   defaultApihost: 'https://adobeioruntime.net',
-  apiversion: 'v1',
-  package: `${packagejson.name}-${packagejson.version}`
+  apihost: 'https://adobeioruntime.net',
+  apiversion: 'v1'
 }
 
 /** @private */
@@ -46,7 +41,7 @@ function fullFakeRuntimeManifest (pathToActionFolder, pkgName1) {
         license: 'Apache-2.0',
         actions: {
           action: {
-            function: upath.toUnix(`${pathToActionFolder}/action.js`),
+            function: winCompat(`${pathToActionFolder}/action.js`),
             web: 'yes',
             runtime: 'nodejs:14',
             inputs: {
@@ -57,14 +52,14 @@ function fullFakeRuntimeManifest (pathToActionFolder, pkgName1) {
               final: true
             },
             include: [
-              [`${pathToActionFolder}/somefile.txt`, 'file.txt']
+              [winCompat(`${pathToActionFolder}/somefile.txt`), 'file.txt']
             ],
             limits: {
               concurrency: 189
             }
           },
           'action-zip': {
-            function: upath.toUnix(`${pathToActionFolder}/action-zip`),
+            function: winCompat(`${pathToActionFolder}/action-zip`),
             web: 'yes',
             runtime: 'nodejs:14'
           }
@@ -114,7 +109,7 @@ function oneActionRuntimeManifest (pathToActionFolder, pkgName1) {
         license: 'Apache-2.0',
         actions: {
           action: {
-            function: upath.toUnix(`${pathToActionFolder}/action.js`),
+            function: winCompat(`${pathToActionFolder}/action.js`),
             web: 'yes',
             runtime: 'nodejs:14',
             inputs: {
@@ -125,7 +120,7 @@ function oneActionRuntimeManifest (pathToActionFolder, pkgName1) {
               final: true
             },
             include: [
-              [`${pathToActionFolder}/somefile.txt`, 'file.txt']
+              [winCompat(`${pathToActionFolder}/somefile.txt`), 'file.txt']
             ],
             limits: {
               concurrency: 189
@@ -137,31 +132,29 @@ function oneActionRuntimeManifest (pathToActionFolder, pkgName1) {
   }
 }
 
-const excActionsFolder = `${root}src/dx-excshell-1/actions`
+const excActionsFolder = winCompat(`${root}src/dx-excshell-1/actions`)
 const excSingleConfig = {
   'dx/excshell/1': {
     app: {
       hasBackend: true,
       hasFrontend: true,
-      dist: `${root}dist/dx-excshell-1`,
+      dist: winCompat(`${root}dist/dx-excshell-1`),
       defaultHostname: 'adobeio-static.net',
       hostname: 'adobeio-static.net',
       htmlCacheDuration: '60',
       jsCacheDuration: '604800',
       cssCacheDuration: '604800',
-      imageCacheDuration: '604800',
-      name: packagejson.name,
-      version: packagejson.version
+      imageCacheDuration: '604800'
     },
     ow,
     s3: {
-      credsCacheFile: `${root}.aws.tmp.creds.json`
+      credsCacheFile: winCompat(`${root}.aws.tmp.creds.json`)
     },
     web: {
-      src: `${root}src/dx-excshell-1/web-src`,
-      injectedConfig: `${root}src/dx-excshell-1/web-src/src/config.json`,
-      distDev: `${root}dist/dx-excshell-1/web-dev`,
-      distProd: `${root}dist/dx-excshell-1/web-prod`
+      src: winCompat(`${root}src/dx-excshell-1/web-src`),
+      injectedConfig: winCompat(`${root}src/dx-excshell-1/web-src/src/config.json`),
+      distDev: winCompat(`${root}dist/dx-excshell-1/web-dev`),
+      distProd: winCompat(`${root}dist/dx-excshell-1/web-prod`)
     },
     manifest: {
       src: 'manifest.yml',
@@ -170,7 +163,11 @@ const excSingleConfig = {
     },
     actions: {
       src: excActionsFolder,
-      dist: `${root}dist/dx-excshell-1/actions`
+      dist: winCompat(`${root}dist/dx-excshell-1/actions`)
+    },
+    tests: {
+      e2e: winCompat(`${root}/src/dx-excshell-1/e2e`),
+      unit: winCompat(`${root}/src/dx-excshell-1/test`)
     },
     root: `${root}`,
     name: 'dx/excshell/1',
@@ -186,26 +183,24 @@ const excSingleConfig = {
   }
 }
 
-const nuiActionsFolder = `${root}src/dx-asset-compute-worker-1/actions`
+const nuiActionsFolder = winCompat(`${root}src/dx-asset-compute-worker-1/actions`)
 const nuiSingleConfig = {
   'dx/asset-compute/worker/1': {
     app: {
       hasBackend: true,
       hasFrontend: false,
-      dist: `${root}dist/dx-asset-compute-worker-1`,
+      dist: winCompat(`${root}dist/dx-asset-compute-worker-1`),
       defaultHostname: 'adobeio-static.net',
       hostname: 'adobeio-static.net',
       htmlCacheDuration: '60',
       jsCacheDuration: '604800',
       cssCacheDuration: '604800',
-      imageCacheDuration: '604800',
-      name: packagejson.name,
-      version: packagejson.version
+      imageCacheDuration: '604800'
     },
     ow,
     s3: {},
     web: {
-      src: `${root}src/dx-asset-compute-worker-1/web-src`
+      src: winCompat(`${root}src/dx-asset-compute-worker-1/web-src`)
     },
     manifest: {
       src: 'manifest.yml',
@@ -214,7 +209,11 @@ const nuiSingleConfig = {
     },
     actions: {
       src: nuiActionsFolder,
-      dist: `${root}dist/dx-asset-compute-worker-1/actions`
+      dist: winCompat(`${root}dist/dx-asset-compute-worker-1/actions`)
+    },
+    tests: {
+      e2e: winCompat(`${root}/src/dx-asset-compute-worker-1/e2e`),
+      unit: winCompat(`${root}/src/dx-asset-compute-worker-1/test`)
     },
     root: `${root}`,
     name: 'dx/asset-compute/worker/1',
@@ -222,7 +221,7 @@ const nuiSingleConfig = {
       'post-app-run': 'adobe-asset-compute devtool'
     },
     operations: {
-      worker: [
+      apply: [
         {
           type: 'action',
           impl: 'my-nui-package/action'
@@ -232,31 +231,29 @@ const nuiSingleConfig = {
   }
 }
 
-const appActionsFolder = `${root}myactions`
+const appActionsFolder = winCompat(`${root}myactions`)
 const applicationSingleConfig = {
   application: {
     app: {
       hasBackend: true,
       hasFrontend: true,
-      dist: `${root}dist/application`,
+      dist: winCompat(`${root}dist/application`),
       defaultHostname: 'adobeio-static.net',
       hostname: 'adobeio-static.net',
       htmlCacheDuration: '60',
       jsCacheDuration: '604800',
       cssCacheDuration: '604800',
-      imageCacheDuration: '604800',
-      name: packagejson.name,
-      version: packagejson.version
+      imageCacheDuration: '604800'
     },
     ow,
     s3: {
-      credsCacheFile: `${root}.aws.tmp.creds.json`
+      credsCacheFile: winCompat(`${root}.aws.tmp.creds.json`)
     },
     web: {
-      src: `${root}web-src`,
-      injectedConfig: `${root}web-src/src/config.json`,
-      distDev: `${root}dist/application/web-dev`,
-      distProd: `${root}dist/application/web-prod`
+      src: winCompat(`${root}web-src`),
+      injectedConfig: winCompat(`${root}web-src/src/config.json`),
+      distDev: winCompat(`${root}dist/application/web-dev`),
+      distProd: winCompat(`${root}dist/application/web-prod`)
     },
     manifest: {
       src: 'manifest.yml',
@@ -266,7 +263,11 @@ const applicationSingleConfig = {
     },
     actions: {
       src: appActionsFolder,
-      dist: `${root}dist/application/actions`
+      dist: winCompat(`${root}dist/application/actions`)
+    },
+    tests: {
+      e2e: winCompat(`${root}e2e`),
+      unit: winCompat(`${root}test`)
     },
     root: `${root}`,
     name: 'application',
@@ -293,29 +294,31 @@ const applicationNoActionsSingleConfig = {
     app: {
       hasBackend: false,
       hasFrontend: true,
-      dist: `${root}dist/application`,
+      dist: winCompat(`${root}dist/application`),
       defaultHostname: 'adobeio-static.net',
       hostname: 'adobeio-static.net',
       htmlCacheDuration: '60',
       jsCacheDuration: '604800',
       cssCacheDuration: '604800',
-      imageCacheDuration: '604800',
-      name: packagejson.name,
-      version: packagejson.version
+      imageCacheDuration: '604800'
     },
     ow,
     s3: {
-      credsCacheFile: `${root}.aws.tmp.creds.json`
+      credsCacheFile: winCompat(`${root}.aws.tmp.creds.json`)
     },
     web: {
-      src: `${root}web-src`,
-      injectedConfig: `${root}web-src/src/config.json`,
-      distDev: `${root}dist/application/web-dev`,
-      distProd: `${root}dist/application/web-prod`
+      src: winCompat(`${root}web-src`),
+      injectedConfig: winCompat(`${root}web-src/src/config.json`),
+      distDev: winCompat(`${root}dist/application/web-dev`),
+      distProd: winCompat(`${root}dist/application/web-prod`)
     },
     manifest: {},
     actions: {
-      src: `${root}actions`
+      src: winCompat(`${root}actions`)
+    },
+    tests: {
+      e2e: winCompat(`${root}e2e`),
+      unit: winCompat(`${root}test`)
     },
     root: `${root}`,
     name: 'application',
@@ -333,7 +336,10 @@ const expectedConfigs = {
       'dx/excshell/1'
     ],
     includeIndex: excIncludeIndex,
-    packagejson,
+    packagejson: {
+      version: '1.0.0',
+      name: 'exc'
+    },
     root
   },
   app: {
@@ -342,7 +348,10 @@ const expectedConfigs = {
       'application'
     ],
     includeIndex: appIncludeIndex,
-    packagejson,
+    packagejson: {
+      version: '1.0.0',
+      name: 'app'
+    },
     root
   },
   'app-exc-nui': {
@@ -353,7 +362,10 @@ const expectedConfigs = {
       'dx/excshell/1'
     ],
     includeIndex: appExcNuiIncludeIndex,
-    packagejson,
+    packagejson: {
+      version: '1.0.0',
+      name: 'app-exc-nui'
+    },
     root
   },
   'app-no-actions': {
@@ -362,7 +374,10 @@ const expectedConfigs = {
       'application'
     ],
     includeIndex: appNoActionsIncludeIndex,
-    packagejson,
+    packagejson: {
+      version: '1.0.0',
+      name: 'app-no-actions'
+    },
     root
   },
   'exc-complex-includes': {
@@ -371,7 +386,10 @@ const expectedConfigs = {
       'dx/excshell/1'
     ],
     includeIndex: excComplexIncludeIndex,
-    packagejson,
+    packagejson: {
+      version: '1.0.0',
+      name: 'exc-complex-includes'
+    },
     root
   },
   'legacy-app': {
@@ -381,7 +399,8 @@ const expectedConfigs = {
     ],
     includeIndex: legacyIncludeIndex,
     packagejson: {
-      ...packagejson,
+      version: '1.0.0',
+      name: 'legacy-app',
       scripts: {
         'post-app-run': 'echo hello'
       }
@@ -391,26 +410,43 @@ const expectedConfigs = {
 }
 
 // get config for fixture - that works
-module.exports = (appFixtureName, mockedAIOConfig, extraConfig = {}) => {
-  // set some more bits based on aio config - kind of ugly, do better
-  ow.auth = mockedAIOConfig.runtime.auth
-  ow.namespace = mockedAIOConfig.runtime.namespace
-  ow.apihost = mockedAIOConfig.runtime.apihost
-  const config = expectedConfigs[appFixtureName]
+module.exports = (appFixtureName, mockedAIOConfig, rewriteMockConfig = {}) => {
+  // important deepCopy to modify mock
+  const config = cloneDeep(expectedConfigs[appFixtureName])
+
+  // set some more bits based on aio config
   Object.keys(config.all).forEach(k => {
-    if (config.all[k].app.hasFrontend) {
-      config.all[k].s3.folder = ow.namespace
+    if (mockedAIOConfig && mockedAIOConfig.runtime) {
+      if (config.all[k].app.hasFrontend) {
+        config.all[k].s3.folder = mockedAIOConfig.runtime.namespace
+      }
+      config.all[k].ow.auth = mockedAIOConfig.runtime.auth
+      config.all[k].ow.namespace = mockedAIOConfig.runtime.namespace
+      config.all[k].ow.apihost = mockedAIOConfig.runtime.apihost || config.all[k].ow.apihost
     }
-    config.all[k].imsOrgId = mockedAIOConfig.project.org.ims_org_id
-    // add some extra mocked config
-    config.all[k] = {
-      // todo deep merge
-      ...config.all[k],
-      ...extraConfig
+    if (mockedAIOConfig && mockedAIOConfig.project && mockedAIOConfig.project.org) {
+      config.all[k].imsOrgId = mockedAIOConfig.project.org.ims_org_id
+    }
+    config.all[k].ow.package = `${config.packagejson.name}-${config.packagejson.version}`
+    config.all[k].app.name = config.packagejson.name
+    config.all[k].app.version = config.packagejson.version
+  })
+
+  // apply extra configuration e.g. { packagejson.name: 'another', all.dx/excshell/1.app.name: 'another' }
+  Object.entries(rewriteMockConfig).forEach(([k, v]) => {
+    const keys = k.split('.')
+    const parentObj = keys.slice(0, -1).reduce((obj, k) => {
+      if (!obj[k]) {
+        obj[k] = {}
+      }
+      return obj[k]
+    }, config)
+    if (parentObj) {
+      parentObj[keys.slice(-1)] = v
     }
   })
   return {
-    ...expectedConfigs[appFixtureName],
+    ...config,
     aio: mockedAIOConfig
   }
 }

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "name": "sample-app",
+  "name": "legacy-app",
   "scripts": {
     "post-app-run": "echo hello"
   }
