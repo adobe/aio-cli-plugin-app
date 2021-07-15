@@ -23,7 +23,6 @@ const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/impor
 const { installPackages, atLeastOne, getImplPromptChoices } = require('../../lib/app-helper')
 
 const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV } = require('../../lib/defaults')
-const cloneDeep = require('lodash.clonedeep')
 const DEFAULT_WORKSPACE = 'Stage'
 
 class InitCommand extends BaseCommand {

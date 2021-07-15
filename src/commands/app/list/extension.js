@@ -43,16 +43,16 @@ class ListExtensionCommand extends BaseCommand {
           ]
         }
         // get worker impl details
-        if (extension.operations.worker) {
+        if (extension.operations.apply) {
           // TODO extension.manifest.full.packages[extPoint.toString()] doesnt fetch package details
           const pkgDetails = extension.manifest.full.packages['dx-asset-compute-worker-1']
           let src
           if (pkgDetails && pkgDetails.actions && pkgDetails.actions.worker) {
             src = pkgDetails.actions.worker.function
           }
-          extDetails.operations.worker = [
+          extDetails.operations.apply = [
             {
-              impl: extension.operations.worker[0].impl,
+              impl: extension.operations.apply[0].impl,
               src: src
             }
           ]
@@ -75,10 +75,10 @@ class ListExtensionCommand extends BaseCommand {
             this.log('   impl -> ' + summary.operations.view[0].impl)
             this.log('   src -> ' + summary.operations.view[0].src)
           }
-          if (summary.operations.worker) {
-            this.log(' - worker')
-            this.log('   impl -> ' + summary.operations.worker[0].impl)
-            this.log('   src -> ' + summary.operations.worker[0].src)
+          if (summary.operations.apply) {
+            this.log(' - apply')
+            this.log('   impl -> ' + summary.operations.apply[0].impl)
+            this.log('   src -> ' + summary.operations.apply[0].src)
           }
         })
       } else {
