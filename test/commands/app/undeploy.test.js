@@ -12,11 +12,13 @@ governing permissions and limitations under the License.
 
 const TheCommand = require('../../../src/commands/app/undeploy')
 const BaseCommand = require('../../../src/BaseCommand')
+const dataMocks = require('../../data-mocks/config-loader')
 
 jest.mock('../../../src/lib/app-helper.js')
 const helpers = require('../../../src/lib/app-helper.js')
 
 const mockFS = require('fs-extra')
+jest.mock('fs-extra')
 
 const mockConfigData = {
   app: {
@@ -34,9 +36,20 @@ const { stdout } = require('stdout-stderr')
 const mockWebLib = require('@adobe/aio-lib-web')
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 
+const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
+  const appConfig = dataMocks(appFixtureName, aioConfig).all
+  appConfig.application = { ...appConfig.application, ...aioConfig }
+  return appConfig
+}
+
+const mockLibConsoleCLI = {
+  updateExtensionPoints: jest.fn(),
+  removeSelectedExtensionPoints: jest.fn()
+}
+
 beforeEach(() => {
   mockRuntimeLib.undeployActions.mockReset()
-  helpers.runPackageScript.mockReset()
+  helpers.runScript.mockReset()
   mockFS.existsSync.mockReset()
   helpers.wrapError.mockImplementation(msg => msg)
   jest.restoreAllMocks()
@@ -64,6 +77,31 @@ test('flags', async () => {
 
   expect(typeof TheCommand.flags['skip-web-assets']).toBe('object')
   expect(typeof TheCommand.flags['skip-web-assets'].description).toBe('string')
+
+  expect(typeof TheCommand.flags.actions).toBe('object')
+  expect(typeof TheCommand.flags.actions.description).toBe('string')
+  expect(TheCommand.flags.actions.default).toEqual(true)
+  expect(TheCommand.flags.actions.allowNo).toEqual(true)
+
+  expect(typeof TheCommand.flags['web-assets']).toBe('object')
+  expect(typeof TheCommand.flags['web-assets'].description).toBe('string')
+  expect(TheCommand.flags['web-assets'].default).toEqual(true)
+  expect(TheCommand.flags['web-assets'].allowNo).toEqual(true)
+
+  expect(typeof TheCommand.flags.extension).toBe('object')
+  expect(typeof TheCommand.flags.extension.description).toBe('string')
+  expect(TheCommand.flags.extension.multiple).toEqual(true)
+  expect(TheCommand.flags.extension.char).toEqual('e')
+
+  expect(typeof TheCommand.flags.unpublish).toBe('object')
+  expect(typeof TheCommand.flags.unpublish.description).toBe('string')
+  expect(TheCommand.flags.unpublish.default).toEqual(true)
+  expect(TheCommand.flags.unpublish.allowNo).toEqual(true)
+
+  expect(typeof TheCommand.flags['force-unpublish']).toBe('object')
+  expect(typeof TheCommand.flags['force-unpublish'].description).toBe('string')
+  expect(TheCommand.flags['force-unpublish'].default).toEqual(false)
+  expect(TheCommand.flags['force-unpublish'].exclusive).toEqual(['unpublish'])
 })
 
 /**
@@ -73,7 +111,7 @@ test('flags', async () => {
  * @param {object} post post-undeploy-hook script
  */
 function __setupMockHooks (pre = {}, undeployActions = {}, undeployStatic = {}, post = {}) {
-  helpers.runPackageScript
+  helpers.runScript
     .mockResolvedValueOnce(pre) // pre-app-undeploy
     .mockResolvedValueOnce(undeployActions) // undeploy-actions
     .mockResolvedValueOnce(undeployStatic) // undeploy-static
@@ -88,6 +126,9 @@ describe('run', () => {
     command.error = jest.fn()
     command.log = jest.fn()
     command.appConfig = mockConfigData
+    command.getLibConsoleCLI = jest.fn(() => mockLibConsoleCLI)
+    command.getAppExtConfigs = jest.fn()
+    command.getFullConfig = jest.fn()
   })
 
   afterEach(() => {
@@ -95,6 +136,8 @@ describe('run', () => {
   })
 
   test('undeploy an App with no flags no hooks', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
@@ -102,6 +145,7 @@ describe('run', () => {
   })
 
   test('undeploy an App with no flags with hooks', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
     __setupMockHooks()
 
     await command.run()
@@ -111,20 +155,25 @@ describe('run', () => {
   })
 
   test('pre post undeploy hook errors --skip-actions --skip-static', async () => {
-    helpers.runPackageScript
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+
+    helpers.runScript
       .mockRejectedValueOnce('error-pre-app-undeploy') // pre-app-deploy (logs error)
       .mockRejectedValueOnce('error-post-app-undeploy') // post-app-deploy (logs error)
 
     command.argv = ['--skip-actions', '--skip-static']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(command.log).toHaveBeenCalledTimes(3)
+    expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(0)
+
     expect(command.log).toHaveBeenCalledWith('error-pre-app-undeploy')
     expect(command.log).toHaveBeenCalledWith('error-post-app-undeploy')
-    expect(command.log).toHaveBeenCalledWith(expect.stringMatching('Undeploy done !'))
   })
 
   test('undeploy an App with --verbose', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+
     command.argv = ['-v']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -133,6 +182,8 @@ describe('run', () => {
   })
 
   test('undeploy skip-actions', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+
     command.argv = ['--skip-actions']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -141,6 +192,8 @@ describe('run', () => {
   })
 
   test('undeploy skip-actions verbose', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+
     command.argv = ['--skip-actions', '-v']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -149,6 +202,8 @@ describe('run', () => {
   })
 
   test('undeploy skip static', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+
     command.argv = ['--skip-static']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -157,6 +212,8 @@ describe('run', () => {
   })
 
   test('undeploy skip web assets', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+
     command.argv = ['--skip-web-assets']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -165,6 +222,8 @@ describe('run', () => {
   })
 
   test('undeploy skip static verbose', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+
     command.argv = ['--skip-static', '-v']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -173,7 +232,10 @@ describe('run', () => {
   })
 
   test('undeploy an app with no backend', async () => {
-    command.appConfig = { app: { hasFrontend: true, hasBackend: false } }
+    const aioConfig = { app: { hasFrontend: true, hasBackend: false } }
+    const appConfig = createAppConfig(aioConfig)
+    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(0)
@@ -182,7 +244,10 @@ describe('run', () => {
   })
 
   test('undeploy an app with no frontend', async () => {
-    command.appConfig = { app: { hasFrontend: false, hasBackend: true } }
+    const aioConfig = { app: { hasFrontend: false, hasBackend: true } }
+    const appConfig = createAppConfig(aioConfig)
+    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
@@ -191,22 +256,32 @@ describe('run', () => {
   })
 
   test('should fail if scripts.undeployActions fails', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+
     const error = new Error('mock failure Actions')
     mockRuntimeLib.undeployActions.mockRejectedValue(error)
-    await command.run()
-    expect(command.error).toHaveBeenCalledWith(error)
+
+    await expect(command.run()).rejects.toThrow(error)
+
+    expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
   })
 
   test('should fail if scripts.undeployWeb fails', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+
     const error = new Error('mock failure UI')
     mockWebLib.undeployWeb.mockRejectedValue(error)
-    await command.run()
-    expect(command.error).toHaveBeenCalledWith(error)
+
+    await expect(command.run()).rejects.toThrow(error)
+
+    expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
   })
 
   test('spinner should be called for progress logs on undeployWeb call , with verbose', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+
     mockRuntimeLib.undeployActions.mockResolvedValue('ok')
     mockWebLib.undeployWeb.mockImplementation(async (config, log) => {
       log('progress log')
@@ -219,6 +294,8 @@ describe('run', () => {
   })
 
   test('spinner should be called for progress logs on undeployWeb call , without verbose', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+
     mockRuntimeLib.undeployActions.mockResolvedValue('ok')
     mockWebLib.undeployWeb.mockImplementation(async (config, log) => {
       log('progress log')
@@ -226,5 +303,102 @@ describe('run', () => {
     })
     await command.run()
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
+  })
+
+  test('publish phase (no force, exc-shell payload)', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig({}, 'app-exc-nui'))
+    command.getFullConfig.mockReturnValue({
+      aio: {
+        project: {
+          workspace: {
+            name: 'foo'
+          }
+        }
+      }
+    })
+    const payload = {
+      endpoints: {
+        'dx/excshell/1': {
+          view: [
+            { metadata: {} }
+          ]
+        }
+      }
+    }
+    helpers.buildExtensionPointPayloadWoMetadata.mockReturnValueOnce(payload)
+    mockLibConsoleCLI.removeSelectedExtensionPoints.mockReturnValueOnce(payload)
+
+    command.argv = []
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(helpers.buildExtensionPointPayloadWoMetadata).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.removeSelectedExtensionPoints).toHaveBeenCalledTimes(1)
+  })
+
+  test('publish phase (--force-nopublish, no exc-shell payload)', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig({}, 'app-exc-nui'))
+    command.getFullConfig.mockReturnValue({
+      aio: {
+        project: {
+          workspace: {
+            name: 'foo'
+          }
+        }
+      }
+    })
+    const payload = {
+      endpoints: {
+      }
+    }
+    helpers.buildExtensionPointPayloadWoMetadata.mockReturnValueOnce(payload)
+    mockLibConsoleCLI.removeSelectedExtensionPoints.mockReturnValueOnce(payload)
+
+    command.argv = ['--force-unpublish']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(helpers.buildExtensionPointPayloadWoMetadata).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.removeSelectedExtensionPoints).toHaveBeenCalledTimes(1)
+  })
+
+  test('app hook sequence', async () => {
+    const appConfig = createAppConfig()
+    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+
+    // set hooks (command the same as hook name, for easy reference)
+    appConfig.application.hooks = {
+      'pre-app-undeploy': 'pre-app-undeploy',
+      'undeploy-actions': 'undeploy-actions',
+      'undeploy-static': 'undeploy-static',
+      'post-app-undeploy': 'post-app-undeploy'
+    }
+
+    const scriptSequence = []
+    helpers.runScript.mockImplementation(script => {
+      scriptSequence.push(script)
+    })
+
+    command.argv = []
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
+
+    expect(helpers.runScript).toHaveBeenCalledTimes(4)
+    expect(scriptSequence.length).toEqual(4)
+    expect(scriptSequence[0]).toEqual('pre-app-undeploy')
+    expect(scriptSequence[1]).toEqual('undeploy-actions')
+    expect(scriptSequence[2]).toEqual('undeploy-static')
+    expect(scriptSequence[3]).toEqual('post-app-undeploy')
+  })
+
+  test('nothing to be undeployed (--no-publish, --build, --skip-deploy)', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+
+    command.argv = ['--no-unpublish', '--no-web-assets', '--no-actions']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledWith(expect.stringMatching(/Nothing to be done/))
   })
 })

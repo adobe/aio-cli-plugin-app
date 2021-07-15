@@ -116,11 +116,6 @@ class Undeploy extends BaseCommand {
       } else {
         this.log('no frontend, skipping frontend undeploy')
       }
-      try {
-        await runScript(config.hooks['post-app-undeploy'])
-      } catch (err) {
-        this.log(err)
-      }
     }
 
     try {
@@ -133,7 +128,7 @@ class Undeploy extends BaseCommand {
   async unpublishExtensionPoints (libConsoleCLI, deployConfigs, aioConfig, flags) {
     const payload = buildExtensionPointPayloadWoMetadata(deployConfigs)
     let res
-    if (flags['force-publish']) {
+    if (flags['force-unpublish']) {
       // publish and overwrite any previous published endpoints (delete them)
       res = await libConsoleCLI.updateExtensionPoints(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, { endpoints: {} })
     }
