@@ -13,10 +13,13 @@ const fs = require('fs-extra')
 
 const TheCommand = require('../../../../src/commands/app/delete/event')
 const BaseCommand = require('../../../../src/BaseCommand')
+const DeleteActionCommand = require('../../../../src/commands/app/delete/action')
+jest.mock('../../../../src/commands/app/delete/action')
 
 jest.mock('fs-extra')
 
 jest.mock('yeoman-environment')
+
 const yeoman = require('yeoman-environment')
 
 const mockRegister = jest.fn()
@@ -31,6 +34,7 @@ beforeEach(() => {
   mockRun.mockReset()
   yeoman.createEnv.mockClear()
   fs.ensureDirSync.mockClear()
+  DeleteActionCommand.run = jest.fn()
 })
 
 describe('Command Prototype', () => {
@@ -41,38 +45,49 @@ describe('Command Prototype', () => {
   })
 })
 
-describe('bad flags', () => {
-  test('--yes without <event-action-name>', async () => {
-    await expect(TheCommand.run(['--yes'])).rejects.toThrow('Missing 1 required arg:\nevent-action-name  Action name to delete\nSee more help with --help')
+describe('passes flags through to delete action', () => {
+  test('no flags', async () => {
+    await TheCommand.run()
+    expect(DeleteActionCommand.run).toHaveBeenCalled()
+  })
+
+  test('--yes', async () => {
+    await expect(TheCommand.run(['--yes'])).rejects.toThrow('<event-action-name> must also be provided')
+    expect(DeleteActionCommand.run).not.toHaveBeenCalled()
+  })
+
+  test('--yes, <event-action-name>', async () => {
+    await TheCommand.run(['--yes', 'event-action-name'])
+    expect(DeleteActionCommand.run).toHaveBeenCalledWith(['event-action-name', '--yes'])
   })
 })
 
-describe('good flags', () => {
-  test('fakeActionName --yes', async () => {
-    await TheCommand.run(['fakeActionName', '--yes'])
+// Question? What is the actual difference between this call and `delete action`?
+// Are event-actions somehow special?
+// How can we detect the diff? -jm
 
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': true,
-      'action-name': 'fakeActionName'
-    })
-  })
+// describe('good flags', () => {
+//   test('fakeActionName --yes', async () => {
+//     await TheCommand.run(['fakeActionName', '--yes'])
 
-  test('fakeActionName', async () => {
-    await TheCommand.run(['fakeActionName'])
+//     expect(yeoman.createEnv).toHaveBeenCalled()
+//     expect(mockRegister).toHaveBeenCalledTimes(1)
+//     const genName = mockRegister.mock.calls[0][1]
+//     expect(mockRun).toHaveBeenCalledWith(genName, {
+//       'skip-prompt': true,
+//       'action-name': 'fakeActionName'
+//     })
+//   })
 
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': false,
-      'action-name': 'fakeActionName'
-    })
-  })
+//   test('fakeActionName', async () => {
+//     await TheCommand.run(['fakeActionName'])
 
-  test('try to delete with any args', async () => {
-    await expect(TheCommand.run([])).rejects.toThrow('Missing 1 required arg:\nevent-action-name  Action name to delete\nSee more help with --help')
-  })
-})
+//     expect(yeoman.createEnv).toHaveBeenCalled()
+//     expect(mockRegister).toHaveBeenCalledTimes(1)
+//     const genName = mockRegister.mock.calls[0][1]
+//     expect(mockRun).toHaveBeenCalledWith(genName, {
+//       'skip-prompt': false,
+//       'action-name': 'fakeActionName'
+//     })
+//   })
+// })

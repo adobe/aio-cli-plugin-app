@@ -22,6 +22,9 @@ class DeleteEventCommand extends BaseCommand {
     aioLogger.debug(`deleting events from the project, with args ${JSON.stringify(args)}, and flags: ${JSON.stringify(flags)}`)
 
     // NOTE: this command only wraps app delete action, events will have more than actions later on
+    if (flags.yes && !args['event-action-name']) {
+      this.error('<event-action-name> must also be provided when using --yes')
+    }
 
     if (!args['event-action-name']) {
       this.log(chalk.bold(chalk.blue('NOTE: this is running the \'app delete action\' command, please select events actions.')))
