@@ -27,6 +27,9 @@ class DeleteWebAssetsCommand extends BaseCommand {
 
     const fullConfig = this.getFullConfig()
     const webAssetsByImpl = this.getAllWebAssets(fullConfig)
+    if (!webAssetsByImpl) {
+      this.error('There does not appear to be web-assets to delete')
+    }
     // prompt user
     const choices = []
     Object.entries(webAssetsByImpl).forEach(([implName, webAssets]) => {
@@ -54,28 +57,31 @@ class DeleteWebAssetsCommand extends BaseCommand {
     ])
     if (!flags.yes && !resConfirm.delete) {
       this.log('aborting..')
+    } else {
+      toBeDeleted.forEach(w => {
+        // remove folders
+        const folder = w.src
+        fs.removeSync(w.src)
+        aioLogger.debug(`deleted '${folder}'`)
+      })
+      this.log(chalk.bold(chalk.green(
+        `✔ Successfully deleted webassets '${toBeDeleted.map(w => w.relSrc)}'` + EOL +
+        '  => please make sure to cleanup associated dependencies and to undeploy any deleted UI'
+      )))
     }
-    toBeDeleted.forEach(w => {
-      // remove folders
-      const folder = w.src
-      fs.removeSync(w.src)
-      aioLogger.debug(`deleted '${folder}'`)
-    })
-
-    this.log(chalk.bold(chalk.green(
-      `✔ Successfully deleted webassets '${toBeDeleted.map(w => w.relSrc)}'` + EOL +
-      '  => please make sure to cleanup associated dependencies and to undeploy any deleted UI'
-    )))
   }
 
   getAllWebAssets (config) {
-    const webAssetsByImpl = {}
+    let webAssetsByImpl = {}
     Object.entries(config.all).forEach(([implName, implConfig]) => {
       if (implConfig.app.hasFrontend) {
         // for now we only support one web assets per impl
         webAssetsByImpl[implName] = [{ src: implConfig.web.src, relSrc: path.relative(implConfig.root, implConfig.web.src) }]
       }
     })
+    if (Object.keys(webAssetsByImpl).length === 0) {
+      webAssetsByImpl = null
+    }
     return webAssetsByImpl
   }
 }
