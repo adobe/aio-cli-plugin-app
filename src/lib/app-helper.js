@@ -487,8 +487,9 @@ function deleteUserConfig (configData) {
 /**
  * Get ALL Extension Point List for the selected org
  *
- * @param consoleCLI
- * @param orgId
+ * @param {object} consoleCLI LibConsoleCLI instance
+ * @param {string} orgId Org ID
+ * @returns {Array}  Array of Extension Points
  */
 async function getAllExtensionPoints (consoleCLI, orgId) {
   const extensionPoints = await consoleCLI.getAllExtensionPoints(orgId, 'dx')
@@ -510,15 +511,16 @@ async function getAllExtensionPoints (consoleCLI, orgId) {
 /**
  * Get promt choices for app
  *
- * @param consoleCLI
- * @param orgId
+ * @param {object} consoleCLI LibConsoleCLI instance
+ * @param {string} orgId Org ID
+ * @returns {Array}  Array of prompt choices
  */
 async function getImplPromptChoices (consoleCLI, orgId) {
   const defaultList = implPromptChoices
   let xpList = EXTENSION_POINT_LIST
   if (consoleCLI && orgId) {
     const extensionPoints = await getAllExtensionPoints(consoleCLI, orgId)
-    if(extensionPoints) {
+    if (extensionPoints) {
       xpList = []
       extensionPoints.forEach(xp => {
         xpList.push(getFullExtensionName(xp))
@@ -536,11 +538,10 @@ async function getImplPromptChoices (consoleCLI, orgId) {
   return defaultList
 }
 
-/* Returns full extension point name with service code and version
-* @param xp extensionpoint  object
-*/
-/**
- * @param xp
+/** Returns full extension point name with service code and version
+ *
+ * @param {object} xp Extension point object
+ * @returns {string} Full extension point name
  */
 function getFullExtensionName (xp) {
   return xp.serviceCode + '/' + xp.name + '/' + xp.idVer

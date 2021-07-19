@@ -106,7 +106,7 @@ class InitCommand extends BaseCommand {
     // 4. retrieve workspace details, defaults to Stage
     const workspace = await this.retrieveWorkspaceFromName(consoleCLI, org, project, flags.workspace)
     // 5. ask for exensionPoints, only allow selection for extensions that have services enabled in Org
-    const extensionPoints = await this.selectExtensionPoints(flags, orgSupportedServices, { login:true, orgId: org.id})
+    const extensionPoints = await this.selectExtensionPoints(flags, orgSupportedServices, { login: true, orgId: org.id })
     // 6. add any required services to Workspace
     const requiredServices = this.getAllRequiredServicesFromExtPoints(extensionPoints)
     await this.addServices(
@@ -132,7 +132,7 @@ class InitCommand extends BaseCommand {
 
   async selectExtensionPoints (flags, orgSupportedServices = null, options = {}) {
     let consoleCLI
-    if(options.login) {
+    if (options.login) {
       consoleCLI = await this.getLibConsoleCLI()
     }
     const availableChoices = await getImplPromptChoices(consoleCLI, options.orgId)

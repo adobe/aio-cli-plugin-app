@@ -25,7 +25,6 @@ class ListExtensionPointsCommand extends BaseCommand {
     const fullConfig = this.getFullConfig({ allowNoImpl: true })
     const consoleCLI = await this.getLibConsoleCLI()
     const extPointList = await getAllExtensionPoints(consoleCLI, fullConfig.aio.console.project.org_id)
-
     const extList = []
     // select meaningful properties from extension point def
     if (extPointList) {
@@ -36,7 +35,6 @@ class ListExtensionPointsCommand extends BaseCommand {
         extList.push(obj)
       })
     }
-
     // print
     if (flags.json) {
       this.log(JSON.stringify(extList))
