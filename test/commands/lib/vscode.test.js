@@ -70,70 +70,180 @@ describe('update()', () => {
     const { backupFile, mainFile } = vsCodeConfig.files()
 
     test('launch.json does not exist, backup does not exist (no backup copy)', async () => {
+        let globalFs = global.fakeFileSystem.files()
+
         // launch.json does not exist
-        expect(mainFile in global.fakeFileSystem.files()).toEqual(false)
+        expect(mainFile in globalFs).toEqual(false)
         // backup does not exist
-        expect(backupFile in global.fakeFileSystem.files()).toEqual(false)
+        expect(backupFile in globalFs).toEqual(false)
         
         await vsCodeConfig.update(props)
         
+        globalFs = global.fakeFileSystem.files()
+
         // now launch.json exists
-        expect(mainFile in global.fakeFileSystem.files()).toEqual(true)
-        expect(global.fakeFileSystem.files()[mainFile].toString()).toEqual('generated-content')
+        expect(mainFile in globalFs).toEqual(true)
+        expect(globalFs[mainFile].toString()).toEqual('generated-content')
         // backup should not exist
-        expect(backupFile in global.fakeFileSystem.files()).toEqual(false)
+        expect(backupFile in globalFs).toEqual(false)
     })
     
     test('launch.json exists, backup does not exist (copy to backup)', async () => {
+        let globalFs
+
         global.fakeFileSystem.addJson({
             [mainFile]: 'main-content'
         })
 
+        globalFs = global.fakeFileSystem.files()
+
         // launch.json already exists
-        expect(mainFile in global.fakeFileSystem.files()).toEqual(true)
+        expect(mainFile in globalFs).toEqual(true)
         // backup does not exist
-        expect(backupFile in global.fakeFileSystem.files()).toEqual(false)
+        expect(backupFile in globalFs).toEqual(false)
 
         await vsCodeConfig.update(props)
         
+        globalFs = global.fakeFileSystem.files()
+
         // still exists, but is generated
-        expect(mainFile in global.fakeFileSystem.files()).toEqual(true)
-        expect(global.fakeFileSystem.files()[mainFile].toString()).toEqual('generated-content')
+        expect(mainFile in globalFs).toEqual(true)
+        expect(globalFs[mainFile].toString()).toEqual('generated-content')
         // check backup is copied
-        expect(backupFile in global.fakeFileSystem.files()).toEqual(true)
-        expect(global.fakeFileSystem.files()[backupFile].toString()).toEqual('main-content')
+        expect(backupFile in globalFs).toEqual(true)
+        expect(globalFs[backupFile].toString()).toEqual('main-content')
     })
     
     test('launch.json exists, backup exists (do not overwrite backup)', async () => {
+        let globalFs
+
         global.fakeFileSystem.addJson({
             [mainFile]: 'main-content',
             [backupFile]: 'backup-content'
         })
 
+        globalFs = global.fakeFileSystem.files()
+
         // launch.json already exists
-        expect(mainFile in global.fakeFileSystem.files()).toEqual(true)
+        expect(mainFile in globalFs).toEqual(true)
         // backup already exists
-        expect(backupFile in global.fakeFileSystem.files()).toEqual(true)
+        expect(backupFile in globalFs).toEqual(true)
 
         await vsCodeConfig.update(props)
         
+        globalFs = global.fakeFileSystem.files()
+
         // still exists, but is generated
-        expect(mainFile in global.fakeFileSystem.files()).toEqual(true)
-        expect(global.fakeFileSystem.files()[mainFile].toString()).toEqual('generated-content')
+        expect(mainFile in globalFs).toEqual(true)
+        expect(globalFs[mainFile].toString()).toEqual('generated-content')
         // check backup is *not* copied over
-        expect(backupFile in global.fakeFileSystem.files()).toEqual(true)
-        expect(global.fakeFileSystem.files()[backupFile].toString()).toEqual('backup-content')
+        expect(backupFile in globalFs).toEqual(true)
+        expect(globalFs[backupFile].toString()).toEqual('backup-content')
     })
 })
 
 describe('cleanup()', () => {
-    const props = { frontEndUrl: 'https://foo.bar' }
-    const config = { root: '/my-root'}
+    const config = { ...createAppConfig().application, envFile: 'my.env' }
     const vsCodeConfig = vscode(config)
     const { backupFile, mainFile } = vsCodeConfig.files()
 
-    test('launch.json does not exist, backup does not exist', () => {
+    test('launch.json does not exist, backup does not exist (do nothing)', () => {
+        let globalFs = global.fakeFileSystem.files()
 
+        // launch.json does not exist
+        expect(mainFile in globalFs).toEqual(false)
+        // backup already exists
+        expect(backupFile in globalFs).toEqual(false)
+
+        vsCodeConfig.cleanup()
+
+        globalFs = global.fakeFileSystem.files()
+
+        // nothing should exist still
+        expect(mainFile in globalFs).toEqual(false)
+        expect(backupFile in globalFs).toEqual(false)
     })
+
+    test('launch.json exists, backup does not exist (remove launch.json, .vscode folder empty and is deleted)', () => {
+        let globalFs
+        const vscodeFolder = path.dirname(mainFile)
+
+        global.fakeFileSystem.addJson({
+            [mainFile]: 'main-content'
+        })
+
+        globalFs = global.fakeFileSystem.files()
+
+        // launch.json exists
+        expect(mainFile in globalFs).toEqual(true)
+        // backup does not exist
+        expect(backupFile in globalFs).toEqual(false)
+
+        vsCodeConfig.cleanup()
+
+        globalFs = global.fakeFileSystem.files()
+
+        // launch.json and the backup file should not exist
+        expect(mainFile in globalFs).toEqual(false)
+        expect(backupFile in globalFs).toEqual(false)
+        // the .vscode folder should be deleted as well (since there are no other contents)
+        expect(fs.existsSync(vscodeFolder)).toBe(false)
+    })
+
+    test('launch.json exists, backup does not exist (remove launch.json, .vscode folder not empty and is not deleted)', () => {
+        let globalFs
+        const vscodeFolder = path.dirname(mainFile)
+        const someOtherFileInVsCodeFolder = path.join(vscodeFolder, 'some-file')
+
+        global.fakeFileSystem.addJson({
+            [mainFile]: 'main-content',
+            [someOtherFileInVsCodeFolder]: 'some-content'
+        })
+
+        globalFs = global.fakeFileSystem.files()
+
+        // launch.json exists
+        expect(mainFile in globalFs).toEqual(true)
+        // backup does not exist
+        expect(backupFile in globalFs).toEqual(false)
+
+        vsCodeConfig.cleanup()
+
+        globalFs = global.fakeFileSystem.files()
+
+        // launch.json and the backup file should not exist
+        expect(mainFile in globalFs).toEqual(false)
+        expect(backupFile in globalFs).toEqual(false)
+        // if there are any other content in .vscode, it is not deleted
+        expect(fs.existsSync(vscodeFolder)).toBe(true)
+        expect(someOtherFileInVsCodeFolder in globalFs).toEqual(true)
+    })
+
+    test('launch.json exists, backup exists (restore backup)', () => {
+        let globalFs
+    
+        global.fakeFileSystem.addJson({
+            [mainFile]: 'main-content',
+            [backupFile]: 'backup-content'
+        })
+
+        globalFs = global.fakeFileSystem.files()
+
+        // launch.json exists
+        expect(mainFile in globalFs).toEqual(true)
+        // backup exists
+        expect(backupFile in globalFs).toEqual(true)
+
+        vsCodeConfig.cleanup()
+
+        globalFs = global.fakeFileSystem.files()
+
+        // launch.json restored from backup
+        expect(mainFile in globalFs).toEqual(true)
+        expect(globalFs[mainFile].toString()).toEqual('backup-content')
+        // backup should not exist
+        expect(backupFile in globalFs).toEqual(false)
+    })
+
 })
 
