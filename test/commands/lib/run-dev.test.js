@@ -23,14 +23,13 @@ governing permissions and limitations under the License.
 global.mockFs()
 const runDev = require('../../../src/lib/run-dev')
 const runLocalRuntime = require('../../../src/lib/run-local-runtime')
-const { loadConfig } = require('../../../src/lib/config-loader')
 const defaults = require('../../../src/lib/defaults')
 const cloneDeep = require('lodash.clonedeep')
 const path = require('path')
 const mockAIOConfig = require('@adobe/aio-lib-core-config')
 const util = require('util')
 const sleep = util.promisify(setTimeout)
-// const bundle = require('../../../src/lib/bundle')
+const dataMocks = require('../../data-mocks/config-loader')
 const { bundle } = require('@adobe/aio-lib-web')
 const bundleServe = require('../../../src/lib/bundle-serve')
 const serve = require('../../../src/lib/serve')
@@ -58,6 +57,7 @@ jest.mock('node-fetch')
 jest.mock('../../../src/lib/run-local-runtime')
 jest.mock('../../../src/lib/bundle-serve')
 jest.mock('../../../src/lib/serve')
+jest.mock('../../../src/lib/vscode')
 jest.mock('../../../src/lib/build-actions')
 jest.mock('../../../src/lib/deploy-actions')
 jest.mock('../../../src/lib/log-poller')
@@ -74,6 +74,13 @@ jest.mock('../../../src/lib/app-helper', () => {
     runPackageScript: jest.fn()
   }
 })
+
+jest.mock('../../../src/lib/vscode', () => {
+  return () => ({
+    update: jest.fn()
+  })
+})
+
 
 /* ****************** Mocks & beforeEach ******************* */
 let onChangeFunc
@@ -112,6 +119,12 @@ const mockCleanup = {
   logPoller: jest.fn(),
   serve: jest.fn(),
   bundle: jest.fn()
+}
+
+const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
+  const appConfig = dataMocks(appFixtureName, aioConfig).all
+  appConfig.application = { ...appConfig.application, ...aioConfig }
+  return appConfig
 }
 
 beforeEach(() => {
@@ -194,17 +207,17 @@ const EXECA_LOCAL_OW_ARGS = ['java', expect.arrayContaining(['-jar', OW_JAR_PATH
 /** @private */
 async function loadEnvScripts (config, excludeFiles = [], customApp = false) {
   // create test app
-  if (customApp) {
-    global.addSampleAppFilesCustomPackage()
-  } else {
-    global.addSampleAppFiles()
-  }
+  // if (customApp) {
+  //   addSampleAppFilesCustomPackage()
+  // } else {
+  //   addSampleAppFiles()
+  // }
 
   excludeFiles.forEach(f => global.fakeFileSystem.removeKeys([f]))
   mockAIOConfig.get.mockReturnValue(config)
   process.chdir('/')
 
-  const appConfig = loadConfig()
+  const appConfig = createAppConfig().application
   appConfig.cli = CLI_CONFIG
   return appConfig
 }
@@ -281,6 +294,13 @@ test('runDev is exported', async () => {
 })
 
 describe('call checkOpenwhiskCredentials with right params', () => {
+  beforeEach(() => {
+    runLocalRuntime.mockImplementation(() => ({
+      config: {},
+      cleanup: jest.fn()
+    }))
+  })
+
   const failMissingRuntimeConfig = async (configVarName, remoteActionsValue) => {
     const devRemote = remoteActionsValue
     const tvmConfig = cloneDeep(global.fakeConfig.tvm) // don't override original
@@ -302,35 +322,6 @@ describe('call checkOpenwhiskCredentials with right params', () => {
 
 /** @private */
 function runCommonTests (ref) {
-  test('should save a previous existing .vscode/config.json file to .vscode/config.json.save', async () => {
-    global.fakeFileSystem.addJson({
-      '.vscode/launch.json': 'fakecontent'
-    })
-    const options = { devRemote: ref.devRemote }
-    await runDev(ref.config, options)
-    expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(true)
-    expect(global.fakeFileSystem.files()['/.vscode/launch.json.save'].toString()).toEqual('fakecontent')
-  })
-
-  test('should not save to .vscode/config.json.save if there is no existing .vscode/config.json file', async () => {
-    const options = { devRemote: ref.devRemote }
-    await runDev(ref.config, options)
-    expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(false)
-  })
-
-  test('should not overwrite .vscode/config.json.save', async () => {
-    // why? because it might be because previous restore failed
-    global.fakeFileSystem.addJson({
-      '.vscode/launch.json': 'fakecontent',
-      '.vscode/launch.json.save': 'fakecontentsaved'
-    })
-
-    const options = { devRemote: ref.devRemote }
-    await runDev(ref.config, options)
-    expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(true)
-    expect(global.fakeFileSystem.files()['/.vscode/launch.json.save'].toString()).toEqual('fakecontentsaved')
-  })
-
   test('should cleanup generated files on SIGINT', async () => {
     execa.mockImplementation(() => ({
       kill: jest.fn()
@@ -348,96 +339,6 @@ function runCommonTests (ref) {
 
     await testCleanupOnError(ref, () => {
       expectAppFiles(ref.appFiles)
-    })
-  })
-
-  test('should cleanup and restore previous existing .vscode/config.json on SIGINT', async () => {
-    global.fakeFileSystem.addJson({
-      '.vscode/launch.json': 'fakecontent'
-    })
-
-    execa.mockImplementation(() => ({
-      kill: jest.fn()
-    }))
-
-    return new Promise(resolve => {
-      testCleanupNoErrors(resolve, ref, () => {
-        expectAppFiles([...ref.appFiles, '/.vscode/launch.json'])
-        expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(false)
-        expect('/.vscode/launch.json' in global.fakeFileSystem.files()).toEqual(true)
-        expect(global.fakeFileSystem.files()['/.vscode/launch.json'].toString()).toEqual('fakecontent')
-      })
-    })
-  })
-
-  test('should cleanup and restore previous existing .vscode/config.json on error', async () => {
-    global.fakeFileSystem.addJson({
-      '.vscode/launch.json': 'fakecontent'
-    })
-
-    execa.mockImplementation(() => ({
-      kill: jest.fn()
-    }))
-
-    await testCleanupOnError(ref, () => {
-      expectAppFiles([...ref.appFiles, '/.vscode/launch.json'])
-      expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(false)
-      expect('/.vscode/launch.json' in global.fakeFileSystem.files()).toEqual(true)
-      expect(global.fakeFileSystem.files()['/.vscode/launch.json'].toString()).toEqual('fakecontent')
-    })
-  })
-
-  test('should restore previously existing ./vscode/launch.json.save on SIGINT', async () => {
-    global.fakeFileSystem.addJson({
-      '.vscode/launch.json': 'fakecontent',
-      '.vscode/launch.json.save': 'fakecontentsaved'
-    })
-
-    execa.mockImplementation(() => ({
-      kill: jest.fn()
-    }))
-
-    return new Promise(resolve => {
-      testCleanupNoErrors(resolve, ref, () => {
-        expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(false)
-        expect(global.fakeFileSystem.files()['/.vscode/launch.json'].toString()).toEqual('fakecontentsaved')
-      })
-    })
-  })
-
-  test('should not remove /.vscode folder if there is something else in it (coverage)', async () => {
-    global.fakeFileSystem.addJson({
-      '.vscode/launch.json': 'fakecontent',
-      '.vscode/readme.txt': 'treasure'
-    })
-
-    execa.mockImplementation(() => ({
-      kill: jest.fn()
-    }))
-
-    global.fakeFileSystem.removeKeys(['/.vscode/launch.json'])
-
-    return new Promise(resolve => {
-      testCleanupNoErrors(resolve, ref, () => {
-        expect('/.vscode/launch.json' in global.fakeFileSystem.files()).toEqual(false)
-        expect('/.vscode/readme.txt' in global.fakeFileSystem.files()).toEqual(true)
-      })
-    })
-  })
-
-  test('should restore previously existing ./vscode/launch.json.save on error', async () => {
-    global.fakeFileSystem.addJson({
-      '.vscode/launch.json': 'fakecontent',
-      '.vscode/launch.json.save': 'fakecontentsaved'
-    })
-
-    execa.mockImplementation(() => ({
-      kill: jest.fn()
-    }))
-
-    await testCleanupOnError(ref, () => {
-      expect('/.vscode/launch.json.save' in global.fakeFileSystem.files()).toEqual(false)
-      expect(global.fakeFileSystem.files()['/.vscode/launch.json'].toString()).toEqual('fakecontentsaved')
     })
   })
 
@@ -657,6 +558,11 @@ describe('with remote actions and no frontend (custom package)', () => {
     ref.config = await loadEnvScripts(global.fakeConfig.tvm, ['/web-src/index.html'], /* custom package in manifest */ true)
     ref.appFiles = ['/manifest.yml', '/package.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
 
+    runLocalRuntime.mockImplementation(() => ({
+      config: ref.config,
+      cleanup: jest.fn()
+    }))
+
     mockYeomanRun.mockImplementation(() => {
       fs.writeFileSync('.vscode/launch.json', '')
     })
@@ -675,6 +581,11 @@ describe('with remote actions and no frontend', () => {
     ref.devRemote = true
     ref.config = await loadEnvScripts(global.fakeConfig.tvm, ['/web-src/index.html'])
     ref.appFiles = ['/manifest.yml', '/package.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
+
+    runLocalRuntime.mockImplementation(() => ({
+      config: ref.config,
+      cleanup: jest.fn()
+    }))
 
     mockYeomanRun.mockImplementation(() => {
       fs.writeFileSync('.vscode/launch.json', '')
@@ -724,6 +635,11 @@ describe('with remote actions and frontend', () => {
     ref.devRemote = true
     ref.config = await loadEnvScripts(global.fakeConfig.tvm)
     ref.appFiles = ['/manifest.yml', '/package.json', '/web-src/index.html', '/web-src/src/config.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js']
+
+    runLocalRuntime.mockImplementation(() => ({
+      config: ref.config,
+      cleanup: jest.fn()
+    }))
 
     mockYeomanRun.mockImplementation(() => {
       fs.writeFileSync('.vscode/launch.json', '')
@@ -796,6 +712,11 @@ describe('with frontend only', () => {
     ref.config = await loadEnvScripts(global.fakeConfig.tvm, ['/manifest.yml'])
     ref.appFiles = ['/package.json', '/web-src/index.html', '/web-src/src/config.json', '/actions/action-zip/index.js', '/actions/action-zip/package.json', '/actions/action.js'] // still have actions cause we only delete manifest.yml
 
+    runLocalRuntime.mockImplementation(() => ({
+      config: ref.config,
+      cleanup: jest.fn()
+    }))
+  
     mockYeomanRun.mockImplementation(() => {
       fs.writeFileSync('.vscode/launch.json', '')
     })
