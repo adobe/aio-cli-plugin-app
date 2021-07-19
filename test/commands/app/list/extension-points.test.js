@@ -55,7 +55,6 @@ const fakeAioConfig = {
 beforeEach(() => {
   helpers.getAllExtensionPoints.mockReset()
   helpers.getFullExtensionName.mockReset()
-  jest.restoreAllMocks()
 })
 
 test('exports', async () => {

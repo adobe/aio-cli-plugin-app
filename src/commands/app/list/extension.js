@@ -86,16 +86,6 @@ class ListExtensionCommand extends BaseCommand {
       }
     }
   }
-
-  getImplementedExtensions (fullConfig) {
-    const extList = []
-    if (fullConfig.implements) {
-      fullConfig.implements.forEach(ext => {
-        extList.push(ext)
-      })
-    }
-    return extList
-  }
 }
 
 ListExtensionCommand.description = `List implemented extensions

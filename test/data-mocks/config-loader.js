@@ -204,7 +204,7 @@ const nuiSingleConfig = {
     },
     manifest: {
       src: 'manifest.yml',
-      full: oneActionRuntimeManifest(nuiActionsFolder, 'my-nui-package'),
+      full: oneActionRuntimeManifest(nuiActionsFolder, 'dx-asset-compute-worker-1'),
       packagePlaceholder: '__APP_PACKAGE__'
     },
     actions: {
