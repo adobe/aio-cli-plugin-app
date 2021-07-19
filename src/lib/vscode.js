@@ -22,16 +22,17 @@ const LAUNCH_JSON_FILE_BACKUP = '.vscode/launch.json.save'
 
 /** @private */
 function files (config) {
-  return {
+  return () => ({
     backupFile: rtLibUtils._absApp(config.root, LAUNCH_JSON_FILE_BACKUP),
     mainFile: rtLibUtils._absApp(config.root, LAUNCH_JSON_FILE)
-  }
+  })
 }
 
 /** @private */
 function update (config) {
+  const _files = files(config)
   return async (props) => {
-    const { backupFile, mainFile } = files(config)
+    const { backupFile, mainFile } = _files()
 
     fs.ensureDirSync(path.dirname(mainFile))
     if (fs.existsSync(mainFile)) {
@@ -55,8 +56,9 @@ function update (config) {
 
 /** @private */
 function cleanup (config) {
+  const _files = files(config)
   return () => {
-    const { backupFile, mainFile } = files(config)
+    const { backupFile, mainFile } = _files()
 
     if (fs.existsSync(mainFile) && !fs.existsSync(backupFile)) {
       aioLogger.debug(`removing ${mainFile}...`)
@@ -75,6 +77,7 @@ function cleanup (config) {
 }
 
 module.exports = (config) => ({
+  files: files(config),
   update: update(config),
   cleanup: cleanup(config)
 })
