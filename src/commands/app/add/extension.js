@@ -15,8 +15,9 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const { flags } = require('@oclif/command')
 const ora = require('ora')
 
-const { installPackages, atLeastOne, getImplPromptChoices } = require('../../../lib/app-helper')
+const { installPackages, atLeastOne } = require('../../../lib/app-helper')
 const aioConfigLoader = require('@adobe/aio-lib-core-config')
+const { implPromptChoices } = require('../../../lib/defaults')
 const chalk = require('chalk')
 
 class AddExtensionCommand extends BaseCommand {
@@ -58,8 +59,7 @@ class AddExtensionCommand extends BaseCommand {
 
   async selectImplementations (flags, config) {
     const alreadyImplemented = config.implements
-    const consoleCLI = await this.getLibConsoleCLI()
-    const availableChoices = await getImplPromptChoices(consoleCLI, config.aio)
+    const availableChoices = implPromptChoices
     const availableImplementations = availableChoices.map(i => i.value.name)
 
     const possibleChoices = availableChoices.filter(i => !alreadyImplemented.includes(i.value.name))

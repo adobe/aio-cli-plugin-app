@@ -20,30 +20,11 @@ const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli.js')
 const mockConsoleCLIInstance = {}
 LibConsoleCLI.init.mockResolvedValue(mockConsoleCLIInstance)
 
-jest.mock('../../../../src/lib/app-helper.js')
-const helpers = require('../../../../src/lib/app-helper.js')
-
 const createFullConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
   const appConfig = dataMocks(appFixtureName, aioConfig)
   return appConfig
 }
 
-const extPointList = [
-  {
-    serviceCode: 'dx',
-    name: 'excshell',
-    version: '1.0.0',
-    idVer: 1,
-    operations: ['view']
-  },
-  {
-    serviceCode: 'dx',
-    name: 'asset-compute',
-    version: '1.0.0',
-    idVer: 1,
-    operations: ['apply']
-  }
-]
 const fakeAioConfig = {
   console: {
     project: {
@@ -51,11 +32,6 @@ const fakeAioConfig = {
     }
   }
 }
-
-beforeEach(() => {
-  helpers.getAllExtensionPoints.mockReset()
-  helpers.getFullExtensionName.mockReset()
-})
 
 test('exports', async () => {
   expect(typeof TheCommand).toEqual('function')
@@ -80,19 +56,16 @@ test('flags', async () => {
 
 describe('run', () => {
   let command
-  const extOutPut = [
-    {
-      name: 'dx/excshell/1',
+  const extOutPut = {
+    'dx/excshell/1': {
       operations: ['view']
     },
-    {
-      name: 'dx/asset-compute/1',
+    'dx/asset-compute/worker/1': {
       operations: ['apply']
     }
-  ]
+  }
+
   beforeEach(() => {
-    helpers.getAllExtensionPoints.mockResolvedValueOnce(extPointList)
-    helpers.getCliInfo.mockResolvedValue({ accessToken: 'fake', env: 'prod' })
     command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
@@ -100,9 +73,6 @@ describe('run', () => {
     const appConfig = createFullConfig({})
     appConfig.aio = fakeAioConfig
     command.getFullConfig.mockReturnValue(appConfig)
-    jest.spyOn(helpers, 'getFullExtensionName').mockImplementation((xp) => {
-      return xp.serviceCode + '/' + xp.name + '/' + xp.idVer
-    })
   })
 
   test('get all extension points', async () => {
@@ -112,7 +82,7 @@ describe('run', () => {
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('dx/excshell/1'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('operations'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('view'))
-    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('dx/asset-compute/1'))
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('dx/asset-compute/worker/1'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('operations'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('apply'))
   })
@@ -141,21 +111,5 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith(yaml.safeDump(extOutPut))
-  })
-
-  test('get all extension points empty list', async () => {
-    helpers.getAllExtensionPoints.mockReset()
-    helpers.getAllExtensionPoints.mockResolvedValueOnce([])
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('No extension points found'))
-  })
-
-  test('get all extension points undefined', async () => {
-    helpers.getAllExtensionPoints.mockReset()
-    helpers.getAllExtensionPoints.mockResolvedValueOnce(undefined)
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('No extension points found'))
   })
 })

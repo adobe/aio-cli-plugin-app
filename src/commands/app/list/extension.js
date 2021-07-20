@@ -26,9 +26,8 @@ class ListExtensionCommand extends BaseCommand {
     const extConfig = this.getAppExtConfigs(flags)
     const extSummary = {}
 
-    EXTENSION_POINT_LIST.forEach(extPoint => {
+    Object.keys(EXTENSION_POINT_LIST).forEach(extPoint => {
       const extension = extConfig[extPoint]
-
       if (extension) {
         const extDetails = { operations: {} }
         extSummary[extPoint] = extDetails

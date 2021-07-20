@@ -14,7 +14,7 @@ const BaseCommand = require('../../../BaseCommand')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:list:extension-points', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 
-const { getAllExtensionPoints, getFullExtensionName } = require('../../../lib/app-helper')
+const { EXTENSION_POINT_LIST } = require('../../../lib/defaults')
 const chalk = require('chalk')
 const yaml = require('js-yaml')
 
@@ -22,37 +22,21 @@ class ListExtensionPointsCommand extends BaseCommand {
   async run () {
     const { flags } = this.parse(ListExtensionPointsCommand)
     aioLogger.debug(`list all extensions points with flags: ${JSON.stringify(flags)}`)
-    const fullConfig = this.getFullConfig({ allowNoImpl: true })
-    const consoleCLI = await this.getLibConsoleCLI()
-    const extPointList = await getAllExtensionPoints(consoleCLI, fullConfig.aio.console.project.org_id)
-    const extList = []
-    // select meaningful properties from extension point def
-    if (extPointList) {
-      extPointList.forEach(extPoint => {
-        const obj = {}
-        obj.name = getFullExtensionName(extPoint)
-        obj.operations = extPoint.operations
-        extList.push(obj)
-      })
-    }
+
     // print
     if (flags.json) {
-      this.log(JSON.stringify(extList))
+      this.log(JSON.stringify(EXTENSION_POINT_LIST))
     } else if (flags.yml) {
-      this.log(yaml.safeDump(extList))
+      this.log(yaml.safeDump(EXTENSION_POINT_LIST))
     } else {
-      if (extList.length > 0) {
-        this.log(chalk.bold('Extensions Points'))
-        extList.forEach(ext => {
-          this.log(ext.name)
-          this.log(' operations')
-          ext.operations.forEach(opr => {
-            this.log('  -> ' + opr)
-          })
+      this.log(chalk.bold('Extensions Points'))
+      Object.keys(EXTENSION_POINT_LIST).forEach(key => {
+        this.log(key)
+        this.log(' operations')
+        EXTENSION_POINT_LIST[key].operations.forEach(opr => {
+          this.log('  -> ' + opr)
         })
-      } else {
-        this.log('No extension points found')
-      }
+      })
     }
   }
 }

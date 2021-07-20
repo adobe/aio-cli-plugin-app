@@ -20,9 +20,11 @@ const { flags } = require('@oclif/command')
 const generators = require('@adobe/generator-aio-app')
 
 const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
-const { installPackages, atLeastOne, getImplPromptChoices } = require('../../lib/app-helper')
+const { installPackages, atLeastOne } = require('../../lib/app-helper')
 
-const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV } = require('../../lib/defaults')
+const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV, implPromptChoices } = require('../../lib/defaults')
+const cloneDeep = require('lodash.clonedeep')
+
 const DEFAULT_WORKSPACE = 'Stage'
 
 class InitCommand extends BaseCommand {
@@ -74,7 +76,7 @@ class InitCommand extends BaseCommand {
     }
 
     // 2. prompt for extension points to be implemented
-    const extensionPoints = await this.selectExtensionPoints(flags, null)
+    const extensionPoints = await this.selectExtensionPoints(flags)
 
     // 3. run extension point code generators
     const projectName = (consoleConfig && consoleConfig.project.name) || path.basename(process.cwd())
@@ -106,7 +108,7 @@ class InitCommand extends BaseCommand {
     // 4. retrieve workspace details, defaults to Stage
     const workspace = await this.retrieveWorkspaceFromName(consoleCLI, org, project, flags.workspace)
     // 5. ask for exensionPoints, only allow selection for extensions that have services enabled in Org
-    const extensionPoints = await this.selectExtensionPoints(flags, orgSupportedServices, { login: true, orgId: org.id })
+    const extensionPoints = await this.selectExtensionPoints(flags, orgSupportedServices)
     // 6. add any required services to Workspace
     const requiredServices = this.getAllRequiredServicesFromExtPoints(extensionPoints)
     await this.addServices(
@@ -130,17 +132,12 @@ class InitCommand extends BaseCommand {
     this.log(chalk.blue(chalk.bold(`Project initialized for Workspace ${workspace.name}, you can run 'aio app use -w <workspace>' to switch workspace.`)))
   }
 
-  async selectExtensionPoints (flags, orgSupportedServices = null, options = {}) {
-    let consoleCLI
-    if (options.login) {
-      consoleCLI = await this.getLibConsoleCLI()
-    }
-    const availableChoices = await getImplPromptChoices(consoleCLI, options.orgId)
+  async selectExtensionPoints (flags, orgSupportedServices = null) {
     if (!flags.extensions) {
-      return [availableChoices.find(i => i.value.name === 'application').value]
+      return [implPromptChoices.find(i => i.value.name === 'application').value]
     }
 
-    const choices = availableChoices.filter(i => i.value.name !== 'application')
+    const choices = cloneDeep(implPromptChoices).filter(i => i.value.name !== 'application')
 
     // disable extensions that lack required services
     if (orgSupportedServices) {

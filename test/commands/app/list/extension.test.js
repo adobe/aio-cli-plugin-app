@@ -20,9 +20,6 @@ const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli.js')
 const mockConsoleCLIInstance = {}
 LibConsoleCLI.init.mockResolvedValue(mockConsoleCLIInstance)
 
-jest.mock('../../../../src/lib/app-helper.js')
-const helpers = require('../../../../src/lib/app-helper.js')
-
 const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
   const appConfig = dataMocks(appFixtureName, aioConfig).all
   appConfig.application = { ...appConfig.application, ...aioConfig }
@@ -30,7 +27,6 @@ const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
 }
 
 beforeEach(() => {
-  helpers.getFullExtensionName.mockReset()
   jest.restoreAllMocks()
 })
 
@@ -61,9 +57,6 @@ describe('run', () => {
     command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
-    jest.spyOn(helpers, 'getFullExtensionName').mockImplementation((xp) => {
-      return xp.serviceCode + '/' + xp.name + '/' + xp.idVer
-    })
     command.getAppExtConfigs = jest.fn()
   })
 

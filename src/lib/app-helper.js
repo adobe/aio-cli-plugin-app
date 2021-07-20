@@ -22,7 +22,6 @@ const aioConfig = require('@adobe/aio-lib-core-config')
 const { AIO_CONFIG_WORKSPACE_SERVICES, AIO_CONFIG_ORG_SERVICES } = require('./defaults')
 const { EOL } = require('os')
 const { getCliEnv } = require('@adobe/aio-lib-env')
-const { implPromptChoices, extensionDefaults, EXTENSION_POINT_LIST } = require('./defaults')
 const yaml = require('js-yaml')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
 
@@ -484,69 +483,6 @@ function deleteUserConfig (configData) {
   fs.writeFileSync(configData.file, yaml.safeDump(phyConfig))
 }
 
-/**
- * Get ALL Extension Point List for the selected org
- *
- * @param {object} consoleCLI LibConsoleCLI instance
- * @param {string} orgId Org ID
- * @returns {Array}  Array of Extension Points
- */
-async function getAllExtensionPoints (consoleCLI, orgId) {
-  const extensionPoints = await consoleCLI.getAllExtensionPoints(orgId, 'dx')
-  const result = []
-  if (extensionPoints) {
-    const processedExtensions = {}
-    extensionPoints.data.forEach(xp => {
-      const fullName = getFullExtensionName(xp)
-      // filter out repeated extensions
-      if (!processedExtensions[fullName]) {
-        processedExtensions[fullName] = xp
-        result.push(xp)
-      }
-    })
-  }
-  return result
-}
-
-/**
- * Get promt choices for app
- *
- * @param {object} consoleCLI LibConsoleCLI instance
- * @param {string} orgId Org ID
- * @returns {Array}  Array of prompt choices
- */
-async function getImplPromptChoices (consoleCLI, orgId) {
-  const defaultList = implPromptChoices
-  let xpList = EXTENSION_POINT_LIST
-  if (consoleCLI && orgId) {
-    const extensionPoints = await getAllExtensionPoints(consoleCLI, orgId)
-    if (extensionPoints) {
-      xpList = []
-      extensionPoints.forEach(xp => {
-        xpList.push(getFullExtensionName(xp))
-      })
-    }
-  }
-  if (xpList) {
-    xpList.forEach(xp => {
-      const ext = extensionDefaults[xp] // get app plugin specific details for the given extension
-      if (ext) {
-        defaultList.push(ext)
-      }
-    })
-  }
-  return defaultList
-}
-
-/** Returns full extension point name with service code and version
- *
- * @param {object} xp Extension point object
- * @returns {string} Full extension point name
- */
-function getFullExtensionName (xp) {
-  return xp.serviceCode + '/' + xp.name + '/' + xp.idVer
-}
-
 module.exports = {
   isNpmInstalled,
   isGitInstalled,
@@ -572,8 +508,5 @@ module.exports = {
   buildExtensionPointPayloadWoMetadata,
   buildExcShellViewExtensionMetadata,
   atLeastOne,
-  deleteUserConfig,
-  getAllExtensionPoints,
-  getImplPromptChoices,
-  getFullExtensionName
+  deleteUserConfig
 }
