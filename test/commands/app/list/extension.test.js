@@ -81,7 +81,7 @@ describe('run', () => {
       'dx/excshell/1':
       {
         operations:
-      { view: [{ impl: 'index.html', src: '/src/dx-excshell-1/web-src' }] }
+      { view: [{ impl: 'index.html' }] }
       }
     }
     await command.run()
@@ -99,7 +99,7 @@ describe('run', () => {
       'dx/excshell/1':
       {
         operations:
-      { view: [{ impl: 'index.html', src: '/src/dx-excshell-1/web-src' }] }
+      { view: [{ impl: 'index.html' }] }
       }
     }
     await command.run()
