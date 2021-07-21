@@ -93,7 +93,7 @@ test('wait (cleanup no errors)', async () => {
     await theCleanup.wait()
 })
 
-test('wait (cleanup no errors)', async () => {
+test('wait (cleanup has error)', async () => {
     const fn1 = jest.fn()
     const fn2 = jest.fn(() => {
         throw new Error('error')
