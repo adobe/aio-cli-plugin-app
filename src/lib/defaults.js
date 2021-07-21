@@ -36,6 +36,16 @@ module.exports = {
   INCLUDE_DIRECTIVE: '$include',
   APPLICATION_CONFIG_KEY: 'application',
   EXTENSIONS_CONFIG_KEY: 'extensions',
+
+  EXTENSION_POINT_LIST: {
+    'dx/excshell/1': {
+      operations: ['view']
+    },
+    'dx/asset-compute/worker/1': {
+      operations: ['apply']
+    }
+  },
+
   implPromptChoices: [
     // we abuse the extension command to also let users add a standalone app
     {
