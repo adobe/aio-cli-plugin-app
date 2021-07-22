@@ -15,14 +15,16 @@ const { flags } = require('@oclif/command')
 const BaseCommand = require('../../BaseCommand')
 const { wrapError } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
-const fs = require('fs-extra')
 
 class Logs extends BaseCommand {
   async run () {
     const { flags } = this.parse(Logs)
-    const config = this.getFullConfig()
-    if (!fs.existsSync('manifest.yml')) {
-      this.error(wrapError(new Error('no manifest.yml')))
+    const fullConfig = this.getFullConfig()
+
+    // has any backend
+    const hasAnyBackend = Object.values(fullConfig.all).reduce((hasBackend, config) => hasBackend && config.hasBackend, true)
+    if (!hasAnyBackend) {
+      throw new Error('There are no backend implementations for this project folder.')
     }
 
     if (flags.limit < 1) {
@@ -36,23 +38,28 @@ class Logs extends BaseCommand {
     const filterActions = []
     if (flags.action) {
       flags.action.forEach((actionName) => {
+        // handle default package
         if (!actionName.includes('/')) {
-          actionName = config.ow.package + '/' + actionName
+          actionName = fullConfig.ow.package + '/' + actionName
         }
         filterActions.push(actionName)
       })
     } else {
-      Object.entries(config.manifest.full.packages).forEach((packageTuple) => {
-        packageTuple[0] = packageTuple[0].replace(/__APP_PACKAGE__/g, config.ow.package)
+      Object.entries(fullConfig.all).forEach(([implName, config]) => {
+        Object.entries(config.manifest.full.packages).forEach((packageTuple) => {
+          // handle default package
+          packageTuple[0] = packageTuple[0].replace(/__APP_PACKAGE__/g, config.ow.package)
 
-        Object.keys(packageTuple[1].actions).forEach((actionName) => {
-          filterActions.push(packageTuple[0] + '/' + actionName)
+          Object.keys(packageTuple[1].actions).forEach((actionName) => {
+            filterActions.push(packageTuple[0] + '/' + actionName)
+          })
         })
       })
     }
 
     try {
-      await rtLib.printActionLogs(config, this.log, flags.limit, filterActions, flags.strip, flags.poll || flags.tail || flags.watch)
+      const owConfig = { ow: Object.values(fullConfig.all)[0].ow }
+      await rtLib.printActionLogs(owConfig, this.log, flags.limit, filterActions, flags.strip, flags.poll || flags.tail || flags.watch)
     } catch (error) {
       this.error(wrapError(error))
     }
