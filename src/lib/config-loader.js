@@ -276,7 +276,7 @@ function loadUserConfigAppYaml () {
 
 /** @private */
 function loadUserConfigLegacy (commonConfig) {
-  // load legacy user app config from manifest.yaml, package.json, .aio.app
+  // load legacy user app config from manifest.yml, package.json, .aio.app
   const includeIndex = {}
   const legacyAppConfig = {}
 
@@ -291,7 +291,6 @@ function loadUserConfigLegacy (commonConfig) {
   }
   // 2. load legacy manifest.yaml
   if (fs.existsSync(LEGACY_RUNTIME_MANIFEST)) {
-    warn('\'manifest.yaml\' is deprecated. Please move your manifest to \'app.config.yaml\' under the \'runtimeManifest\' key')
     const runtimeManifest = yaml.safeLoad(fs.readFileSync(LEGACY_RUNTIME_MANIFEST, 'utf8'))
     legacyAppConfig.runtimeManifest = runtimeManifest
     // populate index
