@@ -17,7 +17,8 @@ const { deployActions: rtDeployActions } = require('@adobe/aio-lib-runtime')
 jest.mock('../../../src/lib/app-helper')
 
 beforeEach(() => {
-  utils.runPackageScript.mockReset()
+  utils.runScript.mockReset()
+  rtDeployActions.mockReset()
   rtDeployActions.mockImplementation(() => ({}))
 })
 
@@ -26,27 +27,31 @@ test('exports', () => {
 })
 
 test('deploy-actions app hook available', async () => {
-  utils.runPackageScript.mockImplementation((script) => {
+  utils.runScript.mockImplementation(script => {
     if (script === 'deploy-actions') {
-      return {}
+      return script
     }
   })
 
-  await deployActions({})
+  await deployActions({
+    hooks: {
+      'deploy-actions': 'deploy-actions'
+    }
+  })
 
   expect(rtDeployActions).not.toBeCalled()
-  expect(utils.runPackageScript).toHaveBeenNthCalledWith(1, 'pre-app-deploy')
-  expect(utils.runPackageScript).toHaveBeenNthCalledWith(2, 'deploy-actions')
-  expect(utils.runPackageScript).toHaveBeenNthCalledWith(3, 'post-app-deploy')
+  expect(utils.runScript).toHaveBeenNthCalledWith(1, undefined) // pre-app-deploy
+  expect(utils.runScript).toHaveBeenNthCalledWith(2, 'deploy-actions')
+  expect(utils.runScript).toHaveBeenNthCalledWith(3, undefined) // post-app-deploy
 })
 
 test('no deploy-actions app hook available (use inbuilt)', async () => {
-  await deployActions({})
+  await deployActions({ hooks: {} })
 
   expect(rtDeployActions).toHaveBeenCalled()
-  expect(utils.runPackageScript).toHaveBeenNthCalledWith(1, 'pre-app-deploy')
-  expect(utils.runPackageScript).toHaveBeenNthCalledWith(2, 'deploy-actions')
-  expect(utils.runPackageScript).toHaveBeenNthCalledWith(3, 'post-app-deploy')
+  expect(utils.runScript).toHaveBeenNthCalledWith(1, undefined) // pre-app-deploy
+  expect(utils.runScript).toHaveBeenNthCalledWith(2, undefined) // deploy-actions
+  expect(utils.runScript).toHaveBeenNthCalledWith(3, undefined) // post-app-deploy
 })
 
 test('use default parameters (coverage)', async () => {
@@ -57,12 +62,12 @@ test('use default parameters (coverage)', async () => {
     ]
   })
 
-  await deployActions({})
+  await deployActions({ hooks: {} })
 
   expect(rtDeployActions).toHaveBeenCalled()
-  expect(utils.runPackageScript).toHaveBeenNthCalledWith(1, 'pre-app-deploy')
-  expect(utils.runPackageScript).toHaveBeenNthCalledWith(2, 'deploy-actions')
-  expect(utils.runPackageScript).toHaveBeenNthCalledWith(3, 'post-app-deploy')
+  expect(utils.runScript).toHaveBeenNthCalledWith(1, undefined) // pre-app-deploy
+  expect(utils.runScript).toHaveBeenNthCalledWith(2, undefined) // deploy-actions
+  expect(utils.runScript).toHaveBeenNthCalledWith(3, undefined) // post-app-deploy
 })
 
 test('should log actions url or name when actions are deployed', async () => {
@@ -73,7 +78,7 @@ test('should log actions url or name when actions are deployed', async () => {
     ]
   })
   const log = jest.fn()
-  await deployActions({}, false, log)
+  await deployActions({ hooks: {} }, false, log)
 
   expect(log).toHaveBeenCalledWith(expect.stringContaining('https://fake.com/action'))
   expect(log).toHaveBeenCalledWith(expect.stringContaining('pkg/actionNoUrl'))

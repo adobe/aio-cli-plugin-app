@@ -10,8 +10,14 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
+global.mockFs()
 const TheCommand = require('../../../src/commands/app/info.js')
 const BaseCommand = require('../../../src/BaseCommand.js')
+const yaml = require('js-yaml')
+
+const mockConfigLoader = require('../../../src/lib/config-loader.js')
+jest.mock('../../../src/lib/config-loader.js')
+const getMockConfig = require('../../data-mocks/config-loader')
 
 test('exports', async () => {
   expect(typeof TheCommand).toEqual('function')
@@ -50,54 +56,83 @@ describe('instance methods', () => {
   })
 })
 
-describe('missing props', () => {
-  test('appConfig.s3.tvmUrl', async () => {
-    const command = new TheCommand([])
-    command.error = jest.fn()
-    command.log = jest.fn()
-    command.appConfig = { s3: { tvmUrl: 'some url', creds: 'definitely defined' }, ow: { auth: 'super secret' } }
-    command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(command.log).not.toHaveBeenCalledWith(expect.stringContaining('super secret'))
+describe('run', () => {
+  beforeEach(() => {
+    // mock files
+    global.loadFixtureApp('exc')
   })
-})
+  const checkHiddenSecrets = (logMock) => {
+    expect(logMock).not.toHaveBeenCalledWith(expect.stringContaining(global.fakeConfig.creds.runtime.auth))
+    expect(logMock).not.toHaveBeenCalledWith(expect.stringContaining(global.fakeS3Creds.accessKeyId))
+    expect(logMock).not.toHaveBeenCalledWith(expect.stringContaining(global.fakeS3Creds.secretAccessKey))
+  }
 
-describe('masking secrets', () => {
-  test('masks by default', async () => {
+  const checkJunkConfig = (logMock, json) => {
+    expect(logMock).not.toHaveBeenCalledWith(expect.stringContaining('includeIndex'))
+    expect(json.aio).toBe(undefined)
+  }
+
+  test('for exc extension no flags', () => {
+    // mock config
+    mockConfigLoader.loadConfig.mockReturnValue(getMockConfig('exc', global.fakeConfig.tvm))
+
     const command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
-    command.appConfig = { s3: {}, ow: { auth: 'super secret' } }
     command.run()
+    expect(mockConfigLoader.loadConfig).toHaveBeenCalledWith({ allowNoImpl: true })
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(command.log).not.toHaveBeenCalledWith(expect.stringContaining('super secret'))
+    checkHiddenSecrets(command.log)
+    const json = JSON.parse(command.log.mock.calls[0][0])
+    checkJunkConfig(command.log, json)
   })
-  // this is really just to get coverage on L32
-  test('masks without appConfig.ow.auth', async () => {
+
+  test('json flag', () => {
+    // add s3 credentials to mocked config - to be hidden
+    mockConfigLoader.loadConfig.mockReturnValue(
+      getMockConfig('exc', global.fakeConfig.tvm, global.extraConfig.s3Creds('dx/excshell/1'))
+    )
+
+    const command = new TheCommand(['--json'])
+    command.error = jest.fn()
+    command.log = jest.fn()
+    command.run()
+    expect(mockConfigLoader.loadConfig).toHaveBeenCalledWith({ allowNoImpl: true })
+    expect(command.error).toHaveBeenCalledTimes(0)
+    checkHiddenSecrets(command.log)
+    const json = JSON.parse(command.log.mock.calls[0][0])
+    checkJunkConfig(command.log, json)
+  })
+
+  test('yml flag', () => {
+    // add s3 credentials to mocked config - to be hidden
+    mockConfigLoader.loadConfig.mockReturnValue(
+      getMockConfig('exc', global.fakeConfig.tvm, global.extraConfig.s3Creds('dx/excshell/1'))
+    )
+    const command = new TheCommand(['--yml'])
+    command.error = jest.fn()
+    command.log = jest.fn()
+    command.run()
+    expect(mockConfigLoader.loadConfig).toHaveBeenCalledWith({ allowNoImpl: true })
+    expect(command.error).toHaveBeenCalledTimes(0)
+    checkHiddenSecrets(command.log)
+    const json = yaml.load(command.log.mock.calls[0][0])
+    checkJunkConfig(command.log, json)
+  })
+
+  test('for coverage, undefined key to hide', () => {
+    // add s3 credentials to mocked config - to be hidden
+    mockConfigLoader.loadConfig.mockReturnValue(
+      getMockConfig('exc', global.fakeConfig.tvm, { 'all.dx/excshell/1.ow.auth': undefined })
+    )
     const command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
-    command.appConfig = { s3: {}, ow: { auth: '' } }
     command.run()
+    expect(mockConfigLoader.loadConfig).toHaveBeenCalledWith({ allowNoImpl: true })
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(command.log).not.toHaveBeenCalledWith(expect.stringContaining('super secret'))
-  })
-  test('no-masking', async () => {
-    const command = new TheCommand(['--no-mask', '-j'])
-    command.error = jest.fn()
-    command.log = jest.fn()
-    command.appConfig = { s3: {}, ow: { auth: 'super secret' } }
-    command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('super secret'))
-  })
-  test('no-masking --yaml', async () => {
-    const command = new TheCommand(['--no-mask', '-y'])
-    command.error = jest.fn()
-    command.log = jest.fn()
-    command.appConfig = { s3: {}, ow: { auth: 'super secret' } }
-    command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('super secret'))
+    checkHiddenSecrets(command.log)
+    const json = JSON.parse(command.log.mock.calls[0][0])
+    checkJunkConfig(command.log, json)
   })
 })

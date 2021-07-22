@@ -11,6 +11,7 @@ governing permissions and limitations under the License.
 */
 
 const { stdout, stderr } = require('stdout-stderr')
+const upath = require('upath')
 
 jest.setTimeout(15000)
 
@@ -77,8 +78,6 @@ process.on('unhandledRejection', error => {
   throw error
 })
 
-// dont touch the real fs
-jest.mock('fs-extra')
 // don't wait for user input in tests
 jest.mock('inquirer', () => ({ prompt: jest.fn(), createPromptModule: jest.fn(() => jest.fn()) }))
 // make sure we mock the app scripts
@@ -90,23 +89,28 @@ jest.mock('which')
 //
 jest.mock('execa')
 
+jest.mock('@adobe/aio-lib-env')
+
 /* global fixtureFile, fixtureJson */
 
 const fixturesFolder = path.join(__dirname, '__fixtures__')
 
+global.fixturePath = (file) => {
+  return `${fixturesFolder}/${file}`
+}
 // helper for fixtures
 global.fixtureFile = (output) => {
-  return fs.readFileSync(`${fixturesFolder}/${output}`).toString()
+  return fs.readFileSync(global.fixturePath(output)).toString()
 }
 
 // helper for fixtures
 global.fixtureJson = (output) => {
-  return JSON.parse(fs.readFileSync(`${fixturesFolder}/${output}`).toString())
+  return JSON.parse(fs.readFileSync(global.fixturePath(output)).toString())
 }
 
 // helper for fixtures
 global.fixtureHjson = (output) => {
-  return hjson.parse(fs.readFileSync(`${fixturesFolder}/${output}`).toString())
+  return hjson.parse(fs.readFileSync(global.fixturePath(output)).toString())
 }
 
 // fixture matcher
@@ -137,40 +141,39 @@ expect.extend({
   }
 })
 
-global.addSampleAppFiles = () => {
-  global.fakeFileSystem.addJson({
-    'actions/action-zip/index.js': global.fixtureFile('/sample-app/actions/action-zip/index.js'),
-    'actions/action-zip/package.json': global.fixtureFile('/sample-app/actions/action-zip/package.json'),
-    'actions/action.js': global.fixtureFile('/sample-app/actions/action.js'),
-    'web-src/index.html': global.fixtureFile('/sample-app/web-src/index.html'),
-    'manifest.yml': global.fixtureFile('/sample-app/manifest.yml'),
-    'package.json': global.fixtureFile('/sample-app/package.json')
-  })
-}
-
-global.addSampleAppFilesCustomPackage = () => {
-  global.fakeFileSystem.addJson({
-    'actions/action-zip/index.js': global.fixtureFile('/sample-app/actions/action-zip/index.js'),
-    'actions/action-zip/package.json': global.fixtureFile('/sample-app/actions/action-zip/package.json'),
-    'actions/action.js': global.fixtureFile('/sample-app/actions/action.js'),
-    'web-src/index.html': global.fixtureFile('/sample-app/web-src/index.html'),
-    'manifest.yml': global.fixtureFile('/sample-app-custom-package/manifest.yml'),
-    'package.json': global.fixtureFile('/sample-app/package.json')
-  })
+global.loadFixtureApp = (appFolder) => {
+  const fsJSON = {}
+  const stack = [appFolder]
+  while (stack.length > 0) {
+    const curr = stack.pop()
+    const stat = fs.statSync(global.fixturePath(curr))
+    if (stat.isDirectory()) {
+      stack.push(...fs.readdirSync(global.fixturePath(curr)).map(f => upath.toUnix(path.join(curr, f))))
+    } else {
+      // is file, populate the in memory json fs
+      // e.g 'actions/action-zip/index.js': global.fixtureFile('app/actions/action-zip/index.js'),
+      fsJSON[curr.split(appFolder + '/').join('')] = global.fixtureFile(curr)
+    }
+  }
+  global.fakeFileSystem.addJson(fsJSON)
+  process.chdir('/') // cannot chdir to a non existing dir in the real fs.. so files are loaded in the root memory fs
 }
 
 global.defaultAppHostName = 'adobeio-static.net'
 global.defaultTvmUrl = 'https://adobeio.adobeioruntime.net/apis/tvm/'
 global.defaultOwApihost = 'https://adobeioruntime.net'
 global.fakeS3Bucket = 'fake-bucket'
+global.fakeOrgId = '00000000000000000100000@AdobeOrg'
 global.fakeConfig = {
   tvm: {
+    project: { org: { ims_org_id: global.fakeOrgId } },
     runtime: {
       namespace: 'fake_ns',
       auth: 'fake:auth'
     }
   },
   local: {
+    project: { org: { ims_org_id: global.fakeOrgId } },
     runtime: {
       // those must match the once set by dev cmd
       apihost: 'http://localhost:3233',
@@ -178,7 +181,9 @@ global.fakeConfig = {
       auth: '23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP'
     }
   },
+  // todo delete those should not be passed via aio now
   creds: {
+    project: { org: { ims_org_id: global.fakeOrgId } },
     runtime: {
       namespace: 'fake_ns',
       auth: 'fake:auth'
@@ -189,11 +194,32 @@ global.fakeConfig = {
       awssecretaccesskey: 'fakeAwsSecretKey'
     }
   },
+  // todo delete those should not be passed via aio now
   app: {
     htmlCacheDuration: 60,
     jsCacheDuration: 604800,
     cssCacheDuration: 604800,
     imageCacheDuration: 604800
+  }
+}
+
+// mocked .aio.app config for __fixtures__/legacy-app
+global.aioLegacyAppConfig = {
+  actions: './myactions'
+}
+
+global.fakeS3Creds = {
+  s3bucket: 'customBucket',
+  accessKeyId: 'fakeAwsKeyId',
+  secretAccessKey: 'fakeAwsSecretKey'
+}
+
+global.extraConfig = {
+  s3Creds: (extName) => {
+    return {
+      [`all.${extName}.s3.creds`]: global.fakeS3Creds,
+      [`all.${extName}.s3.folder`]: global.fakeConfig.tvm.runtime.namespace
+    }
   }
 }
 

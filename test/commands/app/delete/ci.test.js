@@ -19,16 +19,16 @@ jest.mock('fs-extra')
 jest.mock('yeoman-environment')
 const yeoman = require('yeoman-environment')
 
-const mockRegister = jest.fn()
-const mockRun = jest.fn()
+const mockRunGenerator = jest.fn()
+const mockInstantiate = jest.fn()
 yeoman.createEnv.mockReturnValue({
-  register: mockRegister,
-  run: mockRun
+  runGenerator: mockRunGenerator,
+  instantiate: mockInstantiate
 })
 
 beforeEach(() => {
-  mockRegister.mockReset()
-  mockRun.mockReset()
+  mockRunGenerator.mockReset()
+  mockInstantiate.mockReset()
   yeoman.createEnv.mockClear()
   fs.ensureDirSync.mockClear()
 })
@@ -49,7 +49,7 @@ describe('bad flags', () => {
 
 describe('template module cannot be registered', () => {
   test('unknown error', async () => {
-    mockRegister.mockImplementation(() => { throw new Error('some error') })
+    mockInstantiate.mockImplementation(() => { throw new Error('some error') })
     await expect(TheCommand.run([])).rejects.toThrow('some error')
   })
 })
@@ -57,12 +57,11 @@ describe('template module cannot be registered', () => {
 describe('good flags', () => {
   test('--yes', async () => {
     await TheCommand.run(['--yes'])
-
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': true
+    expect(mockInstantiate).toHaveBeenCalledWith(expect.any(Function), {
+      options: {
+        'skip-prompt': true
+      }
     })
   })
 
@@ -70,10 +69,10 @@ describe('good flags', () => {
     await TheCommand.run([])
 
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': false
+    expect(mockInstantiate).toHaveBeenCalledWith(expect.any(Function), {
+      options: {
+        'skip-prompt': false
+      }
     })
   })
 })

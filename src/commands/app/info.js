@@ -13,37 +13,45 @@ governing permissions and limitations under the License.
 const BaseCommand = require('../../BaseCommand')
 const { flags } = require('@oclif/command')
 const yaml = require('js-yaml')
+const deepCopy = require('lodash.clonedeep')
 
 class Info extends BaseCommand {
   async run () {
     // cli input
     const { flags } = this.parse(Info)
-    const appConfig = this.getAppConfig()
-    delete appConfig.cli
-    if (!appConfig.s3.tvmUrl) {
-      delete appConfig.s3.tvmUrl
-    }
-    // todo: mask these
-    if (!appConfig.s3.creds) {
-      delete appConfig.s3.creds
-    }
+    const appConfig = deepCopy(this.getFullConfig({ allowNoImpl: true }))
 
-    if (flags.mask) {
-      appConfig.ow.auth = appConfig.ow.auth ? '<hidden>' : 'undefined'
-    }
+    // includes .env secret delete all aio config for now
+    delete appConfig.aio
+    // remove noisy configs
+    delete appConfig.includeIndex
+
+    // hide credentials
+    Object.values(appConfig.all).forEach(config => {
+      if (config.s3.creds) {
+        config.s3.creds.accessKeyId = mask(config.s3.creds.accessKeyId)
+        config.s3.creds.secretAccessKey = mask(config.s3.creds.secretAccessKey)
+      }
+      config.ow.auth = mask(config.ow.auth)
+    })
 
     if (flags.json) {
       this.log(JSON.stringify(appConfig))
     } else if (flags.yml) {
-      this.log(yaml.safeDump(appConfig))
+      // remove undefined fields
+      this.log(yaml.safeDump(JSON.parse(JSON.stringify(appConfig))))
     } else { // flags.hson
-      this.log(appConfig)
+      this.log(JSON.stringify(appConfig, null, 2))
     }
   }
 }
 
-Info.description = `Display settings/configuration in use by an Adobe I/O App
+/** @private */
+function mask (k) {
+  return k ? '<hidden>' : 'undefined'
+}
 
+Info.description = `Display settings/configuration in use by an Adobe I/O App
 `
 
 Info.flags = {

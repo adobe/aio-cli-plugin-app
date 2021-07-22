@@ -20,7 +20,7 @@ inquirer.createPromptModule.mockReturnValue(mockPrompt)
 
 const { importConfigJson, writeAio, writeEnv, mergeEnv, splitEnvLine, flattenObjectWithSeparator, loadConfigFile, writeDefaultAppConfig } = require('../../../src/lib/import')
 
-jest.mock('fs')
+jest.mock('fs-extra')
 
 beforeEach(() => {
   jest.clearAllMocks()

@@ -22,8 +22,8 @@ const { deployActions } = require('@adobe/aio-lib-runtime')
  */
 /** @private */
 module.exports = async (config, isLocal = false, log = () => {}) => {
-  utils.runPackageScript('pre-app-deploy')
-  const script = await utils.runPackageScript('deploy-actions')
+  utils.runScript(config.hooks['pre-app-deploy'])
+  const script = await utils.runScript(config.hooks['deploy-actions'])
   if (!script) {
     const entities = await deployActions(config, { isLocalDev: isLocal }, log)
     if (entities.actions) {
@@ -32,5 +32,5 @@ module.exports = async (config, isLocal = false, log = () => {}) => {
       })
     }
   }
-  utils.runPackageScript('post-app-deploy')
+  utils.runScript(config.hooks['post-app-deploy'])
 }

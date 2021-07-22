@@ -15,16 +15,17 @@ const { flags } = require('@oclif/command')
 const inquirer = require('inquirer')
 const config = require('@adobe/aio-lib-core-config')
 const { EOL } = require('os')
-const { getCliInfo, warnIfOverwriteServicesInProductionWorkspace } = require('../../lib/app-helper')
+const { warnIfOverwriteServicesInProductionWorkspace } = require('../../lib/app-helper')
 const path = require('path')
-const { SERVICE_API_KEY_ENV, CONSOLE_API_KEYS, ENTP_INT_CERTS_FOLDER } = require('../../lib/defaults')
+const { SERVICE_API_KEY_ENV, ENTP_INT_CERTS_FOLDER } = require('../../lib/defaults')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:use', { provider: 'debug' })
-const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli')
 const chalk = require('chalk')
 
 class Use extends BaseCommand {
   async run () {
     const { flags, args } = this.parse(Use)
+
+    flags.workspace = flags.workspace || flags['workspace-name'] || ''
 
     aioLogger.debug(`args: ${JSON.stringify(args, null, 2)}, flags: ${JSON.stringify(flags, null, 2)}`)
 
@@ -47,20 +48,18 @@ class Use extends BaseCommand {
       return
     }
 
-    // login will be required now
-    const { accessToken, env } = await getCliInfo()
+    // init console CLI sdk consoleCLI
+    // NOTE: the user must be able to login now
+    const consoleCLI = await this.getLibConsoleCLI()
 
     // load global console config
     const globalConfig = this.loadGlobalConfiguration()
     const globalConfigString = this.configString(globalConfig, 4)
 
-    // init console CLI sdk consoleCLI
-    const consoleCLI = await LibConsoleCLI.init({ accessToken, env, apiKey: CONSOLE_API_KEYS[env] })
-
     // load from global configuration or select workspace ?
     const globalOperationFromFlag = flags.global ? 'global' : null
-    const workspaceOperationFromFlag = (flags.workspace || flags['workspace-name']) ? 'workspace' : null
-    // did the user specify --global or --workspace or workspace-name
+    const workspaceOperationFromFlag = flags.workspace ? 'workspace' : null
+    // did the user specify --global or --workspace
     // Note: global workspace(-name) flags are exclusive (see oclif flags options)
     let useOperation = globalOperationFromFlag || workspaceOperationFromFlag
     // if operation was not specified via flags we need to prompt the user for it
@@ -122,13 +121,13 @@ class Use extends BaseCommand {
 
   additionalArgsFlagsProcessing (args, flags) {
     if (args.config_file_path &&
-      (flags.workspace || flags['workspace-name'] || flags.global)
+      (flags.workspace || flags.global)
     ) {
-      this.error('Flags \'--workspace\', \'--workspace-name\' and \'--global\' cannot be used together with arg \'config_file_path\'.')
+      this.error('Flags \'--workspace\' and \'--global\' cannot be used together with arg \'config_file_path\'.')
     }
     if (flags['no-input']) {
-      if (!args.config_file_path && !flags['workspace-name'] && !flags.global) {
-        this.error('Flag \'--no-input\', requires one of: arg \'config_file_path\', flag \'--workspace-name\' or flag \'--global\'')
+      if (!args.config_file_path && !flags.workspace && !flags.global) {
+        this.error('Flag \'--no-input\', requires one of: arg \'config_file_path\', flag \'--workspace\' or flag \'--global\'')
       }
       flags['no-service-sync'] = !flags['confirm-service-sync']
       flags.merge = !flags.overwrite
@@ -193,10 +192,10 @@ class Use extends BaseCommand {
     const currentWorkspace = { name: config.workspace.name, id: config.workspace.id }
 
     // make sure user is not trying to switch to current workspace
-    const workspaceNameFlag = flags['workspace-name']
-    if (workspaceNameFlag === currentWorkspace.name) {
-      LibConsoleCLI.cleanStdOut()
-      this.error(`--workspace-name=${workspaceNameFlag} is the same as the currently selected workspace, nothing to be done.`)
+    const workspaceFlag = flags.workspace
+    if (workspaceFlag === currentWorkspace.name) {
+      this.cleanConsoleCLIOutput()
+      this.error(`--workspace=${workspaceFlag} is the same as the currently selected workspace, nothing to be done.`)
     }
 
     // retrieve all workspaces
@@ -208,12 +207,12 @@ class Use extends BaseCommand {
 
     let workspace
 
-    if (workspaceNameFlag) {
+    if (workspaceFlag) {
       // workspace name is given, make sure the workspace is in there
-      workspace = workspacesButCurrent.find(w => w.name === workspaceNameFlag)
+      workspace = workspacesButCurrent.find(w => w.name === workspaceFlag)
       if (!workspace) {
-        LibConsoleCLI.cleanStdOut()
-        this.error(`--workspace-name=${workspaceNameFlag} does not exist in current Project ${project.name}.`)
+        this.cleanConsoleCLIOutput()
+        this.error(`--workspace=${workspaceFlag} does not exist in current Project ${project.name}.`)
       }
     } else {
       // workspace name is not given, let the user choose the
@@ -391,18 +390,19 @@ Use.flags = {
     description: 'Use the global Adobe Developer Console Org / Project / Workspace configuration, which can be set via `aio console` commands',
     default: false,
     char: 'g',
-    exclusive: ['workspace', 'workspace-name']
+    exclusive: ['workspace']
   }),
-  workspace: flags.boolean({
-    description: 'Prompt for selection of a Workspace in the same Project, and import the configuration for this Workspace',
-    default: false,
-    exclusive: ['global']
-  }),
-  'workspace-name': flags.string({
+  workspace: flags.string({
     description: 'Specify the Adobe Developer Console Workspace name to import the configuration from',
     default: '',
     char: 'w',
-    exclusive: ['global']
+    exclusive: ['global', 'workspace-name']
+  }),
+  'workspace-name': flags.string({
+    description: '[DEPRECATED]: please use --workspace instead',
+    default: '',
+    char: 'w',
+    exclusive: ['global', 'workspace']
   }),
   'no-service-sync': flags.boolean({
     description: 'Skip the Service sync prompt and do not attach current Service subscriptions to the new Workspace',
@@ -415,7 +415,7 @@ Use.flags = {
     exclusive: ['no-service-sync']
   }),
   'no-input': flags.boolean({
-    description: 'Skip user prompts by setting --no-service-sync and --merge. Requires one of config_file_path or --global or --workspace-name',
+    description: 'Skip user prompts by setting --no-service-sync and --merge. Requires one of config_file_path or --global or --workspace',
     default: false
   })
 }

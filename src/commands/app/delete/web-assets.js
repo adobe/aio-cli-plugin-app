@@ -10,27 +10,79 @@ governing permissions and limitations under the License.
 */
 
 const BaseCommand = require('../../../BaseCommand')
-const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
 const { flags } = require('@oclif/command')
+const fs = require('fs-extra')
+const inquirer = require('inquirer')
+const { atLeastOne } = require('../../../lib/app-helper')
+const chalk = require('chalk')
+const { EOL } = require('os')
+const path = require('path')
 
 class DeleteWebAssetsCommand extends BaseCommand {
   async run () {
     const { flags } = this.parse(DeleteWebAssetsCommand)
 
-    aioLogger.debug(`deleting web assets from the project, using flags: ${flags}`)
+    aioLogger.debug(`deleting web assets from the project, using flags: ${JSON.stringify(flags)}`)
 
-    // NOTE: this is only deleting the files, no un-deployment happens here
-
-    const generator = '@adobe/generator-aio-app/generators/delete-web-assets'
-
-    const env = yeoman.createEnv()
-    env.register(require.resolve(generator), 'gen')
-    const res = await env.run('gen', {
-      'skip-prompt': flags.yes
+    const fullConfig = this.getFullConfig()
+    const webAssetsByImpl = this.getAllWebAssets(fullConfig)
+    if (!webAssetsByImpl) {
+      this.error('There does not appear to be web-assets to delete')
+    }
+    // prompt user
+    const choices = []
+    Object.entries(webAssetsByImpl).forEach(([implName, webAssets]) => {
+      choices.push(new inquirer.Separator(`-- web assets for '${implName}' --`))
+      choices.push(...webAssets.map(w => ({ name: w.relSrc, value: w })))
     })
+    const res = await this.prompt([
+      {
+        type: 'checkbox',
+        name: 'web-assets',
+        message: 'Which web-assets do you wish to delete from this project?\nselect web-assets to delete',
+        choices,
+        validate: atLeastOne
+      }
+    ])
+    const toBeDeleted = res['web-assets']
 
-    return res
+    const resConfirm = await this.prompt([
+      {
+        type: 'confirm',
+        name: 'delete',
+        message: `Please confirm the deletion of '${toBeDeleted.map(w => w.relSrc)}', this will delete the source code`,
+        when: !flags.yes
+      }
+    ])
+    if (!flags.yes && !resConfirm.delete) {
+      this.log('aborting..')
+    } else {
+      toBeDeleted.forEach(w => {
+        // remove folders
+        const folder = w.src
+        fs.removeSync(w.src)
+        aioLogger.debug(`deleted '${folder}'`)
+      })
+      this.log(chalk.bold(chalk.green(
+        `✔ Successfully deleted webassets '${toBeDeleted.map(w => w.relSrc)}'` + EOL +
+        '  => please make sure to cleanup associated dependencies and to undeploy any deleted UI'
+      )))
+    }
+  }
+
+  getAllWebAssets (config) {
+    let webAssetsByImpl = {}
+    Object.entries(config.all).forEach(([implName, implConfig]) => {
+      if (implConfig.app.hasFrontend) {
+        // for now we only support one web assets per impl
+        webAssetsByImpl[implName] = [{ src: implConfig.web.src, relSrc: path.relative(implConfig.root, implConfig.web.src) }]
+      }
+    })
+    if (Object.keys(webAssetsByImpl).length === 0) {
+      webAssetsByImpl = null
+    }
+    return webAssetsByImpl
   }
 }
 

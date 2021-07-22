@@ -14,16 +14,12 @@ const config = require('@adobe/aio-lib-core-config')
 const chalk = require('chalk')
 
 const {
-  getCliInfo,
   setOrgServicesConfig,
   setWorkspaceServicesConfig,
   warnIfOverwriteServicesInProductionWorkspace
 } = require('../../../lib/app-helper')
 
 const BaseCommand = require('../../../BaseCommand')
-const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli')
-
-const { CONSOLE_API_KEYS } = require('../../../lib/defaults')
 
 class AddServiceCommand extends BaseCommand {
   async run () {
@@ -32,8 +28,8 @@ class AddServiceCommand extends BaseCommand {
     aioLogger.debug(`deleting Services in the current workspace, using flags: ${JSON.stringify(flags, null, 2)}`)
 
     // login
-    const { accessToken, env } = await getCliInfo()
-    const consoleCLI = await LibConsoleCLI.init({ accessToken, env, apiKey: CONSOLE_API_KEYS[env] })
+    // init console CLI sdk consoleCLI, requires login
+    const consoleCLI = await this.getLibConsoleCLI()
 
     // load console configuration from .aio and .env files
     const projectConfig = config.get('project')
@@ -60,7 +56,7 @@ class AddServiceCommand extends BaseCommand {
     setWorkspaceServicesConfig(currentServiceProperties)
 
     if (currentServiceProperties.length <= 0) {
-      LibConsoleCLI.cleanStdOut()
+      this.cleanConsoleCLIOutput()
       this.error(`No Services are attached to Workspace ${workspace.name}`)
     }
 

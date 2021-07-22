@@ -13,21 +13,46 @@ const BaseCommand = require('../../../BaseCommand')
 const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:event', { provider: 'debug' })
 const { flags } = require('@oclif/command')
+const { installPackages } = require('../../../lib/app-helper')
+const ora = require('ora')
+const path = require('path')
+const generators = require('@adobe/generator-aio-app')
 
 class AddEventCommand extends BaseCommand {
   async run () {
     const { flags } = this.parse(AddEventCommand)
 
-    aioLogger.debug('adding event to the project, using flags: ', flags)
+    aioLogger.debug(`add events with flags: ${JSON.stringify(flags)}`)
+    const spinner = ora()
 
-    const generator = '@adobe/generator-aio-app/generators/add-events'
+    // guaranteed to have at least one, otherwise would throw in config load or in matching the ext name
+    const entries = Object.entries(this.getAppExtConfigs(flags))
+    if (entries.length > 1) {
+      this.error('Please use the \'-e\' flag to specify to which implementation you want to add events to.')
+    }
+    const configName = entries[0][0]
+    const config = entries[0][1]
+    const actionFolder = path.relative(config.root, config.actions.src)
+    const configData = this.getRuntimeManifestConfigFile(configName)
+
     const env = yeoman.createEnv()
-    env.register(require.resolve(generator), 'gen')
-    const res = await env.run('gen', {
-      'skip-install': flags['skip-install'],
-      'skip-prompt': flags.yes
+    const eventsGen = env.instantiate(generators['add-events'], {
+      options: {
+        'skip-prompt': flags.yes,
+        'action-folder': actionFolder,
+        'config-path': configData.file,
+        'full-key-to-manifest': configData.key,
+        // force overwrites, no useless prompts, this is a feature exposed by yeoman itself
+        force: true
+      }
     })
-    return res
+    await env.runGenerator(eventsGen)
+
+    if (!flags['skip-install']) {
+      await installPackages('.', { spinner, verbose: flags.verbose })
+    } else {
+      this.log('--skip-install, make sure to run \'npm install\' later on')
+    }
   }
 }
 
@@ -44,9 +69,16 @@ AddEventCommand.flags = {
     description: 'Skip npm installation after files are created',
     default: false
   }),
+  extension: flags.string({
+    description: 'Add actions to a specific extension',
+    char: 'e',
+    multiple: false,
+    parse: str => [str]
+  }),
   ...BaseCommand.flags
 }
 
+AddEventCommand.aliases = ['app:add:events']
 AddEventCommand.args = []
 
 module.exports = AddEventCommand

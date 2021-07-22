@@ -159,16 +159,12 @@ test('flags/args', async () => {
   expect(TheCommand.flags.global).toBeDefined()
   expect(TheCommand.flags.global.char).toEqual('g')
   expect(TheCommand.flags.global.default).toEqual(false)
-  expect(TheCommand.flags.global.exclusive).toEqual(['workspace', 'workspace-name'])
+  expect(TheCommand.flags.global.exclusive).toEqual(['workspace'])
 
   expect(TheCommand.flags.workspace).toBeDefined()
-  expect(TheCommand.flags.workspace.default).toEqual(false)
+  expect(TheCommand.flags.workspace.char).toEqual('w')
+  expect(TheCommand.flags.workspace.default).toEqual('')
   expect(TheCommand.flags.workspace.exclusive).toEqual(['global'])
-
-  expect(TheCommand.flags['workspace-name']).toBeDefined()
-  expect(TheCommand.flags['workspace-name'].char).toEqual('w')
-  expect(TheCommand.flags['workspace-name'].default).toEqual('')
-  expect(TheCommand.flags['workspace-name'].exclusive).toEqual(['global'])
 
   expect(TheCommand.flags['no-service-sync']).toBeDefined()
   expect(TheCommand.flags['no-service-sync'].default).toEqual(false)
@@ -188,24 +184,19 @@ describe('bad args/flags', () => {
       'Unexpected argument: --wtf\nSee more help with --help'
     )
   })
-  test('arg=console.json --workspace', async () => {
-    await expect(TheCommand.run(['console.json', '--workspace'])).rejects.toThrow(
-      'Flags \'--workspace\', \'--workspace-name\' and \'--global\' cannot be used together with arg \'config_file_path\''
-    )
-  })
   test('arg=console.json --global', async () => {
     await expect(TheCommand.run(['console.json', '--global'])).rejects.toThrow(
-      'Flags \'--workspace\', \'--workspace-name\' and \'--global\' cannot be used together with arg \'config_file_path\''
+      'Flags \'--workspace\' and \'--global\' cannot be used together with arg \'config_file_path\''
     )
   })
-  test('arg=console.json --workspace-name', async () => {
-    await expect(TheCommand.run(['console.json', '--workspace-name', 'wkspce'])).rejects.toThrow(
-      'Flags \'--workspace\', \'--workspace-name\' and \'--global\' cannot be used together with arg \'config_file_path\''
+  test('arg=console.json --workspace', async () => {
+    await expect(TheCommand.run(['console.json', '--workspace', 'wkspce'])).rejects.toThrow(
+      'Flags \'--workspace\' and \'--global\' cannot be used together with arg \'config_file_path\''
     )
   })
   test('--no-input', async () => {
     await expect(TheCommand.run(['--no-input'])).rejects.toThrow(
-      'Flag \'--no-input\', requires one of: arg \'config_file_path\', flag \'--workspace-name\' or flag \'--global\''
+      'Flag \'--no-input\', requires one of: arg \'config_file_path\', flag \'--workspace\' or flag \'--global\''
     )
   })
   // NOTE other combination of flags errors are handled by oclif
@@ -565,34 +556,7 @@ describe('switch to a workspace in the same org', () => {
     expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
   })
 
-  test('--workspace, incomplete global config (no impact)', async () => {
-    delete fakeGlobalConfig.org
-    setConfigMock()
-
-    mockConsoleImportConfig()
-    // first prompt: choose workspace
-    const newWorkspace = { name: 'newworkspace', id: 'newid' }
-    mockConsoleCLIInstance.promptForSelectWorkspace.mockReturnValueOnce(newWorkspace)
-
-    await TheCommand.run(['--workspace'])
-    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
-      fakeCurrentConfig.org.id,
-      fakeCurrentConfig.id,
-      newWorkspace.id,
-      consoleDataMocks.enabledServices
-    )
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
-      expect.any(Buffer),
-      process.cwd(),
-      { merge: false, overwrite: false, interactive: true },
-      { SERVICE_API_KEY: '' }
-    )
-    // services are same in both workspaces in default mock
-    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledTimes(2)
-    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
-  })
-
-  test('--workspace-name existing, prompt confirm sync = true, services are different', async () => {
+  test('--workspace existing, prompt confirm sync = true, services are different', async () => {
     mockConsoleImportConfig()
     const newWorkspace = consoleDataMocks.workspaces[1]
 
@@ -603,7 +567,7 @@ describe('switch to a workspace in the same org', () => {
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServices)
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(servicesInTargetWorkspace)
 
-    await TheCommand.run(['--workspace-name', newWorkspace.name])
+    await TheCommand.run(['--workspace', newWorkspace.name])
     expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
       fakeCurrentConfig.org.id,
       fakeCurrentConfig.id,
@@ -627,7 +591,7 @@ describe('switch to a workspace in the same org', () => {
     )
   })
 
-  test('--workspace-name existing, prompt confirm sync = false, services are different', async () => {
+  test('--workspace existing, prompt confirm sync = false, services are different', async () => {
     mockConsoleImportConfig()
     const newWorkspace = consoleDataMocks.workspaces[1]
 
@@ -638,7 +602,7 @@ describe('switch to a workspace in the same org', () => {
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServices)
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(servicesInTargetWorkspace)
 
-    await TheCommand.run(['--workspace-name', newWorkspace.name])
+    await TheCommand.run(['--workspace', newWorkspace.name])
     expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
       fakeCurrentConfig.org.id,
       fakeCurrentConfig.id,
@@ -656,7 +620,7 @@ describe('switch to a workspace in the same org', () => {
     expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
   })
 
-  test('--workspace, --workspace-name existing, --no-input, services are different', async () => {
+  test('--workspace existing, --no-input, services are different', async () => {
     mockConsoleImportConfig()
     const newWorkspace = consoleDataMocks.workspaces[1]
 
@@ -665,7 +629,7 @@ describe('switch to a workspace in the same org', () => {
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServices)
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(servicesInTargetWorkspace)
 
-    await TheCommand.run(['--workspace', '--workspace-name', newWorkspace.name, '--no-input'])
+    await TheCommand.run(['--workspace', newWorkspace.name, '--no-input'])
     expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
       fakeCurrentConfig.org.id,
       fakeCurrentConfig.id,
@@ -685,7 +649,7 @@ describe('switch to a workspace in the same org', () => {
     expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
   })
 
-  test('--workspace, --workspace-name Production, services are different, confirm sync service', async () => {
+  test('--workspace Production, services are different, confirm sync service', async () => {
     mockConsoleImportConfig()
     mockPrompt.mockReturnValueOnce({ res: true })
     const newWorkspace = consoleDataMocks.workspaces.find(w => w.name === 'Production')
@@ -696,7 +660,7 @@ describe('switch to a workspace in the same org', () => {
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServices)
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(servicesInTargetWorkspace)
 
-    await TheCommand.run(['--workspace', '--workspace-name', 'Production'])
+    await TheCommand.run(['--workspace', 'Production'])
     expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
       fakeCurrentConfig.org.id,
       fakeCurrentConfig.id,
@@ -722,30 +686,30 @@ describe('switch to a workspace in the same org', () => {
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(`⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace in Project '${fakeCurrentConfig.name}'`))
   })
 
-  test('--workspace-name not-existing', async () => {
+  test('--workspace not-existing', async () => {
     mockConsoleImportConfig()
-    await expect(TheCommand.run(['--workspace-name', 'not-existing'])).rejects.toThrow(
-      '--workspace-name=not-existing does not exist in current Project projectname'
+    await expect(TheCommand.run(['--workspace', 'not-existing'])).rejects.toThrow(
+      '--workspace=not-existing does not exist in current Project projectname'
     )
   })
 
-  test('--workspace-name sameascurrent', async () => {
+  test('--workspace sameascurrent', async () => {
     mockConsoleImportConfig()
-    await expect(TheCommand.run(['--workspace-name', fakeCurrentConfig.workspace.name])).rejects.toThrow(
-      '--workspace-name=workspacename is the same as the currently selected workspace, nothing to be done'
+    await expect(TheCommand.run(['--workspace', fakeCurrentConfig.workspace.name])).rejects.toThrow(
+      '--workspace=workspacename is the same as the currently selected workspace, nothing to be done'
     )
   })
 
-  test('--workspace-name <no-value>', async () => {
+  test('--workspace <no-value>', async () => {
     mockConsoleImportConfig()
-    await expect(TheCommand.run(['--workspace-name'])).rejects.toThrow(
-      'Flag --workspace-name expects a value'
+    await expect(TheCommand.run(['--workspace'])).rejects.toThrow(
+      'Flag --workspace expects a value'
     )
   })
   test('incomplete current config, missing org', async () => {
     delete fakeCurrentConfig.org
     setConfigMock()
-    await expect(TheCommand.run(['--workspace'])).rejects.toThrow(
+    await expect(TheCommand.run(['--workspace', 'some'])).rejects.toThrow(
       `Incomplete .aio configuration. Cannot select a new Workspace in same Project.${EOL}Please import a valid Adobe Developer Console configuration file via \`aio app use <config>.json\``
     )
   })
@@ -753,21 +717,21 @@ describe('switch to a workspace in the same org', () => {
     delete fakeCurrentConfig.id
     delete fakeCurrentConfig.name
     setConfigMock()
-    await expect(TheCommand.run(['--workspace'])).rejects.toThrow(
+    await expect(TheCommand.run(['--workspace', 'some'])).rejects.toThrow(
       `Incomplete .aio configuration. Cannot select a new Workspace in same Project.${EOL}Please import a valid Adobe Developer Console configuration file via \`aio app use <config>.json\``
     )
   })
   test('incomplete current config, missing workspace', async () => {
     delete fakeCurrentConfig.workspace
     setConfigMock()
-    await expect(TheCommand.run(['--workspace'])).rejects.toThrow(
+    await expect(TheCommand.run(['--workspace', 'some'])).rejects.toThrow(
       `Incomplete .aio configuration. Cannot select a new Workspace in same Project.${EOL}Please import a valid Adobe Developer Console configuration file via \`aio app use <config>.json\``
     )
   })
   test('incomplete current config, missing all', async () => {
     fakeCurrentConfig = null
     setConfigMock()
-    await expect(TheCommand.run(['--workspace'])).rejects.toThrow(
+    await expect(TheCommand.run(['--workspace', 'some'])).rejects.toThrow(
       `Incomplete .aio configuration. Cannot select a new Workspace in same Project.${EOL}Please import a valid Adobe Developer Console configuration file via \`aio app use <config>.json\``
     )
   })

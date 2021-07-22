@@ -49,14 +49,15 @@ const OW_TIMEOUT = 60000
  * Checks the system for pre-requisites to run local Openwhisk, then runs it.
  *
  * @param {object} config the app config
+ * @param {object} dataDir global config folder to store the ow jar
  * @param {Function} [log] function to log application logs
  * @param {boolean} [verbose=false] set to true to have verbose logging (openwhisk)
  * @returns {RunDevLocalObject} the RunDevLocalObject
  */
-async function runDevLocal (config, log = () => undefined, verbose = false) {
+async function runDevLocal (config, dataDir, log = () => undefined, verbose = false) {
   const devConfig = cloneDeep(config)
   devConfig.envFile = path.join(config.app.dist, '.env.local')
-  const owJarFile = path.join(config.cli.dataDir, OW_JAR_PATH)
+  const owJarFile = path.join(dataDir, OW_JAR_PATH)
 
   // take following steps only when we have a backend
   log('checking if java is installed...')

@@ -15,16 +15,14 @@ const config = require('@adobe/aio-lib-core-config')
 const chalk = require('chalk')
 
 const {
-  getCliInfo,
   setOrgServicesConfig,
   setWorkspaceServicesConfig,
   warnIfOverwriteServicesInProductionWorkspace
 } = require('../../../lib/app-helper')
 
 const BaseCommand = require('../../../BaseCommand')
-const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli')
 
-const { ENTP_INT_CERTS_FOLDER, CONSOLE_API_KEYS } = require('../../../lib/defaults')
+const { ENTP_INT_CERTS_FOLDER } = require('../../../lib/defaults')
 
 class AddServiceCommand extends BaseCommand {
   async run () {
@@ -32,9 +30,9 @@ class AddServiceCommand extends BaseCommand {
 
     aioLogger.debug(`adding services to the current workspace, using flags: ${JSON.stringify(flags, null, 2)}`)
 
-    // login
-    const { accessToken, env } = await getCliInfo()
-    const consoleCLI = await LibConsoleCLI.init({ accessToken, env, apiKey: CONSOLE_API_KEYS[env] })
+    // init console CLI sdk consoleCLI
+    // NOTE: the user must be able to login
+    const consoleCLI = await this.getLibConsoleCLI()
 
     // load console configuration from .aio and .env files
     const projectConfig = config.get('project')
@@ -82,7 +80,7 @@ class AddServiceCommand extends BaseCommand {
       const currentServiceCodesSet = new Set(currentServiceProperties.map(s => s.sdkCode))
       const filteredServices = supportedServices.filter(s => s.type === 'entp' && !currentServiceCodesSet.has(s.code))
       if (filteredServices.length <= 0) {
-        LibConsoleCLI.cleanStdOut()
+        this.cleanConsoleCLIOutput()
         this.error(`All supported Services in the Organization have already been added to Workspace ${workspace.name}`)
       }
       // prompt to manually select services

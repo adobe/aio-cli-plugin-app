@@ -15,22 +15,24 @@ const rtLibUtils = require('@adobe/aio-lib-runtime').utils
 const fs = require('fs-extra')
 const path = require('path')
 const yeoman = require('yeoman-environment')
+const generators = require('@adobe/generator-aio-app')
 
 const LAUNCH_JSON_FILE = '.vscode/launch.json'
 const LAUNCH_JSON_FILE_BACKUP = '.vscode/launch.json.save'
 
 /** @private */
 function files (config) {
-  return {
+  return () => ({
     backupFile: rtLibUtils._absApp(config.root, LAUNCH_JSON_FILE_BACKUP),
     mainFile: rtLibUtils._absApp(config.root, LAUNCH_JSON_FILE)
-  }
+  })
 }
 
 /** @private */
 function update (config) {
+  const _files = files(config)
   return async (props) => {
-    const { backupFile, mainFile } = files(config)
+    const { backupFile, mainFile } = _files()
 
     fs.ensureDirSync(path.dirname(mainFile))
     if (fs.existsSync(mainFile)) {
@@ -39,23 +41,24 @@ function update (config) {
       }
     }
 
-    const generator = '@adobe/generator-aio-app/generators/add-vscode-config'
     const env = yeoman.createEnv()
-    env.register(require.resolve(generator), 'gen')
-
-    await env.run('gen', {
-      'app-config': config,
-      'env-file': config.envFile,
-      'frontend-url': props.frontEndUrl,
-      'skip-prompt': true
+    const gen = env.instantiate(generators['add-vscode-config'], {
+      options: {
+        'app-config': config,
+        'env-file': config.envFile,
+        'frontend-url': props.frontEndUrl,
+        'skip-prompt': true
+      }
     })
+    await env.runGenerator(gen)
   }
 }
 
 /** @private */
 function cleanup (config) {
+  const _files = files(config)
   return () => {
-    const { backupFile, mainFile } = files(config)
+    const { backupFile, mainFile } = _files()
 
     if (fs.existsSync(mainFile) && !fs.existsSync(backupFile)) {
       aioLogger.debug(`removing ${mainFile}...`)
@@ -74,6 +77,7 @@ function cleanup (config) {
 }
 
 module.exports = (config) => ({
+  files: files(config),
   update: update(config),
   cleanup: cleanup(config)
 })

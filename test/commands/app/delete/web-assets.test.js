@@ -10,26 +10,18 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 const fs = require('fs-extra')
-
 const TheCommand = require('../../../../src/commands/app/delete/web-assets')
 const BaseCommand = require('../../../../src/BaseCommand')
+const cloneDeep = require('lodash.clonedeep')
 
 jest.mock('fs-extra')
-
-jest.mock('yeoman-environment')
-const yeoman = require('yeoman-environment')
-
-const mockRegister = jest.fn()
-const mockRun = jest.fn()
-yeoman.createEnv.mockReturnValue({
-  register: mockRegister,
-  run: mockRun
+jest.mock('inquirer', () => {
+  return {
+    Separator: class {}
+  }
 })
 
 beforeEach(() => {
-  mockRegister.mockReset()
-  mockRun.mockReset()
-  yeoman.createEnv.mockClear()
   fs.ensureDirSync.mockClear()
 })
 
@@ -42,38 +34,77 @@ describe('Command Prototype', () => {
 })
 
 describe('bad flags', () => {
+  let command
+  beforeEach(() => {
+    command = new TheCommand([])
+  })
   test('unknown', async () => {
-    await expect(TheCommand.run(['--wtf'])).rejects.toThrow('Unexpected argument')
+    command.argv = ['--wtf']
+    await expect(command.run()).rejects.toThrow('Unexpected argument')
   })
 })
 
-describe('template module cannot be registered', () => {
-  test('unknown error', async () => {
-    mockRegister.mockImplementation(() => { throw new Error('some error') })
-    await expect(TheCommand.run([])).rejects.toThrow('some error')
+const mockConfigData = {
+  app: {
+    hasFrontend: true
+  },
+  all: {
+    woody: {
+      app: {
+        hasFrontend: true
+      },
+      web: {
+        src: '/web-src',
+        distDev: '/dist/web-src-dev',
+        distProd: '/dist/web-src-prod',
+        injectedConfig: '/web-src/src/config.json'
+      },
+      root: '/boom'
+    }
+  }
+}
+
+describe('bad user selections', () => {
+  let command
+  beforeEach(() => {
+    command = new TheCommand([])
+    command.getAppExtConfigs = jest.fn()
+    command.appConfig = cloneDeep(mockConfigData)
+    fs.removeSync.mockClear()
   })
-})
 
-describe('good flags', () => {
-  test('--yes', async () => {
-    await TheCommand.run(['--yes'])
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': true
+  test('aborts if no frontend', async () => {
+    fs.removeSync.mockClear()
+    command.appConfig.all.woody.app.hasFrontend = false
+    command.prompt = jest.fn(a => {
+      return {
+        delete: true,
+        'web-assets': [{ src: 'fakeWebPath23' }]
+      }
     })
+    await expect(command.run()).rejects.toThrow('There does not appear')
+    expect(fs.removeSync).not.toHaveBeenCalled()
   })
 
-  test('no flags', async () => {
-    await TheCommand.run([])
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': false
+  test('aborts if user says no', async () => {
+    command.prompt = jest.fn( a => {
+      return {
+        delete: false,
+        'web-assets': [{ src: 'fakeWebPath4345' }]
+      }
     })
+    await command.run()
+    expect(fs.removeSync).not.toHaveBeenCalled()
+  })
+
+  test('deletes user\'s selection', async () => {
+    command.prompt = jest.fn( a => {
+      return {
+        delete: true,
+        'web-assets': [{ src: 'fakeWebPath' }]
+      }
+    })
+    await command.run()
+    expect(fs.removeSync).toHaveBeenCalledWith('fakeWebPath')
   })
 })

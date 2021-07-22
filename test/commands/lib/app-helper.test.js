@@ -9,26 +9,39 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-const which = require('which')
-const fs = require('fs-extra')
-const execa = require('execa')
-const appHelper = require('../../../src/lib/app-helper')
-const fetch = require('node-fetch')
-const config = require('@adobe/aio-lib-core-config')
+
+// unmock to test proper returned urls from getActionUrls
+jest.unmock('@adobe/aio-lib-runtime')
 
 jest.mock('@adobe/aio-lib-core-config')
 jest.mock('node-fetch')
 jest.mock('execa')
 jest.mock('process')
+jest.mock('fs-extra') // do not touch the real fs
+jest.mock('@adobe/aio-lib-env')
+jest.mock('@adobe/aio-lib-ims')
+
+const which = require('which')
+const fs = require('fs-extra')
+const execa = require('execa')
+const appHelper = require('../../../src/lib/app-helper')
+const fetch = require('node-fetch')
+const aioConfig = require('@adobe/aio-lib-core-config')
+const libEnv = require('@adobe/aio-lib-env')
+const libIms = require('@adobe/aio-lib-ims')
 
 beforeEach(() => {
   Object.defineProperty(process, 'platform', { value: 'linux' })
   execa.mockReset()
   execa.command.mockReset()
   fetch.mockReset()
-  config.get.mockReset()
-  config.set.mockReset()
+  aioConfig.get.mockReset()
+  aioConfig.set.mockReset()
+  libEnv.getCliEnv.mockReset()
+  libIms.getToken.mockReset()
 })
+
+const getMockConfig = require('../../data-mocks/config-loader')
 
 test('isDockerRunning', async () => {
   let result
@@ -120,15 +133,15 @@ test('isGitInstalled', () => {
   expect(appHelper.isGitInstalled()).toBeFalsy()
 })
 
-test('installPackage', async () => {
-  expect(appHelper.installPackage).toBeDefined()
-  expect(appHelper.installPackage).toBeInstanceOf(Function)
+test('installPackages', async () => {
+  expect(appHelper.installPackages).toBeDefined()
+  expect(appHelper.installPackages).toBeInstanceOf(Function)
 
   // throws error if dir dne => // fs.statSync(dir).isDirectory()
   fs.statSync.mockReturnValue({
     isDirectory: () => false
   })
-  await expect(appHelper.installPackage('does-not-exist'))
+  await expect(appHelper.installPackages('does-not-exist'))
     .rejects.toThrow(/does-not-exist is not a directory/)
 
   // throws error if dir does not contain a package.json
@@ -136,13 +149,27 @@ test('installPackage', async () => {
     isDirectory: () => true
   })
   fs.readdirSync.mockReturnValue([])
-  await expect(appHelper.installPackage('does-not-exist'))
+  await expect(appHelper.installPackages('does-not-exist'))
     .rejects.toThrow(/does-not-exist does not contain a package.json file./)
 
   // succeeds if npm install returns success
+  execa.mockReset()
   fs.readdirSync.mockReturnValue(['package.json'])
-  appHelper.installPackage('does-not-exist')
-  return expect(execa).toHaveBeenCalledWith('npm', ['install'], { cwd: 'does-not-exist' })
+  await appHelper.installPackages('does-not-exist')
+  expect(execa).toHaveBeenCalledWith('npm', ['install'], { cwd: 'does-not-exist' })
+
+  // verbose option
+  execa.mockReset()
+  await appHelper.installPackages('somedir', { verbose: true })
+  expect(execa).toHaveBeenCalledWith('npm', ['install'], { cwd: 'somedir', stderr: 'inherit', stdout: 'inherit' })
+
+  // spinner option
+  execa.mockReset()
+  const spinner = { start: jest.fn(), stop: jest.fn() }
+  await appHelper.installPackages('somedir', { spinner, verbose: false })
+  expect(execa).toHaveBeenCalledWith('npm', ['install'], { cwd: 'somedir' })
+  expect(spinner.start).toHaveBeenCalled()
+  expect(spinner.stop).toHaveBeenCalled()
 })
 
 test('runPackageScript', async () => {
@@ -254,6 +281,23 @@ test('runPackageScript logs if package.json does not have matching script', asyn
     .resolves.toBeUndefined()
 })
 
+test('runScript with empty command', async () => {
+  await appHelper.runScript(undefined, 'dir')
+  expect(execa.command).not.toHaveBeenCalled()
+})
+
+test('runScript with defined dir', async () => {
+  execa.command.mockReturnValue({ on: () => {} })
+  await appHelper.runScript('somecommand', 'somedir')
+  expect(execa.command).toHaveBeenCalledWith('somecommand', expect.objectContaining({ cwd: 'somedir' }))
+})
+
+test('runScript with empty dir => process.cwd', async () => {
+  execa.command.mockReturnValue({ on: () => {} })
+  await appHelper.runScript('somecommand', undefined)
+  expect(execa.command).toHaveBeenCalledWith('somecommand', expect.objectContaining({ cwd: process.cwd() }))
+})
+
 test('wrapError returns an a Error in any case', async () => {
   expect(appHelper.wrapError).toBeDefined()
   expect(appHelper.wrapError).toBeInstanceOf(Function)
@@ -277,134 +321,6 @@ test('wrapError returns an a Error in any case', async () => {
   expect(error).toBeInstanceOf(Error)
   expect(error.message).toEqual('yolo3')
   expect(error.stack).toBeDefined()
-})
-
-describe('getActionUrls', () => {
-  let fakeConfig
-  beforeEach(() => {
-    // base
-    fakeConfig = {
-      ow: {
-        namespace: 'dude',
-        apihost: 'https://fake.com',
-        package: 'thepackage',
-        apiversion: 'v0'
-      },
-      app: {
-        hasFrontend: true,
-        hostname: 'https://cdn.com'
-      },
-      manifest: {
-        package: {
-          actions: {}
-        }
-      }
-    }
-  })
-  test('no actions in manifest config', () => {
-    expect(appHelper.getActionUrls(fakeConfig)).toEqual({})
-  })
-  test('6 actions, 2 web and 4 non-web and no sequence', () => {
-    fakeConfig.manifest.package.actions = {
-      one: { 'web-export': true },
-      two: { web: true },
-      three: { web: false },
-      four: { web: 'no' },
-      five: { web: 'false' },
-      six: { other: 'something' }
-    }
-    expect(appHelper.getActionUrls(fakeConfig)).toEqual({
-      five: 'https://dude.fake.com/api/v0/thepackage/five',
-      four: 'https://dude.fake.com/api/v0/thepackage/four',
-      one: 'https://dude.cdn.com/api/v0/web/thepackage/one',
-      six: 'https://dude.fake.com/api/v0/thepackage/six',
-      three: 'https://dude.fake.com/api/v0/thepackage/three',
-      two: 'https://dude.cdn.com/api/v0/web/thepackage/two'
-    })
-  })
-  test('6 sequences, 2 web and 4 non-web and no actions', () => {
-    fakeConfig.manifest.package.sequences = {
-      one: { 'web-export': true },
-      two: { web: true },
-      three: { web: false },
-      four: { web: 'no' },
-      five: { web: 'false' },
-      six: { other: 'something' }
-    }
-    expect(appHelper.getActionUrls(fakeConfig)).toEqual({
-      five: 'https://dude.fake.com/api/v0/thepackage/five',
-      four: 'https://dude.fake.com/api/v0/thepackage/four',
-      one: 'https://dude.cdn.com/api/v0/web/thepackage/one',
-      six: 'https://dude.fake.com/api/v0/thepackage/six',
-      three: 'https://dude.fake.com/api/v0/thepackage/three',
-      two: 'https://dude.cdn.com/api/v0/web/thepackage/two'
-    })
-  })
-  test('2 actions and 2 sequences, one web one non-web', () => {
-    fakeConfig.manifest.package.actions = {
-      aone: { 'web-export': true },
-      atwo: {}
-    }
-    fakeConfig.manifest.package.sequences = {
-      sone: { 'web-export': true },
-      stwo: {}
-    }
-    expect(appHelper.getActionUrls(fakeConfig)).toEqual({
-      aone: 'https://dude.cdn.com/api/v0/web/thepackage/aone',
-      atwo: 'https://dude.fake.com/api/v0/thepackage/atwo',
-      sone: 'https://dude.cdn.com/api/v0/web/thepackage/sone',
-      stwo: 'https://dude.fake.com/api/v0/thepackage/stwo'
-    })
-  })
-  test('2 actions and 2 sequences, one web one non-web, app has no frontend', () => {
-    fakeConfig.manifest.package.actions = {
-      aone: { 'web-export': true },
-      atwo: {}
-    }
-    fakeConfig.manifest.package.sequences = {
-      sone: { 'web-export': true },
-      stwo: {}
-    }
-    fakeConfig.app.hasFrontend = false
-    expect(appHelper.getActionUrls(fakeConfig)).toEqual({
-      aone: 'https://dude.fake.com/api/v0/web/thepackage/aone',
-      atwo: 'https://dude.fake.com/api/v0/thepackage/atwo',
-      sone: 'https://dude.fake.com/api/v0/web/thepackage/sone',
-      stwo: 'https://dude.fake.com/api/v0/thepackage/stwo'
-    })
-  })
-  test('2 actions and 2 sequences, one web one non-web, isRemoteDev=true', () => {
-    fakeConfig.manifest.package.actions = {
-      aone: { 'web-export': true },
-      atwo: {}
-    }
-    fakeConfig.manifest.package.sequences = {
-      sone: { 'web-export': true },
-      stwo: {}
-    }
-    expect(appHelper.getActionUrls(fakeConfig, true)).toEqual({
-      aone: 'https://dude.fake.com/api/v0/web/thepackage/aone',
-      atwo: 'https://dude.fake.com/api/v0/thepackage/atwo',
-      sone: 'https://dude.fake.com/api/v0/web/thepackage/sone',
-      stwo: 'https://dude.fake.com/api/v0/thepackage/stwo'
-    })
-  })
-  test('2 actions and 2 sequences, one web one non-web, isLocalDev=true', () => {
-    fakeConfig.manifest.package.actions = {
-      aone: { 'web-export': true },
-      atwo: {}
-    }
-    fakeConfig.manifest.package.sequences = {
-      sone: { 'web-export': true },
-      stwo: {}
-    }
-    expect(appHelper.getActionUrls(fakeConfig, false, true)).toEqual({
-      aone: 'https://fake.com/api/v0/web/dude/thepackage/aone',
-      atwo: 'https://fake.com/api/v0/dude/thepackage/atwo',
-      sone: 'https://fake.com/api/v0/web/dude/thepackage/sone',
-      stwo: 'https://fake.com/api/v0/dude/thepackage/stwo'
-    })
-  })
 })
 
 test('removeProtocol', () => {
@@ -558,7 +474,7 @@ test('runOpenWhiskJar with AIO_OW_JVM_ARGS env var is passed to execa', async ()
   fetch.mockReturnValue({ ok: true })
   execa.mockReturnValue({ stdout: jest.fn() })
 
-  config.get.mockReturnValueOnce('arg1 arg2')
+  aioConfig.get.mockReturnValueOnce('arg1 arg2')
 
   const result = appHelper.runOpenWhiskJar('jar', 'conf')
 
@@ -628,7 +544,7 @@ test('setWorkspaceServicesConfig', () => {
     { name: 'sec', sdkCode: 'secs', code: 'no such field', b: 'hello', type: 'no such field' }
   ]
   appHelper.setWorkspaceServicesConfig(fakeServiceProps)
-  expect(config.set).toHaveBeenCalledWith(
+  expect(aioConfig.set).toHaveBeenCalledWith(
     'project.workspace.details.services', [
       { name: 'first', code: 'firsts' },
       { name: 'sec', code: 'secs' }
@@ -644,7 +560,7 @@ test('setOrgServicesConfig', () => {
     { name: 'third', code: 'thirds', sdkCode: 'no such field', type: 'entp' }
   ]
   appHelper.setOrgServicesConfig(fakeOrgServices)
-  expect(config.set).toHaveBeenCalledWith(
+  expect(aioConfig.set).toHaveBeenCalledWith(
     'project.org.details.services', [
       { name: 'first', code: 'firsts', type: 'entp' },
       { name: 'sec', code: 'secs', type: 'entp' },
@@ -652,4 +568,213 @@ test('setOrgServicesConfig', () => {
     ],
     true
   )
+})
+
+describe('buildExcShellViewExtensionMetadata', () => {
+  test('with service properties', async () => {
+    const mockConsoleCLIInstance = {
+      getServicePropertiesFromWorkspace: jest.fn()
+    }
+    const mockAIOConfig = {
+      project: {
+        org: {
+          id: 'hola'
+        },
+        workspace: {
+          id: 'yay',
+          name: 'yo'
+        },
+        id: 'bonjour'
+      }
+    }
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue([
+      { name: 'service1', sdkCode: 'service1code', other: 'field' },
+      { name: 'service2', sdkCode: 'service2code', other: 'field2' }
+    ])
+    const res = await appHelper.buildExcShellViewExtensionMetadata(mockConsoleCLIInstance, mockAIOConfig)
+    expect(res).toEqual({
+      services: [
+        { name: 'service1', code: 'service1code' },
+        { name: 'service2', code: 'service2code' }
+      ],
+      profile: {
+        client_id: 'firefly-app',
+        scope: 'ab.manage,additional_info.job_function,additional_info.projectedProductContext,additional_info.roles,additional_info,AdobeID,adobeio_api,adobeio.appregistry.read,audiencemanager_api,creative_cloud,mps,openid,read_organizations,read_pc.acp,read_pc.dma_tartan,read_pc,session'
+      }
+    })
+    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledWith('hola', 'bonjour', { id: 'yay', name: 'yo' })
+  })
+})
+
+describe('buildExtensionPointPayloadWoMetadata', () => {
+  test('app config', () => {
+    // application config has no ext reg payload
+    const mockConfig = getMockConfig('app', {})
+    expect(appHelper.buildExtensionPointPayloadWoMetadata(mockConfig.all))
+      .toEqual({ endpoints: {} })
+  })
+
+  test('exc config', () => {
+    const mockConfig = getMockConfig('exc', { runtime: { namespace: 'hola' } })
+    expect(appHelper.buildExtensionPointPayloadWoMetadata(mockConfig.all))
+      .toEqual({
+        endpoints: {
+          'dx/excshell/1': { view: [{ href: 'https://hola.adobeio-static.net/index.html' }] }
+        }
+      })
+  })
+
+  test('app-exc-nui config', () => {
+    const mockConfig = getMockConfig('app-exc-nui', { runtime: { namespace: 'hola' } })
+    expect(appHelper.buildExtensionPointPayloadWoMetadata(mockConfig.all))
+      .toEqual({
+        endpoints: {
+          'dx/asset-compute/worker/1': { apply: [{ href: 'https://hola.adobeioruntime.net/api/v1/web/my-nui-package/action' }] },
+          'dx/excshell/1': { view: [{ href: 'https://hola.adobeio-static.net/index.html' }] }
+        }
+      })
+  })
+
+  test('fake headless extension with multi package actions', () => {
+    const fakeConfig = {
+      all: {
+        fake: {
+          operations: {
+            one: [{
+              type: 'action',
+              impl: 'pkg1/action1'
+            }],
+            two: [{
+              type: 'action',
+              impl: 'pkg2/action2'
+            }]
+          },
+          ow: {
+            apihost: 'https://some.com',
+            defaultApihost: 'https://adobeioruntime.com',
+            package: 'bla-1',
+            namespace: 'hola',
+            apiversion: 'v1'
+          },
+          app: {
+            hasBackend: true,
+            hostname: 'fake.com',
+            defaultHostname: 'another'
+          },
+          manifest: {
+            full: {
+              packages: {
+                pkg1: {
+                  actions: {
+                    action1: {
+                      web: 'yes'
+                    }
+                  }
+                },
+                pkg2: {
+                  actions: {
+                    action2: {
+                      web: 'false'
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    expect(appHelper.buildExtensionPointPayloadWoMetadata(fakeConfig.all))
+      .toEqual({ endpoints: { fake: { one: [{ href: 'https://hola.fake.com/api/v1/web/pkg1/action1' }], two: [{ href: 'https://some.com/api/v1/hola/pkg2/action2' }] } } })
+  })
+
+  test('fake extension with bad operation type', () => {
+    const fakeConfig = {
+      all: {
+        fake: {
+          operations: {
+            one: [{
+              type: 'notsupported',
+              impl: 'pkg1/action1'
+            }]
+          },
+          manifest: {},
+          app: {},
+          ow: {}
+        }
+      }
+    }
+    expect(() => appHelper.buildExtensionPointPayloadWoMetadata(fakeConfig.all))
+      .toThrow('unexpected op.type encountered => \'notsupported\'')
+  })
+})
+
+describe('atLeastOne', () => {
+  test('no input', () => {
+    expect(appHelper.atLeastOne([])).toEqual('please choose at least one option')
+  })
+  test('some input', () => {
+    expect(appHelper.atLeastOne(['some', 'input'])).toEqual(true)
+  })
+})
+
+describe('deleteUserConfig', () => {
+  beforeEach(() => {
+    fs.writeFileSync.mockReset()
+    fs.readFileSync.mockReset()
+  })
+
+  test('rewrite config', () => {
+    fs.readFileSync.mockReturnValue(Buffer.from(`
+some:
+  config:
+    in: 'a yaml file'
+`))
+    appHelper.deleteUserConfig({ file: 'fake.file', key: 'some.config.in' })
+    expect(fs.readFileSync).toHaveBeenLastCalledWith('fake.file')
+    expect(fs.writeFileSync).toHaveBeenCalledWith('fake.file', `some:
+  config: {}
+`)
+  })
+})
+
+describe('serviceToGeneratorInput', () => {
+  test('list with empty codes', () => {
+    expect(appHelper.servicesToGeneratorInput(
+      [{ name: 'hello', code: 'hellocode' },
+        { name: 'bonjour', code: 'bonjourcode' },
+        { name: 'nocode' }]
+    )).toEqual('hellocode,bonjourcode')
+  })
+})
+
+describe('writeConfig', () => {
+  beforeEach(() => {
+    fs.writeFileSync.mockReset()
+    fs.ensureDirSync.mockReset()
+  })
+  test('write a json to a file', () => {
+    appHelper.writeConfig('the/dir/some.file', { some: 'config' })
+    expect(fs.ensureDirSync).toHaveBeenCalledWith('the/dir')
+    expect(fs.writeFileSync).toHaveBeenCalledWith('the/dir/some.file', '{"some":"config"}', { encoding: 'utf-8' })
+  })
+})
+
+describe('getCliInfo', () => {
+  test('prod', async () => {
+    libEnv.getCliEnv.mockReturnValue('prod')
+    libIms.getToken.mockResolvedValue('token')
+    const res = await appHelper.getCliInfo()
+    expect(res).toEqual(
+      { accessToken: 'token', env: 'prod' }
+    )
+  })
+  test('stage', async () => {
+    libEnv.getCliEnv.mockReturnValue('stage')
+    libIms.getToken.mockResolvedValue('stoken')
+    const res = await appHelper.getCliInfo()
+    expect(res).toEqual(
+      { accessToken: 'stoken', env: 'stage' }
+    )
+  })
 })
