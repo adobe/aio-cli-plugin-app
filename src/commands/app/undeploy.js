@@ -131,6 +131,7 @@ class Undeploy extends BaseCommand {
     if (flags['force-unpublish']) {
       // publish and overwrite any previous published endpoints (delete them)
       res = await libConsoleCLI.updateExtensionPoints(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, { endpoints: {} })
+      return res
     }
     // publish without overwritting, meaning partial publish (for a subset of ext points) are supported
     res = await libConsoleCLI.removeSelectedExtensionPoints(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, payload)

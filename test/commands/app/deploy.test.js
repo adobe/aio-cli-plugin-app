@@ -45,8 +45,45 @@ const { cli } = require('cli-ux')
 
 const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
   const appConfig = dataMocks(appFixtureName, aioConfig).all
-  appConfig.application = { ...appConfig.application, ...aioConfig }
+  // change this, dataMocks allows to inject custom configuration
+  if (appFixtureName.includes('app')) {
+    appConfig.application = { ...appConfig.application, ...aioConfig }
+  }
   return appConfig
+}
+
+const mockExtRegExcShellPayload = () => {
+  const payload = {
+    endpoints: {
+      'dx/excshell/1': {
+        view: [
+          { metadata: {} }
+        ]
+      }
+    }
+  }
+  helpers.buildExtensionPointPayloadWoMetadata.mockReturnValueOnce(payload)
+  mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites.mockReturnValueOnce(payload)
+  mockLibConsoleCLI.updateExtensionPoints.mockReturnValueOnce(payload)
+}
+
+const mockExtRegExcShellAndNuiPayload = () => {
+  const payload = {
+    endpoints: {
+      'dx/excshell/1': {
+        view: [
+          { metadata: {} }
+        ]
+      },
+      'dx/asset-compute/worker/1': {
+        apply: [
+        ]
+      }
+    }
+  }
+  helpers.buildExtensionPointPayloadWoMetadata.mockReturnValueOnce(payload)
+  mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites.mockReturnValueOnce(payload)
+  mockLibConsoleCLI.updateExtensionPoints.mockReturnValueOnce(payload)
 }
 
 const mockLibConsoleCLI = {
@@ -314,7 +351,7 @@ describe('run', () => {
 
     command.argv = ['--skip-deploy']
     await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.error).not.toHaveBeenCalled()
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
     expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true }), expect.anything())
@@ -513,7 +550,7 @@ describe('run', () => {
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
   })
 
-  test('deploy (--skip-actions and --skip-static)', async () => {
+  test('deploy (--skip-actions and --skip-static) for application - nothing to be done', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
     helpers.runScript
@@ -525,7 +562,33 @@ describe('run', () => {
 
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
-    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.error).toHaveBeenCalledWith('Nothing to be done 🚫')
+  })
+
+  test('deploy (--skip-actions and --skip-static) for extension - publish', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig, 'exc'))
+    command.getFullConfig.mockReturnValue({
+      aio: {
+        project: {
+          workspace: {
+            name: 'foo'
+          }
+        }
+      }
+    })
+    mockExtRegExcShellPayload()
+    const noScriptFound = undefined
+    helpers.runScript
+      .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
+      .mockResolvedValueOnce(noScriptFound) // post-app-deploy
+
+    command.argv = ['--skip-actions', '--skip-static']
+    await command.run()
+
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(1)
   })
 
   test('deploy (--skip-actions)', async () => {
@@ -572,16 +635,18 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
   })
 
-  test('deploy (pre and post hooks have errors, --skip-actions and --skip-static)', async () => {
+  test('deploy (pre and post hooks have errors)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     helpers.runScript
-      .mockRejectedValueOnce('error-pre-app-deploy') // pre-app-deploy (logs error)
-      .mockRejectedValueOnce('error-post-app-deploy') // post-app-deploy (logs error)
+      .mockRejectedValueOnce('error-pre-app-deploy') // pre-app-deploy
+      .mockResolvedValueOnce(undefined) // deploy-actions
+      .mockResolvedValueOnce(undefined) // deploy-static
+      .mockRejectedValueOnce('error-post-app-deploy') // post-app-deploy
 
-    command.argv = ['--skip-actions', '--skip-static']
+    command.argv = []
     await command.run()
-    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(0)
 
     expect(command.log).toHaveBeenCalledWith('error-pre-app-deploy')
@@ -623,16 +688,36 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledWith(expect.stringMatching(/Nothing to be done/))
   })
 
-  test('nothing to be published (--no-publish, --build, --skip-deploy)', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+  test('nothing to be done for exc (--no-publish, --no-build, --skip-deploy)', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig, 'exc'))
 
-    command.argv = ['--no-publish', '--build', '--skip-deploy']
+    command.argv = ['--no-publish', '--no-build', '--skip-deploy']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledWith(expect.stringMatching(/Nothing to be done/))
   })
 
-  test('publish phase (no force, exc-shell payload)', async () => {
+  test('publish phase (no force, exc+nui payload)', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig, 'app-exc-nui'))
+    command.getFullConfig.mockReturnValue({
+      aio: {
+        project: {
+          workspace: {
+            name: 'foo'
+          }
+        }
+      }
+    })
+    mockExtRegExcShellAndNuiPayload()
+    command.argv = []
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(helpers.buildExcShellViewExtensionMetadata).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(1)
+  })
+
+  test('publish phase (no force, nui payload + no view operation)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig, 'app-exc-nui'))
     command.getFullConfig.mockReturnValue({
       aio: {
@@ -646,25 +731,24 @@ describe('run', () => {
     const payload = {
       endpoints: {
         'dx/excshell/1': {
-          view: [
-            { metadata: {} }
+          another: [
           ]
         }
       }
     }
     helpers.buildExtensionPointPayloadWoMetadata.mockReturnValueOnce(payload)
     mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites.mockReturnValueOnce(payload)
-
+    mockLibConsoleCLI.updateExtensionPoints.mockReturnValueOnce(payload)
     command.argv = []
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(helpers.buildExcShellViewExtensionMetadata).toHaveBeenCalledTimes(1)
+    expect(helpers.buildExcShellViewExtensionMetadata).toHaveBeenCalledTimes(0)
     expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
     expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(1)
   })
 
-  test('publish phase (--force-publish, no exc-shell payload)', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig, 'app-exc-nui'))
+  test('publish phase (--force-publish, exc+nui payload)', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig, 'exc'))
     command.getFullConfig.mockReturnValue({
       aio: {
         project: {
@@ -674,19 +758,14 @@ describe('run', () => {
         }
       }
     })
-    const payload = {
-      endpoints: {
-      }
-    }
-    helpers.buildExtensionPointPayloadWoMetadata.mockReturnValueOnce(payload)
-    mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites.mockReturnValueOnce(payload)
 
+    mockExtRegExcShellAndNuiPayload()
     command.argv = ['--force-publish']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(helpers.buildExcShellViewExtensionMetadata).toHaveBeenCalledTimes(0)
+    expect(helpers.buildExcShellViewExtensionMetadata).toHaveBeenCalledTimes(1)
     expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(1)
-    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(0)
   })
 
   test('app hook sequence', async () => {
