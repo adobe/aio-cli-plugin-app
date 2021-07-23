@@ -34,19 +34,21 @@ class Deploy extends BuildCommand {
     flags.build = flags.build && !flags['skip-build']
 
     const deployConfigs = this.getAppExtConfigs(flags)
+    const keys = Object.keys(deployConfigs)
+    const values = Object.values(deployConfigs)
+
+    // if there are no extensions, then set publish to false
+    flags.publish = flags.publish && !(keys.length === 1 && keys[0] === 'application')
     let libConsoleCLI
     if (flags.publish) {
       // force login at beginning (if required)
       libConsoleCLI = await this.getLibConsoleCLI()
     }
 
-    const keys = Object.keys(deployConfigs)
-    const values = Object.values(deployConfigs)
-
     if (
       (!flags.publish && !flags['web-assets'] && !flags.actions) ||
       // NOTE skip deploy is deprecated
-      (!flags.publish && flags.build && flags['skip-deploy'])
+      (!flags.publish && !flags.build && flags['skip-deploy'])
     ) {
       this.error('Nothing to be done 🚫')
     }
@@ -63,7 +65,7 @@ class Deploy extends BuildCommand {
         await this.deploySingleConfig(k, v, flags, spinner)
       }
       // 2. deploy extension manifest
-      if (flags.publish && !(keys.length === 1 && keys[0] === 'application')) {
+      if (flags.publish) {
         const aioConfig = this.getFullConfig().aio
         const payload = await this.publishExtensionPoints(libConsoleCLI, deployConfigs, aioConfig, flags)
         this.log(chalk.blue(chalk.bold(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': '${Object.keys(payload.endpoints)}'`)))
@@ -187,6 +189,7 @@ class Deploy extends BuildCommand {
     if (flags['force-publish']) {
       // publish and overwrite any previous published endpoints (delete them)
       newPayload = await libConsoleCLI.updateExtensionPoints(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, payload)
+      return newPayload
     }
     // publish without overwritting, meaning partial publish (for a subset of ext points) are supported
     newPayload = await libConsoleCLI.updateExtensionPointsWithoutOverwrites(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, payload)

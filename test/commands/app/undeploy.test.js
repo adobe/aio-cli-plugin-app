@@ -38,8 +38,26 @@ const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 
 const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
   const appConfig = dataMocks(appFixtureName, aioConfig).all
-  appConfig.application = { ...appConfig.application, ...aioConfig }
+  // change this, dataMocks allows to inject custom configuration
+  if (appFixtureName.includes('app')) {
+    appConfig.application = { ...appConfig.application, ...aioConfig }
+  }
   return appConfig
+}
+
+const mockExtRegExcShellPayload = () => {
+  const payload = {
+    endpoints: {
+      other: {
+        view: [
+          { metadata: {} }
+        ]
+      }
+    }
+  }
+  helpers.buildExtensionPointPayloadWoMetadata.mockReturnValueOnce(payload)
+  mockLibConsoleCLI.updateExtensionPoints.mockReturnValueOnce({ endpoints: {} }) // empty delete all
+  mockLibConsoleCLI.removeSelectedExtensionPoints.mockReturnValueOnce(payload)
 }
 
 const mockLibConsoleCLI = {
@@ -337,7 +355,7 @@ describe('run', () => {
   })
 
   test('publish phase (--force-nopublish, no exc-shell payload)', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig({}, 'app-exc-nui'))
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig({}, 'exc'))
     command.getFullConfig.mockReturnValue({
       aio: {
         project: {
@@ -347,19 +365,14 @@ describe('run', () => {
         }
       }
     })
-    const payload = {
-      endpoints: {
-      }
-    }
-    helpers.buildExtensionPointPayloadWoMetadata.mockReturnValueOnce(payload)
-    mockLibConsoleCLI.removeSelectedExtensionPoints.mockReturnValueOnce(payload)
 
     command.argv = ['--force-unpublish']
+    mockExtRegExcShellPayload()
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(helpers.buildExtensionPointPayloadWoMetadata).toHaveBeenCalledTimes(1)
     expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(1)
-    expect(mockLibConsoleCLI.removeSelectedExtensionPoints).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.removeSelectedExtensionPoints).toHaveBeenCalledTimes(0)
   })
 
   test('app hook sequence', async () => {

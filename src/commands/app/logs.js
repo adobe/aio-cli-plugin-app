@@ -22,7 +22,7 @@ class Logs extends BaseCommand {
     const fullConfig = this.getFullConfig()
 
     // has any backend
-    const hasAnyBackend = Object.values(fullConfig.all).reduce((hasBackend, config) => hasBackend && config.hasBackend, true)
+    const hasAnyBackend = Object.values(fullConfig.all).reduce((hasBackend, config) => hasBackend && config.app.hasBackend, true)
     if (!hasAnyBackend) {
       throw new Error('There are no backend implementations for this project folder.')
     }
