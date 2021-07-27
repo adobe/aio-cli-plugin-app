@@ -141,15 +141,15 @@ describe('good flags', () => {
     command.prompt = () => {
       return {
         deleteAction: true,
-        actions: [{ path: 'fakeActionName' }]
+        actions: [{ name: 'fakeActionName', path: 'dir/file.js' }]
       }
     }
     fs.statSync.mockReturnValue({ isFile: () => true })
     command.getAllActions = () => {
-      return { actions: [{ name: 'fakeActionName', path: 'boom' }], actionsByImpl: { } }
+      return { actions: [{ name: 'fakeActionName', path: 'dir/file.js' }], actionsByImpl: { } }
     }
     await command.run()
-    expect(fs.removeSync).lastCalledWith('boom')
+    expect(fs.removeSync).lastCalledWith('dir')
   })
 
   test('fakeActionName', async () => {
@@ -275,18 +275,6 @@ describe('getAllActions', () => {
             hasBackend: false
           }
         }
-      }
-    })
-    expect(result.actions).toBeDefined()
-    expect(result.actions).toStrictEqual(expect.arrayContaining([]))
-    expect(result.actionsByImpl).toBeDefined()
-    expect(result.actionsByImpl).toStrictEqual(expect.objectContaining({}))
-  })
-
-  test('getAllActions - no app', () => {
-    const result = command.getAllActions({
-      all: {
-        appName: {}
       }
     })
     expect(result.actions).toBeDefined()

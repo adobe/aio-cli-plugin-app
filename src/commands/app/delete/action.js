@@ -87,7 +87,6 @@ class DeleteActionCommand extends BaseCommand {
       // delete test files
       // NOTE: those paths are not always correct, but removeSync doesn't throw in case the file does not exist
       try {
-        // coverage missing start
         const pathToE2eTests = path.join('e2e', action.actionsDir, action.actionName + '.e2e.js')
         const pathToUnitTests = path.join('test', action.actionsDir, action.actionName + '.test.js')
         fs.removeSync(pathToE2eTests)
@@ -97,9 +96,8 @@ class DeleteActionCommand extends BaseCommand {
 
         // delete manifest action config
         deleteUserConfig(action.configData)
-        // coverage missing end
       } catch (e) {
-        console.log('error', e)
+        this.log('error', e)
       }
 
       this.log(chalk.green(`✔ Deleted '${action.name}'`))
@@ -114,7 +112,7 @@ class DeleteActionCommand extends BaseCommand {
     const actions = []
     const actionsByImpl = {}
     Object.entries(config.all).forEach(([implName, implConfig]) => {
-      if (implConfig.app && implConfig.app.hasBackend) {
+      if (implConfig.app.hasBackend) {
         actionsByImpl[implName] = []
         Object.entries(implConfig.manifest.full.packages).forEach(([pkgName, pkg]) => {
           Object.entries(pkg.actions).forEach(([actionName, action]) => {
@@ -133,11 +131,9 @@ class DeleteActionCommand extends BaseCommand {
             actionsByImpl[implName].push(actionObj)
           })
         })
+      } else {
+        aioLogger.debug(`'${implName}' .app.hasBackend is not true`)
       }
-      // else {
-      //   // can this ever happen?
-      //   console.log('this branch IS covered by the tests')
-      // }
     })
     return { actions, actionsByImpl }
   }
