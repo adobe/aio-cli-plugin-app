@@ -12,13 +12,11 @@ governing permissions and limitations under the License.
 const fs = require('fs-extra')
 const TheCommand = require('../../../../src/commands/app/delete/extension')
 const BaseCommand = require('../../../../src/BaseCommand')
-const cloneDeep = require('lodash.clonedeep')
 
 const dataMocks = require('../../../data-mocks/config-loader')
 
 jest.mock('../../../../src/lib/app-helper.js')
 const { deleteUserConfig } = require('../../../../src/lib/app-helper.js')
-const { createPromptModule } = require('inquirer')
 
 jest.mock('fs-extra')
 jest.mock('inquirer', () => {

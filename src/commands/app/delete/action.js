@@ -27,7 +27,7 @@ class DeleteActionCommand extends BaseCommand {
 
     // is there an oclif mechanism for flag depends on arg?
     if (flags.yes && !args['action-name']) {
-      this.error('<action-name> must also be provided when using --yes=')
+      this.error('<action-name> must also be provided when using --yes')
     }
 
     const fullConfig = this.getFullConfig()
@@ -38,9 +38,13 @@ class DeleteActionCommand extends BaseCommand {
     let actionsToBeDeleted
     if (args['action-name']) {
       const actionsToBeDeletedString = args['action-name'].split(',')
-      const notExist = actionsToBeDeletedString.filter(ad => !actions.some(a => a.name === ad))
+      const notExist = actionsToBeDeletedString.filter(ad => {
+        return !actions.some(a => {
+          return a.name === ad
+        })
+      })
       if (notExist.length > 0) {
-        throw new Error(`actions '${notExist}' do not exists`)
+        throw new Error(`action(s) '${notExist}' not found`)
       }
       actionsToBeDeleted = actionsToBeDeletedString.map(ad => actions.find(a => a.name === ad))
     } else {
@@ -72,30 +76,37 @@ class DeleteActionCommand extends BaseCommand {
     ])
 
     if (!flags.yes && !resConfirm.deleteAction) {
-      this.log('aborting..')
+      this.error('aborting..')
     }
-    actionsToBeDeleted.forEach(a => {
+
+    actionsToBeDeleted.forEach(action => {
       // remove action files
-      const folder = fs.statSync(a.path).isFile() ? path.dirname(a.path) : a.path
+      const folder = fs.statSync(action.path).isFile() ? path.dirname(action.path) : action.path
       fs.removeSync(folder)
       aioLogger.debug(`deleted '${folder}'`)
       // delete test files
       // NOTE: those paths are not always correct, but removeSync doesn't throw in case the file does not exist
-      const pathToE2eTests = path.join('e2e', a.actionsDir, a.actionName + '.e2e.js')
-      const pathToUnitTests = path.join('test', a.actionsDir, a.actionName + '.test.js')
-      fs.removeSync(pathToE2eTests)
-      aioLogger.debug(`deleted '${pathToE2eTests}'`)
-      fs.removeSync(pathToUnitTests)
-      aioLogger.debug(`deleted '${pathToUnitTests}'`)
+      try {
+        // coverage missing start
+        const pathToE2eTests = path.join('e2e', action.actionsDir, action.actionName + '.e2e.js')
+        const pathToUnitTests = path.join('test', action.actionsDir, action.actionName + '.test.js')
+        fs.removeSync(pathToE2eTests)
+        aioLogger.debug(`deleted '${pathToE2eTests}'`)
+        fs.removeSync(pathToUnitTests)
+        aioLogger.debug(`deleted '${pathToUnitTests}'`)
 
-      // delete manifest action config
-      deleteUserConfig(a.configData)
+        // delete manifest action config
+        deleteUserConfig(action.configData)
+        // coverage missing end
+      } catch (e) {
+        console.log('error', e)
+      }
 
-      this.log(chalk.green(`✔ Deleted '${a.name}'`))
+      this.log(chalk.green(`✔ Deleted '${action.name}'`))
     })
     this.log(chalk.bold(chalk.green(
-          `✔ Successfully deleted action(s) '${actionsToBeDeleted.map(a => a.name)}'` + EOL +
-          '  => please make sure to cleanup associated dependencies and to undeploy any deleted actions'
+      `✔ Successfully deleted action(s) '${actionsToBeDeleted.map(a => a.name)}'` + EOL +
+      '  => please make sure to cleanup associated dependencies and to undeploy any deleted actions'
     )))
   }
 
@@ -103,7 +114,7 @@ class DeleteActionCommand extends BaseCommand {
     const actions = []
     const actionsByImpl = {}
     Object.entries(config.all).forEach(([implName, implConfig]) => {
-      if (implConfig.app.hasBackend) {
+      if (implConfig.app && implConfig.app.hasBackend) {
         actionsByImpl[implName] = []
         Object.entries(implConfig.manifest.full.packages).forEach(([pkgName, pkg]) => {
           Object.entries(pkg.actions).forEach(([actionName, action]) => {
@@ -111,7 +122,7 @@ class DeleteActionCommand extends BaseCommand {
             const startKey = implName === 'application' ? 'application' : `extensions.${implName}`
             const configData = this.getConfigFileForKey(`${startKey}.runtimeManifest.packages.${pkgName}.actions.${actionName}`)
             const actionObj = {
-              // this assumes path is not relative
+              // assumes path is not relative
               path: action.function,
               actionsDir: path.relative(implConfig.root, implConfig.actions.src),
               name: fullActionName,
@@ -123,6 +134,10 @@ class DeleteActionCommand extends BaseCommand {
           })
         })
       }
+      // else {
+      //   // can this ever happen?
+      //   console.log('this branch IS covered by the tests')
+      // }
     })
     return { actions, actionsByImpl }
   }
