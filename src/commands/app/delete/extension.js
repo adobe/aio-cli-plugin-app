@@ -42,7 +42,7 @@ class DeleteExtensionCommand extends BaseCommand {
     ])
 
     if (!flags.yes && !resConfirm.deleteExtensions) {
-      this.log('aborting..')
+      this.error('aborting..')
     }
 
     await this.deleteImplementations(configs)
