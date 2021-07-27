@@ -13,81 +13,307 @@ const fs = require('fs-extra')
 
 const TheCommand = require('../../../../src/commands/app/delete/action')
 const BaseCommand = require('../../../../src/BaseCommand')
+const cloneDeep = require('lodash.clonedeep')
+const path = require('path')
+
+// application.runtimeManifest.packages.pkga.actions.0
+const mockConfigData = {
+  app: {
+    hasBackend: true,
+    topLevel: 3
+  },
+  includeIndex: {
+    application: {
+      runtimeManifest: {
+        packages: {
+          pkga: {
+            actions: [{ src: '/actions', dist: '/dist/actions' }]
+          }
+        }
+      }
+    }
+  },
+  all: {
+    application: {
+      app: {
+        hasBackend: true,
+        inside: 4345
+      },
+      root: '/',
+      actions: {
+        src: 'actions'
+      },
+      runtimeManifest: {
+        packages: {
+          pkga: {
+            actions: [
+              { src: '/actions', dist: '/dist/actions' }
+            ]
+          }
+        }
+      },
+      manifest: {
+        full: {
+          packages: {
+            pkga: {
+              actions: [
+                { src: '/actions', dist: '/dist/actions' }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+jest.mock('../../../../src/lib/config-loader', () => {
+  return {
+    loadConfig: () => mockConfigData
+  }
+})
 
 jest.mock('fs-extra')
-
-jest.mock('yeoman-environment')
-const yeoman = require('yeoman-environment')
-
-const mockRegister = jest.fn()
-const mockRun = jest.fn()
-yeoman.createEnv.mockReturnValue({
-  register: mockRegister,
-  run: mockRun
+jest.mock('inquirer', () => {
+  return {
+    Separator: class {}
+  }
 })
+
+let command
 
 beforeEach(() => {
-  mockRegister.mockReset()
-  mockRun.mockReset()
-  yeoman.createEnv.mockClear()
   fs.ensureDirSync.mockClear()
+  fs.removeSync.mockClear()
+
+  command = new TheCommand([])
+  command.log = jest.fn()
+  command.appConfig = cloneDeep(mockConfigData)
+  command.buildOneExt = jest.fn()
+  command.getAppExtConfigs = jest.fn()
+  command.getLibConsoleCLI = jest.fn()
 })
 
-describe('Command Prototype', () => {
+describe('command interface, flags', () => {
   test('exports', async () => {
     expect(typeof TheCommand).toEqual('function')
     expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
     expect(typeof TheCommand.flags).toBe('object')
   })
-})
 
-describe('bad flags', () => {
   test('--yes without <action-name>', async () => {
-    await expect(TheCommand.run(['--yes'])).rejects.toThrow('<action-name> must also be provided when using --yes=')
-  })
-})
-
-describe('template module cannot be registered', () => {
-  test('unknown error', async () => {
-    mockRegister.mockImplementation(() => { throw new Error('some error') })
-    await expect(TheCommand.run([])).rejects.toThrow('some error')
+    const command = new TheCommand(['--yes'])
+    expect(typeof command.run).toBe('function')
+    await expect(command.run()).rejects.toThrow('<action-name> must also be provided')
   })
 })
 
 describe('good flags', () => {
-  test('fakeActionName --yes', async () => {
-    await TheCommand.run(['fakeActionName', '--yes'])
+  test('no args - no actions', async () => {
+    command.argv = []
+    command.getAllActions = () => {
+      return { actions: [], actionsByImpl: {} }
+    }
+    await expect(command.run()).rejects.toThrow('no actions')
+  })
 
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': true,
-      'action-name': 'fakeActionName'
-    })
+  test('fakeActionName --yes no actions present', async () => {
+    command.argv = ['fakeActionName', '--yes']
+    command.getAllActions = () => {
+      return { actions: [], actionsByImpl: {} }
+    }
+    await expect(command.run()).rejects.toThrow('no actions')
+  })
+
+  test('delete actions, some dont exist', async () => {
+    command.argv = ['a,b', '--yes']
+    command.getAllActions = () => {
+      return { actions: [{ name: 'a' }], actionsByImpl: {} }
+    }
+    await expect(command.run()).rejects.toThrow('action(s) \'b\' not found')
+
+    command.argv = ['a,b,c', '--yes']
+    await expect(command.run()).rejects.toThrow('action(s) \'b,c\' not found')
+  })
+
+  test('fakeActionName folder', async () => {
+    command.argv = ['fakeActionName']
+    command.prompt = () => {
+      return {
+        deleteAction: true,
+        actions: [{ name: 'fakeActionName', path: 'dir/file.js' }]
+      }
+    }
+    fs.statSync.mockReturnValue({ isFile: () => true })
+    command.getAllActions = () => {
+      return { actions: [{ name: 'fakeActionName', path: 'dir/file.js' }], actionsByImpl: { } }
+    }
+    await command.run()
+    expect(fs.removeSync).lastCalledWith('dir')
   })
 
   test('fakeActionName', async () => {
-    await TheCommand.run(['fakeActionName'])
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': false,
-      'action-name': 'fakeActionName'
-    })
+    command.argv = ['fakeActionName']
+    command.prompt = () => {
+      return {
+        deleteAction: true,
+        actions: [{ path: 'fakeActionName' }]
+      }
+    }
+    fs.statSync.mockReturnValue({ isFile: () => true })
+    path.dirname = jest.fn().mockReturnValue('mock-dirname')
+    command.getAllActions = () => {
+      return { actions: [{ name: 'fakeActionName', path: 'boom.js' }], actionsByImpl: { } }
+    }
+    await command.run()
+    expect(fs.removeSync).lastCalledWith('mock-dirname')
   })
 
-  test('no arg no flags', async () => {
-    await TheCommand.run([])
+  test('fakeActionName hasBackend: false', async () => {
+    command.argv = ['fakeActionName']
+    command.prompt = () => {
+      return {
+        deleteAction: true,
+        actions: [{ path: 'fakeActionName' }]
+      }
+    }
+    fs.statSync = () => {
+      return { isFile: () => true }
+    }
+    path.dirname = jest.fn().mockReturnValue('mock-dirname')
+    command.getAllActions = () => {
+      return { actions: [{ name: 'fakeActionName', path: 'boom.js' }], actionsByImpl: { } }
+    }
+    await command.run()
+    expect(fs.removeSync).lastCalledWith('mock-dirname')
+  })
 
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': false,
-      'action-name': ''
+  test('multiple comma separators', async () => {
+    command.argv = ['a,b', '--yes']
+    command.prompt = () => {
+      return {
+        deleteAction: true
+      }
+    }
+    command.log = jest.fn()
+    fs.statSync = () => {
+      return { isFile: () => false }
+    }
+    const fakeActions = [{
+      name: 'a',
+      path: 'a-path',
+      actionsDir: 'a-dir',
+      actionName: 'a-fileName'
+    }, {
+      name: 'b',
+      path: 'b-path',
+      actionsDir: 'b-dir',
+      actionName: 'b-fileName'
+    }]
+    command.getAllActions = () => {
+      return { actions: fakeActions, actionsByImpl: { } }
+    }
+    await command.run()
+    expect(fs.removeSync).toHaveBeenCalledWith('a-path')
+    expect(fs.removeSync).toHaveBeenCalledWith('e2e/a-dir/a-fileName.e2e.js')
+    expect(fs.removeSync).toHaveBeenCalledWith('test/a-dir/a-fileName.test.js')
+    // expect(command.log).toHaveBeenCalledWith('✔ Deleted \'a\'')
+
+    expect(fs.removeSync).toHaveBeenCalledWith('b-path')
+    expect(fs.removeSync).toHaveBeenCalledWith('e2e/b-dir/b-fileName.e2e.js')
+    expect(fs.removeSync).toHaveBeenCalledWith('test/b-dir/b-fileName.test.js')
+    // expect(command.log).toHaveBeenCalledWith('✔ Deleted \'b\'')
+  })
+
+  test('getAllActions() - no actions', async () => {
+    command.getAllActions = () => {
+      return { actions: [], actionsByImpl: { } }
+    }
+    return expect(command.run()).rejects.toThrow('no actions')
+  })
+
+  test('abort when user declines prompt', async () => {
+    command.args = ['fakeActionName']
+    command.prompt = () => {
+      return {
+        deleteAction: false,
+        actions: [{ path: 'shouldNotBeCalled' }]
+      }
+    }
+    fs.statSync = () => {
+      return { isFile: () => false }
+    }
+    command.getAllActions = () => {
+      return { actions: ['fakeActionName'], actionsByImpl: { fakeActionName: [{ path: 'boom' }] } }
+    }
+    await expect(command.run()).rejects.toThrow('aborting')
+    expect(fs.removeSync).not.toHaveBeenCalledWith('shouldNotBeCalled')
+  })
+})
+
+describe('getAllActions', () => {
+  test('getAllActions() - no actions', async () => {
+    command.prompt = () => {
+      return {
+        deleteAction: true,
+        actions: [{ path: 'fakeActionName' }]
+      }
+    }
+    fs.statSync = jest.fn().mockReturnValue({
+      isFile: () => true
     })
+    path.dirname = jest.fn().mockReturnValue('mock-me?')
+    await command.run()
+    expect(fs.removeSync).toHaveBeenCalledWith('mock-me?')
+  })
+
+  test('getAllActions - no app.hasBackend', () => {
+    const result = command.getAllActions({
+      all: {
+        appName: {
+          app: {
+            hasBackend: false
+          }
+        }
+      }
+    })
+    expect(result.actions).toBeDefined()
+    expect(result.actions).toStrictEqual(expect.arrayContaining([]))
+    expect(result.actionsByImpl).toBeDefined()
+    expect(result.actionsByImpl).toStrictEqual(expect.objectContaining({}))
+  })
+
+  test('getAllActions - coverage', () => {
+    const result = command.getAllActions({
+      all: {
+        appName: {
+          app: {
+            hasBackend: true
+          },
+          actions: {
+            src: 'action-src'
+          },
+          root: 'root',
+          manifest: {
+            full: {
+              packages: {
+                pkgName: {
+                  actions: {
+                    action: {
+                      actionName: 'action-name',
+                      function: 'function-path'
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    })
+    expect(result.actions).toBeDefined()
+    expect(result.actions).toStrictEqual(expect.arrayContaining([]))
+    expect(result.actionsByImpl).toBeDefined()
+    expect(result.actionsByImpl).toStrictEqual(expect.objectContaining({}))
   })
 })

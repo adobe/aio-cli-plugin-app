@@ -18,21 +18,7 @@ jest.mock('../../../../src/commands/app/delete/action')
 
 jest.mock('fs-extra')
 
-jest.mock('yeoman-environment')
-
-const yeoman = require('yeoman-environment')
-
-const mockRegister = jest.fn()
-const mockRun = jest.fn()
-yeoman.createEnv.mockReturnValue({
-  register: mockRegister,
-  run: mockRun
-})
-
 beforeEach(() => {
-  mockRegister.mockReset()
-  mockRun.mockReset()
-  yeoman.createEnv.mockClear()
   fs.ensureDirSync.mockClear()
   DeleteActionCommand.run = jest.fn()
 })
@@ -44,6 +30,10 @@ describe('Command Prototype', () => {
     expect(typeof TheCommand.flags).toBe('object')
   })
 })
+
+// Question? What is/are the actual difference between this call and `delete action`?
+// Are event-actions somehow special?
+// How can we detect the diff? -jm
 
 describe('passes flags through to delete action', () => {
   test('no flags', async () => {
@@ -61,33 +51,3 @@ describe('passes flags through to delete action', () => {
     expect(DeleteActionCommand.run).toHaveBeenCalledWith(['event-action-name', '--yes'])
   })
 })
-
-// Question? What is the actual difference between this call and `delete action`?
-// Are event-actions somehow special?
-// How can we detect the diff? -jm
-
-// describe('good flags', () => {
-//   test('fakeActionName --yes', async () => {
-//     await TheCommand.run(['fakeActionName', '--yes'])
-
-//     expect(yeoman.createEnv).toHaveBeenCalled()
-//     expect(mockRegister).toHaveBeenCalledTimes(1)
-//     const genName = mockRegister.mock.calls[0][1]
-//     expect(mockRun).toHaveBeenCalledWith(genName, {
-//       'skip-prompt': true,
-//       'action-name': 'fakeActionName'
-//     })
-//   })
-
-//   test('fakeActionName', async () => {
-//     await TheCommand.run(['fakeActionName'])
-
-//     expect(yeoman.createEnv).toHaveBeenCalled()
-//     expect(mockRegister).toHaveBeenCalledTimes(1)
-//     const genName = mockRegister.mock.calls[0][1]
-//     expect(mockRun).toHaveBeenCalledWith(genName, {
-//       'skip-prompt': false,
-//       'action-name': 'fakeActionName'
-//     })
-//   })
-// })
