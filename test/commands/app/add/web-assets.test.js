@@ -26,7 +26,6 @@ const helpers = require('../../../../src/lib/app-helper.js')
 
 jest.mock('yeoman-environment')
 const yeoman = require('yeoman-environment')
-const { cloneDeep } = require('lodash')
 
 const mockInstantiate = jest.fn()
 const mockRunGenerator = jest.fn()
@@ -47,13 +46,15 @@ beforeEach(() => {
   command.getAppExtConfigs = jest.fn()
   command.getAppExtConfigs.mockReturnValue(createAppConfig(command.appConfig))
   command.getFullConfig = jest.fn()
-  command.getFullConfig.mockReturnValue({packagejson: {
-    version: '1.0.0',
-    name: 'legacy-app',
-    scripts: {
-      'post-app-run': 'echo hello'
+  command.getFullConfig.mockReturnValue({
+    packagejson: {
+      version: '1.0.0',
+      name: 'legacy-app',
+      scripts: {
+        'post-app-run': 'echo hello'
+      }
     }
-  }})
+  })
   mockInstantiate.mockReset()
   mockRunGenerator.mockReset()
   yeoman.createEnv.mockClear()
@@ -91,13 +92,14 @@ describe('good flags', () => {
     command.argv = ['--yes']
     await command.run()
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-web-assets'], {options: {
-      'skip-prompt': true,
-      'project-name': 'legacy-app',
-      'web-src-folder': '/web-src',
-      'adobe-services': undefined
-    }})
-    const genName = mockInstantiate.mock.calls[0][1]
+    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-web-assets'], {
+      options: {
+        'skip-prompt': true,
+        'project-name': 'legacy-app',
+        'web-src-folder': '/web-src',
+        'adobe-services': undefined
+      }
+    })
     expect(mockRunGenerator).toHaveBeenCalledWith('gen')
     expect(helpers.installPackages).toHaveBeenCalledTimes(1)
   })
@@ -107,12 +109,14 @@ describe('good flags', () => {
     await command.run()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-web-assets'], {options: {
-      'skip-prompt': true,
-      'project-name': 'legacy-app',
-      'web-src-folder': '/web-src',
-      'adobe-services': undefined
-    }})
+    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-web-assets'], {
+      options: {
+        'skip-prompt': true,
+        'project-name': 'legacy-app',
+        'web-src-folder': '/web-src',
+        'adobe-services': undefined
+      }
+    })
     expect(helpers.installPackages).toHaveBeenCalledTimes(0)
   })
 
@@ -121,12 +125,14 @@ describe('good flags', () => {
     await command.run()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-web-assets'], {options: {
-      'skip-prompt': false,
-      'project-name': 'legacy-app',
-      'web-src-folder': '/web-src',
-      'adobe-services': undefined
-    }})
+    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-web-assets'], {
+      options: {
+        'skip-prompt': false,
+        'project-name': 'legacy-app',
+        'web-src-folder': '/web-src',
+        'adobe-services': undefined
+      }
+    })
     expect(helpers.installPackages).toHaveBeenCalledTimes(0)
   })
 
@@ -135,24 +141,28 @@ describe('good flags', () => {
     await command.run([])
 
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-web-assets'], {options: {
-      'skip-prompt': false,
-      'project-name': 'legacy-app',
-      'web-src-folder': '/web-src',
-      'adobe-services': undefined
-    }})
+    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-web-assets'], {
+      options: {
+        'skip-prompt': false,
+        'project-name': 'legacy-app',
+        'web-src-folder': '/web-src',
+        'adobe-services': undefined
+      }
+    })
   })
 
   test('no flags', async () => {
     await command.run([])
 
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-web-assets'], {options: {
-      'skip-prompt': false,
-      'project-name': 'legacy-app',
-      'web-src-folder': '/web-src',
-      'adobe-services': undefined
-    }})
+    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-web-assets'], {
+      options: {
+        'skip-prompt': false,
+        'project-name': 'legacy-app',
+        'web-src-folder': '/web-src',
+        'adobe-services': undefined
+      }
+    })
   })
 
   test('no flags, service code defined in config', async () => {
@@ -160,16 +170,18 @@ describe('good flags', () => {
     await command.run([])
 
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-web-assets'], {options: {
-      'skip-prompt': false,
-      'project-name': 'legacy-app',
-      'web-src-folder': '/web-src',
-      'adobe-services': 'CampaignSDK,AdobeAnalyticsSDK'
-    }})
+    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-web-assets'], {
+      options: {
+        'skip-prompt': false,
+        'project-name': 'legacy-app',
+        'web-src-folder': '/web-src',
+        'adobe-services': 'CampaignSDK,AdobeAnalyticsSDK'
+      }
+    })
   })
 
   test('multiple ext configs', async () => {
-    command.getAppExtConfigs.mockReturnValue({'application':'value','excshell':'value'})
+    command.getAppExtConfigs.mockReturnValue({ application: 'value', excshell: 'value' })
     await expect(command.run()).rejects.toThrow('Please use the \'-e\' flag to specify to which implementation you want to add web-assets to.')
   })
 })

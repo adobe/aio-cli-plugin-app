@@ -45,13 +45,15 @@ beforeEach(() => {
   command.getAppExtConfigs = jest.fn()
   command.getAppExtConfigs.mockReturnValue(createAppConfig(command.appConfig))
   command.getFullConfig = jest.fn()
-  command.getFullConfig.mockReturnValue({packagejson: {
-    version: '1.0.0',
-    name: 'legacy-app',
-    scripts: {
-      'post-app-run': 'echo hello'
+  command.getFullConfig.mockReturnValue({
+    packagejson: {
+      version: '1.0.0',
+      name: 'legacy-app',
+      scripts: {
+        'post-app-run': 'echo hello'
+      }
     }
-  }})
+  })
   command.getConfigFileForKey = jest.fn()
   command.getConfigFileForKey.mockReturnValue({})
   mockInstantiate.mockReset()
@@ -91,14 +93,16 @@ describe('good flags', () => {
     await command.run()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-action'], {options: {
-      'skip-prompt': true,
-      'action-folder': 'myactions',
-      'config-path': undefined,
-      'adobe-services': undefined,
-      'supported-adobe-services': undefined,
-      'full-key-to-manifest': 'undefined.runtimeManifest'
-    }})
+    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-action'], {
+      options: {
+        'skip-prompt': true,
+        'action-folder': 'myactions',
+        'config-path': undefined,
+        'adobe-services': undefined,
+        'supported-adobe-services': undefined,
+        'full-key-to-manifest': 'undefined.runtimeManifest'
+      }
+    })
     expect(mockRunGenerator).toHaveBeenCalledWith('actionGen')
     expect(helpers.installPackages).toHaveBeenCalledTimes(1)
   })
@@ -108,14 +112,16 @@ describe('good flags', () => {
     await command.run()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-action'], {options: {
-      'skip-prompt': true,
-      'action-folder': 'myactions',
-      'config-path': undefined,
-      'adobe-services': undefined,
-      'supported-adobe-services': undefined,
-      'full-key-to-manifest': 'undefined.runtimeManifest'
-    }})
+    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-action'], {
+      options: {
+        'skip-prompt': true,
+        'action-folder': 'myactions',
+        'config-path': undefined,
+        'adobe-services': undefined,
+        'supported-adobe-services': undefined,
+        'full-key-to-manifest': 'undefined.runtimeManifest'
+      }
+    })
     expect(helpers.installPackages).toHaveBeenCalledTimes(0)
   })
 
@@ -124,14 +130,16 @@ describe('good flags', () => {
     await command.run()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-action'], {options: {
-      'skip-prompt': false,
-      'action-folder': 'myactions',
-      'config-path': undefined,
-      'adobe-services': undefined,
-      'supported-adobe-services': undefined,
-      'full-key-to-manifest': 'undefined.runtimeManifest'
-    }})
+    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-action'], {
+      options: {
+        'skip-prompt': false,
+        'action-folder': 'myactions',
+        'config-path': undefined,
+        'adobe-services': undefined,
+        'supported-adobe-services': undefined,
+        'full-key-to-manifest': 'undefined.runtimeManifest'
+      }
+    })
   })
 
   test('--extension', async () => {
@@ -139,28 +147,32 @@ describe('good flags', () => {
     await command.run()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-action'], {options: {
-      'skip-prompt': false,
-      'action-folder': 'myactions',
-      'config-path': undefined,
-      'adobe-services': undefined,
-      'supported-adobe-services': undefined,
-      'full-key-to-manifest': 'undefined.runtimeManifest'
-    }})
+    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-action'], {
+      options: {
+        'skip-prompt': false,
+        'action-folder': 'myactions',
+        'config-path': undefined,
+        'adobe-services': undefined,
+        'supported-adobe-services': undefined,
+        'full-key-to-manifest': 'undefined.runtimeManifest'
+      }
+    })
   })
 
   test('no flags', async () => {
     await command.run()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-action'], {options: {
-      'skip-prompt': false,
-      'action-folder': 'myactions',
-      'config-path': undefined,
-      'adobe-services': undefined,
-      'supported-adobe-services': undefined,
-      'full-key-to-manifest': 'undefined.runtimeManifest'
-    }})
+    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-action'], {
+      options: {
+        'skip-prompt': false,
+        'action-folder': 'myactions',
+        'config-path': undefined,
+        'adobe-services': undefined,
+        'supported-adobe-services': undefined,
+        'full-key-to-manifest': 'undefined.runtimeManifest'
+      }
+    })
   })
 
   test('pass services config codes to generator-aio-app', async () => {
@@ -179,14 +191,16 @@ describe('good flags', () => {
     await command.run()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-action'], {options: {
-      'skip-prompt': false,
-      'action-folder': 'myactions',
-      'config-path': undefined,
-      'adobe-services': 'CampaignSDK,AdobeAnalyticsSDK',
-      'supported-adobe-services': 'CampaignSDK,AdobeAnalyticsSDK,AnotherOneSDK',
-      'full-key-to-manifest': 'undefined.runtimeManifest'
-    }})
+    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-action'], {
+      options: {
+        'skip-prompt': false,
+        'action-folder': 'myactions',
+        'config-path': undefined,
+        'adobe-services': 'CampaignSDK,AdobeAnalyticsSDK',
+        'supported-adobe-services': 'CampaignSDK,AdobeAnalyticsSDK,AnotherOneSDK',
+        'full-key-to-manifest': 'undefined.runtimeManifest'
+      }
+    })
   })
 
   test('pass services config codes from legacy service config key to generator-aio-app', async () => {
@@ -205,18 +219,20 @@ describe('good flags', () => {
     await command.run([])
 
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-action'], {options: {
-      'skip-prompt': false,
-      'action-folder': 'myactions',
-      'config-path': undefined,
-      'adobe-services': 'CampaignSDK,AdobeAnalyticsSDK',
-      'supported-adobe-services': 'CampaignSDK,AdobeAnalyticsSDK,AnotherOneSDK',
-      'full-key-to-manifest': 'undefined.runtimeManifest'
-    }})
+    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-action'], {
+      options: {
+        'skip-prompt': false,
+        'action-folder': 'myactions',
+        'config-path': undefined,
+        'adobe-services': 'CampaignSDK,AdobeAnalyticsSDK',
+        'supported-adobe-services': 'CampaignSDK,AdobeAnalyticsSDK,AnotherOneSDK',
+        'full-key-to-manifest': 'undefined.runtimeManifest'
+      }
+    })
   })
 
   test('multiple ext configs', async () => {
-    command.getAppExtConfigs.mockReturnValue({'application':'value','excshell':'value'})
+    command.getAppExtConfigs.mockReturnValue({ application: 'value', excshell: 'value' })
     await expect(command.run()).rejects.toThrow('Please use the \'-e\' flag to specify to which implementation you want to add actions to.')
   })
 })

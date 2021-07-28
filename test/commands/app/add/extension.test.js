@@ -55,7 +55,7 @@ beforeEach(() => {
   command.getConfigFileForKey = jest.fn()
   command.getConfigFileForKey.mockReturnValue({})
   command.prompt = jest.fn()
-  command.prompt.mockReturnValue({res: [{"name":"dx/excshell/1","requiredServices":[], "generator": generators.extensions['dx/excshell/1']}]})
+  command.prompt.mockReturnValue({ res: [{ name: 'dx/excshell/1', requiredServices: [], generator: generators.extensions['dx/excshell/1'] }] })
   mockInstantiate.mockReset()
   mockRunGenerator.mockReset()
   yeoman.createEnv.mockClear()
@@ -98,10 +98,12 @@ describe('good flags', () => {
     await command.run()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators.extensions['dx/excshell/1'], {options: {
-      'skip-prompt': true,
-      'force': true
-    }})
+    expect(mockInstantiate).toHaveBeenCalledWith(generators.extensions['dx/excshell/1'], {
+      options: {
+        'skip-prompt': true,
+        force: true
+      }
+    })
     expect(mockRunGenerator).toHaveBeenCalledWith('extGen')
     expect(helpers.installPackages).toHaveBeenCalledTimes(1)
   })
@@ -111,10 +113,12 @@ describe('good flags', () => {
     await command.run()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators.extensions['dx/excshell/1'], {options: {
-      'skip-prompt': true,
-      'force': true
-    }})
+    expect(mockInstantiate).toHaveBeenCalledWith(generators.extensions['dx/excshell/1'], {
+      options: {
+        'skip-prompt': true,
+        force: true
+      }
+    })
     expect(helpers.installPackages).toHaveBeenCalledTimes(0)
   })
 
@@ -123,20 +127,24 @@ describe('good flags', () => {
     await command.run()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators.extensions['dx/excshell/1'], {options: {
-      'skip-prompt': false,
-      'force': true
-    }})
+    expect(mockInstantiate).toHaveBeenCalledWith(generators.extensions['dx/excshell/1'], {
+      options: {
+        'skip-prompt': false,
+        force: true
+      }
+    })
   })
 
   test('no flags', async () => {
     await command.run()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators.extensions['dx/excshell/1'], {options: {
-      'skip-prompt': false,
-      'force': true
-    }})
+    expect(mockInstantiate).toHaveBeenCalledWith(generators.extensions['dx/excshell/1'], {
+      options: {
+        'skip-prompt': false,
+        force: true
+      }
+    })
   })
 
   test('required services not added', async () => {
@@ -156,23 +164,25 @@ describe('good flags', () => {
     expect(command.warn).toHaveBeenCalledWith('Please add missing services \'AssetComputeSDK\' required by \'dx/asset-compute/worker/1\'')
 
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators.extensions['dx/asset-compute/worker/1'], {options: {
-      'skip-prompt': false,
-      'force': true
-    }})
+    expect(mockInstantiate).toHaveBeenCalledWith(generators.extensions['dx/asset-compute/worker/1'], {
+      options: {
+        'skip-prompt': false,
+        force: true
+      }
+    })
   })
 
   test('all extensions already implemented', async () => {
     command.argv = ['--skip-install']
     command.getAppExtConfigs.mockReturnValue(createAppConfig(command.appConfig, 'app-exc-nui'))
     command.getFullConfig.mockReturnValue(createFullConfig({}, 'app-exc-nui'))
-    
+
     await expect(command.run()).rejects.toThrow('All available extensions are already implemented in this project.')
   })
 
   test('given extension already implemented', async () => {
     command.argv = ['--skip-install', '--extension', 'application']
-    
+
     await expect(command.run()).rejects.toThrow('\'application\' is/are already implemented by this project')
   })
 

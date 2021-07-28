@@ -115,12 +115,12 @@ test('no parameters (exception before processing)', async () => {
 
 test('test port to use', async () => {
   const config = cloneDeep(createAppConfig().application)
-  runLocalRuntime.mockImplementation(() => ({ 
-      config, 
-      cleanup: jest.fn() 
-    })
+  runLocalRuntime.mockImplementation(() => ({
+    config,
+    cleanup: jest.fn()
+  })
   )
-  
+
   // use default port
   getPort.mockImplementationOnce(params => {
     expect(params.port).toEqual(defaults.defaultHttpServerPort)
@@ -145,21 +145,21 @@ test('test port to use', async () => {
 
 test('devRemote false', async () => {
   const config = cloneDeep(createAppConfig().application)
-  runLocalRuntime.mockImplementation(() => ({ 
-      config, 
-      cleanup: jest.fn() 
-    })
+  runLocalRuntime.mockImplementation(() => ({
+    config,
+    cleanup: jest.fn()
+  })
   )
 
   const result = runDev(config, DATA_DIR, { devRemote: false })
   await expect(result).resolves.toEqual(FRONTEND_URL)
-  
-  expect(runLocalRuntime).toHaveBeenCalled()  // only called when options.devRemote is false
+
+  expect(runLocalRuntime).toHaveBeenCalled() // only called when options.devRemote is false
   expect(buildActions).toHaveBeenCalled() // only with backend, and !options.skipActions
   expect(deployActions).toHaveBeenCalled() // only with backend
   expect(bundle).toHaveBeenCalled() // only with frontend + !options.skipServe + !build-static hook
-  expect(serve).not.toHaveBeenCalled() // only with frontend + !options.skipServe + build-static hook 
-  expect(bundleServe).toHaveBeenCalled()  // only with frontend + !options.skipServe + !build-static hook + !serve-static hook
+  expect(serve).not.toHaveBeenCalled() // only with frontend + !options.skipServe + build-static hook
+  expect(bundleServe).toHaveBeenCalled() // only with frontend + !options.skipServe + !build-static hook + !serve-static hook
   expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalled() // only if it has frontend and backend (config.json write)
   expect(mockRuntimeLib.utils.checkOpenWhiskCredentials).not.toHaveBeenCalled() // only called when options.devRemote is true
   expect(logPoller.run).not.toHaveBeenCalled() // only with backend and options.fetchLogs
@@ -215,10 +215,10 @@ test('devRemote false, fetchLogs true, cleanup coverage', async () => {
 
 test('devRemote false, fetchLogs true', async () => {
   const config = cloneDeep(createAppConfig().application)
-  runLocalRuntime.mockImplementation(() => ({ 
-      config, 
-      cleanup: jest.fn() 
-    })
+  runLocalRuntime.mockImplementation(() => ({
+    config,
+    cleanup: jest.fn()
+  })
   )
 
   const result = runDev(config, DATA_DIR, { devRemote: false, fetchLogs: true })
@@ -238,15 +238,15 @@ test('devRemote false, frontend false, backend false', async () => {
   config.app.hasFrontend = false
   config.app.hasBackend = false
 
-  runLocalRuntime.mockImplementation(() => ({ 
-      config, 
-      cleanup: jest.fn() 
-    })
+  runLocalRuntime.mockImplementation(() => ({
+    config,
+    cleanup: jest.fn()
+  })
   )
 
   const result = runDev(config, DATA_DIR, { devRemote: false })
   await expect(result).resolves.toEqual(undefined) // no frontend, no url
-  
+
   // nothing is called because there is nothing to do
   expect(runLocalRuntime).not.toHaveBeenCalled()
   expect(buildActions).not.toHaveBeenCalled()
@@ -265,15 +265,15 @@ test('devRemote false, frontend true, backend false', async () => {
   config.app.hasFrontend = true
   config.app.hasBackend = false
 
-  runLocalRuntime.mockImplementation(() => ({ 
-      config, 
-      cleanup: jest.fn() 
-    })
+  runLocalRuntime.mockImplementation(() => ({
+    config,
+    cleanup: jest.fn()
+  })
   )
 
   const result = runDev(config, DATA_DIR, { devRemote: false })
   await expect(result).resolves.toEqual(FRONTEND_URL)
-  
+
   expect(runLocalRuntime).not.toHaveBeenCalled()
   expect(buildActions).not.toHaveBeenCalled()
   expect(deployActions).not.toHaveBeenCalled()
@@ -291,15 +291,15 @@ test('devRemote false, frontend true, skipActions true', async () => {
   config.app.hasFrontend = true
   config.app.hasBackend = false
 
-  runLocalRuntime.mockImplementation(() => ({ 
-      config, 
-      cleanup: jest.fn() 
-    })
+  runLocalRuntime.mockImplementation(() => ({
+    config,
+    cleanup: jest.fn()
+  })
   )
 
   const result = runDev(config, DATA_DIR, { devRemote: false, skipActions: true })
   await expect(result).resolves.toEqual(FRONTEND_URL)
-  
+
   expect(runLocalRuntime).not.toHaveBeenCalled()
   expect(buildActions).not.toHaveBeenCalled()
   expect(deployActions).not.toHaveBeenCalled()
@@ -317,15 +317,15 @@ test('devRemote false, frontend true, backend true, skipServe true', async () =>
   config.app.hasFrontend = true
   config.app.hasBackend = false
 
-  runLocalRuntime.mockImplementation(() => ({ 
-      config, 
-      cleanup: jest.fn() 
-    })
+  runLocalRuntime.mockImplementation(() => ({
+    config,
+    cleanup: jest.fn()
+  })
   )
 
   const result = runDev(config, DATA_DIR, { devRemote: false, skipServe: true })
   await expect(result).resolves.toEqual(undefined) // nothing was served, no url
-  
+
   expect(runLocalRuntime).not.toHaveBeenCalled()
   expect(buildActions).not.toHaveBeenCalled()
   expect(deployActions).not.toHaveBeenCalled()
@@ -343,13 +343,13 @@ test('devRemote true', async () => {
 
   const result = runDev(config, DATA_DIR, { devRemote: true })
   await expect(result).resolves.toEqual(FRONTEND_URL)
-  
+
   expect(runLocalRuntime).not.toHaveBeenCalled() // only called when options.devRemote is false
   expect(buildActions).toHaveBeenCalled() // only with backend, and !options.skipActions
   expect(deployActions).toHaveBeenCalled() // only with backend
   expect(bundle).toHaveBeenCalled() // only with frontend and !options.skipServe and build-static hook *not* set
   expect(serve).not.toHaveBeenCalled() // only with frontend and if we don't use the default bundler (build-static hook *is* set)
-  expect(bundleServe).toHaveBeenCalled()  // only with frontend and if we use the default bundler (build-static hook *not* set)
+  expect(bundleServe).toHaveBeenCalled() // only with frontend and if we use the default bundler (build-static hook *not* set)
   expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalled() // only if it has frontend and backend (config.json write)
   expect(mockRuntimeLib.utils.checkOpenWhiskCredentials).toHaveBeenCalled() // only called when options.devRemote is true
   expect(logPoller.run).not.toHaveBeenCalled() // only with backend and options.fetchLogs
@@ -370,7 +370,7 @@ test('devRemote true, build-static hook set, serve-static hook set)', async () =
 
   const result = runDev(config, DATA_DIR, { devRemote: true })
   await expect(result).resolves.toEqual(undefined) // since serve-static is an app hook
-  
+
   expect(runLocalRuntime).not.toHaveBeenCalled()
   expect(buildActions).toHaveBeenCalled()
   expect(deployActions).toHaveBeenCalled()
@@ -396,7 +396,7 @@ test('devRemote true, build-static hook set, serve-static hook not set)', async 
 
   const result = runDev(config, DATA_DIR, { devRemote: true })
   await expect(result).resolves.toEqual(FRONTEND_URL) // we use our own serve
-  
+
   expect(runLocalRuntime).not.toHaveBeenCalled()
   expect(buildActions).toHaveBeenCalled()
   expect(deployActions).toHaveBeenCalled()

@@ -161,7 +161,7 @@ describe('good flags', () => {
       }
     }
     fs.statSync.mockReturnValue({ isFile: () => true })
-    const dirnameSpy = jest.spyOn(path, 'dirname').mockReturnValueOnce('mock-dirname');
+    const dirnameSpy = jest.spyOn(path, 'dirname').mockReturnValueOnce('mock-dirname')
     command.getAllActions = () => {
       return { actions: [{ name: 'fakeActionName', path: 'boom.js' }], actionsByImpl: { } }
     }
@@ -181,7 +181,7 @@ describe('good flags', () => {
     fs.statSync = () => {
       return { isFile: () => true }
     }
-    const dirnameSpy = jest.spyOn(path, 'dirname').mockReturnValueOnce('mock-dirname');
+    const dirnameSpy = jest.spyOn(path, 'dirname').mockReturnValueOnce('mock-dirname')
     command.getAllActions = () => {
       return { actions: [{ name: 'fakeActionName', path: 'boom.js' }], actionsByImpl: { } }
     }
@@ -264,7 +264,7 @@ describe('getAllActions', () => {
     fs.statSync = jest.fn().mockReturnValue({
       isFile: () => true
     })
-    const dirnameSpy = jest.spyOn(path, 'dirname').mockReturnValueOnce('mock-me?');
+    const dirnameSpy = jest.spyOn(path, 'dirname').mockReturnValueOnce('mock-me?')
     await command.run()
     expect(fs.removeSync).toHaveBeenCalledWith('mock-me?')
     dirnameSpy.mockRestore()

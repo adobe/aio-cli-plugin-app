@@ -23,107 +23,106 @@ process.on = jest.fn()
 let theCleanup
 
 beforeEach(() => {
-    theCleanup = new Cleanup()
-    mockLogger.mockReset()
-    process.exit.mockReset()
-    process.on.mockReset()
-    execa.mockReset()
+  theCleanup = new Cleanup()
+  mockLogger.mockReset()
+  process.exit.mockReset()
+  process.on.mockReset()
+  execa.mockReset()
 })
 
 test('exports', () => {
-    expect(typeof Cleanup).toEqual('function')
-    expect(typeof Cleanup.prototype.add).toEqual('function')
-    expect(typeof Cleanup.prototype.run).toEqual('function')
-    expect(typeof Cleanup.prototype.wait).toEqual('function')
+  expect(typeof Cleanup).toEqual('function')
+  expect(typeof Cleanup.prototype.add).toEqual('function')
+  expect(typeof Cleanup.prototype.run).toEqual('function')
+  expect(typeof Cleanup.prototype.wait).toEqual('function')
 })
 
 test('add', () => {
-    const fn1 = jest.fn()
-    const fn2 = jest.fn()
+  const fn1 = jest.fn()
+  const fn2 = jest.fn()
 
-    expect(theCleanup.resources.length).toEqual(0)
-    theCleanup.add(fn1, 'fn1')
-    theCleanup.add(fn2, 'fn2')
-    expect(theCleanup.resources.length).toEqual(2)
+  expect(theCleanup.resources.length).toEqual(0)
+  theCleanup.add(fn1, 'fn1')
+  theCleanup.add(fn2, 'fn2')
+  expect(theCleanup.resources.length).toEqual(2)
 })
 
 test('run', async () => {
-    const fn1 = jest.fn()
-    const fn2 = jest.fn()
+  const fn1 = jest.fn()
+  const fn2 = jest.fn()
 
-    theCleanup.add(fn1, 'fn1')
-    theCleanup.add(fn2, 'fn2')
-    await theCleanup.run()
+  theCleanup.add(fn1, 'fn1')
+  theCleanup.add(fn2, 'fn2')
+  await theCleanup.run()
 
-    expect(fn1).toHaveBeenCalled()
-    expect(fn2).toHaveBeenCalled()
-    expect(mockLogger.debug).toBeCalledWith('fn1')
-    expect(mockLogger.debug).toBeCalledWith('fn2')
+  expect(fn1).toHaveBeenCalled()
+  expect(fn2).toHaveBeenCalled()
+  expect(mockLogger.debug).toBeCalledWith('fn1')
+  expect(mockLogger.debug).toBeCalledWith('fn2')
 })
 
 test('wait (cleanup no errors)', async () => {
-    const fn1 = jest.fn()
-    const fn2 = jest.fn()
+  const fn1 = jest.fn()
+  const fn2 = jest.fn()
 
-    const mockKill = jest.fn()
-    execa.mockImplementation(async () => {
-        return {
-            kill: mockKill
-        }
-      })
+  const mockKill = jest.fn()
+  execa.mockImplementation(async () => {
+    return {
+      kill: mockKill
+    }
+  })
 
-    process.exit.mockImplementation((code) => {
-        expect(code).toEqual(0) // ok
-    })
+  process.exit.mockImplementation((code) => {
+    expect(code).toEqual(0) // ok
+  })
 
-    process.on.mockImplementation(async (eventName, fn) => {
-        if (eventName === 'SIGINT') {
-            // call the fn immediately as if SIGINT was sent
-            await fn()
+  process.on.mockImplementation(async (eventName, fn) => {
+    if (eventName === 'SIGINT') {
+      // call the fn immediately as if SIGINT was sent
+      await fn()
 
-            expect(execa).toHaveBeenCalled()
-            expect(fn1).toHaveBeenCalled()
-            expect(fn2).toHaveBeenCalled()
-            expect(mockKill).toHaveBeenCalled()
-        }
-    })
+      expect(execa).toHaveBeenCalled()
+      expect(fn1).toHaveBeenCalled()
+      expect(fn2).toHaveBeenCalled()
+      expect(mockKill).toHaveBeenCalled()
+    }
+  })
 
-    theCleanup.add(fn1, 'fn1')
-    theCleanup.add(fn2, 'fn2')
-    await theCleanup.wait()
+  theCleanup.add(fn1, 'fn1')
+  theCleanup.add(fn2, 'fn2')
+  await theCleanup.wait()
 })
 
 test('wait (cleanup has error)', async () => {
-    const fn1 = jest.fn()
-    const fn2 = jest.fn(() => {
-        throw new Error('error')
-    })
+  const fn1 = jest.fn()
+  const fn2 = jest.fn(() => {
+    throw new Error('error')
+  })
 
-    const mockKill = jest.fn()
-    execa.mockImplementation(async () => {
-        return {
-            kill: mockKill
-        }
-      })
+  const mockKill = jest.fn()
+  execa.mockImplementation(async () => {
+    return {
+      kill: mockKill
+    }
+  })
 
-    process.exit.mockImplementation((code) => {
-        expect(code).toEqual(1) // error
-    })
+  process.exit.mockImplementation((code) => {
+    expect(code).toEqual(1) // error
+  })
 
-    process.on.mockImplementation(async (eventName, fn) => {
-        if (eventName === 'SIGINT') {
-            // call the fn immediately as if SIGINT was sent
-            await fn()
+  process.on.mockImplementation(async (eventName, fn) => {
+    if (eventName === 'SIGINT') {
+      // call the fn immediately as if SIGINT was sent
+      await fn()
 
-            expect(execa).toHaveBeenCalled()
-            expect(fn1).toHaveBeenCalled()
-            expect(fn2).toHaveBeenCalled()
-            expect(mockKill).not.toHaveBeenCalled() // never gets here because of the exception
-        }
-    })
+      expect(execa).toHaveBeenCalled()
+      expect(fn1).toHaveBeenCalled()
+      expect(fn2).toHaveBeenCalled()
+      expect(mockKill).not.toHaveBeenCalled() // never gets here because of the exception
+    }
+  })
 
-    theCleanup.add(fn1, 'fn1')
-    theCleanup.add(fn2, 'fn2')
-    await theCleanup.wait()
+  theCleanup.add(fn1, 'fn1')
+  theCleanup.add(fn2, 'fn2')
+  await theCleanup.wait()
 })
-

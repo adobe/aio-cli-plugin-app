@@ -70,17 +70,17 @@ describe('run', () => {
         }
       }))
 
-      command = new TheCommand([])
-      command.error = jest.fn()
-      command.log = jest.fn()
-      command.appConfig = {}
-      command.getFullConfig = jest.fn()
+    command = new TheCommand([])
+    command.error = jest.fn()
+    command.log = jest.fn()
+    command.appConfig = {}
+    command.getFullConfig = jest.fn()
   })
 
   test('get all action urls', async () => {
     const appConfig = createFullConfig(command.appConfig)
     command.getFullConfig.mockReturnValueOnce(appConfig)
-      
+
     const retVal = {
       runtime: {
         action: 'https://fake_ns.adobeioruntime.net/api/v1/web/sample-app-1.0.0/action'
@@ -130,7 +130,7 @@ describe('run', () => {
     const appConfig = createFullConfig(command.appConfig)
     command.getFullConfig.mockReturnValueOnce(appConfig)
     command.argv = ['--yml']
-    
+
     const retVal = { runtime: {} }
     mockRuntimeLib.utils.getActionUrls.mockResolvedValue({})
     const urls = await command.run()

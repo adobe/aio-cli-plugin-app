@@ -61,7 +61,6 @@ describe('no flags', () => {
 
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockInstantiate).toHaveBeenCalledWith(generators['add-ci'], { options: {} })
-    const genName = mockInstantiate.mock.calls[0][0]
     expect(mockRunGenerator).toHaveBeenCalled()
   })
 })

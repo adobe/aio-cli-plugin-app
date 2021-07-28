@@ -17,7 +17,7 @@ const { wrapError } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 
 class Logs extends BaseCommand {
-  _processEachAction(fullConfig, processFn) {
+  _processEachAction (fullConfig, processFn) {
     Object.entries(fullConfig.all).forEach(([, config]) => {
       Object.entries(config.manifest.full.packages).forEach(([packageName, pkg]) => {
         // handle default package
@@ -27,7 +27,7 @@ class Logs extends BaseCommand {
           processFn(packageName, aName)
         })
       })
-    })      
+    })
   }
 
   async run () {
@@ -64,7 +64,7 @@ class Logs extends BaseCommand {
           }
         })
 
-        if (actionsToAdd.length == 0) {
+        if (actionsToAdd.length === 0) {
           throw new Error(`There is no match for action '${actionName}' in any of the packages.`)
         } else {
           filterActions.push(...actionsToAdd)

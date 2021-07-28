@@ -21,6 +21,8 @@ const { SERVICE_API_KEY_ENV, ENTP_INT_CERTS_FOLDER } = require('../../lib/defaul
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:use', { provider: 'debug' })
 const chalk = require('chalk')
 
+/* global LibConsoleCLI */
+
 class Use extends BaseCommand {
   async run () {
     const { flags, args } = this.parse(Use)

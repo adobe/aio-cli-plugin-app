@@ -87,7 +87,7 @@ describe('bad user selections', () => {
   })
 
   test('aborts if user says no', async () => {
-    command.prompt = jest.fn( a => {
+    command.prompt = jest.fn(a => {
       return {
         delete: false,
         'web-assets': [{ src: 'fakeWebPath4345' }]
@@ -98,7 +98,7 @@ describe('bad user selections', () => {
   })
 
   test('deletes user\'s selection', async () => {
-    command.prompt = jest.fn( a => {
+    command.prompt = jest.fn(a => {
       return {
         delete: true,
         'web-assets': [{ src: 'fakeWebPath' }]

@@ -33,7 +33,7 @@ class Cleanup {
     */
     // if (this.resources.length < 1) {
     const dummyProc = execa('node')
-    this.add(async () =>  (await dummyProc).kill(), 'stopping sigint waiter...')
+    this.add(async () => (await dummyProc).kill(), 'stopping sigint waiter...')
     // }
     // bind cleanup function
     process.on('SIGINT', async () => {
