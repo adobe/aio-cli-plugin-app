@@ -164,7 +164,7 @@ test('flags/args', async () => {
   expect(TheCommand.flags.workspace).toBeDefined()
   expect(TheCommand.flags.workspace.char).toEqual('w')
   expect(TheCommand.flags.workspace.default).toEqual('')
-  expect(TheCommand.flags.workspace.exclusive).toEqual(['global'])
+  expect(TheCommand.flags.workspace.exclusive).toEqual(['global', 'workspace-name'])
 
   expect(TheCommand.flags['no-service-sync']).toBeDefined()
   expect(TheCommand.flags['no-service-sync'].default).toEqual(false)
