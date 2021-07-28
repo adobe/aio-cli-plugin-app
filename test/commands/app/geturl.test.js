@@ -15,6 +15,12 @@ const BaseCommand = require('../../../src/BaseCommand')
 
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 const deepClone = require('lodash.clonedeep')
+const dataMocks = require('../../data-mocks/config-loader')
+
+const createFullConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
+  const appConfig = dataMocks(appFixtureName, aioConfig)
+  return appConfig
+}
 
 beforeEach(() => {
   jest.restoreAllMocks()
@@ -48,6 +54,8 @@ test('flags', async () => {
 })
 
 describe('run', () => {
+  let command
+
   beforeEach(() => {
     mockRuntimeLib.utils.getActionUrls.mockReset()
     mockRuntimeLib.utils.getActionUrls.mockImplementation(jest.fn(
@@ -62,13 +70,18 @@ describe('run', () => {
           }
         }
       }))
+
+      command = new TheCommand([])
+      command.error = jest.fn()
+      command.log = jest.fn()
+      command.appConfig = {}
+      command.getFullConfig = jest.fn()
   })
 
   test('get all action urls', async () => {
-    const command = new TheCommand([])
-    command.error = jest.fn()
-    command.log = jest.fn()
-    command.appConfig = {}
+    const appConfig = createFullConfig(command.appConfig)
+    command.getFullConfig.mockReturnValueOnce(appConfig)
+      
     const retVal = {
       runtime: {
         action: 'https://fake_ns.adobeioruntime.net/api/v1/web/sample-app-1.0.0/action'
@@ -76,68 +89,78 @@ describe('run', () => {
     }
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith({}, true)
+    Object.values(appConfig.all).forEach(config => {
+      expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith(config, true)
+    })
     expect(urls).toEqual(retVal)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.runtime.action))
   })
 
   test('get empty action urls', async () => {
-    const command = new TheCommand([])
-    command.error = jest.fn()
-    command.log = jest.fn()
-    command.appConfig = {}
-    const retVal = {}
+    const appConfig = createFullConfig(command.appConfig)
+    command.getFullConfig.mockReturnValueOnce(appConfig)
+
+    const retVal = {
+      runtime: {}
+    }
     mockRuntimeLib.utils.getActionUrls.mockResolvedValue(undefined)
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith({}, true)
+    Object.values(appConfig.all).forEach(config => {
+      expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith(config, true)
+    })
     expect(urls).toEqual(retVal)
   })
 
   test('get empty action urls -j', async () => {
-    const command = new TheCommand(['--json'])
-    command.error = jest.fn()
-    command.log = jest.fn()
-    command.appConfig = {}
+    const appConfig = createFullConfig(command.appConfig)
+    command.getFullConfig.mockReturnValueOnce(appConfig)
+    command.argv = ['--json']
+
     const retVal = { runtime: {} }
     mockRuntimeLib.utils.getActionUrls.mockResolvedValue({})
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith({}, true)
+    Object.values(appConfig.all).forEach(config => {
+      expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith(config, true)
+    })
     expect(urls).toEqual(retVal)
   })
 
   test('get empty action urls -y', async () => {
-    const command = new TheCommand(['--yml'])
-    command.error = jest.fn()
-    command.log = jest.fn()
-    command.appConfig = {}
+    const appConfig = createFullConfig(command.appConfig)
+    command.getFullConfig.mockReturnValueOnce(appConfig)
+    command.argv = ['--yml']
+    
     const retVal = { runtime: {} }
     mockRuntimeLib.utils.getActionUrls.mockResolvedValue({})
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith({}, true)
+    Object.values(appConfig.all).forEach(config => {
+      expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith(config, true)
+    })
     expect(urls).toEqual(retVal)
   })
 
   test('get empty action urls -h', async () => {
-    const command = new TheCommand(['--hson'])
-    command.error = jest.fn()
-    command.log = jest.fn()
-    command.appConfig = {}
+    const appConfig = createFullConfig(command.appConfig)
+    command.getFullConfig.mockReturnValueOnce(appConfig)
+    command.argv = ['--hson']
+
     mockRuntimeLib.utils.getActionUrls.mockResolvedValue({})
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith({}, true)
+    Object.values(appConfig.all).forEach(config => {
+      expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith(config, true)
+    })
     expect(urls).toEqual({ runtime: {} })
   })
 
   test('get all action urls with cdn flag', async () => {
-    const command = new TheCommand([])
-    command.error = jest.fn()
-    command.log = jest.fn()
-    command.appConfig = {}
+    const appConfig = createFullConfig(command.appConfig)
+    command.getFullConfig.mockReturnValueOnce(appConfig)
     command.argv = ['--cdn']
+
     const retVal = {
       runtime: {
         action: 'https://fake_ns.adobeioruntime.net/api/v1/web/sample-app-1.0.0/action'
@@ -148,18 +171,19 @@ describe('run', () => {
     }
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith({}, true)
+    Object.values(appConfig.all).forEach(config => {
+      expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith(config, true)
+    })
     expect(urls).toEqual(retVal)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.runtime.action))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.cdn.action))
   })
 
   test('get single action url', async () => {
-    const command = new TheCommand([])
-    command.error = jest.fn()
-    command.log = jest.fn()
+    const appConfig = createFullConfig(command.appConfig)
+    command.getFullConfig.mockReturnValueOnce(appConfig)
     command.args = { action: 'action' }
-    command.appConfig = {}
+
     const retVal = {
       runtime: {
         action: 'https://fake_ns.adobeioruntime.net/api/v1/web/sample-app-1.0.0/action'
@@ -167,17 +191,15 @@ describe('run', () => {
     }
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith({}, true)
+    Object.values(appConfig.all).forEach(config => {
+      expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith(config, true)
+    })
     expect(urls).toEqual(retVal)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.runtime.action))
   })
 
   test('get single action url with cdn flag', async () => {
-    const command = new TheCommand([])
-    command.error = jest.fn()
-    command.log = jest.fn()
-    command.argv = ['action', '--cdn']
-    command.appConfig = {
+    const appConfigParam = {
       manifest: {
         package: {
           actions: {
@@ -189,7 +211,9 @@ describe('run', () => {
         }
       }
     }
-    const appConfigParam = deepClone(command.appConfig)
+    const appConfig = { ...createFullConfig(command.appConfig), ...appConfigParam }
+    command.getFullConfig.mockReturnValueOnce(appConfig)
+    command.argv = ['action', '--cdn']
     // To check that only one action is sent to getActionUrls()
     delete appConfigParam.manifest.package.actions.action2
     const result = {
@@ -203,18 +227,17 @@ describe('run', () => {
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalledTimes(2)
-    expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenNthCalledWith(1, appConfigParam, true)
-    expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenNthCalledWith(2, appConfigParam, false)
+    Object.values(appConfig.all).forEach(config => {
+      expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith(config, true)
+      expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith(config, false)
+    })
+
     expect(urls).toEqual(result)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.runtime.action))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.cdn.action))
   })
 
   test('get single action url with non existing action', async () => {
-    const command = new TheCommand([])
-    command.error = jest.fn()
-    command.log = jest.fn()
-    command.argv = ['invalid']
     command.appConfig = {
       manifest: {
         package: {
@@ -223,15 +246,14 @@ describe('run', () => {
         }
       }
     }
+    command.getFullConfig.mockReturnValueOnce(createFullConfig(command.appConfig))
+    command.argv = ['invalid']
+
     await command.run()
     expect(command.error).toHaveBeenCalledWith(new Error('No action with name invalid found'))
   })
 
   test('get only cdn url', async () => {
-    const command = new TheCommand([])
-    command.error = jest.fn()
-    command.log = jest.fn()
-    command.argv = ['invalid']
     command.appConfig = {
       manifest: {
         package: {
@@ -240,6 +262,9 @@ describe('run', () => {
         }
       }
     }
+    command.getFullConfig.mockReturnValueOnce(createFullConfig(command.appConfig))
+    command.argv = ['invalid']
+
     await command.run()
     expect(command.error).toHaveBeenCalledWith(new Error('No action with name invalid found'))
   })

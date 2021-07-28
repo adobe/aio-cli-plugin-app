@@ -64,12 +64,11 @@ class GetUrlCommand extends BaseCommand {
       } else if (flags.hson) {
         this.log(urls)
       } else {
-        if (urls.runtime) {
-          this.log('Runtime URLs')
-          Object.entries(urls.runtime).forEach(([key, value]) => {
-            this.log(chalk.blue(chalk.bold(`${key} `)) + ' - ' + chalk.blue(chalk.bold(`${value} `)))
-          })
-        }
+        // urls.runtime is always set
+        this.log('Runtime URLs')
+        Object.entries(urls.runtime).forEach(([key, value]) => {
+          this.log(chalk.blue(chalk.bold(`${key} `)) + ' - ' + chalk.blue(chalk.bold(`${value} `)))
+        })
 
         if (urls.cdn) {
           this.log('CDN URLs')
