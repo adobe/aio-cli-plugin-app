@@ -20,7 +20,7 @@ jest.mock('fs-extra')
 
 beforeEach(() => {
   fs.ensureDirSync.mockClear()
-  DeleteActionCommand.run = jest.fn()
+  DeleteActionCommand.run.mockReset()
 })
 
 describe('Command Prototype', () => {
