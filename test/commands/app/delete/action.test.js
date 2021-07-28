@@ -217,13 +217,13 @@ describe('good flags', () => {
     }
     await command.run()
     expect(fs.removeSync).toHaveBeenCalledWith('a-path')
-    expect(fs.removeSync).toHaveBeenCalledWith('e2e/a-dir/a-fileName.e2e.js')
-    expect(fs.removeSync).toHaveBeenCalledWith('test/a-dir/a-fileName.test.js')
+    expect(fs.removeSync).toHaveBeenCalledWith(path.normalize('e2e/a-dir/a-fileName.e2e.js'))
+    expect(fs.removeSync).toHaveBeenCalledWith(path.normalize('test/a-dir/a-fileName.test.js'))
     // expect(command.log).toHaveBeenCalledWith('✔ Deleted \'a\'')
 
     expect(fs.removeSync).toHaveBeenCalledWith('b-path')
-    expect(fs.removeSync).toHaveBeenCalledWith('e2e/b-dir/b-fileName.e2e.js')
-    expect(fs.removeSync).toHaveBeenCalledWith('test/b-dir/b-fileName.test.js')
+    expect(fs.removeSync).toHaveBeenCalledWith(path.normalize('e2e/b-dir/b-fileName.e2e.js'))
+    expect(fs.removeSync).toHaveBeenCalledWith(path.normalize('test/b-dir/b-fileName.test.js'))
     // expect(command.log).toHaveBeenCalledWith('✔ Deleted \'b\'')
   })
 
