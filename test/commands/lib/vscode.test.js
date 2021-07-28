@@ -18,6 +18,7 @@ const yeoman = require('yeoman-environment')
 const fs = require('fs-extra')
 const path = require('path')
 const dataMocks = require('../../data-mocks/config-loader')
+const upath = require('upath')
 
 jest.mock('fs-extra')
 jest.mock('yeoman-environment')
@@ -33,6 +34,14 @@ const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
   const appConfig = dataMocks(appFixtureName, aioConfig).all
   appConfig.application = { ...appConfig.application, ...aioConfig }
   return appConfig
+}
+
+const relativeVsCodeConfigFiles = (configRoot, vsCodeConfig) => {
+  const { backupFile, mainFile } = vsCodeConfig.files()
+  return {
+    backupFile: upath.toUnix(path.join('/', path.relative(configRoot, backupFile))),
+    mainFile: upath.toUnix(path.join('/', path.relative(configRoot, mainFile)))
+  }
 }
 
 beforeEach(() => {
@@ -67,7 +76,7 @@ describe('update()', () => {
   const props = { frontEndUrl: 'https://foo.bar' }
   const config = { ...createAppConfig().application, envFile: 'my.env' }
   const vsCodeConfig = vscode(config)
-  const { backupFile, mainFile } = vsCodeConfig.files()
+  const { backupFile, mainFile } = relativeVsCodeConfigFiles(config.root, vsCodeConfig)
 
   test('launch.json does not exist, backup does not exist (no backup copy)', async () => {
     let globalFs = global.fakeFileSystem.files()
@@ -145,7 +154,7 @@ describe('update()', () => {
 describe('cleanup()', () => {
   const config = { ...createAppConfig().application, envFile: 'my.env' }
   const vsCodeConfig = vscode(config)
-  const { backupFile, mainFile } = vsCodeConfig.files()
+  const { backupFile, mainFile } = relativeVsCodeConfigFiles(config.root, vsCodeConfig)
 
   test('launch.json does not exist, backup does not exist (do nothing)', () => {
     let globalFs = global.fakeFileSystem.files()
@@ -193,7 +202,7 @@ describe('cleanup()', () => {
   test('launch.json exists, backup does not exist (remove launch.json, .vscode folder not empty and is not deleted)', () => {
     let globalFs
     const vscodeFolder = path.dirname(mainFile)
-    const someOtherFileInVsCodeFolder = path.join(vscodeFolder, 'some-file')
+    const someOtherFileInVsCodeFolder = upath.toUnix(path.join(vscodeFolder, 'some-file'))
 
     global.fakeFileSystem.addJson({
       [mainFile]: 'main-content',

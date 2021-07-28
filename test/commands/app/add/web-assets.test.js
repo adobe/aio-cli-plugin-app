@@ -15,6 +15,7 @@ const TheCommand = require('../../../../src/commands/app/add/web-assets')
 const BaseCommand = require('../../../../src/BaseCommand')
 const generators = require('@adobe/generator-aio-app')
 const dataMocks = require('../../../data-mocks/config-loader')
+const path = require('path')
 
 const config = require('@adobe/aio-lib-core-config')
 jest.mock('@adobe/aio-lib-core-config')
@@ -96,7 +97,7 @@ describe('good flags', () => {
       options: {
         'skip-prompt': true,
         'project-name': 'legacy-app',
-        'web-src-folder': '/web-src',
+        'web-src-folder': path.resolve('/web-src'),
         'adobe-services': undefined
       }
     })
@@ -113,7 +114,7 @@ describe('good flags', () => {
       options: {
         'skip-prompt': true,
         'project-name': 'legacy-app',
-        'web-src-folder': '/web-src',
+        'web-src-folder': path.resolve('/web-src'),
         'adobe-services': undefined
       }
     })
@@ -129,7 +130,7 @@ describe('good flags', () => {
       options: {
         'skip-prompt': false,
         'project-name': 'legacy-app',
-        'web-src-folder': '/web-src',
+        'web-src-folder': path.resolve('/web-src'),
         'adobe-services': undefined
       }
     })
@@ -145,7 +146,7 @@ describe('good flags', () => {
       options: {
         'skip-prompt': false,
         'project-name': 'legacy-app',
-        'web-src-folder': '/web-src',
+        'web-src-folder': path.resolve('/web-src'),
         'adobe-services': undefined
       }
     })
@@ -159,7 +160,7 @@ describe('good flags', () => {
       options: {
         'skip-prompt': false,
         'project-name': 'legacy-app',
-        'web-src-folder': '/web-src',
+        'web-src-folder': path.resolve('/web-src'),
         'adobe-services': undefined
       }
     })
@@ -174,7 +175,7 @@ describe('good flags', () => {
       options: {
         'skip-prompt': false,
         'project-name': 'legacy-app',
-        'web-src-folder': '/web-src',
+        'web-src-folder': path.resolve('/web-src'),
         'adobe-services': 'CampaignSDK,AdobeAnalyticsSDK'
       }
     })
