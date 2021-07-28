@@ -36,18 +36,26 @@ describe('Command Prototype', () => {
 // How can we detect the diff? -jm
 
 describe('passes flags through to delete action', () => {
+  let command
+  beforeEach(() => {
+    command = new TheCommand([])
+  })
+
   test('no flags', async () => {
-    await TheCommand.run()
+    command.argv = []
+    await command.run()
     expect(DeleteActionCommand.run).toHaveBeenCalled()
   })
 
   test('--yes', async () => {
-    await expect(TheCommand.run(['--yes'])).rejects.toThrow('<event-action-name> must also be provided')
+    command.argv = ['--yes']
+    await expect(command.run()).rejects.toThrow('<event-action-name> must also be provided')
     expect(DeleteActionCommand.run).not.toHaveBeenCalled()
   })
 
   test('--yes, <event-action-name>', async () => {
-    await TheCommand.run(['--yes', 'event-action-name'])
+    command.argv = ['--yes', 'event-action-name']
+    await command.run()
     expect(DeleteActionCommand.run).toHaveBeenCalledWith(['event-action-name', '--yes'])
   })
 })
