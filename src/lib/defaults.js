@@ -42,7 +42,7 @@ module.exports = {
       operations: ['view']
     },
     'dx/asset-compute/worker/1': {
-      operations: ['apply']
+      operations: ['workerProcess']
     }
   },
 

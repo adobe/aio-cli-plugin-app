@@ -66,7 +66,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('Extensions'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('dx/asset-compute/worker/1'))
-    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('apply'))
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('workerProcess'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('dx/excshell/1'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('view'))
   })

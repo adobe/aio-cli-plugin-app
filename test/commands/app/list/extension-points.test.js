@@ -61,7 +61,7 @@ describe('run', () => {
       operations: ['view']
     },
     'dx/asset-compute/worker/1': {
-      operations: ['apply']
+      operations: ['workerProcess']
     }
   }
 
@@ -84,7 +84,7 @@ describe('run', () => {
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('view'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('dx/asset-compute/worker/1'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('operations'))
-    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('apply'))
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('workerProcess'))
   })
 
   test('get all extension points --json', async () => {

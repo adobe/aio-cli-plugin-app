@@ -221,7 +221,7 @@ const nuiSingleConfig = {
       'post-app-run': 'adobe-asset-compute devtool'
     },
     operations: {
-      apply: [
+      workerProcess: [
         {
           type: 'action',
           impl: 'my-nui-package/action'
@@ -432,7 +432,7 @@ module.exports = (appFixtureName, mockedAIOConfig, rewriteMockConfig = {}) => {
     config.all[k].app.version = config.packagejson.version
   })
 
-  // apply extra configuration e.g. { packagejson.name: 'another', all.dx/excshell/1.app.name: 'another' }
+  // workerProcess extra configuration e.g. { packagejson.name: 'another', all.dx/excshell/1.app.name: 'another' }
   Object.entries(rewriteMockConfig).forEach(([k, v]) => {
     const keys = k.split('.')
     const parentObj = keys.slice(0, -1).reduce((obj, k) => {

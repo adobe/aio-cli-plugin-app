@@ -41,10 +41,10 @@ class ListExtensionCommand extends BaseCommand {
           ]
         }
         // get worker impl details
-        if (extension.operations.apply) {
-          extDetails.operations.apply = [
+        if (extension.operations.workerProcess) {
+          extDetails.operations.workerProcess = [
             {
-              impl: extension.operations.apply[0].impl
+              impl: extension.operations.workerProcess[0].impl
             }
           ]
         }
@@ -65,9 +65,9 @@ class ListExtensionCommand extends BaseCommand {
             this.log(' - view')
             this.log('   impl -> ' + summary.operations.view[0].impl)
           }
-          if (summary.operations.apply) {
-            this.log(' - apply')
-            this.log('   impl -> ' + summary.operations.apply[0].impl)
+          if (summary.operations.workerProcess) {
+            this.log(' - workerProcess')
+            this.log('   impl -> ' + summary.operations.workerProcess[0].impl)
           }
         })
       } else {

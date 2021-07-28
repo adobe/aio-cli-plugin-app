@@ -629,7 +629,7 @@ describe('buildExtensionPointPayloadWoMetadata', () => {
     expect(appHelper.buildExtensionPointPayloadWoMetadata(mockConfig.all))
       .toEqual({
         endpoints: {
-          'dx/asset-compute/worker/1': { apply: [{ href: 'https://hola.adobeioruntime.net/api/v1/web/my-nui-package/action' }] },
+          'dx/asset-compute/worker/1': { workerProcess: [{ href: 'https://hola.adobeioruntime.net/api/v1/web/my-nui-package/action' }] },
           'dx/excshell/1': { view: [{ href: 'https://hola.adobeio-static.net/index.html' }] }
         }
       })
