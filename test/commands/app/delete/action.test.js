@@ -161,12 +161,13 @@ describe('good flags', () => {
       }
     }
     fs.statSync.mockReturnValue({ isFile: () => true })
-    path.dirname = jest.fn().mockReturnValue('mock-dirname')
+    const dirnameSpy = jest.spyOn(path, 'dirname').mockReturnValueOnce('mock-dirname');
     command.getAllActions = () => {
       return { actions: [{ name: 'fakeActionName', path: 'boom.js' }], actionsByImpl: { } }
     }
     await command.run()
     expect(fs.removeSync).lastCalledWith('mock-dirname')
+    dirnameSpy.mockRestore()
   })
 
   test('fakeActionName hasBackend: false', async () => {
@@ -180,12 +181,13 @@ describe('good flags', () => {
     fs.statSync = () => {
       return { isFile: () => true }
     }
-    path.dirname = jest.fn().mockReturnValue('mock-dirname')
+    const dirnameSpy = jest.spyOn(path, 'dirname').mockReturnValueOnce('mock-dirname');
     command.getAllActions = () => {
       return { actions: [{ name: 'fakeActionName', path: 'boom.js' }], actionsByImpl: { } }
     }
     await command.run()
     expect(fs.removeSync).lastCalledWith('mock-dirname')
+    dirnameSpy.mockRestore()
   })
 
   test('multiple comma separators', async () => {
@@ -262,9 +264,10 @@ describe('getAllActions', () => {
     fs.statSync = jest.fn().mockReturnValue({
       isFile: () => true
     })
-    path.dirname = jest.fn().mockReturnValue('mock-me?')
+    const dirnameSpy = jest.spyOn(path, 'dirname').mockReturnValueOnce('mock-me?');
     await command.run()
     expect(fs.removeSync).toHaveBeenCalledWith('mock-me?')
+    dirnameSpy.mockRestore()
   })
 
   test('getAllActions - no app.hasBackend', () => {
