@@ -18,7 +18,10 @@ jest.mock('../../../../src/commands/app/delete/action')
 
 jest.mock('fs-extra')
 
+
+let command
 beforeEach(() => {
+  command = new TheCommand()
   fs.ensureDirSync.mockClear()
   DeleteActionCommand.run.mockReset()
 })
@@ -37,17 +40,19 @@ describe('Command Prototype', () => {
 
 describe('passes flags through to delete action', () => {
   test('no flags', async () => {
-    await TheCommand.run()
+    await command.run()
     expect(DeleteActionCommand.run).toHaveBeenCalled()
   })
 
   test('--yes', async () => {
-    await expect(TheCommand.run(['--yes'])).rejects.toThrow('<event-action-name> must also be provided')
+    command.argv = ['--yes']
+    await expect(command.run()).rejects.toThrow('<event-action-name> must also be provided')
     expect(DeleteActionCommand.run).not.toHaveBeenCalled()
   })
 
   test('--yes, <event-action-name>', async () => {
-    await TheCommand.run(['--yes', 'event-action-name'])
-    expect(DeleteActionCommand.run).toHaveBeenCalledWith(['event-action-name', '--yes'])
+    command.argv = ['--yes', 'event-action-name']
+    await command.run()
+    expect(DeleteActionCommand.run).toHaveBeenCalledWith(command.argv)
   })
 })
