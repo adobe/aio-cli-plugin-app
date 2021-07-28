@@ -76,7 +76,7 @@ const mockExtRegExcShellAndNuiPayload = () => {
         ]
       },
       'dx/asset-compute/worker/1': {
-        apply: [
+        workerProcess: [
         ]
       }
     }

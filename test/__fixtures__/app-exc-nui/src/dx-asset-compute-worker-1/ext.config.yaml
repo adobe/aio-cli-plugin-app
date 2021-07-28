@@ -1,5 +1,5 @@
 operations:
-  apply:
+  workerProcess:
     - type: action
       impl: my-nui-package/action
 actions: ./actions
