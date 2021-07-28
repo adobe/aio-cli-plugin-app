@@ -40,6 +40,7 @@ describe('Command Prototype', () => {
 
 describe('passes flags through to delete action', () => {
   test('no flags', async () => {
+    command.argv = []
     await command.run()
     expect(DeleteActionCommand.run).toHaveBeenCalled()
   })
@@ -53,6 +54,6 @@ describe('passes flags through to delete action', () => {
   test('--yes, <event-action-name>', async () => {
     command.argv = ['--yes', 'event-action-name']
     await command.run()
-    expect(DeleteActionCommand.run).toHaveBeenCalledWith(command.argv)
+    expect(DeleteActionCommand.run).toHaveBeenCalledWith(['event-action-name', '--yes'])
   })
 })
