@@ -12,8 +12,15 @@ governing permissions and limitations under the License.
 
 const TheCommand = require('../../../src/commands/app/logs')
 const BaseCommand = require('../../../src/BaseCommand')
+const dataMocks = require('../../data-mocks/config-loader')
+
+const createFullConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
+  const appConfig = dataMocks(appFixtureName, aioConfig)
+  return appConfig
+}
 
 const mockFS = require('fs-extra')
+jest.mock('fs-extra')
 
 jest.mock('../../../src/lib/app-helper.js')
 const helpers = require('../../../src/lib/app-helper.js')
@@ -21,22 +28,6 @@ const helpers = require('../../../src/lib/app-helper.js')
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 const printActionLogs = mockRuntimeLib.printActionLogs
 
-const fakeAppConfig = {
-  manifest: {
-    full: {
-      packages: {
-        jesttestpackage: {
-          actions: {
-            hello: {}
-          }
-        }
-      }
-    }
-  },
-  ow: {
-    package: 'jesttestpackage'
-  }
-}
 describe('interface', () => {
   test('exports', async () => {
     expect(typeof TheCommand).toEqual('function')
@@ -60,121 +51,126 @@ describe('interface', () => {
 })
 
 describe('run', () => {
+  let command
+
+  const owConfig = () => Object.values(command.appConfig.all)[0].ow // every extension has the same 'ow' package
+
   beforeEach(() => {
     printActionLogs.mockReset()
     helpers.wrapError.mockReset()
     mockFS.existsSync.mockReset()
+
+    command = new TheCommand([])
+    command.appConfig = createFullConfig()
+    command.error = jest.fn()
+    command.log = jest.fn()
+    command.getFullConfig = jest.fn()
+    command.getFullConfig.mockReturnValue(command.appConfig)
   })
 
   test('no flags, sets limit to 1', async () => {
     mockFS.existsSync.mockReturnValue(true)
-    const command = new TheCommand([])
-    command.appConfig = fakeAppConfig
-    command.error = jest.fn()
-    command.log = jest.fn()
 
     await command.run()
-    expect(printActionLogs).toHaveBeenCalledWith(command.appConfig, command.log, 1, ['jesttestpackage/hello'], false, false)
+    const ow = owConfig()
+    const actionList = ['legacy-app-1.0.0/action', 'legacy-app-1.0.0/action-zip']
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, actionList, false, false)
     expect(command.error).not.toHaveBeenCalled()
   })
 
   test('--limit < 1, sets limit to 1', async () => {
     mockFS.existsSync.mockReturnValue(true)
-    const command = new TheCommand(['--limit', '-1'])
-    command.appConfig = fakeAppConfig
-    command.error = jest.fn()
-    command.log = jest.fn()
+    command.argv = ['--limit', '-1']
 
     await command.run()
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('using --limit=1'))
-    expect(printActionLogs).toHaveBeenCalledWith(fakeAppConfig, command.log, 1, ['jesttestpackage/hello'], false, false)
+    const ow = owConfig()
+    const actionList = ['legacy-app-1.0.0/action', 'legacy-app-1.0.0/action-zip']
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, actionList, false, false)
     expect(command.error).not.toHaveBeenCalled()
   })
 
   test('--limit > 50, sets limit to 50', async () => {
     mockFS.existsSync.mockReturnValue(true)
-    const command = new TheCommand(['--limit', '51'])
-    command.appConfig = fakeAppConfig
-    command.error = jest.fn()
-    command.log = jest.fn()
+    command.argv = ['--limit', '51']
 
     await command.run()
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('using --limit=50'))
-    expect(printActionLogs).toHaveBeenCalledWith(fakeAppConfig, command.log, 50, ['jesttestpackage/hello'], false, false)
+    const ow = owConfig()
+    const actionList = ['legacy-app-1.0.0/action', 'legacy-app-1.0.0/action-zip']
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 50, actionList, false, false)
     expect(command.error).not.toHaveBeenCalled()
   })
 
   test('--limit 32', async () => {
     mockFS.existsSync.mockReturnValue(true)
-    const command = new TheCommand(['--limit', '32'])
-    command.appConfig = fakeAppConfig
-    command.error = jest.fn()
-    command.log = jest.fn()
+    command.argv = ['--limit', '32']
 
     await command.run()
-    expect(printActionLogs).toHaveBeenCalledWith(fakeAppConfig, command.log, 32, ['jesttestpackage/hello'], false, false)
+    const ow = owConfig()
+    const actionList = ['legacy-app-1.0.0/action', 'legacy-app-1.0.0/action-zip']
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 32, actionList, false, false)
     expect(command.error).not.toHaveBeenCalled()
   })
 
-  test('--action without including package name', async () => {
+  test('--action without including package name (found)', async () => {
     mockFS.existsSync.mockReturnValue(true)
-    const command = new TheCommand(['--action', 'hello'])
-    command.appConfig = fakeAppConfig
-    command.error = jest.fn()
-    command.log = jest.fn()
+    command.argv = ['--action', 'action-zip'] // we check if it exists because package-name is missing
 
     await command.run()
-    expect(printActionLogs).toHaveBeenCalledWith(fakeAppConfig, command.log, 1, ['jesttestpackage/hello'], false, false)
+    const ow = owConfig()
+    const actionList = ['legacy-app-1.0.0/action-zip']
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, actionList, false, false)
     expect(command.error).not.toHaveBeenCalled()
+  })
+
+  test('--action without including package name (not found)', async () => {
+    mockFS.existsSync.mockReturnValue(true)
+    const actionToFind = 'unknown-action'
+    command.argv = ['--action', actionToFind] // we check if it exists because package-name is missing
+
+    await expect(command.run()).rejects.toEqual(new Error(`There is no match for action '${actionToFind}' in any of the packages.`))
   })
 
   test('--action including package name', async () => {
     mockFS.existsSync.mockReturnValue(true)
-    const command = new TheCommand(['--action', 'pkg1/hello'])
-    command.appConfig = fakeAppConfig
-    command.error = jest.fn()
-    command.log = jest.fn()
+    command.argv = ['--action', 'legacy-app-1.0.0/action'] // pass-through (we don't check if it exists)
 
     await command.run()
-    expect(printActionLogs).toHaveBeenCalledWith(fakeAppConfig, command.log, 1, ['pkg1/hello'], false, false)
+    const ow = owConfig()
+    const actionList = ['legacy-app-1.0.0/action']
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, actionList, false, false)
     expect(command.error).not.toHaveBeenCalled()
   })
 
   test('--action multiple', async () => {
     mockFS.existsSync.mockReturnValue(true)
-    const command = new TheCommand(['--action', 'pkg1/hello', '--action', '/actionwithoutpkg'])
-    command.appConfig = fakeAppConfig
-    command.error = jest.fn()
-    command.log = jest.fn()
+    command.argv = ['--action', 'pkg1/hello', '--action', '/actionwithoutpkg'] // pass-through (we don't check if it exists)
 
     await command.run()
-    expect(printActionLogs).toHaveBeenCalledWith(fakeAppConfig, command.log, 1, ['pkg1/hello', '/actionwithoutpkg'], false, false)
+    const ow = owConfig()
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, ['pkg1/hello', '/actionwithoutpkg'], false, false)
     expect(command.error).not.toHaveBeenCalled()
   })
 
   test('error while getting logs', async () => {
     mockFS.existsSync.mockReturnValue(true)
-    const command = new TheCommand([])
-    command.appConfig = fakeAppConfig
-    command.error = jest.fn()
-    command.log = jest.fn()
     const theerror = new Error('I do not like logs')
     printActionLogs.mockRejectedValue(theerror)
     helpers.wrapError.mockReturnValue('wrapped error')
+
     await command.run()
     expect(command.error).toHaveBeenCalledWith('wrapped error')
     expect(helpers.wrapError).toHaveBeenCalledWith(theerror)
   })
 
-  test('error no manifest', async () => {
+  test('error no backend for any package', async () => {
     mockFS.existsSync.mockReturnValue(false)
-    const command = new TheCommand([])
-    command.appConfig = fakeAppConfig
-    command.error = jest.fn()
-    command.log = jest.fn()
     helpers.wrapError.mockReturnValue('wrapped error')
-    await command.run()
-    expect(command.error).toHaveBeenCalledWith('wrapped error')
-    expect(helpers.wrapError).toHaveBeenCalledWith(new Error('no manifest.yml'))
+
+    command.appConfig.all.application.app.hasBackend = false
+    command.getFullConfig.mockReturnValue(command.appConfig)
+
+    await expect(command.run()).rejects.toEqual(new Error('There are no backend implementations for this project folder.'))
   })
 })

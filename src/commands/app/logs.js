@@ -17,6 +17,19 @@ const { wrapError } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 
 class Logs extends BaseCommand {
+  _processEachAction(fullConfig, processFn) {
+    Object.entries(fullConfig.all).forEach(([, config]) => {
+      Object.entries(config.manifest.full.packages).forEach(([packageName, pkg]) => {
+        // handle default package
+        packageName = packageName.replace(/__APP_PACKAGE__/g, config.ow.package)
+
+        Object.keys(pkg.actions).forEach((aName) => {
+          processFn(packageName, aName)
+        })
+      })
+    })      
+  }
+
   async run () {
     const { flags } = this.parse(Logs)
     const fullConfig = this.getFullConfig()
@@ -38,22 +51,28 @@ class Logs extends BaseCommand {
     const filterActions = []
     if (flags.action) {
       flags.action.forEach((actionName) => {
-        // handle default package
-        if (!actionName.includes('/')) {
-          actionName = fullConfig.ow.package + '/' + actionName
+        if (actionName.includes('/')) {
+          filterActions.push(actionName)
+          return
         }
-        filterActions.push(actionName)
+        // handle action name without package
+        const actionsToAdd = []
+        this._processEachAction(fullConfig, (packageName, aName) => {
+          const normalizedActionName = `${packageName}/${aName}`
+          if (normalizedActionName.includes(actionName)) {
+            actionsToAdd.push(normalizedActionName)
+          }
+        })
+
+        if (actionsToAdd.length == 0) {
+          throw new Error(`There is no match for action '${actionName}' in any of the packages.`)
+        } else {
+          filterActions.push(...actionsToAdd)
+        }
       })
     } else {
-      Object.entries(fullConfig.all).forEach(([implName, config]) => {
-        Object.entries(config.manifest.full.packages).forEach((packageTuple) => {
-          // handle default package
-          packageTuple[0] = packageTuple[0].replace(/__APP_PACKAGE__/g, config.ow.package)
-
-          Object.keys(packageTuple[1].actions).forEach((actionName) => {
-            filterActions.push(packageTuple[0] + '/' + actionName)
-          })
-        })
+      this._processEachAction(fullConfig, (packageName, aName) => {
+        filterActions.push(`${packageName}/${aName}`)
       })
     }
 
