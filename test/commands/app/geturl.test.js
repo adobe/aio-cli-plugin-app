@@ -14,7 +14,6 @@ const TheCommand = require('../../../src/commands/app/get-url')
 const BaseCommand = require('../../../src/BaseCommand')
 
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
-const deepClone = require('lodash.clonedeep')
 const dataMocks = require('../../data-mocks/config-loader')
 
 const createFullConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
