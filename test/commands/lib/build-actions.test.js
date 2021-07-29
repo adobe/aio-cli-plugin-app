@@ -16,8 +16,16 @@ const { buildActions: rtBuildActions } = require('@adobe/aio-lib-runtime')
 
 jest.mock('../../../src/lib/app-helper')
 
+const extensionConfig = {
+  hooks: {
+    // make script be the same name as hook, for testing purposes
+    'pre-app-build': 'pre-app-build',
+    'build-actions': 'build-actions',
+    'post-app-build': 'post-app-build'
+  }
+}
 beforeEach(() => {
-  utils.runPackageScript.mockReset()
+  utils.runScript.mockReset()
 })
 
 test('exports', () => {
@@ -25,25 +33,25 @@ test('exports', () => {
 })
 
 test('build-actions app hook available', async () => {
-  utils.runPackageScript.mockImplementation((script) => {
+  utils.runScript.mockImplementation((script) => {
     if (script === 'build-actions') {
       return {}
     }
   })
 
-  await buildActions({})
+  await buildActions(extensionConfig)
 
   expect(rtBuildActions).not.toBeCalled()
-  expect(utils.runPackageScript).toHaveBeenNthCalledWith(1, 'pre-app-build')
-  expect(utils.runPackageScript).toHaveBeenNthCalledWith(2, 'build-actions')
-  expect(utils.runPackageScript).toHaveBeenNthCalledWith(3, 'post-app-build')
+  expect(utils.runScript).toHaveBeenNthCalledWith(1, 'pre-app-build')
+  expect(utils.runScript).toHaveBeenNthCalledWith(2, 'build-actions')
+  expect(utils.runScript).toHaveBeenNthCalledWith(3, 'post-app-build')
 })
 
 test('no build-actions app hook available (use inbuilt)', async () => {
-  await buildActions({})
+  await buildActions(extensionConfig)
 
   expect(rtBuildActions).toHaveBeenCalled()
-  expect(utils.runPackageScript).toHaveBeenNthCalledWith(1, 'pre-app-build')
-  expect(utils.runPackageScript).toHaveBeenNthCalledWith(2, 'build-actions')
-  expect(utils.runPackageScript).toHaveBeenNthCalledWith(3, 'post-app-build')
+  expect(utils.runScript).toHaveBeenNthCalledWith(1, 'pre-app-build')
+  expect(utils.runScript).toHaveBeenNthCalledWith(2, 'build-actions')
+  expect(utils.runScript).toHaveBeenNthCalledWith(3, 'post-app-build')
 })

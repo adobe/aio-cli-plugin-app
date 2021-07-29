@@ -9,7 +9,8 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-// defaults
+// defaults & constants
+const generators = require('@adobe/generator-aio-app')
 
 module.exports = {
   defaultAppHostname: 'adobeio-static.net',
@@ -29,5 +30,49 @@ module.exports = {
   },
   defaultHttpServerPort: 9080,
   AIO_CONFIG_WORKSPACE_SERVICES: 'project.workspace.details.services',
-  AIO_CONFIG_ORG_SERVICES: 'project.org.details.services'
+  AIO_CONFIG_ORG_SERVICES: 'project.org.details.services',
+  USER_CONFIG_FILE: 'app.config.yaml',
+  LEGACY_RUNTIME_MANIFEST: 'manifest.yml',
+  INCLUDE_DIRECTIVE: '$include',
+  APPLICATION_CONFIG_KEY: 'application',
+  EXTENSIONS_CONFIG_KEY: 'extensions',
+
+  EXTENSION_POINT_LIST: {
+    'dx/excshell/1': {
+      operations: ['view']
+    },
+    'dx/asset-compute/worker/1': {
+      operations: ['workerProcess']
+    }
+  },
+
+  implPromptChoices: [
+    // we abuse the extension command to also let users add a standalone app
+    {
+      name: 'Standalone Application',
+      value: {
+        name: 'application',
+        generator: generators.application,
+        requiredServices: [] // TODO required services should be filled based on selected actions
+      }
+    },
+    // extensions
+    // TODO this list should not be hardcoded but fetched from xt reg
+    {
+      name: 'DX Experience Cloud SPA v1',
+      value: {
+        name: 'dx/excshell/1',
+        generator: generators.extensions['dx/excshell/1'],
+        requiredServices: []
+      }
+    },
+    {
+      name: 'DX Asset Compute Worker v1',
+      value: {
+        name: 'dx/asset-compute/worker/1',
+        generator: generators.extensions['dx/asset-compute/worker/1'],
+        requiredServices: ['AssetComputeSDK']
+      }
+    }
+  ]
 }

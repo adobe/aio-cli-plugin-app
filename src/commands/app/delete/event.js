@@ -10,30 +10,39 @@ governing permissions and limitations under the License.
 */
 
 const BaseCommand = require('../../../BaseCommand')
-const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:delete:event', { provider: 'debug' })
 const { flags } = require('@oclif/command')
+const DeleteActionCommand = require('./action')
+const chalk = require('chalk')
 
 class DeleteEventCommand extends BaseCommand {
   async run () {
     const { args, flags } = this.parse(DeleteEventCommand)
 
-    aioLogger.debug('deleting an action from the project, with args', args, 'and flags:', flags)
+    aioLogger.debug(`deleting events from the project, with args ${JSON.stringify(args)}, and flags: ${JSON.stringify(flags)}`)
 
-    const generator = '@adobe/generator-aio-app/generators/delete-events'
+    // NOTE: this command only wraps app delete action, events will have more than actions later on
+    if (flags.yes && !args['event-action-name']) {
+      this.error('<event-action-name> must also be provided when using --yes')
+    }
 
-    const env = yeoman.createEnv()
-    env.register(require.resolve(generator), 'gen')
-    const res = await env.run('gen', {
-      'skip-prompt': flags.yes,
-      'action-name': args['event-action-name']
-    })
+    if (!args['event-action-name']) {
+      this.log(chalk.bold(chalk.blue('NOTE: this is running the \'app delete action\' command, please select events actions.')))
+      this.log()
+    }
 
-    return res
+    const cmdLineArgs = []
+    if (args['event-action-name']) {
+      cmdLineArgs.push(args['event-action-name'])
+    }
+    if (flags.yes) {
+      cmdLineArgs.push('--yes')
+    }
+    await DeleteActionCommand.run(cmdLineArgs)
   }
 }
 
-DeleteEventCommand.description = `Delete an existing Adobe I/O Events action
+DeleteEventCommand.description = `Delete existing Adobe I/O Events actions
 `
 
 DeleteEventCommand.flags = {
@@ -48,9 +57,11 @@ DeleteEventCommand.flags = {
 DeleteEventCommand.args = [
   {
     name: 'event-action-name',
-    description: 'Action name to delete',
-    required: true
+    description: 'Action `pkg/name` to delete, you can specify multiple actions via a comma separated list',
+    required: false
   }
 ]
+
+DeleteEventCommand.aliases = ['app:delete:events']
 
 module.exports = DeleteEventCommand

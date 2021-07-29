@@ -11,47 +11,90 @@ governing permissions and limitations under the License.
 */
 const fs = require('fs-extra')
 const path = require('path')
-
-const TheCommand = require('../../../src/commands/app/init')
-const BaseCommand = require('../../../src/BaseCommand')
-const runtimeLib = require('@adobe/aio-lib-runtime') // eslint-disable-line no-unused-vars
-const importLib = require('../../../src/lib/import')
-jest.mock('../../../src/lib/import')
-
 jest.mock('fs-extra')
 
-const mockAccessToken = 'some-access-token'
-const mockSetCli = jest.fn()
-jest.mock('@adobe/aio-lib-ims', () => {
-  return {
-    context: {
-      setCli: () => mockSetCli()
-    },
-    getToken: () => mockAccessToken
-  }
-})
-jest.mock('@adobe/aio-lib-env', () => {
-  return {
-    getCliEnv: () => 'prod'
-  }
-})
+// mock config load
+const mockImport = {
+  loadAndValidateConfigFile: jest.fn(),
+  importConfigJson: jest.fn()
+}
+jest.mock('../../../src/lib/import', () => mockImport)
 
+// mock generators
 jest.mock('yeoman-environment')
 const yeoman = require('yeoman-environment')
-
-const mockRegister = jest.fn()
+const mockGenInstantiate = jest.fn()
 const mockRun = jest.fn()
 yeoman.createEnv.mockReturnValue({
-  register: mockRegister,
-  run: mockRun
+  instantiate: mockGenInstantiate,
+  runGenerator: mockRun
 })
+
+// mock login
+jest.mock('@adobe/aio-lib-ims')
+
+// mock console calls
+jest.mock('@adobe/generator-aio-console/lib/console-cli.js')
+const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli.js')
+const mockConsoleCLIInstance = {
+  getEnabledServicesForOrg: jest.fn(),
+  promptForSelectOrganization: jest.fn(),
+  getOrganizations: jest.fn(),
+  getProjects: jest.fn(),
+  promptForSelectProject: jest.fn(),
+  promptForCreateProjectDetails: jest.fn(),
+  createProject: jest.fn(),
+  getWorkspaces: jest.fn(),
+  promptForSelectWorkspace: jest.fn(),
+  getServicePropertiesFromWorkspace: jest.fn(),
+  subscribeToServices: jest.fn(),
+  getWorkspaceConfig: jest.fn()
+  // promptForServiceSubscriptionsOperation: jest.fn(),
+  // confirmNewServiceSubscriptions: jest.fn(),
+  // promptForSelectServiceProperties: jest.fn()
+}
+LibConsoleCLI.init.mockResolvedValue(mockConsoleCLIInstance)
+/** @private */
+function resetMockConsoleCLI () {
+  Object.keys(mockConsoleCLIInstance).forEach(
+    k => mockConsoleCLIInstance[k].mockReset()
+  )
+  LibConsoleCLI.init.mockClear()
+}
+
+jest.mock('@adobe/generator-aio-app', () => ({
+  application: 'fake-gen-application',
+  'base-app': 'fake-gen-base-app',
+  extensions: {
+    'dx/excshell/1': 'fake-gen-excshell',
+    'dx/asset-compute/worker/1': 'fake-gen-nui'
+  }
+}))
+
+// mock prompt hardcoded generator list
+jest.mock('inquirer')
+const inquirer = require('inquirer')
+const mockExtensionPrompt = jest.fn()
+inquirer.createPromptModule = jest.fn().mockReturnValue(mockExtensionPrompt)
+const { implPromptChoices } = require('../../../src/lib/defaults')
+const extChoices = implPromptChoices.filter(c => c.value.name !== 'application')
+const excshellSelection = [implPromptChoices.find(c => c.value.name === 'dx/excshell/1').value]
+const assetComputeSelection = [implPromptChoices.find(c => c.value.name === 'dx/asset-compute/worker/1').value]
+
+// mock install app helper
+const mockInstallPackages = jest.fn()
+jest.mock('../../../src/lib/app-helper.js', () => ({
+  installPackages: mockInstallPackages,
+  atLeastOne: () => true,
+  getCliInfo: () => ({ accessToken: 'fake', env: 'prod' }) // for base command
+}))
 
 // mock cwd
 let fakeCwd
 const savedChdir = process.chdir
 const savedCwd = process.cwd
 beforeEach(() => {
-  fakeCwd = 'lifeisgood'
+  fakeCwd = 'cwd'
   process.chdir = jest.fn().mockImplementation(dir => { fakeCwd = dir })
   process.cwd = jest.fn().mockImplementation(() => fakeCwd)
   process.chdir.mockClear()
@@ -62,17 +105,27 @@ afterAll(() => {
   process.cwd = savedCwd
 })
 
+const TheCommand = require('../../../src/commands/app/init')
+const BaseCommand = require('../../../src/BaseCommand')
+const runtimeLib = require('@adobe/aio-lib-runtime') // eslint-disable-line no-unused-vars
+
 const savedDataDir = process.env.XDG_DATA_HOME
 beforeEach(() => {
-  mockRegister.mockReset()
+  mockGenInstantiate.mockReset()
   mockRun.mockReset()
   yeoman.createEnv.mockClear()
   fs.ensureDirSync.mockClear()
   fs.unlinkSync.mockClear()
-  importLib.importConfigJson.mockReset()
-  importLib.writeAio.mockReset()
   // set config.dataDir in oclif
   process.env.XDG_DATA_HOME = 'data-dir'
+
+  resetMockConsoleCLI()
+  mockExtensionPrompt.mockReset()
+  mockInstallPackages.mockClear()
+
+  // default
+  mockImport.importConfigJson.mockReset()
+  mockImport.loadAndValidateConfigFile.mockReset()
 })
 afterAll(() => {
   process.env.XDG_DATA_HOME = savedDataDir
@@ -100,6 +153,13 @@ describe('Command Prototype', () => {
     expect(typeof TheCommand.flags['skip-install']).toBe('object')
     expect(TheCommand.flags['skip-install'].char).toBe('s')
     expect(TheCommand.flags['skip-install'].default).toBe(false)
+
+    expect(TheCommand.flags.login.allowNo).toBe(true)
+    expect(TheCommand.flags.login.default).toBe(true)
+
+    expect(TheCommand.flags.workspace.default).toBe('Stage')
+    expect(TheCommand.flags.workspace.char).toBe('w')
+    expect(TheCommand.flags.workspace.exclusive).toEqual(['import'])
   })
 
   test('args', async () => {
@@ -115,580 +175,393 @@ describe('bad args/flags', () => {
   test('unknown', async () => {
     await expect(TheCommand.run(['.', '--wtf'])).rejects.toThrow('Unexpected argument')
   })
-})
-
-describe('template module cannot be registered', () => {
-  test('unknown error', async () => {
-    mockRegister.mockImplementation(() => { throw new Error('some error') })
-    await expect(TheCommand.run(['.'])).rejects.toThrow('some error')
+  test('--no-login and --workspace', async () => {
+    await expect(TheCommand.run(['--no-login', '--workspace', 'dev'])).rejects.toThrow('--no-login and --workspace flags cannot be used together.')
   })
 })
 
-const fakeCredentials = [
-  {
-    id: '1',
-    fake: { client_id: 'notjwtId' }
-  },
-  {
-    id: '2',
-    jwt: { client_id: 'fakeId123' }
-  }
-]
+describe('run', () => {
+  test('--no-login, select excshell', async () => {
+    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
+    await TheCommand.run(['--no-login'])
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-base-app',
+      { options: { 'skip-prompt': false, 'project-name': 'cwd' } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-excshell',
+      { options: { 'skip-prompt': false, force: true } }
+    )
+    expect(mockInstallPackages).toHaveBeenCalled()
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
+    expect(mockImport.importConfigJson).not.toHaveBeenCalled()
+  })
 
-const fakeWorkspaceServices = [
-  {
-    code: 'service1SDK',
-    name: 'the first fake service'
-  },
-  {
-    code: 'service2SDK',
-    name: 'the second fake service'
-  }
-]
-const fakeSupportedServices = [
-  {
-    code: 'service1SDK',
-    name: 'the first fake service'
-  },
-  {
-    code: 'service2SDK',
-    name: 'the second fake service'
-  },
-  {
-    code: 'service3SDK',
-    name: 'the third fake service'
-  },
-  {
-    code: 'service4SDK',
-    name: 'the fourth fake service'
-  }
-]
+  test('--no-login, select excshell, arg: /otherdir', async () => {
+    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
+    await TheCommand.run(['--no-login', '/otherdir'])
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-base-app',
+      { options: { 'skip-prompt': false, 'project-name': 'otherdir' } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-excshell',
+      { options: { 'skip-prompt': false, force: true } }
+    )
+    expect(mockInstallPackages).toHaveBeenCalled()
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
+    expect(mockImport.importConfigJson).not.toHaveBeenCalled()
 
-/** @private */
-function mockValidConfig ({ name = 'lifeisgood', workspaceServices = fakeWorkspaceServices, supportedServices = undefined, credentials = fakeCredentials } = {}) {
-  const project = {
-    name,
-    org: {
-      details: {
-        services: supportedServices
-      }
-    },
-    workspace: {
-      details: {
-        services: workspaceServices,
-        credentials
+    expect(fs.ensureDirSync).toHaveBeenCalledWith(path.resolve('/otherdir'))
+    expect(process.chdir).toHaveBeenCalledWith(path.resolve('/otherdir'))
+  })
+
+  test('--no-login, select both', async () => {
+    mockExtensionPrompt.mockReturnValue({ res: excshellSelection.concat(assetComputeSelection) })
+    await TheCommand.run(['--no-login'])
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-base-app',
+      { options: { 'skip-prompt': false, 'project-name': 'cwd' } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-excshell',
+      { options: { 'skip-prompt': false, force: true } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-nui',
+      { options: { 'skip-prompt': false, force: true } }
+    )
+    expect(mockInstallPackages).toHaveBeenCalled()
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
+    expect(mockImport.importConfigJson).not.toHaveBeenCalled()
+  })
+
+  test('--no-login --no-extensions', async () => {
+    await TheCommand.run(['--no-login', '--no-extensions'])
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-base-app',
+      { options: { 'skip-prompt': false, 'project-name': 'cwd' } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-application',
+      { options: { 'skip-prompt': false, force: true } }
+    )
+    expect(mockInstallPackages).toHaveBeenCalled()
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(mockExtensionPrompt).not.toHaveBeenCalled()
+    expect(mockImport.importConfigJson).not.toHaveBeenCalled()
+  })
+
+  test('--no-login --yes --skip-install, select excshell', async () => {
+    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
+    await TheCommand.run(['--no-login', '--yes', '--skip-install'])
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-base-app',
+      { options: { 'skip-prompt': true, 'project-name': 'cwd' } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-excshell',
+      { options: { 'skip-prompt': true, force: true } }
+    )
+    expect(mockInstallPackages).not.toHaveBeenCalled()
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
+    expect(mockImport.importConfigJson).not.toHaveBeenCalled()
+  })
+
+  // fake imported config
+  const fakeConfig = {
+    project: {
+      name: 'hola',
+      title: 'hola world',
+      org: { name: 'bestorg' },
+      workspace: {
+        details: {
+          credentials: [
+            {
+              jwt: {
+                client_id: 'fakeclientid'
+              }
+            }
+          ]
+        }
       }
     }
   }
-  // note: supportedServices config is not always defined, e.g. when importing the file
-  if (supportedServices) {
-    project.org.details = { services: supportedServices }
+  const fakeConfigNoCredentials = {
+    project: {
+      name: 'hola',
+      title: 'hola world',
+      org: { name: 'bestorg' },
+      workspace: {
+        details: {
+        }
+      }
+    }
   }
 
-  importLib.loadAndValidateConfigFile.mockReturnValue({
-    values: { project }
+  test('--import fakeconfig.json, select excshell', async () => {
+    mockImport.loadAndValidateConfigFile.mockReturnValue({ values: fakeConfig })
+    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
+    await TheCommand.run(['--import', 'fakeconfig.json'])
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-base-app',
+      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-excshell',
+      { options: { 'skip-prompt': false, force: true } }
+    )
+    expect(mockInstallPackages).toHaveBeenCalled()
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
+    expect(mockImport.importConfigJson).toHaveBeenCalledWith(
+      Buffer.from(JSON.stringify(fakeConfig)),
+      'cwd',
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: 'fakeclientid' }
+    )
   })
 
-  return project
-}
-
-/** @private */
-function mockInvalidConfig () {
-  importLib.loadAndValidateConfigFile.mockImplementation(() => { throw new Error('fake error') })
-}
-
-describe('run', () => {
-  test('some-path, --yes', async () => {
-    mockValidConfig()
-    const appFolder = 'some-path'
-    await TheCommand.run([appFolder, '--yes'])
-
-    // gen-console is skipped
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genApp = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenNthCalledWith(1, genApp, {
-      'skip-prompt': true,
-      'skip-install': false,
-      'project-name': appFolder,
-      'adobe-services': '',
-      'supported-adobe-services': ''
-    })
-    expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
-    expect(process.chdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
-    expect(fs.unlinkSync).not.toHaveBeenCalled()
+  test('--import fakeconfig.json, select excshell, no client id', async () => {
+    mockImport.loadAndValidateConfigFile.mockReturnValue({ values: fakeConfigNoCredentials })
+    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
+    await TheCommand.run(['--import', 'fakeconfig.json'])
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-base-app',
+      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-excshell',
+      { options: { 'skip-prompt': false, force: true } }
+    )
+    expect(mockInstallPackages).toHaveBeenCalled()
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
+    expect(mockImport.importConfigJson).toHaveBeenCalledWith(
+      Buffer.from(JSON.stringify(fakeConfigNoCredentials)),
+      'cwd',
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: '' }
+    )
   })
 
-  test('some-path, --yes --skip-install', async () => {
-    mockValidConfig()
-    const appFolder = 'some-path'
-    await TheCommand.run([appFolder, '--yes', '--skip-install'])
+  // some fake data
+  const fakeSupportedOrgServices = [{ code: 'AssetComputeSDK', properties: {} }, { code: 'another', properties: {} }]
+  const fakeSupportedOrgServicesNoAssetCompute = [{ code: 'another', properties: {} }]
+  const fakeProject = { id: 'fakeprojid', name: 'bestproject', title: 'best project' }
+  const fakeOrg = { id: 'fakeorgid', name: 'bestorg' }
+  const fakeWorkspaces = [{ id: 'fakewspcid1', name: 'Stage' }, { id: 'fkewspcid2', name: 'dev' }]
+  const fakeServicePropertiesNoAssetCompute = [{ sdkCode: 'another' }]
 
-    // gen-console is skipped
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genApp = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenNthCalledWith(1, genApp, {
-      'skip-prompt': true,
-      'skip-install': true,
-      'project-name': appFolder,
-      'adobe-services': '',
-      'supported-adobe-services': ''
-    })
-    expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
-    expect(process.chdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
-    expect(fs.unlinkSync).not.toHaveBeenCalled()
-  })
+  test('with login, select excshell', async () => {
+    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
+    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
+    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
+    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
 
-  test('no-path, --yes', async () => {
-    const project = mockValidConfig()
-    await TheCommand.run(['--yes'])
-
-    // gen-console is skipped
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genApp = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenNthCalledWith(1, genApp, {
-      'skip-prompt': true,
-      'skip-install': false,
-      'project-name': project.name,
-      'adobe-services': '',
-      'supported-adobe-services': ''
-    })
-    expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(process.chdir).not.toHaveBeenCalled()
-    expect(fs.unlinkSync).not.toHaveBeenCalled()
-  })
-
-  test('no-path, --no-login', async () => {
-    const project = mockValidConfig()
-    await TheCommand.run(['--no-login'])
-
-    // gen-console is skipped
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genApp = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenNthCalledWith(1, genApp, {
-      'skip-prompt': false,
-      'skip-install': false,
-      'project-name': project.name,
-      'adobe-services': '',
-      'supported-adobe-services': ''
-    })
-    expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(process.chdir).not.toHaveBeenCalled()
-    expect(fs.unlinkSync).not.toHaveBeenCalled()
-  })
-
-  test('no-path, --yes --skip-install', async () => {
-    const project = mockValidConfig()
-    await TheCommand.run(['--yes', '--skip-install'])
-
-    // gen-console is skipped
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genApp = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenNthCalledWith(1, genApp, {
-      'skip-prompt': true,
-      'skip-install': true,
-      'project-name': project.name,
-      'adobe-services': '',
-      'supported-adobe-services': ''
-    })
-    expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(process.chdir).not.toHaveBeenCalled()
-    expect(fs.unlinkSync).not.toHaveBeenCalled()
-  })
-
-  test('no-path, --skip-install', async () => {
-    const project = mockValidConfig({ supportedServices: fakeSupportedServices })
-    await TheCommand.run(['--skip-install'])
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(2)
-    const genConsole = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
-      'access-token': mockAccessToken,
-      'destination-file': 'console.json',
-      'ims-env': 'prod',
-      'allow-create': true,
-      'cert-dir': certDir
-    })
-    const genApp = mockRegister.mock.calls[1][1]
-    expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
-      'skip-prompt': false,
-      'skip-install': true,
-      'project-name': project.name,
-      'adobe-services': 'service1SDK,service2SDK',
-      'supported-adobe-services': 'service1SDK,service2SDK,service3SDK,service4SDK'
-    })
-    expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(process.chdir).not.toHaveBeenCalled()
-    expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
-  })
-
-  test('getCliInfo error', async () => {
-    mockSetCli.mockReset()
-    mockSetCli.mockImplementationOnce(() => { throw new Error('Error') })
-
-    const project = mockValidConfig()
-    await TheCommand.run(['--skip-install'])
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genApp = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenNthCalledWith(1, genApp, {
-      'skip-prompt': false,
-      'skip-install': true,
-      'project-name': project.name,
-      'adobe-services': '',
-      'supported-adobe-services': ''
-    })
-    expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(process.chdir).not.toHaveBeenCalled()
-    expect(fs.unlinkSync).not.toHaveBeenCalled()
-  })
-
-  test('no-path', async () => {
-    const project = mockValidConfig({ supportedServices: fakeSupportedServices })
+    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
     await TheCommand.run([])
-
-    expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(process.chdir).not.toHaveBeenCalled()
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(2)
-    const genConsole = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
-      'access-token': mockAccessToken,
-      'destination-file': 'console.json',
-      'ims-env': 'prod',
-      'allow-create': true,
-      'cert-dir': certDir
-    })
-    const genApp = mockRegister.mock.calls[1][1]
-    expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
-      'skip-prompt': false,
-      'skip-install': false,
-      'project-name': project.name,
-      'adobe-services': 'service1SDK,service2SDK',
-      'supported-adobe-services': 'service1SDK,service2SDK,service3SDK,service4SDK'
-    })
-    expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-base-app',
+      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-excshell',
+      { options: { 'skip-prompt': false, force: true } }
+    )
+    expect(mockInstallPackages).toHaveBeenCalled()
+    expect(LibConsoleCLI.init).toHaveBeenCalled()
+    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
+    expect(mockImport.importConfigJson).toHaveBeenCalledWith(
+      Buffer.from(JSON.stringify(fakeConfig)),
+      'cwd',
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: 'fakeclientid' }
+    )
+    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(fakeOrg.id, fakeProject.id, fakeWorkspaces[0].id, fakeSupportedOrgServices)
+    // exchshell has no required service to be added
+    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.createProject).not.toHaveBeenCalled()
   })
 
-  test('no path, no supported services in console config file', async () => {
-    const project = mockValidConfig({ supportedServices: [] })
+  test('with login, select asset-compute', async () => {
+    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
+    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
+    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
+    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
+
+    mockExtensionPrompt.mockReturnValue({ res: assetComputeSelection })
     await TheCommand.run([])
-
-    expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(process.chdir).not.toHaveBeenCalled()
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(2)
-    const genConsole = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
-      'access-token': mockAccessToken,
-      'destination-file': 'console.json',
-      'ims-env': 'prod',
-      'allow-create': true,
-      'cert-dir': certDir
-    })
-    const genApp = mockRegister.mock.calls[1][1]
-    expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
-      'skip-prompt': false,
-      'skip-install': false,
-      'project-name': project.name,
-      'adobe-services': 'service1SDK,service2SDK',
-      'supported-adobe-services': ''
-    })
-    expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-base-app',
+      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-nui',
+      { options: { 'skip-prompt': false, force: true } }
+    )
+    expect(mockInstallPackages).toHaveBeenCalled()
+    expect(LibConsoleCLI.init).toHaveBeenCalled()
+    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
+    expect(mockImport.importConfigJson).toHaveBeenCalledWith(
+      Buffer.from(JSON.stringify(fakeConfig)),
+      'cwd',
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: 'fakeclientid' }
+    )
+    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(fakeOrg.id, fakeProject.id, fakeWorkspaces[0].id, fakeSupportedOrgServices)
+    // adding the required nui service (exchshell has no required service)
+    expect(mockConsoleCLIInstance.subscribeToServices).toHaveBeenCalledWith(
+      fakeOrg.id,
+      fakeProject,
+      fakeWorkspaces[0],
+      expect.stringContaining(certDir),
+      [{ sdkCode: 'another' }, { sdkCode: 'AssetComputeSDK' }]
+    )
+    expect(mockConsoleCLIInstance.createProject).not.toHaveBeenCalled()
   })
 
-  test('no path, no workspace services in console config file', async () => {
-    const project = mockValidConfig({ workspaceServices: [], supportedServices: fakeSupportedServices })
+  test('with login, select excshell, no asset compute service in org', async () => {
+    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
+    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
+    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServicesNoAssetCompute)
+    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
+
+    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
     await TheCommand.run([])
-
-    expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(process.chdir).not.toHaveBeenCalled()
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(2)
-    const genConsole = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
-      'access-token': mockAccessToken,
-      'destination-file': 'console.json',
-      'ims-env': 'prod',
-      'allow-create': true,
-      'cert-dir': certDir
-    })
-    const genApp = mockRegister.mock.calls[1][1]
-    expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
-      'skip-prompt': false,
-      'skip-install': false,
-      'project-name': project.name,
-      'adobe-services': '',
-      'supported-adobe-services': 'service1SDK,service2SDK,service3SDK,service4SDK'
-    })
-    expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-base-app',
+      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-excshell',
+      { options: { 'skip-prompt': false, force: true } }
+    )
+    expect(mockInstallPackages).toHaveBeenCalled()
+    expect(LibConsoleCLI.init).toHaveBeenCalled()
+    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining(
+      {
+        choices: [
+        // exc shell
+          extChoices[0],
+          // disabled nui
+          expect.objectContaining({
+            disabled: true,
+            name: expect.stringContaining('missing service(s) in Org: \'AssetComputeSDK\'')
+          })
+        ]
+      })])
+    expect(mockImport.importConfigJson).toHaveBeenCalledWith(
+      Buffer.from(JSON.stringify(fakeConfig)),
+      'cwd',
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: 'fakeclientid' }
+    )
+    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(fakeOrg.id, fakeProject.id, fakeWorkspaces[0].id, fakeSupportedOrgServicesNoAssetCompute)
+    // exchshell has no required service to be added
+    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.createProject).not.toHaveBeenCalled()
   })
 
-  test('no path, no services at all in console config file', async () => {
-    const project = mockValidConfig({ workspaceServices: [], supportedServices: [] })
+  test('with login, select excshell, create new project', async () => {
+    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
+    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(null) // null = user selects to create a project
+    mockConsoleCLIInstance.createProject.mockResolvedValue(fakeProject)
+    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
+    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
+    mockConsoleCLIInstance.promptForCreateProjectDetails.mockResolvedValue('fakedetails')
+    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
     await TheCommand.run([])
-
-    expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(process.chdir).not.toHaveBeenCalled()
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(2)
-    const genConsole = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
-      'access-token': mockAccessToken,
-      'destination-file': 'console.json',
-      'ims-env': 'prod',
-      'allow-create': true,
-      'cert-dir': certDir
-    })
-    const genApp = mockRegister.mock.calls[1][1]
-    expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
-      'skip-prompt': false,
-      'skip-install': false,
-      'project-name': project.name,
-      'adobe-services': '',
-      'supported-adobe-services': ''
-    })
-    expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
-  })
-
-  test('some-path', async () => {
-    const project = mockValidConfig({ supportedServices: fakeSupportedServices })
-    await TheCommand.run(['some-path'])
-
-    expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
-    expect(process.chdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(2)
-    const genConsole = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
-      'access-token': mockAccessToken,
-      'destination-file': 'console.json',
-      'ims-env': 'prod',
-      'allow-create': true,
-      'cert-dir': certDir
-    })
-    const genApp = mockRegister.mock.calls[1][1]
-    expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
-      'skip-prompt': false,
-      'skip-install': false,
-      'project-name': project.name,
-      'adobe-services': 'service1SDK,service2SDK',
-      'supported-adobe-services': 'service1SDK,service2SDK,service3SDK,service4SDK'
-    })
-
-    // we changed dir, console.json is in cwd
-    expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
-  })
-
-  test('some-path no-supported-services', async () => {
-    const project = mockValidConfig()
-    await TheCommand.run(['some-path'])
-
-    expect(fs.ensureDirSync).toHaveBeenCalledWith(expect.stringContaining('some-path'))
-    expect(process.chdir).toHaveBeenCalledWith(expect.stringContaining('some-path'))
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(2)
-    const genConsole = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
-      'access-token': mockAccessToken,
-      'destination-file': 'console.json',
-      'ims-env': 'prod',
-      'allow-create': true,
-      'cert-dir': certDir
-    })
-    const genApp = mockRegister.mock.calls[1][1]
-    expect(mockRun).toHaveBeenNthCalledWith(2, genApp, {
-      'skip-prompt': false,
-      'skip-install': false,
-      'project-name': project.name,
-      'adobe-services': 'service1SDK,service2SDK',
-      'supported-adobe-services': ''
-    })
-
-    // we changed dir, console.json is in cwd
-    expect(fs.unlinkSync).toHaveBeenCalledWith('console.json')
-  })
-
-  test('no imports should write aio config', async () => {
-    // the only way we write defaults if gen-console threw an error
-    mockRun.mockImplementationOnce(() => { throw new Error('some error') })
-
-    const project = mockValidConfig()
-    await TheCommand.run([])
-
-    expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(process.chdir).not.toHaveBeenCalled()
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(2)
-    const genConsole = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenNthCalledWith(1, genConsole, {
-      'access-token': mockAccessToken,
-      'destination-file': 'console.json',
-      'ims-env': 'prod',
-      'allow-create': true,
-      'cert-dir': certDir
-    })
-    const genApp = mockRegister.mock.calls[1][1]
-    expect(mockRun).toHaveBeenCalledWith(genApp, {
-      'skip-prompt': false,
-      'skip-install': false,
-      'project-name': project.name,
-      'adobe-services': '',
-      'supported-adobe-services': ''
-    })
-    expect(fs.unlinkSync).not.toHaveBeenCalled()
-  })
-
-  test('no-path --import file=invalid config', async () => {
-    mockInvalidConfig()
-    await expect(TheCommand.run(['--import', 'config.json'])).rejects.toThrow('fake error')
-  })
-
-  test('no-path --import file={name: lifeisgood, services:AdobeTargetSDK,CampaignSDK, credentials:fake,jwt}', async () => {
-    const project = mockValidConfig({
-      name: 'lifeisgood',
-      workspaceServices: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }]
-    })
-    await TheCommand.run(['--import', 'config.json'])
-
-    // no args.path
-    expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(process.chdir).not.toHaveBeenCalled()
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genApp = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenNthCalledWith(1, genApp, {
-      'skip-prompt': false,
-      'skip-install': false,
-      'project-name': project.name,
-      'adobe-services': 'AdobeTargetSDK,CampaignSDK',
-      'supported-adobe-services': ''
-    })
-
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
-      process.cwd(),
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-base-app',
+      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-excshell',
+      { options: { 'skip-prompt': false, force: true } }
+    )
+    expect(mockInstallPackages).toHaveBeenCalled()
+    expect(LibConsoleCLI.init).toHaveBeenCalled()
+    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
+    expect(mockImport.importConfigJson).toHaveBeenCalledWith(
+      Buffer.from(JSON.stringify(fakeConfig)),
+      'cwd',
       { interactive: false, merge: true },
-      { SERVICE_API_KEY: 'fakeId123' })
-    expect(fs.unlinkSync).not.toHaveBeenCalled()
+      { SERVICE_API_KEY: 'fakeclientid' }
+    )
+    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(fakeOrg.id, fakeProject.id, fakeWorkspaces[0].id, fakeSupportedOrgServices)
+    // exchshell has no required service to be added
+    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.createProject).toHaveBeenCalledWith(fakeOrg.id, 'fakedetails')
   })
 
-  test('no-path --import file={name: lifeisgood, workspaceServices:AdobeTargetSDK,CampaignSDK, credentials:fake}', async () => {
-    const project = mockValidConfig({
-      name: 'lifeisgood',
-      workspaceServices: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }],
-      credentials: [{ id: '1', fake: { client_id: 'notjwtId' } }]
-    })
-    await TheCommand.run(['--import', 'config.json'])
+  test('with login, select excshell, -w dev', async () => {
+    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
+    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
+    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
+    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
 
-    // no args.path
-    expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(process.chdir).not.toHaveBeenCalled()
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genApp = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenNthCalledWith(1, genApp, {
-      'skip-prompt': false,
-      'skip-install': false,
-      'project-name': project.name,
-      'adobe-services': 'AdobeTargetSDK,CampaignSDK',
-      'supported-adobe-services': ''
-    })
-
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
-      process.cwd(),
+    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
+    await TheCommand.run(['-w', 'dev'])
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-base-app',
+      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-excshell',
+      { options: { 'skip-prompt': false, force: true } }
+    )
+    expect(mockInstallPackages).toHaveBeenCalled()
+    expect(LibConsoleCLI.init).toHaveBeenCalled()
+    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
+    expect(mockImport.importConfigJson).toHaveBeenCalledWith(
+      Buffer.from(JSON.stringify(fakeConfig)),
+      'cwd',
       { interactive: false, merge: true },
-      { SERVICE_API_KEY: '' })
-    expect(fs.unlinkSync).not.toHaveBeenCalled()
+      { SERVICE_API_KEY: 'fakeclientid' }
+    )
+    // get config for dev workspace (fakeWorkspaces[1])
+    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(fakeOrg.id, fakeProject.id, fakeWorkspaces[1].id, fakeSupportedOrgServices)
+    // exchshell has no required service to be added
+    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.createProject).not.toHaveBeenCalled()
   })
 
-  test('no-path --import file={name: lifeisgood, workspaceServices:AdobeTargetSDK,CampaignSDK, credentials:null}', async () => {
-    const project = mockValidConfig({
-      name: 'lifeisgood',
-      workspaceServices: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }],
-      credentials: null
-    })
-    await TheCommand.run(['--import', 'config.json'])
+  test('with login, select excshell, -w notexists', async () => {
+    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
+    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
+    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
+    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
+    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
 
-    // no args.path
-    expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(process.chdir).not.toHaveBeenCalled()
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genApp = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenNthCalledWith(1, genApp, {
-      'skip-prompt': false,
-      'skip-install': false,
-      'project-name': project.name,
-      'adobe-services': 'AdobeTargetSDK,CampaignSDK',
-      'supported-adobe-services': ''
-    })
-
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
-      process.cwd(),
-      { interactive: false, merge: true },
-      { SERVICE_API_KEY: '' })
-    expect(fs.unlinkSync).not.toHaveBeenCalled()
-  })
-
-  test('no-path --yes --import file={name: lifeisgood, supportedServices:AdobeTargetSDK,CampaignSDK, credentials:fake,jwt}', async () => {
-    const project = mockValidConfig({
-      name: 'lifeisgood',
-      supportedServices: [{ code: 'AdobeTargetSDK' }, { code: 'CampaignSDK' }]
-    })
-    await TheCommand.run(['--yes', '--import', 'config.json'])
-
-    // no args.path
-    expect(fs.ensureDirSync).not.toHaveBeenCalled()
-    expect(process.chdir).not.toHaveBeenCalled()
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': true,
-      'skip-install': false,
-      'project-name': project.name,
-      'adobe-services': 'service1SDK,service2SDK',
-      'supported-adobe-services': 'AdobeTargetSDK,CampaignSDK'
-    })
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('config.json'),
-      process.cwd(),
-      { interactive: false, merge: true },
-      { SERVICE_API_KEY: 'fakeId123' })
-    expect(fs.unlinkSync).not.toHaveBeenCalled()
-  })
-
-  test('some-path --import ../fake/config.json', async () => {
-    await TheCommand.run(['some-path', '--import', '../fake/config.json'])
-    // Note here path.resolve uses another cwd than the mocked process.cwd
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('../fake/config.json'),
-      process.cwd(),
-      { interactive: false, merge: true },
-      { SERVICE_API_KEY: 'fakeId123' })
-  })
-
-  test('some-path --import /abs/fake/config.json', async () => {
-    await TheCommand.run(['some-path', '--import', '/abs/fake/config.json'])
-    // Note here path.resolve uses another cwd than the mocked process.cwd
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(path.resolve('/abs/fake/config.json'),
-      process.cwd(),
-      { interactive: false, merge: true },
-      { SERVICE_API_KEY: 'fakeId123' })
+    await expect(TheCommand.run(['-w', 'notexists'])).rejects.toThrow('\'--workspace=notexists\' in Project \'bestproject\' not found.')
   })
 })

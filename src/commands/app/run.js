@@ -23,7 +23,7 @@ const coreConfig = require('@adobe/aio-lib-core-config')
 const BaseCommand = require('../../BaseCommand')
 const runDev = require('../../lib/run-dev')
 const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('../../lib/defaults')
-const { runPackageScript, wrapError } = require('../../lib/app-helper')
+const { runScript } = require('../../lib/app-helper')
 
 const DEV_KEYS_DIR = 'dist/dev-keys/'
 const PRIVATE_KEY_PATH = DEV_KEYS_DIR + 'private.key'
@@ -31,24 +31,46 @@ const PUB_CERT_PATH = DEV_KEYS_DIR + 'cert-pub.crt'
 const CONFIG_KEY = 'aio-dev.dev-keys'
 
 class Run extends BaseCommand {
-  async run (args = []) {
+  async run () {
+    // cli input
     const { flags } = this.parse(Run)
-    const config = this.getAppConfig()
+    // aliases
+    flags.actions = flags.actions && !flags['skip-actions']
 
+    const spinner = ora()
+
+    const runConfigs = this.getAppExtConfigs(flags)
+    const entries = Object.entries(runConfigs)
+    if (entries.length > 1) {
+      this.error('You can only run one implementation at the time, please filter with the \'-e\' flag.')
+    }
+    const name = entries[0][0]
+    const config = entries[0][1]
+
+    try {
+      // now we are good, either there is only 1 extension point or -e flag for one was provided
+      await this.runOneExtensionPoint(name, config, flags, spinner)
+    } catch (error) {
+      spinner.stop()
+      // delegate to top handler
+      throw error
+    }
+  }
+
+  async runOneExtensionPoint (name, config, flags, spinner) {
     const hasBackend = config.app.hasBackend
     const hasFrontend = config.app.hasFrontend
 
     if (!hasBackend && !hasFrontend) {
-      this.error(wrapError('nothing to run.. there is no frontend and no manifest.yml, are you in a valid app?'))
+      this.error(new Error('nothing to run.. there is no frontend and no manifest.yml, are you in a valid app?'))
     }
     if (flags['skip-actions'] && !hasFrontend) {
-      this.error(wrapError('nothing to run.. there is no frontend and --skip-actions is set'))
+      this.error(new Error('nothing to run.. there is no frontend and --skip-actions is set'))
     }
 
     const runOptions = {
-      skipActions: flags['skip-actions'],
+      skipActions: !flags.actions,
       skipServe: !flags.serve,
-      // todo: any other params we should add here?
       parcel: {
         logLevel: flags.verbose ? 'verbose' : 'warn',
         // always set to false on localhost to get debugging and hot reloading
@@ -60,7 +82,7 @@ class Run extends BaseCommand {
     }
 
     try {
-      await runPackageScript('pre-app-run')
+      await runScript(config.hooks['pre-app-run'])
     } catch (err) {
       this.log(err)
     }
@@ -71,11 +93,10 @@ class Run extends BaseCommand {
       try {
         runOptions.parcel.https = await this.getOrGenerateCertificates()
       } catch (error) {
-        this.error(wrapError(error))
+        this.error(error)
       }
     }
 
-    const spinner = ora()
     const onProgress = !flags.verbose ? info => {
       spinner.text = info
     } : info => {
@@ -83,29 +104,24 @@ class Run extends BaseCommand {
       spinner.start()
     }
 
+    const frontendUrl = await runDev(config, this.config.dataDir, runOptions, onProgress)
     try {
-      const frontendUrl = await runDev(this.getAppConfig(), runOptions, onProgress)
-      try {
-        await runPackageScript('post-app-run')
-      } catch (err) {
-        this.log(err)
-      }
-      if (frontendUrl) {
-        this.log()
-        this.log(chalk.blue(chalk.bold(`To view your local application:\n  -> ${frontendUrl}`)))
-        const launchUrl = this.getLaunchUrlPrefix() + frontendUrl
-        if (flags.open) {
-          this.log(chalk.blue(chalk.bold(`Opening your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
-          cli.open(launchUrl)
-        } else {
-          this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
-        }
-      }
-      this.log('press CTRL+C to terminate dev environment')
-    } catch (error) {
-      spinner.fail()
-      this.error(wrapError(error))
+      await runScript(config.hooks['post-app-run'])
+    } catch (err) {
+      this.log(err)
     }
+    if (frontendUrl) {
+      this.log()
+      this.log(chalk.blue(chalk.bold(`To view your local application:\n  -> ${frontendUrl}`)))
+      const launchUrl = this.getLaunchUrlPrefix() + frontendUrl
+      if (flags.open) {
+        this.log(chalk.blue(chalk.bold(`Opening your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
+        cli.open(launchUrl)
+      } else {
+        this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
+      }
+    }
+    this.log('press CTRL+C to terminate dev environment')
   }
 
   async getOrGenerateCertificates () {
@@ -184,22 +200,36 @@ Run.description = 'Run an Adobe I/O App'
 Run.flags = {
   ...BaseCommand.flags,
   local: flags.boolean({
-    description: 'run/debug actions locally ( requires Docker running )',
+    description: 'Run/debug actions locally ( requires Docker running )',
     exclusive: ['skip-actions']
   }),
   serve: flags.boolean({
-    description: 'start frontend server (experimental)',
+    description: '[default: true] Start frontend server (experimental)',
     default: true,
     allowNo: true
   }),
   'skip-actions': flags.boolean({
-    description: 'skip actions, only run the ui server',
+    description: '[deprecated] Please use --no-actions',
     exclusive: ['local'],
     default: false
+  }),
+  actions: flags.boolean({
+    description: '[default: true] Run actions, defaults to true, to skip actions use --no-actions',
+    exclusive: ['local'], // no-actions and local don't work together
+    default: true,
+    allowNo: true
   }),
   open: flags.boolean({
     description: 'Open the default web browser after a successful run, only valid if your app has a front-end',
     default: false
+  }),
+  extension: flags.string({
+    description: 'Run only a specific extension, this flag can only be specified once',
+    char: 'e',
+    // we do not support multiple yet
+    multiple: false,
+    // not multiple but treat it as array for logic reuse
+    parse: str => [str]
   })
 }
 

@@ -1,7 +1,7 @@
 {
   "name": "@adobe/aio-cli-plugin-app",
   "description": "Create, Build and Deploy Adobe I/O Applications",
-  "version": "7.0.2",
+  "version": "7.0.3-next.6",
   "author": "Adobe Inc.",
   "bugs": "https://github.com/adobe/aio-cli-plugin-app/issues",
   "dependencies": {
@@ -36,6 +36,7 @@
     "ora": "^4.0.3",
     "pure-http": "^2.0.3",
     "serve-static": "^1.14.1",
+    "upath": "^1.2.0",
     "which": "^2.0.1",
     "yeoman-environment": "^2.5.0"
   },
@@ -88,7 +89,10 @@
     "lint": "eslint src test",
     "prepack": "oclif-dev manifest && oclif-dev readme",
     "test": "npm run unit-tests && npm run lint",
-    "unit-tests": "jest -c ./jest.config.js",
+    "unit-tests": "jest -c jest.config.js",
     "version": "oclif-dev readme && git add README.md"
+  },
+  "bin": {
+    "aio-next": "./bin/run"
   }
 }

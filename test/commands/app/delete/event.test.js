@@ -13,24 +13,14 @@ const fs = require('fs-extra')
 
 const TheCommand = require('../../../../src/commands/app/delete/event')
 const BaseCommand = require('../../../../src/BaseCommand')
+const DeleteActionCommand = require('../../../../src/commands/app/delete/action')
+jest.mock('../../../../src/commands/app/delete/action')
 
 jest.mock('fs-extra')
 
-jest.mock('yeoman-environment')
-const yeoman = require('yeoman-environment')
-
-const mockRegister = jest.fn()
-const mockRun = jest.fn()
-yeoman.createEnv.mockReturnValue({
-  register: mockRegister,
-  run: mockRun
-})
-
 beforeEach(() => {
-  mockRegister.mockReset()
-  mockRun.mockReset()
-  yeoman.createEnv.mockClear()
   fs.ensureDirSync.mockClear()
+  DeleteActionCommand.run.mockReset()
 })
 
 describe('Command Prototype', () => {
@@ -41,38 +31,31 @@ describe('Command Prototype', () => {
   })
 })
 
-describe('bad flags', () => {
-  test('--yes without <event-action-name>', async () => {
-    await expect(TheCommand.run(['--yes'])).rejects.toThrow('Missing 1 required arg:\nevent-action-name  Action name to delete\nSee more help with --help')
-  })
-})
+// Question? What is/are the actual difference between this call and `delete action`?
+// Are event-actions somehow special?
+// How can we detect the diff? -jm
 
-describe('good flags', () => {
-  test('fakeActionName --yes', async () => {
-    await TheCommand.run(['fakeActionName', '--yes'])
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': true,
-      'action-name': 'fakeActionName'
-    })
+describe('passes flags through to delete action', () => {
+  let command
+  beforeEach(() => {
+    command = new TheCommand([])
   })
 
-  test('fakeActionName', async () => {
-    await TheCommand.run(['fakeActionName'])
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockRegister).toHaveBeenCalledTimes(1)
-    const genName = mockRegister.mock.calls[0][1]
-    expect(mockRun).toHaveBeenCalledWith(genName, {
-      'skip-prompt': false,
-      'action-name': 'fakeActionName'
-    })
+  test('no flags', async () => {
+    command.argv = []
+    await command.run()
+    expect(DeleteActionCommand.run).toHaveBeenCalled()
   })
 
-  test('try to delete with any args', async () => {
-    await expect(TheCommand.run([])).rejects.toThrow('Missing 1 required arg:\nevent-action-name  Action name to delete\nSee more help with --help')
+  test('--yes', async () => {
+    command.argv = ['--yes']
+    await expect(command.run()).rejects.toThrow('<event-action-name> must also be provided')
+    expect(DeleteActionCommand.run).not.toHaveBeenCalled()
+  })
+
+  test('--yes, <event-action-name>', async () => {
+    command.argv = ['--yes', 'event-action-name']
+    await command.run()
+    expect(DeleteActionCommand.run).toHaveBeenCalledWith(['event-action-name', '--yes'])
   })
 })

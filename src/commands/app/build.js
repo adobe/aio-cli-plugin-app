@@ -15,103 +15,111 @@ const chalk = require('chalk')
 
 const BaseCommand = require('../../BaseCommand')
 const { flags } = require('@oclif/command')
-const { runPackageScript, writeConfig, wrapError } = require('../../lib/app-helper')
+const { runScript, writeConfig } = require('../../lib/app-helper')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
 const { bundle } = require('@adobe/aio-lib-web')
 const fs = require('fs-extra')
+// const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:build', { provider: 'debug' })
 
 class Build extends BaseCommand {
   async run () {
     // cli input
     const { flags } = this.parse(Build)
-    const config = this.getAppConfig()
+    // flags
+    flags['web-assets'] = flags['web-assets'] && !flags['skip-static'] && !flags['skip-web-assets'] && !flags.action
+    flags.actions = flags.actions && !flags['skip-actions']
 
-    const spinner = ora()
+    const buildConfigs = this.getAppExtConfigs(flags)
 
-    await this.build(config, flags, spinner)
-  }
+    // 1. build actions and web assets for each extension
+    const keys = Object.keys(buildConfigs)
+    const values = Object.values(buildConfigs)
 
-  async build (config, flags, spinner) {
-    const onProgress = !flags.verbose ? info => {
-      spinner.text = info
-    } : info => {
-      spinner.info(chalk.dim(`${info}`))
-      spinner.start()
+    if (!flags['web-assets'] && !flags.actions) {
+      this.error('Nothing to be done 🚫')
     }
 
+    const spinner = ora()
     try {
-      const filterActions = flags.action
-      try {
-        await runPackageScript('pre-app-build')
-      } catch (err) {
-        this.log(err)
-      }
-
-      if (!flags['skip-actions']) {
-        if (config.app.hasBackend && (flags['force-build'] || !fs.existsSync(config.actions.dist))) {
-          spinner.start('Building actions')
-          try {
-            const script = await runPackageScript('build-actions')
-            if (!script) {
-              await RuntimeLib.buildActions(config, filterActions)
-            }
-            spinner.succeed(chalk.green('Building actions'))
-          } catch (err) {
-            spinner.fail(chalk.green('Building actions'))
-            throw err
-          }
-        } else {
-          spinner.info('no backend or a build already exists, skipping action build')
-        }
-      }
-      if (!flags['skip-static'] && !flags['skip-web-assets']) {
-        if (config.app.hasFrontend && (flags['force-build'] || !fs.existsSync(config.web.distProd))) {
-          if (config.app.hasBackend) {
-            const urls = await RuntimeLib.utils.getActionUrls(config)
-            await writeConfig(config.web.injectedConfig, urls)
-          }
-          spinner.start('Building web assets')
-          try {
-            const script = await runPackageScript('build-static')
-            if (!script) {
-              const entryFile = config.web.src + '/index.html'
-              const bundleOptions = {
-                shouldDisableCache: true,
-                shouldContentHash: flags['content-hash'],
-                shouldOptimize: false,
-                logLevel: flags.verbose ? 'verbose' : 'warn'
-              }
-              const bundler = await bundle(entryFile, config.web.distProd, bundleOptions, onProgress)
-              await bundler.run()
-            }
-            spinner.succeed(chalk.green('Building web assets'))
-          } catch (err) {
-            spinner.fail(chalk.green('Building web assets'))
-            throw err
-          }
-        } else {
-          spinner.info('no frontend or a build already exists, skipping frontend build')
-        }
-      }
-      try {
-        await runPackageScript('post-app-build')
-      } catch (err) {
-        this.log(err)
-      }
-
-      // final message
-      if (flags['skip-static'] || flags['skip-web-assets']) {
-        if (flags['skip-actions']) {
-          this.log(chalk.green(chalk.bold('Nothing to build 🚫')))
-        } else {
-          this.log(chalk.green(chalk.bold('Build success, your actions are ready to be deployed 👌')))
-        }
-      } else {
-        this.log(chalk.green(chalk.bold('Build success, your app is ready to be deployed 👌')))
+      for (let i = 0; i < keys.length; ++i) {
+        const k = keys[i]
+        const v = values[i]
+        await this.buildOneExt(k, v, flags, spinner)
       }
     } catch (error) {
       spinner.stop()
-      this.error(wrapError(error))
+      // delegate to top handler
+      throw error
+    }
+  }
+
+  async buildOneExt (name, config, flags, spinner) {
+    const onProgress = !flags.verbose
+      ? info => {
+        spinner.text = info
+      }
+      : info => {
+        spinner.info(chalk.dim(`${info}`))
+        spinner.start()
+      }
+
+    const filterActions = flags.action
+    try {
+      await runScript(config.hooks['pre-app-build'])
+    } catch (err) {
+      this.log(err)
+    }
+
+    if (flags.actions) {
+      if (config.app.hasBackend && (flags['force-build'] || !fs.existsSync(config.actions.dist))) {
+        spinner.start(`Building actions for '${name}'`)
+        try {
+          const script = await runScript(config.hooks['build-actions'])
+          if (!script) {
+            await RuntimeLib.buildActions(config, filterActions)
+          }
+          spinner.succeed(chalk.green(`Building actions for '${name}'`))
+        } catch (err) {
+          spinner.fail(chalk.green(`Building actions for '${name}'`))
+          throw err
+        }
+      } else {
+        spinner.info(`no backend or a build already exists, skipping action build for '${name}'`)
+      }
+    }
+    if (flags['web-assets']) {
+      if (config.app.hasFrontend && (flags['force-build'] || !fs.existsSync(config.web.distProd))) {
+        if (config.app.hasBackend) {
+          const urls = await RuntimeLib.utils.getActionUrls(config)
+          await writeConfig(config.web.injectedConfig, urls)
+        }
+        spinner.start('Building web assets')
+        try {
+          const script = await runScript(config.hooks['build-static'])
+          if (!script) {
+            const entryFile = config.web.src + '/index.html'
+            const bundleOptions = {
+              shouldDisableCache: true,
+              shouldContentHash: flags['content-hash'],
+              shouldOptimize: false,
+              logLevel: flags.verbose ? 'verbose' : 'warn'
+            }
+            const bundler = await bundle(entryFile, config.web.distProd, bundleOptions, onProgress)
+            await bundler.run()
+          }
+          spinner.succeed(chalk.green(`Building web assets for '${name}'`))
+        } catch (err) {
+          spinner.fail(chalk.green(`Building web assets for '${name}'`))
+          throw err
+        }
+      } else {
+        spinner.info(`no frontend or a build already exists, skipping frontend build for '${name}'`)
+      }
+    }
+    try {
+      await runScript(config.hooks['post-app-build'])
+    } catch (err) {
+      this.log(err)
     }
   }
 }
@@ -124,32 +132,47 @@ This will always force a rebuild unless --no-force-build is set.
 Build.flags = {
   ...BaseCommand.flags,
   'skip-static': flags.boolean({
-    description: 'Skip build of static files'
+    description: '[deprecated] Please use --no-web-assets'
   }),
   'skip-web-assets': flags.boolean({
-    description: 'Skip build of web assets'
+    description: '[deprecated] Please use --no-web-assets'
   }),
   'skip-actions': flags.boolean({
-    description: 'Skip build of actions'
+    description: '[deprecated] Please use --no-actions'
+  }),
+  actions: flags.boolean({
+    description: '[default: true] Build actions if any',
+    default: true,
+    allowNo: true,
+    exclusive: ['action'] // should be action exclusive --no-action but see https://github.com/oclif/oclif/issues/600
+  }),
+  action: flags.string({
+    description: 'Build only a specific action, the flags can be specified multiple times, this will set --no-publish',
+    char: 'a',
+    exclusive: ['extension'],
+    multiple: true
+  }),
+  'web-assets': flags.boolean({
+    description: '[default: true] Build web-assets if any',
+    default: true,
+    allowNo: true
   }),
   'force-build': flags.boolean({
-    description: 'Forces a build even if one already exists (default: true)',
+    description: '[default: true] Force a build even if one already exists',
     default: true,
     allowNo: true
   }),
   'content-hash': flags.boolean({
-    description: 'Enable content hashing in browser code (default: true)',
+    description: '[default: true] Enable content hashing in browser code',
     default: true,
     allowNo: true
   }),
-  action: flags.string({
-    description: 'Build only a specific action, the flags can be specified multiple times',
-    exclusive: ['skip-actions'],
-    char: 'a',
-    multiple: true
+  extension: flags.string({
+    description: 'Build only a specific extension point, the flags can be specified multiple times',
+    exclusive: ['action'],
+    multiple: true,
+    char: 'e'
   })
 }
-
-Build.args = []
 
 module.exports = Build

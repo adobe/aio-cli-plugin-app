@@ -30,19 +30,30 @@ class GetUrlCommand extends BaseCommand {
       options.cdn = flags.cdn
 
       const urls = {}
-      const configCopy = this.getAppConfig()
+      const fullConfig = this.getFullConfig()
       if (options.action) {
-        const action = configCopy.manifest.package.actions[options.action]
+        let action
+        // search for action
+        Object.values(fullConfig.all).forEach(config => {
+          action = config.manifest.package.actions[options.action]
+        })
         if (!action) {
           throw new Error(`No action with name ${options.action} found`)
         }
-        configCopy.manifest.package.actions = {}
-        configCopy.manifest.package.actions[options.action] = action
+        fullConfig.manifest.package.actions = {}
+        fullConfig.manifest.package.actions[options.action] = action
       }
-      const actionUrls = await getActionUrls(configCopy, true)
+
+      const actionUrls = {}
+      Object.values(fullConfig.all).forEach(config => {
+        Object.assign(actionUrls, getActionUrls(config, true))
+      })
       urls.runtime = actionUrls
+      const cdnUrls = {}
       if (options.cdn) {
-        const cdnUrls = await getActionUrls(configCopy, false)
+        Object.values(fullConfig.all).forEach(config => {
+          Object.assign(cdnUrls, getActionUrls(config, false))
+        })
         urls.cdn = cdnUrls
       }
 
@@ -53,12 +64,11 @@ class GetUrlCommand extends BaseCommand {
       } else if (flags.hson) {
         this.log(urls)
       } else {
-        if (urls.runtime) {
-          this.log('Runtime URLs')
-          Object.entries(urls.runtime).forEach(([key, value]) => {
-            this.log(chalk.blue(chalk.bold(`${key} `)) + ' - ' + chalk.blue(chalk.bold(`${value} `)))
-          })
-        }
+        // urls.runtime is always set
+        this.log('Runtime URLs')
+        Object.entries(urls.runtime).forEach(([key, value]) => {
+          this.log(chalk.blue(chalk.bold(`${key} `)) + ' - ' + chalk.blue(chalk.bold(`${value} `)))
+        })
 
         if (urls.cdn) {
           this.log('CDN URLs')

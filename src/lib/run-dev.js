@@ -30,7 +30,7 @@ const { run: logPoller } = require('./log-poller')
 const getPort = require('get-port')
 
 /** @private */
-async function runDev (config, options = {}, log = () => {}) {
+async function runDev (config, dataDir, options = {}, log = () => {}) {
   /* parcel bundle options */
   const bundleOptions = {
     shouldDisableCache: true,
@@ -69,7 +69,7 @@ async function runDev (config, options = {}, log = () => {}) {
     // Build Phase - actions
     if (withBackend) {
       if (isLocal) {
-        const { config: localConfig, cleanup: localCleanup } = await runLocalRuntime(config, log, options.verbose)
+        const { config: localConfig, cleanup: localCleanup } = await runLocalRuntime(config, dataDir, log, options.verbose)
         devConfig = localConfig
         cleanup.add(() => localCleanup(), 'cleaning up runDevLocal')
       } else {
@@ -100,7 +100,7 @@ async function runDev (config, options = {}, log = () => {}) {
       utils.writeConfig(devConfig.web.injectedConfig, urls)
 
       if (!options.skipServe) {
-        const script = await utils.runPackageScript('build-static')
+        const script = await utils.runScript(config.hooks['build-static'])
         if (!script) {
           const entryFile = config.web.src + '/index.html'
           bundleOptions.serveOptions = {
@@ -128,7 +128,7 @@ async function runDev (config, options = {}, log = () => {}) {
     // Deploy Phase - serve the web UI
     if (hasFrontend) {
       if (!options.skipServe) {
-        const script = await utils.runPackageScript('serve-static')
+        const script = await utils.runScript(config.hooks['serve-static'])
         if (!script) {
           let result
           if (defaultBundler) {

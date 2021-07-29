@@ -22,6 +22,8 @@ const aioConfig = require('@adobe/aio-lib-core-config')
 const { AIO_CONFIG_WORKSPACE_SERVICES, AIO_CONFIG_ORG_SERVICES } = require('./defaults')
 const { EOL } = require('os')
 const { getCliEnv } = require('@adobe/aio-lib-env')
+const yaml = require('js-yaml')
+const RuntimeLib = require('@adobe/aio-lib-runtime')
 
 /** @private */
 function isNpmInstalled () {
@@ -35,8 +37,14 @@ function isGitInstalled () {
 }
 
 /** @private */
-async function installPackage (dir) {
+async function installPackages (dir, options = { spinner: null, verbose: false }) {
+  // todo support for ctrl + c handler to "install later"
+
+  if (options.spinner && !options.verbose) {
+    options.spinner.start('Installing packages...')
+  }
   aioLogger.debug(`running npm install : ${dir}`)
+
   if (!(fs.statSync(dir).isDirectory())) {
     aioLogger.debug(`${dir} is not a directory`)
     throw new Error(`${dir} is not a directory`)
@@ -45,59 +53,79 @@ async function installPackage (dir) {
     aioLogger.debug(`${dir} does not contain a package.json file.`)
     throw new Error(`${dir} does not contain a package.json file.`)
   }
+  const execaOptions = { cwd: dir }
+  if (options.verbose) {
+    execaOptions.stderr = 'inherit'
+    execaOptions.stdout = 'inherit'
+  }
   // npm install
-  return execa('npm', ['install'], { cwd: dir })
+  const ret = await execa('npm', ['install'], execaOptions)
+  if (options.spinner && !options.verbose) {
+    options.spinner.stop(chalk.green('Packages installed!'))
+  }
+  return ret
 }
 
 /** @private */
 async function runPackageScript (scriptName, dir, cmdArgs = []) {
-  if (!dir) {
-    dir = process.cwd()
-  }
   aioLogger.debug(`running npm run-script ${scriptName} in dir: ${dir}`)
   const pkg = await fs.readJSON(path.join(dir, 'package.json'))
   if (pkg && pkg.scripts && pkg.scripts[scriptName]) {
-    let command = pkg.scripts[scriptName]
-    if (cmdArgs.length) {
-      command = `${command} ${cmdArgs.join(' ')}`
-    }
-
-    // we have to disable IPC for Windows (see link in debug line below)
-    const isWindows = process.platform === 'win32'
-    const ipc = isWindows ? null : 'ipc'
-
-    const child = execa.command(command, {
-      stdio: ['inherit', 'inherit', 'inherit', ipc],
-      shell: true,
-      cwd: dir,
-      preferLocal: true
-    })
-
-    if (isWindows) {
-      aioLogger.debug(`os is Windows, so we can't use ipc when running npm script ${scriptName}`)
-      aioLogger.debug('see: https://github.com/adobe/aio-cli-plugin-app/issues/372')
-    } else {
-      // handle IPC from possible aio-run-detached script
-      child.on('message', message => {
-        if (message.type === 'long-running-process') {
-          const { pid, logs } = message.data
-          aioLogger.debug(`Found ${scriptName} event hook long running process (pid: ${pid}). Registering for SIGTERM`)
-          aioLogger.debug(`Log locations for ${scriptName} event hook long-running process (stdout: ${logs.stdout} stderr: ${logs.stderr})`)
-          process.on('exit', () => {
-            try {
-              aioLogger.debug(`Killing ${scriptName} event hook long-running process (pid: ${pid})`)
-              process.kill(pid, 'SIGTERM')
-            } catch (_) {
-            // do nothing if pid not found
-            }
-          })
-        }
-      })
-    }
+    const command = pkg.scripts[scriptName]
+    const child = runScript(command, dir, cmdArgs)
     return child
   } else {
     aioLogger.debug(`${dir} does not contain a package.json or it does not contain a script named ${scriptName}`)
   }
+}
+
+/** @private */
+async function runScript (command, dir, cmdArgs = []) {
+  if (!command) {
+    return null
+  }
+  if (!dir) {
+    dir = process.cwd()
+  }
+
+  if (cmdArgs.length) {
+    command = `${command} ${cmdArgs.join(' ')}`
+  }
+
+  // we have to disable IPC for Windows (see link in debug line below)
+  const isWindows = process.platform === 'win32'
+  const ipc = isWindows ? null : 'ipc'
+
+  const child = execa.command(command, {
+    stdio: ['inherit', 'inherit', 'inherit', ipc],
+    shell: true,
+    cwd: dir,
+    preferLocal: true
+  })
+
+  if (isWindows) {
+    aioLogger.debug(`os is Windows, so we can't use ipc when running ${command}`)
+    aioLogger.debug('see: https://github.com/adobe/aio-cli-plugin-app/issues/372')
+  } else {
+    // handle IPC from possible aio-run-detached script
+    child.on('message', message => {
+      if (message.type === 'long-running-process') {
+        const { pid, logs } = message.data
+        aioLogger.debug(`Found ${command} event hook long running process (pid: ${pid}). Registering for SIGTERM`)
+        aioLogger.debug(`Log locations for ${command} event hook long-running process (stdout: ${logs.stdout} stderr: ${logs.stderr})`)
+        process.on('exit', () => {
+          try {
+            aioLogger.debug(`Killing ${command} event hook long-running process (pid: ${pid})`)
+            process.kill(pid, 'SIGTERM')
+          } catch (_) {
+          // do nothing if pid not found
+          }
+        })
+      }
+    })
+  }
+
+  return child
 }
 
 /** @private */
@@ -119,36 +147,12 @@ function wrapError (err) {
 async function getCliInfo () {
   await context.setCli({ 'cli.bare-output': true }, false) // set this globally
 
-  aioLogger.debug('Retrieving CLI Token')
+  const env = getCliEnv()
+
+  aioLogger.debug(`Retrieving CLI Token using env=${env}`)
   const accessToken = await getToken(CLI)
 
-  const env = getCliEnv()
   return { accessToken, env }
-}
-
-/** @private */
-function getActionUrls (config, isRemoteDev = false, isLocalDev = false) {
-  // set action urls
-  // action urls {name: url}, if !LocalDev subdomain uses namespace
-  return Object.entries({ ...config.manifest.package.actions, ...(config.manifest.package.sequences || {}) }).reduce((obj, [name, action]) => {
-    const webArg = action['web-export'] || action.web
-    const webUri = (webArg && webArg !== 'no' && webArg !== 'false') ? 'web' : ''
-    if (isLocalDev) {
-      // http://localhost:3233/api/v1/web/<ns>/<package>/<action>
-      obj[name] = urlJoin(config.ow.apihost, 'api', config.ow.apiversion, webUri, config.ow.namespace, config.ow.package, name)
-    } else if (isRemoteDev || !webUri || !config.app.hasFrontend) {
-      // - if remote dev we don't care about same domain as the UI runs on localhost
-      // - if action is non web it cannot be called from the UI and we can point directly to ApiHost domain
-      // - if action has no UI no need to use the CDN url
-      // NOTE this will not work for apihosts that do not support <ns>.apihost url
-      // https://<ns>.adobeioruntime.net/api/v1/web/<package>/<action>
-      obj[name] = urlJoin('https://' + config.ow.namespace + '.' + removeProtocolFromURL(config.ow.apihost), 'api', config.ow.apiversion, webUri, config.ow.package, name)
-    } else {
-      // https://<ns>.adobe-static.net/api/v1/web/<package>/<action>
-      obj[name] = urlJoin('https://' + config.ow.namespace + '.' + removeProtocolFromURL(config.app.hostname), 'api', config.ow.apiversion, webUri, config.ow.package, name)
-    }
-    return obj
-  }, {})
 }
 
 /**
@@ -367,14 +371,126 @@ function setOrgServicesConfig (supportedServices) {
   aioLogger.debug(`set aio config ${AIO_CONFIG_ORG_SERVICES}: ${JSON.stringify(orgServiceConfig, null, 2)}`)
 }
 
+/**
+ * Gets fresh service list from Console Workspace and builds metadata to be associated with the view operation for dx/excshell/1 extensions
+ *
+ * @param {object} libConsoleCLI an instance of LibConsoleCli to get latest services, the user must be logged in
+ * @param {object} aioConfig loaded aio config
+ * @returns {object} op['view'] metadata OR null
+ */
+async function buildExcShellViewExtensionMetadata (libConsoleCLI, aioConfig) {
+  const serviceProperties = await libConsoleCLI.getServicePropertiesFromWorkspace(
+    aioConfig.project.org.id,
+    aioConfig.project.id,
+    aioConfig.project.workspace
+  )
+  const services = serviceProperties.map(s => ({
+    name: s.name,
+    code: s.sdkCode
+  }))
+  return {
+    services: Object.assign([], services),
+    profile: {
+      client_id: 'firefly-app',
+      scope: 'ab.manage,additional_info.job_function,additional_info.projectedProductContext,additional_info.roles,additional_info,AdobeID,adobeio_api,adobeio.appregistry.read,audiencemanager_api,creative_cloud,mps,openid,read_organizations,read_pc.acp,read_pc.dma_tartan,read_pc,session'
+    }
+  }
+}
+
+/**
+ * Build extension points payload from configuration all extension configurations
+ *
+ * @param {Array} extConfigs array resulting from BaseCommand.getAppExtConfigs
+ * @returns {object} extension registry payload
+ */
+function buildExtensionPointPayloadWoMetadata (extConfigs) {
+  // Example input:
+  //   application: {...}
+  //   dx/excshell/1:
+  //     operations:
+  //       view:
+  //         impl: index.html
+  //         type: web
+  //   dx/asset-compute/worker/1:
+  //     operations:
+  //       workerProcess:
+  //         impl: aem-nui-v1/ps-worker
+  //         type: action
+  //
+  // Example output:
+  // endpoints:
+  //   dx/excshell/1:
+  //    operations:
+  //      view:
+  //        href: https://namespace.adobeio-static.net/index.html # todo support for multi UI with a extname-opcode-subfolder
+  //   dx/asset-compute/worker/1:
+  //    operations:
+  //      workerProcess:
+  //        href: https://namespace.adobeioruntime.net/api/v1/web/aem-nui-v1/ps-worker
+
+  const endpointsPayload = {}
+  // iterate over all configuration to deploy
+  Object.entries(extConfigs)
+    // filter out the standalone application config, we want to publish extension points
+    .filter(([k, v]) => k !== 'application')
+    .forEach(([extPointName, extPointConfig]) => {
+      endpointsPayload[extPointName] = {}
+      let actionUrls = {}
+      if (extPointConfig.app.hasBackend) {
+        actionUrls = RuntimeLib.utils.getActionUrls(extPointConfig, false, false)
+      }
+      Object.entries(extPointConfig.operations)
+        .forEach(([opName, opList]) => {
+          // replace operations impl and type with a href, either for an action or for a UI
+          endpointsPayload[extPointName][opName] = opList.map(op => {
+            if (op.type === 'action') {
+              const actionAndPkgName = op.impl
+              const actionName = actionAndPkgName.split('/')[1]
+              // Note: if the package is the first package in the url getActionUrls will return actionName as key
+              // this should be fixed in runtime lib: https://github.com/adobe/aio-lib-runtime/issues/64
+              const href = actionUrls[actionName] || actionUrls[actionAndPkgName]
+              return { href, ...op.params }
+            } else if (op.type === 'web') {
+              // todo support for multi UI with a extname-opcode-subfolder
+              return {
+                href: `https://${extPointConfig.ow.namespace}.${extPointConfig.app.hostname}/${op.impl}`,
+                ...op.params
+              }
+            } else {
+              throw new Error(`unexpected op.type encountered => '${op.type}'`)
+            }
+          })
+        })
+    })
+  return { endpoints: endpointsPayload }
+}
+
+/** @private */
+function atLeastOne (input) {
+  if (input.length === 0) {
+    return 'please choose at least one option'
+  }
+  return true
+}
+
+/** @private */
+function deleteUserConfig (configData) {
+  const phyConfig = yaml.safeLoad(fs.readFileSync(configData.file))
+  const interKeys = configData.key.split('.')
+  const phyActionConfigParent = interKeys.slice(0, -1).reduce((obj, k) => obj && obj[k], phyConfig)
+  // like delete configFile.runtimeManifest.packages.actions.theaction
+  delete phyActionConfigParent[interKeys.slice(-1)]
+  fs.writeFileSync(configData.file, yaml.safeDump(phyConfig))
+}
+
 module.exports = {
   isNpmInstalled,
   isGitInstalled,
-  installPackage,
+  installPackages,
+  runScript,
   runPackageScript,
   wrapError,
   getCliInfo,
-  getActionUrls,
   removeProtocolFromURL,
   urlJoin,
   checkFile,
@@ -388,5 +504,9 @@ module.exports = {
   waitForOpenWhiskReadiness,
   warnIfOverwriteServicesInProductionWorkspace,
   setOrgServicesConfig,
-  setWorkspaceServicesConfig
+  setWorkspaceServicesConfig,
+  buildExtensionPointPayloadWoMetadata,
+  buildExcShellViewExtensionMetadata,
+  atLeastOne,
+  deleteUserConfig
 }

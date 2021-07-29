@@ -1,0 +1,24 @@
+operations:
+  view:
+    - type: web
+      impl: index.html
+actions: ./actions
+web: ./web-src
+runtimeManifest:
+  packages:
+    my-exc-package:
+      license: 'Apache-2.0'
+      actions:
+        action:
+          function: 'actions/action.js'
+          web: 'yes'
+          runtime: 'nodejs:14'
+          inputs:
+            LOG_LEVEL: 'debug'
+          annotations:
+            'require-adobe-auth': true
+            final: true
+          include:
+            - [ 'actions/somefile.txt', 'file.txt' ]
+          limits:
+            concurrency: 189

@@ -1,0 +1,3 @@
+application:
+  hooks:
+    "pre-app-run": "echo hello"
