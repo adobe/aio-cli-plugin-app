@@ -82,7 +82,7 @@ describe('bad user selections', () => {
         'web-assets': [{ src: 'fakeWebPath23' }]
       }
     })
-    await expect(command.run()).rejects.toThrow('There does not appear')
+    await expect(command.run()).rejects.toThrow('web-assets not found')
     expect(fs.removeSync).not.toHaveBeenCalled()
   })
 
