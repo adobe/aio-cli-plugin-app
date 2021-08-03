@@ -80,7 +80,7 @@ class Deploy extends BuildCommand {
 
     // final message
     // TODO better output depending on which ext points/app and flags
-    this.log(chalk.green(chalk.bold('Successfull deployment 🏄')))
+    this.log(chalk.green(chalk.bold('Successful deployment 🏄')))
   }
 
   async deploySingleConfig (name, config, flags, spinner) {
