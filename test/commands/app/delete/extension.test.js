@@ -137,6 +137,10 @@ describe('good args', () => {
         },
         web: {
           src: 'fake-web-source-path'
+        },
+        tests: {
+          unit: 'test',
+          e2e: 'e2e'
         }
       }
     })
@@ -145,6 +149,8 @@ describe('good args', () => {
     expect(fs.removeSync).toHaveBeenCalledWith('file-to-delete')
     expect(fs.removeSync).toHaveBeenCalledWith('fake-action-source-path')
     expect(fs.removeSync).toHaveBeenCalledWith('fake-web-source-path')
+    expect(fs.removeSync).toHaveBeenCalledWith('test')
+    expect(fs.removeSync).toHaveBeenCalledWith('e2e')
     expect(deleteUserConfig).toHaveBeenCalledWith({ data: 'configData' })
   })
 
@@ -161,6 +167,10 @@ describe('good args', () => {
         },
         actions: {
           src: 'fake-action-source-path'
+        },
+        tests: {
+          unit: 'test',
+          e2e: 'e2e'
         }
       }
     })
@@ -169,6 +179,8 @@ describe('good args', () => {
     expect(fs.removeSync).toHaveBeenCalledWith('file-to-delete')
     expect(fs.removeSync).toHaveBeenCalledWith('fake-action-source-path')
     expect(fs.removeSync).not.toHaveBeenCalledWith('fake-web-source-path')
+    expect(fs.removeSync).toHaveBeenCalledWith('test')
+    expect(fs.removeSync).toHaveBeenCalledWith('e2e')
     expect(deleteUserConfig).toHaveBeenCalledWith({ data: 'configData' })
   })
 
@@ -185,6 +197,10 @@ describe('good args', () => {
         },
         web: {
           src: 'fake-web-source-path'
+        },
+        tests: {
+          unit: 'test',
+          e2e: 'e2e'
         }
       }
     })
@@ -193,6 +209,8 @@ describe('good args', () => {
     expect(fs.removeSync).toHaveBeenCalledWith('file-to-delete')
     expect(fs.removeSync).not.toHaveBeenCalledWith('fake-action-source-path')
     expect(fs.removeSync).toHaveBeenCalledWith('fake-web-source-path')
+    expect(fs.removeSync).toHaveBeenCalledWith('test')
+    expect(fs.removeSync).toHaveBeenCalledWith('e2e')
     expect(deleteUserConfig).toHaveBeenCalledWith({ data: 'configData' })
   })
 })

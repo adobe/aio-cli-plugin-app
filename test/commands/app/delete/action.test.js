@@ -43,6 +43,10 @@ const mockConfigData = {
       actions: {
         src: 'actions'
       },
+      tests: {
+        unit: 'test',
+        e2e: 'e2e'
+      },
       runtimeManifest: {
         packages: {
           pkga: {
@@ -205,25 +209,29 @@ describe('good flags', () => {
       name: 'a',
       path: 'a-path',
       actionsDir: 'a-dir',
-      actionName: 'a-fileName'
+      actionName: 'a-fileName',
+      unitTestsDir: path.normalize('A/unit/tests/dir'),
+      e2eTestsDir: path.normalize('A/e2e/tests/dir')
     }, {
       name: 'b',
       path: 'b-path',
       actionsDir: 'b-dir',
-      actionName: 'b-fileName'
+      actionName: 'b-fileName',
+      unitTestsDir: path.normalize('B/unit/tests/dir'),
+      e2eTestsDir: path.normalize('B/e2e/tests/dir')
     }]
     command.getAllActions = () => {
       return { actions: fakeActions, actionsByImpl: { } }
     }
     await command.run()
     expect(fs.removeSync).toHaveBeenCalledWith('a-path')
-    expect(fs.removeSync).toHaveBeenCalledWith(path.normalize('e2e/a-dir/a-fileName.e2e.js'))
-    expect(fs.removeSync).toHaveBeenCalledWith(path.normalize('test/a-dir/a-fileName.test.js'))
+    expect(fs.removeSync).toHaveBeenCalledWith(path.normalize('A/e2e/tests/dir/a-fileName.e2e.js'))
+    expect(fs.removeSync).toHaveBeenCalledWith(path.normalize('A/unit/tests/dir/a-fileName.test.js'))
     // expect(command.log).toHaveBeenCalledWith('✔ Deleted \'a\'')
 
     expect(fs.removeSync).toHaveBeenCalledWith('b-path')
-    expect(fs.removeSync).toHaveBeenCalledWith(path.normalize('e2e/b-dir/b-fileName.e2e.js'))
-    expect(fs.removeSync).toHaveBeenCalledWith(path.normalize('test/b-dir/b-fileName.test.js'))
+    expect(fs.removeSync).toHaveBeenCalledWith(path.normalize('B/e2e/tests/dir/b-fileName.e2e.js'))
+    expect(fs.removeSync).toHaveBeenCalledWith(path.normalize('B/unit/tests/dir/b-fileName.test.js'))
     // expect(command.log).toHaveBeenCalledWith('✔ Deleted \'b\'')
   })
 
@@ -295,6 +303,10 @@ describe('getAllActions', () => {
           },
           actions: {
             src: 'action-src'
+          },
+          tests: {
+            unit: 'test',
+            e2e: 'e2e'
           },
           root: 'root',
           manifest: {
