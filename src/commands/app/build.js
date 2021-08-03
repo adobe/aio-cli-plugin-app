@@ -19,7 +19,7 @@ const { runScript, writeConfig } = require('../../lib/app-helper')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
 const { bundle } = require('@adobe/aio-lib-web')
 const fs = require('fs-extra')
-// const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:build', { provider: 'debug' })
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:build', { provider: 'debug' })
 
 class Build extends BaseCommand {
   async run () {
@@ -72,13 +72,24 @@ class Build extends BaseCommand {
 
     if (flags.actions) {
       if (config.app.hasBackend && (flags['force-build'] || !fs.existsSync(config.actions.dist))) {
-        spinner.start(`Building actions for '${name}'`)
         try {
+          let builtList = []
           const script = await runScript(config.hooks['build-actions'])
+          aioLogger.debug(`run hook for 'build-actions' for actions in '${name}' returned ${script}`)
+          spinner.start(`Building actions for '${name}'`)
           if (!script) {
-            await RuntimeLib.buildActions(config, filterActions)
+            builtList = await RuntimeLib.buildActions(config, filterActions)
           }
-          spinner.succeed(chalk.green(`Building actions for '${name}'`))
+          if (builtList.length > 0) {
+            spinner.succeed(chalk.green(`Built ${builtList.length} action(s) for '${name}'`))
+          } else {
+            if (script) {
+              spinner.fail(chalk.green(`build-action skipped by hook '${name}'`))
+            } else {
+              spinner.fail(chalk.green(`No actions built for '${name}'`))
+            }
+          }
+          aioLogger.debug(`RuntimeLib.buildActions returned ${builtList}`)
         } catch (err) {
           spinner.fail(chalk.green(`Building actions for '${name}'`))
           throw err
