@@ -201,7 +201,7 @@ describe('run', () => {
     command.getLibConsoleCLI = jest.fn(() => mockLibConsoleCLI)
     command.getFullConfig = jest.fn()
 
-    mockRuntimeLib.deployActions.mockResolvedValue({})
+    mockRuntimeLib.deployActions.mockResolvedValue({ actions: [] })
     mockWebLib.bundle.mockResolvedValue({ run: mockBundleFunc })
   })
 
@@ -213,7 +213,6 @@ describe('run', () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
-    // expect(command.error).toHaveBeenCalledWith(0)
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
@@ -515,7 +514,7 @@ describe('run', () => {
   test('should fail if scripts.deployWeb fails', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const error = new Error('mock failure')
-    mockRuntimeLib.deployActions.mockResolvedValue('ok')
+    mockRuntimeLib.deployActions.mockResolvedValue({ actions: [] })
     mockWebLib.deployWeb.mockRejectedValue(error)
 
     await expect(command.run()).rejects.toEqual(error)
@@ -524,7 +523,7 @@ describe('run', () => {
 
   test('spinner should be called for progress logs on deployWeb call , with verbose', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
-    mockRuntimeLib.deployActions.mockResolvedValue('ok')
+    mockRuntimeLib.deployActions.mockResolvedValue({ actions: [] })
     mockWebLib.deployWeb.mockImplementation(async (config, log) => {
       log('progress log')
       return 'ok'
@@ -540,7 +539,7 @@ describe('run', () => {
     const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
 
-    mockRuntimeLib.deployActions.mockResolvedValue('ok')
+    mockRuntimeLib.deployActions.mockResolvedValue({ actions: [] })
     mockWebLib.deployWeb.mockImplementation(async (config, log) => {
       log('progress log')
       return 'ok'
@@ -629,6 +628,7 @@ describe('run', () => {
       .mockResolvedValueOnce(childProcess) // deploy-static (uses hook)
       .mockResolvedValueOnce(noScriptFound) // post-app-deploy
 
+    mockRuntimeLib.deployActions.mockResolvedValue({ actions: [] })
     await command.run()
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
