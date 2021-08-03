@@ -10,26 +10,29 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
+const spinner = {
+  stopAndPersist: jest.fn(() => {
+    // console.error('stopAndPersist')
+  }),
+  stop: jest.fn((value) => {
+    console.error(value)
+  }),
+  start: jest.fn((value) => {
+    console.error(value)
+  }),
+  warn: jest.fn((value) => {
+    console.error(value)
+  }),
+  info: jest.fn((msg) => {
+    console.log(msg)
+  }),
+  error: jest.fn(),
+  fail: jest.fn(),
+  succeed: jest.fn((value) => {
+    console.error(value)
+  })
+}
+
 module.exports = () => {
-  const spinner = {
-    stopAndPersist: jest.fn(() => {
-      // console.error('stopAndPersist')
-    }),
-    stop: jest.fn(),
-    start: jest.fn(() => {
-      // console.error('start')
-    }),
-    warn: jest.fn(() => {
-      // console.error('warn')
-    }),
-    info: jest.fn((msg) => {
-      console.log(msg)
-    }),
-    error: jest.fn(),
-    fail: jest.fn(),
-    succeed: jest.fn(() => {
-      // console.error('succeed')
-    })
-  }
   return spinner
 }

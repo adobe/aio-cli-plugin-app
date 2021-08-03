@@ -16,6 +16,9 @@ const path = require('path')
 const cloneDeep = require('lodash.clonedeep')
 const dataMocks = require('../../data-mocks/config-loader')
 
+const ora = require('ora')
+jest.mock('ora')
+
 const mockFS = require('fs-extra')
 jest.mock('fs-extra')
 
@@ -199,9 +202,12 @@ test('flags', async () => {
   expect(TheCommand.flags.extension.exclusive).toEqual(['action'])
 })
 
+let spinner
+
 describe('run', () => {
   let command
   beforeEach(() => {
+    spinner = ora()
     command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
@@ -209,6 +215,7 @@ describe('run', () => {
     command.appConfig = cloneDeep(sampleAppConfig)
 
     mockRuntimeLib.buildActions.mockReset()
+    mockRuntimeLib.buildActions.mockReturnValue([])
   })
 
   afterEach(() => {
@@ -301,7 +308,6 @@ describe('run', () => {
 
   test('build & deploy --skip-static', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
-
     command.argv = ['--skip-static']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -311,7 +317,6 @@ describe('run', () => {
 
   test('build & deploy --skip-web-assets', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
-
     command.argv = ['--skip-web-assets']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -322,9 +327,11 @@ describe('run', () => {
   test('build & deploy only some actions using --action', async () => {
     const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
-
-    command.argv = ['--skip-static', '-a', 'a', '-a', 'b', '--action', 'c']
+    command.argv = ['--skip-static', '-a', 'a', '-a=b', '--action', 'c']
+    mockRuntimeLib.buildActions.mockReturnValue(['a', 'b', 'c'])
     await command.run()
+    expect(spinner.start).toBeCalledWith('Building actions for \'application\'')
+    expect(spinner.succeed).toBeCalledWith(expect.stringContaining('Built 3 action(s) for \'application\''))
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledWith(appConfig.application, ['a', 'b', 'c'])
