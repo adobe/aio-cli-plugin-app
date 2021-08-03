@@ -75,12 +75,20 @@ class DeleteExtensionCommand extends BaseCommand {
 
   deleteImplementations (configs) {
     Object.entries(configs).forEach(([id, c]) => {
+      // delete actions
       if (c.app.hasBackend) {
         fs.removeSync(c.actions.src)
       }
+      // delete web-assets
       if (c.app.hasFrontend) {
         fs.removeSync(c.web.src)
       }
+
+      // delete test files
+      fs.removeSync(c.tests.unit)
+      fs.removeSync(c.tests.e2e)
+
+      // delete config
       // try to find another config file => case of init extension in another folder
       const configKey = id === 'application' ? 'application' : `extensions.${id}`
       const configDataOp = this.getConfigFileForKey(configKey + '.operations')
@@ -90,7 +98,6 @@ class DeleteExtensionCommand extends BaseCommand {
       // delete config in parent config file
       const configData = this.getConfigFileForKey(configKey)
       deleteUserConfig(configData)
-      // todo delete tests !
     })
   }
 }
