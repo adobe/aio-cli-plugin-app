@@ -28,7 +28,7 @@ class DeleteWebAssetsCommand extends BaseCommand {
     const fullConfig = this.getFullConfig()
     const webAssetsByImpl = this.getAllWebAssets(fullConfig)
     if (!webAssetsByImpl) {
-      this.error('There does not appear to be web-assets to delete')
+      this.error('web-assets not found')
     }
     // prompt user
     const choices = []
