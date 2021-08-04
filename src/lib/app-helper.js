@@ -486,7 +486,7 @@ function deleteUserConfig (configData) {
 /** @private */
 const createWebExportFilter = (filterValue) => {
   return (action) => {
-    if (!action && !action.body && !action.body.annotations) {
+    if (!action || !action.body || !action.body.annotations) {
       return false
     }
 

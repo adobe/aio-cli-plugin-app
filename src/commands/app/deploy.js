@@ -156,14 +156,14 @@ class Deploy extends BuildCommand {
         this.log(chalk.blue(chalk.bold('Your deployed actions:')))
         const web = deployedRuntimeEntities.actions.filter(createWebExportFilter(true))
         const nonWeb = deployedRuntimeEntities.actions.filter(createWebExportFilter(false))
-  
+
         if (web.length > 0) {
           this.log('web actions:')
           web.forEach(a => {
             this.log(chalk.blue(chalk.bold(`  -> ${a.url || a.name} `)))
           })
         }
-  
+
         if (nonWeb.length > 0) {
           this.log('non-web actions:')
           nonWeb.forEach(a => {
