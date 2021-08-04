@@ -100,9 +100,11 @@ beforeEach(() => {
   helpers.runScript.mockReset()
   helpers.buildExtensionPointPayloadWoMetadata.mockReset()
   helpers.buildExcShellViewExtensionMetadata.mockReset()
+  helpers.createWebExportFilter.mockReset()
   jest.restoreAllMocks()
 
   helpers.wrapError.mockImplementation(msg => msg)
+  helpers.createWebExportFilter.mockImplementation(value => (() => value))
 })
 
 test('exports', async () => {

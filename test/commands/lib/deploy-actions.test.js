@@ -18,8 +18,12 @@ jest.mock('../../../src/lib/app-helper')
 
 beforeEach(() => {
   utils.runScript.mockReset()
+  utils.createWebExportFilter.mockReset()
+
   rtDeployActions.mockReset()
   rtDeployActions.mockImplementation(() => ({}))
+  
+  utils.createWebExportFilter.mockImplementation(value => (() => true))
 })
 
 test('exports', () => {
