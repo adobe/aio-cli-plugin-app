@@ -113,7 +113,6 @@ beforeEach(() => {
   helpers.buildExtensionPointPayloadWoMetadata.mockReset()
   helpers.buildExcShellViewExtensionMetadata.mockReset()
   helpers.createWebExportFilter.mockReset()
-  helpers.createWebExportFilter.mockReset()
 
   jest.restoreAllMocks()
 
