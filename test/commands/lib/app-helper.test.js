@@ -571,7 +571,7 @@ test('setOrgServicesConfig', () => {
 })
 
 describe('buildExcShellViewExtensionMetadata', () => {
-  test('with service properties', async () => {
+  test('with service properties from console', async () => {
     const mockConsoleCLIInstance = {
       getServicePropertiesFromWorkspace: jest.fn()
     }
@@ -603,6 +603,91 @@ describe('buildExcShellViewExtensionMetadata', () => {
       }
     })
     expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledWith('hola', 'bonjour', { id: 'yay', name: 'yo' })
+  })
+
+  test('with service properties in config', async () => {
+    const mockConsoleCLIInstance = {
+      getServicePropertiesFromWorkspace: jest.fn()
+    }
+    const mockAIOConfig = {
+      project: {
+        org: {
+          id: 'hola'
+        },
+        workspace: {
+          id: 'yay',
+          name: 'yo',
+          details: {
+            services: [
+              {
+                code: 'service1code',
+                name: 'service1'
+              },
+              {
+                code: 'service2code',
+                name: 'service2'
+              }
+            ]
+          }
+        },
+        id: 'bonjour'
+      }
+    }
+    const res = await appHelper.buildExcShellViewExtensionMetadata(mockConsoleCLIInstance, mockAIOConfig)
+    expect(res).toEqual({
+      services: [
+        { name: 'service1', code: 'service1code' },
+        { name: 'service2', code: 'service2code' }
+      ],
+      profile: {
+        client_id: 'firefly-app',
+        scope: 'ab.manage,additional_info.job_function,additional_info.projectedProductContext,additional_info.roles,additional_info,AdobeID,adobeio_api,adobeio.appregistry.read,audiencemanager_api,creative_cloud,mps,openid,read_organizations,read_pc.acp,read_pc.dma_tartan,read_pc,session'
+      }
+    })
+    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledTimes(0)
+  })
+
+  test('with service properties set as string', async () => {
+    const services = JSON.stringify([
+      {
+        code: 'service1code',
+        name: 'service1'
+      },
+      {
+        code: 'service2code',
+        name: 'service2'
+      }
+    ])
+    const mockConsoleCLIInstance = {
+      getServicePropertiesFromWorkspace: jest.fn()
+    }
+    const mockAIOConfig = {
+      project: {
+        org: {
+          id: 'hola'
+        },
+        workspace: {
+          id: 'yay',
+          name: 'yo',
+          details: {
+            services: services
+          }
+        },
+        id: 'bonjour'
+      }
+    }
+    const res = await appHelper.buildExcShellViewExtensionMetadata(mockConsoleCLIInstance, mockAIOConfig)
+    expect(res).toEqual({
+      services: [
+        { name: 'service1', code: 'service1code' },
+        { name: 'service2', code: 'service2code' }
+      ],
+      profile: {
+        client_id: 'firefly-app',
+        scope: 'ab.manage,additional_info.job_function,additional_info.projectedProductContext,additional_info.roles,additional_info,AdobeID,adobeio_api,adobeio.appregistry.read,audiencemanager_api,creative_cloud,mps,openid,read_organizations,read_pc.acp,read_pc.dma_tartan,read_pc,session'
+      }
+    })
+    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledTimes(0)
   })
 })
 
@@ -776,5 +861,87 @@ describe('getCliInfo', () => {
     expect(res).toEqual(
       { accessToken: 'stoken', env: 'stage' }
     )
+  })
+})
+
+describe('createWebExportFilter', () => {
+  const webFilter = appHelper.createWebExportFilter(true)
+  const nonWebFilter = appHelper.createWebExportFilter(false)
+
+  test('no web-export annotation', () => {
+    const action = {
+      name: 'abcde', url: 'https://fake.site', body: { annotations: [] }
+    }
+
+    expect(webFilter(action)).toEqual(false)
+    expect(nonWebFilter(action)).toEqual(true)
+  })
+
+  test('web-export:(true or truthy) annotation', () => {
+    const action1 = {
+      name: 'abcde',
+      url: 'https://fake.site',
+      body: {
+        annotations: [
+          {
+            key: 'web-export',
+            value: true
+          }
+        ]
+      }
+    }
+
+    expect(webFilter(action1)).toEqual(true)
+    expect(nonWebFilter(action1)).toEqual(false)
+
+    const action2 = {
+      name: 'abcde',
+      url: 'https://fake.site',
+      body: {
+        annotations: [
+          {
+            key: 'web-export',
+            value: 1
+          }
+        ]
+      }
+    }
+
+    expect(webFilter(action2)).toEqual(true)
+    expect(nonWebFilter(action2)).toEqual(false)
+  })
+
+  test('web-export:(false or falsy) annotation', () => {
+    const action1 = {
+      name: 'abcde',
+      url: 'https://fake.site',
+      body: {
+        annotations: [
+          {
+            key: 'web-export',
+            value: false
+          }
+        ]
+      }
+    }
+
+    expect(webFilter(action1)).toEqual(false)
+    expect(nonWebFilter(action1)).toEqual(true)
+
+    const action2 = {
+      name: 'abcde',
+      url: 'https://fake.site',
+      body: {
+        annotations: [
+          {
+            key: 'web-export',
+            value: null
+          }
+        ]
+      }
+    }
+
+    expect(webFilter(action2)).toEqual(false)
+    expect(nonWebFilter(action2)).toEqual(true)
   })
 })

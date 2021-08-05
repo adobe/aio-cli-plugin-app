@@ -14,6 +14,7 @@ const TheCommand = require('../../../src/commands/app/deploy')
 const BaseCommand = require('../../../src/BaseCommand')
 const cloneDeep = require('lodash.clonedeep')
 const dataMocks = require('../../data-mocks/config-loader')
+const helpersActual = jest.requireActual('../../../src/lib/app-helper.js')
 
 const mockBundleFunc = jest.fn()
 
@@ -38,6 +39,17 @@ const mockConfigData = {
 
 jest.mock('cli-ux')
 const { cli } = require('cli-ux')
+
+const createWebExportAnnotation = (value) => ({
+  body: {
+    annotations: [
+      {
+        key: 'web-export',
+        value
+      }
+    ]
+  }
+})
 
 const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
   const appConfig = dataMocks(appFixtureName, aioConfig).all
@@ -96,9 +108,12 @@ beforeEach(() => {
   helpers.runScript.mockReset()
   helpers.buildExtensionPointPayloadWoMetadata.mockReset()
   helpers.buildExcShellViewExtensionMetadata.mockReset()
+  helpers.createWebExportFilter.mockReset()
+
   jest.restoreAllMocks()
 
   helpers.wrapError.mockImplementation(msg => msg)
+  helpers.createWebExportFilter.mockImplementation(filterValue => helpersActual.createWebExportFilter(filterValue))
 })
 
 test('exports', async () => {
@@ -197,7 +212,7 @@ describe('run', () => {
     command.getLibConsoleCLI = jest.fn(() => mockLibConsoleCLI)
     command.getFullConfig = jest.fn()
 
-    mockRuntimeLib.deployActions.mockResolvedValue({})
+    mockRuntimeLib.deployActions.mockResolvedValue({ actions: [] })
     mockWebLib.bundle.mockResolvedValue({ run: mockBundleFunc })
   })
 
@@ -209,7 +224,6 @@ describe('run', () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
-    // expect(command.error).toHaveBeenCalledWith(0)
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
@@ -482,18 +496,36 @@ describe('run', () => {
     expect(cli.open).toHaveBeenCalledWith('http://prefix?fake=https://example.com')
   })
 
-  test('deploy should show action urls', async () => {
+  test('deploy should show action urls (web-export: true)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     mockRuntimeLib.deployActions.mockResolvedValue({
       actions: [
-        { name: 'pkg/action', url: 'https://fake.com/action' },
-        { name: 'pkg/actionNoUrl' }
+        { name: 'pkg/action', url: 'https://fake.com/action', ...createWebExportAnnotation(true) },
+        { name: 'pkg/actionNoUrl', ...createWebExportAnnotation(true) }
       ]
     })
 
     command.argv = []
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('web actions:'))
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('https://fake.com/action'))
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('pkg/actionNoUrl'))
+  })
+
+  test('deploy should show action urls (web-export: false)', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    mockRuntimeLib.deployActions.mockResolvedValue({
+      actions: [
+        { name: 'pkg/action', url: 'https://fake.com/action', ...createWebExportAnnotation(false) },
+        { name: 'pkg/actionNoUrl', ...createWebExportAnnotation(false) }
+      ]
+    })
+
+    command.argv = []
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('non-web actions:'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('https://fake.com/action'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('pkg/actionNoUrl'))
   })
@@ -511,7 +543,7 @@ describe('run', () => {
   test('should fail if scripts.deployWeb fails', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const error = new Error('mock failure')
-    mockRuntimeLib.deployActions.mockResolvedValue('ok')
+    mockRuntimeLib.deployActions.mockResolvedValue({ actions: [] })
     mockWebLib.deployWeb.mockRejectedValue(error)
 
     await expect(command.run()).rejects.toEqual(error)
@@ -520,7 +552,7 @@ describe('run', () => {
 
   test('spinner should be called for progress logs on deployWeb call , with verbose', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
-    mockRuntimeLib.deployActions.mockResolvedValue('ok')
+    mockRuntimeLib.deployActions.mockResolvedValue({ actions: [] })
     mockWebLib.deployWeb.mockImplementation(async (config, log) => {
       log('progress log')
       return 'ok'
@@ -536,7 +568,7 @@ describe('run', () => {
     const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
 
-    mockRuntimeLib.deployActions.mockResolvedValue('ok')
+    mockRuntimeLib.deployActions.mockResolvedValue({ actions: [] })
     mockWebLib.deployWeb.mockImplementation(async (config, log) => {
       log('progress log')
       return 'ok'
@@ -625,6 +657,7 @@ describe('run', () => {
       .mockResolvedValueOnce(childProcess) // deploy-static (uses hook)
       .mockResolvedValueOnce(noScriptFound) // post-app-deploy
 
+    mockRuntimeLib.deployActions.mockResolvedValue({ actions: [] })
     await command.run()
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
