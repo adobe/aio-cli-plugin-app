@@ -67,7 +67,7 @@ class Deploy extends BuildCommand {
       // 2. deploy extension manifest
       if (flags.publish) {
         const aioConfig = this.getFullConfig().aio
-        const payload = await this.publishExtensionPoints(libConsoleCLI, deployConfigs, aioConfig, flags)
+        const payload = await this.publishExtensionPoints(libConsoleCLI, deployConfigs, aioConfig, flags['force-publish'])
         this.log(chalk.blue(chalk.bold(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': '${Object.keys(payload.endpoints)}'`)))
       } else {
         this.log('skipping publish phase...')
@@ -178,7 +178,7 @@ class Deploy extends BuildCommand {
     }
   }
 
-  async publishExtensionPoints (libConsoleCLI, deployConfigs, aioConfig, flags) {
+  async publishExtensionPoints (libConsoleCLI, deployConfigs, aioConfig, force) {
     const payload = buildExtensionPointPayloadWoMetadata(deployConfigs)
     // build metadata
     if (payload.endpoints['dx/excshell/1'] && payload.endpoints['dx/excshell/1'].view) {
@@ -186,7 +186,7 @@ class Deploy extends BuildCommand {
       payload.endpoints['dx/excshell/1'].view[0].metadata = metadata
     }
     let newPayload
-    if (flags['force-publish']) {
+    if (force) {
       // publish and overwrite any previous published endpoints (delete them)
       newPayload = await libConsoleCLI.updateExtensionPoints(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, payload)
       return newPayload
