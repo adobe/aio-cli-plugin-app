@@ -120,9 +120,18 @@ class Deploy extends BuildCommand {
           try {
             const script = await runScript(config.hooks['deploy-actions'])
             if (!script) {
-              deployedRuntimeEntities = { ...await rtLib.deployActions(config, { filterEntities }, onProgress) }
+              deployedRuntimeEntities = await rtLib.deployActions(config, { filterEntities }, onProgress)
             }
-            spinner.succeed(chalk.green(message))
+
+            if (deployedRuntimeEntities.actions && deployedRuntimeEntities.actions.length > 0) {
+              spinner.succeed(chalk.green(`Deployed ${deployedRuntimeEntities.actions.length} action(s) for '${name}'`))
+            } else {
+              if (script) {
+                spinner.fail(chalk.green(`build-action skipped by hook '${name}'`))
+              } else {
+                spinner.fail(chalk.green(`No actions deployed for '${name}'`))
+              }
+            }
           } catch (err) {
             spinner.fail(chalk.green(message))
             throw err
@@ -152,7 +161,7 @@ class Deploy extends BuildCommand {
       }
 
       // log deployed resources
-      if (deployedRuntimeEntities.actions) {
+      if (deployedRuntimeEntities.actions && deployedRuntimeEntities.actions.length > 0) {
         this.log(chalk.blue(chalk.bold('Your deployed actions:')))
         const web = deployedRuntimeEntities.actions.filter(createWebExportFilter(true))
         const nonWeb = deployedRuntimeEntities.actions.filter(createWebExportFilter(false))
