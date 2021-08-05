@@ -571,7 +571,7 @@ test('setOrgServicesConfig', () => {
 })
 
 describe('buildExcShellViewExtensionMetadata', () => {
-  test('with service properties', async () => {
+  test('with service properties from console', async () => {
     const mockConsoleCLIInstance = {
       getServicePropertiesFromWorkspace: jest.fn()
     }
@@ -603,6 +603,91 @@ describe('buildExcShellViewExtensionMetadata', () => {
       }
     })
     expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledWith('hola', 'bonjour', { id: 'yay', name: 'yo' })
+  })
+
+  test('with service properties in config', async () => {
+    const mockConsoleCLIInstance = {
+      getServicePropertiesFromWorkspace: jest.fn()
+    }
+    const mockAIOConfig = {
+      project: {
+        org: {
+          id: 'hola'
+        },
+        workspace: {
+          id: 'yay',
+          name: 'yo',
+          details: {
+            services: [
+              {
+                code: 'service1code',
+                name: 'service1'
+              },
+              {
+                code: 'service2code',
+                name: 'service2'
+              }
+            ]
+          }
+        },
+        id: 'bonjour'
+      }
+    }
+    const res = await appHelper.buildExcShellViewExtensionMetadata(mockConsoleCLIInstance, mockAIOConfig)
+    expect(res).toEqual({
+      services: [
+        { name: 'service1', code: 'service1code' },
+        { name: 'service2', code: 'service2code' }
+      ],
+      profile: {
+        client_id: 'firefly-app',
+        scope: 'ab.manage,additional_info.job_function,additional_info.projectedProductContext,additional_info.roles,additional_info,AdobeID,adobeio_api,adobeio.appregistry.read,audiencemanager_api,creative_cloud,mps,openid,read_organizations,read_pc.acp,read_pc.dma_tartan,read_pc,session'
+      }
+    })
+    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledTimes(0)
+  })
+
+  test('with service properties set as string', async () => {
+    const services = JSON.stringify([
+      {
+        code: 'service1code',
+        name: 'service1'
+      },
+      {
+        code: 'service2code',
+        name: 'service2'
+      }
+    ])
+    const mockConsoleCLIInstance = {
+      getServicePropertiesFromWorkspace: jest.fn()
+    }
+    const mockAIOConfig = {
+      project: {
+        org: {
+          id: 'hola'
+        },
+        workspace: {
+          id: 'yay',
+          name: 'yo',
+          details: {
+            services: services
+          }
+        },
+        id: 'bonjour'
+      }
+    }
+    const res = await appHelper.buildExcShellViewExtensionMetadata(mockConsoleCLIInstance, mockAIOConfig)
+    expect(res).toEqual({
+      services: [
+        { name: 'service1', code: 'service1code' },
+        { name: 'service2', code: 'service2code' }
+      ],
+      profile: {
+        client_id: 'firefly-app',
+        scope: 'ab.manage,additional_info.job_function,additional_info.projectedProductContext,additional_info.roles,additional_info,AdobeID,adobeio_api,adobeio.appregistry.read,audiencemanager_api,creative_cloud,mps,openid,read_organizations,read_pc.acp,read_pc.dma_tartan,read_pc,session'
+      }
+    })
+    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledTimes(0)
   })
 })
 

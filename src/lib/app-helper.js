@@ -379,15 +379,24 @@ function setOrgServicesConfig (supportedServices) {
  * @returns {object} op['view'] metadata OR null
  */
 async function buildExcShellViewExtensionMetadata (libConsoleCLI, aioConfig) {
-  const serviceProperties = await libConsoleCLI.getServicePropertiesFromWorkspace(
-    aioConfig.project.org.id,
-    aioConfig.project.id,
-    aioConfig.project.workspace
-  )
-  const services = serviceProperties.map(s => ({
-    name: s.name,
-    code: s.sdkCode
-  }))
+  let serviceProperties
+  let services
+  if (aioConfig.project.workspace.details) {
+    serviceProperties = aioConfig.project.workspace.details.services
+  }
+  if (serviceProperties) {
+    services = (Array.isArray(serviceProperties)) ? serviceProperties : JSON.parse(serviceProperties)
+  } else {
+    serviceProperties = await libConsoleCLI.getServicePropertiesFromWorkspace(
+      aioConfig.project.org.id,
+      aioConfig.project.id,
+      aioConfig.project.workspace
+    )
+    services = serviceProperties.map(s => ({
+      name: s.name,
+      code: s.sdkCode
+    }))
+  }
   return {
     services: Object.assign([], services),
     profile: {
