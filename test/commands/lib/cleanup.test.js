@@ -21,6 +21,7 @@ process.exit = jest.fn()
 process.on = jest.fn()
 
 let theCleanup
+const mockKill = jest.fn()
 
 beforeEach(() => {
   theCleanup = new Cleanup()
@@ -28,6 +29,13 @@ beforeEach(() => {
   process.exit.mockReset()
   process.on.mockReset()
   execa.mockReset()
+  mockKill.mockReset()
+
+  execa.mockImplementation(() => {
+    const p = new Promise(resolve => resolve(0))
+    p.kill = mockKill // execa puts properties on the returned Promise
+    return p
+  })
 })
 
 test('exports', () => {
@@ -65,13 +73,6 @@ test('wait (cleanup no errors)', async () => {
   const fn1 = jest.fn()
   const fn2 = jest.fn()
 
-  const mockKill = jest.fn()
-  execa.mockImplementation(async () => {
-    return {
-      kill: mockKill
-    }
-  })
-
   process.exit.mockImplementation((code) => {
     expect(code).toEqual(0) // ok
   })
@@ -97,13 +98,6 @@ test('wait (cleanup has error)', async () => {
   const fn1 = jest.fn()
   const fn2 = jest.fn(() => {
     throw new Error('error')
-  })
-
-  const mockKill = jest.fn()
-  execa.mockImplementation(async () => {
-    return {
-      kill: mockKill
-    }
   })
 
   process.exit.mockImplementation((code) => {
