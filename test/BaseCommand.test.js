@@ -16,8 +16,8 @@ const { Command } = require('@oclif/command')
 jest.mock('@adobe/aio-lib-core-config')
 const mockAioConfig = require('@adobe/aio-lib-core-config')
 
-const mockConfigLoader = require('../src/lib/config-loader.js')
-jest.mock('../src/lib/config-loader.js')
+const mockConfigLoader = require('@adobe/aio-cli-lib-app-config')
+jest.mock('@adobe/aio-cli-lib-app-config')
 const getMockConfig = require('./data-mocks/config-loader')
 
 const libEnv = require('@adobe/aio-lib-env')
@@ -39,7 +39,7 @@ inquirer.createPromptModule = jest.fn().mockReturnValue(mockExtensionPrompt)
 
 beforeEach(() => {
   libEnv.getCliEnv.mockReturnValue('prod')
-  mockConfigLoader.loadConfig.mockReset()
+  mockConfigLoader.mockReset()
   LibConsoleCLI.init.mockClear()
   LibConsoleCLI.cleanStdOut.mockClear()
 
@@ -103,45 +103,45 @@ test('getLaunchUrlPrefix() uses stage launch prefix', async () => {
 describe('getFullConfig', () => {
   test('keeps cache', () => {
     const cmd = new TheCommand()
-    mockConfigLoader.loadConfig.mockReturnValue({ a: 'hello' })
+    mockConfigLoader.mockReturnValue({ a: 'hello' })
     const config = cmd.getFullConfig()
     const config2 = cmd.getFullConfig()
     expect(config).toEqual({ a: 'hello' })
     expect(config).toEqual(config2)
-    expect(mockConfigLoader.loadConfig).toHaveBeenCalledTimes(1)
+    expect(mockConfigLoader).toHaveBeenCalledTimes(1)
   })
   test('with options', () => {
     const cmd = new TheCommand()
-    mockConfigLoader.loadConfig.mockReturnValue({ a: 'hello' })
+    mockConfigLoader.mockReturnValue({ a: 'hello' })
     const config = cmd.getFullConfig({ someOptions: {} })
     expect(config).toEqual({ a: 'hello' })
-    expect(mockConfigLoader.loadConfig).toHaveBeenCalledWith({ someOptions: {} })
+    expect(mockConfigLoader).toHaveBeenCalledWith({ someOptions: {} })
   })
 })
 
 describe('getConfigFileForKey', () => {
   test('returns empty object if not found', () => {
-    mockConfigLoader.loadConfig.mockReturnValue(getMockConfig('exc', {}))
+    mockConfigLoader.mockReturnValue(getMockConfig('exc', {}))
     const cmd = new TheCommand()
     expect(cmd.getConfigFileForKey('notexist.key.abc')).toEqual({})
   })
   test('returns file and key if found', () => {
     const config = getMockConfig('exc', {})
     const cmd = new TheCommand()
-    mockConfigLoader.loadConfig.mockReturnValue(config)
+    mockConfigLoader.mockReturnValue(config)
     expect(cmd.getConfigFileForKey('extensions')).toEqual(config.includeIndex.extensions)
   })
 })
 
 describe('getRuntimeManifestConfigFile', () => {
   test('no actions', () => {
-    mockConfigLoader.loadConfig.mockReturnValue(getMockConfig('app-no-actions', {}))
+    mockConfigLoader.mockReturnValue(getMockConfig('app-no-actions', {}))
     const cmd = new TheCommand()
     expect(cmd.getRuntimeManifestConfigFile('application')).toEqual({ file: 'app.config.yaml', key: 'application.runtimeManifest' })
   })
   test('multiple implementations', () => {
     const config = getMockConfig('app-exc-nui', {})
-    mockConfigLoader.loadConfig.mockReturnValue(config)
+    mockConfigLoader.mockReturnValue(config)
     const cmd = new TheCommand()
     expect(cmd.getRuntimeManifestConfigFile('application')).toEqual({ file: 'app.config.yaml', key: 'application.runtimeManifest' })
     expect(cmd.getRuntimeManifestConfigFile('dx/asset-compute/worker/1')).toEqual({ file: 'src/dx-asset-compute-worker-1/ext.config.yaml', key: 'runtimeManifest' })
@@ -152,20 +152,20 @@ describe('getRuntimeManifestConfigFile', () => {
 describe('getAppExtConfigs', () => {
   test('no extension flags', () => {
     const config = getMockConfig('app-exc-nui', {})
-    mockConfigLoader.loadConfig.mockReturnValue(config)
+    mockConfigLoader.mockReturnValue(config)
     const cmd = new TheCommand()
     expect(cmd.getAppExtConfigs({})).toEqual(config.all)
   })
   test('with options', () => {
     const config = getMockConfig('app-exc-nui', {})
-    mockConfigLoader.loadConfig.mockReturnValue(config)
+    mockConfigLoader.mockReturnValue(config)
     const cmd = new TheCommand()
     expect(cmd.getAppExtConfigs({}, { some: 'options' })).toEqual(config.all)
-    expect(mockConfigLoader.loadConfig).toHaveBeenCalledWith({ some: 'options' })
+    expect(mockConfigLoader).toHaveBeenCalledWith({ some: 'options' })
   })
   test('-e exc -e asset', () => {
     const config = getMockConfig('app-exc-nui', {})
-    mockConfigLoader.loadConfig.mockReturnValue(config)
+    mockConfigLoader.mockReturnValue(config)
     const cmd = new TheCommand()
     expect(cmd.getAppExtConfigs({ extension: ['exc', 'asset'] }))
       .toEqual({
@@ -175,7 +175,7 @@ describe('getAppExtConfigs', () => {
   })
   test('-e application', () => {
     const config = getMockConfig('app-exc-nui', {})
-    mockConfigLoader.loadConfig.mockReturnValue(config)
+    mockConfigLoader.mockReturnValue(config)
     const cmd = new TheCommand()
     expect(cmd.getAppExtConfigs({ extension: ['application'] }))
       .toEqual({ application: config.all.application })
@@ -183,7 +183,7 @@ describe('getAppExtConfigs', () => {
 
   test('-e exc -e notexists', () => {
     const config = getMockConfig('app-exc-nui', {})
-    mockConfigLoader.loadConfig.mockReturnValue(config)
+    mockConfigLoader.mockReturnValue(config)
     const cmd = new TheCommand()
     expect(() => cmd.getAppExtConfigs({ extension: ['exc', 'notexists'] }))
       .toThrow('No matching extension implementation found for flag \'-e notexists\'')
@@ -191,7 +191,7 @@ describe('getAppExtConfigs', () => {
 
   test('-e dx (matches more than one)', () => {
     const config = getMockConfig('app-exc-nui', {})
-    mockConfigLoader.loadConfig.mockReturnValue(config)
+    mockConfigLoader.mockReturnValue(config)
     const cmd = new TheCommand()
     expect(() => cmd.getAppExtConfigs({ extension: ['dx'] }))
       .toThrow('Flag \'-e dx\' matches multiple extension implementation')
