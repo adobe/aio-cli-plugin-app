@@ -863,3 +863,85 @@ describe('getCliInfo', () => {
     )
   })
 })
+
+describe('createWebExportFilter', () => {
+  const webFilter = appHelper.createWebExportFilter(true)
+  const nonWebFilter = appHelper.createWebExportFilter(false)
+
+  test('no web-export annotation', () => {
+    const action = {
+      name: 'abcde', url: 'https://fake.site', body: { annotations: [] }
+    }
+
+    expect(webFilter(action)).toEqual(false)
+    expect(nonWebFilter(action)).toEqual(true)
+  })
+
+  test('web-export:(true or truthy) annotation', () => {
+    const action1 = {
+      name: 'abcde',
+      url: 'https://fake.site',
+      body: {
+        annotations: [
+          {
+            key: 'web-export',
+            value: true
+          }
+        ]
+      }
+    }
+
+    expect(webFilter(action1)).toEqual(true)
+    expect(nonWebFilter(action1)).toEqual(false)
+
+    const action2 = {
+      name: 'abcde',
+      url: 'https://fake.site',
+      body: {
+        annotations: [
+          {
+            key: 'web-export',
+            value: 1
+          }
+        ]
+      }
+    }
+
+    expect(webFilter(action2)).toEqual(true)
+    expect(nonWebFilter(action2)).toEqual(false)
+  })
+
+  test('web-export:(false or falsy) annotation', () => {
+    const action1 = {
+      name: 'abcde',
+      url: 'https://fake.site',
+      body: {
+        annotations: [
+          {
+            key: 'web-export',
+            value: false
+          }
+        ]
+      }
+    }
+
+    expect(webFilter(action1)).toEqual(false)
+    expect(nonWebFilter(action1)).toEqual(true)
+
+    const action2 = {
+      name: 'abcde',
+      url: 'https://fake.site',
+      body: {
+        annotations: [
+          {
+            key: 'web-export',
+            value: null
+          }
+        ]
+      }
+    }
+
+    expect(webFilter(action2)).toEqual(false)
+    expect(nonWebFilter(action2)).toEqual(true)
+  })
+})
