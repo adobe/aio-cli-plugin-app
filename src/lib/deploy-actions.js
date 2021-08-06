@@ -27,9 +27,22 @@ module.exports = async (config, isLocal = false, log = () => {}) => {
   if (!script) {
     const entities = await deployActions(config, { isLocalDev: isLocal }, log)
     if (entities.actions) {
-      entities.actions.forEach(a => {
-        log(`  -> ${a.url || a.name}`)
-      })
+      const web = entities.actions.filter(utils.createWebExportFilter(true))
+      const nonWeb = entities.actions.filter(utils.createWebExportFilter(false))
+
+      if (web.length > 0) {
+        log('web actions:')
+        web.forEach(a => {
+          log(`  -> ${a.url || a.name}`)
+        })
+      }
+
+      if (nonWeb.length > 0) {
+        log('non-web actions:')
+        nonWeb.forEach(a => {
+          log(`  -> ${a.url || a.name}`)
+        })
+      }
     }
   }
   utils.runScript(config.hooks['post-app-deploy'])

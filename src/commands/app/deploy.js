@@ -19,7 +19,7 @@ const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { flags } = require('@oclif/command')
-const { runScript, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata } = require('../../lib/app-helper')
+const { createWebExportFilter, runScript, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 
 class Deploy extends BuildCommand {
@@ -120,9 +120,18 @@ class Deploy extends BuildCommand {
           try {
             const script = await runScript(config.hooks['deploy-actions'])
             if (!script) {
-              deployedRuntimeEntities = { ...await rtLib.deployActions(config, { filterEntities }, onProgress) }
+              deployedRuntimeEntities = await rtLib.deployActions(config, { filterEntities }, onProgress)
             }
-            spinner.succeed(chalk.green(message))
+
+            if (deployedRuntimeEntities.actions && deployedRuntimeEntities.actions.length > 0) {
+              spinner.succeed(chalk.green(`Deployed ${deployedRuntimeEntities.actions.length} action(s) for '${name}'`))
+            } else {
+              if (script) {
+                spinner.fail(chalk.green(`build-action skipped by hook '${name}'`))
+              } else {
+                spinner.fail(chalk.green(`No actions deployed for '${name}'`))
+              }
+            }
           } catch (err) {
             spinner.fail(chalk.green(message))
             throw err
@@ -152,11 +161,24 @@ class Deploy extends BuildCommand {
       }
 
       // log deployed resources
-      if (deployedRuntimeEntities.actions) {
+      if (deployedRuntimeEntities.actions && deployedRuntimeEntities.actions.length > 0) {
         this.log(chalk.blue(chalk.bold('Your deployed actions:')))
-        deployedRuntimeEntities.actions.forEach(a => {
-          this.log(chalk.blue(chalk.bold(`  -> ${a.url || a.name} `)))
-        })
+        const web = deployedRuntimeEntities.actions.filter(createWebExportFilter(true))
+        const nonWeb = deployedRuntimeEntities.actions.filter(createWebExportFilter(false))
+
+        if (web.length > 0) {
+          this.log('web actions:')
+          web.forEach(a => {
+            this.log(chalk.blue(chalk.bold(`  -> ${a.url || a.name} `)))
+          })
+        }
+
+        if (nonWeb.length > 0) {
+          this.log('non-web actions:')
+          nonWeb.forEach(a => {
+            this.log(chalk.blue(chalk.bold(`  -> ${a.url || a.name} `)))
+          })
+        }
       }
       // TODO urls should depend on extension point, exc shell only for exc shell extension point - use a post-app-deploy hook ?
       if (deployedFrontendUrl) {
