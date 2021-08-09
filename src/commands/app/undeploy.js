@@ -57,7 +57,7 @@ class Undeploy extends BaseCommand {
       // 2. unpublish extension manifest
       if (flags.unpublish && !(keys.length === 1 && keys[0] === 'application')) {
         const aioConfig = this.getFullConfig().aio
-        const payload = await this.unpublishExtensionPoints(libConsoleCLI, undeployConfigs, aioConfig, flags)
+        const payload = await this.unpublishExtensionPoints(libConsoleCLI, undeployConfigs, aioConfig, flags['force-unpublish'])
         this.log(chalk.blue(chalk.bold(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': '${Object.keys(payload.endpoints)}'`)))
       } else {
         this.log('skipping unpublish phase...')
@@ -125,10 +125,10 @@ class Undeploy extends BaseCommand {
     }
   }
 
-  async unpublishExtensionPoints (libConsoleCLI, deployConfigs, aioConfig, flags) {
+  async unpublishExtensionPoints (libConsoleCLI, deployConfigs, aioConfig, force) {
     const payload = buildExtensionPointPayloadWoMetadata(deployConfigs)
     let res
-    if (flags['force-unpublish']) {
+    if (force) {
       // publish and overwrite any previous published endpoints (delete them)
       res = await libConsoleCLI.updateExtensionPoints(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, { endpoints: {} })
       return res
