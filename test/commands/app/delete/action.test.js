@@ -71,12 +71,6 @@ const mockConfigData = {
   }
 }
 
-jest.mock('../../../../src/lib/config-loader', () => {
-  return {
-    loadConfig: () => mockConfigData
-  }
-})
-
 jest.mock('fs-extra')
 jest.mock('inquirer', () => {
   return {

@@ -29,10 +29,6 @@ const mockConfigData = {
   }
 }
 
-jest.mock('../../../src/lib/config-loader', () => {
-  return () => mockConfigData
-})
-
 // should be same as in run.js
 const DEV_KEYS_DIR = 'dist/dev-keys/'
 const PRIVATE_KEY_PATH = DEV_KEYS_DIR + 'private.key'

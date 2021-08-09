@@ -27,10 +27,6 @@ const mockConfigData = {
   }
 }
 
-jest.mock('../../../src/lib/config-loader', () => {
-  return () => mockConfigData
-})
-
 // mocks
 const { stdout } = require('stdout-stderr')
 const mockWebLib = require('@adobe/aio-lib-web')

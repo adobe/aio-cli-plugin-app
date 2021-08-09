@@ -15,8 +15,8 @@ const TheCommand = require('../../../src/commands/app/info.js')
 const BaseCommand = require('../../../src/BaseCommand.js')
 const yaml = require('js-yaml')
 
-const mockConfigLoader = require('../../../src/lib/config-loader.js')
-jest.mock('../../../src/lib/config-loader.js')
+const mockConfigLoader = require('@adobe/aio-cli-lib-app-config')
+jest.mock('@adobe/aio-cli-lib-app-config')
 const getMockConfig = require('../../data-mocks/config-loader')
 
 test('exports', async () => {
@@ -74,13 +74,13 @@ describe('run', () => {
 
   test('for exc extension no flags', () => {
     // mock config
-    mockConfigLoader.loadConfig.mockReturnValue(getMockConfig('exc', global.fakeConfig.tvm))
+    mockConfigLoader.mockReturnValue(getMockConfig('exc', global.fakeConfig.tvm))
 
     const command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
     command.run()
-    expect(mockConfigLoader.loadConfig).toHaveBeenCalledWith({ allowNoImpl: true })
+    expect(mockConfigLoader).toHaveBeenCalledWith({ allowNoImpl: true })
     expect(command.error).toHaveBeenCalledTimes(0)
     checkHiddenSecrets(command.log)
     const json = JSON.parse(command.log.mock.calls[0][0])
@@ -89,7 +89,7 @@ describe('run', () => {
 
   test('json flag', () => {
     // add s3 credentials to mocked config - to be hidden
-    mockConfigLoader.loadConfig.mockReturnValue(
+    mockConfigLoader.mockReturnValue(
       getMockConfig('exc', global.fakeConfig.tvm, global.extraConfig.s3Creds('dx/excshell/1'))
     )
 
@@ -97,7 +97,7 @@ describe('run', () => {
     command.error = jest.fn()
     command.log = jest.fn()
     command.run()
-    expect(mockConfigLoader.loadConfig).toHaveBeenCalledWith({ allowNoImpl: true })
+    expect(mockConfigLoader).toHaveBeenCalledWith({ allowNoImpl: true })
     expect(command.error).toHaveBeenCalledTimes(0)
     checkHiddenSecrets(command.log)
     const json = JSON.parse(command.log.mock.calls[0][0])
@@ -106,14 +106,14 @@ describe('run', () => {
 
   test('yml flag', () => {
     // add s3 credentials to mocked config - to be hidden
-    mockConfigLoader.loadConfig.mockReturnValue(
+    mockConfigLoader.mockReturnValue(
       getMockConfig('exc', global.fakeConfig.tvm, global.extraConfig.s3Creds('dx/excshell/1'))
     )
     const command = new TheCommand(['--yml'])
     command.error = jest.fn()
     command.log = jest.fn()
     command.run()
-    expect(mockConfigLoader.loadConfig).toHaveBeenCalledWith({ allowNoImpl: true })
+    expect(mockConfigLoader).toHaveBeenCalledWith({ allowNoImpl: true })
     expect(command.error).toHaveBeenCalledTimes(0)
     checkHiddenSecrets(command.log)
     const json = yaml.load(command.log.mock.calls[0][0])
@@ -122,14 +122,14 @@ describe('run', () => {
 
   test('for coverage, undefined key to hide', () => {
     // add s3 credentials to mocked config - to be hidden
-    mockConfigLoader.loadConfig.mockReturnValue(
+    mockConfigLoader.mockReturnValue(
       getMockConfig('exc', global.fakeConfig.tvm, { 'all.dx/excshell/1.ow.auth': undefined })
     )
     const command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
     command.run()
-    expect(mockConfigLoader.loadConfig).toHaveBeenCalledWith({ allowNoImpl: true })
+    expect(mockConfigLoader).toHaveBeenCalledWith({ allowNoImpl: true })
     expect(command.error).toHaveBeenCalledTimes(0)
     checkHiddenSecrets(command.log)
     const json = JSON.parse(command.log.mock.calls[0][0])

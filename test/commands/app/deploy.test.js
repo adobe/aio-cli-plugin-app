@@ -37,10 +37,6 @@ const mockConfigData = {
   }
 }
 
-jest.mock('../../../src/lib/config-loader', () => {
-  return () => mockConfigData
-})
-
 jest.mock('cli-ux')
 const { cli } = require('cli-ux')
 
