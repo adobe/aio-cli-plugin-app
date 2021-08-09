@@ -59,6 +59,7 @@
     "jest-plugin-fs": "^2.9.0",
     "stdout-stderr": "^0.1.9"
   },
+  "engineStrict": true,
   "engines": {
     "node": ">=12.2.0"
   },
