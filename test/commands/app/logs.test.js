@@ -26,6 +26,7 @@ jest.mock('../../../src/lib/app-helper.js')
 const helpers = require('../../../src/lib/app-helper.js')
 
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
+const RuntimeLib = require('@adobe/aio-lib-runtime')
 const printActionLogs = mockRuntimeLib.printActionLogs
 
 describe('interface', () => {
@@ -74,7 +75,7 @@ describe('run', () => {
     await command.run()
     const ow = owConfig()
     const actionList = ['legacy-app-1.0.0/action', 'legacy-app-1.0.0/action-zip']
-    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, actionList, false, false)
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, actionList, false, false, undefined, expect.anything())
     expect(command.error).not.toHaveBeenCalled()
   })
 
@@ -86,7 +87,7 @@ describe('run', () => {
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('using --limit=1'))
     const ow = owConfig()
     const actionList = ['legacy-app-1.0.0/action', 'legacy-app-1.0.0/action-zip']
-    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, actionList, false, false)
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, actionList, false, false, undefined, expect.anything())
     expect(command.error).not.toHaveBeenCalled()
   })
 
@@ -98,7 +99,7 @@ describe('run', () => {
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('using --limit=50'))
     const ow = owConfig()
     const actionList = ['legacy-app-1.0.0/action', 'legacy-app-1.0.0/action-zip']
-    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 50, actionList, false, false)
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 50, actionList, false, false, undefined, expect.anything())
     expect(command.error).not.toHaveBeenCalled()
   })
 
@@ -109,7 +110,7 @@ describe('run', () => {
     await command.run()
     const ow = owConfig()
     const actionList = ['legacy-app-1.0.0/action', 'legacy-app-1.0.0/action-zip']
-    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 32, actionList, false, false)
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 32, actionList, false, false, undefined, expect.anything())
     expect(command.error).not.toHaveBeenCalled()
   })
 
@@ -120,7 +121,7 @@ describe('run', () => {
     await command.run()
     const ow = owConfig()
     const actionList = ['legacy-app-1.0.0/action-zip']
-    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, actionList, false, false)
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, actionList, false, false, undefined, expect.anything())
     expect(command.error).not.toHaveBeenCalled()
   })
 
@@ -139,7 +140,7 @@ describe('run', () => {
     await command.run()
     const ow = owConfig()
     const actionList = ['legacy-app-1.0.0/action']
-    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, actionList, false, false)
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, actionList, false, false, undefined, expect.anything())
     expect(command.error).not.toHaveBeenCalled()
   })
 
@@ -149,7 +150,7 @@ describe('run', () => {
 
     await command.run()
     const ow = owConfig()
-    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, ['pkg1/hello', '/actionwithoutpkg'], false, false)
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, ['pkg1/hello', '/actionwithoutpkg'], false, false, undefined, expect.anything())
     expect(command.error).not.toHaveBeenCalled()
   })
 
@@ -172,5 +173,14 @@ describe('run', () => {
     command.getFullConfig.mockReturnValue(command.appConfig)
 
     await expect(command.run()).rejects.toEqual(new Error('There are no backend implementations for this project folder.'))
+  })
+  test('startTime is now when fetching continuously', () => {
+    const mockedNow = 1487076708000
+    Date.now = jest.fn(() => mockedNow)
+    command.argv = ['-t']
+    return command.run()
+      .then(() => {
+        expect(RuntimeLib.printActionLogs).toHaveBeenLastCalledWith(expect.anything(), expect.anything(), 1, expect.anything(), expect.anything(), expect.anything(), undefined, 1487076708000)
+      })
   })
 })
