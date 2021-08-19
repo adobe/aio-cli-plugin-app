@@ -26,7 +26,6 @@ jest.mock('../../../src/lib/app-helper.js')
 const helpers = require('../../../src/lib/app-helper.js')
 
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
-const RuntimeLib = require('@adobe/aio-lib-runtime')
 const printActionLogs = mockRuntimeLib.printActionLogs
 
 describe('interface', () => {
@@ -180,7 +179,7 @@ describe('run', () => {
     command.argv = ['-t']
     return command.run()
       .then(() => {
-        expect(RuntimeLib.printActionLogs).toHaveBeenLastCalledWith(expect.anything(), expect.anything(), 1, expect.anything(), expect.anything(), expect.anything(), undefined, 1487076708000)
+        expect(printActionLogs).toHaveBeenLastCalledWith(expect.anything(), expect.anything(), 1, expect.anything(), expect.anything(), expect.anything(), undefined, 1487076708000)
       })
   })
 })

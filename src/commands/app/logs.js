@@ -81,7 +81,7 @@ class Logs extends BaseCommand {
       const tail = flags.poll || flags.tail || flags.watch
       const startTime = tail ? Date.now() : 0
 
-      await rtLib.printActionLogs(owConfig, this.log, flags.limit, filterActions, flags.strip, flags.poll || flags.tail || flags.watch, undefined, startTime)
+      await rtLib.printActionLogs(owConfig, this.log, flags.limit, filterActions, flags.strip, tail, undefined, startTime)
     } catch (error) {
       this.error(wrapError(error))
     }
