@@ -239,7 +239,7 @@ class InitCommand extends BaseCommand {
   }
 
   async runCodeGenerators (flags, extensionPoints, projectName) {
-    const env = yeoman.createEnv()
+    let env = yeoman.createEnv()
     // first run app generator that will generate the root skeleton
     const appGen = env.instantiate(generators['base-app'], {
       options: {
@@ -249,6 +249,10 @@ class InitCommand extends BaseCommand {
     })
     await env.runGenerator(appGen)
 
+    // Creating new Yeoman env here to workaround an issue where yeoman reuses the conflicter from previous environment.
+    // https://github.com/yeoman/environment/issues/324
+
+    env = yeoman.createEnv()
     // try to use appGen.composeWith
     for (let i = 0; i < extensionPoints.length; ++i) {
       const extGen = env.instantiate(
