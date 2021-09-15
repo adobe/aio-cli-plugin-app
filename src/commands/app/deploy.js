@@ -127,7 +127,7 @@ class Deploy extends BuildCommand {
               spinner.succeed(chalk.green(`Deployed ${deployedRuntimeEntities.actions.length} action(s) for '${name}'`))
             } else {
               if (script) {
-                spinner.fail(chalk.green(`build-action skipped by hook '${name}'`))
+                spinner.fail(chalk.green(`deploy-actions skipped by hook '${name}'`))
               } else {
                 spinner.fail(chalk.green(`No actions deployed for '${name}'`))
               }
@@ -147,10 +147,12 @@ class Deploy extends BuildCommand {
           spinner.start(message)
           try {
             const script = await runScript(config.hooks['deploy-static'])
-            if (!script) {
+            if (script) {
+              spinner.fail(chalk.green(`deploy-static skipped by hook '${name}'`))
+            } else {
               deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
+              spinner.succeed(chalk.green(message))
             }
-            spinner.succeed(chalk.green(message))
           } catch (err) {
             spinner.fail(chalk.green(message))
             throw err
