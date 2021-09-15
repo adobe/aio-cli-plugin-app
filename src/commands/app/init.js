@@ -136,8 +136,12 @@ class InitCommand extends BaseCommand {
     if (!flags.extensions) {
       return [implPromptChoices.find(i => i.value.name === 'application').value]
     } else if (flags.extension) {
-      return implPromptChoices.filter(i => flags.extension.indexOf(i.value.name) > -1)
+      const extList = implPromptChoices.filter(i => flags.extension.indexOf(i.value.name) > -1)
         .map(i => i.value)
+      if (extList.length < 1) {
+        throw new Error(`--extension=${flags.extension} not found.`)
+      }
+      return extList
     } else {
       const choices = cloneDeep(implPromptChoices).filter(i => i.value.name !== 'application')
 

@@ -178,6 +178,9 @@ describe('bad args/flags', () => {
   test('--no-login and --workspace', async () => {
     await expect(TheCommand.run(['--no-login', '--workspace', 'dev'])).rejects.toThrow('--no-login and --workspace flags cannot be used together.')
   })
+  test('--no-login and --extension does not exist', async () => {
+    await expect(TheCommand.run(['--no-login', '--extension', 'dev'])).rejects.toThrow('--extension=dev not found.')
+  })
 })
 
 describe('run', () => {
