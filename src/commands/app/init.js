@@ -135,32 +135,33 @@ class InitCommand extends BaseCommand {
   async selectExtensionPoints (flags, orgSupportedServices = null) {
     if (!flags.extensions) {
       return [implPromptChoices.find(i => i.value.name === 'application').value]
+    } else if (flags.extension) {
+      return implPromptChoices.filter(i => flags.extension.indexOf(i.value.name) > -1)
+        .map(i => i.value)
+    } else {
+      const choices = cloneDeep(implPromptChoices).filter(i => i.value.name !== 'application')
+
+      // disable extensions that lack required services
+      if (orgSupportedServices) {
+        const supportedServiceCodes = new Set(orgSupportedServices.map(s => s.code))
+        // filter choices
+        choices.forEach(c => {
+          const missingServices = c.value.requiredServices.filter(s => !supportedServiceCodes.has(s))
+          if (missingServices.length > 0) {
+            c.disabled = true
+            c.name = `${c.name}: missing service(s) in Org: '${missingServices}'`
+          }
+        })
+      }
+      const answers = await this.prompt([{
+        type: 'checkbox',
+        name: 'res',
+        message: 'Which extension point(s) do you wish to implement ?',
+        choices,
+        validate: atLeastOne
+      }])
+      return answers.res
     }
-
-    const choices = cloneDeep(implPromptChoices).filter(i => i.value.name !== 'application')
-
-    // disable extensions that lack required services
-    if (orgSupportedServices) {
-      const supportedServiceCodes = new Set(orgSupportedServices.map(s => s.code))
-      // filter choices
-      choices.forEach(c => {
-        const missingServices = c.value.requiredServices.filter(s => !supportedServiceCodes.has(s))
-        if (missingServices.length > 0) {
-          c.disabled = true
-          c.name = `${c.name}: missing service(s) in Org: '${missingServices}'`
-        }
-      })
-    }
-
-    const answers = await this.prompt([{
-      type: 'checkbox',
-      name: 'res',
-      message: 'Which extension point(s) do you wish to implement ?',
-      choices,
-      validate: atLeastOne
-    }])
-
-    return answers.res
   }
 
   async selectConsoleOrg (consoleCLI) {
@@ -314,6 +315,12 @@ InitCommand.flags = {
     description: 'Use --no-extensions to create a blank application that does not integrate with Exchange',
     default: true,
     allowNo: true
+  }),
+  extension: flags.string({
+    description: 'Extension point(s) to implement',
+    char: 'e',
+    multiple: true,
+    exclusive: ['extensions']
   }),
   workspace: flags.string({
     description: 'Specify the Adobe Developer Console Workspace to init from, defaults to Stage',

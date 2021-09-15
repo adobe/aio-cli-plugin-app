@@ -277,6 +277,24 @@ describe('run', () => {
     expect(mockImport.importConfigJson).not.toHaveBeenCalled()
   })
 
+  test('--no-login --yes --skip-install, --extension dx/asset-compute/worker/1', async () => {
+    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
+    await TheCommand.run(['--no-login', '--yes', '--skip-install', '--extension', 'dx/asset-compute/worker/1'])
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-base-app',
+      { options: { 'skip-prompt': true, 'project-name': 'cwd' } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-nui',
+      { options: { 'skip-prompt': true, force: true } }
+    )
+    expect(mockInstallPackages).not.toHaveBeenCalled()
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(mockExtensionPrompt).not.toHaveBeenCalled()
+    expect(mockImport.importConfigJson).not.toHaveBeenCalled()
+  })
+
   // fake imported config
   const fakeConfig = {
     project: {
@@ -506,6 +524,42 @@ describe('run', () => {
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).toHaveBeenCalled()
     expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
+    expect(mockImport.importConfigJson).toHaveBeenCalledWith(
+      Buffer.from(JSON.stringify(fakeConfig)),
+      'cwd',
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: 'fakeclientid' }
+    )
+    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(fakeOrg.id, fakeProject.id, fakeWorkspaces[0].id, fakeSupportedOrgServices)
+    // exchshell has no required service to be added
+    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.createProject).toHaveBeenCalledWith(fakeOrg.id, 'fakedetails')
+  })
+
+  test('with login, --extension excshell, create new project', async () => {
+    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
+    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(null) // null = user selects to create a project
+    mockConsoleCLIInstance.createProject.mockResolvedValue(fakeProject)
+    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
+    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
+    mockConsoleCLIInstance.promptForCreateProjectDetails.mockResolvedValue('fakedetails')
+    mockExtensionPrompt.mockReturnValue({})
+
+    await TheCommand.run(['--extension', 'dx/excshell/1'])
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-base-app',
+      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-excshell',
+      { options: { 'skip-prompt': false, force: true } }
+    )
+    expect(mockInstallPackages).toHaveBeenCalled()
+    expect(LibConsoleCLI.init).toHaveBeenCalled()
+    expect(mockExtensionPrompt).not.toHaveBeenCalled()
     expect(mockImport.importConfigJson).toHaveBeenCalledWith(
       Buffer.from(JSON.stringify(fakeConfig)),
       'cwd',
