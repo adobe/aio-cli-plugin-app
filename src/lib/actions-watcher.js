@@ -75,30 +75,67 @@ async function buildAndDeploy (watcherOptions) {
 function createChangeHandler (watcherOptions) {
   const { watcher, log } = watcherOptions
 
-  let running = false
-  let changed = false
+  let deploymentInProgress = false
+  let fileChanged = false
+  let undeployedFile = ''
 
   return async (filePath) => {
-    if (running) {
+    const actionName = filePath.split('/')[filePath.split('/').findIndex(el => el === 'actions') + 1]
+    console.log(
+      '\n \n \n',
+      '\n Action file changed, ' + actionName + '\n',
+      '\n Path: ' + filePath + '\n',
+      'States::::::::::::::::::::::::::::::::::::::::::::\n',
+      '-> deploymentInProgress state::', deploymentInProgress, '\n',
+      '-> File changed during deploy state::', fileChanged, '\n',
+      '-> Last undeployedFile path was', undeployedFile
+    )
+    console.log('----> Starting the deployment for ', actionName)
+    if (deploymentInProgress) {
+      console.log(`----> another deploy is in progress for ${undeployedFile}, skipping for now`)
       aioLogger.debug(`${filePath} has changed. Deploy in progress. This change will be deployed after completion of current deployment.`)
-      changed = true
+      undeployedFile = filePath
+      fileChanged = true
       return
     }
-    running = true
+    deploymentInProgress = true
     try {
       aioLogger.debug(`${filePath} has changed. Redeploying actions.`)
+      const actionName = getActionNameFromPath(filePath)
+      watcherOptions.config.filterActions = [actionName]
       await buildAndDeploy(watcherOptions)
-      aioLogger.debug('Deployment successful.')
+      aioLogger.debug(`Deployment successful for', ${actionName}.`)
+      console.log('----> Deployment successful for ', actionName)
     } catch (err) {
+      console.log('----> something went wrong')
       log('  -> Error encountered while deploying actions. Stopping auto refresh.')
       aioLogger.debug(err)
       await watcher.close()
     }
-    if (changed) {
+    if (fileChanged) {
+      console.log('----> Code changed during deployment, Triggering deploy again for', actionName)
       aioLogger.debug('Code changed during deployment. Triggering deploy again.')
-      changed = running = false
-      await createChangeHandler(watcherOptions)(filePath)
+      fileChanged = deploymentInProgress = false
+      await createChangeHandler(watcherOptions)(undeployedFile)
     }
-    running = false
+    deploymentInProgress = false
+    console.log('end of function for', actionName)
+  }
+}
+
+/**
+ * Util function which extract the actionName from the filePath.
+ *
+ * @param {string} filePath  path of the file
+ * @returns {string}  name of the action
+ */
+function getActionNameFromPath (filePath) {
+  const defaultReturn = ''
+  if (!filePath) return defaultReturn
+  const pathArray = filePath.split('/')
+  /* validate the path */
+  if (pathArray.includes('actions')) {
+    const actionParentIndex = pathArray.findIndex(el => el === 'actions')
+    return pathArray[actionParentIndex + 1] || defaultReturn
   }
 }

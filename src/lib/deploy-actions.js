@@ -25,8 +25,13 @@ module.exports = async (config, isLocal = false, log = () => {}) => {
   utils.runScript(config.hooks['pre-app-deploy'])
   const script = await utils.runScript(config.hooks['deploy-actions'])
   if (!script) {
-    const entities = await deployActions(config, { isLocalDev: isLocal }, log)
+    const deployConfig = {
+      isLocalDev: isLocal,
+      filterEntities: config.filterActions ? { actions: config.filterActions } : undefined
+    }
+    const entities = await deployActions(config, deployConfig, log)
     if (entities.actions) {
+      console.log('deployed', entities.actions)
       const web = entities.actions.filter(utils.createWebExportFilter(true))
       const nonWeb = entities.actions.filter(utils.createWebExportFilter(false))
 

@@ -44,6 +44,7 @@ test('exports', () => {
 
 test('deploy-actions app hook available', async () => {
   utils.runScript.mockImplementation(script => {
+    console.log('script', script)
     if (script === 'deploy-actions') {
       return script
     }

@@ -19,10 +19,11 @@ const { buildActions } = require('@adobe/aio-lib-runtime')
  * @param {object} config see src/lib/config-loader.js
  */
 module.exports = async (config) => {
+  const { filterActions } = config || {}
   utils.runScript(config.hooks['pre-app-build'])
   const script = await utils.runScript(config.hooks['build-actions'])
   if (!script) {
-    await buildActions(config)
+    await buildActions(config, filterActions)
   }
   utils.runScript(config.hooks['post-app-build'])
 }
