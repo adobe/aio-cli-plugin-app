@@ -107,7 +107,9 @@ class Build extends BaseCommand {
         spinner.start('Building web assets')
         try {
           const script = await runScript(config.hooks['build-static'])
-          if (!script) {
+          if (script) {
+            spinner.fail(chalk.green(`build-static skipped by hook '${name}'`))
+          } else {
             const entryFile = config.web.src + '/index.html'
             const bundleOptions = {
               shouldDisableCache: true,
@@ -117,8 +119,8 @@ class Build extends BaseCommand {
             }
             const bundler = await bundle(entryFile, config.web.distProd, bundleOptions, onProgress)
             await bundler.run()
+            spinner.succeed(chalk.green(`Building web assets for '${name}'`))
           }
-          spinner.succeed(chalk.green(`Building web assets for '${name}'`))
         } catch (err) {
           spinner.fail(chalk.green(`Building web assets for '${name}'`))
           throw err
