@@ -80,19 +80,7 @@ function createChangeHandler (watcherOptions) {
   let undeployedFile = ''
 
   return async (filePath) => {
-    const actionName = filePath.split('/')[filePath.split('/').findIndex(el => el === 'actions') + 1]
-    console.log(
-      '\n \n \n',
-      '\n Action file changed, ' + actionName + '\n',
-      '\n Path: ' + filePath + '\n',
-      'States::::::::::::::::::::::::::::::::::::::::::::\n',
-      '-> deploymentInProgress state::', deploymentInProgress, '\n',
-      '-> File changed during deploy state::', fileChanged, '\n',
-      '-> Last undeployedFile path was', undeployedFile
-    )
-    console.log('----> Starting the deployment for ', actionName)
     if (deploymentInProgress) {
-      console.log(`----> another deploy is in progress for ${undeployedFile}, skipping for now`)
       aioLogger.debug(`${filePath} has changed. Deploy in progress. This change will be deployed after completion of current deployment.`)
       undeployedFile = filePath
       fileChanged = true
@@ -105,21 +93,17 @@ function createChangeHandler (watcherOptions) {
       watcherOptions.config.filterActions = [actionName]
       await buildAndDeploy(watcherOptions)
       aioLogger.debug(`Deployment successful for', ${actionName}.`)
-      console.log('----> Deployment successful for ', actionName)
     } catch (err) {
-      console.log('----> something went wrong')
       log('  -> Error encountered while deploying actions. Stopping auto refresh.')
       aioLogger.debug(err)
       await watcher.close()
     }
     if (fileChanged) {
-      console.log('----> Code changed during deployment, Triggering deploy again for', actionName)
       aioLogger.debug('Code changed during deployment. Triggering deploy again.')
       fileChanged = deploymentInProgress = false
       await createChangeHandler(watcherOptions)(undeployedFile)
     }
     deploymentInProgress = false
-    console.log('end of function for', actionName)
   }
 }
 
@@ -130,12 +114,7 @@ function createChangeHandler (watcherOptions) {
  * @returns {string}  name of the action
  */
 function getActionNameFromPath (filePath) {
-  const defaultReturn = ''
-  if (!filePath) return defaultReturn
   const pathArray = filePath.split('/')
-  /* validate the path */
-  if (pathArray.includes('actions')) {
-    const actionParentIndex = pathArray.findIndex(el => el === 'actions')
-    return pathArray[actionParentIndex + 1] || defaultReturn
-  }
+  const actionParentIndex = pathArray.findIndex(el => el === 'actions')
+  return pathArray[actionParentIndex + 1]
 }
