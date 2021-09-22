@@ -8,6 +8,7 @@
     "@adobe/aio-cli-lib-app-config": "^0.2.1",
     "@adobe/aio-lib-core-config": "^2.0.0",
     "@adobe/aio-lib-core-logging": "^1.1.0",
+    "@adobe/aio-lib-core-networking": "github:adobe/aio-lib-core-networking#proxy-support",
     "@adobe/aio-lib-env": "^1.1.0",
     "@adobe/aio-lib-ims": "^4.1.0",
     "@adobe/aio-lib-runtime": "^3.0.1",
