@@ -122,6 +122,7 @@ async function runDev (config, dataDir, options = {}, log = () => {}) {
     // Deploy Phase - deploy actions
     if (withBackend) {
       log('redeploying actions..')
+      devConfig.filterByBuiltActions = true
       await deployActions(devConfig, isLocal, log)
     }
 
