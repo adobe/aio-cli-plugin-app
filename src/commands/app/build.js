@@ -114,7 +114,7 @@ class Build extends BaseCommand {
             const bundleOptions = {
               shouldDisableCache: true,
               shouldContentHash: flags['content-hash'],
-              shouldOptimize: false,
+              shouldOptimize: flags['web-optimize'],
               logLevel: flags.verbose ? 'verbose' : 'warn'
             }
             const bundler = await bundle(entryFile, config.web.distProd, bundleOptions, onProgress)
@@ -178,6 +178,11 @@ Build.flags = {
   'content-hash': flags.boolean({
     description: '[default: true] Enable content hashing in browser code',
     default: true,
+    allowNo: true
+  }),
+  'web-optimize': flags.boolean({
+    description: '[default: false] Enable optimization (minification) of js/css/html',
+    default: false,
     allowNo: true
   }),
   extension: flags.string({
