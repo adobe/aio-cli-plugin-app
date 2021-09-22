@@ -17,7 +17,6 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
 const { createFetch } = require('@adobe/aio-lib-core-networking')
-const fetch = createFetch()
 const chalk = require('chalk')
 const aioConfig = require('@adobe/aio-lib-core-config')
 const { AIO_CONFIG_WORKSPACE_SERVICES, AIO_CONFIG_ORG_SERVICES } = require('./defaults')
@@ -256,6 +255,7 @@ async function downloadOWJar (url, outFile) {
   aioLogger.debug(`downloadOWJar - url: ${url} outFile: ${outFile}`)
   let response
   try {
+    const fetch = createFetch()
     response = await fetch(url)
   } catch (e) {
     aioLogger.debug(`connection error while downloading '${url}'`, e)
@@ -285,6 +285,7 @@ async function waitForOpenWhiskReadiness (host, endTime, period, timeout, waitFu
   let ok
 
   try {
+    const fetch = createFetch()
     const response = await fetch(host + '/api/v1')
     ok = response.ok
   } catch (e) {
