@@ -141,13 +141,13 @@ test('onChange handler calls buildActions with filterActions', async () => {
   await actionsWatcher({ config: application, log })
   expect(typeof onChangeHandler).toEqual('function')
 
-  deployActions.mockImplementation(async () => await sleep(2000))
+  deployActions.mockImplementation(async () => await sleep(5000))
   onChangeHandler('/myactions/action.js')
 
   await jest.runAllTimers()
 
   expect(buildActions).toHaveBeenCalledWith(
-    { ...application, filterActions: ['action'] }
+    expect.objectContaining({ filterActions: ['action'] })
   )
 })
 
