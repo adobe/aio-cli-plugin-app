@@ -141,8 +141,10 @@ test('onChange handler calls buildActions with filterActions', async () => {
   await actionsWatcher({ config: application, log })
   expect(typeof onChangeHandler).toEqual('function')
 
+  const filePath = process.platform === 'win32' ? '\\myactions\\action.js' : '/myactions/action.js'
+
   deployActions.mockImplementation(async () => await sleep(5000))
-  onChangeHandler('/myactions/action.js')
+  onChangeHandler(filePath)
 
   await jest.runAllTimers()
 

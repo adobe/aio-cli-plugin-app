@@ -122,7 +122,7 @@ function getActionNameFromPath (filePath, watcherOptions) {
   Object.entries(config.manifest.full.packages).forEach(([, pkg]) => {
     if (pkg.actions) {
       Object.entries(pkg.actions).forEach(([actionName, action]) => {
-        if (action.function === filePath) {
+        if (action.function.includes(filePath)) {
           theActionName = actionName
         }
       })
