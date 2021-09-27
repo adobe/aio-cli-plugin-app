@@ -296,6 +296,10 @@ Deploy.flags = {
     description: 'Force publish extension(s) to Exchange, delete previously published extension points',
     default: false,
     exclusive: ['action', 'publish'] // no-publish is excluded
+  }),
+  'web-optimize': flags.boolean({
+    description: '[default: false] Enable optimization (minification) of web js/css/html',
+    default: false
   })
 }
 
