@@ -182,8 +182,7 @@ Build.flags = {
   }),
   'web-optimize': flags.boolean({
     description: '[default: false] Enable optimization (minification) of js/css/html',
-    default: false,
-    allowNo: true
+    default: false
   }),
   extension: flags.string({
     description: 'Build only a specific extension point, the flags can be specified multiple times',
