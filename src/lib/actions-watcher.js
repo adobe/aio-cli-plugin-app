@@ -89,8 +89,10 @@ function createChangeHandler (watcherOptions) {
     deploymentInProgress = true
     try {
       aioLogger.debug(`${filePath} has changed. Redeploying actions.`)
-      const actionName = getActionNameFromPath(filePath)
-      watcherOptions.config.filterActions = [actionName]
+      const actionName = getActionNameFromPath(filePath, watcherOptions)
+      if (actionName) {
+        watcherOptions.config.filterActions = [actionName]
+      }
       await buildAndDeploy(watcherOptions)
       aioLogger.debug(`Deployment successful for', ${actionName}.`)
     } catch (err) {
@@ -108,13 +110,23 @@ function createChangeHandler (watcherOptions) {
 }
 
 /**
- * Util function which extract the actionName from the filePath.
+ * Util function which returns the actionName from the filePath.
  *
  * @param {string} filePath  path of the file
+ * @param {WatcherOptions} watcherOptions the options for the watcher
  * @returns {string}  name of the action
  */
-function getActionNameFromPath (filePath) {
-  const pathArray = filePath.split('/')
-  const actionParentIndex = pathArray.findIndex(el => el === 'actions')
-  return pathArray[actionParentIndex + 1]
+function getActionNameFromPath (filePath, watcherOptions) {
+  let theActionName = ''
+  const { config } = watcherOptions
+  Object.entries(config.manifest.full.packages).forEach(([, pkg]) => {
+    if (pkg.actions) {
+      Object.entries(pkg.actions).forEach(([actionName, action]) => {
+        if (action.function === filePath) {
+          theActionName = actionName
+        }
+      })
+    }
+  })
+  return theActionName
 }
