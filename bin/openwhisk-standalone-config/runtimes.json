@@ -7,7 +7,7 @@
         "image": {
           "prefix": "adobeapiplatform",
           "name": "adobe-action-nodejs-v14",
-          "tag": "3.0.26"
+          "tag": "3.0.28"
         }
       },
       {
@@ -15,7 +15,7 @@
         "image": {
           "prefix": "adobeapiplatform",
           "name": "adobe-action-nodejs-v12",
-          "tag": "3.0.22"
+          "tag": "3.0.28"
         }
       },
       {
@@ -23,7 +23,7 @@
         "image": {
           "prefix": "adobeapiplatform",
           "name": "adobe-action-nodejs-v10",
-          "tag": "3.0.22"
+          "tag": "3.0.28"
         }
       }
     ]
