@@ -89,12 +89,12 @@ function createChangeHandler (watcherOptions) {
     deploymentInProgress = true
     try {
       aioLogger.debug(`${filePath} has changed. Redeploying actions.`)
-      const actionName = getActionNameFromPath(filePath, watcherOptions)
-      if (actionName) {
-        watcherOptions.config.filterActions = [actionName]
+      const actionNames = getActionNameFromPath(filePath, watcherOptions)
+      if (actionNames.length) {
+        watcherOptions.config.filterActions = actionNames
       }
       await buildAndDeploy(watcherOptions)
-      aioLogger.debug(`Deployment successful for', ${actionName}.`)
+      aioLogger.debug('Deployment successful')
     } catch (err) {
       log('  -> Error encountered while deploying actions. Stopping auto refresh.')
       aioLogger.debug(err)
@@ -114,19 +114,19 @@ function createChangeHandler (watcherOptions) {
  *
  * @param {string} filePath  path of the file
  * @param {WatcherOptions} watcherOptions the options for the watcher
- * @returns {string}  name of the action
+ * @returns {Array<string>}  All of the actions which match the modified path
  */
 function getActionNameFromPath (filePath, watcherOptions) {
-  let theActionName = ''
+  const actionNames = []
   const { config } = watcherOptions
   Object.entries(config.manifest.full.packages).forEach(([, pkg]) => {
     if (pkg.actions) {
       Object.entries(pkg.actions).forEach(([actionName, action]) => {
         if (action.function.includes(filePath)) {
-          theActionName = actionName
+          actionNames.push(actionName)
         }
       })
     }
   })
-  return theActionName
+  return actionNames
 }
