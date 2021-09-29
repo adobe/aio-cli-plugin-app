@@ -245,14 +245,17 @@ class InitCommand extends BaseCommand {
 
   async runCodeGenerators (flags, extensionPoints, projectName) {
     let env = yeoman.createEnv()
-    // first run app generator that will generate the root skeleton
-    const appGen = env.instantiate(generators['base-app'], {
-      options: {
-        'skip-prompt': flags.yes,
-        'project-name': projectName
-      }
-    })
-    await env.runGenerator(appGen)
+    const initialGenerators = ['base-app', 'add-ci']
+    // first run app generator that will generate the root skeleton + ci
+    for (const generatorKey of initialGenerators) {
+      const appGen = env.instantiate(generators[generatorKey], {
+        options: {
+          'skip-prompt': flags.yes,
+          'project-name': projectName
+        }
+      })
+      await env.runGenerator(appGen)
+    }
 
     // Creating new Yeoman env here to workaround an issue where yeoman reuses the conflicter from previous environment.
     // https://github.com/yeoman/environment/issues/324
