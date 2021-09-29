@@ -149,7 +149,7 @@ class InitCommand extends BaseCommand {
         implPromptChoices.forEach(c => {
           const missingServices = c.value.requiredServices.filter(s => !supportedServiceCodes.has(s))
           if (missingServices.length > 0) {
-            c.value = true
+            c.disabled = true
             c.name = `${c.name}: missing service(s) in Org: '${missingServices}'`
           }
         })
