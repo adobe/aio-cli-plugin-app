@@ -14,7 +14,7 @@
     "@adobe/aio-lib-runtime": "github:adobe/aio-lib-runtime#master",
     "@adobe/aio-lib-web": "github:adobe/aio-lib-web#master",
     "@adobe/generator-aio-app": "github:adobe/generator-aio-app#master",
-    "@adobe/generator-aio-console": "github:adobe/generator-aio-console#master",
+    "@adobe/aio-cli-lib-console": "github:adobe/generator-aio-console#master",
     "@oclif/command": "^1.5.11",
     "@oclif/config": "^1.12.9",
     "@oclif/plugin-help": "^2.2.3",
