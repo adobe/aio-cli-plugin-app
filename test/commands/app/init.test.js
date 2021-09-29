@@ -78,7 +78,7 @@ const inquirer = require('inquirer')
 const mockExtensionPrompt = jest.fn()
 inquirer.createPromptModule = jest.fn().mockReturnValue(mockExtensionPrompt)
 const { implPromptChoices } = require('../../../src/lib/defaults')
-const extChoices = implPromptChoices.filter(c => c.value.name !== 'application')
+const extChoices = implPromptChoices
 const excshellSelection = [implPromptChoices.find(c => c.value.name === 'dx/excshell/1').value]
 const assetComputeSelection = [implPromptChoices.find(c => c.value.name === 'dx/asset-compute/worker/1').value]
 
@@ -530,10 +530,12 @@ describe('run', () => {
         choices: [
         // exc shell
           extChoices[0],
+          extChoices[1],
           // disabled nui
           expect.objectContaining({
             disabled: true,
-            name: expect.stringContaining('missing service(s) in Org: \'AssetComputeSDK\'')
+            name: expect.stringContaining('missing service(s) in Org: \'AssetComputeSDK\''),
+            value: expect.any(Object)
           })
         ]
       })])
