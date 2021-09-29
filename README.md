@@ -260,6 +260,8 @@ OPTIONS
 
   --[no-]web-assets          [default: true] Build web-assets if any
 
+  --web-optimize             [default: false] Enable optimization (minification) of js/css/html
+
 DESCRIPTION
   This will always force a rebuild unless --no-force-build is set.
 ```
@@ -488,6 +490,8 @@ OPTIONS
   --version                  Show version
 
   --[no-]web-assets          [default: true] Deploy web-assets if any
+
+  --web-optimize             [default: false] Enable optimization (minification) of web js/css/html
 
 DESCRIPTION
   This will always force a rebuild unless --no-force-build is set.
