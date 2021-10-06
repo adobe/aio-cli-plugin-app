@@ -13,8 +13,12 @@ governing permissions and limitations under the License.
 // unmock to test proper returned urls from getActionUrls
 jest.unmock('@adobe/aio-lib-runtime')
 
+const mockFetch = jest.fn()
+jest.mock('@adobe/aio-lib-core-networking', () => ({
+  createFetch: jest.fn(() => mockFetch)
+}))
+
 jest.mock('@adobe/aio-lib-core-config')
-jest.mock('node-fetch')
 jest.mock('execa')
 jest.mock('process')
 jest.mock('fs-extra') // do not touch the real fs
@@ -25,7 +29,6 @@ const which = require('which')
 const fs = require('fs-extra')
 const execa = require('execa')
 const appHelper = require('../../../src/lib/app-helper')
-const fetch = require('node-fetch')
 const aioConfig = require('@adobe/aio-lib-core-config')
 const libEnv = require('@adobe/aio-lib-env')
 const libIms = require('@adobe/aio-lib-ims')
@@ -34,11 +37,11 @@ beforeEach(() => {
   Object.defineProperty(process, 'platform', { value: 'linux' })
   execa.mockReset()
   execa.command.mockReset()
-  fetch.mockReset()
   aioConfig.get.mockReset()
   aioConfig.set.mockReset()
   libEnv.getCliEnv.mockReset()
   libIms.getToken.mockReset()
+  mockFetch.mockReset()
 })
 
 const getMockConfig = require('../../data-mocks/config-loader')
@@ -389,7 +392,7 @@ test('downloadOWJar failed (server has response, but not ok)', async () => {
     ok: false,
     statusText: 'some error'
   }
-  fetch.mockReturnValueOnce(response)
+  mockFetch.mockResolvedValueOnce(response)
 
   const url = 'https://some.url'
   const result = appHelper.downloadOWJar(url, 'foo/bar')
@@ -398,7 +401,7 @@ test('downloadOWJar failed (server has response, but not ok)', async () => {
 
 test('downloadOWJar failed (no server response, fetch exception)', async () => {
   const err = new Error('some fetch error')
-  fetch.mockRejectedValueOnce(err)
+  mockFetch.mockRejectedValueOnce(err)
 
   const url = 'https://some.url'
   const result = appHelper.downloadOWJar(url, 'foo/bar')
@@ -428,7 +431,7 @@ test('downloadOWJar ok', async () => {
       })
     }
   })
-  fetch.mockReturnValueOnce(response)
+  mockFetch.mockResolvedValueOnce(response)
 
   const result = appHelper.downloadOWJar(url, fileToWrite)
   await expect(result).resolves.toBeUndefined()
@@ -451,14 +454,14 @@ test('downloadOWJar (server connected ok, streaming error)', async () => {
   const url = 'https://some.url'
   const fileToWrite = 'foo/bar'
 
-  fetch.mockReturnValueOnce(response)
+  mockFetch.mockResolvedValueOnce(response)
 
   const result = appHelper.downloadOWJar(url, fileToWrite)
   await expect(result).rejects.toEqual(streamError)
 })
 
 test('runOpenWhiskJar ok', async () => {
-  fetch.mockReturnValue({ ok: true })
+  mockFetch.mockResolvedValue({ ok: true })
   execa.mockReturnValue({ stdout: jest.fn() })
 
   const result = appHelper.runOpenWhiskJar('jar', 'conf')
@@ -466,12 +469,12 @@ test('runOpenWhiskJar ok', async () => {
   await expect(result).resolves.toEqual({
     proc: expect.any(Object)
   })
-  expect(fetch).toHaveBeenCalledTimes(1)
+  expect(mockFetch).toHaveBeenCalledTimes(1)
   expect(execa).toHaveBeenCalledWith('java', expect.arrayContaining(['jar', 'conf']), {})
 })
 
 test('runOpenWhiskJar with AIO_OW_JVM_ARGS env var is passed to execa', async () => {
-  fetch.mockReturnValue({ ok: true })
+  mockFetch.mockResolvedValue({ ok: true })
   execa.mockReturnValue({ stdout: jest.fn() })
 
   aioConfig.get.mockReturnValueOnce('arg1 arg2')
@@ -481,7 +484,7 @@ test('runOpenWhiskJar with AIO_OW_JVM_ARGS env var is passed to execa', async ()
   await expect(result).resolves.toEqual({
     proc: expect.any(Object)
   })
-  expect(fetch).toHaveBeenCalledTimes(1)
+  expect(mockFetch).toHaveBeenCalledTimes(1)
   expect(execa).toHaveBeenCalledWith('java', expect.arrayContaining(['arg1', 'arg2', 'jar', 'conf']), {})
 })
 
@@ -497,7 +500,7 @@ test('waitForOpenWhiskReadiness timeout', async () => {
   const result = appHelper.waitForOpenWhiskReadiness(host, endTime, period, timeout, waitFunc)
 
   await expect(result).rejects.toEqual(new Error(`local openwhisk stack startup timed out: ${timeout}ms`))
-  expect(fetch).toHaveBeenCalledTimes(0)
+  expect(mockFetch).toHaveBeenCalledTimes(0)
   expect(waitFunc).toHaveBeenCalledTimes(0)
 })
 
@@ -510,14 +513,14 @@ test('waitForOpenWhiskReadiness (fail, retry, then success)', async () => {
   const waitFunc = jest.fn((_period) => {
     expect(_period).toEqual(period)
   })
-  fetch
+  mockFetch
     .mockRejectedValueOnce(new Error('some error')) // first fail (fetch exception)
     .mockRejectedValueOnce({ ok: false }) // second fail (response not ok)
     .mockResolvedValue({ ok: true }) // finally success
   const result = appHelper.waitForOpenWhiskReadiness(host, endTime, period, timeout, waitFunc)
 
   await expect(result).resolves.not.toBeDefined()
-  expect(fetch).toHaveBeenCalledTimes(3)
+  expect(mockFetch).toHaveBeenCalledTimes(3)
   expect(waitFunc).toHaveBeenCalledTimes(2)
 })
 
