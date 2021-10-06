@@ -5,7 +5,7 @@ name: Release Branch CI
 
 on:
   pull_request:
-    branches: [ 'release-*' ]
+    branches: [ 'release-*', 'branch-prerelease' ]
 
 jobs:
   build:
