@@ -11,7 +11,7 @@
     "@adobe/aio-lib-core-logging": "^1.1.0",
     "@adobe/aio-lib-core-networking": "^2.0.0",
     "@adobe/aio-lib-env": "^1.1.0",
-    "@adobe/aio-lib-ims": "github:adobe/aio-lib-ims#proxy-support",
+    "@adobe/aio-lib-ims": "^5.0.0",
     "@adobe/aio-lib-runtime": "github:adobe/aio-lib-runtime#proxy-support",
     "@adobe/aio-lib-web": "^5.0.0",
     "@adobe/generator-aio-app": "^3.0.0",
