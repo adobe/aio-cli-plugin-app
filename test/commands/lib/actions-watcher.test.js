@@ -149,14 +149,14 @@ test('onChange handler calls buildActions with filterActions', async () => {
   await jest.runAllTimers()
 
   expect(buildActions).toHaveBeenCalledWith(
-    expect.objectContaining({ filterActions: ['action'] })
+    application, ['action']
   )
 })
 
 test('onChange handler calls buildActions without filterActions when actions are undefined', async () => {
   const { application } = createAppConfig()
-  const newApplication = cloneDeep(application)
-  Object.entries(newApplication.manifest.full.packages).forEach(([, pkg]) => {
+  const cloneApplication = cloneDeep(application)
+  Object.entries(cloneApplication.manifest.full.packages).forEach(([, pkg]) => {
     if (pkg.actions) {
       delete pkg.actions
     }
@@ -173,7 +173,7 @@ test('onChange handler calls buildActions without filterActions when actions are
   chokidar.watch.mockImplementation(() => mockWatcherInstance)
 
   const log = jest.fn()
-  await actionsWatcher({ config: newApplication, log })
+  await actionsWatcher({ config: cloneApplication, log })
   expect(typeof onChangeHandler).toEqual('function')
 
   deployActions.mockImplementation(async () => await sleep(2000))
@@ -181,7 +181,5 @@ test('onChange handler calls buildActions without filterActions when actions are
 
   await jest.runAllTimers()
 
-  expect(buildActions).toHaveBeenCalledWith(
-    newApplication
-  )
+  expect(buildActions).toHaveBeenCalledWith(cloneApplication, [])
 })

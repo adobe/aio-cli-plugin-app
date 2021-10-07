@@ -58,12 +58,13 @@ module.exports = async (watcherOptions) => {
  * Builds and deploy the app.
  *
  * @param {WatcherOptions} watcherOptions the options for the watcher
+ * @param {Array<string>} filterActions add filters to deploy only specified OpenWhisk actions
  */
-async function buildAndDeploy (watcherOptions) {
+async function buildAndDeploy (watcherOptions, filterActions) {
   const { config, isLocal, log } = watcherOptions
 
-  await buildActions(config)
-  await deployActions(config, isLocal, log)
+  await buildActions(config, filterActions)
+  await deployActions(config, isLocal, log, filterActions)
 }
 
 /**
@@ -89,11 +90,9 @@ function createChangeHandler (watcherOptions) {
     deploymentInProgress = true
     try {
       aioLogger.debug(`${filePath} has changed. Redeploying actions.`)
-      const actionNames = getActionNameFromPath(filePath, watcherOptions)
-      if (actionNames.length) {
-        watcherOptions.config.filterActions = actionNames
-      }
-      await buildAndDeploy(watcherOptions)
+      const filterActions = getActionNameFromPath(filePath, watcherOptions)
+      console.log('filterActions', filterActions)
+      await buildAndDeploy(watcherOptions, filterActions)
       aioLogger.debug('Deployment successful')
     } catch (err) {
       log('  -> Error encountered while deploying actions. Stopping auto refresh.')
