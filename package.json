@@ -1,19 +1,20 @@
 {
   "name": "@adobe/aio-cli-plugin-app",
   "description": "Create, Build and Deploy Adobe I/O Applications",
-  "version": "8.1.0",
+  "version": "8.2.0",
   "author": "Adobe Inc.",
   "bugs": "https://github.com/adobe/aio-cli-plugin-app/issues",
   "dependencies": {
     "@adobe/aio-cli-lib-app-config": "^0.2.1",
+    "@adobe/aio-cli-lib-console": "^3.0.0",
     "@adobe/aio-lib-core-config": "^2.0.0",
     "@adobe/aio-lib-core-logging": "^1.1.0",
+    "@adobe/aio-lib-core-networking": "^2.0.0",
     "@adobe/aio-lib-env": "^1.1.0",
-    "@adobe/aio-lib-ims": "^4.1.0",
-    "@adobe/aio-lib-runtime": "^3.0.1",
+    "@adobe/aio-lib-ims": "^5.0.0",
+    "@adobe/aio-lib-runtime": "^3.1.0",
     "@adobe/aio-lib-web": "^5.0.0",
     "@adobe/generator-aio-app": "^3.0.0",
-    "@adobe/generator-aio-console": "^2.2.1",
     "@oclif/command": "^1.5.11",
     "@oclif/config": "^1.12.9",
     "@oclif/plugin-help": "^2.2.3",
@@ -42,6 +43,7 @@
     "yeoman-environment": "^3.2.0"
   },
   "devDependencies": {
+    "@adobe/aio-lib-test-proxy": "^1.0.0",
     "@adobe/eslint-config-aio-lib-config": "^1.3.0",
     "@oclif/dev-cli": "^1.21.3",
     "@types/jest": "^26.0.10",

@@ -34,8 +34,8 @@ yeoman.createEnv.mockReturnValue({
 jest.mock('@adobe/aio-lib-ims')
 
 // mock console calls
-jest.mock('@adobe/generator-aio-console/lib/console-cli.js')
-const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli.js')
+jest.mock('@adobe/aio-cli-lib-console')
+const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
 const mockConsoleCLIInstance = {
   getEnabledServicesForOrg: jest.fn(),
   promptForSelectOrganization: jest.fn(),
