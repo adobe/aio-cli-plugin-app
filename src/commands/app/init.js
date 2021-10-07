@@ -23,6 +23,7 @@ const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/impor
 const { installPackages, atLeastOne } = require('../../lib/app-helper')
 
 const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV, implPromptChoices } = require('../../lib/defaults')
+const cloneDeep = require('lodash.clonedeep')
 
 const DEFAULT_WORKSPACE = 'Stage'
 
@@ -142,11 +143,13 @@ class InitCommand extends BaseCommand {
       }
       return extList
     } else {
+      const choices = cloneDeep(implPromptChoices)
+
       // disable extensions that lack required services
       if (orgSupportedServices) {
         const supportedServiceCodes = new Set(orgSupportedServices.map(s => s.code))
         // filter choices
-        implPromptChoices.forEach(c => {
+        choices.forEach(c => {
           const missingServices = c.value.requiredServices.filter(s => !supportedServiceCodes.has(s))
           if (missingServices.length > 0) {
             c.disabled = true
@@ -158,7 +161,7 @@ class InitCommand extends BaseCommand {
         type: 'checkbox',
         name: 'res',
         message: 'Which extension point(s) do you wish to implement ?',
-        choices: implPromptChoices,
+        choices,
         validate: atLeastOne
       }])
       return answers.res
