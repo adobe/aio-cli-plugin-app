@@ -18,7 +18,7 @@ const loadConfig = require('@adobe/aio-cli-lib-app-config')
 const inquirer = require('inquirer')
 const { CONSOLE_API_KEYS, APPLICATION_CONFIG_KEY, EXTENSIONS_CONFIG_KEY } = require('./lib/defaults')
 const { getCliInfo } = require('./lib/app-helper')
-const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli')
+const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app', { provider: 'debug' })
 
 const {

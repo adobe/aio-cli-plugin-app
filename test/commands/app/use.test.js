@@ -20,9 +20,9 @@ const mockPrompt = jest.fn()
 inquirer.createPromptModule.mockReturnValue(mockPrompt)
 
 // mock LibConsoleCLI
-const consoleDataMocks = require('@adobe/generator-aio-console/test/data-mocks')
-jest.mock('@adobe/generator-aio-console/lib/console-cli.js')
-const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli.js')
+const consoleDataMocks = require('@adobe/aio-cli-lib-console/test/data-mocks')
+jest.mock('@adobe/aio-cli-lib-console')
+const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
 const mockConsoleCLIInstance = {
   getWorkspaces: jest.fn(),
   promptForSelectWorkspace: jest.fn(),
