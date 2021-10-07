@@ -91,7 +91,6 @@ function createChangeHandler (watcherOptions) {
     try {
       aioLogger.debug(`${filePath} has changed. Redeploying actions.`)
       const filterActions = getActionNameFromPath(filePath, watcherOptions)
-      console.log('filterActions', filterActions)
       await buildAndDeploy(watcherOptions, filterActions)
       aioLogger.debug('Deployment successful')
     } catch (err) {

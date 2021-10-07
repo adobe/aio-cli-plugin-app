@@ -23,7 +23,6 @@ module.exports = async (config, filterActions) => {
   utils.runScript(config.hooks['pre-app-build'])
   const script = await utils.runScript(config.hooks['build-actions'])
   if (!script) {
-    console.log('calling build actions with', filterActions)
     await buildActions(config, filterActions)
   }
   utils.runScript(config.hooks['post-app-build'])

@@ -34,7 +34,6 @@ module.exports = async (config, isLocal = false, log = () => {}, filter = false)
     }
     const entities = await deployActions(config, deployConfig, log)
     if (entities.actions) {
-      console.log('deployed', entities.actions.length)
       const web = entities.actions.filter(utils.createWebExportFilter(true))
       const nonWeb = entities.actions.filter(utils.createWebExportFilter(false))
 
