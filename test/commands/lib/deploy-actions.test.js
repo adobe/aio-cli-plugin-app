@@ -61,6 +61,27 @@ test('deploy-actions app hook available', async () => {
   expect(utils.runScript).toHaveBeenNthCalledWith(3, undefined) // post-app-deploy
 })
 
+test('it should deploy actions with filter param, (coverage)', async () => {
+  utils.runScript.mockImplementation(() => false)
+
+  await deployActions({
+    hooks: {
+      'deploy-actions': 'deploy-actions'
+    },
+    filterByBuiltActions: true
+  })
+
+  expect(rtDeployActions).toHaveBeenCalled()
+  expect(rtDeployActions).toHaveBeenCalledWith(
+    expect.objectContaining({
+      hooks: { 'deploy-actions': 'deploy-actions' },
+      filterByBuiltActions: true
+    }),
+    expect.any(Object),
+    expect.any(Function)
+  )
+})
+
 test('no deploy-actions app hook available (use inbuilt)', async () => {
   await deployActions({ hooks: {} })
 

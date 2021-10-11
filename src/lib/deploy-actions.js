@@ -19,13 +19,20 @@ const { deployActions } = require('@adobe/aio-lib-runtime')
  * @param {object} config see src/lib/config-loader.js
  * @param {boolean} isLocal=false set to true if it's a local deploy
  * @param {Function} [log] a log function
+ * @param {boolean} filter true if a filter by built actions is desired.
  */
 /** @private */
-module.exports = async (config, isLocal = false, log = () => {}) => {
+module.exports = async (config, isLocal = false, log = () => {}, filter = false) => {
   utils.runScript(config.hooks['pre-app-deploy'])
   const script = await utils.runScript(config.hooks['deploy-actions'])
   if (!script) {
-    const entities = await deployActions(config, { isLocalDev: isLocal }, log)
+    const deployConfig = {
+      isLocalDev: isLocal,
+      filterEntities: {
+        byBuiltActions: filter
+      }
+    }
+    const entities = await deployActions(config, deployConfig, log)
     if (entities.actions) {
       const web = entities.actions.filter(utils.createWebExportFilter(true))
       const nonWeb = entities.actions.filter(utils.createWebExportFilter(false))

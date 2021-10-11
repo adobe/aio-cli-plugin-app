@@ -122,7 +122,7 @@ async function runDev (config, dataDir, options = {}, log = () => {}) {
     // Deploy Phase - deploy actions
     if (withBackend) {
       log('redeploying actions..')
-      await deployActions(devConfig, isLocal, log)
+      await deployActions(devConfig, isLocal, log, true)
     }
 
     // Deploy Phase - serve the web UI
