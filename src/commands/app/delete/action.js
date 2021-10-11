@@ -85,6 +85,7 @@ class DeleteActionCommand extends BaseCommand {
       fs.removeSync(folder)
       aioLogger.debug(`deleted '${folder}'`)
       // NOTE: (attempt) to delete test files. The test file must match the action name
+      // file in the same folder, which is true in most cases, but won't work for asset compute action tests for example.
       try {
         const pathToE2eTests = path.join(action.e2eTestsDir, action.actionName + '.e2e.test.js')
         const pathToUnitTests = path.join(action.unitTestsDir, action.actionName + '.test.js')
