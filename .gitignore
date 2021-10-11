@@ -9,16 +9,9 @@
 node_modules
 coverage
 .vscode/
+/.idea/
 
 oclif.manifest.json
 package-lock.json
 
 bin/openwhisk-standalone*.jar
-/.idea/.gitignore
-/.idea/aio-cli-plugin-app.iml
-/.idea/codeStyles/codeStyleConfig.xml
-/.idea/misc.xml
-/.idea/modules.xml
-/.idea/codeStyles/Project.xml
-/.idea/inspectionProfiles/Project_Default.xml
-/.idea/vcs.xml

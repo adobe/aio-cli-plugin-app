@@ -9,7 +9,7 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-
+const upath = require('upath')
 const chokidar = require('chokidar')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:actions-watcher', { provider: 'debug' })
 const buildActions = require('./build-actions')
@@ -116,11 +116,13 @@ function createChangeHandler (watcherOptions) {
  */
 function getActionNameFromPath (filePath, watcherOptions) {
   const actionNames = []
+  const unixFilePath = upath.toUnix(filePath)
   const { config } = watcherOptions
   Object.entries(config.manifest.full.packages).forEach(([, pkg]) => {
     if (pkg.actions) {
       Object.entries(pkg.actions).forEach(([actionName, action]) => {
-        if (action.function.includes(filePath)) {
+        const unixActionFunction = upath.toUnix(action.function)
+        if (unixActionFunction.includes(unixFilePath)) {
           actionNames.push(actionName)
         }
       })
