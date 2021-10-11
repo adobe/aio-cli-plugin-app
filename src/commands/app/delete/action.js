@@ -88,7 +88,6 @@ class DeleteActionCommand extends BaseCommand {
       try {
         const pathToE2eTests = path.join(action.e2eTestsDir, action.actionName + '.e2e.test.js')
         const pathToUnitTests = path.join(action.unitTestsDir, action.actionName + '.test.js')
-
         fs.removeSync(pathToE2eTests)
         aioLogger.debug(`deleted '${pathToE2eTests}'`)
         fs.removeSync(pathToUnitTests)
