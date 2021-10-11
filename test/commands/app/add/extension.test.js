@@ -101,7 +101,8 @@ describe('good flags', () => {
     expect(mockInstantiate).toHaveBeenCalledWith(generators.extensions['dx/excshell/1'], {
       options: {
         'skip-prompt': true,
-        force: true
+        force: true,
+        'skip-install': true
       }
     })
     expect(mockRunGenerator).toHaveBeenCalledWith('extGen')
@@ -116,7 +117,8 @@ describe('good flags', () => {
     expect(mockInstantiate).toHaveBeenCalledWith(generators.extensions['dx/excshell/1'], {
       options: {
         'skip-prompt': true,
-        force: true
+        force: true,
+        'skip-install': true
       }
     })
     expect(helpers.installPackages).toHaveBeenCalledTimes(0)
@@ -130,7 +132,8 @@ describe('good flags', () => {
     expect(mockInstantiate).toHaveBeenCalledWith(generators.extensions['dx/excshell/1'], {
       options: {
         'skip-prompt': false,
-        force: true
+        force: true,
+        'skip-install': true
       }
     })
   })
@@ -142,7 +145,8 @@ describe('good flags', () => {
     expect(mockInstantiate).toHaveBeenCalledWith(generators.extensions['dx/excshell/1'], {
       options: {
         'skip-prompt': false,
-        force: true
+        force: true,
+        'skip-install': true
       }
     })
   })
@@ -167,7 +171,8 @@ describe('good flags', () => {
     expect(mockInstantiate).toHaveBeenCalledWith(generators.extensions['dx/asset-compute/worker/1'], {
       options: {
         'skip-prompt': false,
-        force: true
+        force: true,
+        'skip-install': true
       }
     })
   })
