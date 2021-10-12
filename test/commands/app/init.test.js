@@ -195,7 +195,7 @@ describe('run', () => {
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'cwd' } }
+      { options: { 'skip-prompt': false, 'project-name': 'cwd', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
@@ -217,7 +217,7 @@ describe('run', () => {
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'otherdir' } }
+      { options: { 'skip-prompt': false, 'project-name': 'otherdir', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
@@ -242,7 +242,7 @@ describe('run', () => {
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'cwd' } }
+      { options: { 'skip-prompt': false, 'project-name': 'cwd', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
@@ -267,7 +267,7 @@ describe('run', () => {
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'cwd' } }
+      { options: { 'skip-prompt': false, 'project-name': 'cwd', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-application',
@@ -289,7 +289,7 @@ describe('run', () => {
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-add-ci',
-      { options: { 'skip-prompt': true, 'project-name': 'cwd' } }
+      { options: { 'skip-prompt': true, 'project-name': 'cwd', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
@@ -311,7 +311,7 @@ describe('run', () => {
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-add-ci',
-      { options: { 'skip-prompt': true, 'project-name': 'cwd' } }
+      { options: { 'skip-prompt': true, 'project-name': 'cwd', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-nui',
@@ -365,7 +365,7 @@ describe('run', () => {
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
@@ -393,7 +393,7 @@ describe('run', () => {
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
@@ -435,7 +435,7 @@ describe('run', () => {
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
@@ -473,7 +473,7 @@ describe('run', () => {
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-nui',
@@ -517,7 +517,7 @@ describe('run', () => {
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
@@ -569,7 +569,7 @@ describe('run', () => {
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
@@ -609,7 +609,7 @@ describe('run', () => {
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
@@ -647,7 +647,7 @@ describe('run', () => {
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
