@@ -9,7 +9,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('../../BaseCommand')
+const AddCommand = require('../../AddCommand')
 const yeoman = require('yeoman-environment')
 const path = require('path')
 const fs = require('fs-extra')
@@ -20,14 +20,14 @@ const { flags } = require('@oclif/command')
 const generators = require('@adobe/generator-aio-app')
 
 const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
-const { installPackages, atLeastOne } = require('../../lib/app-helper')
+const { atLeastOne } = require('../../lib/app-helper')
 
 const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV, implPromptChoices } = require('../../lib/defaults')
 const cloneDeep = require('lodash.clonedeep')
 
 const DEFAULT_WORKSPACE = 'Stage'
 
-class InitCommand extends BaseCommand {
+class InitCommand extends AddCommand {
   async run () {
     const { args, flags } = this.parse(InitCommand)
 
@@ -56,11 +56,7 @@ class InitCommand extends BaseCommand {
     }
 
     // install packages, always at the end, so user can ctrl+c
-    if (!flags['skip-install']) {
-      await installPackages('.', { spinner, verbose: flags.verbose })
-    } else {
-      this.log('--skip-install, make sure to run \'npm install\' later on')
-    }
+    await this.runInstallPackages(flags, spinner)
 
     this.log(chalk.bold(chalk.green('✔ App initialization finished!')))
     this.log('> Tip: you can add more actions, web-assets and events to your project via the `aio app add` commands')
@@ -249,7 +245,9 @@ class InitCommand extends BaseCommand {
     const appGen = env.instantiate(generators['base-app'], {
       options: {
         'skip-prompt': flags.yes,
-        'project-name': projectName
+        'project-name': projectName,
+        // by default yeoman runs the install, we control installation from the app plugin
+        'skip-install': true
       }
     })
     await env.runGenerator(appGen)
@@ -266,7 +264,9 @@ class InitCommand extends BaseCommand {
           options: {
             'skip-prompt': flags.yes,
             // do not prompt for overwrites
-            force: true
+            force: true,
+            // by default yeoman runs the install, we control installation from the app plugin
+            'skip-install': true
           }
         })
       await env.runGenerator(extGen)
@@ -295,16 +295,11 @@ InitCommand.description = `Create a new Adobe I/O App
 `
 
 InitCommand.flags = {
-  ...BaseCommand.flags,
+  ...AddCommand.flags,
   yes: flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
-  }),
-  'skip-install': flags.boolean({
-    description: 'Skip npm installation after files are created',
-    char: 's',
-    default: false
   }),
   import: flags.string({
     description: 'Import an Adobe I/O Developer Console configuration file',

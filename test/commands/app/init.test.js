@@ -190,11 +190,11 @@ describe('run', () => {
     expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'cwd' } }
+      { options: { 'skip-prompt': false, 'project-name': 'cwd', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
@@ -208,11 +208,11 @@ describe('run', () => {
     expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'otherdir' } }
+      { options: { 'skip-prompt': false, 'project-name': 'otherdir', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
@@ -229,15 +229,15 @@ describe('run', () => {
     expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'cwd' } }
+      { options: { 'skip-prompt': false, 'project-name': 'cwd', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-nui',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
@@ -250,11 +250,11 @@ describe('run', () => {
     expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'cwd' } }
+      { options: { 'skip-prompt': false, 'project-name': 'cwd', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-application',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
@@ -268,11 +268,11 @@ describe('run', () => {
     expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': true, 'project-name': 'cwd' } }
+      { options: { 'skip-prompt': true, 'project-name': 'cwd', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
-      { options: { 'skip-prompt': true, force: true } }
+      { options: { 'skip-prompt': true, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).not.toHaveBeenCalled()
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
@@ -286,11 +286,11 @@ describe('run', () => {
     expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': true, 'project-name': 'cwd' } }
+      { options: { 'skip-prompt': true, 'project-name': 'cwd', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-nui',
-      { options: { 'skip-prompt': true, force: true } }
+      { options: { 'skip-prompt': true, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).not.toHaveBeenCalled()
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
@@ -336,11 +336,11 @@ describe('run', () => {
     expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
@@ -360,11 +360,11 @@ describe('run', () => {
     expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
@@ -398,11 +398,11 @@ describe('run', () => {
     expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).toHaveBeenCalled()
@@ -432,11 +432,11 @@ describe('run', () => {
     expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-nui',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).toHaveBeenCalled()
@@ -472,11 +472,11 @@ describe('run', () => {
     expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).toHaveBeenCalled()
@@ -518,11 +518,11 @@ describe('run', () => {
     expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).toHaveBeenCalled()
@@ -554,11 +554,11 @@ describe('run', () => {
     expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).toHaveBeenCalled()
@@ -588,11 +588,11 @@ describe('run', () => {
     expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).toHaveBeenCalled()

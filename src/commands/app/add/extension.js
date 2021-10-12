@@ -9,18 +9,18 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('../../../BaseCommand')
+const AddCommand = require('../../../AddCommand')
 const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 const ora = require('ora')
 
-const { installPackages, atLeastOne } = require('../../../lib/app-helper')
+const { atLeastOne } = require('../../../lib/app-helper')
 const aioConfigLoader = require('@adobe/aio-lib-core-config')
 const { implPromptChoices } = require('../../../lib/defaults')
 const chalk = require('chalk')
 
-class AddExtensionCommand extends BaseCommand {
+class AddExtensionCommand extends AddCommand {
   async run () {
     const { flags } = this.parse(AddExtensionCommand)
 
@@ -36,11 +36,7 @@ class AddExtensionCommand extends BaseCommand {
 
     await this.runCodeGenerators(flags, implementationsToAdd)
 
-    if (!flags['skip-install']) {
-      await installPackages('.', { spinner, verbose: flags.verbose })
-    } else {
-      this.log('--skip-install, make sure to run \'npm install\' later on')
-    }
+    await this.runInstallPackages(flags, spinner)
 
     // warn about services to add
     const workspaceServices =
@@ -101,7 +97,10 @@ class AddExtensionCommand extends BaseCommand {
         {
           options: {
             'skip-prompt': flags.yes,
-            force: true // no yeoman overwrite prompts
+            // no yeoman overwrite prompts
+            force: true,
+            // by default yeoman runs the install, we control installation from the app plugin
+            'skip-install': true
           }
         })
       this.log(chalk.blue(chalk.bold(`Running generator for ${implementation.name}`)))
@@ -118,16 +117,12 @@ AddExtensionCommand.flags = {
     default: false,
     char: 'y'
   }),
-  'skip-install': flags.boolean({
-    description: 'Skip npm installation after files are created',
-    default: false
-  }),
   extension: flags.string({
     description: 'Specify extensions to add, skips selection prompt',
     char: 'e',
     multiple: true
   }),
-  ...BaseCommand.flags
+  ...AddCommand.flags
 }
 
 AddExtensionCommand.aliases = ['app:add:ext', 'app:add:extensions']

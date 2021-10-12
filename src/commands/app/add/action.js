@@ -9,17 +9,17 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('../../../BaseCommand')
+const AddCommand = require('../../../AddCommand')
 const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 const ora = require('ora')
 const path = require('path')
 const generators = require('@adobe/generator-aio-app')
-const { servicesToGeneratorInput, installPackages } = require('../../../lib/app-helper')
+const { servicesToGeneratorInput } = require('../../../lib/app-helper')
 const aioConfigLoader = require('@adobe/aio-lib-core-config')
 
-class AddActionCommand extends BaseCommand {
+class AddActionCommand extends AddCommand {
   async run () {
     const { flags } = this.parse(AddActionCommand)
 
@@ -53,17 +53,15 @@ class AddActionCommand extends BaseCommand {
         'config-path': configData.file,
         'adobe-services': servicesToGeneratorInput(workspaceServices),
         'supported-adobe-services': servicesToGeneratorInput(supportedOrgServices),
-        'full-key-to-manifest': configData.key
-        // force: true
+        'full-key-to-manifest': configData.key,
+        // force: true,
+        // by default yeoman runs the install, we control installation from the app plugin
+        'skip-install': true
       }
     })
     await env.runGenerator(addActionGen)
 
-    if (!flags['skip-install']) {
-      await installPackages('.', { spinner, verbose: flags.verbose })
-    } else {
-      this.log('--skip-install, make sure to run \'npm install\' later on')
-    }
+    await this.runInstallPackages(flags, spinner)
   }
 }
 
@@ -76,17 +74,13 @@ AddActionCommand.flags = {
     default: false,
     char: 'y'
   }),
-  'skip-install': flags.boolean({
-    description: 'Skip npm installation after files are created',
-    default: false
-  }),
   extension: flags.string({
     description: 'Add actions to a specific extension',
     char: 'e',
     multiple: false,
     parse: str => [str]
   }),
-  ...BaseCommand.flags
+  ...AddCommand.flags
 }
 
 AddActionCommand.aliases = ['app:add:actions']
