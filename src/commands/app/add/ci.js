@@ -21,7 +21,13 @@ class AddCICommand extends BaseCommand {
     aioLogger.debug(`adding component ${args.component} to the project, using flags: ${flags}`)
 
     const env = yeoman.createEnv()
-    const gen = env.instantiate(generators['add-ci'], { options: {} })
+    const gen = env.instantiate(
+      generators['add-ci'], {
+        options: {
+          // by default yeoman runs the install, we control installation from the app plugin
+          'skip-install': true
+        }
+      })
     await env.runGenerator(gen)
   }
 }
