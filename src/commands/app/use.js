@@ -192,12 +192,16 @@ class Use extends BaseCommand {
   async selectTargetWorkspaceInProject (consoleCLI, config, flags) {
     const project = { name: config.project.name, id: config.project.id }
     const currentWorkspace = { name: config.workspace.name, id: config.workspace.id }
-
     // make sure user is not trying to switch to current workspace
-    const workspaceFlag = flags.workspace
-    if (workspaceFlag === currentWorkspace.name) {
+    const workspaceNameFlag = flags.workspace
+    const workspaceIdFlag = flags.workspace
+    const workspaceDetails = { workspaceName: workspaceNameFlag, workspaceId: workspaceIdFlag }
+    // workspace flag or workspace id flag
+    const workspaceNameOrId = workspaceNameFlag || workspaceIdFlag
+
+    if (this.isCurrentWorkspace(currentWorkspace, workspaceDetails)) {
       this.cleanConsoleCLIOutput()
-      this.error(`--workspace=${workspaceFlag} is the same as the currently selected workspace, nothing to be done.`)
+      this.error(`--workspace=${workspaceNameOrId} is the same as the currently selected workspace, nothing to be done.`)
     }
 
     // retrieve all workspaces
@@ -209,18 +213,46 @@ class Use extends BaseCommand {
 
     let workspace
 
-    if (workspaceFlag) {
-      // workspace name is given, make sure the workspace is in there
-      workspace = workspacesButCurrent.find(w => w.name === workspaceFlag)
+    if (workspaceNameOrId) {
+      workspace = workspacesButCurrent.find(currentWorkspace => this.isCurrentWorkspace(currentWorkspace, workspaceDetails))
+      // if no workspace found, create a new one
       if (!workspace) {
-        this.cleanConsoleCLIOutput()
-        this.error(`--workspace=${workspaceFlag} does not exist in current Project ${project.name}.`)
+        aioLogger.debug(`--workspace=${workspaceNameOrId} was not found in the current Project ${project.name}.
+Creating workspace ${workspaceNameFlag}...`)
+        const skipPrompt = flags['confirm-new-workspace']
+        workspace = await this.selectOrCreateWorkspace(consoleCLI, config, workspaces, workspaceDetails, skipPrompt)
       }
     } else {
       // workspace name is not given, let the user choose the
       workspace = await consoleCLI.promptForSelectWorkspace(workspacesButCurrent)
     }
     return { name: workspace.name, id: workspace.id }
+  }
+
+  /**
+   *
+   * @param {{id: string, name:string}} currentWorkspace the current workspace
+   * @param {{workspaceName:string, workspaceId:string}} workspaceDetails details about the workspace.
+   * @returns {boolean} true if the workspaceDetails is the same as current selected workspace.
+   * @private
+   */
+  isCurrentWorkspace (currentWorkspace, workspaceDetails) {
+    const { workspaceName, workspaceId } = workspaceDetails || {}
+    return currentWorkspace.name === workspaceName || currentWorkspace.id === workspaceId
+  }
+
+  async selectOrCreateWorkspace (consoleCLI, config, workspaces, workspaceDetails, skipPrompt) {
+    const { project: { id: projectId, name: projectName }, org: { id: orgId } } = config
+    const options = { allowCreate: true }
+    let workspace = await consoleCLI.promptForSelectWorkspace(workspaces, workspaceDetails, options)
+    if (!workspace) {
+      const workspaceDetails = await consoleCLI.promptForCreateWorkspaceDetails()
+      workspace = await consoleCLI.createWorkspace(orgId, projectId, workspaceDetails)
+      if (!workspace) {
+        this.error(`Failed to create a new workspace in the current Project ${projectName}.`)
+      }
+    }
+    return workspace
   }
 
   /**
@@ -400,11 +432,21 @@ Use.flags = {
     char: 'w',
     exclusive: ['global', 'workspace-name']
   }),
+  'confirm-new-workspace': flags.boolean({
+    description: 'Skip and confirm prompt for creating a new workspace',
+    default: ''
+  }),
   'workspace-name': flags.string({
     description: '[DEPRECATED]: please use --workspace instead',
     default: '',
     char: 'w',
     exclusive: ['global', 'workspace']
+  }),
+  workspaceId: flags.string({
+    description: 'Specify the Adobe Developer Console Workspace id to import the configuration from',
+    default: '',
+    char: 'w',
+    exclusive: ['global', 'workspace', 'workspace-name']
   }),
   'no-service-sync': flags.boolean({
     description: 'Skip the Service sync prompt and do not attach current Service subscriptions to the new Workspace',
