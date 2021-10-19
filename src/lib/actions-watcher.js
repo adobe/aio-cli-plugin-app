@@ -41,6 +41,7 @@ module.exports = async (watcherOptions) => {
   log(`watching action files at ${config.actions.src}...`)
   const watcher = chokidar.watch(config.actions.src)
 
+  // todo: sometimes it fires twice, it might be a bug.
   watcher.on('change', createChangeHandler({ ...watcherOptions, watcher }))
 
   const cleanup = async () => {
@@ -91,8 +92,12 @@ function createChangeHandler (watcherOptions) {
     try {
       aioLogger.debug(`${filePath} has changed. Redeploying actions.`)
       const filterActions = getActionNameFromPath(filePath, watcherOptions)
-      await buildAndDeploy(watcherOptions, filterActions)
-      aioLogger.debug('Deployment successful')
+      if (!filterActions.length) {
+        log('  -> A non-action file was changed, restart is required to deploy...')
+      } else {
+        await buildAndDeploy(watcherOptions, filterActions)
+        aioLogger.debug('Deployment successful')
+      }
     } catch (err) {
       log('  -> Error encountered while deploying actions. Stopping auto refresh.')
       aioLogger.debug(err)

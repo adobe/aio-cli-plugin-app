@@ -14,6 +14,7 @@ const chokidar = require('chokidar')
 const mockLogger = require('@adobe/aio-lib-core-logging')
 const buildActions = require('../../../src/lib/build-actions')
 const deployActions = require('../../../src/lib/deploy-actions')
+const buildAndDeploy = require('../../../src/lib/deploy-actions')
 const util = require('util')
 const dataMocks = require('../../data-mocks/config-loader')
 const sleep = util.promisify(setTimeout)
@@ -38,6 +39,7 @@ beforeEach(() => {
 
   buildActions.mockReset()
   deployActions.mockReset()
+  buildAndDeploy.mockReset()
 })
 
 test('exports', () => {
@@ -153,7 +155,7 @@ test('onChange handler calls buildActions with filterActions', async () => {
   )
 })
 
-test('onChange handler calls buildActions without filterActions when actions are undefined', async () => {
+test('on non-action file changed, skip build&deploy', async () => {
   const { application } = createAppConfig()
   const cloneApplication = cloneDeep(application)
   Object.entries(cloneApplication.manifest.full.packages).forEach(([, pkg]) => {
@@ -176,10 +178,10 @@ test('onChange handler calls buildActions without filterActions when actions are
   await actionsWatcher({ config: cloneApplication, log })
   expect(typeof onChangeHandler).toEqual('function')
 
-  deployActions.mockImplementation(async () => await sleep(2000))
-  onChangeHandler('/myactions/action.js')
+  buildAndDeploy.mockImplementation(async () => await sleep(2000))
+  onChangeHandler('/myactions/utils.js')
 
   await jest.runAllTimers()
 
-  expect(buildActions).toHaveBeenCalledWith(cloneApplication, [])
+  expect(buildAndDeploy).not.toHaveBeenCalledWith()
 })
