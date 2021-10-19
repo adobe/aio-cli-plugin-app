@@ -183,5 +183,5 @@ test('on non-action file changed, skip build&deploy', async () => {
 
   await jest.runAllTimers()
 
-  expect(buildAndDeploy).not.toHaveBeenCalledWith()
+  expect(buildAndDeploy).not.toHaveBeenCalled()
 })
