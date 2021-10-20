@@ -785,6 +785,8 @@ OPTIONS
 
   -w, --workspace-name=workspace-name  [DEPRECATED]: please use --workspace instead
 
+  --confirm-new-workspace              Skip and confirm prompt for creating a new workspace
+
   --confirm-service-sync               Skip the Service sync prompt and overwrite Service subscriptions in the new
                                        Workspace with current subscriptions
 
@@ -801,6 +803,8 @@ OPTIONS
                                        configuration file
 
   --version                            Show version
+
+  --workspaceId=workspaceId            Specify the Adobe Developer Console Workspace id to import the configuration from
 
 DESCRIPTION
   If the optional configuration file is not set, this command will retrieve the console org, project, and workspace 
