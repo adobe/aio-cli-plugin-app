@@ -60,7 +60,7 @@ class Use extends BaseCommand {
 
     // load from global configuration or select workspace ?
     const globalOperationFromFlag = flags.global ? 'global' : null
-    const workspaceOperationFromFlag = flags.workspace || flags.workspaceId ? 'workspace' : null
+    const workspaceOperationFromFlag = flags.workspace ? 'workspace' : null
     // did the user specify --global or --workspace
     // Note: global workspace(-name) flags are exclusive (see oclif flags options)
     let useOperation = globalOperationFromFlag || workspaceOperationFromFlag
@@ -78,14 +78,6 @@ class Use extends BaseCommand {
         this.error(message)
       }
       newConfig = globalConfig
-      if (
-        currentConfigIsComplete &&
-        newConfig.org.id === currentConfig.org.id &&
-        newConfig.project.id === currentConfig.project.id &&
-        newConfig.workspace.id === currentConfig.workspace.id
-      ) {
-        this.error('The selected configuration is the same as the current configuration.')
-      }
     } else {
       // useOperation = 'workspace'
       if (!currentConfigIsComplete) {
@@ -187,87 +179,41 @@ class Use extends BaseCommand {
    * @param {LibConsoleCLI} consoleCLI lib console config
    * @param {object} config local configuration
    * @param {object} flags input flags
+   * @param args
    * @returns {Buffer} the Adobe Developer Console configuration file for the workspace
    */
-  async selectTargetWorkspaceInProject (consoleCLI, config, flags) {
-    const workspaceNameFlag = flags.workspace
-    const workspaceIdFlag = flags.workspaceId
-    // workspace flags
-    const workspaceDetails = {
-      workspaceName: workspaceNameFlag,
-      workspaceId: workspaceIdFlag
-    }
-    // workspaceName flag or workspaceId flag
-    const workspaceNameOrId = workspaceNameFlag || workspaceIdFlag
-
-    const { project, org, workspace: currentWorkspace } = config
-
-    // 1. Check if the current selected workspace is the same as the requested one
-    if (this.workspaceExist(currentWorkspace, workspaceDetails)) {
-      this.cleanConsoleCLIOutput()
-      this.error(`--workspace=${workspaceNameOrId} is the same as the currently selected workspace, nothing to be done.`)
-    }
+  async selectTargetWorkspaceInProject (consoleCLI, config, flags, args) {
+    const { project, org } = config
+    const workspaceNameOrId = flags.workspace.replace(' ', '')
 
     // retrieve all workspaces
     const workspaces = await consoleCLI.getWorkspaces(
       org.id,
       project.id
     )
-    const workspacesButCurrent = workspaces.filter(w => w.id !== currentWorkspace.id)
     let workspace
-
-    if (workspaceNameOrId) {
-      // 2. Find a workspace with the given name or id
-      workspace = workspacesButCurrent.find(currentWorkspace => this.workspaceExist(currentWorkspace, workspaceDetails))
-      if (!workspace && workspaceNameFlag) {
-        aioLogger.debug(`--workspace=${workspaceNameOrId} was not found in the current Project ${project.name}.
-Creating workspace ${workspaceNameOrId}...`)
+    let workspaceData = { name: workspaceNameOrId }
+    workspace = await consoleCLI.promptForSelectWorkspace(workspaces, { workspaceId: workspaceNameOrId, workspaceName: workspaceNameOrId }, { allowCreate: true })
+    if (!workspace) {
+      aioLogger.debug(`--workspace=${workspaceNameOrId} was not found in the current Project ${project.name}`)
+      if (workspaceNameOrId) {
         const skipPrompt = !!flags['confirm-new-workspace']
-        // 2.1. Create the workspace with the given name.
         if (!skipPrompt) {
-          const shouldNewWorkspace = await consoleCLI.prompt.promptConfirm(`Workspace ${workspaceNameFlag} was not found \n > Do you wish to create a new workspace named: '${workspaceNameFlag}'`)
+          const shouldNewWorkspace = await consoleCLI.prompt.promptConfirm(`Workspace ${workspaceNameOrId} does not exist \n > Do you wish to create a new workspace?`)
           if (!shouldNewWorkspace) {
-            this.error(`Workspace creation for ${workspaceNameFlag} was denied by user`)
+            this.error('Workspace creation aborted')
           }
         }
-        workspace = await this.createWorkspace(consoleCLI, config, { workspaceName: workspaceNameFlag })
+      } else {
+        workspaceData = consoleCLI.promptForCreateWorkspaceDetails()
       }
-    } else {
-      // 3. Allow user to select or create a workspace.
-      workspace = await this.selectOrCreateWorkspace(consoleCLI, config, workspaces)
+      aioLogger.debug(`Creating workspace: ${workspaceData.name}...`)
+      workspace = await consoleCLI.createWorkspace(org.id, project.id, workspaceData)
     }
     return {
       name: workspace.name,
       id: workspace.id
     }
-  }
-
-  /**
-   * Check if the desired workspace is already selected.
-   *
-   * @param {{id: string, name:string}} currentWorkspace the current workspace
-   * @param {{workspaceName:string, workspaceId:string}} workspaceDetails workspace name or id flag
-   * @returns {boolean} true if the workspace name or id flag is the same as current selected workspace.
-   * @private
-   */
-  workspaceExist (currentWorkspace, workspaceDetails) {
-    const { workspaceName, workspaceId } = workspaceDetails
-    return currentWorkspace.name === workspaceName || currentWorkspace.id === workspaceId
-  }
-
-  async selectOrCreateWorkspace (consoleCLI, config, workspaces) {
-    const options = { allowCreate: true }
-    let workspace = await consoleCLI.promptForSelectWorkspace(workspaces, {}, options)
-    if (!workspace) {
-      workspace = await this.createWorkspace(consoleCLI, config, {})
-    }
-    return workspace
-  }
-
-  async createWorkspace (consoleCLI, config, { workspaceName = '', workspaceTitle = '' }) {
-    const { project: { id: projectId }, org: { id: orgId } } = config
-    const workspaceDetails = await consoleCLI.promptForCreateWorkspaceDetails(workspaceName, workspaceTitle)
-    return await consoleCLI.createWorkspace(orgId, projectId, workspaceDetails)
   }
 
   /**
@@ -442,7 +388,7 @@ Use.flags = {
     exclusive: ['workspace']
   }),
   workspace: flags.string({
-    description: 'Specify the Adobe Developer Console Workspace name to import the configuration from',
+    description: 'Specify the Adobe Developer Console Workspace name or Workspace id to import the configuration from',
     default: '',
     char: 'w',
     exclusive: ['global', 'workspace-name']
@@ -456,11 +402,6 @@ Use.flags = {
     default: '',
     char: 'w',
     exclusive: ['global', 'workspace']
-  }),
-  workspaceId: flags.string({
-    description: 'Specify the Adobe Developer Console Workspace id to import the configuration from',
-    default: '',
-    exclusive: ['global', 'workspace-name']
   }),
   'no-service-sync': flags.boolean({
     description: 'Skip the Service sync prompt and do not attach current Service subscriptions to the new Workspace',

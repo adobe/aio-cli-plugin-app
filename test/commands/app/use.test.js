@@ -312,15 +312,24 @@ describe('run with global configuration', () => {
   })
 
   test('-g, global config === current config', async () => {
-    // mock fake global config to have a different org
-    fakeGlobalConfig = {
-      org: fakeCurrentConfig.org,
-      workspace: fakeCurrentConfig.workspace,
-      project: { id: fakeCurrentConfig.id, name: fakeCurrentConfig.name }
-    }
-    setConfigMock()
-    await expect(TheCommand.run(['-g']))
-      .rejects.toThrow('The selected configuration is the same as the current configuration')
+    mockConsoleImportConfig()
+    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeCurrentConfig)
+    mockPrompt.mockReturnValueOnce({ res: true })
+
+    await TheCommand.run(['-g'])
+
+    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
+      fakeGlobalConfig.org.id,
+      fakeGlobalConfig.project.id,
+      fakeGlobalConfig.workspace.id,
+      consoleDataMocks.enabledServices
+    )
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+      expect.any(Buffer),
+      process.cwd(),
+      { merge: false, overwrite: false, interactive: true },
+      { SERVICE_API_KEY: '' }
+    )
   })
 
   test('-g --no-input', async () => {
@@ -581,6 +590,7 @@ describe('switch to a workspace in the same org', () => {
     const currentServices = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[1]]
     const servicesInTargetWorkspace = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[2]]
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServices)
+    mockConsoleCLIInstance.promptForSelectWorkspace.mockResolvedValueOnce(newWorkspace)
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(servicesInTargetWorkspace)
 
     await TheCommand.run(['--workspace', newWorkspace.name])
@@ -616,6 +626,7 @@ describe('switch to a workspace in the same org', () => {
     const currentServices = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[1]]
     const servicesInTargetWorkspace = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[2]]
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServices)
+    mockConsoleCLIInstance.promptForSelectWorkspace.mockResolvedValueOnce(newWorkspace)
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(servicesInTargetWorkspace)
 
     await TheCommand.run(['--workspace', newWorkspace.name])
@@ -644,6 +655,7 @@ describe('switch to a workspace in the same org', () => {
     const servicesInTargetWorkspace = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[2]]
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServices)
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(servicesInTargetWorkspace)
+    mockConsoleCLIInstance.promptForSelectWorkspace.mockResolvedValueOnce(newWorkspace)
 
     await TheCommand.run(['--workspace', newWorkspace.name, '--no-input'])
     expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
@@ -674,6 +686,7 @@ describe('switch to a workspace in the same org', () => {
     const currentServices = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[1]]
     const servicesInTargetWorkspace = [consoleDataMocks.serviceProperties[0]]
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServices)
+    mockConsoleCLIInstance.promptForSelectWorkspace.mockResolvedValueOnce(newWorkspace)
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(servicesInTargetWorkspace)
 
     await TheCommand.run(['--workspace', 'Production'])
@@ -711,9 +724,15 @@ describe('switch to a workspace in the same org', () => {
 
   test('--workspace sameascurrent', async () => {
     mockConsoleImportConfig()
-    await expect(TheCommand.run(['--workspace', fakeCurrentConfig.workspace.name])).rejects.toThrow(
-      '--workspace=workspacename is the same as the currently selected workspace, nothing to be done'
+    mockConsoleCLIInstance.promptForSelectWorkspace.mockResolvedValueOnce(consoleDataMocks.workspace)
+    await TheCommand.run(['--workspace', consoleDataMocks.workspace.id])
+    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
+      fakeCurrentConfig.org.id,
+      fakeCurrentConfig.id,
+      consoleDataMocks.workspace.id,
+      consoleDataMocks.enabledServices
     )
+    expect(mockConsoleCLIInstance.createWorkspace).not.toHaveBeenCalled()
   })
 
   test('--workspace <no-value>', async () => {
@@ -756,19 +775,23 @@ describe('switch to a workspace in the same org', () => {
     // first prompt: choose mode
     mockPrompt.mockReturnValueOnce({ res: 'workspace' })
     // second prompt: choose workspace to create workspace
-    mockConsoleCLIInstance.promptForSelectWorkspace.mockReturnValueOnce(null)
+    const mockDetails = { name: 'name', title: 'title' }
+    mockConsoleCLIInstance.promptForSelectWorkspace.mockReturnValueOnce(undefined)
+    mockConsoleCLIInstance.promptForCreateWorkspaceDetails.mockReturnValueOnce(mockDetails)
 
     await TheCommand.run([])
     expect(mockConsoleCLIInstance.promptForCreateWorkspaceDetails).toHaveBeenCalledTimes(1)
-    expect(mockConsoleCLIInstance.createWorkspace).toHaveBeenCalledTimes(1)
+    expect(mockConsoleCLIInstance.createWorkspace).toHaveBeenCalledWith(fakeCurrentConfig.org.id, fakeCurrentConfig.id, mockDetails)
   })
   test('-w newworkspace --confirm-new-workspace', async () => {
+    const workspaceFlag = 'new-workspace'
     mockConsoleImportConfig()
     mockConsoleCLIInstance.promptForSelectWorkspace.mockReturnValueOnce(null)
 
-    await TheCommand.run(['-w new-workspace --confirm-new-workspace'])
-    expect(mockConsoleCLIInstance.promptForCreateWorkspaceDetails).toHaveBeenCalledTimes(1)
-    expect(mockConsoleCLIInstance.createWorkspace).toHaveBeenCalledTimes(1)
+    await TheCommand.run([`-w ${workspaceFlag}`, '--confirm-new-workspace'])
+    expect(mockConsoleCLIInstance.promptForCreateWorkspaceDetails).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.createWorkspace)
+      .toHaveBeenCalledWith(fakeCurrentConfig.org.id, fakeCurrentConfig.id, { name: workspaceFlag })
   })
 
   test('-w newworkspace --confirm-new-workspace = false, error if canceled', async () => {
@@ -785,26 +808,5 @@ describe('switch to a workspace in the same org', () => {
 
     await TheCommand.run(['-w newWorkspace', '--confirm-new-workspace'])
     expect(mockConsoleCLIInstance.prompt.promptConfirm).not.toHaveBeenCalled()
-  })
-  test('--workspaceId, switch workspace', async () => {
-    mockConsoleImportConfig()
-    const newWorkspace = consoleDataMocks.workspaces[1]
-    mockConsoleCLIInstance.promptForSelectWorkspace.mockReturnValueOnce(null)
-    mockConsoleCLIInstance.prompt.promptConfirm.mockReturnValueOnce(false)
-
-    await TheCommand.run(['--workspaceId', newWorkspace.id])
-    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
-      fakeCurrentConfig.org.id,
-      fakeCurrentConfig.id,
-      newWorkspace.id,
-      consoleDataMocks.enabledServices
-    )
-    expect(mockConsoleCLIInstance.createWorkspace).not.toHaveBeenCalled()
-  })
-  test('--workspaceId, sameascurrent', async () => {
-    mockConsoleImportConfig()
-    await expect(TheCommand.run(['--workspaceId', fakeCurrentConfig.workspace.id])).rejects.toThrow(
-      '--workspace=workspaceid is the same as the currently selected workspace, nothing to be done'
-    )
   })
 })

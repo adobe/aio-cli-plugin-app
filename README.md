@@ -780,8 +780,8 @@ OPTIONS
 
   -v, --verbose                        Verbose output
 
-  -w, --workspace=workspace            Specify the Adobe Developer Console Workspace name to import the configuration
-                                       from
+  -w, --workspace=workspace            Specify the Adobe Developer Console Workspace name or Workspace id to import the
+                                       configuration from
 
   -w, --workspace-name=workspace-name  [DEPRECATED]: please use --workspace instead
 
@@ -803,8 +803,6 @@ OPTIONS
                                        configuration file
 
   --version                            Show version
-
-  --workspaceId=workspaceId            Specify the Adobe Developer Console Workspace id to import the configuration from
 
 DESCRIPTION
   If the optional configuration file is not set, this command will retrieve the console org, project, and workspace 
