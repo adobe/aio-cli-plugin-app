@@ -214,7 +214,6 @@ class Use extends BaseCommand {
       project.id
     )
     const workspacesButCurrent = workspaces.filter(w => w.id !== currentWorkspace.id)
-    console.log('currentWorkspace iD for debugging', currentWorkspace.id)
     let workspace
 
     if (workspaceNameOrId) {
