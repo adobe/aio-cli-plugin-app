@@ -189,9 +189,10 @@ class InitCommand extends AddCommand {
   async retrieveWorkspaceFromName (consoleCLI, org, project, workspaceName) {
     // get workspace details
     const workspaces = await consoleCLI.getWorkspaces(org.id, project.id)
-    const workspace = workspaces.find(w => w.name.toLowerCase() === workspaceName.toLowerCase())
+    let workspace = workspaces.find(w => w.name.toLowerCase() === workspaceName.toLowerCase())
     if (!workspace) {
-      throw new Error(`'--workspace=${workspaceName}' in Project '${project.name}' not found.`)
+      this.log(`'--workspace=${workspaceName}' in Project '${project.name}' not found. \n Creating one...`)
+      workspace = await consoleCLI.createWorkspace(org.id, project.id, { name: workspaceName, title: '' })
     }
     return workspace
   }

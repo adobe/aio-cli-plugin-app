@@ -29,13 +29,24 @@ const mockConsoleCLIInstance = {
   getEnabledServicesForOrg: jest.fn(),
   subscribeToServices: jest.fn(),
   getServicePropertiesFromWorkspace: jest.fn(),
-  getWorkspaceConfig: jest.fn()
+  getWorkspaceConfig: jest.fn(),
+  promptForCreateWorkspaceDetails: jest.fn(),
+  createWorkspace: jest.fn(),
+  selectOrCreateWorkspace: jest.fn(),
+  promptForUseOperation: jest.fn(),
+  prompt: {
+    promptConfirm: jest.fn()
+  }
 }
 LibConsoleCLI.init.mockResolvedValue(mockConsoleCLIInstance)
 /** @private */
 function resetMockConsoleCLI () {
   Object.keys(mockConsoleCLIInstance).forEach(
-    k => mockConsoleCLIInstance[k].mockReset()
+    k => {
+      if ('mockReset' in mockConsoleCLIInstance[k]) {
+        mockConsoleCLIInstance[k].mockReset()
+      }
+    }
   )
   LibConsoleCLI.init.mockClear()
 }
@@ -48,6 +59,10 @@ function setDefaultMockConsoleCLI () {
   mockConsoleCLIInstance.subscribeToServices.mockResolvedValue(consoleDataMocks.subscribeServicesResponse)
   mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(consoleDataMocks.serviceProperties)
   mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue({ fake: 'config' })
+  mockConsoleCLIInstance.promptForCreateWorkspaceDetails.mockResolvedValue({ name: 'newWorkspace', title: 'title' })
+  mockConsoleCLIInstance.createWorkspace.mockResolvedValue(consoleDataMocks.workspace)
+  mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValue(true)
+  mockConsoleCLIInstance.selectOrCreateWorkspace.mockResolvedValue(consoleDataMocks.workspace)
 }
 
 // mock config
@@ -115,6 +130,7 @@ beforeEach(() => {
   importLib.loadConfigFile.mockReset()
   importLib.validateConfig.mockReset()
   resetMockConsoleCLI()
+  mockConsoleCLIInstance.prompt.promptConfirm.mockReset()
   setDefaultMockConsoleCLI()
 
   fakeCurrentConfig = {
@@ -686,11 +702,11 @@ describe('switch to a workspace in the same org', () => {
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(`⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace in Project '${fakeCurrentConfig.name}'`))
   })
 
-  test('--workspace not-existing', async () => {
+  test('--workspace not-existing, should create a workspace', async () => {
     mockConsoleImportConfig()
-    await expect(TheCommand.run(['--workspace', 'not-existing'])).rejects.toThrow(
-      '--workspace=not-existing does not exist in current Project projectname'
-    )
+    mockConsoleCLIInstance.promptForSelectWorkspace.mockImplementationOnce(() => Promise.resolve(undefined))
+    await TheCommand.run(['--workspace', 'not-existing'])
+    expect(mockConsoleCLIInstance.createWorkspace).toHaveBeenCalled()
   })
 
   test('--workspace sameascurrent', async () => {
@@ -733,6 +749,62 @@ describe('switch to a workspace in the same org', () => {
     setConfigMock()
     await expect(TheCommand.run(['--workspace', 'some'])).rejects.toThrow(
       `Incomplete .aio configuration. Cannot select a new Workspace in same Project.${EOL}Please import a valid Adobe Developer Console configuration file via \`aio app use <config>.json\``
+    )
+  })
+  test('create workspace > prompt select workspace', async () => {
+    mockConsoleImportConfig()
+    // first prompt: choose mode
+    mockPrompt.mockReturnValueOnce({ res: 'workspace' })
+    // second prompt: choose workspace to create workspace
+    mockConsoleCLIInstance.promptForSelectWorkspace.mockReturnValueOnce(null)
+
+    await TheCommand.run([])
+    expect(mockConsoleCLIInstance.promptForCreateWorkspaceDetails).toHaveBeenCalledTimes(1)
+    expect(mockConsoleCLIInstance.createWorkspace).toHaveBeenCalledTimes(1)
+  })
+  test('-w newworkspace --confirm-new-workspace', async () => {
+    mockConsoleImportConfig()
+    mockConsoleCLIInstance.promptForSelectWorkspace.mockReturnValueOnce(null)
+
+    await TheCommand.run(['-w new-workspace --confirm-new-workspace'])
+    expect(mockConsoleCLIInstance.promptForCreateWorkspaceDetails).toHaveBeenCalledTimes(1)
+    expect(mockConsoleCLIInstance.createWorkspace).toHaveBeenCalledTimes(1)
+  })
+
+  test('-w newworkspace --confirm-new-workspace = false, error if canceled', async () => {
+    mockConsoleImportConfig()
+    mockConsoleCLIInstance.promptForSelectWorkspace.mockReturnValueOnce(null)
+    mockConsoleCLIInstance.prompt.promptConfirm.mockReturnValueOnce(false)
+
+    await expect(TheCommand.run(['-w new-workspace'])).rejects.toThrow()
+  })
+  test('-w newworkspace --confirm-new-workspace = true, create workspace', async () => {
+    mockConsoleImportConfig()
+    mockConsoleCLIInstance.promptForSelectWorkspace.mockReturnValueOnce(null)
+    mockConsoleCLIInstance.prompt.promptConfirm.mockReturnValueOnce(false)
+
+    await TheCommand.run(['-w newWorkspace', '--confirm-new-workspace'])
+    expect(mockConsoleCLIInstance.prompt.promptConfirm).not.toHaveBeenCalled()
+  })
+  test('--workspaceId, switch workspace', async () => {
+    mockConsoleImportConfig()
+    const newWorkspace = consoleDataMocks.workspaces[1]
+    mockConsoleCLIInstance.promptForSelectWorkspace.mockReturnValueOnce(null)
+    mockConsoleCLIInstance.prompt.promptConfirm.mockReturnValueOnce(false)
+
+    await TheCommand.run(['--workspaceId', newWorkspace.id])
+    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
+      fakeCurrentConfig.org.id,
+      fakeCurrentConfig.id,
+      newWorkspace.id,
+      consoleDataMocks.enabledServices
+    )
+    expect(mockConsoleCLIInstance.createWorkspace).not.toHaveBeenCalled()
+  })
+  test('--workspaceId, sameascurrent', async () => {
+    mockConsoleImportConfig()
+    await expect(TheCommand.run(['--workspaceId', fakeCurrentConfig.workspace.id])).rejects.toThrow(
+      '--workspace=workspaceid is the same as the currently selected workspace, nothing to be done'
     )
   })
 })

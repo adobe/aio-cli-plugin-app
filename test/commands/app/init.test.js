@@ -48,7 +48,8 @@ const mockConsoleCLIInstance = {
   promptForSelectWorkspace: jest.fn(),
   getServicePropertiesFromWorkspace: jest.fn(),
   subscribeToServices: jest.fn(),
-  getWorkspaceConfig: jest.fn()
+  getWorkspaceConfig: jest.fn(),
+  createWorkspace: jest.fn()
   // promptForServiceSubscriptionsOperation: jest.fn(),
   // confirmNewServiceSubscriptions: jest.fn(),
   // promptForSelectServiceProperties: jest.fn()
@@ -669,7 +670,7 @@ describe('run', () => {
     expect(mockConsoleCLIInstance.createProject).not.toHaveBeenCalled()
   })
 
-  test('with login, select excshell, -w notexists', async () => {
+  test('with login, select excshell, -w notexists, create workspace', async () => {
     mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
     mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
     mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
@@ -677,7 +678,9 @@ describe('run', () => {
     mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
     mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
     mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
+    mockConsoleCLIInstance.createWorkspace.mockResolvedValue(fakeWorkspaces[0])
 
-    await expect(TheCommand.run(['-w', 'notexists'])).rejects.toThrow('\'--workspace=notexists\' in Project \'bestproject\' not found.')
+    await TheCommand.run(['-w', 'notexists'])
+    expect(mockConsoleCLIInstance.createWorkspace).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({ name: 'notexists', title: '' }))
   })
 })
