@@ -192,6 +192,10 @@ class InitCommand extends AddCommand {
     let workspace = workspaces.find(w => w.name.toLowerCase() === workspaceName.toLowerCase())
     if (!workspace) {
       this.log(`'--workspace=${workspaceName}' in Project '${project.name}' not found. \n Creating one...`)
+      const shouldNewWorkspace = await consoleCLI.prompt.promptConfirm(`Workspace '${workspaceName}' does not exist \n > Do you wish to create a new workspace?`)
+      if (!shouldNewWorkspace) {
+        this.error('Workspace creation aborted')
+      }
       workspace = await consoleCLI.createWorkspace(org.id, project.id, { name: workspaceName, title: '' })
     }
     return workspace

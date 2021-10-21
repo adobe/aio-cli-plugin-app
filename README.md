@@ -780,12 +780,10 @@ OPTIONS
 
   -v, --verbose                        Verbose output
 
-  -w, --workspace=workspace            Specify the Adobe Developer Console Workspace name or Workspace id to import the
-                                       configuration from
+  -w, --workspace=workspace            Specify the Adobe Developer Console Workspace name to import the configuration
+                                       from
 
   -w, --workspace-name=workspace-name  [DEPRECATED]: please use --workspace instead
-
-  --confirm-new-workspace              Skip and confirm prompt for creating a new workspace
 
   --confirm-service-sync               Skip the Service sync prompt and overwrite Service subscriptions in the new
                                        Workspace with current subscriptions

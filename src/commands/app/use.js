@@ -179,10 +179,9 @@ class Use extends BaseCommand {
    * @param {LibConsoleCLI} consoleCLI lib console config
    * @param {object} config local configuration
    * @param {object} flags input flags
-   * @param args
    * @returns {Buffer} the Adobe Developer Console configuration file for the workspace
    */
-  async selectTargetWorkspaceInProject (consoleCLI, config, flags, args) {
+  async selectTargetWorkspaceInProject (consoleCLI, config, flags) {
     const { project, org } = config
     const workspaceNameOrId = flags.workspace.replace(' ', '')
 
@@ -199,7 +198,7 @@ class Use extends BaseCommand {
       if (workspaceNameOrId) {
         const skipPrompt = !!flags['confirm-new-workspace']
         if (!skipPrompt) {
-          const shouldNewWorkspace = await consoleCLI.prompt.promptConfirm(`Workspace ${workspaceNameOrId} does not exist \n > Do you wish to create a new workspace?`)
+          const shouldNewWorkspace = await consoleCLI.prompt.promptConfirm(`Workspace '${workspaceNameOrId}' does not exist \n > Do you wish to create a new workspace?`)
           if (!shouldNewWorkspace) {
             this.error('Workspace creation aborted')
           }
@@ -207,7 +206,7 @@ class Use extends BaseCommand {
       } else {
         workspaceData = consoleCLI.promptForCreateWorkspaceDetails()
       }
-      aioLogger.debug(`Creating workspace: ${workspaceData.name}...`)
+      aioLogger.debug(`Creating workspace: ${workspaceData.name}`)
       workspace = await consoleCLI.createWorkspace(org.id, project.id, workspaceData)
     }
     return {
