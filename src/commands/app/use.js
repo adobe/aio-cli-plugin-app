@@ -204,7 +204,7 @@ class Use extends BaseCommand {
           }
         }
       } else {
-        workspaceData = consoleCLI.promptForCreateWorkspaceDetails()
+        workspaceData = await consoleCLI.promptForCreateWorkspaceDetails()
       }
       aioLogger.debug(`Creating workspace: ${workspaceData.name}`)
       workspace = await consoleCLI.createWorkspace(org.id, project.id, workspaceData)
