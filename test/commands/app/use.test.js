@@ -788,7 +788,7 @@ describe('switch to a workspace in the same org', () => {
     mockConsoleImportConfig()
     mockConsoleCLIInstance.promptForSelectWorkspace.mockReturnValueOnce(null)
 
-    await TheCommand.run([`-w ${workspaceFlag}`, '--confirm-new-workspace'])
+    await TheCommand.run(['-w', workspaceFlag, '--confirm-new-workspace'])
     expect(mockConsoleCLIInstance.promptForCreateWorkspaceDetails).not.toHaveBeenCalled()
     expect(mockConsoleCLIInstance.createWorkspace)
       .toHaveBeenCalledWith(fakeCurrentConfig.org.id, fakeCurrentConfig.id, { name: workspaceFlag })

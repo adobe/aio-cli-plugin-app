@@ -183,7 +183,7 @@ class Use extends BaseCommand {
    */
   async selectTargetWorkspaceInProject (consoleCLI, config, flags) {
     const { project, org } = config
-    const workspaceNameOrId = flags.workspace.replace(' ', '')
+    const workspaceNameOrId = flags.workspace
 
     // retrieve all workspaces
     const workspaces = await consoleCLI.getWorkspaces(
@@ -196,8 +196,7 @@ class Use extends BaseCommand {
     if (!workspace) {
       aioLogger.debug(`--workspace=${workspaceNameOrId} was not found in the current Project ${project.name}`)
       if (workspaceNameOrId) {
-        const skipPrompt = !!flags['confirm-new-workspace']
-        if (!skipPrompt) {
+        if (!flags['confirm-new-workspace']) {
           const shouldNewWorkspace = await consoleCLI.prompt.promptConfirm(`Workspace '${workspaceNameOrId}' does not exist \n > Do you wish to create a new workspace?`)
           if (!shouldNewWorkspace) {
             this.error('Workspace creation aborted')
@@ -394,7 +393,7 @@ Use.flags = {
   }),
   'confirm-new-workspace': flags.boolean({
     description: 'Skip and confirm prompt for creating a new workspace',
-    default: ''
+    default: false
   }),
   'workspace-name': flags.string({
     description: '[DEPRECATED]: please use --workspace instead',

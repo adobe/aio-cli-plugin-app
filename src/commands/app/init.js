@@ -102,7 +102,7 @@ class InitCommand extends AddCommand {
     // 3. select or create project
     const project = await this.selectOrCreateConsoleProject(consoleCLI, org)
     // 4. retrieve workspace details, defaults to Stage
-    const workspace = await this.retrieveWorkspaceFromName(consoleCLI, org, project, flags.workspace)
+    const workspace = await this.retrieveWorkspaceFromName(consoleCLI, org, project, flags)
     // 5. ask for exensionPoints, only allow selection for extensions that have services enabled in Org
     const extensionPoints = await this.selectExtensionPoints(flags, orgSupportedServices)
     // 6. add any required services to Workspace
@@ -186,17 +186,23 @@ class InitCommand extends AddCommand {
     return project
   }
 
-  async retrieveWorkspaceFromName (consoleCLI, org, project, workspaceName) {
+  async retrieveWorkspaceFromName (consoleCLI, org, project, flags) {
+    const workspaceName = flags.workspace
     // get workspace details
     const workspaces = await consoleCLI.getWorkspaces(org.id, project.id)
     let workspace = workspaces.find(w => w.name.toLowerCase() === workspaceName.toLowerCase())
     if (!workspace) {
-      this.log(`'--workspace=${workspaceName}' in Project '${project.name}' not found. \n Creating one...`)
-      const shouldNewWorkspace = await consoleCLI.prompt.promptConfirm(`Workspace '${workspaceName}' does not exist \n > Do you wish to create a new workspace?`)
-      if (!shouldNewWorkspace) {
-        this.error('Workspace creation aborted')
+      if (!flags['confirm-new-workspace']) {
+        const shouldNewWorkspace = await consoleCLI.prompt.promptConfirm(`Workspace '${workspaceName}' does not exist \n > Do you wish to create a new workspace?`)
+        if (!shouldNewWorkspace) {
+          this.error(`Workspace '${workspaceName}' does not exist and creation aborted`)
+        }
       }
-      workspace = await consoleCLI.createWorkspace(org.id, project.id, { name: workspaceName, title: '' })
+      this.log(`'--workspace=${workspaceName}' in Project '${project.name}' not found. \n Creating one...`)
+      workspace = await consoleCLI.createWorkspace(org.id, project.id, {
+        name: workspaceName,
+        title: ''
+      })
     }
     return workspace
   }
@@ -334,6 +340,10 @@ InitCommand.flags = {
     default: DEFAULT_WORKSPACE,
     char: 'w',
     exclusive: ['import'] // also no-login
+  }),
+  'confirm-new-workspace': flags.boolean({
+    description: 'Skip and confirm prompt for creating a new workspace',
+    default: false
   })
 }
 
