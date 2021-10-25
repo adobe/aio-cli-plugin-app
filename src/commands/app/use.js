@@ -192,6 +192,7 @@ class Use extends BaseCommand {
     )
     let workspace
     let workspaceData = { name: workspaceNameOrId }
+    // does not prompt if workspaceNameOrId is defined via the flag
     workspace = await consoleCLI.promptForSelectWorkspace(workspaces, { workspaceId: workspaceNameOrId, workspaceName: workspaceNameOrId }, { allowCreate: true })
     if (!workspace) {
       aioLogger.debug(`--workspace=${workspaceNameOrId} was not found in the current Project ${project.name}`)
