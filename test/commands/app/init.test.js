@@ -48,7 +48,11 @@ const mockConsoleCLIInstance = {
   promptForSelectWorkspace: jest.fn(),
   getServicePropertiesFromWorkspace: jest.fn(),
   subscribeToServices: jest.fn(),
-  getWorkspaceConfig: jest.fn()
+  getWorkspaceConfig: jest.fn(),
+  createWorkspace: jest.fn(),
+  prompt: {
+    promptConfirm: jest.fn()
+  }
   // promptForServiceSubscriptionsOperation: jest.fn(),
   // confirmNewServiceSubscriptions: jest.fn(),
   // promptForSelectServiceProperties: jest.fn()
@@ -56,10 +60,13 @@ const mockConsoleCLIInstance = {
 LibConsoleCLI.init.mockResolvedValue(mockConsoleCLIInstance)
 /** @private */
 function resetMockConsoleCLI () {
-  Object.keys(mockConsoleCLIInstance).forEach(
-    k => mockConsoleCLIInstance[k].mockReset()
-  )
+  Object.keys(mockConsoleCLIInstance).forEach(k => {
+    if ('mockReset' in mockConsoleCLIInstance[k]) {
+      mockConsoleCLIInstance[k].mockReset()
+    }
+  })
   LibConsoleCLI.init.mockClear()
+  mockConsoleCLIInstance.prompt.promptConfirm.mockReset()
 }
 
 jest.mock('@adobe/generator-aio-app', () => ({
@@ -669,7 +676,8 @@ describe('run', () => {
     expect(mockConsoleCLIInstance.createProject).not.toHaveBeenCalled()
   })
 
-  test('with login, select excshell, -w notexists', async () => {
+  test('with login, select excshell, -w notexists, promptConfirm true', async () => {
+    mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValue(true)
     mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
     mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
     mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
@@ -677,7 +685,40 @@ describe('run', () => {
     mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
     mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
     mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
+    mockConsoleCLIInstance.createWorkspace.mockResolvedValue(fakeWorkspaces[0])
 
-    await expect(TheCommand.run(['-w', 'notexists'])).rejects.toThrow('\'--workspace=notexists\' in Project \'bestproject\' not found.')
+    await TheCommand.run(['-w', 'notexists'])
+    expect(mockConsoleCLIInstance.createWorkspace).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({ name: 'notexists', title: '' }))
+  })
+
+  test('with login, select excshell, -w notexists, promptConfirm false, should throw', async () => {
+    const workspaceName = 'notexists'
+    mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValue(false)
+    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
+    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
+    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
+    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
+    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
+    mockConsoleCLIInstance.createWorkspace.mockResolvedValue(fakeWorkspaces[0])
+
+    await expect(TheCommand.run(['-w', workspaceName])).rejects.toThrow(`Workspace '${workspaceName}' does not exist and creation aborted`)
+  })
+  test('with login, select excshell, -w notexists, --confirm-new-workspace', async () => {
+    const notexistsWorkspace = 'notexists'
+    mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValue(true)
+    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
+    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
+    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
+    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
+    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
+    mockConsoleCLIInstance.createWorkspace.mockResolvedValue(fakeWorkspaces[0])
+
+    await TheCommand.run(['-w', notexistsWorkspace, '--confirm-new-workspace'])
+    expect(mockConsoleCLIInstance.prompt.promptConfirm).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.createWorkspace).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({ name: 'notexists', title: '' }))
   })
 })
