@@ -41,7 +41,6 @@ module.exports = async (watcherOptions) => {
   log(`watching action files at ${config.actions.src}...`)
   const watcher = chokidar.watch(config.actions.src)
 
-  // todo: sometimes it fires twice, it might be a bug.
   watcher.on('change', createChangeHandler({ ...watcherOptions, watcher }))
 
   const cleanup = async () => {
@@ -82,6 +81,7 @@ function createChangeHandler (watcherOptions) {
   let undeployedFile = ''
 
   return async (filePath) => {
+    aioLogger.debug('Code change triggered...')
     if (deploymentInProgress) {
       aioLogger.debug(`${filePath} has changed. Deploy in progress. This change will be deployed after completion of current deployment.`)
       undeployedFile = filePath
