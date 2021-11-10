@@ -9,7 +9,7 @@
 node_modules
 coverage
 .vscode/
-/.idea/
+.idea/
 
 oclif.manifest.json
 package-lock.json

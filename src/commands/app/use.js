@@ -78,14 +78,6 @@ class Use extends BaseCommand {
         this.error(message)
       }
       newConfig = globalConfig
-      if (
-        currentConfigIsComplete &&
-        newConfig.org.id === currentConfig.org.id &&
-        newConfig.project.id === currentConfig.project.id &&
-        newConfig.workspace.id === currentConfig.workspace.id
-      ) {
-        this.error('The selected configuration is the same as the current configuration.')
-      }
     } else {
       // useOperation = 'workspace'
       if (!currentConfigIsComplete) {
@@ -190,37 +182,37 @@ class Use extends BaseCommand {
    * @returns {Buffer} the Adobe Developer Console configuration file for the workspace
    */
   async selectTargetWorkspaceInProject (consoleCLI, config, flags) {
-    const project = { name: config.project.name, id: config.project.id }
-    const currentWorkspace = { name: config.workspace.name, id: config.workspace.id }
-
-    // make sure user is not trying to switch to current workspace
-    const workspaceFlag = flags.workspace
-    if (workspaceFlag === currentWorkspace.name) {
-      this.cleanConsoleCLIOutput()
-      this.error(`--workspace=${workspaceFlag} is the same as the currently selected workspace, nothing to be done.`)
-    }
+    const { project, org } = config
+    const workspaceNameOrId = flags.workspace
 
     // retrieve all workspaces
     const workspaces = await consoleCLI.getWorkspaces(
-      config.org.id,
-      config.project.id
+      org.id,
+      project.id
     )
-    const workspacesButCurrent = workspaces.filter(w => w.id !== currentWorkspace.id)
-
     let workspace
-
-    if (workspaceFlag) {
-      // workspace name is given, make sure the workspace is in there
-      workspace = workspacesButCurrent.find(w => w.name === workspaceFlag)
-      if (!workspace) {
-        this.cleanConsoleCLIOutput()
-        this.error(`--workspace=${workspaceFlag} does not exist in current Project ${project.name}.`)
+    let workspaceData = { name: workspaceNameOrId }
+    // does not prompt if workspaceNameOrId is defined via the flag
+    workspace = await consoleCLI.promptForSelectWorkspace(workspaces, { workspaceId: workspaceNameOrId, workspaceName: workspaceNameOrId }, { allowCreate: true })
+    if (!workspace) {
+      aioLogger.debug(`--workspace=${workspaceNameOrId} was not found in the current Project ${project.name}`)
+      if (workspaceNameOrId) {
+        if (!flags['confirm-new-workspace']) {
+          const shouldNewWorkspace = await consoleCLI.prompt.promptConfirm(`Workspace '${workspaceNameOrId}' does not exist \n > Do you wish to create a new workspace?`)
+          if (!shouldNewWorkspace) {
+            this.error('Workspace creation aborted')
+          }
+        }
+      } else {
+        workspaceData = await consoleCLI.promptForCreateWorkspaceDetails()
       }
-    } else {
-      // workspace name is not given, let the user choose the
-      workspace = await consoleCLI.promptForSelectWorkspace(workspacesButCurrent)
+      aioLogger.debug(`Creating workspace: ${workspaceData.name}`)
+      workspace = await consoleCLI.createWorkspace(org.id, project.id, workspaceData)
     }
-    return { name: workspace.name, id: workspace.id }
+    return {
+      name: workspace.name,
+      id: workspace.id
+    }
   }
 
   /**
@@ -395,10 +387,14 @@ Use.flags = {
     exclusive: ['workspace']
   }),
   workspace: flags.string({
-    description: 'Specify the Adobe Developer Console Workspace name to import the configuration from',
+    description: 'Specify the Adobe Developer Console Workspace name or Workspace id to import the configuration from',
     default: '',
     char: 'w',
     exclusive: ['global', 'workspace-name']
+  }),
+  'confirm-new-workspace': flags.boolean({
+    description: 'Skip and confirm prompt for creating a new workspace',
+    default: false
   }),
   'workspace-name': flags.string({
     description: '[DEPRECATED]: please use --workspace instead',

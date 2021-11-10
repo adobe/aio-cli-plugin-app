@@ -102,7 +102,7 @@ class InitCommand extends AddCommand {
     // 3. select or create project
     const project = await this.selectOrCreateConsoleProject(consoleCLI, org)
     // 4. retrieve workspace details, defaults to Stage
-    const workspace = await this.retrieveWorkspaceFromName(consoleCLI, org, project, flags.workspace)
+    const workspace = await this.retrieveWorkspaceFromName(consoleCLI, org, project, flags)
     // 5. ask for exensionPoints, only allow selection for extensions that have services enabled in Org
     const extensionPoints = await this.selectExtensionPoints(flags, orgSupportedServices)
     // 6. add any required services to Workspace
@@ -139,7 +139,7 @@ class InitCommand extends AddCommand {
       }
       return extList
     } else {
-      const choices = cloneDeep(implPromptChoices).filter(i => i.value.name !== 'application')
+      const choices = cloneDeep(implPromptChoices)
 
       // disable extensions that lack required services
       if (orgSupportedServices) {
@@ -186,12 +186,23 @@ class InitCommand extends AddCommand {
     return project
   }
 
-  async retrieveWorkspaceFromName (consoleCLI, org, project, workspaceName) {
+  async retrieveWorkspaceFromName (consoleCLI, org, project, flags) {
+    const workspaceName = flags.workspace
     // get workspace details
     const workspaces = await consoleCLI.getWorkspaces(org.id, project.id)
-    const workspace = workspaces.find(w => w.name.toLowerCase() === workspaceName.toLowerCase())
+    let workspace = workspaces.find(w => w.name.toLowerCase() === workspaceName.toLowerCase())
     if (!workspace) {
-      throw new Error(`'--workspace=${workspaceName}' in Project '${project.name}' not found.`)
+      if (!flags['confirm-new-workspace']) {
+        const shouldNewWorkspace = await consoleCLI.prompt.promptConfirm(`Workspace '${workspaceName}' does not exist \n > Do you wish to create a new workspace?`)
+        if (!shouldNewWorkspace) {
+          this.error(`Workspace '${workspaceName}' does not exist and creation aborted`)
+        }
+      }
+      this.log(`'--workspace=${workspaceName}' in Project '${project.name}' not found. \n Creating one...`)
+      workspace = await consoleCLI.createWorkspace(org.id, project.id, {
+        name: workspaceName,
+        title: ''
+      })
     }
     return workspace
   }
@@ -241,16 +252,19 @@ class InitCommand extends AddCommand {
 
   async runCodeGenerators (flags, extensionPoints, projectName) {
     let env = yeoman.createEnv()
-    // first run app generator that will generate the root skeleton
-    const appGen = env.instantiate(generators['base-app'], {
-      options: {
-        'skip-prompt': flags.yes,
-        'project-name': projectName,
-        // by default yeoman runs the install, we control installation from the app plugin
-        'skip-install': true
-      }
-    })
-    await env.runGenerator(appGen)
+    const initialGenerators = ['base-app', 'add-ci']
+    // first run app generator that will generate the root skeleton + ci
+    for (const generatorKey of initialGenerators) {
+      const appGen = env.instantiate(generators[generatorKey], {
+        options: {
+          'skip-prompt': flags.yes,
+          'project-name': projectName,
+          // by default yeoman runs the install, we control installation from the app plugin
+          'skip-install': true
+        }
+      })
+      await env.runGenerator(appGen)
+    }
 
     // Creating new Yeoman env here to workaround an issue where yeoman reuses the conflicter from previous environment.
     // https://github.com/yeoman/environment/issues/324
@@ -326,6 +340,10 @@ InitCommand.flags = {
     default: DEFAULT_WORKSPACE,
     char: 'w',
     exclusive: ['import'] // also no-login
+  }),
+  'confirm-new-workspace': flags.boolean({
+    description: 'Skip and confirm prompt for creating a new workspace',
+    default: false
   })
 }
 
