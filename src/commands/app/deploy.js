@@ -84,12 +84,14 @@ class Deploy extends BuildCommand {
   }
 
   async deploySingleConfig (name, config, flags, spinner) {
-    const onProgress = !flags.verbose ? info => {
-      spinner.text = info
-    } : info => {
-      spinner.info(chalk.dim(`${info}`))
-      spinner.start()
-    }
+    const onProgress = !flags.verbose
+      ? info => {
+        spinner.text = info
+      }
+      : info => {
+        spinner.info(chalk.dim(`${info}`))
+        spinner.start()
+      }
 
     // build phase
     if (flags.build) {
