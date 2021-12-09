@@ -72,12 +72,14 @@ class Undeploy extends BaseCommand {
   }
 
   async undeployOneExt (extName, config, flags, spinner) {
-    const onProgress = !flags.verbose ? info => {
-      spinner.text = info
-    } : info => {
-      spinner.info(chalk.dim(`${info}`))
-      spinner.start()
-    }
+    const onProgress = !flags.verbose
+      ? info => {
+        spinner.text = info
+      }
+      : info => {
+        spinner.info(chalk.dim(`${info}`))
+        spinner.start()
+      }
     // undeploy
     try {
       await runScript(config.hooks['pre-app-undeploy'])
