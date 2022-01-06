@@ -14,8 +14,10 @@ const rtLib = require('@adobe/aio-lib-runtime')
 const { writeAio, writeEnv } = require('./import')
 const crypto = require('crypto')
 const fs = require('fs-extra')
+const path = require('path')
 
 const SECRET_FIELD_TYPE = 'password'
+const CHECKSUM_DIR = 'dist'
 const CHECKSUM_FILE = 'log-forwarding-config.sha256'
 
 class LogForwarding {
@@ -104,13 +106,13 @@ class LogForwarding {
     }
     const interactive = false
     const merge = true
-    await writeAio(projectConfig, process.cwd(), { interactive, merge })
-    await writeEnv({}, process.cwd(), { interactive, merge }, secretSettings)
+    await writeAio(projectConfig, '', { interactive, merge })
+    await writeEnv({}, '', { interactive, merge }, secretSettings)
   }
 
   isLocalConfigChanged () {
-    if (fs.pathExistsSync(process.cwd() + '/tmp/' + CHECKSUM_FILE)) {
-      const oldChecksum = fs.readFileSync(process.cwd() + '/tmp/' + CHECKSUM_FILE).toString()
+    if (fs.pathExistsSync(path.join(CHECKSUM_DIR, CHECKSUM_FILE))) {
+      const oldChecksum = fs.readFileSync(path.join(CHECKSUM_DIR, CHECKSUM_FILE)).toString()
       const config = this.getLocalConfigWithSecrets()
       const newChecksum = getChecksum(config)
       return oldChecksum !== newChecksum
@@ -122,8 +124,8 @@ class LogForwarding {
   async updateServerConfig (lfConfig) {
     await this.logForwarding.setDestination(lfConfig.getDestination(), lfConfig.getSettings())
     const checksum = getChecksum(lfConfig)
-    fs.ensureDirSync(process.cwd() + '/tmp')
-    fs.writeFile(process.cwd() + '/tmp/' + CHECKSUM_FILE, checksum, { flags: 'w' })
+    fs.ensureDirSync(CHECKSUM_DIR)
+    fs.writeFile(path.join(CHECKSUM_DIR, CHECKSUM_FILE), checksum, { flags: 'w' })
   }
 }
 
@@ -205,14 +207,14 @@ function shallowEqual (config1, config2) {
 /**
  * Convert JSON config to Log Forwarding object
  *
- * @param {string} configJson Config in JSON format
+ * @param {object} configJson Config in JSON format
  * @returns {LogForwardingConfig} Config
  */
 function convertToConfigObject (configJson) {
   let destination
   let settings
 
-  if (configJson !== undefined) {
+  if (configJson !== undefined && configJson !== null && !Array.isArray(configJson) && typeof configJson === 'object') {
     const destinations = Object.keys(configJson)
     if (destinations.length === 1) {
       destination = destinations[0]

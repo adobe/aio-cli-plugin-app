@@ -138,14 +138,14 @@ describe('with secrets in env vars', () => {
     fs.pathExistsSync.mockReturnValue(true)
     fs.readFileSync.mockReturnValue('e35c04da5060b3aa1406a907ca149f5d974d5ada308163046080c02c98796cf9')
     expect(lf.isLocalConfigChanged()).toEqual(false)
-    expect(fs.pathExistsSync).toHaveBeenCalledWith(process.cwd() + '/tmp/log-forwarding-config.sha256')
+    expect(fs.pathExistsSync).toHaveBeenCalledWith('dist/log-forwarding-config.sha256')
   })
 
   test('isLocalConfigChanged (changed)', async () => {
     fs.pathExistsSync.mockReturnValue(true)
     fs.readFileSync.mockReturnValue('outdated-checksum')
     expect(lf.isLocalConfigChanged()).toEqual(true)
-    expect(fs.pathExistsSync).toHaveBeenCalledWith(process.cwd() + '/tmp/log-forwarding-config.sha256')
+    expect(fs.pathExistsSync).toHaveBeenCalledWith('dist/log-forwarding-config.sha256')
   })
 })
 
@@ -242,8 +242,8 @@ describe('absent local log forwarding config', () => {
     const merge = true
 
     await lf.updateLocalConfig(newConfig)
-    expect(writeAio).toHaveBeenCalledWith(expectedNonSecretConfig, process.cwd(), { interactive, merge })
-    expect(writeEnv).toHaveBeenCalledWith({}, process.cwd(), { interactive, merge }, expectedSecretConfig)
+    expect(writeAio).toHaveBeenCalledWith(expectedNonSecretConfig, '', { interactive, merge })
+    expect(writeEnv).toHaveBeenCalledWith({}, '', { interactive, merge }, expectedSecretConfig)
   })
 })
 
@@ -275,7 +275,7 @@ describe('with checksum file', () => {
   test('isLocalConfigChanged (new config - no checksum)', async () => {
     fs.pathExistsSync.mockReturnValue(false)
     expect(lf.isLocalConfigChanged()).toEqual(true)
-    expect(fs.pathExistsSync).toHaveBeenCalledWith(process.cwd() + '/tmp/log-forwarding-config.sha256')
+    expect(fs.pathExistsSync).toHaveBeenCalledWith('dist/log-forwarding-config.sha256')
     expect(fs.readFileSync).toHaveBeenCalledTimes(0)
   })
 
@@ -290,9 +290,9 @@ describe('with checksum file', () => {
     await lf.updateServerConfig(config)
 
     expect(rtLib.logForwarding.setDestination).toHaveBeenCalledWith('new_destination', settings)
-    expect(fs.ensureDirSync).toHaveBeenCalledWith(process.cwd() + '/tmp')
+    expect(fs.ensureDirSync).toHaveBeenCalledWith('dist')
     expect(fs.writeFile).toHaveBeenCalledWith(
-      process.cwd() + '/tmp/log-forwarding-config.sha256',
+      'dist/log-forwarding-config.sha256',
       'a431a2616cbca2a7f017d3829dceb25d0f90f4dc285e0fa74796fa223576ea96',
       { flags: 'w' }
     )
