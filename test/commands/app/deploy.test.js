@@ -480,16 +480,16 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': false }), expect.anything()) // force-build is true by default for build cmd
   })
 
-  test('--no-log-forwarding-update', async () => {
+  test.each([
+    [['--no-log-forwarding-update']],
+    [['--no-actions']],
+    [['--no-log-forwarding-update', '--no-actions']]
+  ])('no log forwarding update due to %s arg(s) specified', async (args) => {
     const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
-
-    command.argv = ['--no-log-forwarding-update']
+    command.argv = args
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(command.buildOneExt).toHaveBeenCalledTimes(1)
-    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(LogForwarding.init).toHaveBeenCalledTimes(0)
   })
 

@@ -58,7 +58,7 @@ class Deploy extends BuildCommand {
     try {
       const aioConfig = this.getFullConfig().aio
       // 1. update log forwarding configuration
-      if (flags['log-forwarding-update']) {
+      if (flags['log-forwarding-update'] && flags.actions) {
         spinner.start('Updating log forwarding configuration')
         try {
           const lf = await LogForwarding.init(aioConfig)
