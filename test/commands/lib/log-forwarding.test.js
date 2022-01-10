@@ -14,6 +14,7 @@ const RuntimeLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../../src/lib/log-forwarding')
 const { writeAio, writeEnv } = require('../../../src/lib/import')
 const fs = require('fs-extra')
+const path = require('path')
 
 jest.mock('../../../src/lib/import', () => {
   return {
@@ -30,6 +31,8 @@ const rtConfig = {
   apiversion: 'v1',
   package: 'sample-app-1.0.0'
 }
+
+const LF_CONFIGPATH = path.join('dist', 'log-forwarding-config.sha256')
 
 let lf, rtLib
 
@@ -138,14 +141,14 @@ describe('with secrets in env vars', () => {
     fs.pathExistsSync.mockReturnValue(true)
     fs.readFileSync.mockReturnValue('e35c04da5060b3aa1406a907ca149f5d974d5ada308163046080c02c98796cf9')
     expect(lf.isLocalConfigChanged()).toEqual(false)
-    expect(fs.pathExistsSync).toHaveBeenCalledWith('dist/log-forwarding-config.sha256')
+    expect(fs.pathExistsSync).toHaveBeenCalledWith(LF_CONFIGPATH)
   })
 
   test('isLocalConfigChanged (changed)', async () => {
     fs.pathExistsSync.mockReturnValue(true)
     fs.readFileSync.mockReturnValue('outdated-checksum')
     expect(lf.isLocalConfigChanged()).toEqual(true)
-    expect(fs.pathExistsSync).toHaveBeenCalledWith('dist/log-forwarding-config.sha256')
+    expect(fs.pathExistsSync).toHaveBeenCalledWith(LF_CONFIGPATH)
   })
 })
 
@@ -275,7 +278,7 @@ describe('with checksum file', () => {
   test('isLocalConfigChanged (new config - no checksum)', async () => {
     fs.pathExistsSync.mockReturnValue(false)
     expect(lf.isLocalConfigChanged()).toEqual(true)
-    expect(fs.pathExistsSync).toHaveBeenCalledWith('dist/log-forwarding-config.sha256')
+    expect(fs.pathExistsSync).toHaveBeenCalledWith(LF_CONFIGPATH)
     expect(fs.readFileSync).toHaveBeenCalledTimes(0)
   })
 
@@ -292,7 +295,7 @@ describe('with checksum file', () => {
     expect(rtLib.logForwarding.setDestination).toHaveBeenCalledWith('new_destination', settings)
     expect(fs.ensureDirSync).toHaveBeenCalledWith('dist')
     expect(fs.writeFile).toHaveBeenCalledWith(
-      'dist/log-forwarding-config.sha256',
+      LF_CONFIGPATH,
       'a431a2616cbca2a7f017d3829dceb25d0f90f4dc285e0fa74796fa223576ea96',
       { flags: 'w' }
     )
