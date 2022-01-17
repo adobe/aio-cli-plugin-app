@@ -50,6 +50,7 @@ const https = require('https')
 
 jest.mock('get-port')
 const getPort = require('get-port')
+const ora = require('ora')
 
 let command
 
