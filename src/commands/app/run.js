@@ -102,7 +102,8 @@ class Run extends BaseCommand {
     const onProgress = !verboseOutput
       ? info => {
         spinner.text = info
-      } : info => {
+      }
+      : info => {
         spinner.info(chalk.dim(`${info}`))
         spinner.start()
       }
