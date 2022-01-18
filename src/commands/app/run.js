@@ -99,12 +99,13 @@ class Run extends BaseCommand {
     }
 
     const verboseOutput = flags.verbose || flags.local || headlessApp
-    const onProgress = !verboseOutput ? info => {
-      spinner.text = info
-    } : info => {
-      spinner.info(chalk.dim(`${info}`))
-      spinner.start()
-    }
+    const onProgress = !verboseOutput
+      ? info => {
+        spinner.text = info
+      } : info => {
+        spinner.info(chalk.dim(`${info}`))
+        spinner.start()
+      }
 
     const frontendUrl = await runDev(config, this.config.dataDir, runOptions, onProgress)
     try {
