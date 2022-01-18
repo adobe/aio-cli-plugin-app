@@ -98,7 +98,7 @@ class Run extends BaseCommand {
       }
     }
 
-    const verboseOutput = flags.verbose || headlessApp
+    const verboseOutput = flags.verbose || flags.local || headlessApp
     const onProgress = !verboseOutput ? info => {
       spinner.text = info
     } : info => {

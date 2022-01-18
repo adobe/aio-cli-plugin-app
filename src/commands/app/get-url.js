@@ -49,8 +49,6 @@ class GetUrlCommand extends BaseCommand {
       if (flags.local) {
         Object.values(fullConfig.all).forEach(config => {
           const localDevConfig = loadLocalDevConfig(config)
-          console.log('localDevConfig', localDevConfig)
-          console.log('config', config)
           Object.assign(actionUrls, getActionUrls(localDevConfig, false, true))
         })
       } else {
