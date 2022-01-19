@@ -71,7 +71,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/index.js)_
+_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/index.js)_
 
 ## `aio app:add`
 
@@ -88,7 +88,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/add/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/add/index.js)_
+_See code: [src/commands/app/add/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/add/index.js)_
 
 ## `aio app:add:action`
 
@@ -103,16 +103,17 @@ USAGE
 
 OPTIONS
   -e, --extension=extension  Add actions to a specific extension
+  -s, --skip-install         [deprecated] Please use --no-install
   -v, --verbose              Verbose output
   -y, --yes                  Skip questions, and use all default values
-  --skip-install             Skip npm installation after files are created
+  --[no-]install             [default: true] Run npm installation after files are created
   --version                  Show version
 
 ALIASES
   $ aio app:add:actions
 ```
 
-_See code: [src/commands/app/add/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/add/action.js)_
+_See code: [src/commands/app/add/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/add/action.js)_
 
 ## `aio app:add:ci`
 
@@ -130,7 +131,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/add/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/add/ci.js)_
+_See code: [src/commands/app/add/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/add/ci.js)_
 
 ## `aio app:add:event`
 
@@ -145,16 +146,17 @@ USAGE
 
 OPTIONS
   -e, --extension=extension  Add actions to a specific extension
+  -s, --skip-install         [deprecated] Please use --no-install
   -v, --verbose              Verbose output
   -y, --yes                  Skip questions, and use all default values
-  --skip-install             Skip npm installation after files are created
+  --[no-]install             [default: true] Run npm installation after files are created
   --version                  Show version
 
 ALIASES
   $ aio app:add:events
 ```
 
-_See code: [src/commands/app/add/event.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/add/event.js)_
+_See code: [src/commands/app/add/event.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/add/event.js)_
 
 ## `aio app:add:extension`
 
@@ -169,9 +171,10 @@ USAGE
 
 OPTIONS
   -e, --extension=extension  Specify extensions to add, skips selection prompt
+  -s, --skip-install         [deprecated] Please use --no-install
   -v, --verbose              Verbose output
   -y, --yes                  Skip questions, and use all default values
-  --skip-install             Skip npm installation after files are created
+  --[no-]install             [default: true] Run npm installation after files are created
   --version                  Show version
 
 ALIASES
@@ -179,7 +182,7 @@ ALIASES
   $ aio app:add:extensions
 ```
 
-_See code: [src/commands/app/add/extension.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/add/extension.js)_
+_See code: [src/commands/app/add/extension.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/add/extension.js)_
 
 ## `aio app:add:service`
 
@@ -200,7 +203,7 @@ ALIASES
   $ aio app:add:services
 ```
 
-_See code: [src/commands/app/add/service.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/add/service.js)_
+_See code: [src/commands/app/add/service.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/add/service.js)_
 
 ## `aio app:add:web-assets`
 
@@ -215,13 +218,14 @@ USAGE
 
 OPTIONS
   -e, --extension=extension  Add web-assets to a specific extension
+  -s, --skip-install         [deprecated] Please use --no-install
   -v, --verbose              Verbose output
   -y, --yes                  Skip questions, and use all default values
-  --skip-install             Skip npm installation after files are created
+  --[no-]install             [default: true] Run npm installation after files are created
   --version                  Show version
 ```
 
-_See code: [src/commands/app/add/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/add/web-assets.js)_
+_See code: [src/commands/app/add/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/add/web-assets.js)_
 
 ## `aio app:build`
 
@@ -260,11 +264,13 @@ OPTIONS
 
   --[no-]web-assets          [default: true] Build web-assets if any
 
+  --web-optimize             [default: false] Enable optimization (minification) of js/css/html
+
 DESCRIPTION
   This will always force a rebuild unless --no-force-build is set.
 ```
 
-_See code: [src/commands/app/build.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/build.js)_
+_See code: [src/commands/app/build.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/build.js)_
 
 ## `aio app:create [PATH]`
 
@@ -286,7 +292,7 @@ OPTIONS
   --version            Show version
 ```
 
-_See code: [src/commands/app/create.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/create.js)_
+_See code: [src/commands/app/create.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/create.js)_
 
 ## `aio app:delete`
 
@@ -303,7 +309,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/delete/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/delete/index.js)_
+_See code: [src/commands/app/delete/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/delete/index.js)_
 
 ## `aio app:delete:action [ACTION-NAME]`
 
@@ -328,7 +334,7 @@ ALIASES
   $ aio app:delete:actions
 ```
 
-_See code: [src/commands/app/delete/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/delete/action.js)_
+_See code: [src/commands/app/delete/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/delete/action.js)_
 
 ## `aio app:delete:ci`
 
@@ -347,7 +353,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/delete/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/delete/ci.js)_
+_See code: [src/commands/app/delete/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/delete/ci.js)_
 
 ## `aio app:delete:event [EVENT-ACTION-NAME]`
 
@@ -372,7 +378,7 @@ ALIASES
   $ aio app:delete:events
 ```
 
-_See code: [src/commands/app/delete/event.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/delete/event.js)_
+_See code: [src/commands/app/delete/event.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/delete/event.js)_
 
 ## `aio app:delete:extension`
 
@@ -397,7 +403,7 @@ ALIASES
   $ aio app:delete:extensions
 ```
 
-_See code: [src/commands/app/delete/extension.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/delete/extension.js)_
+_See code: [src/commands/app/delete/extension.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/delete/extension.js)_
 
 ## `aio app:delete:service`
 
@@ -418,7 +424,7 @@ ALIASES
   $ aio app:delete:services
 ```
 
-_See code: [src/commands/app/delete/service.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/delete/service.js)_
+_See code: [src/commands/app/delete/service.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/delete/service.js)_
 
 ## `aio app:delete:web-assets`
 
@@ -437,7 +443,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/delete/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/delete/web-assets.js)_
+_See code: [src/commands/app/delete/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/delete/web-assets.js)_
 
 ## `aio app:deploy`
 
@@ -489,11 +495,13 @@ OPTIONS
 
   --[no-]web-assets          [default: true] Deploy web-assets if any
 
+  --web-optimize             [default: false] Enable optimization (minification) of web js/css/html
+
 DESCRIPTION
   This will always force a rebuild unless --no-force-build is set.
 ```
 
-_See code: [src/commands/app/deploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/deploy.js)_
+_See code: [src/commands/app/deploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/deploy.js)_
 
 ## `aio app:get-url [ACTION]`
 
@@ -514,7 +522,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/get-url.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/get-url.js)_
+_See code: [src/commands/app/get-url.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/get-url.js)_
 
 ## `aio app:info`
 
@@ -536,7 +544,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/info.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/info.js)_
+_See code: [src/commands/app/info.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/info.js)_
 
 ## `aio app:init [PATH]`
 
@@ -553,8 +561,9 @@ ARGUMENTS
   PATH  [default: .] Path to the app directory
 
 OPTIONS
+  -e, --extension=extension  Extension point(s) to implement
   -i, --import=import        Import an Adobe I/O Developer Console configuration file
-  -s, --skip-install         Skip npm installation after files are created
+  -s, --skip-install         [deprecated] Please use --no-install
   -v, --verbose              Verbose output
 
   -w, --workspace=workspace  [default: Stage] Specify the Adobe Developer Console Workspace to init from, defaults to
@@ -562,14 +571,18 @@ OPTIONS
 
   -y, --yes                  Skip questions, and use all default values
 
+  --confirm-new-workspace    Skip and confirm prompt for creating a new workspace
+
   --[no-]extensions          Use --no-extensions to create a blank application that does not integrate with Exchange
+
+  --[no-]install             [default: true] Run npm installation after files are created
 
   --[no-]login               Login using your Adobe ID for interacting with Adobe I/O Developer Console
 
   --version                  Show version
 ```
 
-_See code: [src/commands/app/init.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/init.js)_
+_See code: [src/commands/app/init.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/init.js)_
 
 ## `aio app:list`
 
@@ -586,7 +599,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/list/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/list/index.js)_
+_See code: [src/commands/app/list/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/list/index.js)_
 
 ## `aio app:list:extension`
 
@@ -610,7 +623,7 @@ ALIASES
   $ aio app:list:extensions
 ```
 
-_See code: [src/commands/app/list/extension.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/list/extension.js)_
+_See code: [src/commands/app/list/extension.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/list/extension.js)_
 
 ## `aio app:list:extension-points`
 
@@ -634,7 +647,7 @@ ALIASES
   $ aio app:list:extension-points
 ```
 
-_See code: [src/commands/app/list/extension-points.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/list/extension-points.js)_
+_See code: [src/commands/app/list/extension-points.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/list/extension-points.js)_
 
 ## `aio app:logs`
 
@@ -658,7 +671,7 @@ OPTIONS
   --version            Show version
 ```
 
-_See code: [src/commands/app/logs.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/logs.js)_
+_See code: [src/commands/app/logs.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/logs.js)_
 
 ## `aio app:run`
 
@@ -681,7 +694,7 @@ OPTIONS
   --version                  Show version
 ```
 
-_See code: [src/commands/app/run.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/run.js)_
+_See code: [src/commands/app/run.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/run.js)_
 
 ## `aio app:test`
 
@@ -715,7 +728,7 @@ DESCRIPTION
   If the extension has a hook called 'test' in its 'ext.config.yaml', the script specified will be run instead.
 ```
 
-_See code: [src/commands/app/test.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/test.js)_
+_See code: [src/commands/app/test.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/test.js)_
 
 ## `aio app:undeploy`
 
@@ -741,7 +754,7 @@ OPTIONS
   --[no-]web-assets          [default: true] Undeploy web-assets if any
 ```
 
-_See code: [src/commands/app/undeploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/undeploy.js)_
+_See code: [src/commands/app/undeploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/undeploy.js)_
 
 ## `aio app:use [CONFIG_FILE_PATH]`
 
@@ -769,10 +782,12 @@ OPTIONS
 
   -v, --verbose                        Verbose output
 
-  -w, --workspace=workspace            Specify the Adobe Developer Console Workspace name to import the configuration
-                                       from
+  -w, --workspace=workspace            Specify the Adobe Developer Console Workspace name or Workspace id to import the
+                                       configuration from
 
   -w, --workspace-name=workspace-name  [DEPRECATED]: please use --workspace instead
+
+  --confirm-new-workspace              Skip and confirm prompt for creating a new workspace
 
   --confirm-service-sync               Skip the Service sync prompt and overwrite Service subscriptions in the new
                                        Workspace with current subscriptions
@@ -801,5 +816,5 @@ DESCRIPTION
   page in https://console.adobe.io
 ```
 
-_See code: [src/commands/app/use.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.0.3/src/commands/app/use.js)_
+_See code: [src/commands/app/use.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/use.js)_
 <!-- commandsstop -->

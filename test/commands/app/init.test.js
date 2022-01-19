@@ -34,8 +34,8 @@ yeoman.createEnv.mockReturnValue({
 jest.mock('@adobe/aio-lib-ims')
 
 // mock console calls
-jest.mock('@adobe/generator-aio-console/lib/console-cli.js')
-const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli.js')
+jest.mock('@adobe/aio-cli-lib-console')
+const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
 const mockConsoleCLIInstance = {
   getEnabledServicesForOrg: jest.fn(),
   promptForSelectOrganization: jest.fn(),
@@ -48,7 +48,11 @@ const mockConsoleCLIInstance = {
   promptForSelectWorkspace: jest.fn(),
   getServicePropertiesFromWorkspace: jest.fn(),
   subscribeToServices: jest.fn(),
-  getWorkspaceConfig: jest.fn()
+  getWorkspaceConfig: jest.fn(),
+  createWorkspace: jest.fn(),
+  prompt: {
+    promptConfirm: jest.fn()
+  }
   // promptForServiceSubscriptionsOperation: jest.fn(),
   // confirmNewServiceSubscriptions: jest.fn(),
   // promptForSelectServiceProperties: jest.fn()
@@ -56,15 +60,19 @@ const mockConsoleCLIInstance = {
 LibConsoleCLI.init.mockResolvedValue(mockConsoleCLIInstance)
 /** @private */
 function resetMockConsoleCLI () {
-  Object.keys(mockConsoleCLIInstance).forEach(
-    k => mockConsoleCLIInstance[k].mockReset()
-  )
+  Object.keys(mockConsoleCLIInstance).forEach(k => {
+    if ('mockReset' in mockConsoleCLIInstance[k]) {
+      mockConsoleCLIInstance[k].mockReset()
+    }
+  })
   LibConsoleCLI.init.mockClear()
+  mockConsoleCLIInstance.prompt.promptConfirm.mockReset()
 }
 
 jest.mock('@adobe/generator-aio-app', () => ({
   application: 'fake-gen-application',
   'base-app': 'fake-gen-base-app',
+  'add-ci': 'fake-gen-add-ci',
   extensions: {
     'dx/excshell/1': 'fake-gen-excshell',
     'dx/asset-compute/worker/1': 'fake-gen-nui'
@@ -77,7 +85,7 @@ const inquirer = require('inquirer')
 const mockExtensionPrompt = jest.fn()
 inquirer.createPromptModule = jest.fn().mockReturnValue(mockExtensionPrompt)
 const { implPromptChoices } = require('../../../src/lib/defaults')
-const extChoices = implPromptChoices.filter(c => c.value.name !== 'application')
+const extChoices = implPromptChoices
 const excshellSelection = [implPromptChoices.find(c => c.value.name === 'dx/excshell/1').value]
 const assetComputeSelection = [implPromptChoices.find(c => c.value.name === 'dx/asset-compute/worker/1').value]
 
@@ -178,20 +186,27 @@ describe('bad args/flags', () => {
   test('--no-login and --workspace', async () => {
     await expect(TheCommand.run(['--no-login', '--workspace', 'dev'])).rejects.toThrow('--no-login and --workspace flags cannot be used together.')
   })
+  test('--no-login and --extension does not exist', async () => {
+    await expect(TheCommand.run(['--no-login', '--extension', 'dev'])).rejects.toThrow('--extension=dev not found.')
+  })
 })
 
 describe('run', () => {
   test('--no-login, select excshell', async () => {
     mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
     await TheCommand.run(['--no-login'])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'cwd' } }
+      { options: { 'skip-prompt': false, 'project-name': 'cwd', 'skip-install': true } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-add-ci',
+      { options: { 'skip-prompt': false, 'project-name': 'cwd', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
@@ -202,14 +217,18 @@ describe('run', () => {
   test('--no-login, select excshell, arg: /otherdir', async () => {
     mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
     await TheCommand.run(['--no-login', '/otherdir'])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'otherdir' } }
+      { options: { 'skip-prompt': false, 'project-name': 'otherdir', 'skip-install': true } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-add-ci',
+      { options: { 'skip-prompt': false, 'project-name': 'otherdir', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
@@ -223,18 +242,22 @@ describe('run', () => {
   test('--no-login, select both', async () => {
     mockExtensionPrompt.mockReturnValue({ res: excshellSelection.concat(assetComputeSelection) })
     await TheCommand.run(['--no-login'])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(4)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'cwd' } }
+      { options: { 'skip-prompt': false, 'project-name': 'cwd', 'skip-install': true } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-add-ci',
+      { options: { 'skip-prompt': false, 'project-name': 'cwd', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-nui',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
@@ -244,14 +267,18 @@ describe('run', () => {
 
   test('--no-login --no-extensions', async () => {
     await TheCommand.run(['--no-login', '--no-extensions'])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'cwd' } }
+      { options: { 'skip-prompt': false, 'project-name': 'cwd', 'skip-install': true } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-add-ci',
+      { options: { 'skip-prompt': false, 'project-name': 'cwd', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-application',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
@@ -262,18 +289,44 @@ describe('run', () => {
   test('--no-login --yes --skip-install, select excshell', async () => {
     mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
     await TheCommand.run(['--no-login', '--yes', '--skip-install'])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': true, 'project-name': 'cwd' } }
+      { options: { 'skip-prompt': true, 'project-name': 'cwd', 'skip-install': true } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-add-ci',
+      { options: { 'skip-prompt': true, 'project-name': 'cwd', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
-      { options: { 'skip-prompt': true, force: true } }
+      { options: { 'skip-prompt': true, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).not.toHaveBeenCalled()
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
     expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
+    expect(mockImport.importConfigJson).not.toHaveBeenCalled()
+  })
+
+  test('--no-login --yes --skip-install, --extension dx/asset-compute/worker/1', async () => {
+    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
+    await TheCommand.run(['--no-login', '--yes', '--skip-install', '--extension', 'dx/asset-compute/worker/1'])
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-base-app',
+      { options: { 'skip-prompt': true, 'project-name': 'cwd', 'skip-install': true } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-add-ci',
+      { options: { 'skip-prompt': true, 'project-name': 'cwd', 'skip-install': true } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-nui',
+      { options: { 'skip-prompt': true, force: true, 'skip-install': true } }
+    )
+    expect(mockInstallPackages).not.toHaveBeenCalled()
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(mockExtensionPrompt).not.toHaveBeenCalled()
     expect(mockImport.importConfigJson).not.toHaveBeenCalled()
   })
 
@@ -312,14 +365,18 @@ describe('run', () => {
     mockImport.loadAndValidateConfigFile.mockReturnValue({ values: fakeConfig })
     mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
     await TheCommand.run(['--import', 'fakeconfig.json'])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-add-ci',
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
@@ -336,14 +393,18 @@ describe('run', () => {
     mockImport.loadAndValidateConfigFile.mockReturnValue({ values: fakeConfigNoCredentials })
     mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
     await TheCommand.run(['--import', 'fakeconfig.json'])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-add-ci',
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
@@ -374,14 +435,18 @@ describe('run', () => {
 
     mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
     await TheCommand.run([])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-add-ci',
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).toHaveBeenCalled()
@@ -408,14 +473,18 @@ describe('run', () => {
 
     mockExtensionPrompt.mockReturnValue({ res: assetComputeSelection })
     await TheCommand.run([])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-add-ci',
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-nui',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).toHaveBeenCalled()
@@ -448,14 +517,18 @@ describe('run', () => {
 
     mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
     await TheCommand.run([])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-add-ci',
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).toHaveBeenCalled()
@@ -464,10 +537,12 @@ describe('run', () => {
         choices: [
         // exc shell
           extChoices[0],
+          extChoices[1],
           // disabled nui
           expect.objectContaining({
             disabled: true,
-            name: expect.stringContaining('missing service(s) in Org: \'AssetComputeSDK\'')
+            name: expect.stringContaining('missing service(s) in Org: \'AssetComputeSDK\''),
+            value: expect.any(Object)
           })
         ]
       })])
@@ -494,18 +569,62 @@ describe('run', () => {
     mockConsoleCLIInstance.promptForCreateProjectDetails.mockResolvedValue('fakedetails')
     mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
     await TheCommand.run([])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-add-ci',
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).toHaveBeenCalled()
     expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
+    expect(mockImport.importConfigJson).toHaveBeenCalledWith(
+      Buffer.from(JSON.stringify(fakeConfig)),
+      'cwd',
+      { interactive: false, merge: true },
+      { SERVICE_API_KEY: 'fakeclientid' }
+    )
+    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(fakeOrg.id, fakeProject.id, fakeWorkspaces[0].id, fakeSupportedOrgServices)
+    // exchshell has no required service to be added
+    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.createProject).toHaveBeenCalledWith(fakeOrg.id, 'fakedetails')
+  })
+
+  test('with login, --extension excshell, create new project', async () => {
+    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
+    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(null) // null = user selects to create a project
+    mockConsoleCLIInstance.createProject.mockResolvedValue(fakeProject)
+    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
+    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
+    mockConsoleCLIInstance.promptForCreateProjectDetails.mockResolvedValue('fakedetails')
+    mockExtensionPrompt.mockReturnValue({})
+
+    await TheCommand.run(['--extension', 'dx/excshell/1'])
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-base-app',
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-add-ci',
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-excshell',
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
+    )
+    expect(mockInstallPackages).toHaveBeenCalled()
+    expect(LibConsoleCLI.init).toHaveBeenCalled()
+    expect(mockExtensionPrompt).not.toHaveBeenCalled()
     expect(mockImport.importConfigJson).toHaveBeenCalledWith(
       Buffer.from(JSON.stringify(fakeConfig)),
       'cwd',
@@ -528,14 +647,18 @@ describe('run', () => {
 
     mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
     await TheCommand.run(['-w', 'dev'])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(2)
+    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
+    )
+    expect(mockGenInstantiate).toHaveBeenCalledWith(
+      'fake-gen-add-ci',
+      { options: { 'skip-prompt': false, 'project-name': 'hola', 'skip-install': true } }
     )
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
+      { options: { 'skip-prompt': false, force: true, 'skip-install': true } }
     )
     expect(mockInstallPackages).toHaveBeenCalled()
     expect(LibConsoleCLI.init).toHaveBeenCalled()
@@ -553,7 +676,8 @@ describe('run', () => {
     expect(mockConsoleCLIInstance.createProject).not.toHaveBeenCalled()
   })
 
-  test('with login, select excshell, -w notexists', async () => {
+  test('with login, select excshell, -w notexists, promptConfirm true', async () => {
+    mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValue(true)
     mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
     mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
     mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
@@ -561,7 +685,40 @@ describe('run', () => {
     mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
     mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
     mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
+    mockConsoleCLIInstance.createWorkspace.mockResolvedValue(fakeWorkspaces[0])
 
-    await expect(TheCommand.run(['-w', 'notexists'])).rejects.toThrow('\'--workspace=notexists\' in Project \'bestproject\' not found.')
+    await TheCommand.run(['-w', 'notexists'])
+    expect(mockConsoleCLIInstance.createWorkspace).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({ name: 'notexists', title: '' }))
+  })
+
+  test('with login, select excshell, -w notexists, promptConfirm false, should throw', async () => {
+    const workspaceName = 'notexists'
+    mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValue(false)
+    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
+    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
+    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
+    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
+    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
+    mockConsoleCLIInstance.createWorkspace.mockResolvedValue(fakeWorkspaces[0])
+
+    await expect(TheCommand.run(['-w', workspaceName])).rejects.toThrow(`Workspace '${workspaceName}' does not exist and creation aborted`)
+  })
+  test('with login, select excshell, -w notexists, --confirm-new-workspace', async () => {
+    const notexistsWorkspace = 'notexists'
+    mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValue(true)
+    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
+    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
+    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
+    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
+    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
+    mockConsoleCLIInstance.createWorkspace.mockResolvedValue(fakeWorkspaces[0])
+
+    await TheCommand.run(['-w', notexistsWorkspace, '--confirm-new-workspace'])
+    expect(mockConsoleCLIInstance.prompt.promptConfirm).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.createWorkspace).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({ name: 'notexists', title: '' }))
   })
 })

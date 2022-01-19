@@ -84,12 +84,14 @@ class Deploy extends BuildCommand {
   }
 
   async deploySingleConfig (name, config, flags, spinner) {
-    const onProgress = !flags.verbose ? info => {
-      spinner.text = info
-    } : info => {
-      spinner.info(chalk.dim(`${info}`))
-      spinner.start()
-    }
+    const onProgress = !flags.verbose
+      ? info => {
+        spinner.text = info
+      }
+      : info => {
+        spinner.info(chalk.dim(`${info}`))
+        spinner.start()
+      }
 
     // build phase
     if (flags.build) {
@@ -127,7 +129,7 @@ class Deploy extends BuildCommand {
               spinner.succeed(chalk.green(`Deployed ${deployedRuntimeEntities.actions.length} action(s) for '${name}'`))
             } else {
               if (script) {
-                spinner.fail(chalk.green(`build-action skipped by hook '${name}'`))
+                spinner.fail(chalk.green(`deploy-actions skipped by hook '${name}'`))
               } else {
                 spinner.fail(chalk.green(`No actions deployed for '${name}'`))
               }
@@ -147,10 +149,12 @@ class Deploy extends BuildCommand {
           spinner.start(message)
           try {
             const script = await runScript(config.hooks['deploy-static'])
-            if (!script) {
+            if (script) {
+              spinner.fail(chalk.green(`deploy-static skipped by hook '${name}'`))
+            } else {
               deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
+              spinner.succeed(chalk.green(message))
             }
-            spinner.succeed(chalk.green(message))
           } catch (err) {
             spinner.fail(chalk.green(message))
             throw err
@@ -294,6 +298,10 @@ Deploy.flags = {
     description: 'Force publish extension(s) to Exchange, delete previously published extension points',
     default: false,
     exclusive: ['action', 'publish'] // no-publish is excluded
+  }),
+  'web-optimize': flags.boolean({
+    description: '[default: false] Enable optimization (minification) of web js/css/html',
+    default: false
   })
 }
 

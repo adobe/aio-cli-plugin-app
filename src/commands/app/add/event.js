@@ -9,16 +9,15 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('../../../BaseCommand')
+const AddCommand = require('../../../AddCommand')
 const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:event', { provider: 'debug' })
 const { flags } = require('@oclif/command')
-const { installPackages } = require('../../../lib/app-helper')
 const ora = require('ora')
 const path = require('path')
 const generators = require('@adobe/generator-aio-app')
 
-class AddEventCommand extends BaseCommand {
+class AddEventCommand extends AddCommand {
   async run () {
     const { flags } = this.parse(AddEventCommand)
 
@@ -43,16 +42,14 @@ class AddEventCommand extends BaseCommand {
         'config-path': configData.file,
         'full-key-to-manifest': configData.key,
         // force overwrites, no useless prompts, this is a feature exposed by yeoman itself
-        force: true
+        force: true,
+        // by default yeoman runs the install, we control installation from the app plugin
+        'skip-install': true
       }
     })
     await env.runGenerator(eventsGen)
 
-    if (!flags['skip-install']) {
-      await installPackages('.', { spinner, verbose: flags.verbose })
-    } else {
-      this.log('--skip-install, make sure to run \'npm install\' later on')
-    }
+    await this.runInstallPackages(flags, spinner)
   }
 }
 
@@ -65,17 +62,13 @@ AddEventCommand.flags = {
     default: false,
     char: 'y'
   }),
-  'skip-install': flags.boolean({
-    description: 'Skip npm installation after files are created',
-    default: false
-  }),
   extension: flags.string({
     description: 'Add actions to a specific extension',
     char: 'e',
     multiple: false,
     parse: str => [str]
   }),
-  ...BaseCommand.flags
+  ...AddCommand.flags
 }
 
 AddEventCommand.aliases = ['app:add:events']

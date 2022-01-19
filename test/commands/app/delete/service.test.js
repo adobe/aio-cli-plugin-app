@@ -9,10 +9,10 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-const consoleDataMocks = require('@adobe/generator-aio-console/test/data-mocks')
+const consoleDataMocks = require('@adobe/aio-cli-lib-console/test/data-mocks')
 
-jest.mock('@adobe/generator-aio-console/lib/console-cli.js')
-const LibConsoleCLI = require('@adobe/generator-aio-console/lib/console-cli.js')
+jest.mock('@adobe/aio-cli-lib-console')
+const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
 const mockConsoleCLIInstance = {
   getEnabledServicesForOrg: jest.fn(),
   promptForRemoveServiceSubscriptions: jest.fn(),

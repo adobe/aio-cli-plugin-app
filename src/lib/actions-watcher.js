@@ -9,7 +9,7 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-
+const upath = require('upath')
 const chokidar = require('chokidar')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:actions-watcher', { provider: 'debug' })
 const buildActions = require('./build-actions')
@@ -58,12 +58,13 @@ module.exports = async (watcherOptions) => {
  * Builds and deploy the app.
  *
  * @param {WatcherOptions} watcherOptions the options for the watcher
+ * @param {Array<string>} filterActions add filters to deploy only specified OpenWhisk actions
  */
-async function buildAndDeploy (watcherOptions) {
+async function buildAndDeploy (watcherOptions, filterActions) {
   const { config, isLocal, log } = watcherOptions
 
-  await buildActions(config)
-  await deployActions(config, isLocal, log)
+  await buildActions(config, filterActions)
+  await deployActions(config, isLocal, log, filterActions)
 }
 
 /**
@@ -75,30 +76,62 @@ async function buildAndDeploy (watcherOptions) {
 function createChangeHandler (watcherOptions) {
   const { watcher, log } = watcherOptions
 
-  let running = false
-  let changed = false
+  let deploymentInProgress = false
+  let fileChanged = false
+  let undeployedFile = ''
 
   return async (filePath) => {
-    if (running) {
+    aioLogger.debug('Code change triggered...')
+    if (deploymentInProgress) {
       aioLogger.debug(`${filePath} has changed. Deploy in progress. This change will be deployed after completion of current deployment.`)
-      changed = true
+      undeployedFile = filePath
+      fileChanged = true
       return
     }
-    running = true
+    deploymentInProgress = true
     try {
       aioLogger.debug(`${filePath} has changed. Redeploying actions.`)
-      await buildAndDeploy(watcherOptions)
-      aioLogger.debug('Deployment successful.')
+      const filterActions = getActionNameFromPath(filePath, watcherOptions)
+      if (!filterActions.length) {
+        log('  -> A non-action file was changed, restart is required to deploy...')
+      } else {
+        await buildAndDeploy(watcherOptions, filterActions)
+        aioLogger.debug('Deployment successful')
+      }
     } catch (err) {
       log('  -> Error encountered while deploying actions. Stopping auto refresh.')
       aioLogger.debug(err)
       await watcher.close()
     }
-    if (changed) {
+    if (fileChanged) {
       aioLogger.debug('Code changed during deployment. Triggering deploy again.')
-      changed = running = false
-      await createChangeHandler(watcherOptions)(filePath)
+      fileChanged = deploymentInProgress = false
+      await createChangeHandler(watcherOptions)(undeployedFile)
     }
-    running = false
+    deploymentInProgress = false
   }
+}
+
+/**
+ * Util function which returns the actionName from the filePath.
+ *
+ * @param {string} filePath  path of the file
+ * @param {WatcherOptions} watcherOptions the options for the watcher
+ * @returns {Array<string>}  All of the actions which match the modified path
+ */
+function getActionNameFromPath (filePath, watcherOptions) {
+  const actionNames = []
+  const unixFilePath = upath.toUnix(filePath)
+  const { config } = watcherOptions
+  Object.entries(config.manifest.full.packages).forEach(([, pkg]) => {
+    if (pkg.actions) {
+      Object.entries(pkg.actions).forEach(([actionName, action]) => {
+        const unixActionFunction = upath.toUnix(action.function)
+        if (unixActionFunction.includes(unixFilePath)) {
+          actionNames.push(actionName)
+        }
+      })
+    }
+  })
+  return actionNames
 }

@@ -78,7 +78,7 @@ class Build extends BaseCommand {
           aioLogger.debug(`run hook for 'build-actions' for actions in '${name}' returned ${script}`)
           spinner.start(`Building actions for '${name}'`)
           if (!script) {
-            builtList = await RuntimeLib.buildActions(config, filterActions)
+            builtList = await RuntimeLib.buildActions(config, filterActions, true)
           }
           if (builtList.length > 0) {
             spinner.succeed(chalk.green(`Built ${builtList.length} action(s) for '${name}'`))
@@ -107,18 +107,20 @@ class Build extends BaseCommand {
         spinner.start('Building web assets')
         try {
           const script = await runScript(config.hooks['build-static'])
-          if (!script) {
+          if (script) {
+            spinner.fail(chalk.green(`build-static skipped by hook '${name}'`))
+          } else {
             const entryFile = config.web.src + '/index.html'
             const bundleOptions = {
               shouldDisableCache: true,
               shouldContentHash: flags['content-hash'],
-              shouldOptimize: false,
+              shouldOptimize: flags['web-optimize'],
               logLevel: flags.verbose ? 'verbose' : 'warn'
             }
             const bundler = await bundle(entryFile, config.web.distProd, bundleOptions, onProgress)
             await bundler.run()
+            spinner.succeed(chalk.green(`Building web assets for '${name}'`))
           }
-          spinner.succeed(chalk.green(`Building web assets for '${name}'`))
         } catch (err) {
           spinner.fail(chalk.green(`Building web assets for '${name}'`))
           throw err
@@ -177,6 +179,10 @@ Build.flags = {
     description: '[default: true] Enable content hashing in browser code',
     default: true,
     allowNo: true
+  }),
+  'web-optimize': flags.boolean({
+    description: '[default: false] Enable optimization (minification) of js/css/html',
+    default: false
   }),
   extension: flags.string({
     description: 'Build only a specific extension point, the flags can be specified multiple times',

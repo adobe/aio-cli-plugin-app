@@ -9,7 +9,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('../../BaseCommand')
+const AddCommand = require('../../AddCommand')
 const yeoman = require('yeoman-environment')
 const path = require('path')
 const fs = require('fs-extra')
@@ -20,14 +20,14 @@ const { flags } = require('@oclif/command')
 const generators = require('@adobe/generator-aio-app')
 
 const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
-const { installPackages, atLeastOne } = require('../../lib/app-helper')
+const { atLeastOne } = require('../../lib/app-helper')
 
 const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV, implPromptChoices } = require('../../lib/defaults')
 const cloneDeep = require('lodash.clonedeep')
 
 const DEFAULT_WORKSPACE = 'Stage'
 
-class InitCommand extends BaseCommand {
+class InitCommand extends AddCommand {
   async run () {
     const { args, flags } = this.parse(InitCommand)
 
@@ -56,11 +56,7 @@ class InitCommand extends BaseCommand {
     }
 
     // install packages, always at the end, so user can ctrl+c
-    if (!flags['skip-install']) {
-      await installPackages('.', { spinner, verbose: flags.verbose })
-    } else {
-      this.log('--skip-install, make sure to run \'npm install\' later on')
-    }
+    await this.runInstallPackages(flags, spinner)
 
     this.log(chalk.bold(chalk.green('✔ App initialization finished!')))
     this.log('> Tip: you can add more actions, web-assets and events to your project via the `aio app add` commands')
@@ -106,7 +102,7 @@ class InitCommand extends BaseCommand {
     // 3. select or create project
     const project = await this.selectOrCreateConsoleProject(consoleCLI, org)
     // 4. retrieve workspace details, defaults to Stage
-    const workspace = await this.retrieveWorkspaceFromName(consoleCLI, org, project, flags.workspace)
+    const workspace = await this.retrieveWorkspaceFromName(consoleCLI, org, project, flags)
     // 5. ask for exensionPoints, only allow selection for extensions that have services enabled in Org
     const extensionPoints = await this.selectExtensionPoints(flags, orgSupportedServices)
     // 6. add any required services to Workspace
@@ -135,32 +131,37 @@ class InitCommand extends BaseCommand {
   async selectExtensionPoints (flags, orgSupportedServices = null) {
     if (!flags.extensions) {
       return [implPromptChoices.find(i => i.value.name === 'application').value]
+    } else if (flags.extension) {
+      const extList = implPromptChoices.filter(i => flags.extension.indexOf(i.value.name) > -1)
+        .map(i => i.value)
+      if (extList.length < 1) {
+        throw new Error(`--extension=${flags.extension} not found.`)
+      }
+      return extList
+    } else {
+      const choices = cloneDeep(implPromptChoices)
+
+      // disable extensions that lack required services
+      if (orgSupportedServices) {
+        const supportedServiceCodes = new Set(orgSupportedServices.map(s => s.code))
+        // filter choices
+        choices.forEach(c => {
+          const missingServices = c.value.requiredServices.filter(s => !supportedServiceCodes.has(s))
+          if (missingServices.length > 0) {
+            c.disabled = true
+            c.name = `${c.name}: missing service(s) in Org: '${missingServices}'`
+          }
+        })
+      }
+      const answers = await this.prompt([{
+        type: 'checkbox',
+        name: 'res',
+        message: 'Which extension point(s) do you wish to implement ?',
+        choices,
+        validate: atLeastOne
+      }])
+      return answers.res
     }
-
-    const choices = cloneDeep(implPromptChoices).filter(i => i.value.name !== 'application')
-
-    // disable extensions that lack required services
-    if (orgSupportedServices) {
-      const supportedServiceCodes = new Set(orgSupportedServices.map(s => s.code))
-      // filter choices
-      choices.forEach(c => {
-        const missingServices = c.value.requiredServices.filter(s => !supportedServiceCodes.has(s))
-        if (missingServices.length > 0) {
-          c.disabled = true
-          c.name = `${c.name}: missing service(s) in Org: '${missingServices}'`
-        }
-      })
-    }
-
-    const answers = await this.prompt([{
-      type: 'checkbox',
-      name: 'res',
-      message: 'Which extension point(s) do you wish to implement ?',
-      choices,
-      validate: atLeastOne
-    }])
-
-    return answers.res
   }
 
   async selectConsoleOrg (consoleCLI) {
@@ -185,12 +186,23 @@ class InitCommand extends BaseCommand {
     return project
   }
 
-  async retrieveWorkspaceFromName (consoleCLI, org, project, workspaceName) {
+  async retrieveWorkspaceFromName (consoleCLI, org, project, flags) {
+    const workspaceName = flags.workspace
     // get workspace details
     const workspaces = await consoleCLI.getWorkspaces(org.id, project.id)
-    const workspace = workspaces.find(w => w.name.toLowerCase() === workspaceName.toLowerCase())
+    let workspace = workspaces.find(w => w.name.toLowerCase() === workspaceName.toLowerCase())
     if (!workspace) {
-      throw new Error(`'--workspace=${workspaceName}' in Project '${project.name}' not found.`)
+      if (!flags['confirm-new-workspace']) {
+        const shouldNewWorkspace = await consoleCLI.prompt.promptConfirm(`Workspace '${workspaceName}' does not exist \n > Do you wish to create a new workspace?`)
+        if (!shouldNewWorkspace) {
+          this.error(`Workspace '${workspaceName}' does not exist and creation aborted`)
+        }
+      }
+      this.log(`'--workspace=${workspaceName}' in Project '${project.name}' not found. \n Creating one...`)
+      workspace = await consoleCLI.createWorkspace(org.id, project.id, {
+        name: workspaceName,
+        title: ''
+      })
     }
     return workspace
   }
@@ -240,14 +252,19 @@ class InitCommand extends BaseCommand {
 
   async runCodeGenerators (flags, extensionPoints, projectName) {
     let env = yeoman.createEnv()
-    // first run app generator that will generate the root skeleton
-    const appGen = env.instantiate(generators['base-app'], {
-      options: {
-        'skip-prompt': flags.yes,
-        'project-name': projectName
-      }
-    })
-    await env.runGenerator(appGen)
+    const initialGenerators = ['base-app', 'add-ci']
+    // first run app generator that will generate the root skeleton + ci
+    for (const generatorKey of initialGenerators) {
+      const appGen = env.instantiate(generators[generatorKey], {
+        options: {
+          'skip-prompt': flags.yes,
+          'project-name': projectName,
+          // by default yeoman runs the install, we control installation from the app plugin
+          'skip-install': true
+        }
+      })
+      await env.runGenerator(appGen)
+    }
 
     // Creating new Yeoman env here to workaround an issue where yeoman reuses the conflicter from previous environment.
     // https://github.com/yeoman/environment/issues/324
@@ -261,7 +278,9 @@ class InitCommand extends BaseCommand {
           options: {
             'skip-prompt': flags.yes,
             // do not prompt for overwrites
-            force: true
+            force: true,
+            // by default yeoman runs the install, we control installation from the app plugin
+            'skip-install': true
           }
         })
       await env.runGenerator(extGen)
@@ -290,16 +309,11 @@ InitCommand.description = `Create a new Adobe I/O App
 `
 
 InitCommand.flags = {
-  ...BaseCommand.flags,
+  ...AddCommand.flags,
   yes: flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
-  }),
-  'skip-install': flags.boolean({
-    description: 'Skip npm installation after files are created',
-    char: 's',
-    default: false
   }),
   import: flags.string({
     description: 'Import an Adobe I/O Developer Console configuration file',
@@ -315,11 +329,21 @@ InitCommand.flags = {
     default: true,
     allowNo: true
   }),
+  extension: flags.string({
+    description: 'Extension point(s) to implement',
+    char: 'e',
+    multiple: true,
+    exclusive: ['extensions']
+  }),
   workspace: flags.string({
     description: 'Specify the Adobe Developer Console Workspace to init from, defaults to Stage',
     default: DEFAULT_WORKSPACE,
     char: 'w',
     exclusive: ['import'] // also no-login
+  }),
+  'confirm-new-workspace': flags.boolean({
+    description: 'Skip and confirm prompt for creating a new workspace',
+    default: false
   })
 }
 
