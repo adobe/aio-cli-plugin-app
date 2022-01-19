@@ -283,15 +283,24 @@ describe('with checksum file', () => {
   })
 
   test('updateServerConfig', async () => {
-    rtLib.logForwarding.setDestination = jest.fn()
-
     const settings = {
       new_field: 'new value',
       new_secret_field: 'new secret'
     }
-    const config = new LogForwarding.LogForwardingConfig('new_destination', settings)
-    await lf.updateServerConfig(config)
+    const sanitizedSettings = {
+      new_field: 'new value sanitized',
+      new_secret_field: 'new secret sanitized'
+    }
 
+    rtLib.logForwarding.setDestination = jest.fn().mockResolvedValue({
+      new_destination: sanitizedSettings
+    })
+
+    const config = new LogForwarding.LogForwardingConfig('new_destination', settings)
+
+    expect(await lf.updateServerConfig(config)).toEqual({
+      new_destination: sanitizedSettings
+    })
     expect(rtLib.logForwarding.setDestination).toHaveBeenCalledWith('new_destination', settings)
     expect(fs.ensureDirSync).toHaveBeenCalledWith('dist')
     expect(fs.writeFile).toHaveBeenCalledWith(

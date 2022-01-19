@@ -21,9 +21,10 @@ class LogForwardingCommand extends BaseCommand {
     const settings = await this.prompt(destinationSettingsConfig)
     const lfConfig = new LogForwarding.LogForwardingConfig(destination, settings)
 
-    await lf.updateServerConfig(lfConfig)
+    const res = await lf.updateServerConfig(lfConfig)
     this.log(`Log forwarding is set to '${destination}'`)
-    await lf.updateLocalConfig(lfConfig)
+
+    await lf.updateLocalConfig(lf.getConfigFromJson(res))
     this.log('Log forwarding settings are saved to the local configuration')
   }
 

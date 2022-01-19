@@ -19,6 +19,7 @@ const path = require('path')
 const SECRET_FIELD_TYPE = 'password'
 const CHECKSUM_DIR = 'dist'
 const CHECKSUM_FILE = 'log-forwarding-config.sha256'
+const IGNORED_REMOTE_SETTINGS = ['updated_at']
 
 class LogForwarding {
   constructor (aioConfig) {
@@ -34,7 +35,7 @@ class LogForwarding {
   getLocalConfig () {
     const config = this.aioConfig.project.workspace.log_forwarding
     try {
-      return convertToConfigObject(config)
+      return this.getConfigFromJson(config)
     } catch (e) {
       throw new Error('Incorrect local log forwarding configuration. ' + e.message)
     }
@@ -67,10 +68,32 @@ class LogForwarding {
 
   async getServerConfig () {
     try {
-      return convertToConfigObject(await this.logForwarding.get())
+      return this.getConfigFromJson(await this.logForwarding.get())
     } catch (e) {
       throw new Error('Incorrect log forwarding configuration on server. ' + e.message)
     }
+  }
+
+  /**
+   * Convert JSON config to Log Forwarding object
+   *
+   * @param {object} configJson Config in JSON format
+   * @returns {LogForwardingConfig} Config
+   */
+  getConfigFromJson (configJson) {
+    let destination
+    let settings
+
+    if (configJson !== undefined && configJson !== null && !Array.isArray(configJson) && typeof configJson === 'object') {
+      const destinations = Object.keys(configJson)
+      if (destinations.length === 1) {
+        destination = destinations[0]
+        settings = configJson[destination]
+      } else {
+        throw new Error(`Configuration has ${destinations.length} destinations. Exactly one must be defined.`)
+      }
+    }
+    return new LogForwardingConfig(destination, settings)
   }
 
   getSupportedDestinations () {
@@ -92,14 +115,16 @@ class LogForwarding {
     const secretSettings = {}
 
     const settings = lfConfig.getSettings()
-    Object.keys(settings).forEach(k => {
-      const destFieldSettings = destinationSettings.find(i => i.name === k)
-      if (destFieldSettings.type === SECRET_FIELD_TYPE) {
-        secretSettings[getSecretVarName(destination, k)] = settings[k]
-      } else {
-        nonSecretSettings[k] = settings[k]
-      }
-    })
+    Object.keys(settings)
+      .filter(e => !IGNORED_REMOTE_SETTINGS.includes(e))
+      .forEach(k => {
+        const destFieldSettings = destinationSettings.find(i => i.name === k)
+        if (destFieldSettings.type === SECRET_FIELD_TYPE) {
+          secretSettings[getSecretVarName(destination, k)] = settings[k]
+        } else {
+          nonSecretSettings[k] = settings[k]
+        }
+      })
 
     projectConfig.project.workspace.log_forwarding = {
       [destination]: nonSecretSettings
@@ -122,10 +147,11 @@ class LogForwarding {
   }
 
   async updateServerConfig (lfConfig) {
-    await this.logForwarding.setDestination(lfConfig.getDestination(), lfConfig.getSettings())
+    const res = await this.logForwarding.setDestination(lfConfig.getDestination(), lfConfig.getSettings())
     const checksum = getChecksum(lfConfig)
     fs.ensureDirSync(CHECKSUM_DIR)
     fs.writeFile(path.join(CHECKSUM_DIR, CHECKSUM_FILE), checksum, { flags: 'w' })
+    return res
   }
 }
 
@@ -191,8 +217,8 @@ async function getRTLogForwarding (rtConfig) {
  */
 function shallowEqual (config1, config2) {
   // updated_at exists on server only and does not impact actual configuration
-  const keys1 = Object.keys(config1).filter(e => e !== 'updated_at')
-  const keys2 = Object.keys(config2).filter(e => e !== 'updated_at')
+  const keys1 = Object.keys(config1).filter(e => !IGNORED_REMOTE_SETTINGS.includes(e))
+  const keys2 = Object.keys(config2).filter(e => !IGNORED_REMOTE_SETTINGS.includes(e))
   if (keys1.length !== keys2.length) {
     return false
   }
@@ -202,28 +228,6 @@ function shallowEqual (config1, config2) {
     }
   }
   return true
-}
-
-/**
- * Convert JSON config to Log Forwarding object
- *
- * @param {object} configJson Config in JSON format
- * @returns {LogForwardingConfig} Config
- */
-function convertToConfigObject (configJson) {
-  let destination
-  let settings
-
-  if (configJson !== undefined && configJson !== null && !Array.isArray(configJson) && typeof configJson === 'object') {
-    const destinations = Object.keys(configJson)
-    if (destinations.length === 1) {
-      destination = destinations[0]
-      settings = configJson[destination]
-    } else {
-      throw new Error(`Configuration has ${destinations.length} destinations. Exactly one must be defined.`)
-    }
-  }
-  return new LogForwardingConfig(destination, settings)
 }
 
 /**

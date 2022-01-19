@@ -42,7 +42,8 @@ beforeEach(async () => {
     getSupportedDestinations: jest.fn().mockReturnValue([{ value: 'destination', name: 'Destination' }]),
     getSettingsConfig: jest.fn().mockReturnValue({ key: 'value' }),
     updateServerConfig: jest.fn(),
-    updateLocalConfig: jest.fn()
+    updateLocalConfig: jest.fn(),
+    getConfigFromJson: jest.fn()
   }
   LogForwarding.init.mockResolvedValue(lf)
 })
@@ -56,8 +57,17 @@ test('set log forwarding destination', async () => {
     }
     command.prompt.mockResolvedValueOnce({ type: destination })
     command.prompt.mockResolvedValueOnce(input)
-    const setCall = jest.fn()
+    const serverSanitizedSettings = {
+      field_one: 'val_one',
+      field_two: 'val_two sanitized'
+    }
+    const setCall = jest.fn().mockResolvedValue({
+      destination: serverSanitizedSettings
+    })
+    const localSetCall = jest.fn()
     lf.updateServerConfig = setCall
+    lf.updateLocalConfig = localSetCall
+    lf.getConfigFromJson.mockReturnValue(new LogForwarding.LogForwardingConfig(destination, serverSanitizedSettings))
     return command.run()
       .then(() => {
         expect(command.prompt).toHaveBeenNthCalledWith(1, [{
@@ -69,6 +79,8 @@ test('set log forwarding destination', async () => {
         expect(stdout.output).toMatch(`Log forwarding is set to '${destination}'\nLog forwarding settings are saved to the local configuration`)
         expect(setCall).toBeCalledTimes(1)
         expect(setCall).toHaveBeenCalledWith(new LogForwarding.LogForwardingConfig(destination, input))
+        expect(localSetCall).toBeCalledTimes(1)
+        expect(localSetCall).toHaveBeenCalledWith(new LogForwarding.LogForwardingConfig(destination, serverSanitizedSettings))
         resolve()
       })
   })
