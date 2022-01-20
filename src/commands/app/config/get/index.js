@@ -15,11 +15,11 @@ const BaseCommand = require('../../../../BaseCommand')
 class IndexCommand extends BaseCommand {
   async run () {
     const help = new HHelp(this.config)
-    help.showHelp(['app:config:set', '--help'])
+    help.showHelp(['app:config:get', '--help'])
   }
 }
 
-IndexCommand.description = 'Set app config'
-IndexCommand.aliases = ['app:config:set']
+IndexCommand.description = 'Get app config'
+IndexCommand.aliases = ['app:config:get']
 
 module.exports = IndexCommand

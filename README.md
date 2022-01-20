@@ -36,7 +36,9 @@ $ aio app --help
 * [`aio app:add:web-assets`](#aio-appaddweb-assets)
 * [`aio app:build`](#aio-appbuild)
 * [`aio app:config`](#aio-appconfig)
+* [`aio app:config:get`](#aio-appconfigget)
 * [`aio app:config:get:log-forwarding`](#aio-appconfiggetlog-forwarding)
+* [`aio app:config:get:log-forwarding:errors`](#aio-appconfiggetlog-forwardingerrors)
 * [`aio app:config:set`](#aio-appconfigset)
 * [`aio app:config:set:log-forwarding`](#aio-appconfigsetlog-forwarding)
 * [`aio app:create [PATH]`](#aio-appcreate-path)
@@ -277,6 +279,24 @@ ALIASES
 
 _See code: [src/commands/app/config/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/config/index.ts)_
 
+## `aio app:config:get`
+
+```
+Get app config
+
+USAGE
+  $ aio app:config:get
+
+OPTIONS
+  -v, --verbose  Verbose output
+  --version      Show version
+
+ALIASES
+  $ aio app:config:get
+```
+
+_See code: [src/commands/app/config/get/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/config/get/index.ts)_
+
 ## `aio app:config:get:log-forwarding`
 
 ```
@@ -296,6 +316,25 @@ ALIASES
 
 _See code: [src/commands/app/config/get/log-forwarding.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/config/get/log-forwarding.ts)_
 
+## `aio app:config:get:log-forwarding:errors`
+
+```
+Get log forwarding errors
+
+USAGE
+  $ aio app:config:get:log-forwarding:errors
+
+OPTIONS
+  -v, --verbose  Verbose output
+  --version      Show version
+
+ALIASES
+  $ aio app:config:get:log-forwarding:errors
+  $ aio app:config:get:lf:errors
+```
+
+_See code: [src/commands/app/config/get/log-forwarding/errors.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/config/get/log-forwarding/errors.ts)_
+
 ## `aio app:config:set`
 
 ```
@@ -309,7 +348,6 @@ OPTIONS
   --version      Show version
 
 ALIASES
-  $ aio app:config:set
   $ aio app:config:set
 ```
 
