@@ -11,10 +11,10 @@ governing permissions and limitations under the License.
 */
 
 const { flags } = require('@oclif/command')
-// const { cli } = require('cli-ux')
 const BaseCommand = require('../../BaseCommand')
 const { wrapError } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
+const LogForwarding = require('../../lib/log-forwarding')
 
 class Logs extends BaseCommand {
   _processEachAction (fullConfig, processFn) {
@@ -38,6 +38,15 @@ class Logs extends BaseCommand {
     const hasAnyBackend = Object.values(fullConfig.all).reduce((hasBackend, config) => hasBackend && config.app.hasBackend, true)
     if (!hasAnyBackend) {
       throw new Error('There are no backend implementations for this project folder.')
+    }
+
+    const lf = await LogForwarding.init(fullConfig.aio)
+    const serverConfig = await lf.getServerConfig()
+    const logForwardingDestination = serverConfig.getDestination()
+    if (logForwardingDestination !== 'adobe_io_runtime') {
+      this.log(`Namespace is configured with custom log forwarding destination: '${logForwardingDestination}'. ` +
+        'Please use corresponding logging platform to view logs.')
+      return
     }
 
     if (flags.limit < 1) {

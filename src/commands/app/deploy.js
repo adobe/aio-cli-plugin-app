@@ -21,6 +21,7 @@ const webLib = require('@adobe/aio-lib-web')
 const { flags } = require('@oclif/command')
 const { createWebExportFilter, runScript, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
+const LogForwarding = require('../../lib/log-forwarding')
 
 class Deploy extends BuildCommand {
   async run () {
@@ -55,7 +56,29 @@ class Deploy extends BuildCommand {
     const spinner = ora()
 
     try {
-      // 1. deploy actions and web assets for each extension
+      const aioConfig = this.getFullConfig().aio
+      // 1. update log forwarding configuration
+      if (flags['log-forwarding-update'] && flags.actions) {
+        spinner.start('Updating log forwarding configuration')
+        try {
+          const lf = await LogForwarding.init(aioConfig)
+          if (lf.isLocalConfigChanged()) {
+            const lfConfig = lf.getLocalConfigWithSecrets()
+            if (lfConfig.isDefined()) {
+              await lf.updateServerConfig(lfConfig)
+              spinner.succeed(chalk.green(`Log forwarding is set to '${lfConfig.getDestination()}'`))
+            } else {
+              spinner.fail(chalk.green('Log forwarding is not updated: no configuration is provided'))
+            }
+          } else {
+            spinner.fail(chalk.green('Log forwarding is not updated: configuration not changed since last update'))
+          }
+        } catch (error) {
+          spinner.fail(chalk.red('Log forwarding is not updated.'))
+          throw error
+        }
+      }
+      // 2. deploy actions and web assets for each extension
       // Possible improvements:
       // - parallelize
       // - break into smaller pieces deploy, allowing to first deploy all actions then all web assets
@@ -64,9 +87,9 @@ class Deploy extends BuildCommand {
         const v = values[i]
         await this.deploySingleConfig(k, v, flags, spinner)
       }
-      // 2. deploy extension manifest
+
+      // 3. deploy extension manifest
       if (flags.publish) {
-        const aioConfig = this.getFullConfig().aio
         const payload = await this.publishExtensionPoints(libConsoleCLI, deployConfigs, aioConfig, flags['force-publish'])
         this.log(chalk.blue(chalk.bold(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': '${Object.keys(payload.endpoints)}'`)))
       } else {
@@ -84,12 +107,14 @@ class Deploy extends BuildCommand {
   }
 
   async deploySingleConfig (name, config, flags, spinner) {
-    const onProgress = !flags.verbose ? info => {
-      spinner.text = info
-    } : info => {
-      spinner.info(chalk.dim(`${info}`))
-      spinner.start()
-    }
+    const onProgress = !flags.verbose
+      ? info => {
+        spinner.text = info
+      }
+      : info => {
+        spinner.info(chalk.dim(`${info}`))
+        spinner.start()
+      }
 
     // build phase
     if (flags.build) {
@@ -300,6 +325,11 @@ Deploy.flags = {
   'web-optimize': flags.boolean({
     description: '[default: false] Enable optimization (minification) of web js/css/html',
     default: false
+  }),
+  'log-forwarding-update': flags.boolean({
+    description: '[default: true] Update log forwarding configuration on server',
+    default: true,
+    allowNo: true
   })
 }
 
