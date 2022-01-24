@@ -13,10 +13,18 @@ governing permissions and limitations under the License.
 const TheCommand = require('../../../src/commands/app/logs')
 const BaseCommand = require('../../../src/BaseCommand')
 const dataMocks = require('../../data-mocks/config-loader')
+const LogForwarding = require('../../../src/lib/log-forwarding')
+
+jest.mock('../../../src/lib/log-forwarding', () => {
+  const orig = jest.requireActual('../../../src/lib/log-forwarding')
+  return {
+    ...orig,
+    init: jest.fn()
+  }
+})
 
 const createFullConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
-  const appConfig = dataMocks(appFixtureName, aioConfig)
-  return appConfig
+  return dataMocks(appFixtureName, aioConfig)
 }
 
 const mockFS = require('fs-extra')
@@ -51,7 +59,7 @@ describe('interface', () => {
 })
 
 describe('run', () => {
-  let command
+  let command, logForwarding
 
   const owConfig = () => Object.values(command.appConfig.all)[0].ow // every extension has the same 'ow' package
 
@@ -66,6 +74,11 @@ describe('run', () => {
     command.log = jest.fn()
     command.getFullConfig = jest.fn()
     command.getFullConfig.mockReturnValue(command.appConfig)
+    logForwarding = {
+      getServerConfig: jest.fn()
+        .mockResolvedValue(new LogForwarding.LogForwardingConfig('adobe_io_runtime', {}))
+    }
+    LogForwarding.init.mockResolvedValue(logForwarding)
   })
 
   test('no flags, sets limit to 1', async () => {
@@ -76,6 +89,16 @@ describe('run', () => {
     const actionList = ['legacy-app-1.0.0/action', 'legacy-app-1.0.0/action-zip']
     expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, actionList, false, false)
     expect(command.error).not.toHaveBeenCalled()
+  })
+
+  test('no flags, custom log forwarding', async () => {
+    mockFS.existsSync.mockReturnValue(true)
+    logForwarding.getServerConfig.mockResolvedValue(
+      new LogForwarding.LogForwardingConfig('custom_destination', {})
+    )
+
+    await command.run()
+    expect(printActionLogs).not.toHaveBeenCalled()
   })
 
   test('--limit < 1, sets limit to 1', async () => {
