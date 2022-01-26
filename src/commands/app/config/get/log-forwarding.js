@@ -21,8 +21,12 @@ class LogForwardingCommand extends BaseCommand {
 
     if (!localConfig.isEqual(serverConfig)) {
       this.log('Local and server log forwarding configuration is different')
-      this.log("Run either 'aio app:deploy' to update the server, " +
-        "or 'aio app:config:set:log-forwarding' to set new local and server configuration")
+      let message = 'Run'
+      if (localConfig.isDefined()) {
+        message += " either 'aio app:deploy' to update the server, or"
+      }
+      message += " 'aio app:config:set:log-forwarding' to set new local and server configuration"
+      this.log(message)
       this.log('Local configuration:')
       this.printConfig(localConfig)
       this.log('\nServer configuration:')
