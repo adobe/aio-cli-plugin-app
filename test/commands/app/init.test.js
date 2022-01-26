@@ -50,6 +50,9 @@ const mockConsoleCLIInstance = {
   subscribeToServices: jest.fn(),
   getWorkspaceConfig: jest.fn(),
   createWorkspace: jest.fn(),
+  checkDevTermsForOrg: jest.fn(),
+  getDevTermsForOrg: jest.fn(),
+  acceptDevTermsForOrg: jest.fn(),
   prompt: {
     promptConfirm: jest.fn()
   }
@@ -426,13 +429,13 @@ describe('run', () => {
   const fakeServicePropertiesNoAssetCompute = [{ sdkCode: 'another' }]
 
   test('with login, select excshell', async () => {
+    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
     mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
     mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
     mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
     mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
     mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
-
     mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
     await TheCommand.run([])
     expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
@@ -464,6 +467,7 @@ describe('run', () => {
   })
 
   test('with login, select asset-compute', async () => {
+    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
     mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
     mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
     mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
@@ -508,6 +512,7 @@ describe('run', () => {
   })
 
   test('with login, select excshell, no asset compute service in org', async () => {
+    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
     mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
     mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
     mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
@@ -559,6 +564,7 @@ describe('run', () => {
   })
 
   test('with login, select excshell, create new project', async () => {
+    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
     mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
     mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(null) // null = user selects to create a project
     mockConsoleCLIInstance.createProject.mockResolvedValue(fakeProject)
@@ -599,6 +605,7 @@ describe('run', () => {
 
   test('with login, --extension excshell, create new project', async () => {
     mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
+    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
     mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(null) // null = user selects to create a project
     mockConsoleCLIInstance.createProject.mockResolvedValue(fakeProject)
     mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
@@ -638,6 +645,7 @@ describe('run', () => {
   })
 
   test('with login, select excshell, -w dev', async () => {
+    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
     mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
     mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
     mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
@@ -677,6 +685,7 @@ describe('run', () => {
   })
 
   test('with login, select excshell, -w notexists, promptConfirm true', async () => {
+    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
     mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValue(true)
     mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
     mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
@@ -693,6 +702,7 @@ describe('run', () => {
 
   test('with login, select excshell, -w notexists, promptConfirm false, should throw', async () => {
     const workspaceName = 'notexists'
+    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
     mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValue(false)
     mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
     mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
@@ -707,6 +717,7 @@ describe('run', () => {
   })
   test('with login, select excshell, -w notexists, --confirm-new-workspace', async () => {
     const notexistsWorkspace = 'notexists'
+    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
     mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValue(true)
     mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
     mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
@@ -720,5 +731,41 @@ describe('run', () => {
     await TheCommand.run(['-w', notexistsWorkspace, '--confirm-new-workspace'])
     expect(mockConsoleCLIInstance.prompt.promptConfirm).not.toHaveBeenCalled()
     expect(mockConsoleCLIInstance.createWorkspace).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({ name: 'notexists', title: '' }))
+  })
+  test('with login, developer terms not accepted, accept', async () => {
+    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
+    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
+    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
+    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
+    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
+    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(false)
+    mockConsoleCLIInstance.getDevTermsForOrg.mockResolvedValue({ text: 'pls, accept this', locale: 'eng' })
+    mockConsoleCLIInstance.acceptDevTermsForOrg.mockResolvedValueOnce(true)
+    mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValueOnce(true)
+    await TheCommand.run([])
+    expect(mockConsoleCLIInstance.checkDevTermsForOrg).toHaveBeenCalledTimes(1)
+    expect(mockConsoleCLIInstance.prompt.promptConfirm).toHaveBeenCalledTimes(1)
+    expect(mockConsoleCLIInstance.getDevTermsForOrg).toHaveBeenCalledTimes(1)
+    expect(mockConsoleCLIInstance.acceptDevTermsForOrg).toHaveBeenCalledTimes(1)
+  })
+  test('with login, developer terms not accepted, declined by user', async () => {
+    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
+    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
+    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
+    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
+    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
+    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(false)
+    mockConsoleCLIInstance.getDevTermsForOrg.mockResolvedValue({ text: 'pls, accept this', locale: 'eng' })
+    mockConsoleCLIInstance.acceptDevTermsForOrg.mockResolvedValueOnce(true)
+    mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValueOnce(false)
+    await expect(TheCommand.run([])).rejects.toThrow('Developer terms were declined')
+    expect(mockConsoleCLIInstance.checkDevTermsForOrg).toHaveBeenCalledTimes(1)
+    expect(mockConsoleCLIInstance.getDevTermsForOrg).toHaveBeenCalledTimes(1)
+    expect(mockConsoleCLIInstance.prompt.promptConfirm).toHaveBeenCalledTimes(1)
+    expect(mockConsoleCLIInstance.acceptDevTermsForOrg).toHaveBeenCalledTimes(0)
   })
 })

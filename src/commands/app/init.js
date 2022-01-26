@@ -128,6 +128,20 @@ class InitCommand extends AddCommand {
     this.log(chalk.blue(chalk.bold(`Project initialized for Workspace ${workspace.name}, you can run 'aio app use -w <workspace>' to switch workspace.`)))
   }
 
+  async ensureDevTermAccepted (consoleCLI, orgId) {
+    const isTermAccepted = await consoleCLI.checkDevTermsForOrg(orgId)
+    if (!isTermAccepted) {
+      const terms = await consoleCLI.getDevTermsForOrg()
+      const confirmDevTerms = await consoleCLI.prompt.promptConfirm(terms.text)
+      if (!confirmDevTerms) {
+        this.error('Developer terms were declined')
+      } else {
+        await consoleCLI.acceptDevTermsForOrg(orgId)
+        this.log(`Developer terms were successfully accepted for org ${orgId}`)
+      }
+    }
+  }
+
   async selectExtensionPoints (flags, orgSupportedServices = null) {
     if (!flags.extensions) {
       return [implPromptChoices.find(i => i.value.name === 'application').value]
@@ -167,6 +181,7 @@ class InitCommand extends AddCommand {
   async selectConsoleOrg (consoleCLI) {
     const organizations = await consoleCLI.getOrganizations()
     const selectedOrg = await consoleCLI.promptForSelectOrganization(organizations)
+    await this.ensureDevTermAccepted(consoleCLI, selectedOrg.id)
     return selectedOrg
   }
 
