@@ -53,13 +53,19 @@ test('set log forwarding destination', async () => {
     const destination = 'destination'
     const input = {
       field_one: 'val_one',
-      field_two: 'val_two'
+      field_two: 'val_two',
+      secret: 'val_secret'
     }
     command.prompt.mockResolvedValueOnce({ type: destination })
     command.prompt.mockResolvedValueOnce(input)
     const serverSanitizedSettings = {
       field_one: 'val_one',
       field_two: 'val_two sanitized'
+    }
+    const fullSanitizedSettings = {
+      field_one: 'val_one',
+      field_two: 'val_two sanitized',
+      secret: 'val_secret'
     }
     const setCall = jest.fn().mockResolvedValue({
       destination: serverSanitizedSettings
@@ -80,7 +86,7 @@ test('set log forwarding destination', async () => {
         expect(setCall).toBeCalledTimes(1)
         expect(setCall).toHaveBeenCalledWith(new LogForwarding.LogForwardingConfig(destination, input))
         expect(localSetCall).toBeCalledTimes(1)
-        expect(localSetCall).toHaveBeenCalledWith(new LogForwarding.LogForwardingConfig(destination, serverSanitizedSettings))
+        expect(localSetCall).toHaveBeenCalledWith(new LogForwarding.LogForwardingConfig(destination, fullSanitizedSettings))
         resolve()
       })
   })
