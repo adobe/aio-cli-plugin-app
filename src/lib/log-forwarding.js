@@ -169,6 +169,14 @@ class LogForwardingConfig {
     return this.settings
   }
 
+  getMergedConfig (config) {
+    const newSettings = {}
+    Object.keys(this.settings).forEach(k => {
+      newSettings[k] = config.settings[k] !== undefined ? config.settings[k] : this.settings[k]
+    })
+    return new LogForwardingConfig(this.destination, newSettings)
+  }
+
   isDefined () {
     return this.destination !== undefined
   }

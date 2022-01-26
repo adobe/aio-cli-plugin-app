@@ -134,7 +134,7 @@ test('get log forwarding settings (no local config)', async () => {
     return command.run()
       .then(() => {
         expect(stdout.output).toEqual('Local and server log forwarding configuration is different\n' +
-          "Run either 'aio app:deploy' to update the server, or 'aio app:config:set:log-forwarding' to set new local and server configuration\n" +
+          "Run 'aio app:config:set:log-forwarding' to set new local and server configuration\n" +
           'Local configuration:\n' +
           'Not defined\n\n' +
           'Server configuration:\n' +
