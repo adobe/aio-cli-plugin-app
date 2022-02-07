@@ -40,7 +40,7 @@ const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
   appConfig.application = { ...appConfig.application, ...aioConfig }
   return appConfig
 }
-console.log(createAppConfig({}))
+
 let command
 beforeEach(() => {
   command = new TheCommand([])

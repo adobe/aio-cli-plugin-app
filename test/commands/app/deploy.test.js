@@ -902,6 +902,15 @@ describe('run', () => {
     expect(mockLogForwarding.updateServerConfig).toBeCalledTimes(0)
   })
 
+  test('log forwarding is not updated on server when local config is absent --verbose', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    const config = new LogForwarding.LogForwardingConfig()
+    mockLogForwarding.getLocalConfigWithSecrets.mockReturnValue(config)
+    command.argv = ['--verbose']
+    await command.run()
+    expect(mockLogForwarding.updateServerConfig).toBeCalledTimes(0)
+  })
+
   test('log forwarding is not updated on server when local config not changed', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     mockLogForwarding.isLocalConfigChanged.mockReturnValue(false)

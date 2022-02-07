@@ -58,7 +58,12 @@ class Deploy extends BuildCommand {
     try {
       const aioConfig = this.getFullConfig().aio
       // 1. update log forwarding configuration
-      if (flags['log-forwarding-update'] && flags.actions) {
+      // note: it is possible that .aio file does not exist, which means there is no local lg config
+      if (aioConfig &&
+          aioConfig.project &&
+          aioConfig.project.workspace &&
+          flags['log-forwarding-update'] &&
+          flags.actions) {
         spinner.start('Updating log forwarding configuration')
         try {
           const lf = await LogForwarding.init(aioConfig)
@@ -68,10 +73,12 @@ class Deploy extends BuildCommand {
               await lf.updateServerConfig(lfConfig)
               spinner.succeed(chalk.green(`Log forwarding is set to '${lfConfig.getDestination()}'`))
             } else {
-              spinner.fail(chalk.green('Log forwarding is not updated: no configuration is provided'))
+              if (flags.verbose) {
+                spinner.info(chalk.dim('Log forwarding is not updated: no configuration is provided'))
+              }
             }
           } else {
-            spinner.fail(chalk.green('Log forwarding is not updated: configuration not changed since last update'))
+            spinner.info(chalk.dim('Log forwarding is not updated: configuration not changed since last update'))
           }
         } catch (error) {
           spinner.fail(chalk.red('Log forwarding is not updated.'))
