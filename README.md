@@ -35,6 +35,12 @@ $ aio app --help
 * [`aio app:add:service`](#aio-appaddservice)
 * [`aio app:add:web-assets`](#aio-appaddweb-assets)
 * [`aio app:build`](#aio-appbuild)
+* [`aio app:config`](#aio-appconfig)
+* [`aio app:config:get`](#aio-appconfigget)
+* [`aio app:config:get:log-forwarding`](#aio-appconfiggetlog-forwarding)
+* [`aio app:config:get:log-forwarding:errors`](#aio-appconfiggetlog-forwardingerrors)
+* [`aio app:config:set`](#aio-appconfigset)
+* [`aio app:config:set:log-forwarding`](#aio-appconfigsetlog-forwarding)
 * [`aio app:create [PATH]`](#aio-appcreate-path)
 * [`aio app:delete`](#aio-appdelete)
 * [`aio app:delete:action [ACTION-NAME]`](#aio-appdeleteaction-action-name)
@@ -61,8 +67,6 @@ $ aio app --help
 Create, run, test, and deploy Adobe I/O Apps
 
 ```
-Create, run, test, and deploy Adobe I/O Apps
-
 USAGE
   $ aio app
 
@@ -71,15 +75,13 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/index.js)_
+_See code: [src/commands/app/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/index.ts)_
 
 ## `aio app:add`
 
 Add a new component to an existing Adobe I/O App
 
 ```
-Add a new component to an existing Adobe I/O App
-
 USAGE
   $ aio app:add
 
@@ -88,16 +90,13 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/add/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/add/index.js)_
+_See code: [src/commands/app/add/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/add/index.ts)_
 
 ## `aio app:add:action`
 
 Add new actions
 
 ```
-Add new actions
-
-
 USAGE
   $ aio app:add:action
 
@@ -113,16 +112,13 @@ ALIASES
   $ aio app:add:actions
 ```
 
-_See code: [src/commands/app/add/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/add/action.js)_
+_See code: [src/commands/app/add/action.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/add/action.ts)_
 
 ## `aio app:add:ci`
 
 Add CI files
 
 ```
-Add CI files
-
-
 USAGE
   $ aio app:add:ci
 
@@ -131,16 +127,13 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/add/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/add/ci.js)_
+_See code: [src/commands/app/add/ci.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/add/ci.ts)_
 
 ## `aio app:add:event`
 
 Add a new Adobe I/O Events action
 
 ```
-Add a new Adobe I/O Events action
-
-
 USAGE
   $ aio app:add:event
 
@@ -156,16 +149,13 @@ ALIASES
   $ aio app:add:events
 ```
 
-_See code: [src/commands/app/add/event.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/add/event.js)_
+_See code: [src/commands/app/add/event.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/add/event.ts)_
 
 ## `aio app:add:extension`
 
 Add new extensions or a standalone application to the project
 
 ```
-Add new extensions or a standalone application to the project
-
-
 USAGE
   $ aio app:add:extension
 
@@ -182,16 +172,13 @@ ALIASES
   $ aio app:add:extensions
 ```
 
-_See code: [src/commands/app/add/extension.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/add/extension.js)_
+_See code: [src/commands/app/add/extension.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/add/extension.ts)_
 
 ## `aio app:add:service`
 
 Subscribe to Services in the current Workspace
 
 ```
-Subscribe to Services in the current Workspace
-
-
 USAGE
   $ aio app:add:service
 
@@ -203,16 +190,13 @@ ALIASES
   $ aio app:add:services
 ```
 
-_See code: [src/commands/app/add/service.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/add/service.js)_
+_See code: [src/commands/app/add/service.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/add/service.ts)_
 
 ## `aio app:add:web-assets`
 
 Add web assets support
 
 ```
-Add web assets support
-
-
 USAGE
   $ aio app:add:web-assets
 
@@ -225,18 +209,13 @@ OPTIONS
   --version                  Show version
 ```
 
-_See code: [src/commands/app/add/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/add/web-assets.js)_
+_See code: [src/commands/app/add/web-assets.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/add/web-assets.ts)_
 
 ## `aio app:build`
 
 Build an Adobe I/O App
 
 ```
-Build an Adobe I/O App
-
-This will always force a rebuild unless --no-force-build is set.
-
-
 USAGE
   $ aio app:build
 
@@ -270,16 +249,125 @@ DESCRIPTION
   This will always force a rebuild unless --no-force-build is set.
 ```
 
-_See code: [src/commands/app/build.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/build.js)_
+_See code: [src/commands/app/build.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/build.ts)_
+
+## `aio app:config`
+
+Manage app config
+
+```
+USAGE
+  $ aio app:config
+
+OPTIONS
+  -v, --verbose  Verbose output
+  --version      Show version
+
+ALIASES
+  $ aio app:config
+  $ aio app:config
+```
+
+_See code: [src/commands/app/config/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/config/index.ts)_
+
+## `aio app:config:get`
+
+Get app config
+
+```
+USAGE
+  $ aio app:config:get
+
+OPTIONS
+  -v, --verbose  Verbose output
+  --version      Show version
+
+ALIASES
+  $ aio app:config:get
+```
+
+_See code: [src/commands/app/config/get/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/config/get/index.ts)_
+
+## `aio app:config:get:log-forwarding`
+
+Get log forwarding destination configuration
+
+```
+USAGE
+  $ aio app:config:get:log-forwarding
+
+OPTIONS
+  -v, --verbose  Verbose output
+  --version      Show version
+
+ALIASES
+  $ aio app:config:get:log-forwarding
+  $ aio app:config:get:lf
+```
+
+_See code: [src/commands/app/config/get/log-forwarding.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/config/get/log-forwarding.ts)_
+
+## `aio app:config:get:log-forwarding:errors`
+
+Get log forwarding errors
+
+```
+USAGE
+  $ aio app:config:get:log-forwarding:errors
+
+OPTIONS
+  -v, --verbose  Verbose output
+  --version      Show version
+
+ALIASES
+  $ aio app:config:get:log-forwarding:errors
+  $ aio app:config:get:lf:errors
+```
+
+_See code: [src/commands/app/config/get/log-forwarding/errors.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/config/get/log-forwarding/errors.ts)_
+
+## `aio app:config:set`
+
+Set app config
+
+```
+USAGE
+  $ aio app:config:set
+
+OPTIONS
+  -v, --verbose  Verbose output
+  --version      Show version
+
+ALIASES
+  $ aio app:config:set
+```
+
+_See code: [src/commands/app/config/set/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/config/set/index.ts)_
+
+## `aio app:config:set:log-forwarding`
+
+Set log forwarding destination configuration
+
+```
+USAGE
+  $ aio app:config:set:log-forwarding
+
+OPTIONS
+  -v, --verbose  Verbose output
+  --version      Show version
+
+ALIASES
+  $ aio app:config:set:log-forwarding
+  $ aio app:config:set:lf
+```
+
+_See code: [src/commands/app/config/set/log-forwarding.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/config/set/log-forwarding.ts)_
 
 ## `aio app:create [PATH]`
 
 Create a new Adobe I/O App with default parameters
 
 ```
-Create a new Adobe I/O App with default parameters
-
-
 USAGE
   $ aio app:create [PATH]
 
@@ -292,15 +380,13 @@ OPTIONS
   --version            Show version
 ```
 
-_See code: [src/commands/app/create.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/create.js)_
+_See code: [src/commands/app/create.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/create.ts)_
 
 ## `aio app:delete`
 
 Delete a component from an existing Adobe I/O App
 
 ```
-Delete a component from an existing Adobe I/O App
-
 USAGE
   $ aio app:delete
 
@@ -309,16 +395,13 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/delete/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/delete/index.js)_
+_See code: [src/commands/app/delete/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/delete/index.ts)_
 
 ## `aio app:delete:action [ACTION-NAME]`
 
 Delete existing actions
 
 ```
-Delete existing actions
-
-
 USAGE
   $ aio app:delete:action [ACTION-NAME]
 
@@ -334,16 +417,13 @@ ALIASES
   $ aio app:delete:actions
 ```
 
-_See code: [src/commands/app/delete/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/delete/action.js)_
+_See code: [src/commands/app/delete/action.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/delete/action.ts)_
 
 ## `aio app:delete:ci`
 
 Delete existing CI files
 
 ```
-Delete existing CI files
-
-
 USAGE
   $ aio app:delete:ci
 
@@ -353,16 +433,13 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/delete/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/delete/ci.js)_
+_See code: [src/commands/app/delete/ci.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/delete/ci.ts)_
 
 ## `aio app:delete:event [EVENT-ACTION-NAME]`
 
 Delete existing Adobe I/O Events actions
 
 ```
-Delete existing Adobe I/O Events actions
-
-
 USAGE
   $ aio app:delete:event [EVENT-ACTION-NAME]
 
@@ -378,16 +455,13 @@ ALIASES
   $ aio app:delete:events
 ```
 
-_See code: [src/commands/app/delete/event.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/delete/event.js)_
+_See code: [src/commands/app/delete/event.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/delete/event.ts)_
 
 ## `aio app:delete:extension`
 
 Add new extensions or a standalone application to the project
 
 ```
-Add new extensions or a standalone application to the project
-
-
 USAGE
   $ aio app:delete:extension
 
@@ -403,16 +477,13 @@ ALIASES
   $ aio app:delete:extensions
 ```
 
-_See code: [src/commands/app/delete/extension.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/delete/extension.js)_
+_See code: [src/commands/app/delete/extension.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/delete/extension.ts)_
 
 ## `aio app:delete:service`
 
 Delete Services in the current Workspace
 
 ```
-Delete Services in the current Workspace
-
-
 USAGE
   $ aio app:delete:service
 
@@ -424,16 +495,13 @@ ALIASES
   $ aio app:delete:services
 ```
 
-_See code: [src/commands/app/delete/service.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/delete/service.js)_
+_See code: [src/commands/app/delete/service.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/delete/service.ts)_
 
 ## `aio app:delete:web-assets`
 
 Delete existing web assets
 
 ```
-Delete existing web assets
-
-
 USAGE
   $ aio app:delete:web-assets
 
@@ -443,73 +511,68 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/delete/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/delete/web-assets.js)_
+_See code: [src/commands/app/delete/web-assets.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/delete/web-assets.ts)_
 
 ## `aio app:deploy`
 
 Build and deploy an Adobe I/O App
 
 ```
-Build and deploy an Adobe I/O App
-
-This will always force a rebuild unless --no-force-build is set.
-
-
 USAGE
   $ aio app:deploy
 
 OPTIONS
-  -a, --action=action        Deploy only a specific action, the flags can be specified multiple times, this will set
-                             --no-publish
+  -a, --action=action           Deploy only a specific action, the flags can be specified multiple times, this will set
+                                --no-publish
 
-  -e, --extension=extension  Deploy only a specific extension, the flags can be specified multiple times
+  -e, --extension=extension     Deploy only a specific extension, the flags can be specified multiple times
 
-  -v, --verbose              Verbose output
+  -v, --verbose                 Verbose output
 
-  --[no-]actions             [default: true] Deploy actions if any
+  --[no-]actions                [default: true] Deploy actions if any
 
-  --[no-]build               [default: true] Run the build phase before deployment
+  --[no-]build                  [default: true] Run the build phase before deployment
 
-  --[no-]content-hash        [default: true] Enable content hashing in browser code
+  --[no-]content-hash           [default: true] Enable content hashing in browser code
 
-  --[no-]force-build         [default: true] Force a build even if one already exists
+  --[no-]force-build            [default: true] Force a build even if one already exists
 
-  --force-publish            Force publish extension(s) to Exchange, delete previously published extension points
+  --force-publish               Force publish extension(s) to Exchange, delete previously published extension points
 
-  --open                     Open the default web browser after a successful deploy, only valid if your app has a
-                             front-end
+  --[no-]log-forwarding-update  [default: true] Update log forwarding configuration on server
 
-  --[no-]publish             [default: true] Publish extension(s) to Exchange
+  --open                        Open the default web browser after a successful deploy, only valid if your app has a
+                                front-end
 
-  --skip-actions             [deprecated] Please use --no-actions
+  --[no-]publish                [default: true] Publish extension(s) to Exchange
 
-  --skip-build               [deprecated] Please use --no-build
+  --skip-actions                [deprecated] Please use --no-actions
 
-  --skip-deploy              [deprecated] Please use 'aio app build'
+  --skip-build                  [deprecated] Please use --no-build
 
-  --skip-static              [deprecated] Please use --no-web-assets
+  --skip-deploy                 [deprecated] Please use 'aio app build'
 
-  --skip-web-assets          [deprecated] Please use --no-web-assets
+  --skip-static                 [deprecated] Please use --no-web-assets
 
-  --version                  Show version
+  --skip-web-assets             [deprecated] Please use --no-web-assets
 
-  --[no-]web-assets          [default: true] Deploy web-assets if any
+  --version                     Show version
 
-  --web-optimize             [default: false] Enable optimization (minification) of web js/css/html
+  --[no-]web-assets             [default: true] Deploy web-assets if any
+
+  --web-optimize                [default: false] Enable optimization (minification) of web js/css/html
 
 DESCRIPTION
   This will always force a rebuild unless --no-force-build is set.
 ```
 
-_See code: [src/commands/app/deploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/deploy.js)_
+_See code: [src/commands/app/deploy.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/deploy.ts)_
 
 ## `aio app:get-url [ACTION]`
 
 Get action URLs
 
 ```
-Get action URLs
-
 USAGE
   $ aio app:get-url [ACTION]
 
@@ -522,16 +585,13 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/get-url.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/get-url.js)_
+_See code: [src/commands/app/get-url.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/get-url.ts)_
 
 ## `aio app:info`
 
 Display settings/configuration in use by an Adobe I/O App
 
 ```
-Display settings/configuration in use by an Adobe I/O App
-
-
 USAGE
   $ aio app:info
 
@@ -544,16 +604,13 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/info.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/info.js)_
+_See code: [src/commands/app/info.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/info.ts)_
 
 ## `aio app:init [PATH]`
 
 Create a new Adobe I/O App
 
 ```
-Create a new Adobe I/O App
-
-
 USAGE
   $ aio app:init [PATH]
 
@@ -582,15 +639,13 @@ OPTIONS
   --version                  Show version
 ```
 
-_See code: [src/commands/app/init.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/init.js)_
+_See code: [src/commands/app/init.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/init.ts)_
 
 ## `aio app:list`
 
 List components for Adobe I/O App
 
 ```
-List components for Adobe I/O App
-
 USAGE
   $ aio app:list
 
@@ -599,16 +654,13 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/list/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/list/index.js)_
+_See code: [src/commands/app/list/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/list/index.ts)_
 
 ## `aio app:list:extension`
 
 List implemented extensions
 
 ```
-List implemented extensions
-
-
 USAGE
   $ aio app:list:extension
 
@@ -623,16 +675,13 @@ ALIASES
   $ aio app:list:extensions
 ```
 
-_See code: [src/commands/app/list/extension.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/list/extension.js)_
+_See code: [src/commands/app/list/extension.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/list/extension.ts)_
 
 ## `aio app:list:extension-points`
 
 List all extension points for the selected org
 
 ```
-List all extension points for the selected org
-
-
 USAGE
   $ aio app:list:extension-points
 
@@ -647,16 +696,13 @@ ALIASES
   $ aio app:list:extension-points
 ```
 
-_See code: [src/commands/app/list/extension-points.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/list/extension-points.js)_
+_See code: [src/commands/app/list/extension-points.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/list/extension-points.ts)_
 
 ## `aio app:logs`
 
 Fetch logs for an Adobe I/O App
 
 ```
-Fetch logs for an Adobe I/O App
-
-
 USAGE
   $ aio app:logs
 
@@ -671,15 +717,13 @@ OPTIONS
   --version            Show version
 ```
 
-_See code: [src/commands/app/logs.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/logs.js)_
+_See code: [src/commands/app/logs.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/logs.ts)_
 
 ## `aio app:run`
 
 Run an Adobe I/O App
 
 ```
-Run an Adobe I/O App
-
 USAGE
   $ aio app:run
 
@@ -694,22 +738,13 @@ OPTIONS
   --version                  Show version
 ```
 
-_See code: [src/commands/app/run.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/run.js)_
+_See code: [src/commands/app/run.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/run.ts)_
 
 ## `aio app:test`
 
 Run tests for an Adobe I/O App
 
 ```
-Run tests for an Adobe I/O App
-If no flags are specified, by default only unit-tests are run.
-
-For the --action flag, it tries a substring search on the 'package-name/action-name' pair for an action.
-For the --extension flag, it tries a substring search on the 'extension-name' only.
-If the extension has a hook called 'test' in its 'ext.config.yaml', the script specified will be run instead.
-
-
-
 USAGE
   $ aio app:test
 
@@ -728,16 +763,13 @@ DESCRIPTION
   If the extension has a hook called 'test' in its 'ext.config.yaml', the script specified will be run instead.
 ```
 
-_See code: [src/commands/app/test.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/test.js)_
+_See code: [src/commands/app/test.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/test.ts)_
 
 ## `aio app:undeploy`
 
 Undeploys an Adobe I/O App
 
 ```
-Undeploys an Adobe I/O App
-
-
 USAGE
   $ aio app:undeploy
 
@@ -754,22 +786,13 @@ OPTIONS
   --[no-]web-assets          [default: true] Undeploy web-assets if any
 ```
 
-_See code: [src/commands/app/undeploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/undeploy.js)_
+_See code: [src/commands/app/undeploy.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/undeploy.ts)_
 
 ## `aio app:use [CONFIG_FILE_PATH]`
 
 Import an Adobe Developer Console configuration file.
 
 ```
-Import an Adobe Developer Console configuration file.
-
-If the optional configuration file is not set, this command will retrieve the console org, project, and workspace settings from the global config.
-
-To set these global config values, see the help text for 'aio console --help'.
-
-To download the configuration file for your project, select the 'Download' button in the toolbar of your project's page in https://console.adobe.io
-
-
 USAGE
   $ aio app:use [CONFIG_FILE_PATH]
 
@@ -816,5 +839,5 @@ DESCRIPTION
   page in https://console.adobe.io
 ```
 
-_See code: [src/commands/app/use.js](https://github.com/adobe/aio-cli-plugin-app/blob/8.4.0/src/commands/app/use.js)_
+_See code: [src/commands/app/use.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/use.ts)_
 <!-- commandsstop -->

@@ -40,6 +40,15 @@ const mockConfigData = {
 jest.mock('cli-ux')
 const { cli } = require('cli-ux')
 
+jest.mock('../../../src/lib/log-forwarding', () => {
+  const orig = jest.requireActual('../../../src/lib/log-forwarding')
+  return {
+    ...orig,
+    init: jest.fn()
+  }
+})
+const LogForwarding = require('../../../src/lib/log-forwarding')
+
 const createWebExportAnnotation = (value) => ({
   body: {
     annotations: [
@@ -99,6 +108,12 @@ const mockLibConsoleCLI = {
   updateExtensionPointsWithoutOverwrites: jest.fn()
 }
 
+const mockLogForwarding = {
+  isLocalConfigChanged: jest.fn(),
+  getLocalConfigWithSecrets: jest.fn(),
+  updateServerConfig: jest.fn()
+}
+
 afterAll(() => {
   jest.restoreAllMocks()
 })
@@ -109,11 +124,16 @@ beforeEach(() => {
   helpers.buildExtensionPointPayloadWoMetadata.mockReset()
   helpers.buildExcShellViewExtensionMetadata.mockReset()
   helpers.createWebExportFilter.mockReset()
+  mockLogForwarding.isLocalConfigChanged.mockReset()
+  mockLogForwarding.getLocalConfigWithSecrets.mockReset()
+  mockLogForwarding.updateServerConfig.mockReset()
 
   jest.restoreAllMocks()
 
   helpers.wrapError.mockImplementation(msg => msg)
   helpers.createWebExportFilter.mockImplementation(filterValue => helpersActual.createWebExportFilter(filterValue))
+
+  LogForwarding.init.mockResolvedValue(mockLogForwarding)
 })
 
 test('exports', async () => {
@@ -210,10 +230,22 @@ describe('run', () => {
     command.buildOneExt = jest.fn()
     command.getAppExtConfigs = jest.fn()
     command.getLibConsoleCLI = jest.fn(() => mockLibConsoleCLI)
-    command.getFullConfig = jest.fn()
+    command.getFullConfig = jest.fn().mockReturnValue({
+      aio: {
+        project: {
+          workspace: {
+            name: 'foo'
+          }
+        }
+      }
+    })
 
     mockRuntimeLib.deployActions.mockResolvedValue({ actions: [] })
     mockWebLib.bundle.mockResolvedValue({ run: mockBundleFunc })
+
+    mockLogForwarding.isLocalConfigChanged.mockReturnValue(true)
+    const config = new LogForwarding.LogForwardingConfig('destination', { field: 'value' })
+    mockLogForwarding.getLocalConfigWithSecrets.mockReturnValue(config)
   })
 
   afterEach(() => {
@@ -448,6 +480,19 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': false }), expect.anything()) // force-build is true by default for build cmd
   })
 
+  test.each([
+    [['--no-log-forwarding-update']],
+    [['--no-actions']],
+    [['--no-log-forwarding-update', '--no-actions']]
+  ])('no log forwarding update due to %s arg(s) specified', async (args) => {
+    const appConfig = createAppConfig(command.appConfig)
+    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+    command.argv = args
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(LogForwarding.init).toHaveBeenCalledTimes(0)
+  })
+
   test('deploy should show ui url', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     mockWebLib.deployWeb.mockResolvedValue('https://example.com')
@@ -548,6 +593,20 @@ describe('run', () => {
 
     await expect(command.run()).rejects.toEqual(error)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+  })
+
+  test('should fail if log forwarding config is invalid', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    const error = new Error('mock failure')
+    mockLogForwarding.getLocalConfigWithSecrets.mockImplementation(() => { throw error })
+    await expect(command.run()).rejects.toEqual(error)
+  })
+
+  test('should fail if log forwarding update fails', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    const error = new Error('mock failure')
+    mockLogForwarding.updateServerConfig.mockImplementation(() => { throw error })
+    await expect(command.run()).rejects.toEqual(error)
   })
 
   test('spinner should be called for progress logs on deployWeb call , with verbose', async () => {
@@ -826,5 +885,36 @@ describe('run', () => {
     expect(scriptSequence[1]).toEqual('deploy-actions')
     expect(scriptSequence[2]).toEqual('deploy-static')
     expect(scriptSequence[3]).toEqual('post-app-deploy')
+  })
+
+  test('should update log forwarding on server when local config is defined', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    const expectedConfig = new LogForwarding.LogForwardingConfig('destination', { field: 'value' })
+    await command.run()
+    expect(mockLogForwarding.updateServerConfig).toBeCalledWith(expectedConfig)
+  })
+
+  test('log forwarding is not updated on server when local config is absent', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    const config = new LogForwarding.LogForwardingConfig()
+    mockLogForwarding.getLocalConfigWithSecrets.mockReturnValue(config)
+    await command.run()
+    expect(mockLogForwarding.updateServerConfig).toBeCalledTimes(0)
+  })
+
+  test('log forwarding is not updated on server when local config is absent --verbose', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    const config = new LogForwarding.LogForwardingConfig()
+    mockLogForwarding.getLocalConfigWithSecrets.mockReturnValue(config)
+    command.argv = ['--verbose']
+    await command.run()
+    expect(mockLogForwarding.updateServerConfig).toBeCalledTimes(0)
+  })
+
+  test('log forwarding is not updated on server when local config not changed', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    mockLogForwarding.isLocalConfigChanged.mockReturnValue(false)
+    await command.run()
+    expect(mockLogForwarding.updateServerConfig).toBeCalledTimes(0)
   })
 })
