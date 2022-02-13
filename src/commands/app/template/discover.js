@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Adobe Inc. All rights reserved.
+ * Copyright 2022 Adobe Inc. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -10,7 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
-const { Command, flags } = require('@oclif/command')
+const { flags } = require('@oclif/command')
+const BaseCommand = require('../../../BaseCommand')
 const { cli } = require('cli-ux')
 const fetch = require('node-fetch')
 const inquirer = require('inquirer')
@@ -22,13 +23,11 @@ https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md
 */
 
 const TEMPLATE_NPM_KEYWORD = 'ecosystem:aio-app-builder-template'
+const TEMPLATE_PACKAGE_JSON_KEY = 'aio-app-builder-templates'
 
-class DiscoverCommand extends Command {
+class DiscoverCommand extends BaseCommand {
   async _install (templates) {
-    // get installed templates
-    const installedTemplates = this.config.commands.map(elem => {
-      return elem.pluginName
-    })
+    const installedTemplates = this.config.pjson[TEMPLATE_PACKAGE_JSON_KEY] || []
 
     const inqChoices = templates
       .filter(elem => { // remove any installed plugins from the list
@@ -123,11 +122,12 @@ DiscoverCommand.description = 'Discover App Builder templates to install'
 DiscoverCommand.aliases = ['template:discover']
 
 DiscoverCommand.flags = {
+  ...BaseCommand.flags,
   scope: flags.string({
     char: 's',
     description: 'filter the templates by npm scope'
   }),
-  install: flags.boolean({
+  interactive: flags.boolean({
     char: 'i',
     default: false,
     description: 'interactive install mode'
