@@ -15,6 +15,7 @@ const BaseCommand = require('../../../BaseCommand')
 const inquirer = require('inquirer')
 const { cli } = require('cli-ux')
 const { prompt, hideNPMWarnings, getNpmLocalVersion } = require('../../../lib/templates-helper')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:template:discover', { provider: 'debug' })
 
 const TEMPLATE_PACKAGE_JSON_KEY = 'aio-app-builder-templates'
 
@@ -112,6 +113,8 @@ class RollbackCommand extends BaseCommand {
     const installedTemplates = this.config.pjson[TEMPLATE_PACKAGE_JSON_KEY] || []
     const templates = []
 
+    aioLogger.debug(`installed templates (from package.json): ${JSON.stringify(installedTemplates, null, 2)}`)
+
     // list is just the names, we query node_modules for the actual version
     for (const template of installedTemplates) {
       try {
@@ -119,10 +122,12 @@ class RollbackCommand extends BaseCommand {
         templates.push({ template, version })
       } catch (e) {
         // might not be installed yet, just put a dummy version
+        aioLogger.debug(`template not found (error or not npm installed yet), using 'unknown' version: ${e}`)
         templates.push({ template, version: 'unknown' })
       }
     }
 
+    aioLogger.debug(`installed templates (processed with version): ${JSON.stringify(templates, null, 2)}`)
     if (templates.length === 0) {
       this.log('no installed templates to clear')
       return
@@ -139,6 +144,8 @@ class RollbackCommand extends BaseCommand {
 }
 
 RollbackCommand.description = 'Clears all installed templates.'
+
+RollbackCommand.aliases = ['template:rollb']
 
 RollbackCommand.flags = {
   ...BaseCommand.flags,

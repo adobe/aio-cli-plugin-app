@@ -508,7 +508,38 @@ const createWebExportFilter = (filterValue) => {
   }
 }
 
+/** @private */
+async function writeObjectToPackageJson (obj = {}, dir = process.cwd()) {
+  const filePath = path.join(dir, 'package.json')
+  const pkgJson = await fs.readJson(filePath)
+
+  return fs.writeJson(
+    filePath,
+    { ...pkgJson, ...obj },
+    { spaces: 2 }
+  )
+}
+
+/** @private */
+async function readPackageJson (dir = process.cwd()) {
+  const filePath = path.join(dir, 'package.json')
+  return fs.readJson(filePath)
+}
+
+/** @private */
+async function getNpmPackageName (npmSpec) {
+  // TODO:
+  // the npm spec can be:
+  // 1. an npm package
+  // 2. a folder path
+  // 3. a url
+  return npmSpec
+}
+
 module.exports = {
+  getNpmPackageName,
+  readPackageJson,
+  writeObjectToPackageJson,
   createWebExportFilter,
   isNpmInstalled,
   isGitInstalled,

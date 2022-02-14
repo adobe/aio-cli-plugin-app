@@ -16,6 +16,7 @@ const { cli } = require('cli-ux')
 const fetch = require('node-fetch')
 const inquirer = require('inquirer')
 const { sortValues } = require('../../../lib/templates-helper')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:template:discover', { provider: 'debug' })
 
 /*
 The npm public registry API:
@@ -92,8 +93,12 @@ class DiscoverCommand extends BaseCommand {
 
     try {
       const url = `https://registry.npmjs.org/-/v1/search?text=keywords:${TEMPLATE_NPM_KEYWORD}`
+      aioLogger.debug(`url to retrieve templates: ${url}`)
+
       const response = await fetch(url)
       const json = await response.json()
+
+      aioLogger.debug(`retrieved templates: ${JSON.stringify(json, null, 2)}`)
 
       let packages = json.objects.map(e => e.package)
 
@@ -119,7 +124,7 @@ class DiscoverCommand extends BaseCommand {
 
 DiscoverCommand.description = 'Discover App Builder templates to install'
 
-DiscoverCommand.aliases = ['template:discover']
+DiscoverCommand.aliases = ['template:disco']
 
 DiscoverCommand.flags = {
   ...BaseCommand.flags,
