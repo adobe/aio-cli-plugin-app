@@ -12,9 +12,8 @@
 
 const BaseCommand = require('../../../BaseCommand')
 const { runScript, writeObjectToPackageJson, readPackageJson } = require('../../../lib/app-helper')
+const { TEMPLATE_PACKAGE_JSON_KEY } = require('../../../lib/templates-helper')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:template:install', { provider: 'debug' })
-
-const TEMPLATE_PACKAGE_JSON_KEY = 'aio-app-builder-templates'
 
 class UninstallCommand extends BaseCommand {
   async run () {
@@ -29,7 +28,7 @@ class UninstallCommand extends BaseCommand {
     const installedTemplates = packageJson[TEMPLATE_PACKAGE_JSON_KEY] || []
     aioLogger.debug(`installed templates in package.json: ${JSON.stringify(installedTemplates, null, 2)}`)
 
-    if (!installedTemplates.includes(args.path)) {
+    if (!installedTemplates.includes(templateName)) {
       this.error(`template ${templateName} is not installed.`)
     } else {
       const idx = installedTemplates.indexOf(templateName)

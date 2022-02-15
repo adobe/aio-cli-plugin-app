@@ -14,10 +14,8 @@ const { flags } = require('@oclif/command')
 const BaseCommand = require('../../../BaseCommand')
 const inquirer = require('inquirer')
 const { cli } = require('cli-ux')
-const { prompt, hideNPMWarnings, getNpmLocalVersion } = require('../../../lib/templates-helper')
+const { prompt, hideNPMWarnings, getNpmLocalVersion, TEMPLATE_PACKAGE_JSON_KEY } = require('../../../lib/templates-helper')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:template:discover', { provider: 'debug' })
-
-const TEMPLATE_PACKAGE_JSON_KEY = 'aio-app-builder-templates'
 
 class RollbackCommand extends BaseCommand {
   /**

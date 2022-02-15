@@ -15,6 +15,9 @@ const fs = require('fs')
 const inquirer = require('inquirer')
 const path = require('path')
 
+const TEMPLATE_NPM_KEYWORD = 'ecosystem:aio-app-builder-template'
+const TEMPLATE_PACKAGE_JSON_KEY = 'aio-app-builder-templates'
+
 /**
  * Processes the npmPackageSpec, returns the value expected for the package name key in
  * the `dependencies` property of package.json
@@ -180,6 +183,8 @@ function hideNPMWarnings () {
 }
 
 module.exports = {
+  TEMPLATE_NPM_KEYWORD,
+  TEMPLATE_PACKAGE_JSON_KEY,
   processNpmPackageSpec,
   prompt,
   sortValues,

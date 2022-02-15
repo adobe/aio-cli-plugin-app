@@ -15,16 +15,13 @@ const BaseCommand = require('../../../BaseCommand')
 const { cli } = require('cli-ux')
 const fetch = require('node-fetch')
 const inquirer = require('inquirer')
-const { sortValues } = require('../../../lib/templates-helper')
+const { sortValues, TEMPLATE_NPM_KEYWORD, TEMPLATE_PACKAGE_JSON_KEY } = require('../../../lib/templates-helper')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:template:discover', { provider: 'debug' })
 
 /*
 The npm public registry API:
 https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md
 */
-
-const TEMPLATE_NPM_KEYWORD = 'ecosystem:aio-app-builder-template'
-const TEMPLATE_PACKAGE_JSON_KEY = 'aio-app-builder-templates'
 
 class DiscoverCommand extends BaseCommand {
   async _install (templates) {
