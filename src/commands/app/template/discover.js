@@ -16,22 +16,25 @@ const { cli } = require('cli-ux')
 const fetch = require('node-fetch')
 const inquirer = require('inquirer')
 const { sortValues, TEMPLATE_NPM_KEYWORD, TEMPLATE_PACKAGE_JSON_KEY } = require('../../../lib/templates-helper')
+const { readPackageJson } = require('../../../lib/app-helper')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:template:discover', { provider: 'debug' })
 
 /*
-The npm public registry API:
-https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md
 */
 
 class DiscoverCommand extends BaseCommand {
   async _install (templates) {
-    const installedTemplates = this.config.pjson[TEMPLATE_PACKAGE_JSON_KEY] || []
+    const packageJson = await readPackageJson()
+    const installedTemplates = packageJson[TEMPLATE_PACKAGE_JSON_KEY] || []
+    aioLogger.debug(`installedTemplates: ${JSON.stringify(installedTemplates, null, 2)}`)
 
     const inqChoices = templates
       .filter(elem => { // remove any installed plugins from the list
+        aioLogger.debug(`elem (filter): ${elem}`)
         return !installedTemplates.includes(elem.name)
       })
       .map(elem => { // map to expected inquirer format
+        aioLogger.debug(`elem (map): ${elem}`)
         return {
           name: `${elem.name}@${elem.version}`,
           value: elem.name
@@ -52,7 +55,7 @@ class DiscoverCommand extends BaseCommand {
 
     // install the templates in sequence
     for (const template of response.templates) {
-      await this.config.runCommand('template:install', [template])
+      await this.config.runCommand('app:template:install', [template])
     }
 
     return response.templates
@@ -89,6 +92,8 @@ class DiscoverCommand extends BaseCommand {
     const { flags } = this.parse(DiscoverCommand)
 
     try {
+      // The npm public registry API:
+      // https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md
       const url = `https://registry.npmjs.org/-/v1/search?text=keywords:${TEMPLATE_NPM_KEYWORD}`
       aioLogger.debug(`url to retrieve templates: ${url}`)
 
@@ -108,7 +113,7 @@ class DiscoverCommand extends BaseCommand {
         field: flags['sort-field']
       })
 
-      if (flags.install) {
+      if (flags.interactive) {
         return this._install(packages)
       } else {
         return this._list(packages)

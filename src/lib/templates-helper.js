@@ -131,12 +131,12 @@ async function getNpmLatestVersion (npmPackageName) {
 /**
  * Gets the npm package version of an npm package installed in the cli.
  *
- * @param {string} cliRoot the root path of the cli
  * @param {string} npmPackageName the npm package name
+ * @param {string} dir the root path of where node_modules is
  * @returns {string} the version of the package from the cli node_modules
  */
-async function getNpmLocalVersion (cliRoot, npmPackageName) {
-  const pjsonPath = `${cliRoot}/node_modules/${npmPackageName}/package.json`
+async function getNpmLocalVersion (npmPackageName, dir = process.cwd()) {
+  const pjsonPath = `${dir}/node_modules/${npmPackageName}/package.json`
   const pjson = JSON.parse(fs.readFileSync(pjsonPath))
 
   return pjson.version

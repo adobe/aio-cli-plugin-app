@@ -15,6 +15,7 @@ const BaseCommand = require('../../../BaseCommand')
 const inquirer = require('inquirer')
 const { cli } = require('cli-ux')
 const { prompt, hideNPMWarnings, getNpmLocalVersion, TEMPLATE_PACKAGE_JSON_KEY } = require('../../../lib/templates-helper')
+const { readPackageJson } = require('../../../lib/app-helper')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:template:discover', { provider: 'debug' })
 
 class RollbackCommand extends BaseCommand {
@@ -63,7 +64,7 @@ class RollbackCommand extends BaseCommand {
 
       // uninstall the templates in sequence
       for (const template of templates) {
-        await this.config.runCommand('template:uninstall', [template.name])
+        await this.config.runCommand('app:template:uninstall', [template.name])
       }
     }
   }
@@ -97,7 +98,7 @@ class RollbackCommand extends BaseCommand {
 
     // uninstall the plugins in sequence
     for (const template of response.templates) {
-      await this.config.runCommand('template:uninstall', [template])
+      await this.config.runCommand('app:template:uninstall', [template])
     }
   }
 
@@ -108,20 +109,21 @@ class RollbackCommand extends BaseCommand {
    */
   async run () {
     const { flags } = this.parse(RollbackCommand)
-    const installedTemplates = this.config.pjson[TEMPLATE_PACKAGE_JSON_KEY] || []
+    const packageJson = await readPackageJson()
+    const installedTemplates = packageJson[TEMPLATE_PACKAGE_JSON_KEY] || []
     const templates = []
 
     aioLogger.debug(`installed templates (from package.json): ${JSON.stringify(installedTemplates, null, 2)}`)
 
     // list is just the names, we query node_modules for the actual version
-    for (const template of installedTemplates) {
+    for (const name of installedTemplates) {
       try {
-        const version = await getNpmLocalVersion(this.config.root, template)
-        templates.push({ template, version })
+        const version = await getNpmLocalVersion(name)
+        templates.push({ name, version })
       } catch (e) {
         // might not be installed yet, just put a dummy version
         aioLogger.debug(`template not found (error or not npm installed yet), using 'unknown' version: ${e}`)
-        templates.push({ template, version: 'unknown' })
+        templates.push({ name, version: 'unknown' })
       }
     }
 
