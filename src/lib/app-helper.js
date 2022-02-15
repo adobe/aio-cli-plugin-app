@@ -527,20 +527,30 @@ async function readPackageJson (dir = process.cwd()) {
 }
 
 /** @private */
-async function getNpmPackageName (npmSpec, dir = process.cwd()) {
-  // go through package.json and find the key for the value npmSpec
+async function getNpmDependency ({ packageName, urlSpec }, dir = process.cwd()) {
+  // go through package.json and find the key for the urlSpec
   const packageJson = await readPackageJson(dir)
   aioLogger.debug(`getNpmPackageName package.json: ${JSON.stringify(packageJson, null, 2)}`)
 
-  return Object.entries(packageJson.dependencies || {})
-    .find(([k, v]) => {
-      aioLogger.debug(`k,v: ${k}, ${v}`)
-      return v === npmSpec
-    })
+  if (packageName) {
+    return Object.entries(packageJson.dependencies || {})
+      .find(([key, value]) => {
+        aioLogger.debug(`k,v: ${key}, ${value}`)
+        return key === packageName
+      })
+  } else if (urlSpec) {
+    return Object.entries(packageJson.dependencies || {})
+      .find(([key, value]) => {
+        aioLogger.debug(`k,v: ${key}, ${value}`)
+        return value === urlSpec
+      })
+  }
+
+  throw new Error('Either packageName or urlSpec must be set')
 }
 
 module.exports = {
-  getNpmPackageName,
+  getNpmDependency,
   readPackageJson,
   writeObjectToPackageJson,
   createWebExportFilter,

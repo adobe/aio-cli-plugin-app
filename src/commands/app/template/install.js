@@ -11,7 +11,8 @@
  */
 
 const BaseCommand = require('../../../BaseCommand')
-const { runScript, writeObjectToPackageJson, readPackageJson, getNpmPackageName } = require('../../../lib/app-helper')
+const { runScript, writeObjectToPackageJson, readPackageJson, getNpmDependency } = require('../../../lib/app-helper')
+const { processNpmPackageSpec } = require('../../../lib/templates-helper')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:template:install', { provider: 'debug' })
 
 const TEMPLATE_PACKAGE_JSON_KEY = 'aio-app-builder-templates'
@@ -19,18 +20,26 @@ const TEMPLATE_PACKAGE_JSON_KEY = 'aio-app-builder-templates'
 class InstallCommand extends BaseCommand {
   async run () {
     const { args } = this.parse(InstallCommand)
+    let templateName
 
     await runScript('npm', process.cwd(), ['install', args.path])
 
     const packageJson = await readPackageJson()
     aioLogger.debug(`read package.json: ${JSON.stringify(packageJson, null, 2)}`)
 
-    const templateName = await getNpmPackageName(args.path) // TODO:
-    aioLogger.debug(`getNpmPackageName: ${templateName}`)
+    const packageSpec = processNpmPackageSpec(args.path)
+    if (packageSpec.url) {
+      // if it's a url, we don't know the package name, so we have to do a reverse lookup
+      [templateName] = await getNpmDependency({ urlSpec: packageSpec.url })
+    } else {
+      templateName = packageSpec.name
+    }
+
+    aioLogger.debug(`templateName: ${templateName}`)
     const installedTemplates = packageJson[TEMPLATE_PACKAGE_JSON_KEY] || []
     aioLogger.debug(`installed templates in package.json: ${JSON.stringify(installedTemplates, null, 2)}`)
 
-    if (!installedTemplates.includes(args.path)) {
+    if (!installedTemplates.includes(templateName)) {
       installedTemplates.push(templateName)
       aioLogger.debug(`adding new installed templates into package.json: ${JSON.stringify(installedTemplates, null, 2)}`)
       await writeObjectToPackageJson({ [TEMPLATE_PACKAGE_JSON_KEY]: installedTemplates })
