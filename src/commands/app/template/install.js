@@ -42,12 +42,27 @@ class InstallCommand extends BaseCommand {
 
 InstallCommand.description = 'Install an Adobe Developer App Builder template'
 
+InstallCommand.examples = [
+  'aio app:template:install https://github.com/org/repo',
+  'aio app:template:install git+https://github.com/org/repo',
+  'aio app:template:install ssh://github.com/org/repo',
+  'aio app:template:install git+ssh://github.com/org/repo',
+  'aio app:template:install file:../relative/path/to/template/folder',
+  'aio app:template:install file:/absolute/path/to/template/folder',
+  'aio app:template:install ../relative/path/to/template/folder',
+  'aio app:template:install /absolute/path/to/template/folder',
+  'aio app:template:install npm-package-name',
+  'aio app:template:install npm-package-name@tagOrVersion',
+  'aio app:template:install @scope/npm-package-name',
+  'aio app:template:install @scope/npm-package-name@tagOrVersion'
+]
+
 InstallCommand.aliases = ['template:i']
 
 InstallCommand.args = [
   {
     name: 'path',
-    description: 'path to the template (npm package name, file path, url). See https://docs.npmjs.com/cli/v6/commands/npm-install',
+    description: 'path to the template (npm package name, file path, url). See examples',
     required: true
   }
 ]

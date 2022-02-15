@@ -527,13 +527,16 @@ async function readPackageJson (dir = process.cwd()) {
 }
 
 /** @private */
-async function getNpmPackageName (npmSpec) {
-  // TODO:
-  // the npm spec can be:
-  // 1. an npm package
-  // 2. a folder path
-  // 3. a url
-  return npmSpec
+async function getNpmPackageName (npmSpec, dir = process.cwd()) {
+  // go through package.json and find the key for the value npmSpec
+  const packageJson = await readPackageJson(dir)
+  aioLogger.debug(`getNpmPackageName package.json: ${JSON.stringify(packageJson, null, 2)}`)
+
+  return Object.entries(packageJson.dependencies || {})
+    .find(([k, v]) => {
+      aioLogger.debug(`k,v: ${k}, ${v}`)
+      return v === npmSpec
+    })
 }
 
 module.exports = {
