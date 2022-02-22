@@ -11,14 +11,14 @@ governing permissions and limitations under the License.
 */
 
 const BaseCommand = require('../../BaseCommand')
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 const yaml = require('js-yaml')
 const deepCopy = require('lodash.clonedeep')
 
 class Info extends BaseCommand {
   async run () {
     // cli input
-    const { flags } = this.parse(Info)
+    const { flags } = await this.parse(Info)
     const appConfig = deepCopy(this.getFullConfig({ allowNoImpl: true }))
 
     // includes .env secret delete all aio config for now
@@ -39,7 +39,7 @@ class Info extends BaseCommand {
       this.log(JSON.stringify(appConfig))
     } else if (flags.yml) {
       // remove undefined fields
-      this.log(yaml.safeDump(JSON.parse(JSON.stringify(appConfig))))
+      this.log(yaml.safeDump(JSON.parse(JSON.stringify(appConfig)), {}))
     } else { // flags.hson
       this.log(JSON.stringify(appConfig, null, 2))
     }
@@ -56,23 +56,23 @@ Info.description = `Display settings/configuration in use by an Adobe I/O App
 
 Info.flags = {
   ...BaseCommand.flags,
-  json: flags.boolean({
+  json: Flags.boolean({
     description: 'Output json',
     char: 'j',
     exclusive: ['hson', 'yml']
   }),
-  hson: flags.boolean({
+  hson: Flags.boolean({
     default: true,
     description: 'Output human readable json',
     char: 'h',
     exclusive: ['json', 'yml']
   }),
-  yml: flags.boolean({
+  yml: Flags.boolean({
     description: 'Output yml',
     char: 'y',
     exclusive: ['hson', 'json']
   }),
-  mask: flags.boolean({
+  mask: Flags.boolean({
     description: 'Hide known private info',
     default: true,
     allowNo: true

@@ -11,7 +11,7 @@ governing permissions and limitations under the License.
 
 const BaseCommand = require('../../../BaseCommand')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 
 const { atLeastOne, deleteUserConfig } = require('../../../lib/app-helper')
 const { implPromptChoices } = require('../../../lib/defaults')
@@ -21,7 +21,7 @@ const { EOL } = require('os')
 
 class DeleteExtensionCommand extends BaseCommand {
   async run () {
-    const { flags } = this.parse(DeleteExtensionCommand)
+    const { flags } = await this.parse(DeleteExtensionCommand)
 
     aioLogger.debug(`delete extension with flags: ${JSON.stringify(flags)}`)
 
@@ -105,16 +105,16 @@ class DeleteExtensionCommand extends BaseCommand {
 DeleteExtensionCommand.description = `Add new extensions or a standalone application to the project
 `
 DeleteExtensionCommand.flags = {
-  yes: flags.boolean({
+  yes: Flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
   }),
-  'skip-install': flags.boolean({
+  'skip-install': Flags.boolean({
     description: 'Skip npm installation after files are created',
     default: false
   }),
-  extension: flags.string({
+  extension: Flags.string({
     description: 'Specify extensions to delete, skips selection prompt',
     char: 'e',
     multiple: true

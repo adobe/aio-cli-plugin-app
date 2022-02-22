@@ -42,8 +42,19 @@ jest.mock('fs-extra')
 jest.mock('@adobe/aio-lib-core-config')
 const mockConfig = require('@adobe/aio-lib-core-config')
 
-jest.mock('cli-ux')
-const { cli } = require('cli-ux')
+jest.mock('@oclif/core', () => {
+  return {
+    ...jest.requireActual('@oclif/core'),
+    CliUx: {
+      ux: {
+        cli: {
+          open: jest.fn()
+        }
+      }
+    }
+  }
+})
+const { CliUx: { ux: cli } } = require('@oclif/core')
 
 jest.mock('https')
 const https = require('https')

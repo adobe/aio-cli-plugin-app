@@ -12,7 +12,7 @@ governing permissions and limitations under the License.
 
 const TheCommand = require('../../../../src/commands/app/list/index.js')
 const BaseCommand = require('../../../../src/BaseCommand.js')
-const HHelp = require('@oclif/plugin-help').default
+const { Help } = require('@oclif/core')
 
 test('exports', async () => {
   expect(typeof TheCommand).toEqual('function')
@@ -45,7 +45,8 @@ describe('instance methods', () => {
     })
 
     test('returns help file for app:list command', () => {
-      const spy = jest.spyOn(HHelp.prototype, 'showHelp').mockReturnValue(true)
+      command.config = {}
+      const spy = jest.spyOn(Help.prototype, 'showHelp').mockReturnValue(true)
       return command.run().then(() => {
         expect(spy).toHaveBeenCalledWith(['app:list', '--help'])
       })

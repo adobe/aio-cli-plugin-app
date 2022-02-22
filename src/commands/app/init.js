@@ -16,7 +16,7 @@ const fs = require('fs-extra')
 const ora = require('ora')
 const chalk = require('chalk')
 // const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 const generators = require('@adobe/generator-aio-app')
 
 const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
@@ -29,7 +29,7 @@ const DEFAULT_WORKSPACE = 'Stage'
 
 class InitCommand extends AddCommand {
   async run () {
-    const { args, flags } = this.parse(InitCommand)
+    const { args, flags } = await this.parse(InitCommand)
 
     if (!flags.login && flags.workspace !== DEFAULT_WORKSPACE) {
       this.error('--no-login and --workspace flags cannot be used together.')
@@ -310,38 +310,38 @@ InitCommand.description = `Create a new Adobe I/O App
 
 InitCommand.flags = {
   ...AddCommand.flags,
-  yes: flags.boolean({
+  yes: Flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
   }),
-  import: flags.string({
+  import: Flags.string({
     description: 'Import an Adobe I/O Developer Console configuration file',
     char: 'i'
   }),
-  login: flags.boolean({
+  login: Flags.boolean({
     description: 'Login using your Adobe ID for interacting with Adobe I/O Developer Console',
     default: true,
     allowNo: true
   }),
-  extensions: flags.boolean({
+  extensions: Flags.boolean({
     description: 'Use --no-extensions to create a blank application that does not integrate with Exchange',
     default: true,
     allowNo: true
   }),
-  extension: flags.string({
+  extension: Flags.string({
     description: 'Extension point(s) to implement',
     char: 'e',
     multiple: true,
     exclusive: ['extensions']
   }),
-  workspace: flags.string({
+  workspace: Flags.string({
     description: 'Specify the Adobe Developer Console Workspace to init from, defaults to Stage',
     default: DEFAULT_WORKSPACE,
     char: 'w',
     exclusive: ['import'] // also no-login
   }),
-  'confirm-new-workspace': flags.boolean({
+  'confirm-new-workspace': Flags.boolean({
     description: 'Skip and confirm prompt for creating a new workspace',
     default: false
   })

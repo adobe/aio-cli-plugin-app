@@ -14,7 +14,7 @@ const ora = require('ora')
 const chalk = require('chalk')
 // const path = require('path')
 
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 
 const BaseCommand = require('../../BaseCommand')
 const webLib = require('@adobe/aio-lib-web')
@@ -24,7 +24,7 @@ const rtLib = require('@adobe/aio-lib-runtime')
 class Undeploy extends BaseCommand {
   async run () {
     // cli input
-    const { flags } = this.parse(Undeploy)
+    const { flags } = await this.parse(Undeploy)
 
     // flags
     flags['web-assets'] = flags['web-assets'] && !flags['skip-static'] && !flags['skip-web-assets'] && !flags.action
@@ -146,36 +146,36 @@ Undeploy.description = `Undeploys an Adobe I/O App
 
 Undeploy.flags = {
   ...BaseCommand.flags,
-  'skip-static': flags.boolean({
+  'skip-static': Flags.boolean({
     description: '[deprecated] Please use --no-web-assets'
   }),
-  'skip-web-assets': flags.boolean({
+  'skip-web-assets': Flags.boolean({
     description: '[deprecated] Please use --no-web-assets'
   }),
-  'skip-actions': flags.boolean({
+  'skip-actions': Flags.boolean({
     description: '[deprecated] Please use --no-actions'
   }),
-  actions: flags.boolean({
+  actions: Flags.boolean({
     description: '[default: true] Undeploy actions if any',
     default: true,
     allowNo: true
   }),
-  'web-assets': flags.boolean({
+  'web-assets': Flags.boolean({
     description: '[default: true] Undeploy web-assets if any',
     default: true,
     allowNo: true
   }),
-  extension: flags.string({
+  extension: Flags.string({
     description: 'Undeploy only a specific extension, the flags can be specified multiple times',
     char: 'e',
     multiple: true
   }),
-  unpublish: flags.boolean({
+  unpublish: Flags.boolean({
     description: '[default: true] Unpublish selected extension(s) from Exchange',
     allowNo: true,
     default: true
   }),
-  'force-unpublish': flags.boolean({
+  'force-unpublish': Flags.boolean({
     description: 'Force unpublish extension(s) from Exchange, will delete all extension points',
     default: false,
     exclusive: ['unpublish'] // unpublish is excluded

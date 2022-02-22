@@ -31,8 +31,11 @@ const mockBundleFunc = jest.fn()
 
 jest.mock('@adobe/aio-lib-core-config')
 
-jest.mock('cli-ux')
-
+jest.mock('@oclif/core', () => {
+  return {
+    ...jest.requireActual('@oclif/core')
+  }
+})
 const sampleAppConfig = {
   app: {
     hasFrontend: true,

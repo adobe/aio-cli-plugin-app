@@ -11,7 +11,7 @@ governing permissions and limitations under the License.
 */
 
 const { stdout } = require('stdout-stderr')
-const { Command } = require('@oclif/command')
+const { Command } = require('@oclif/core')
 
 jest.mock('@adobe/aio-lib-core-config')
 const mockAioConfig = require('@adobe/aio-lib-core-config')
