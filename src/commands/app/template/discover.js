@@ -13,17 +13,13 @@
 const { flags } = require('@oclif/command')
 const BaseCommand = require('../../../BaseCommand')
 const { cli } = require('cli-ux')
-const fetch = require('node-fetch')
 const inquirer = require('inquirer')
-const { sortValues, TEMPLATE_NPM_KEYWORD, TEMPLATE_PACKAGE_JSON_KEY } = require('../../../lib/templates-helper')
-const { readPackageJson } = require('../../../lib/app-helper')
+const { sortValues } = require('../../../lib/app-helper')
+const { TEMPLATE_NPM_KEYWORD, TEMPLATE_PACKAGE_JSON_KEY, readPackageJson, npmTextSearch } = require('../../../lib/npm-helper')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:template:discover', { provider: 'debug' })
 
-/*
-*/
-
 class DiscoverCommand extends BaseCommand {
-  async _install (templates) {
+  async __install (templates) {
     const packageJson = await readPackageJson()
     const installedTemplates = packageJson[TEMPLATE_PACKAGE_JSON_KEY] || []
     aioLogger.debug(`installedTemplates: ${JSON.stringify(installedTemplates, null, 2)}`)
@@ -61,7 +57,7 @@ class DiscoverCommand extends BaseCommand {
     return response.templates
   }
 
-  async _list (plugins) {
+  async __list (plugins) {
     const options = {
       year: 'numeric',
       month: 'long',
@@ -84,7 +80,6 @@ class DiscoverCommand extends BaseCommand {
         get: row => `${new Date(row.date).toLocaleDateString('en', options)}`
       }
     }
-    // skip ones that aren't from us
     cli.table(plugins, columns)
   }
 
@@ -92,14 +87,7 @@ class DiscoverCommand extends BaseCommand {
     const { flags } = this.parse(DiscoverCommand)
 
     try {
-      // The npm public registry API:
-      // https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md
-      const url = `https://registry.npmjs.org/-/v1/search?text=keywords:${TEMPLATE_NPM_KEYWORD}`
-      aioLogger.debug(`url to retrieve templates: ${url}`)
-
-      const response = await fetch(url)
-      const json = await response.json()
-
+      const json = await npmTextSearch(`keywords:${TEMPLATE_NPM_KEYWORD}`)
       aioLogger.debug(`retrieved templates: ${JSON.stringify(json, null, 2)}`)
 
       let packages = json.objects.map(e => e.package)
@@ -114,9 +102,9 @@ class DiscoverCommand extends BaseCommand {
       })
 
       if (flags.interactive) {
-        return this._install(packages)
+        return this.__install(packages)
       } else {
-        return this._list(packages)
+        return this.__list(packages)
       }
     } catch (error) {
       this.error('Oops:' + error)

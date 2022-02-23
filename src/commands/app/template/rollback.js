@@ -14,8 +14,8 @@ const { flags } = require('@oclif/command')
 const BaseCommand = require('../../../BaseCommand')
 const inquirer = require('inquirer')
 const { cli } = require('cli-ux')
-const { prompt, hideNPMWarnings, getNpmLocalVersion, TEMPLATE_PACKAGE_JSON_KEY } = require('../../../lib/templates-helper')
-const { readPackageJson } = require('../../../lib/app-helper')
+const { prompt } = require('../../../lib/app-helper')
+const { readPackageJson, hideNPMWarnings, getNpmLocalVersion, TEMPLATE_PACKAGE_JSON_KEY } = require('../../../lib/npm-helper')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:template:discover', { provider: 'debug' })
 
 class RollbackCommand extends BaseCommand {
@@ -48,15 +48,15 @@ class RollbackCommand extends BaseCommand {
    */
   async __clear (templates, needsConfirm, verbose) {
     await this.__list(templates)
-    let _doClear = true
+    let doClear = true
 
     this.log() // newline
 
     if (needsConfirm) {
-      _doClear = await prompt(`Uninstall ${templates.length} template(s)?`)
+      doClear = await prompt(`Uninstall ${templates.length} template(s)?`)
     }
 
-    if (_doClear) {
+    if (doClear) {
       if (!verbose) {
         // Intercept the stderr stream to hide npm warnings
         hideNPMWarnings()

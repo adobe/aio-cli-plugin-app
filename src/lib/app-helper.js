@@ -24,6 +24,7 @@ const { EOL } = require('os')
 const { getCliEnv } = require('@adobe/aio-lib-env')
 const yaml = require('js-yaml')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
+const inquirer = require('inquirer')
 
 /** @private */
 function isNpmInstalled () {
@@ -508,51 +509,58 @@ const createWebExportFilter = (filterValue) => {
   }
 }
 
-/** @private */
-async function writeObjectToPackageJson (obj = {}, dir = process.cwd()) {
-  const filePath = path.join(dir, 'package.json')
-  const pkgJson = await fs.readJson(filePath)
-
-  return fs.writeJson(
-    filePath,
-    { ...pkgJson, ...obj },
-    { spaces: 2 }
-  )
-}
-
-/** @private */
-async function readPackageJson (dir = process.cwd()) {
-  const filePath = path.join(dir, 'package.json')
-  return fs.readJson(filePath)
-}
-
-/** @private */
-async function getNpmDependency ({ packageName, urlSpec }, dir = process.cwd()) {
-  // go through package.json and find the key for the urlSpec
-  const packageJson = await readPackageJson(dir)
-  aioLogger.debug(`getNpmPackageName package.json: ${JSON.stringify(packageJson, null, 2)}`)
-
-  if (packageName) {
-    return Object.entries(packageJson.dependencies || {})
-      .find(([key, value]) => {
-        aioLogger.debug(`k,v: ${key}, ${value}`)
-        return key === packageName
-      })
-  } else if (urlSpec) {
-    return Object.entries(packageJson.dependencies || {})
-      .find(([key, value]) => {
-        aioLogger.debug(`k,v: ${key}, ${value}`)
-        return value === urlSpec
-      })
+/**
+ * Sort array values according to the sort order and/or sort-field.
+ *
+ * Note that this will use the Javascript sort() function, thus the values will
+ * be sorted in-place.
+ *
+ * @param {Array<object>} values array of objects (with fields to sort by)
+ * @param {object} [options] sort options to pass
+ * @param {boolean} [options.descending] true by default, sort order
+ * @param {string} [options.field] 'date' by default, sort field ('name', 'date' options)
+ * @returns {Array<object>} the sorted values array (input values array sorted in place)
+ */
+function sortValues (values, { descending = true, field = 'date' } = {}) {
+  const supportedFields = ['name', 'date']
+  if (!supportedFields.includes(field)) { // unknown field, we just return the array
+    return values
   }
 
-  throw new Error('Either packageName or urlSpec must be set')
+  values.sort((left, right) => {
+    const d1 = left[field]
+    const d2 = right[field]
+
+    if (descending) {
+      return (d1 > d2) ? -1 : (d1 < d2) ? 1 : 0
+    } else {
+      return (d1 > d2) ? 1 : (d1 < d2) ? -1 : 0
+    }
+  })
+  return values
+}
+
+/**
+ * Prompt for confirmation.
+ *
+ * @param {string} [message=Confirm?] the message to show
+ * @param {boolean} [defaultValue=false] the default value if the user presses 'Enter'
+ * @returns {boolean} true or false chosen for the confirmation
+ */
+async function prompt (message = 'Confirm?', defaultValue = false) {
+  return inquirer.prompt({
+    name: 'confirm',
+    type: 'confirm',
+    message,
+    default: defaultValue
+  }).then(function (answers) {
+    return answers.confirm
+  })
 }
 
 module.exports = {
-  getNpmDependency,
-  readPackageJson,
-  writeObjectToPackageJson,
+  prompt,
+  sortValues,
   createWebExportFilter,
   isNpmInstalled,
   isGitInstalled,

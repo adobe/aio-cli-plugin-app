@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Adobe Inc. All rights reserved.
+ * Copyright 2022 Adobe Inc. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -11,12 +11,26 @@
  */
 
 const fetch = require('node-fetch')
-const fs = require('fs')
-const inquirer = require('inquirer')
+const fs = require('fs-extra')
 const path = require('path')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:lib-npm-helper', { provider: 'debug' })
 
 const TEMPLATE_NPM_KEYWORD = 'ecosystem:aio-app-builder-template'
 const TEMPLATE_PACKAGE_JSON_KEY = 'aio-app-builder-templates'
+
+/**
+ * Do an npm text search
+ *
+ * @param {string} text the text to search for (see https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md)
+ * @returns {Promise} the json
+ */
+async function npmTextSearch (text) {
+  const url = `https://registry.npmjs.org/-/v1/search?text=${text}`
+  aioLogger.debug(`npmTextSearch url: ${url}`)
+
+  const response = await fetch(url)
+  return response.json()
+}
 
 /**
  * Processes the npmPackageSpec, returns the value expected for the package name key in
@@ -85,35 +99,45 @@ function processNpmPackageSpec (npmPackageSpec, dir = process.cwd()) {
   return { url, name, tagOrVersion }
 }
 
-/**
- * Sort array values according to the sort order and/or sort-field.
- *
- * Note that this will use the Javascript sort() function, thus the values will
- * be sorted in-place.
- *
- * @param {Array<object>} values array of objects (with fields to sort by)
- * @param {object} [options] sort options to pass
- * @param {boolean} [options.descending] true by default, sort order
- * @param {string} [options.field] 'date' by default, sort field ('name', 'date' options)
- * @returns {Array<object>} the sorted values array (input values array sorted in place)
- */
-function sortValues (values, { descending = true, field = 'date' } = {}) {
-  const supportedFields = ['name', 'date']
-  if (!supportedFields.includes(field)) { // unknown field, we just return the array
-    return values
+/** @private */
+async function readPackageJson (dir = process.cwd()) {
+  const filePath = path.join(dir, 'package.json')
+  return fs.readJson(filePath)
+}
+
+/** @private */
+async function writeObjectToPackageJson (obj = {}, dir = process.cwd()) {
+  const filePath = path.join(dir, 'package.json')
+  const pkgJson = await fs.readJson(filePath)
+
+  return fs.writeJson(
+    filePath,
+    { ...pkgJson, ...obj },
+    { spaces: 2 }
+  )
+}
+
+/** @private */
+async function getNpmDependency ({ packageName, urlSpec }, dir = process.cwd()) {
+  // go through package.json and find the key for the urlSpec
+  const packageJson = await readPackageJson(dir)
+  aioLogger.debug(`getNpmPackageName package.json: ${JSON.stringify(packageJson, null, 2)}`)
+
+  if (packageName) {
+    return Object.entries(packageJson.dependencies || {})
+      .find(([key, value]) => {
+        aioLogger.debug(`k,v: ${key}, ${value}`)
+        return key === packageName
+      })
+  } else if (urlSpec) {
+    return Object.entries(packageJson.dependencies || {})
+      .find(([key, value]) => {
+        aioLogger.debug(`k,v: ${key}, ${value}`)
+        return value === urlSpec
+      })
   }
 
-  values.sort((left, right) => {
-    const d1 = left[field]
-    const d2 = right[field]
-
-    if (descending) {
-      return (d1 > d2) ? -1 : (d1 < d2) ? 1 : 0
-    } else {
-      return (d1 > d2) ? 1 : (d1 < d2) ? -1 : 0
-    }
-  })
-  return values
+  throw new Error('Either packageName or urlSpec must be set')
 }
 
 /**
@@ -143,24 +167,6 @@ async function getNpmLocalVersion (npmPackageName, dir = process.cwd()) {
 }
 
 /**
- * Prompt for confirmation.
- *
- * @param {string} [message=Confirm?] the message to show
- * @param {boolean} [defaultValue=false] the default value if the user presses 'Enter'
- * @returns {boolean} true or false chosen for the confirmation
- */
-async function prompt (message = 'Confirm?', defaultValue = false) {
-  return inquirer.prompt({
-    name: 'confirm',
-    type: 'confirm',
-    message,
-    default: defaultValue
-  }).then(function (answers) {
-    return answers.confirm
-  })
-}
-
-/**
  * Hide NPM Warnings by intercepting process.stderr.write stream
  *
  */
@@ -185,9 +191,11 @@ function hideNPMWarnings () {
 module.exports = {
   TEMPLATE_NPM_KEYWORD,
   TEMPLATE_PACKAGE_JSON_KEY,
+  npmTextSearch,
   processNpmPackageSpec,
-  prompt,
-  sortValues,
+  readPackageJson,
+  writeObjectToPackageJson,
+  getNpmDependency,
   getNpmLatestVersion,
   getNpmLocalVersion,
   hideNPMWarnings

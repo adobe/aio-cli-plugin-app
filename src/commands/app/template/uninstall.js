@@ -11,8 +11,8 @@
  */
 
 const BaseCommand = require('../../../BaseCommand')
-const { runScript, writeObjectToPackageJson, readPackageJson } = require('../../../lib/app-helper')
-const { TEMPLATE_PACKAGE_JSON_KEY } = require('../../../lib/templates-helper')
+const { runScript } = require('../../../lib/app-helper')
+const { TEMPLATE_PACKAGE_JSON_KEY, writeObjectToPackageJson, readPackageJson } = require('../../../lib/npm-helper')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:template:install', { provider: 'debug' })
 
 class UninstallCommand extends BaseCommand {
