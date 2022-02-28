@@ -83,13 +83,12 @@ describe('run', () => {
 
   test('no flags, sets limit to 1', async () => {
     mockFS.existsSync.mockReturnValue(true)
-    const mockedLogger = jest.spyOn(command.log, 'bind')
+
     await command.run()
     const ow = owConfig()
-    const actionList = ['legacy-app-1.0.0/__secured_action', 'legacy-app-1.0.0/action', 'legacy-app-1.0.0/action-zip']
-    expect(printActionLogs).toHaveBeenCalledWith({ ow }, expect.any(Function), 1, actionList, false, false)
+    const actionList = ['legacy-app-1.0.0/action', 'legacy-app-1.0.0/action-zip']
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, actionList, false, false)
     expect(command.error).not.toHaveBeenCalled()
-    expect(mockedLogger).toHaveBeenCalled()
   })
 
   test('no flags, custom log forwarding', async () => {
@@ -105,50 +104,46 @@ describe('run', () => {
   test('--limit < 1, sets limit to 1', async () => {
     mockFS.existsSync.mockReturnValue(true)
     command.argv = ['--limit', '-1']
-    const mockedLogger = jest.spyOn(command.log, 'bind')
+
     await command.run()
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('using --limit=1'))
     const ow = owConfig()
-    const actionList = ['legacy-app-1.0.0/__secured_action', 'legacy-app-1.0.0/action', 'legacy-app-1.0.0/action-zip']
-    expect(printActionLogs).toHaveBeenCalledWith({ ow }, expect.any(Function), 1, actionList, false, false)
+    const actionList = ['legacy-app-1.0.0/action', 'legacy-app-1.0.0/action-zip']
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, actionList, false, false)
     expect(command.error).not.toHaveBeenCalled()
-    expect(mockedLogger).toHaveBeenCalled()
   })
 
   test('--limit > 50, sets limit to 50', async () => {
     mockFS.existsSync.mockReturnValue(true)
     command.argv = ['--limit', '51']
-    const mockedLogger = jest.spyOn(command.log, 'bind')
+
     await command.run()
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('using --limit=50'))
     const ow = owConfig()
-    const actionList = ['legacy-app-1.0.0/__secured_action', 'legacy-app-1.0.0/action', 'legacy-app-1.0.0/action-zip']
-    expect(printActionLogs).toHaveBeenCalledWith({ ow }, expect.any(Function), 50, actionList, false, false)
+    const actionList = ['legacy-app-1.0.0/action', 'legacy-app-1.0.0/action-zip']
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 50, actionList, false, false)
     expect(command.error).not.toHaveBeenCalled()
-    expect(mockedLogger).toHaveBeenCalled()
   })
 
   test('--limit 32', async () => {
     mockFS.existsSync.mockReturnValue(true)
     command.argv = ['--limit', '32']
-    const mockedLogger = jest.spyOn(command.log, 'bind')
+
     await command.run()
     const ow = owConfig()
-    const actionList = ['legacy-app-1.0.0/__secured_action', 'legacy-app-1.0.0/action', 'legacy-app-1.0.0/action-zip']
-    expect(printActionLogs).toHaveBeenCalledWith({ ow }, expect.any(Function), 32, actionList, false, false)
-    expect(mockedLogger).toHaveBeenCalled()
+    const actionList = ['legacy-app-1.0.0/action', 'legacy-app-1.0.0/action-zip']
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 32, actionList, false, false)
     expect(command.error).not.toHaveBeenCalled()
   })
 
   test('--action without including package name (found)', async () => {
     mockFS.existsSync.mockReturnValue(true)
     command.argv = ['--action', 'action-zip'] // we check if it exists because package-name is missing
-    const mockedLogger = jest.spyOn(command.log, 'bind')
+
     await command.run()
     const ow = owConfig()
     const actionList = ['legacy-app-1.0.0/action-zip']
-    expect(printActionLogs).toHaveBeenCalledWith({ ow }, expect.any(Function), 1, actionList, false, false)
-    expect(mockedLogger).toHaveBeenCalled()
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, actionList, false, false)
     expect(command.error).not.toHaveBeenCalled()
   })
 
@@ -163,25 +158,22 @@ describe('run', () => {
   test('--action including package name', async () => {
     mockFS.existsSync.mockReturnValue(true)
     command.argv = ['--action', 'legacy-app-1.0.0/action'] // pass-through (we don't check if it exists)
-    const mockedLogger = jest.spyOn(command.log, 'bind')
+
     await command.run()
     const ow = owConfig()
     const actionList = ['legacy-app-1.0.0/action']
-    expect(printActionLogs).toHaveBeenCalledWith({ ow }, expect.any(Function), 1, actionList, false, false)
-    expect(mockedLogger).toHaveBeenCalled()
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, actionList, false, false)
     expect(command.error).not.toHaveBeenCalled()
   })
 
   test('--action multiple', async () => {
     mockFS.existsSync.mockReturnValue(true)
     command.argv = ['--action', 'pkg1/hello', '--action', '/actionwithoutpkg'] // pass-through (we don't check if it exists)
-    const mockedLogger = jest.spyOn(command.log, 'bind')
 
     await command.run()
     const ow = owConfig()
-    expect(printActionLogs).toHaveBeenCalledWith({ ow }, expect.any(Function), 1, ['pkg1/hello', '/actionwithoutpkg'], false, false)
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, ['pkg1/hello', '/actionwithoutpkg'], false, false)
     expect(command.error).not.toHaveBeenCalled()
-    expect(mockedLogger).toHaveBeenCalled()
   })
 
   test('error while getting logs', async () => {

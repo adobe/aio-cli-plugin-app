@@ -16,23 +16,15 @@ const { wrapError } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
 
-const SECURED = 'require-adobe-auth'
-
 class Logs extends BaseCommand {
   _processEachAction (fullConfig, processFn) {
-    const isSecuredAction = (pkg, aName) => {
-      try {
-        return pkg.actions[aName].annotations[SECURED]
-      } catch (e) {
-        return false
-      }
-    }
     Object.entries(fullConfig.all).forEach(([, config]) => {
       Object.entries(config.manifest.full.packages).forEach(([packageName, pkg]) => {
         // handle default package
         packageName = packageName.replace(/__APP_PACKAGE__/g, config.ow.package)
+
         Object.keys(pkg.actions).forEach((aName) => {
-          processFn(packageName, aName, isSecuredAction(pkg, aName))
+          processFn(packageName, aName)
         })
       })
     })
@@ -88,11 +80,7 @@ class Logs extends BaseCommand {
         }
       })
     } else {
-      this._processEachAction(fullConfig, (packageName, aName, isSecured) => {
-        if (isSecured) {
-          const securedAName = '__secured_' + aName
-          filterActions.push(`${packageName}/${securedAName}`)
-        }
+      this._processEachAction(fullConfig, (packageName, aName) => {
         filterActions.push(`${packageName}/${aName}`)
       })
     }
