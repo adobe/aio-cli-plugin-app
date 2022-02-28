@@ -106,7 +106,7 @@ async function readPackageJson (dir = process.cwd()) {
 }
 
 /** @private */
-async function writeObjectToPackageJson (obj = {}, dir = process.cwd()) {
+async function writeObjectToPackageJson (obj, dir = process.cwd()) {
   const filePath = path.join(dir, 'package.json')
   const pkgJson = await fs.readJson(filePath)
 

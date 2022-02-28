@@ -13,6 +13,9 @@ governing permissions and limitations under the License.
 const { stdout, stderr } = require('stdout-stderr')
 const upath = require('upath')
 
+const fetch = require('jest-fetch-mock')
+jest.setMock('node-fetch', fetch)
+
 jest.setTimeout(15000)
 
 const fs = jest.requireActual('fs')
@@ -62,7 +65,6 @@ global.mockFs = () => {
 }
 
 global.unmockFs = () => {
-
 }
 
 // trap console log
