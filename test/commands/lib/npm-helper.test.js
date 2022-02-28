@@ -28,11 +28,17 @@ const path = require('path')
 const processCwd = process.cwd()
 
 jest.mock('fs-extra') // do not touch the real fs
+jest.mock('node-fetch')
+
+const createMockResponse = _json => {
+  return {
+    json: async () => _json
+  }
+}
 
 beforeEach(() => {
   fs.readJson.mockReset()
   fs.writeJson.mockReset()
-  fetch.resetMocks()
 })
 
 describe('processNpmPackageSpec', () => {
@@ -164,7 +170,7 @@ test('npmTextSearch', async () => {
   const json = {
     objects: []
   }
-  fetch.mockResponseOnce(JSON.stringify(json))
+  fetch.mockResolvedValueOnce(createMockResponse(json))
 
   return expect(npmTextSearch()).resolves.toStrictEqual(json)
 })
@@ -176,7 +182,7 @@ test('getNpmLatestVersion', async () => {
     }
   }
 
-  fetch.mockResponseOnce(JSON.stringify(json))
+  fetch.mockResolvedValueOnce(createMockResponse(json))
   return expect(getNpmLatestVersion('foo')).resolves.toStrictEqual(json['dist-tags'].latest)
 })
 
@@ -208,7 +214,6 @@ describe('getNpmLocalVersion', () => {
     return expect(getNpmLocalVersion(npmPackage)).resolves.toStrictEqual(packageJson.version)
   })
 })
-
 
 describe('package.json', () => {
   let useProcessCwd
