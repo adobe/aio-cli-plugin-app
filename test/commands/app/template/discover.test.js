@@ -226,31 +226,33 @@ describe('interactive install', () => {
         })
     })
   })
+
+  test('json result error', async () => {
+    fetch.mockRejectedValueOnce({})
+
+    command.argv = ['-i']
+
+    return new Promise((resolve, reject) => {
+      return command.run()
+        .then(() => {
+          expect(command.error).toHaveBeenCalled()
+          resolve()
+        })
+        .catch(() => {
+          reject(new Error('no error should have been thrown'))
+        })
+    })
+  })
 })
-
-// test('json result error', async () => {
-//   // fetch.mockResolvedValueOnce(createMockResponse(expectedResult))
-//   fetch.mockReject(new Error('some error'))
-
-//   command.argv = ['-i']
-
-//   return new Promise((resolve, reject) => {
-//     return command.run()
-//       .then((result) => {
-//         expect(result).toEqual('xxx')
-//         reject(new Error('this should not succeed'))
-//       })
-//       .catch((error) => {
-//         expect(error.message).toMatch('Oops:')
-//         resolve()
-//       })
-//   })
-// })
 
 describe('--experimental-registry', () => {
   const now = new Date()
   const tomorrow = new Date(now.valueOf() + 86400000)
   const dayAfter = new Date(tomorrow.valueOf() + 86400000)
+
+  beforeEach(() => {
+    fetch.mockReset()
+  })
 
   test('npm (default)', async () => {
     const expectedResult = {
@@ -277,6 +279,34 @@ describe('--experimental-registry', () => {
           expect(result).toEqual(['bar', 'foo'])
           const arg = inquirer.prompt.mock.calls[0][0] // first arg of first call
           expect(arg[0].choices.map(elem => elem.value)).toEqual(['bar', 'foo']) // baz was an existing plugin, filtered out
+          resolve()
+        })
+    })
+  })
+
+  test('npm (default) scope: adobe', async () => {
+    const expectedResult = {
+      objects: [
+        { package: { scope: 'adobe', name: 'foo', description: 'some foo', version: '1.0.0', date: now } },
+        { package: { scope: 'some-other-company', name: 'bar', description: 'some bar', version: '1.0.1', date: tomorrow } },
+        { package: { scope: 'adobe', name: 'baz', description: 'some baz', version: '1.0.2', date: dayAfter } }
+      ]
+    }
+    fetch.mockResolvedValueOnce(createMockResponse(expectedResult))
+
+    command.argv = ['-i', '--scope', 'adobe', '--experimental-registry', 'npm']
+    inquirer.prompt = jest.fn().mockResolvedValue({
+      templates: ['baz', 'foo']
+    })
+
+    packageJson = {}
+
+    return new Promise(resolve => {
+      return command.run()
+        .then((result) => {
+          expect(result).toEqual(['baz', 'foo'])
+          const arg = inquirer.prompt.mock.calls[0][0] // first arg of first call
+          expect(arg[0].choices.map(elem => elem.value)).toEqual(['baz', 'foo']) // baz was an existing plugin, filtered out
           resolve()
         })
     })
@@ -317,17 +347,17 @@ describe('--experimental-registry', () => {
       .mockResolvedValueOnce(createMockResponse(firstResult))
       .mockResolvedValueOnce(createMockResponse(secondResult))
 
-    command.argv = ['--experimental-registry', 'https://my-registry.reg/metadata.json']
+    command.argv = ['-i', '--experimental-registry', 'https://my-registry.reg/metadata.json']
     inquirer.prompt = jest.fn().mockResolvedValue({
-      templates: ['bar', 'foo']
+      templates: ['baz', 'bar', 'foo']
     })
 
     return new Promise(resolve => {
       return command.run()
         .then((result) => {
-          expect(result).toEqual(['bar', 'foo'])
+          expect(result).toEqual(['baz', 'bar', 'foo'])
           const arg = inquirer.prompt.mock.calls[0][0] // first arg of first call
-          expect(arg[0].choices.map(elem => elem.value)).toEqual(['bar', 'foo']) // baz was an existing plugin, filtered out
+          expect(arg[0].choices.map(elem => elem.value)).toStrictEqual(['baz', 'bar', 'foo']) // baz was an existing plugin, filtered out
           resolve()
         })
     })
