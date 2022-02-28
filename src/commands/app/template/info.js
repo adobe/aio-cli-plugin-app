@@ -63,8 +63,6 @@ class InfoCommand extends BaseCommand {
 
 InfoCommand.description = 'List all App Builder templates that are installed'
 
-InfoCommand.args = []
-
 InfoCommand.flags = {
   json: flags.boolean({
     char: 'j',

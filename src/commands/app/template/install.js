@@ -64,7 +64,7 @@ InstallCommand.examples = [
   'aio app:template:install @scope/npm-package-name@tagOrVersion'
 ]
 
-InstallCommand.aliases = ['template:i']
+InstallCommand.aliases = ['app:template:i']
 
 InstallCommand.args = [
   {

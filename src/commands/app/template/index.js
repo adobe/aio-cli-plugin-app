@@ -21,6 +21,4 @@ class TemplateCommand extends BaseCommand {
 
 TemplateCommand.description = 'Install, or uninstall a new template into an existing Adobe Developer App Builder App'
 
-TemplateCommand.args = []
-
 module.exports = TemplateCommand

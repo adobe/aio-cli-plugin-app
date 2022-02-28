@@ -12,6 +12,8 @@
 
 const { flags } = require('@oclif/command')
 const BaseCommand = require('../../../BaseCommand')
+const ora = require('ora')
+const fetch = require('node-fetch')
 const { cli } = require('cli-ux')
 const inquirer = require('inquirer')
 const { sortValues } = require('../../../lib/app-helper')
@@ -37,7 +39,7 @@ class DiscoverCommand extends BaseCommand {
         }
       })
 
-    if (!(inqChoices.length)) {
+    if (!inqChoices.length) {
       this.log('All available templates appear to be installed.')
       return []
     }
@@ -85,12 +87,23 @@ class DiscoverCommand extends BaseCommand {
 
   async run () {
     const { flags } = this.parse(DiscoverCommand)
+    const spinner = ora()
 
     try {
-      const json = await npmTextSearch(`keywords:${TEMPLATE_NPM_KEYWORD}`)
-      aioLogger.debug(`retrieved templates: ${JSON.stringify(json, null, 2)}`)
+      let packages = {}
+      const registrySpec = flags['experimental-registry']
 
-      let packages = json.objects.map(e => e.package)
+      spinner.start()
+      if (registrySpec === 'npm') {
+        const json = await npmTextSearch(`keywords:${TEMPLATE_NPM_KEYWORD}`)
+        aioLogger.debug(`retrieved templates: ${JSON.stringify(json, null, 2)}`)
+        packages = json.objects.map(e => e.package)
+      } else {
+        const json = await this.__getRegistryPackages(registrySpec)
+        aioLogger.debug(`retrieved templates from registry ${registrySpec}: ${JSON.stringify(json, null, 2)}`)
+        packages = json.data
+      }
+      spinner.stop()
 
       if (flags.scope) {
         packages = packages.filter(elem => elem.scope === flags.scope)
@@ -107,17 +120,38 @@ class DiscoverCommand extends BaseCommand {
         return this.__list(packages)
       }
     } catch (error) {
+      spinner.stop()
       this.error('Oops:' + error)
     }
+  }
+
+  async __getRegistryPackages (registrySpec) {
+    let response = await fetch(registrySpec)
+    const regMetadata = await response.json()
+    const registryFile = regMetadata.registry
+
+    aioLogger.debug(`retrieved metadata from registry ${registrySpec}: ${JSON.stringify(regMetadata, null, 2)}`)
+
+    if (!registryFile) {
+      this.error('App template registry file not found (missing registry key in metadata)')
+    }
+
+    response = await fetch(registryFile)
+    return response.json()
   }
 }
 
 DiscoverCommand.description = 'Discover App Builder templates to install'
 
-DiscoverCommand.aliases = ['template:disco']
+DiscoverCommand.aliases = ['app:template:disco']
 
 DiscoverCommand.flags = {
   ...BaseCommand.flags,
+  'experimental-registry': flags.string({
+    char: 'r',
+    description: '',
+    default: 'npm'
+  }),
   scope: flags.string({
     char: 's',
     description: 'filter the templates by npm scope'

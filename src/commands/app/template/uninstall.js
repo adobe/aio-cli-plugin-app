@@ -41,7 +41,7 @@ class UninstallCommand extends BaseCommand {
 
 UninstallCommand.description = 'Uninstall an Adobe Developer App Builder template'
 
-UninstallCommand.aliases = ['template:un']
+UninstallCommand.aliases = ['app:template:un']
 
 UninstallCommand.args = [
   {
