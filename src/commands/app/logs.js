@@ -99,7 +99,7 @@ class Logs extends BaseCommand {
 
     try {
       const owConfig = { ow: Object.values(fullConfig.all)[0].ow }
-      await rtLib.printActionLogs(owConfig, this.log, flags.limit, filterActions, flags.strip, flags.poll || flags.tail || flags.watch)
+      await rtLib.printActionLogs(owConfig, this.log.bind(this), flags.limit, filterActions, flags.strip, flags.poll || flags.tail || flags.watch)
     } catch (error) {
       this.error(wrapError(error))
     }
