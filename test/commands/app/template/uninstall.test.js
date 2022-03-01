@@ -12,6 +12,27 @@ governing permissions and limitations under the License.
 
 const TheCommand = require('../../../../src/commands/app/template/uninstall')
 const BaseCommand = require('../../../../src/BaseCommand')
+const { TEMPLATE_PACKAGE_JSON_KEY, readPackageJson, writeObjectToPackageJson } = require('../../../../src/lib/npm-helper')
+
+jest.mock('../../../../src/lib/app-helper')
+jest.mock('../../../../src/lib/npm-helper', () => {
+  const orig = jest.requireActual('../../../../src/lib/npm-helper')
+  return {
+    ...orig,
+    readPackageJson: jest.fn(),
+    writeObjectToPackageJson: jest.fn()
+  }
+})
+
+let command
+
+beforeEach(() => {
+  command = new TheCommand([])
+  command.error = jest.fn()
+
+  readPackageJson.mockReset()
+  writeObjectToPackageJson.mockReset()
+})
 
 test('exports', async () => {
   expect(typeof TheCommand).toEqual('function')
@@ -31,27 +52,58 @@ test('flags', async () => {
 })
 
 test('args', async () => {
+  expect(TheCommand.args).toBeDefined()
+  expect(TheCommand.args).toBeInstanceOf(Array)
   expect(TheCommand.args.length).toEqual(1)
+
   expect(TheCommand.args[0].name).toEqual('package-name')
 })
 
-// describe('instance methods', () => {
-//   let command
+describe('run', () => {
+  test('exists', async () => {
+    expect(command.run).toBeInstanceOf(Function)
+  })
 
-//   beforeEach(() => {
-//     command = new TheCommand([])
-//   })
+  test('uninstall (template is installed)', () => {
+    const templateName = 'my-template'
+    command.argv = [templateName]
 
-//   describe('run', () => {
-//     test('exists', async () => {
-//       expect(command.run).toBeInstanceOf(Function)
-//     })
+    readPackageJson.mockResolvedValue({
+      dependencies: {
+        [templateName]: '^1.0.0'
+      },
+      [TEMPLATE_PACKAGE_JSON_KEY]: [
+        templateName
+      ]
+    })
 
-//     test('returns help file for app:list command', () => {
-//       const spy = jest.spyOn(HHelp.prototype, 'showHelp').mockReturnValue(true)
-//       return command.run().then(() => {
-//         expect(spy).toHaveBeenCalledWith(['app:template', '--help'])
-//       })
-//     })
-//   })
-// })
+    return new Promise(resolve => {
+      return command.run()
+        .then(() => {
+          expect(writeObjectToPackageJson).toBeCalledWith({
+            [TEMPLATE_PACKAGE_JSON_KEY]: []
+          })
+          resolve()
+        })
+    })
+  })
+
+  test('uninstall (template is not installed)', () => {
+    const templateName = 'my-template'
+    command.argv = [templateName]
+
+    readPackageJson.mockResolvedValue({
+      dependencies: {
+        [templateName]: '^1.0.0'
+      }
+    })
+
+    return new Promise(resolve => {
+      return command.run()
+        .then(() => {
+          expect(command.error).toBeCalledWith(`template ${templateName} is not installed.`)
+          resolve()
+        })
+    })
+  })
+})

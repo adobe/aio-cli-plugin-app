@@ -12,6 +12,28 @@ governing permissions and limitations under the License.
 
 const TheCommand = require('../../../../src/commands/app/template/install')
 const BaseCommand = require('../../../../src/BaseCommand')
+const { TEMPLATE_PACKAGE_JSON_KEY, readPackageJson, writeObjectToPackageJson, getNpmDependency } = require('../../../../src/lib/npm-helper')
+
+jest.mock('../../../../src/lib/app-helper')
+jest.mock('../../../../src/lib/npm-helper', () => {
+  const orig = jest.requireActual('../../../../src/lib/npm-helper')
+  return {
+    ...orig,
+    readPackageJson: jest.fn(),
+    writeObjectToPackageJson: jest.fn(),
+    getNpmDependency: jest.fn()
+  }
+})
+
+let command
+
+beforeEach(() => {
+  command = new TheCommand([])
+
+  readPackageJson.mockReset()
+  writeObjectToPackageJson.mockReset()
+  getNpmDependency.mockReset()
+})
 
 test('exports', async () => {
   expect(typeof TheCommand).toEqual('function')
@@ -42,23 +64,82 @@ test('args', async () => {
   expect(TheCommand.args[0].name).toEqual('path')
 })
 
-// describe('instance methods', () => {
-//   let command
+describe('run', () => {
+  test('exists', async () => {
+    expect(command.run).toBeInstanceOf(Function)
+  })
 
-//   beforeEach(() => {
-//     command = new TheCommand([])
-//   })
+  test('install from https', () => {
+    const templateName = 'my-template'
+    command.argv = [`https://github.com/adobe/${templateName}`]
 
-//   describe('run', () => {
-//     test('exists', async () => {
-//       expect(command.run).toBeInstanceOf(Function)
-//     })
+    readPackageJson.mockResolvedValue({
+      dependencies: {
+        [templateName]: `git+${command.argv[0]}.git`
+      }
+    })
 
-//     test('returns help file for app:list command', () => {
-//       const spy = jest.spyOn(HHelp.prototype, 'showHelp').mockReturnValue(true)
-//       return command.run().then(() => {
-//         expect(spy).toHaveBeenCalledWith(['app:template', '--help'])
-//       })
-//     })
-//   })
-// })
+    getNpmDependency.mockResolvedValue([templateName, '1.0.0'])
+
+    return new Promise(resolve => {
+      return command.run()
+        .then(() => {
+          expect(writeObjectToPackageJson).toBeCalledWith({
+            [TEMPLATE_PACKAGE_JSON_KEY]: [
+              templateName
+            ]
+          })
+          resolve()
+        })
+    })
+  })
+
+  test('install from package name', () => {
+    const templateName = 'my-package'
+    command.argv = [templateName]
+
+    readPackageJson.mockResolvedValue({
+      dependencies: {
+        [templateName]: '^1.0.0'
+      }
+    })
+
+    getNpmDependency.mockResolvedValue([templateName, '1.0.0'])
+
+    return new Promise(resolve => {
+      return command.run()
+        .then(() => {
+          expect(writeObjectToPackageJson).toBeCalledWith({
+            [TEMPLATE_PACKAGE_JSON_KEY]: [
+              templateName
+            ]
+          })
+          resolve()
+        })
+    })
+  })
+
+  test('install from package name - already installed', () => {
+    const templateName = 'my-package'
+    command.argv = [templateName]
+
+    readPackageJson.mockResolvedValue({
+      dependencies: {
+        [templateName]: '^1.0.0'
+      },
+      [TEMPLATE_PACKAGE_JSON_KEY]: [
+        templateName
+      ]
+    })
+
+    getNpmDependency.mockResolvedValue([templateName, '1.0.0'])
+
+    return new Promise(resolve => {
+      return command.run()
+        .then(() => {
+          expect(writeObjectToPackageJson).not.toHaveBeenCalled()
+          resolve()
+        })
+    })
+  })
+})
