@@ -25,6 +25,7 @@ const fetch = require('node-fetch')
 const fs = require('fs-extra')
 const { stderr } = require('stdout-stderr')
 const path = require('path')
+const os = require('os')
 const processCwd = process.cwd()
 
 jest.mock('fs-extra') // do not touch the real fs
@@ -42,7 +43,7 @@ beforeEach(() => {
 })
 
 describe('processNpmPackageSpec', () => {
-  const cwd = '/a/b/c'
+  const cwd = os.homedir()
 
   test('http, https, ssh urls', async () => {
     let result
@@ -77,8 +78,8 @@ describe('processNpmPackageSpec', () => {
 
   test('file: urls (with absolute, relative paths)', async () => {
     let result
-    const absFolderPath = path.join('/', 'a', 'd')
-    const relFolderPath = path.join('..', '..', 'd')
+    const absFolderPath = path.join(os.homedir(), 'a', 'd')
+    const relFolderPath = path.join('a', 'd')
 
     result = processNpmPackageSpec(`file:${absFolderPath}`, cwd)
     expect(result).toEqual({ url: `file:${relFolderPath}` })
@@ -89,8 +90,8 @@ describe('processNpmPackageSpec', () => {
 
   test('file paths (absolute, relative)', async () => {
     let result
-    const absFolderPath = path.join('/', 'a', 'd')
-    const relFolderPath = path.join('..', '..', 'd')
+    const absFolderPath = path.join(os.homedir(), 'a', 'd')
+    const relFolderPath = path.join('a', 'd')
 
     result = processNpmPackageSpec(absFolderPath, cwd)
     expect(result).toEqual({ url: `file:${relFolderPath}` })
@@ -101,7 +102,7 @@ describe('processNpmPackageSpec', () => {
 
   test('file paths (absolute, relative) - use process.cwd()', async () => {
     let result
-    const absFolderPath = path.join('/', 'a', 'd')
+    const absFolderPath = path.join(os.homedir(), 'a', 'd')
     const relFolderPath = path.relative(processCwd, absFolderPath)
 
     result = processNpmPackageSpec(absFolderPath)
