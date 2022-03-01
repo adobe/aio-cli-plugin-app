@@ -13,6 +13,52 @@ governing permissions and limitations under the License.
 const TheCommand = require('../../../../src/commands/app/template/install')
 const BaseCommand = require('../../../../src/BaseCommand')
 
-test('dummy', () => {
-  expect(true).toEqual(false)
+test('exports', async () => {
+  expect(typeof TheCommand).toEqual('function')
+  expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
 })
+
+test('description', async () => {
+  expect(TheCommand.description.length).toBeGreaterThan(0)
+})
+
+test('examples', async () => {
+  expect(TheCommand.examples.length).toBeGreaterThan(0)
+})
+
+test('aliases', async () => {
+  expect(TheCommand.aliases).toEqual(['app:template:i'])
+})
+
+test('flags', async () => {
+  expect(Object.keys(TheCommand.flags)).toMatchObject(Object.keys(BaseCommand.flags))
+})
+
+test('args', async () => {
+  expect(TheCommand.args).toBeDefined()
+  expect(TheCommand.args).toBeInstanceOf(Array)
+  expect(TheCommand.args.length).toEqual(1)
+
+  expect(TheCommand.args[0].name).toEqual('path')
+})
+
+// describe('instance methods', () => {
+//   let command
+
+//   beforeEach(() => {
+//     command = new TheCommand([])
+//   })
+
+//   describe('run', () => {
+//     test('exists', async () => {
+//       expect(command.run).toBeInstanceOf(Function)
+//     })
+
+//     test('returns help file for app:list command', () => {
+//       const spy = jest.spyOn(HHelp.prototype, 'showHelp').mockReturnValue(true)
+//       return command.run().then(() => {
+//         expect(spy).toHaveBeenCalledWith(['app:template', '--help'])
+//       })
+//     })
+//   })
+// })

@@ -20,7 +20,7 @@ test('exports', async () => {
 })
 
 test('description', async () => {
-  expect(TheCommand.description).toBeDefined()
+  expect(TheCommand.description.length).toBeGreaterThan(0)
 })
 
 test('flags', async () => {
@@ -28,8 +28,7 @@ test('flags', async () => {
 })
 
 test('args', async () => {
-  expect(TheCommand.args).toBeDefined()
-  expect(TheCommand.args).toBeInstanceOf(Array)
+  expect(TheCommand.args).toEqual([])
 })
 
 describe('instance methods', () => {

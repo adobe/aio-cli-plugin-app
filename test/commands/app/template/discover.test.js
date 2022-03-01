@@ -11,6 +11,8 @@ governing permissions and limitations under the License.
 */
 
 const TheCommand = require('../../../../src/commands/app/template/discover')
+const BaseCommand = require('../../../../src/BaseCommand')
+
 const { TEMPLATE_PACKAGE_JSON_KEY, readPackageJson } = require('../../../../src/lib/npm-helper')
 const fetch = require('node-fetch')
 const inquirer = require('inquirer')
@@ -52,8 +54,45 @@ beforeEach(() => {
   })
 })
 
-test('exports a run function', async () => {
-  expect(typeof TheCommand.run).toEqual('function')
+test('exports', async () => {
+  expect(typeof TheCommand).toEqual('function')
+  expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
+})
+
+test('description', async () => {
+  expect(TheCommand.description.length).toBeGreaterThan(0)
+})
+
+test('aliases', async () => {
+  expect(TheCommand.aliases).toEqual(['app:template:disco'])
+})
+
+test('flags', async () => {
+  // from BaseComand
+  expect(TheCommand.flags.verbose).toBeDefined()
+  expect(TheCommand.flags.version).toBeDefined()
+
+  expect(TheCommand.flags['experimental-registry']).toBeDefined()
+  expect(TheCommand.flags['experimental-registry'].type).toEqual('option')
+  expect(TheCommand.flags['experimental-registry'].default).toEqual('npm')
+
+  expect(TheCommand.flags.scope).toBeDefined()
+  expect(TheCommand.flags.scope.type).toEqual('option')
+
+  expect(TheCommand.flags.interactive).toBeDefined()
+  expect(TheCommand.flags.interactive.type).toEqual('boolean')
+
+  expect(TheCommand.flags['sort-field']).toBeDefined()
+  expect(TheCommand.flags['sort-field'].type).toEqual('option')
+  expect(TheCommand.flags['sort-field'].default).toEqual('date')
+
+  expect(TheCommand.flags['sort-order']).toBeDefined()
+  expect(TheCommand.flags['sort-order'].type).toEqual('option')
+  expect(TheCommand.flags['sort-order'].default).toEqual('desc')
+})
+
+test('args', async () => {
+  expect(TheCommand.args).toEqual([])
 })
 
 describe('sorting', () => {
