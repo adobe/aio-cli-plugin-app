@@ -81,7 +81,7 @@ function processNpmPackageSpec (npmPackageSpec, dir = process.cwd()) {
     if (!tagOrVersion) {
       tagOrVersion = 'latest'
     }
-  } else if (spec.startsWith('file:') || spec.includes('/')) { // process file paths
+  } else if (spec.startsWith('file:') || spec.includes('/') || spec.includes('\\')) { // process file paths
     const fileProtocol = 'file:'
     let filePath = spec.startsWith(fileProtocol) ? spec.substring(fileProtocol.length) : spec
 

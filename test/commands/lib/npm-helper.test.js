@@ -189,7 +189,7 @@ test('getNpmLatestVersion', async () => {
 
 describe('getNpmLocalVersion', () => {
   let useProcessCwd
-  const dir = 'myroot'
+  const dir = path.join(os.homedir(), 'some-folder')
   const npmPackage = 'mypackage'
   const packageJson = { version: '1.2.3' }
 
@@ -201,7 +201,7 @@ describe('getNpmLocalVersion', () => {
       if (filePath === path.join(theDir, 'node_modules', npmPackage, 'package.json')) {
         return JSON.stringify(packageJson)
       } else {
-        throw new Error('not found')
+        throw new Error(`${filePath} not found`)
       }
     })
   })
