@@ -1,0 +1,7 @@
+- name: foo
+  version: 1.0.1
+  spec: ^1.0.0
+- name: bar
+  version: 2.0.1
+  spec: ^2.0.0
+
