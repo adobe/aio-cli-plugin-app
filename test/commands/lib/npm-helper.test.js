@@ -77,8 +77,8 @@ describe('processNpmPackageSpec', () => {
 
   test('file: urls (with absolute, relative paths)', async () => {
     let result
-    const absFolderPath = '/a/d'
-    const relFolderPath = '../../d' //
+    const absFolderPath = path.join('/', 'a', 'd')
+    const relFolderPath = path.join('..', '..', 'd')
 
     result = processNpmPackageSpec(`file:${absFolderPath}`, cwd)
     expect(result).toEqual({ url: `file:${relFolderPath}` })
@@ -89,8 +89,8 @@ describe('processNpmPackageSpec', () => {
 
   test('file paths (absolute, relative)', async () => {
     let result
-    const absFolderPath = '/a/d'
-    const relFolderPath = '../../d' //
+    const absFolderPath = path.join('/', 'a', 'd')
+    const relFolderPath = path.join('..', '..', 'd')
 
     result = processNpmPackageSpec(absFolderPath, cwd)
     expect(result).toEqual({ url: `file:${relFolderPath}` })
@@ -101,7 +101,7 @@ describe('processNpmPackageSpec', () => {
 
   test('file paths (absolute, relative) - use process.cwd()', async () => {
     let result
-    const absFolderPath = '/a/d'
+    const absFolderPath = path.join('/', 'a', 'd')
     const relFolderPath = path.relative(processCwd, absFolderPath)
 
     result = processNpmPackageSpec(absFolderPath)
@@ -188,7 +188,7 @@ test('getNpmLatestVersion', async () => {
 
 describe('getNpmLocalVersion', () => {
   let useProcessCwd
-  const dir = '/myroot'
+  const dir = 'myroot'
   const npmPackage = 'mypackage'
   const packageJson = { version: '1.2.3' }
 
@@ -197,7 +197,7 @@ describe('getNpmLocalVersion', () => {
 
     fs.readFileSync.mockImplementation(filePath => {
       const theDir = useProcessCwd ? processCwd : dir
-      if (filePath === `${theDir}/node_modules/${npmPackage}/package.json`) {
+      if (filePath === path.join(theDir, 'node_modules', npmPackage, 'package.json')) {
         return JSON.stringify(packageJson)
       } else {
         throw new Error('not found')
@@ -227,7 +227,7 @@ describe('package.json', () => {
 
     fs.readJson.mockImplementation(filePath => {
       const theDir = useProcessCwd ? processCwd : dir
-      if (filePath === `${theDir}/package.json`) {
+      if (filePath === path.join(theDir, 'package.json')) {
         return packageJson
       } else {
         throw new Error(`readJson: file not found: ${filePath}`)
@@ -245,7 +245,7 @@ describe('package.json', () => {
   })
 
   test('writeObjectToPackageJson', async () => {
-    const filePath = `${dir}/package.json`
+    const filePath = path.join(dir, 'package.json')
     const obj = { foo: 'bar' }
 
     fs.writeJson.mockImplementation((fp, objToWrite) => {
@@ -260,7 +260,7 @@ describe('package.json', () => {
   })
 
   test('writeObjectToPackageJson (use process.cwd())', async () => {
-    const filePath = `${processCwd}/package.json`
+    const filePath = path.join(processCwd, 'package.json')
     const obj = { foo: 'bar' }
 
     fs.writeJson.mockImplementation((fp, objToWrite) => {
@@ -286,7 +286,7 @@ describe('getNpmDependency', () => {
     fs.readJson.mockReset()
     fs.readJson.mockImplementation(filePath => {
       const theDir = useProcessCwd ? processCwd : dir
-      if (filePath === `${theDir}/package.json`) {
+      if (filePath === path.join(theDir, 'package.json')) {
         return packageJson
       } else {
         throw new Error(`readJson: file not found: ${filePath}`)
