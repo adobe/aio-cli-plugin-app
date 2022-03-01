@@ -160,7 +160,7 @@ async function getNpmLatestVersion (npmPackageName) {
  * @returns {string} the version of the package from the cli node_modules
  */
 async function getNpmLocalVersion (npmPackageName, dir = process.cwd()) {
-  const pjsonPath = `${dir}/node_modules/${npmPackageName}/package.json`
+  const pjsonPath = path.join(dir, 'node_modules', npmPackageName, 'package.json')
   const pjson = JSON.parse(fs.readFileSync(pjsonPath))
 
   return pjson.version
