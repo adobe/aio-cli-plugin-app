@@ -768,7 +768,7 @@ describe('run', () => {
     expect(mockConsoleCLIInstance.prompt.promptConfirm).toHaveBeenCalledTimes(1)
     expect(mockConsoleCLIInstance.acceptDevTermsForOrg).toHaveBeenCalledTimes(0)
   })
-  test('with login, developer terms not accepted, response with accepted = false', async () => {
+  test('with login, developer terms not accepted, acceptDevTermsForOrg: accepted = false', async () => {
     mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
     mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
     mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
