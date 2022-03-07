@@ -112,7 +112,7 @@ GetUrlCommand.flags = {
     char: 'y'
   }),
   local: flags.boolean({
-    description: 'Display local based action URLs'
+    description: 'Display locally based action URLs'
   })
 }
 
