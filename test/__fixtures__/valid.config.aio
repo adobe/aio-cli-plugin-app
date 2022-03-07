@@ -32,6 +32,21 @@
             "id": "17950",
             "name": "New_Test_Intégration_8",
             "integration_type": "oauthandroid"
+          },
+          {
+            "id": "17951",
+            "name": "New_Test_Intégration_9",
+            "integration_type": "oauthwebapp"
+          },
+          {
+            "id": "17952",
+            "name": "New_Test_Intégration_10",
+            "integration_type": "oauthnativeapp"
+          },
+          {
+            "id": "17953",
+            "name": "New_Test_Intégration_11",
+            "integration_type": "oauthsinglepageapp"
           }
         ],
         "services": [
