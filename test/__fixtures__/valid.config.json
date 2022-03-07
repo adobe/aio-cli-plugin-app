@@ -54,6 +54,39 @@
                             "redirect_uri": [ "https://abc123/foo" ],
                             "defaultRedirectUri": "https://abc123/foo"
                         }
+                    },
+                    {
+                        "id": "17951",
+                        "name": "New Test Intégration 9",
+                        "integration_type": "oauthwebapp",
+                        "oauth2": {
+                            "client_id": "TYTYTYYUTYEWTEWRW",
+                            "client_secret": "STWEGSDGEVBEGE",
+                            "redirect_uri": [ "https://abc123/foo2" ],
+                            "defaultRedirectUri": "https://abc123/foo2"
+                        }
+                    },
+                    {
+                        "id": "17952",
+                        "name": "New Test Intégration 10",
+                        "integration_type": "oauthnativeapp",
+                        "oauth2": {
+                            "client_id": "XXXTYTYTYYUTYEWTEWRW",
+                            "client_secret": "XXXSTWEGSDGEVBEGE",
+                            "redirect_uri": [ "https://abc123/foo3" ],
+                            "defaultRedirectUri": "https://abc123/foo3"
+                        }
+                    },
+                    {
+                        "id": "17953",
+                        "name": "New Test Intégration 11",
+                        "integration_type": "oauthsinglepageapp",
+                        "oauth2": {
+                            "client_id": "YYYYXXXTYTYTYYUTYEWTEWRW",
+                            "client_secret": "YYYYXXXSTWEGSDGEVBEGE",
+                            "redirect_uri": [ "https://abc123/foo4" ],
+                            "defaultRedirectUri": "https://abc123/foo4"
+                        }
                     }
                 ],
                 "services": [
