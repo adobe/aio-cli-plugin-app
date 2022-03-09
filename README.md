@@ -75,7 +75,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/index.ts)_
+_See code: [src/commands/app/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/index.ts)_
 
 ## `aio app:add`
 
@@ -90,7 +90,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/add/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/add/index.ts)_
+_See code: [src/commands/app/add/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/add/index.ts)_
 
 ## `aio app:add:action`
 
@@ -112,7 +112,7 @@ ALIASES
   $ aio app:add:actions
 ```
 
-_See code: [src/commands/app/add/action.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/add/action.ts)_
+_See code: [src/commands/app/add/action.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/add/action.ts)_
 
 ## `aio app:add:ci`
 
@@ -127,7 +127,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/add/ci.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/add/ci.ts)_
+_See code: [src/commands/app/add/ci.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/add/ci.ts)_
 
 ## `aio app:add:event`
 
@@ -149,7 +149,7 @@ ALIASES
   $ aio app:add:events
 ```
 
-_See code: [src/commands/app/add/event.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/add/event.ts)_
+_See code: [src/commands/app/add/event.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/add/event.ts)_
 
 ## `aio app:add:extension`
 
@@ -172,7 +172,7 @@ ALIASES
   $ aio app:add:extensions
 ```
 
-_See code: [src/commands/app/add/extension.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/add/extension.ts)_
+_See code: [src/commands/app/add/extension.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/add/extension.ts)_
 
 ## `aio app:add:service`
 
@@ -190,7 +190,7 @@ ALIASES
   $ aio app:add:services
 ```
 
-_See code: [src/commands/app/add/service.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/add/service.ts)_
+_See code: [src/commands/app/add/service.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/add/service.ts)_
 
 ## `aio app:add:web-assets`
 
@@ -209,7 +209,7 @@ OPTIONS
   --version                  Show version
 ```
 
-_See code: [src/commands/app/add/web-assets.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/add/web-assets.ts)_
+_See code: [src/commands/app/add/web-assets.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/add/web-assets.ts)_
 
 ## `aio app:build`
 
@@ -249,7 +249,7 @@ DESCRIPTION
   This will always force a rebuild unless --no-force-build is set.
 ```
 
-_See code: [src/commands/app/build.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/build.ts)_
+_See code: [src/commands/app/build.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/build.ts)_
 
 ## `aio app:config`
 
@@ -268,7 +268,7 @@ ALIASES
   $ aio app:config
 ```
 
-_See code: [src/commands/app/config/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/config/index.ts)_
+_See code: [src/commands/app/config/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/config/index.ts)_
 
 ## `aio app:config:get`
 
@@ -286,7 +286,7 @@ ALIASES
   $ aio app:config:get
 ```
 
-_See code: [src/commands/app/config/get/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/config/get/index.ts)_
+_See code: [src/commands/app/config/get/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/config/get/index.ts)_
 
 ## `aio app:config:get:log-forwarding`
 
@@ -305,7 +305,7 @@ ALIASES
   $ aio app:config:get:lf
 ```
 
-_See code: [src/commands/app/config/get/log-forwarding.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/config/get/log-forwarding.ts)_
+_See code: [src/commands/app/config/get/log-forwarding.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/config/get/log-forwarding.ts)_
 
 ## `aio app:config:get:log-forwarding:errors`
 
@@ -324,7 +324,7 @@ ALIASES
   $ aio app:config:get:lf:errors
 ```
 
-_See code: [src/commands/app/config/get/log-forwarding/errors.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/config/get/log-forwarding/errors.ts)_
+_See code: [src/commands/app/config/get/log-forwarding/errors.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/config/get/log-forwarding/errors.ts)_
 
 ## `aio app:config:set`
 
@@ -342,7 +342,7 @@ ALIASES
   $ aio app:config:set
 ```
 
-_See code: [src/commands/app/config/set/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/config/set/index.ts)_
+_See code: [src/commands/app/config/set/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/config/set/index.ts)_
 
 ## `aio app:config:set:log-forwarding`
 
@@ -361,7 +361,7 @@ ALIASES
   $ aio app:config:set:lf
 ```
 
-_See code: [src/commands/app/config/set/log-forwarding.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/config/set/log-forwarding.ts)_
+_See code: [src/commands/app/config/set/log-forwarding.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/config/set/log-forwarding.ts)_
 
 ## `aio app:create [PATH]`
 
@@ -380,7 +380,7 @@ OPTIONS
   --version            Show version
 ```
 
-_See code: [src/commands/app/create.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/create.ts)_
+_See code: [src/commands/app/create.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/create.ts)_
 
 ## `aio app:delete`
 
@@ -395,7 +395,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/delete/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/delete/index.ts)_
+_See code: [src/commands/app/delete/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/delete/index.ts)_
 
 ## `aio app:delete:action [ACTION-NAME]`
 
@@ -417,7 +417,7 @@ ALIASES
   $ aio app:delete:actions
 ```
 
-_See code: [src/commands/app/delete/action.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/delete/action.ts)_
+_See code: [src/commands/app/delete/action.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/delete/action.ts)_
 
 ## `aio app:delete:ci`
 
@@ -433,7 +433,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/delete/ci.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/delete/ci.ts)_
+_See code: [src/commands/app/delete/ci.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/delete/ci.ts)_
 
 ## `aio app:delete:event [EVENT-ACTION-NAME]`
 
@@ -455,7 +455,7 @@ ALIASES
   $ aio app:delete:events
 ```
 
-_See code: [src/commands/app/delete/event.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/delete/event.ts)_
+_See code: [src/commands/app/delete/event.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/delete/event.ts)_
 
 ## `aio app:delete:extension`
 
@@ -477,7 +477,7 @@ ALIASES
   $ aio app:delete:extensions
 ```
 
-_See code: [src/commands/app/delete/extension.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/delete/extension.ts)_
+_See code: [src/commands/app/delete/extension.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/delete/extension.ts)_
 
 ## `aio app:delete:service`
 
@@ -495,7 +495,7 @@ ALIASES
   $ aio app:delete:services
 ```
 
-_See code: [src/commands/app/delete/service.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/delete/service.ts)_
+_See code: [src/commands/app/delete/service.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/delete/service.ts)_
 
 ## `aio app:delete:web-assets`
 
@@ -511,7 +511,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/delete/web-assets.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/delete/web-assets.ts)_
+_See code: [src/commands/app/delete/web-assets.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/delete/web-assets.ts)_
 
 ## `aio app:deploy`
 
@@ -566,7 +566,7 @@ DESCRIPTION
   This will always force a rebuild unless --no-force-build is set.
 ```
 
-_See code: [src/commands/app/deploy.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/deploy.ts)_
+_See code: [src/commands/app/deploy.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/deploy.ts)_
 
 ## `aio app:get-url [ACTION]`
 
@@ -585,7 +585,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/get-url.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/get-url.ts)_
+_See code: [src/commands/app/get-url.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/get-url.ts)_
 
 ## `aio app:info`
 
@@ -604,7 +604,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/info.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/info.ts)_
+_See code: [src/commands/app/info.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/info.ts)_
 
 ## `aio app:init [PATH]`
 
@@ -639,7 +639,7 @@ OPTIONS
   --version                  Show version
 ```
 
-_See code: [src/commands/app/init.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/init.ts)_
+_See code: [src/commands/app/init.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/init.ts)_
 
 ## `aio app:list`
 
@@ -654,7 +654,7 @@ OPTIONS
   --version      Show version
 ```
 
-_See code: [src/commands/app/list/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/list/index.ts)_
+_See code: [src/commands/app/list/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/list/index.ts)_
 
 ## `aio app:list:extension`
 
@@ -675,7 +675,7 @@ ALIASES
   $ aio app:list:extensions
 ```
 
-_See code: [src/commands/app/list/extension.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/list/extension.ts)_
+_See code: [src/commands/app/list/extension.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/list/extension.ts)_
 
 ## `aio app:list:extension-points`
 
@@ -696,7 +696,7 @@ ALIASES
   $ aio app:list:extension-points
 ```
 
-_See code: [src/commands/app/list/extension-points.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/list/extension-points.ts)_
+_See code: [src/commands/app/list/extension-points.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/list/extension-points.ts)_
 
 ## `aio app:logs`
 
@@ -717,7 +717,7 @@ OPTIONS
   --version            Show version
 ```
 
-_See code: [src/commands/app/logs.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/logs.ts)_
+_See code: [src/commands/app/logs.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/logs.ts)_
 
 ## `aio app:run`
 
@@ -738,7 +738,7 @@ OPTIONS
   --version                  Show version
 ```
 
-_See code: [src/commands/app/run.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/run.ts)_
+_See code: [src/commands/app/run.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/run.ts)_
 
 ## `aio app:test`
 
@@ -763,7 +763,7 @@ DESCRIPTION
   If the extension has a hook called 'test' in its 'ext.config.yaml', the script specified will be run instead.
 ```
 
-_See code: [src/commands/app/test.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/test.ts)_
+_See code: [src/commands/app/test.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/test.ts)_
 
 ## `aio app:undeploy`
 
@@ -786,7 +786,7 @@ OPTIONS
   --[no-]web-assets          [default: true] Undeploy web-assets if any
 ```
 
-_See code: [src/commands/app/undeploy.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/undeploy.ts)_
+_See code: [src/commands/app/undeploy.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/undeploy.ts)_
 
 ## `aio app:use [CONFIG_FILE_PATH]`
 
@@ -839,5 +839,5 @@ DESCRIPTION
   page in https://console.adobe.io
 ```
 
-_See code: [src/commands/app/use.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.0/src/commands/app/use.ts)_
+_See code: [src/commands/app/use.ts](https://github.com/adobe/aio-cli-plugin-app/blob/8.5.1/src/commands/app/use.ts)_
 <!-- commandsstop -->
