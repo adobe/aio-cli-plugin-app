@@ -82,7 +82,6 @@ async function runDev (config, dataDir, options = {}, log = () => {}) {
       log('building actions..')
       await buildActions(devConfig)
 
-      log(`watching action files at ${devConfig.actions.src}...`)
       const { cleanup: watcherCleanup } = await actionsWatcher({ config: devConfig, isLocal, log })
       cleanup.add(() => watcherCleanup(), 'stopping action watcher...')
     }
