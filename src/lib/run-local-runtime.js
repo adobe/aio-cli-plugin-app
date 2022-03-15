@@ -32,6 +32,12 @@ const OW_WAIT_INIT_TIME = 2000
 const OW_WAIT_PERIOD_TIME = 500
 const OW_TIMEOUT = 60000
 
+const LOCAL_RUNTIME = {
+  namespace: OW_LOCAL_NAMESPACE,
+  auth: OW_LOCAL_AUTH,
+  apihost: OW_LOCAL_APIHOST
+}
+
 /**
  * @typedef {object} RunDevLocalObject
  * @property {string} config the modified dev config
@@ -55,9 +61,8 @@ const OW_TIMEOUT = 60000
  * @returns {RunDevLocalObject} the RunDevLocalObject
  */
 async function runDevLocal (config, dataDir, log = () => undefined, verbose = false) {
-  const devConfig = cloneDeep(config)
-  devConfig.envFile = path.join(config.app.dist, '.env.local')
   const owJarFile = path.join(dataDir, OW_JAR_PATH)
+  const devConfig = loadLocalDevConfig(config)
 
   // take following steps only when we have a backend
   log('checking if java is installed...')
@@ -91,16 +96,8 @@ async function runDevLocal (config, dataDir, log = () => undefined, verbose = fa
   }
   const res = await utils.runOpenWhiskJar(owJarFile, OW_CONFIG_RUNTIMES_FILE, OW_LOCAL_APIHOST, OW_WAIT_INIT_TIME, OW_WAIT_PERIOD_TIME, OW_TIMEOUT, owExecaOptions)
 
-  log('setting local openwhisk credentials...')
-  const runtime = {
-    namespace: OW_LOCAL_NAMESPACE,
-    auth: OW_LOCAL_AUTH,
-    apihost: OW_LOCAL_APIHOST
-  }
-  devConfig.ow = { ...devConfig.ow, ...runtime }
-
   log(`writing credentials to tmp wskdebug config '${devConfig.envFile}'`)
-  await writeLocalEnvFile(devConfig, runtime)
+  await writeLocalEnvFile(devConfig, LOCAL_RUNTIME)
 
   const cleanup = () => {
     aioLogger.debug('stopping local OpenWhisk stack...')
@@ -116,6 +113,19 @@ async function runDevLocal (config, dataDir, log = () => undefined, verbose = fa
     config: devConfig,
     cleanup
   }
+}
+
+/**
+ * @param {object} config the app config
+ * @param {Function} [log] function to log application logs
+ * @returns {RunDevLocalObject} the RunDevLocalObject
+ */
+function loadLocalDevConfig (config, log) {
+  const devConfig = cloneDeep(config)
+  devConfig.envFile = path.join(config.app.dist, '.env.local')
+  log && log('setting local openwhisk credentials...')
+  devConfig.ow = { ...devConfig.ow, ...LOCAL_RUNTIME }
+  return devConfig
 }
 
 /**
@@ -141,4 +151,4 @@ async function writeLocalEnvFile (appConfig, runtimeCredentials) {
   `))
 }
 
-module.exports = runDevLocal
+module.exports = { runLocalRuntime: runDevLocal, loadLocalDevConfig }
