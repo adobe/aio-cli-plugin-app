@@ -19,7 +19,7 @@ const bundleServe = require('./bundle-serve')
 const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('./defaults')
 const serve = require('./serve')
 const Cleanup = require('./cleanup')
-const runLocalRuntime = require('./run-local-runtime')
+const { runLocalRuntime } = require('./run-local-runtime')
 
 const buildActions = require('./build-actions')
 const deployActions = require('./deploy-actions')

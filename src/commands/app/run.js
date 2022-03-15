@@ -60,6 +60,7 @@ class Run extends BaseCommand {
   async runOneExtensionPoint (name, config, flags, spinner) {
     const hasBackend = config.app.hasBackend
     const hasFrontend = config.app.hasFrontend
+    const headlessApp = hasBackend && !hasFrontend
 
     if (!hasBackend && !hasFrontend) {
       this.error(new Error('nothing to run.. there is no frontend and no manifest.yml, are you in a valid app?'))
@@ -97,7 +98,8 @@ class Run extends BaseCommand {
       }
     }
 
-    const onProgress = !flags.verbose
+    const verboseOutput = flags.verbose || flags.local || headlessApp
+    const onProgress = !verboseOutput
       ? info => {
         spinner.text = info
       }
