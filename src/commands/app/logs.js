@@ -20,13 +20,9 @@ const SECURED = 'require-adobe-auth'
 
 class Logs extends BaseCommand {
   _processEachAction (fullConfig, processFn) {
-    const isSecuredAction = (pkg, aName) => {
-      try {
-        return pkg.actions[aName].annotations[SECURED]
-      } catch (e) {
-        return false
-      }
-    }
+    const isSecuredAction = (pkg, aName) => pkg && pkg.actions && pkg.actions[aName] &&
+      pkg.actions[aName].annotations && pkg.actions[aName].annotations[SECURED]
+
     Object.entries(fullConfig.all).forEach(([, config]) => {
       Object.entries(config.manifest.full.packages).forEach(([packageName, pkg]) => {
         // handle default package
