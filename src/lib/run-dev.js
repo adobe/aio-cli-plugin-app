@@ -19,7 +19,7 @@ const bundleServe = require('./bundle-serve')
 const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('./defaults')
 const serve = require('./serve')
 const Cleanup = require('./cleanup')
-const runLocalRuntime = require('./run-local-runtime')
+const { runLocalRuntime } = require('./run-local-runtime')
 
 const buildActions = require('./build-actions')
 const deployActions = require('./deploy-actions')
@@ -82,7 +82,6 @@ async function runDev (config, dataDir, options = {}, log = () => {}) {
       log('building actions..')
       await buildActions(devConfig)
 
-      log(`watching action files at ${devConfig.actions.src}...`)
       const { cleanup: watcherCleanup } = await actionsWatcher({ config: devConfig, isLocal, log })
       cleanup.add(() => watcherCleanup(), 'stopping action watcher...')
     }
