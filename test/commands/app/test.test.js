@@ -27,6 +27,11 @@ const appHelper = require('../../../src/lib/app-helper')
 // mocks
 jest.mock('../../../src/lib/app-helper')
 jest.mock('fs')
+jest.mock('@adobe/generator-aio-app', () => ({
+  extensions: {
+    'dx/excshell/1': {}
+  }
+}))
 
 const mockGetAppExtConfigs = jest.fn()
 

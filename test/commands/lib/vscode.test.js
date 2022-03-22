@@ -22,6 +22,9 @@ const upath = require('upath')
 
 jest.mock('fs-extra')
 jest.mock('yeoman-environment')
+jest.mock('@adobe/generator-aio-app', () => ({
+  'add-vscode-config': {}
+}))
 
 const mockYeomanInstantiate = jest.fn()
 const mockYeomanRunGenerator = jest.fn()

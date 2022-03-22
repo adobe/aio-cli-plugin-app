@@ -17,6 +17,11 @@ const yaml = require('js-yaml')
 
 const mockConfigLoader = require('@adobe/aio-cli-lib-app-config')
 jest.mock('@adobe/aio-cli-lib-app-config')
+jest.mock('@adobe/generator-aio-app', () => ({
+  extensions: {
+    'dx/excshell/1': {}
+  }
+}))
 const getMockConfig = require('../../data-mocks/config-loader')
 
 test('exports', async () => {
