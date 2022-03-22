@@ -14,7 +14,7 @@
     "@adobe/aio-lib-ims": "^5.0.0",
     "@adobe/aio-lib-runtime": "^3.4.0",
     "@adobe/aio-lib-web": "^5.1.0",
-    "@adobe/generator-aio-app": "^3.0.0",
+    "@adobe/generator-aio-app": "https://github.com/adobe/generator-aio-app.git#task/third-party-extension",
     "@oclif/command": "^1.5.11",
     "@oclif/config": "^1.12.9",
     "@oclif/plugin-help": "^2.2.3",
