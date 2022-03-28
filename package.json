@@ -12,7 +12,7 @@
     "@adobe/aio-lib-core-networking": "^2.0.0",
     "@adobe/aio-lib-env": "^1.1.0",
     "@adobe/aio-lib-ims": "^5.0.0",
-    "@adobe/aio-lib-runtime": "^3.4.0",
+    "@adobe/aio-lib-runtime": "^4.0.0",
     "@adobe/aio-lib-web": "^5.1.0",
     "@adobe/generator-aio-app": "^3.0.0",
     "@oclif/command": "^1.5.11",
