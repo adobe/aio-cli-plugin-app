@@ -101,7 +101,7 @@ async function runDev (config, dataDir, options = {}, log = () => {}) {
       if (!options.skipServe) {
         const script = await utils.runScript(config.hooks['build-static'])
         if (!script) {
-          const entryFile = config.web.src + '/index.html'
+          const entries = config.web.src + '/**/*.html'
           bundleOptions.serveOptions = {
             port: uiPort,
             https: bundleOptions.https
@@ -113,7 +113,7 @@ async function runDev (config, dataDir, options = {}, log = () => {}) {
           bundleOptions.additionalReporters = [
             { packageName: '@parcel/reporter-cli', resolveFrom: __filename }
           ]
-          defaultBundler = await bundle(entryFile, config.web.distDev, bundleOptions, log)
+          defaultBundler = await bundle(entries, config.web.distDev, bundleOptions, log)
         }
       }
     }

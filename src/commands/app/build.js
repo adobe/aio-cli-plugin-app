@@ -110,14 +110,14 @@ class Build extends BaseCommand {
           if (script) {
             spinner.fail(chalk.green(`build-static skipped by hook '${name}'`))
           } else {
-            const entryFile = config.web.src + '/index.html'
+            const entries = config.web.src + '/**/*.html'
             const bundleOptions = {
               shouldDisableCache: true,
               shouldContentHash: flags['content-hash'],
               shouldOptimize: flags['web-optimize'],
               logLevel: flags.verbose ? 'verbose' : 'warn'
             }
-            const bundler = await bundle(entryFile, config.web.distProd, bundleOptions, onProgress)
+            const bundler = await bundle(entries, config.web.distProd, bundleOptions, onProgress)
             await bundler.run()
             spinner.succeed(chalk.green(`Building web assets for '${name}'`))
           }
