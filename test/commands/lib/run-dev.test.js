@@ -11,7 +11,7 @@ governing permissions and limitations under the License.
 */
 
 const runDev = require('../../../src/lib/run-dev')
-const runLocalRuntime = require('../../../src/lib/run-local-runtime')
+const { runLocalRuntime } = require('../../../src/lib/run-local-runtime')
 const cloneDeep = require('lodash.clonedeep')
 const dataMocks = require('../../data-mocks/config-loader')
 const defaults = require('../../../src/lib/defaults')

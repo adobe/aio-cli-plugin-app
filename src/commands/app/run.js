@@ -42,7 +42,7 @@ class Run extends BaseCommand {
     const runConfigs = this.getAppExtConfigs(flags)
     const entries = Object.entries(runConfigs)
     if (entries.length > 1) {
-      this.error('You can only run one implementation at the time, please filter with the \'-e\' flag.')
+      this.error('Your app implements multiple extensions. You can only run one at the time, please select which extension to run with the \'-e\' flag.')
     }
     const name = entries[0][0]
     const config = entries[0][1]
@@ -60,6 +60,7 @@ class Run extends BaseCommand {
   async runOneExtensionPoint (name, config, flags, spinner) {
     const hasBackend = config.app.hasBackend
     const hasFrontend = config.app.hasFrontend
+    const headlessApp = hasBackend && !hasFrontend
 
     if (!hasBackend && !hasFrontend) {
       this.error(new Error('nothing to run.. there is no frontend and no manifest.yml, are you in a valid app?'))
@@ -97,7 +98,8 @@ class Run extends BaseCommand {
       }
     }
 
-    const onProgress = !flags.verbose
+    const verboseOutput = flags.verbose || flags.local || headlessApp
+    const onProgress = !verboseOutput
       ? info => {
         spinner.text = info
       }

@@ -236,7 +236,15 @@ describe('run', () => {
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
     expect(mockBundleFunc).toHaveBeenCalledTimes(1)
-    expect(helpers.writeConfig).toHaveBeenCalledWith('/web-src/src/config.json', { action: 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action', 'action-sequence': 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action-sequence', 'action-zip': 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action-zip' })
+    expect(helpers.writeConfig).toHaveBeenCalledWith('/web-src/src/config.json',
+      {
+        action: 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action',
+        'action-sequence': 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action-sequence',
+        'action-zip': 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action-zip',
+        'sample-app-1.0.0/action': 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action',
+        'sample-app-1.0.0/action-sequence': 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action-sequence',
+        'sample-app-1.0.0/action-zip': 'https://fake_ns.adobeio-static.net/api/v1/web/sample-app-1.0.0/action-zip'
+      })
   })
 
   test('build & deploy an App with no flags', async () => {
