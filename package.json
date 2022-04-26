@@ -1,7 +1,7 @@
 {
   "name": "@adobe/aio-cli-plugin-app",
   "description": "Create, Build and Deploy Adobe I/O Applications",
-  "version": "8.6.0",
+  "version": "8.6.1",
   "author": "Adobe Inc.",
   "bugs": "https://github.com/adobe/aio-cli-plugin-app/issues",
   "dependencies": {
@@ -60,8 +60,7 @@
     "eslint-plugin-standard": "^4.0.1",
     "jest": "^26.6.3",
     "jest-plugin-fs": "^2.9.0",
-    "stdout-stderr": "^0.1.9",
-    "typescript": "^4.5.2"
+    "stdout-stderr": "^0.1.9"
   },
   "engineStrict": true,
   "engines": {

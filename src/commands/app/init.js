@@ -132,7 +132,8 @@ class InitCommand extends AddCommand {
     const isTermAccepted = await consoleCLI.checkDevTermsForOrg(orgId)
     if (!isTermAccepted) {
       const terms = await consoleCLI.getDevTermsForOrg()
-      const confirmDevTerms = await consoleCLI.prompt.promptConfirm(terms.text)
+      const confirmDevTerms = await consoleCLI.prompt.promptConfirm(`${terms.text}
+      \nDo you agree with the new Developer Terms?`)
       if (!confirmDevTerms) {
         this.error('The Developer Terms of Service were declined')
       } else {
