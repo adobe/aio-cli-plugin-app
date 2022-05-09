@@ -459,7 +459,7 @@ _See code: [src/commands/app/delete/event.js](https://github.com/adobe/aio-cli-p
 
 ## `aio app:delete:extension`
 
-Add new extensions or a standalone application to the project
+Delete existing extensions
 
 ```
 USAGE
