@@ -102,7 +102,7 @@ class DeleteExtensionCommand extends BaseCommand {
   }
 }
 
-DeleteExtensionCommand.description = `Add new extensions or a standalone application to the project
+DeleteExtensionCommand.description = `Delete existing extensions
 `
 DeleteExtensionCommand.flags = {
   yes: flags.boolean({
