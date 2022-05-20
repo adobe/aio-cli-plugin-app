@@ -16,7 +16,6 @@ module.exports = {
   defaultAppHostname: 'adobeio-static.net',
   stageAppHostname: 'dev.runtime.adobe.io',
   defaultTvmUrl: 'https://firefly-tvm.adobe.io',
-  defaultOwApihost: 'https://adobeioruntime.net',
   defaultHTMLCacheDuration: '60',
   defaultJSCacheDuration: '604800',
   defaultCSSCacheDuration: '604800',
