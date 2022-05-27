@@ -562,6 +562,8 @@ OPTIONS
 
   --web-optimize                [default: false] Enable optimization (minification) of web js/css/html
 
+  --[no-]code                   [default: true] --no-code prevents action code deployment
+
 DESCRIPTION
   This will always force a rebuild unless --no-force-build is set.
 ```

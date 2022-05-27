@@ -147,12 +147,15 @@ class Deploy extends BuildCommand {
           if (filterActions) {
             filterEntities = { actions: filterActions }
           }
+
+          const options = { noCode: !flags.code }
+
           const message = `Deploying actions for '${name}'`
           spinner.start(message)
           try {
             const script = await runScript(config.hooks['deploy-actions'])
             if (!script) {
-              deployedRuntimeEntities = await rtLib.deployActions(config, { filterEntities }, onProgress)
+              deployedRuntimeEntities = await rtLib.deployActions(config, { filterEntities }, onProgress, options)
             }
 
             if (deployedRuntimeEntities.actions && deployedRuntimeEntities.actions.length > 0) {
@@ -337,6 +340,11 @@ Deploy.flags = {
     description: '[default: true] Update log forwarding configuration on server',
     default: true,
     allowNo: true
+  }),
+  code: flags.boolean({
+    description: '[default: true] --no-code prevents deploying action code',
+    allowNo: true,
+    default: true
   })
 }
 
