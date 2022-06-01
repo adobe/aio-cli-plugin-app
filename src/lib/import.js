@@ -11,7 +11,6 @@ governing permissions and limitations under the License.
 
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:import', { provider: 'debug' })
 const config = require('@adobe/aio-lib-core-config')
-const defaults = require('./defaults')
 const path = require('path')
 const fs = require('fs-extra')
 const inquirer = require('inquirer')
@@ -489,8 +488,6 @@ function transformRuntime (runtime) {
   if (newRuntime.name) {
     newRuntime.namespace = newRuntime.name
     delete newRuntime.name
-    // apihost is not sent in console config
-    newRuntime.apihost = defaults.defaultOwApihost
   }
 
   return newRuntime

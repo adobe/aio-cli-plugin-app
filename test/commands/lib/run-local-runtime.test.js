@@ -20,7 +20,10 @@ governing permissions and limitations under the License.
 ]
 */
 
-const runLocalRuntime = require('../../../src/lib/run-local-runtime')
+const {
+  runLocalRuntime,
+  loadLocalDevConfig
+} = require('../../../src/lib/run-local-runtime')
 const utils = require('../../../src/lib/app-helper')
 const mockLogger = require('@adobe/aio-lib-core-logging')
 const path = require('path')
@@ -170,5 +173,25 @@ test('return value', async () => {
       auth: OW_LOCAL_AUTH,
       apihost: OW_LOCAL_APIHOST
     }
+  })
+})
+
+describe('loadLocalDevConfig', () => {
+  test('returns local config dev config', () => {
+    const localConfig = loadLocalDevConfig(LOCAL_CONFIG)
+    expect(localConfig).toEqual({
+      ...LOCAL_CONFIG,
+      envFile: path.join(LOCAL_CONFIG.app.dist, '.env.local'),
+      ow: {
+        namespace: OW_LOCAL_NAMESPACE,
+        auth: OW_LOCAL_AUTH,
+        apihost: OW_LOCAL_APIHOST
+      }
+    })
+  })
+  test('calls logger when available (coverage)', () => {
+    jest.spyOn(console, 'log')
+    loadLocalDevConfig(LOCAL_CONFIG, console.log)
+    expect(console.log).toHaveBeenCalledWith(expect.any(String))
   })
 })

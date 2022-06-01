@@ -688,7 +688,7 @@ describe('run', () => {
     await command.run()
 
     expect(command.error).toHaveBeenCalledTimes(1)
-    expect(command.error).toHaveBeenCalledWith('You can only run one implementation at the time, please filter with the \'-e\' flag.')
+    expect(command.error).toHaveBeenCalledWith(expect.stringContaining('\'-e\' flag'))
   })
 
   test('run a single extension', async () => {
