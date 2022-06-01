@@ -148,7 +148,7 @@ class Deploy extends BuildCommand {
             filterEntities = { actions: filterActions }
           }
 
-          const options = { noCode: !flags.code }
+          const options = { actionCode: flags['action-code'] }
 
           const message = `Deploying actions for '${name}'`
           spinner.start(message)
@@ -341,8 +341,8 @@ Deploy.flags = {
     default: true,
     allowNo: true
   }),
-  code: flags.boolean({
-    description: '[default: true] --no-code prevents deploying action code',
+  'action-code': flags.boolean({
+    description: '[default: true] --no-action-code skips deployment of action code',
     allowNo: true,
     default: true
   })
