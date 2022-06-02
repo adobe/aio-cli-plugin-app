@@ -160,6 +160,11 @@ describe('run command definition', () => {
     expect(typeof TheCommand.flags.open.description).toBe('string')
     expect(TheCommand.flags.open.default).toEqual(false)
 
+    expect(typeof TheCommand.flags['force-build']).toBe('object')
+    expect(typeof TheCommand.flags['force-build'].description).toBe('string')
+    expect(TheCommand.flags['force-build'].default).toEqual(false)
+    expect(TheCommand.flags['force-build'].allowNo).toEqual(true)
+
     expect(typeof TheCommand.flags.extension).toBe('object')
     expect(typeof TheCommand.flags.extension.description).toBe('string')
     expect(TheCommand.flags.extension.multiple).toEqual(false)
@@ -289,7 +294,7 @@ describe('run', () => {
     }), expect.any(Function))
   })
 
-  test('app:run with -verbose', async () => {
+  test('app:run with --verbose', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     command.argv = ['--verbose']
     const appConfig = createAppConfig(command.appConfig)
@@ -302,6 +307,21 @@ describe('run', () => {
       parcel: expect.objectContaining({
         logLevel: 'verbose'
       }),
+      devRemote: true
+    }), expect.any(Function))
+  })
+
+  test('app:run with --force-build', async () => {
+    mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
+    command.argv = ['--force-build']
+    const appConfig = createAppConfig(command.appConfig)
+    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledWith(appConfig.application, expect.any(String), expect.objectContaining({
+      forceBuild: true,
       devRemote: true
     }), expect.any(Function))
   })

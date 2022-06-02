@@ -79,7 +79,8 @@ class Run extends BaseCommand {
       },
       fetchLogs: true,
       devRemote: !flags.local,
-      verbose: flags.verbose
+      verbose: flags.verbose,
+      forceBuild: flags['force-build']
     }
 
     try {
@@ -226,6 +227,11 @@ Run.flags = {
   open: flags.boolean({
     description: 'Open the default web browser after a successful run, only valid if your app has a front-end',
     default: false
+  }),
+  'force-build': flags.boolean({
+    description: '[default: false] Force a build even if one already exists',
+    default: false,
+    allowNo: true
   }),
   extension: flags.string({
     description: 'Run only a specific extension, this flag can only be specified once',
