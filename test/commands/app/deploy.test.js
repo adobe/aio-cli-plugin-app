@@ -215,6 +215,11 @@ test('flags', async () => {
   expect(TheCommand.flags.actions.default).toEqual(true)
   expect(TheCommand.flags.actions.allowNo).toEqual(true)
   expect(TheCommand.flags.actions.exclusive).toEqual(['action'])
+
+  expect(typeof TheCommand.flags['action-code']).toBe('object')
+  expect(typeof TheCommand.flags['action-code'].description).toBe('string')
+  expect(TheCommand.flags['action-code'].default).toEqual(true)
+  expect(TheCommand.flags['action-code'].allowNo).toEqual(true)
 })
 
 describe('run', () => {
@@ -316,7 +321,8 @@ describe('run', () => {
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(appConfig.application, {
       filterEntities: { actions: ['a', 'b', 'c'] }
     },
-    expect.any(Function))
+    expect.any(Function),
+    expect.objectContaining({ actionCode: true }))
   })
 
   test('build & deploy actions with no actions folder and no manifest', async () => {
@@ -478,6 +484,23 @@ describe('run', () => {
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': false }), expect.anything()) // force-build is true by default for build cmd
+  })
+
+  test('--no-action-code', async () => {
+    const appConfig = createAppConfig(command.appConfig)
+    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+
+    command.argv = ['--no-action-code', '--action', 'a']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
+    expect(command.buildOneExt).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(appConfig.application, {
+      filterEntities: { actions: ['a'] }
+    },
+    expect.any(Function),
+    expect.objectContaining({ actionCode: false }))
   })
 
   test.each([
