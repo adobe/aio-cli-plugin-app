@@ -29,7 +29,7 @@ const {
 class BaseCommand extends Command {
   // default error handler for app commands
   async catch (error) {
-    const { flags } = this.parse(this.prototype)
+    const { flags } = await this.parse(this.prototype)
     aioLogger.error(error) // debug log
     this.handleError(error, flags.verbose)
   }

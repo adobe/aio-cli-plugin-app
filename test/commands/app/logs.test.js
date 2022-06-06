@@ -88,8 +88,8 @@ describe('run', () => {
     await command.run()
     const ow = owConfig()
     const actionList = ['legacy-app-1.0.0/__secured_action', 'legacy-app-1.0.0/action', 'legacy-app-1.0.0/action-zip']
-    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, actionList, false, false)
     expect(command.error).not.toHaveBeenCalled()
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, expect.any(Function), 1, actionList, false, false)
     expect(mockedLogger).toHaveBeenCalled()
   })
 
@@ -111,7 +111,7 @@ describe('run', () => {
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('using --limit=1'))
     const ow = owConfig()
     const actionList = ['legacy-app-1.0.0/__secured_action', 'legacy-app-1.0.0/action', 'legacy-app-1.0.0/action-zip']
-    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 1, actionList, false, false)
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, expect.any(Function), 1, actionList, false, false)
     expect(command.error).not.toHaveBeenCalled()
     expect(mockedLogger).toHaveBeenCalled()
   })
@@ -124,7 +124,7 @@ describe('run', () => {
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('using --limit=50'))
     const ow = owConfig()
     const actionList = ['legacy-app-1.0.0/__secured_action', 'legacy-app-1.0.0/action', 'legacy-app-1.0.0/action-zip']
-    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 50, actionList, false, false)
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, expect.any(Function), 50, actionList, false, false)
     expect(command.error).not.toHaveBeenCalled()
     expect(mockedLogger).toHaveBeenCalled()
   })
@@ -136,7 +136,7 @@ describe('run', () => {
     await command.run()
     const ow = owConfig()
     const actionList = ['legacy-app-1.0.0/__secured_action', 'legacy-app-1.0.0/action', 'legacy-app-1.0.0/action-zip']
-    expect(printActionLogs).toHaveBeenCalledWith({ ow }, command.log, 32, actionList, false, false)
+    expect(printActionLogs).toHaveBeenCalledWith({ ow }, expect.any(Function), 32, actionList, false, false)
     expect(command.error).not.toHaveBeenCalled()
     expect(mockedLogger).toHaveBeenCalled()
   })

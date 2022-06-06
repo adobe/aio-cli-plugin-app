@@ -12,7 +12,6 @@ governing permissions and limitations under the License.
 
 const ora = require('ora')
 const chalk = require('chalk')
-// const path = require('path')
 
 const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')

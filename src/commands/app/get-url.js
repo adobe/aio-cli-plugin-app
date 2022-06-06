@@ -111,7 +111,7 @@ GetUrlCommand.flags = {
     description: 'Output yml',
     char: 'y'
   }),
-  local: flags.boolean({
+  local: Flags.boolean({
     description: 'Display locally based action URLs'
   })
 }
