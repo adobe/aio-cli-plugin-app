@@ -408,3 +408,12 @@ test('devRemote true, build-static hook set, serve-static hook not set)', async 
   expect(logPoller.run).not.toHaveBeenCalled()
   expect(actionsWatcher).toHaveBeenCalled()
 })
+
+test('runDev always force builds', async () => {
+  const config = cloneDeep(createAppConfig().application)
+
+  await runDev(config, DATA_DIR, { devRemote: true })
+
+  expect(buildActions).toHaveBeenCalled()
+  expect(buildActions).toHaveBeenCalledWith(expect.any(Object) /* config */, null /* filterActions */, true /* forceBuild */)
+})
