@@ -18,6 +18,7 @@ const chalk = require('chalk')
 // const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 const generators = require('@adobe/generator-aio-app')
+const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
 
 const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
 const { atLeastOne } = require('../../lib/app-helper')
@@ -103,9 +104,14 @@ class InitCommand extends AddCommand {
     const project = await this.selectOrCreateConsoleProject(consoleCLI, org)
     // 4. retrieve workspace details, defaults to Stage
     const workspace = await this.retrieveWorkspaceFromName(consoleCLI, org, project, flags)
+
+    // TODO:
+    await this.selectTemplate(flags, orgSupportedServices)
+
     // 5. ask for exensionPoints, only allow selection for extensions that have services enabled in Org
     const extensionPoints = await this.selectExtensionPoints(flags, orgSupportedServices)
     // 6. add any required services to Workspace
+
     const requiredServices = this.getAllRequiredServicesFromExtPoints(extensionPoints)
     await this.addServices(
       consoleCLI,
@@ -143,6 +149,33 @@ class InitCommand extends AddCommand {
         }
         this.log(`The Developer Terms of Service were successfully accepted for org ${orgId}`)
       }
+    }
+  }
+
+  async selectTemplate (flags, orgSupportedServices = null) {
+    const supportedServiceCodes = new Set(orgSupportedServices.map(s => s.code))
+    const templateRegistryClient = TemplateRegistryAPI.init()
+
+    const searchCriteria = {
+      statuses: ['Approved'],
+      apis: Array.from(supportedServiceCodes)
+    }
+
+    const orderByCriteria = {
+      names: 'desc'
+    }
+
+    let empty = true
+
+    for await (const templates of templateRegistryClient.getTemplates(searchCriteria, orderByCriteria)) {
+      for (const template of templates) {
+        empty = false
+        console.log(template)
+      }
+    }
+
+    if (empty) {
+      console.warn('there are no templates that match the services supported by the org')
     }
   }
 
