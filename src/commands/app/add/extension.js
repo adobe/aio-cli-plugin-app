@@ -12,7 +12,7 @@ governing permissions and limitations under the License.
 const AddCommand = require('../../../AddCommand')
 const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 const ora = require('ora')
 
 const { atLeastOne } = require('../../../lib/app-helper')
@@ -22,7 +22,7 @@ const chalk = require('chalk')
 
 class AddExtensionCommand extends AddCommand {
   async run () {
-    const { flags } = this.parse(AddExtensionCommand)
+    const { flags } = await this.parse(AddExtensionCommand)
 
     aioLogger.debug(`add extensions with flags: ${JSON.stringify(flags)}`)
     const spinner = ora()
@@ -112,12 +112,12 @@ class AddExtensionCommand extends AddCommand {
 AddExtensionCommand.description = `Add new extensions or a standalone application to the project
 `
 AddExtensionCommand.flags = {
-  yes: flags.boolean({
+  yes: Flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
   }),
-  extension: flags.string({
+  extension: Flags.string({
     description: 'Specify extensions to add, skips selection prompt',
     char: 'e',
     multiple: true

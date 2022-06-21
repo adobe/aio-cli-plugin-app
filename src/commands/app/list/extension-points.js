@@ -12,7 +12,7 @@ governing permissions and limitations under the License.
 const BaseCommand = require('../../../BaseCommand')
 
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:list:extension-points', { provider: 'debug' })
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 
 const { EXTENSION_POINT_LIST } = require('../../../lib/defaults')
 const chalk = require('chalk')
@@ -20,7 +20,7 @@ const yaml = require('js-yaml')
 
 class ListExtensionPointsCommand extends BaseCommand {
   async run () {
-    const { flags } = this.parse(ListExtensionPointsCommand)
+    const { flags } = await this.parse(ListExtensionPointsCommand)
     aioLogger.debug(`list all extensions points with flags: ${JSON.stringify(flags)}`)
 
     // print
@@ -45,11 +45,11 @@ ListExtensionPointsCommand.description = `List all extension points for the sele
 `
 ListExtensionPointsCommand.flags = {
   ...BaseCommand.flags,
-  json: flags.boolean({
+  json: Flags.boolean({
     description: 'Output json',
     char: 'j'
   }),
-  yml: flags.boolean({
+  yml: Flags.boolean({
     description: 'Output yml',
     char: 'y'
   })
