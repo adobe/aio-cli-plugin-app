@@ -18,12 +18,13 @@ const { buildActions } = require('@adobe/aio-lib-runtime')
  *
  * @param {object} config see src/lib/config-loader.js
  * @param {Array<string>} filterActions add filters to deploy only specified OpenWhisk actions
+ * @param {boolean} [forceBuild=false] force a build (skip file changed hash check)
  */
-module.exports = async (config, filterActions) => {
+module.exports = async (config, filterActions, forceBuild = false) => {
   utils.runScript(config.hooks['pre-app-build'])
   const script = await utils.runScript(config.hooks['build-actions'])
   if (!script) {
-    await buildActions(config, filterActions)
+    await buildActions(config, filterActions, forceBuild)
   }
   utils.runScript(config.hooks['post-app-build'])
 }
