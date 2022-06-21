@@ -55,3 +55,17 @@ test('no build-actions app hook available (use inbuilt)', async () => {
   expect(utils.runScript).toHaveBeenNthCalledWith(2, 'build-actions')
   expect(utils.runScript).toHaveBeenNthCalledWith(3, 'post-app-build')
 })
+
+test('forceBuild false (default)', async () => {
+  await buildActions(extensionConfig)
+
+  expect(rtBuildActions).toHaveBeenCalled()
+  expect(rtBuildActions).toHaveBeenCalledWith(extensionConfig, undefined, false)
+})
+
+test('forceBuild true', async () => {
+  await buildActions(extensionConfig, null, true)
+
+  expect(rtBuildActions).toHaveBeenCalled()
+  expect(rtBuildActions).toHaveBeenCalledWith(extensionConfig, null, true)
+})

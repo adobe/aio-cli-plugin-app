@@ -289,7 +289,7 @@ describe('run', () => {
     }), expect.any(Function))
   })
 
-  test('app:run with -verbose', async () => {
+  test('app:run with --verbose', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     command.argv = ['--verbose']
     const appConfig = createAppConfig(command.appConfig)
