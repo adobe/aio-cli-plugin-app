@@ -12,7 +12,7 @@ governing permissions and limitations under the License.
 const AddCommand = require('../../../AddCommand')
 const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 const ora = require('ora')
 const path = require('path')
 const generators = require('@adobe/generator-aio-app')
@@ -21,7 +21,7 @@ const aioConfigLoader = require('@adobe/aio-lib-core-config')
 
 class AddActionCommand extends AddCommand {
   async run () {
-    const { flags } = this.parse(AddActionCommand)
+    const { flags } = await this.parse(AddActionCommand)
 
     aioLogger.debug(`add actions with flags: ${JSON.stringify(flags)}`)
     const spinner = ora()
@@ -69,12 +69,12 @@ AddActionCommand.description = `Add new actions
 `
 
 AddActionCommand.flags = {
-  yes: flags.boolean({
+  yes: Flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
   }),
-  extension: flags.string({
+  extension: Flags.string({
     description: 'Add actions to a specific extension',
     char: 'e',
     multiple: false,

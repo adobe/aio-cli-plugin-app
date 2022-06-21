@@ -26,7 +26,7 @@ const { ENTP_INT_CERTS_FOLDER } = require('../../../lib/defaults')
 
 class AddServiceCommand extends BaseCommand {
   async run () {
-    const { flags } = this.parse(AddServiceCommand)
+    const { flags } = await this.parse(AddServiceCommand)
 
     aioLogger.debug(`adding services to the current workspace, using flags: ${JSON.stringify(flags, null, 2)}`)
 
@@ -80,7 +80,7 @@ class AddServiceCommand extends BaseCommand {
       const currentServiceCodesSet = new Set(currentServiceProperties.map(s => s.sdkCode))
       const filteredServices = supportedServices.filter(s => s.type === 'entp' && !currentServiceCodesSet.has(s.code))
       if (filteredServices.length <= 0) {
-        this.cleanConsoleCLIOutput()
+        await this.cleanConsoleCLIOutput()
         this.error(`All supported Services in the Organization have already been added to Workspace ${workspace.name}`)
       }
       // prompt to manually select services
@@ -92,7 +92,7 @@ class AddServiceCommand extends BaseCommand {
       newServiceProperties.push(...currentServiceProperties)
     }
     if (op === 'clone') {
-      // get latest workspaces which are not the current
+      // get the latest workspaces which are not the current
       const otherWorkspaces = (
         await consoleCLI.getWorkspaces(orgId, project.id)
       ).filter(w => w.id !== workspace.id)

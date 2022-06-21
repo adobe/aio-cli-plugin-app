@@ -12,7 +12,7 @@ governing permissions and limitations under the License.
 const BaseCommand = require('../../../BaseCommand')
 const inquirer = require('inquirer')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:delete:action', { provider: 'debug' })
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 const fs = require('fs-extra')
 const path = require('path')
 const chalk = require('chalk')
@@ -21,7 +21,7 @@ const { atLeastOne, deleteUserConfig } = require('../../../lib/app-helper')
 
 class DeleteActionCommand extends BaseCommand {
   async run () {
-    const { args, flags } = this.parse(DeleteActionCommand)
+    const { args, flags } = await this.parse(DeleteActionCommand)
 
     aioLogger.debug(`deleting actions from the project, with args ${JSON.stringify(args)}, and flags: ${JSON.stringify(flags)}`)
 
@@ -145,7 +145,7 @@ DeleteActionCommand.description = `Delete existing actions
 `
 
 DeleteActionCommand.flags = {
-  yes: flags.boolean({
+  yes: Flags.boolean({
     description: 'Skip questions, and use all default values',
     char: 'y',
     default: false

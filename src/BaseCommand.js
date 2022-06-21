@@ -9,7 +9,7 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-const { Command, flags } = require('@oclif/command')
+const { Command, Flags } = require('@oclif/core')
 const chalk = require('chalk')
 const coreConfig = require('@adobe/aio-lib-core-config')
 const DEFAULT_LAUNCH_PREFIX = 'https://experience.adobe.com/?devMode=true#/custom-apps/?localDevUrl='
@@ -29,14 +29,13 @@ const {
 class BaseCommand extends Command {
   // default error handler for app commands
   async catch (error) {
-    const { flags } = this.parse(this.prototype)
+    const { flags } = await this.parse(this.prototype)
     aioLogger.error(error) // debug log
     this.handleError(error, flags.verbose)
   }
 
   handleError (error, verbose) {
     const errorMessages = ['no such file or directory', 'find configuration']
-
     if (errorMessages.find(msg => error.message.includes(msg))) {
       const errorList = [
         'Not a valid application root folder.',
@@ -49,7 +48,7 @@ class BaseCommand extends Command {
   }
 
   async init () {
-    super.init()
+    await super.init()
     // setup a prompt that outputs to stderr
     this.prompt = inquirer.createPromptModule({ output: process.stderr })
   }
@@ -169,8 +168,8 @@ class BaseCommand extends Command {
 }
 
 BaseCommand.flags = {
-  verbose: flags.boolean({ char: 'v', description: 'Verbose output' }),
-  version: flags.boolean({ description: 'Show version' })
+  verbose: Flags.boolean({ char: 'v', description: 'Verbose output' }),
+  version: Flags.boolean({ description: 'Show version' })
 }
 
 BaseCommand.args = []
