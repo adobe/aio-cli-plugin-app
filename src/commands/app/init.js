@@ -19,6 +19,8 @@ const chalk = require('chalk')
 const { flags } = require('@oclif/command')
 const generators = require('@adobe/generator-aio-app')
 const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
+const inquirer = require('inquirer')
+const inquirerTablePrompt = require('inquirer-table-prompt')
 
 const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
 const { atLeastOne } = require('../../lib/app-helper')
@@ -41,8 +43,8 @@ class InitCommand extends AddCommand {
       flags.import = path.resolve(flags.import)
     }
 
-    if (args.path !== '.') {
-      const destDir = path.resolve(args.path)
+    const destDir = this.destDir(args)
+    if (destDir !== '.') {
       fs.ensureDirSync(destDir)
       process.chdir(destDir)
     }
@@ -50,10 +52,10 @@ class InitCommand extends AddCommand {
     const spinner = ora()
     if (flags.import || !flags.login) {
       // import a console config - no login required!
-      await this.initNoLogin(flags)
+      await this.initNoLogin(destDir, flags)
     } else {
       // we can login
-      await this.initWithLogin(flags)
+      await this.initWithLogin(destDir, flags)
     }
 
     // install packages, always at the end, so user can ctrl+c
@@ -64,7 +66,17 @@ class InitCommand extends AddCommand {
   }
 
   /** @private */
-  async initNoLogin (flags) {
+  destDir (args) {
+    let destDir = '.'
+    if (args.path !== '.') {
+      destDir = path.resolve(args.path)
+    }
+
+    return destDir
+  }
+
+  /** @private */
+  async initNoLogin (destDir, flags) {
     // 1. load console details - if any
     let consoleConfig
     if (flags.import) {
@@ -77,7 +89,7 @@ class InitCommand extends AddCommand {
 
     // 3. run extension point code generators
     const projectName = (consoleConfig && consoleConfig.project.name) || path.basename(process.cwd())
-    await this.runCodeGenerators(flags, extensionPoints, projectName)
+    await this.runCodeGenerators(destDir, flags, extensionPoints, projectName)
 
     // 4. import config - if any
     if (flags.import) {
@@ -92,7 +104,7 @@ class InitCommand extends AddCommand {
     }
   }
 
-  async initWithLogin (flags) {
+  async initWithLogin (destDir, flags) {
     // this will trigger a login
     const consoleCLI = await this.getLibConsoleCLI()
 
@@ -106,27 +118,27 @@ class InitCommand extends AddCommand {
     const workspace = await this.retrieveWorkspaceFromName(consoleCLI, org, project, flags)
 
     // TODO:
-    await this.selectTemplate(flags, orgSupportedServices)
+    const templates = await this.selectTemplates(flags, orgSupportedServices)
 
     // 5. ask for exensionPoints, only allow selection for extensions that have services enabled in Org
-    const extensionPoints = await this.selectExtensionPoints(flags, orgSupportedServices)
+    // const extensionPoints = await this.selectExtensionPoints(flags, orgSupportedServices)
     // 6. add any required services to Workspace
 
-    const requiredServices = this.getAllRequiredServicesFromExtPoints(extensionPoints)
-    await this.addServices(
-      consoleCLI,
-      org,
-      project,
-      workspace,
-      orgSupportedServices,
-      requiredServices
-    )
+    // const requiredServices = this.getAllRequiredServicesFromExtPoints(extensionPoints)
+    // await this.addServices(
+    //   consoleCLI,
+    //   org,
+    //   project,
+    //   workspace,
+    //   orgSupportedServices,
+    //   requiredServices
+    // )
 
     // 7. download workspace config
     const consoleConfig = await consoleCLI.getWorkspaceConfig(org.id, project.id, workspace.id, orgSupportedServices)
 
     // 8. run code generators
-    await this.runCodeGenerators(flags, extensionPoints, consoleConfig.project.name)
+    await this.runCodeGenerators(destDir, flags, templates, consoleConfig.project.name)
 
     // 9. import config
     await this.importConsoleConfig(consoleConfig)
@@ -152,31 +164,83 @@ class InitCommand extends AddCommand {
     }
   }
 
-  async selectTemplate (flags, orgSupportedServices = null) {
-    const supportedServiceCodes = new Set(orgSupportedServices.map(s => s.code))
+  async selectTemplates (flags, orgSupportedServices = null) {
+    // const supportedServiceCodes = new Set(orgSupportedServices.map(s => s.code))
     const templateRegistryClient = TemplateRegistryAPI.init()
 
     const searchCriteria = {
-      statuses: ['Approved'],
-      apis: Array.from(supportedServiceCodes)
+      [TemplateRegistryAPI.SEARCH_CRITERIA_CATEGORIES]: flags.category,
+      [TemplateRegistryAPI.SEARCH_CRITERIA_STATUSES]: TemplateRegistryAPI.TEMPLATE_STATUS_APPROVED //,
+      // [TemplateRegistryAPI.SEARCH_CRITERIA_APIS]: Array.from(supportedServiceCodes)
     }
 
+    // an optional OrderBy Criteria object
     const orderByCriteria = {
-      names: 'desc'
+      [TemplateRegistryAPI.ORDER_BY_CRITERIA_PUBLISH_DATE]: TemplateRegistryAPI.ORDER_BY_CRITERIA_SORT_DESC
     }
 
-    let empty = true
+    const spinner = ora()
+    const templateList = []
 
-    for await (const templates of templateRegistryClient.getTemplates(searchCriteria, orderByCriteria)) {
+    spinner.start('Getting a list of templates')
+    const templatesIterator = templateRegistryClient.getTemplates(searchCriteria, orderByCriteria)
+
+    for await (const templates of templatesIterator) {
       for (const template of templates) {
-        empty = false
-        console.log(template)
+        templateList.push(template)
       }
     }
+    spinner.succeed('Downloaded the list of templates')
 
-    if (empty) {
-      console.warn('there are no templates that match the services supported by the org')
+    if (templateList.length === 0) {
+      console.warn('There are no templates that match the services supported by the org.')
+      return
     }
+
+    const COLUMNS = {
+      COL_SELECT: 'Select',
+      COL_TEMPLATE: 'Template',
+      COL_DESCRIPTION: 'Description',
+      COL_EXTENSION_POINT: 'Extension Point',
+      COL_CATEGORIES: 'Categories'
+    }
+
+    const rows = templateList.map(template => {
+      const extensionPoint = template.extension ? template.extension.serviceCode : 'N/A'
+      const name = template.adobeRecommended ? `${template.name} *` : template.name
+      return {
+        value: template.name,
+        [COLUMNS.COL_TEMPLATE]: name,
+        [COLUMNS.COL_DESCRIPTION]: template.description,
+        [COLUMNS.COL_EXTENSION_POINT]: extensionPoint,
+        [COLUMNS.COL_CATEGORIES]: template.categories
+      }
+    })
+    const promptName = 'select template'
+
+    inquirer.registerPrompt('table', inquirerTablePrompt)
+    const answers = await inquirer
+      .prompt([
+        {
+          type: 'table',
+          name: promptName,
+          bottomContent: '* = recommended by Adobe; to learn more about the templates, go to http://adobe.ly/templates',
+          message: 'Choose the template(s) to install:',
+          wordWrap: true,
+          wrapOnWordBoundary: false,
+          colWidths: [10, 40, 20, 20, 20],
+          columns: [
+            { name: COLUMNS.COL_SELECT },
+            { name: COLUMNS.COL_TEMPLATE },
+            { name: COLUMNS.COL_DESCRIPTION },
+            { name: COLUMNS.COL_EXTENSION_POINT },
+            { name: COLUMNS.COL_CATEGORIES }
+          ],
+          rows
+        }
+      ])
+
+    return answers[promptName]
   }
 
   async selectExtensionPoints (flags, orgSupportedServices = null) {
@@ -302,7 +366,7 @@ class InitCommand extends AddCommand {
     return [...new Set(requiredServicesWithDuplicates)]
   }
 
-  async runCodeGenerators (flags, extensionPoints, projectName) {
+  async runCodeGenerators (destDir, flags, templates, projectName) {
     let env = yeoman.createEnv()
     const initialGenerators = ['base-app', 'add-ci']
     // first run app generator that will generate the root skeleton + ci
@@ -321,11 +385,22 @@ class InitCommand extends AddCommand {
     // Creating new Yeoman env here to workaround an issue where yeoman reuses the conflicter from previous environment.
     // https://github.com/yeoman/environment/issues/324
 
+    const spinner = ora()
+
+    // install the templates in sequence
+    for (const template of templates) {
+      spinner.info(`Installing template ${template}`)
+      await this.config.runCommand('templates:install', [template])
+      spinner.succeed(`Installed template ${template}`)
+    }
+
     env = yeoman.createEnv()
     // try to use appGen.composeWith
-    for (let i = 0; i < extensionPoints.length; ++i) {
-      const extGen = env.instantiate(
-        extensionPoints[i].generator,
+    for (let i = 0; i < templates.length; ++i) {
+      const loc = path.join(destDir, 'node_modules', templates[i])
+      env.register(require.resolve(loc), 'template-to-run')
+      spinner.start(`Running template ${templates[i]}`)
+      env.run('template-to-run',
         {
           options: {
             'skip-prompt': flags.yes,
@@ -335,7 +410,7 @@ class InitCommand extends AddCommand {
             'skip-install': true
           }
         })
-      await env.runGenerator(extGen)
+      spinner.succeed(`Ran template ${templates[i]}`)
     }
   }
 
