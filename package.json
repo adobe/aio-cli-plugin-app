@@ -57,6 +57,7 @@
     "eslint-plugin-standard": "^4.0.1",
     "jest": "^26.6.3",
     "jest-plugin-fs": "^2.9.0",
+    "oclif": "^3.0.1",
     "stdout-stderr": "^0.1.9"
   },
   "engineStrict": true,
@@ -86,10 +87,10 @@
   "scripts": {
     "postpack": "rm -f oclif.manifest.json",
     "lint": "eslint src test",
-    "prepack": "oclif-dev manifest && oclif-dev readme",
+    "prepack": "oclif manifest && oclif readme",
     "test": "npm run unit-tests && npm run lint",
     "unit-tests": "jest -c jest.config.js",
-    "version": "oclif-dev readme && git add README.md"
+    "version": "oclif readme && git add README.md"
   },
   "bin": {
     "aio-next": "./bin/run"
