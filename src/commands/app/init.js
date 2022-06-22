@@ -397,8 +397,7 @@ class InitCommand extends AddCommand {
     env = yeoman.createEnv()
     // try to use appGen.composeWith
     for (let i = 0; i < templates.length; ++i) {
-      const loc = path.join(destDir, 'node_modules', templates[i])
-      env.register(require.resolve(loc), 'template-to-run')
+      env.register(require.resolve(templates[i], { paths: [destDir] }), 'template-to-run')
       spinner.start(`Running template ${templates[i]}`)
       env.run('template-to-run',
         {
