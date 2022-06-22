@@ -23,10 +23,7 @@ const inquirer = require('inquirer')
 const inquirerTablePrompt = require('inquirer-table-prompt')
 
 const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
-const { atLeastOne } = require('../../lib/app-helper')
-
-const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV, implPromptChoices } = require('../../lib/defaults')
-const cloneDeep = require('lodash.clonedeep')
+const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV } = require('../../lib/defaults')
 
 const DEFAULT_WORKSPACE = 'Stage'
 
@@ -84,24 +81,25 @@ class InitCommand extends AddCommand {
       this.log(chalk.green(`Loaded Adobe Developer Console configuration file for the Project '${consoleConfig.project.title}' in the Organization '${consoleConfig.project.org.name}'`))
     }
 
-    // 2. prompt for extension points to be implemented
-    const extensionPoints = await this.selectExtensionPoints(flags)
+    // 2. prompt for templates to be installed
+    const templates = await this.selectTemplates(flags)
 
     // 3. run extension point code generators
     const projectName = (consoleConfig && consoleConfig.project.name) || path.basename(process.cwd())
-    await this.runCodeGenerators(destDir, flags, extensionPoints, projectName)
+    await this.runCodeGenerators(destDir, flags, templates, projectName)
 
     // 4. import config - if any
     if (flags.import) {
       await this.importConsoleConfig(consoleConfig)
     }
 
+    // TODO:
     // 5. This flow supports non logged in users so we can't now for sure if the project has
     //    required services installed. So we output a note on required services instead.
-    const requiredServices = this.getAllRequiredServicesFromExtPoints(extensionPoints)
-    if (requiredServices.length > 0) {
-      this.log(chalk.bold(`Please ensure the following service(s) are enabled in the Organization and added to the Console Workspace: '${requiredServices}'`))
-    }
+    // const requiredServices = this.getAllRequiredServicesFromExtPoints(templates)
+    // if (requiredServices.length > 0) {
+    //   this.log(chalk.bold(`Please ensure the following service(s) are enabled in the Organization and added to the Console Workspace: '${requiredServices}'`))
+    // }
   }
 
   async initWithLogin (destDir, flags) {
@@ -117,13 +115,10 @@ class InitCommand extends AddCommand {
     // 4. retrieve workspace details, defaults to Stage
     const workspace = await this.retrieveWorkspaceFromName(consoleCLI, org, project, flags)
 
-    // TODO:
+    // 5. get list of templates to install
     const templates = await this.selectTemplates(flags, orgSupportedServices)
 
-    // 5. ask for exensionPoints, only allow selection for extensions that have services enabled in Org
-    // const extensionPoints = await this.selectExtensionPoints(flags, orgSupportedServices)
-    // 6. add any required services to Workspace
-
+    // TODO:
     // const requiredServices = this.getAllRequiredServicesFromExtPoints(extensionPoints)
     // await this.addServices(
     //   consoleCLI,
@@ -241,42 +236,6 @@ class InitCommand extends AddCommand {
       ])
 
     return answers[promptName]
-  }
-
-  async selectExtensionPoints (flags, orgSupportedServices = null) {
-    if (!flags.extensions) {
-      return [implPromptChoices.find(i => i.value.name === 'application').value]
-    } else if (flags.extension) {
-      const extList = implPromptChoices.filter(i => flags.extension.indexOf(i.value.name) > -1)
-        .map(i => i.value)
-      if (extList.length < 1) {
-        throw new Error(`--extension=${flags.extension} not found.`)
-      }
-      return extList
-    } else {
-      const choices = cloneDeep(implPromptChoices)
-
-      // disable extensions that lack required services
-      if (orgSupportedServices) {
-        const supportedServiceCodes = new Set(orgSupportedServices.map(s => s.code))
-        // filter choices
-        choices.forEach(c => {
-          const missingServices = c.value.requiredServices.filter(s => !supportedServiceCodes.has(s))
-          if (missingServices.length > 0) {
-            c.disabled = true
-            c.name = `${c.name}: missing service(s) in Org: '${missingServices}'`
-          }
-        })
-      }
-      const answers = await this.prompt([{
-        type: 'checkbox',
-        name: 'res',
-        message: 'Which extension point(s) do you wish to implement ?',
-        choices,
-        validate: atLeastOne
-      }])
-      return answers.res
-    }
   }
 
   async selectConsoleOrg (consoleCLI) {
@@ -450,16 +409,10 @@ InitCommand.flags = {
     default: true,
     allowNo: true
   }),
-  extensions: flags.boolean({
-    description: 'Use --no-extensions to create a blank application that does not integrate with Exchange',
-    default: true,
-    allowNo: true
-  }),
-  extension: flags.string({
-    description: 'Extension point(s) to implement',
-    char: 'e',
-    multiple: true,
-    exclusive: ['extensions']
+  template: flags.string({
+    description: 'Specify a link to a template that will be installed',
+    char: 't',
+    multiple: true
   }),
   workspace: flags.string({
     description: 'Specify the Adobe Developer Console Workspace to init from, defaults to Stage',
