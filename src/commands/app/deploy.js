@@ -339,7 +339,7 @@ Deploy.flags = {
     default: true,
     allowNo: true
   }),
-  'action-code': flags.boolean({
+  'action-code': Flags.boolean({
     description: '[default: true] --no-action-code skips deployment of action code',
     allowNo: true,
     default: true
