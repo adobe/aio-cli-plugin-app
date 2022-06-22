@@ -12,13 +12,11 @@ governing permissions and limitations under the License.
 
 const ora = require('ora')
 const chalk = require('chalk')
-// const path = require('path')
-const { cli } = require('cli-ux')
 
 const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
-const { flags } = require('@oclif/command')
+const { Flags, CliUx: { ux: cli } } = require('@oclif/core')
 const { createWebExportFilter, runScript, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
@@ -26,7 +24,7 @@ const LogForwarding = require('../../lib/log-forwarding')
 class Deploy extends BuildCommand {
   async run () {
     // cli input
-    const { flags } = this.parse(Deploy)
+    const { flags } = await this.parse(Deploy)
 
     // flags
     flags['web-assets'] = flags['web-assets'] && !flags['skip-web-assets'] && !flags['skip-static'] && !flags.action
@@ -263,80 +261,80 @@ This will always force a rebuild unless --no-force-build is set.
 
 Deploy.flags = {
   ...BaseCommand.flags,
-  'skip-build': flags.boolean({
+  'skip-build': Flags.boolean({
     description: '[deprecated] Please use --no-build'
   }),
-  'skip-deploy': flags.boolean({
+  'skip-deploy': Flags.boolean({
     description: '[deprecated] Please use \'aio app build\''
   }),
-  'skip-static': flags.boolean({
+  'skip-static': Flags.boolean({
     description: '[deprecated] Please use --no-web-assets'
   }),
-  'skip-web-assets': flags.boolean({
+  'skip-web-assets': Flags.boolean({
     description: '[deprecated] Please use --no-web-assets'
   }),
-  'skip-actions': flags.boolean({
+  'skip-actions': Flags.boolean({
     description: '[deprecated] Please use --no-actions'
   }),
-  actions: flags.boolean({
+  actions: Flags.boolean({
     description: '[default: true] Deploy actions if any',
     default: true,
     allowNo: true,
     exclusive: ['action'] // should be action exclusive --no-action but see https://github.com/oclif/oclif/issues/600
   }),
-  action: flags.string({
+  action: Flags.string({
     description: 'Deploy only a specific action, the flags can be specified multiple times, this will set --no-publish',
     char: 'a',
     exclusive: ['extension'],
     multiple: true
   }),
-  'web-assets': flags.boolean({
+  'web-assets': Flags.boolean({
     description: '[default: true] Deploy web-assets if any',
     default: true,
     allowNo: true
   }),
-  build: flags.boolean({
+  build: Flags.boolean({
     description: '[default: true] Run the build phase before deployment',
     default: true,
     allowNo: true
   }),
-  'force-build': flags.boolean({
+  'force-build': Flags.boolean({
     description: '[default: true] Force a build even if one already exists',
     exclusive: ['no-build'], // no-build
     default: true,
     allowNo: true
   }),
-  'content-hash': flags.boolean({
+  'content-hash': Flags.boolean({
     description: '[default: true] Enable content hashing in browser code',
     default: true,
     allowNo: true
   }),
-  open: flags.boolean({
+  open: Flags.boolean({
     description: 'Open the default web browser after a successful deploy, only valid if your app has a front-end',
     default: false
   }),
-  extension: flags.string({
+  extension: Flags.string({
     description: 'Deploy only a specific extension, the flags can be specified multiple times',
     exclusive: ['action'],
     char: 'e',
     multiple: true
   }),
-  publish: flags.boolean({
+  publish: Flags.boolean({
     description: '[default: true] Publish extension(s) to Exchange',
     allowNo: true,
     default: true,
     exclusive: ['action']
   }),
-  'force-publish': flags.boolean({
+  'force-publish': Flags.boolean({
     description: 'Force publish extension(s) to Exchange, delete previously published extension points',
     default: false,
     exclusive: ['action', 'publish'] // no-publish is excluded
   }),
-  'web-optimize': flags.boolean({
+  'web-optimize': Flags.boolean({
     description: '[default: false] Enable optimization (minification) of web js/css/html',
     default: false
   }),
-  'log-forwarding-update': flags.boolean({
+  'log-forwarding-update': Flags.boolean({
     description: '[default: true] Update log forwarding configuration on server',
     default: true,
     allowNo: true

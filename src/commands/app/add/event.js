@@ -12,14 +12,14 @@ governing permissions and limitations under the License.
 const AddCommand = require('../../../AddCommand')
 const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:event', { provider: 'debug' })
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 const ora = require('ora')
 const path = require('path')
 const generators = require('@adobe/generator-aio-app')
 
 class AddEventCommand extends AddCommand {
   async run () {
-    const { flags } = this.parse(AddEventCommand)
+    const { flags } = await this.parse(AddEventCommand)
 
     aioLogger.debug(`add events with flags: ${JSON.stringify(flags)}`)
     const spinner = ora()
@@ -57,12 +57,12 @@ AddEventCommand.description = `Add a new Adobe I/O Events action
 `
 
 AddEventCommand.flags = {
-  yes: flags.boolean({
+  yes: Flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
   }),
-  extension: flags.string({
+  extension: Flags.string({
     description: 'Add actions to a specific extension',
     char: 'e',
     multiple: false,

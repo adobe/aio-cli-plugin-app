@@ -9,13 +9,13 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const HHelp = require('@oclif/plugin-help').default
+const { Help } = require('@oclif/core')
 const BaseCommand = require('../../../BaseCommand')
 
 class ListCommand extends BaseCommand {
   async run () {
-    const help = new HHelp(this.config)
-    help.showHelp(['app:list', '--help'])
+    const help = new Help(this.config)
+    await help.showHelp(['app:list', '--help'])
   }
 }
 

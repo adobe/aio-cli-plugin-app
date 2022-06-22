@@ -37,8 +37,19 @@ const mockConfigData = {
   }
 }
 
-jest.mock('cli-ux')
-const { cli } = require('cli-ux')
+jest.mock('@oclif/core', () => {
+  return {
+    ...jest.requireActual('@oclif/core'),
+    CliUx: {
+      ux: {
+        cli: {
+          open: jest.fn()
+        }
+      }
+    }
+  }
+})
+const { CliUx: { ux: cli } } = require('@oclif/core')
 
 jest.mock('../../../src/lib/log-forwarding', () => {
   const orig = jest.requireActual('../../../src/lib/log-forwarding')

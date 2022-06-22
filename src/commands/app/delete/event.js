@@ -11,13 +11,13 @@ governing permissions and limitations under the License.
 
 const BaseCommand = require('../../../BaseCommand')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:delete:event', { provider: 'debug' })
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 const DeleteActionCommand = require('./action')
 const chalk = require('chalk')
 
 class DeleteEventCommand extends BaseCommand {
   async run () {
-    const { args, flags } = this.parse(DeleteEventCommand)
+    const { args, flags } = await this.parse(DeleteEventCommand)
 
     aioLogger.debug(`deleting events from the project, with args ${JSON.stringify(args)}, and flags: ${JSON.stringify(flags)}`)
 
@@ -46,7 +46,7 @@ DeleteEventCommand.description = `Delete existing Adobe I/O Events actions
 `
 
 DeleteEventCommand.flags = {
-  yes: flags.boolean({
+  yes: Flags.boolean({
     description: 'Skip questions, and use all default values',
     char: 'y',
     default: false
