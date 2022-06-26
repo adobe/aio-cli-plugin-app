@@ -15,7 +15,7 @@ const path = require('path')
 const fs = require('fs-extra')
 const ora = require('ora')
 const chalk = require('chalk')
-// const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { flags } = require('@oclif/command')
 const generators = require('@adobe/generator-aio-app')
 const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
@@ -89,11 +89,14 @@ class InitCommand extends AddCommand {
       templates = await this.selectTemplates(flags)
     }
 
-    // 3. run extension point code generators
+    // 3. run base code generators
     const projectName = (consoleConfig && consoleConfig.project.name) || path.basename(process.cwd())
     await this.runCodeGenerators(destDir, flags, templates, projectName)
 
-    // 4. import config - if any
+    // 4. install templates
+    await this.installTemplates(destDir, flags, templates)
+
+    // 5. import config - if any
     if (flags.import) {
       await this.importConsoleConfig(consoleConfig)
     }
@@ -128,22 +131,14 @@ class InitCommand extends AddCommand {
       templates = await this.selectTemplates(flags, orgSupportedServices)
     }
 
-    // TODO:
-    // const requiredServices = this.getAllRequiredServicesFromExtPoints(extensionPoints)
-    // await this.addServices(
-    //   consoleCLI,
-    //   org,
-    //   project,
-    //   workspace,
-    //   orgSupportedServices,
-    //   requiredServices
-    // )
-
-    // 7. download workspace config
+    // 6. download workspace config
     const consoleConfig = await consoleCLI.getWorkspaceConfig(org.id, project.id, workspace.id, orgSupportedServices)
 
-    // 8. run code generators
+    // 7. run base code generators
     await this.runCodeGenerators(destDir, flags, templates, consoleConfig.project.name)
+
+    // 8. install templates
+    await this.installTemplates(destDir, flags, templates)
 
     // 9. import config
     await this.importConsoleConfig(consoleConfig)
@@ -187,7 +182,7 @@ class InitCommand extends AddCommand {
     const spinner = ora()
     const templateList = []
 
-    spinner.start('Getting a list of templates')
+    spinner.start('Getting available templates')
     const templatesIterator = templateRegistryClient.getTemplates(searchCriteria, orderByCriteria)
 
     for await (const templates of templatesIterator) {
@@ -195,10 +190,11 @@ class InitCommand extends AddCommand {
         templateList.push(template)
       }
     }
+    aioLogger.debug('template list', JSON.stringify(templateList, null, 2))
     spinner.succeed('Downloaded the list of templates')
 
     if (templateList.length === 0) {
-      console.warn('There are no templates that match the services supported by the org.')
+      console.warn('There are no templates that match the query.')
       return
     }
 
@@ -370,6 +366,35 @@ class InitCommand extends AddCommand {
     }
 
     env = yeoman.createEnv()
+    // try to use appGen.composeWith
+    for (let i = 0; i < templates.length; ++i) {
+      env.register(require.resolve(templates[i], { paths: [destDir] }), 'template-to-run')
+      spinner.start(`Running template ${templates[i]}`)
+      env.run('template-to-run',
+        {
+          options: {
+            'skip-prompt': flags.yes,
+            // do not prompt for overwrites
+            force: true,
+            // by default yeoman runs the install, we control installation from the app plugin
+            'skip-install': true
+          }
+        })
+      spinner.succeed(`Ran template ${templates[i]}`)
+    }
+  }
+
+  async installTemplates (destDir, flags, templates) {
+    const spinner = ora()
+
+    // install the templates in sequence
+    for (const template of templates) {
+      spinner.info(`Installing template ${template}`)
+      await this.config.runCommand('templates:install', [template])
+      spinner.succeed(`Installed template ${template}`)
+    }
+
+    const env = yeoman.createEnv()
     // try to use appGen.composeWith
     for (let i = 0; i < templates.length; ++i) {
       env.register(require.resolve(templates[i], { paths: [destDir] }), 'template-to-run')
