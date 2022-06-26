@@ -82,7 +82,12 @@ class InitCommand extends AddCommand {
     }
 
     // 2. prompt for templates to be installed
-    const templates = await this.selectTemplates(flags)
+    let templates = []
+    if (flags.template) {
+      templates = flags.template
+    } else if (!flags['standalone-app']) {
+      templates = await this.selectTemplates(flags)
+    }
 
     // 3. run extension point code generators
     const projectName = (consoleConfig && consoleConfig.project.name) || path.basename(process.cwd())
@@ -116,7 +121,12 @@ class InitCommand extends AddCommand {
     const workspace = await this.retrieveWorkspaceFromName(consoleCLI, org, project, flags)
 
     // 5. get list of templates to install
-    const templates = await this.selectTemplates(flags, orgSupportedServices)
+    let templates = []
+    if (flags.template) {
+      templates = flags.template
+    } else if (!flags['standalone-app']) {
+      templates = await this.selectTemplates(flags, orgSupportedServices)
+    }
 
     // TODO:
     // const requiredServices = this.getAllRequiredServicesFromExtPoints(extensionPoints)
@@ -208,7 +218,7 @@ class InitCommand extends AddCommand {
         [COLUMNS.COL_TEMPLATE]: name,
         [COLUMNS.COL_DESCRIPTION]: template.description,
         [COLUMNS.COL_EXTENSION_POINT]: extensionPoint,
-        [COLUMNS.COL_CATEGORIES]: template.categories
+        [COLUMNS.COL_CATEGORIES]: template.categories.join(', ')
       }
     })
     const promptName = 'select template'
@@ -221,9 +231,10 @@ class InitCommand extends AddCommand {
           name: promptName,
           bottomContent: '* = recommended by Adobe; to learn more about the templates, go to http://adobe.ly/templates',
           message: 'Choose the template(s) to install:',
+          style: { head: [], border: [] },
           wordWrap: true,
           wrapOnWordBoundary: false,
-          colWidths: [10, 40, 20, 20, 20],
+          colWidths: [12, 30, 30, 20, 15],
           columns: [
             { name: COLUMNS.COL_SELECT },
             { name: COLUMNS.COL_TEMPLATE },
@@ -328,6 +339,11 @@ class InitCommand extends AddCommand {
   async runCodeGenerators (destDir, flags, templates, projectName) {
     let env = yeoman.createEnv()
     const initialGenerators = ['base-app', 'add-ci']
+
+    if (flags['standalone-app']) {
+      initialGenerators.push('application')
+    }
+
     // first run app generator that will generate the root skeleton + ci
     for (const generatorKey of initialGenerators) {
       const appGen = env.instantiate(generators[generatorKey], {
@@ -408,6 +424,11 @@ InitCommand.flags = {
     description: 'Login using your Adobe ID for interacting with Adobe I/O Developer Console',
     default: true,
     allowNo: true
+  }),
+  'standalone-app': flags.boolean({
+    description: 'Create a stand-alone application',
+    default: false,
+    exclusive: ['template']
   }),
   template: flags.string({
     description: 'Specify a link to a template that will be installed',
