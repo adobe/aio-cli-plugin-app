@@ -165,6 +165,12 @@ class InitCommand extends AddCommand {
   }
 
   async selectTemplates (flags, orgSupportedServices = null) {
+    // check that the template plugin has been installed
+    const command = await this.config.findCommand('templates:install')
+    if (!command) {
+      this.error(`aio-cli plugin @adobe/aio-cli-plugin-app-templates was not found. This plugin is required to install templates.`)
+    }
+
     // const supportedServiceCodes = new Set(orgSupportedServices.map(s => s.code))
     const templateRegistryClient = TemplateRegistryAPI.init()
 
