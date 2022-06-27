@@ -333,7 +333,7 @@ class InitCommand extends AddCommand {
   }
 
   async runCodeGenerators (destDir, flags, templates, projectName) {
-    let env = yeoman.createEnv()
+    const env = yeoman.createEnv()
     const initialGenerators = ['base-app', 'add-ci']
 
     if (flags['standalone-app']) {
@@ -352,36 +352,6 @@ class InitCommand extends AddCommand {
       })
       await env.runGenerator(appGen)
     }
-
-    // Creating new Yeoman env here to workaround an issue where yeoman reuses the conflicter from previous environment.
-    // https://github.com/yeoman/environment/issues/324
-
-    const spinner = ora()
-
-    // install the templates in sequence
-    for (const template of templates) {
-      spinner.info(`Installing template ${template}`)
-      await this.config.runCommand('templates:install', [template])
-      spinner.succeed(`Installed template ${template}`)
-    }
-
-    env = yeoman.createEnv()
-    // try to use appGen.composeWith
-    for (let i = 0; i < templates.length; ++i) {
-      env.register(require.resolve(templates[i], { paths: [destDir] }), 'template-to-run')
-      spinner.start(`Running template ${templates[i]}`)
-      env.run('template-to-run',
-        {
-          options: {
-            'skip-prompt': flags.yes,
-            // do not prompt for overwrites
-            force: true,
-            // by default yeoman runs the install, we control installation from the app plugin
-            'skip-install': true
-          }
-        })
-      spinner.succeed(`Ran template ${templates[i]}`)
-    }
   }
 
   async installTemplates (destDir, flags, templates) {
@@ -398,8 +368,8 @@ class InitCommand extends AddCommand {
     // try to use appGen.composeWith
     for (let i = 0; i < templates.length; ++i) {
       env.register(require.resolve(templates[i], { paths: [destDir] }), 'template-to-run')
-      spinner.start(`Running template ${templates[i]}`)
-      env.run('template-to-run',
+      spinner.info(`Running template ${templates[i]}`)
+      await env.run('template-to-run',
         {
           options: {
             'skip-prompt': flags.yes,
@@ -409,7 +379,7 @@ class InitCommand extends AddCommand {
             'skip-install': true
           }
         })
-      spinner.succeed(`Ran template ${templates[i]}`)
+      spinner.succeed(`Finished running template ${templates[i]}`)
     }
   }
 
