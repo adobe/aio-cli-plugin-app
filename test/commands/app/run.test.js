@@ -237,7 +237,7 @@ describe('run', () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     mockRunDev.mockImplementation((config, dataDir, options, logFunc) => {
       logFunc('boo')
-      expect(options.isLocal).toBe(false)
+      expect(options.isLocal).toBe(undefined)
     })
     command.argv = ['--verbose']
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
@@ -251,7 +251,7 @@ describe('run', () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     mockRunDev.mockImplementation((config, dataDir, options, logFunc) => {
       logFunc('boo')
-      expect(options.isLocal).toBe(false)
+      expect(options.isLocal).toBe(undefined)
     })
     command.argv = []
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
@@ -284,7 +284,7 @@ describe('run', () => {
       parcel: expect.objectContaining({
         logLevel: 'warn'
       }),
-      isLocal: false
+      isLocal: undefined
     }), expect.any(Function))
   })
 
@@ -313,7 +313,7 @@ describe('run', () => {
       parcel: expect.objectContaining({
         logLevel: 'verbose'
       }),
-      isLocal: false
+      isLocal: undefined
     }), expect.any(Function))
   })
 
