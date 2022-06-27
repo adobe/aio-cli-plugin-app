@@ -33,7 +33,7 @@
     "hjson": "^3.2.1",
     "http-terminator": "^2.0.3",
     "inquirer": "^7.0.0",
-    "inquirer-table-prompt": "github:shazron/inquirer-table-prompt",
+    "inquirer-table-prompt": "git+https://github.com/shazron/inquirer-table-prompt.git",
     "js-yaml": "^3.13.1",
     "lodash.clonedeep": "^4.5.0",
     "node-fetch": "^2.6.0",

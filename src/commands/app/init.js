@@ -205,7 +205,6 @@ class InitCommand extends AddCommand {
     }
 
     const COLUMNS = {
-      COL_SELECT: 'Select',
       COL_TEMPLATE: 'Template',
       COL_DESCRIPTION: 'Description',
       COL_EXTENSION_POINT: 'Extension Point',
@@ -236,13 +235,12 @@ class InitCommand extends AddCommand {
           style: { head: [], border: [] },
           wordWrap: true,
           wrapOnWordBoundary: false,
-          colWidths: [12, 30, 30, 20, 15],
+          colWidths: [30, 30, 20, 15],
           columns: [
-            { name: COLUMNS.COL_SELECT },
             { name: COLUMNS.COL_TEMPLATE },
-            { name: COLUMNS.COL_DESCRIPTION },
+            { name: COLUMNS.COL_DESCRIPTION, wrapOnWordBoundary: true },
             { name: COLUMNS.COL_EXTENSION_POINT },
-            { name: COLUMNS.COL_CATEGORIES }
+            { name: COLUMNS.COL_CATEGORIES, wrapOnWordBoundary: true }
           ],
           rows
         }
