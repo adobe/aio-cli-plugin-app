@@ -77,7 +77,7 @@ class Run extends BaseCommand {
         shouldContentHash: false
       },
       fetchLogs: true,
-      devRemote: !flags.local,
+      isLocal: flags.local,
       verbose: flags.verbose
     }
 
