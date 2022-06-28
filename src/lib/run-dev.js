@@ -46,7 +46,7 @@ async function runDev (config, dataDir, options = {}, log = () => {}) {
   // control variables
   const hasFrontend = config.app.hasFrontend
   const withBackend = config.app.hasBackend && !skipActions
-  const isLocal = !options.devRemote // applies only for backend
+  const isLocal = options.isLocal // applies only for backend
   const portToUse = parseInt(process.env.PORT) || SERVER_DEFAULT_PORT
   const uiPort = await getPort({ port: portToUse })
   if (uiPort !== portToUse) {
