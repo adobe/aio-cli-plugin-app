@@ -100,14 +100,6 @@ class InitCommand extends AddCommand {
     if (flags.import) {
       await this.importConsoleConfig(consoleConfig)
     }
-
-    // TODO:
-    // 5. This flow supports non logged in users so we can't now for sure if the project has
-    //    required services installed. So we output a note on required services instead.
-    // const requiredServices = this.getAllRequiredServicesFromExtPoints(templates)
-    // if (requiredServices.length > 0) {
-    //   this.log(chalk.bold(`Please ensure the following service(s) are enabled in the Organization and added to the Console Workspace: '${requiredServices}'`))
-    // }
   }
 
   async initWithLogin (destDir, flags) {
@@ -137,11 +129,11 @@ class InitCommand extends AddCommand {
     // 7. run base code generators
     await this.runCodeGenerators(destDir, flags, templates, consoleConfig.project.name)
 
-    // 8. install templates
-    await this.installTemplates(destDir, flags, templates)
-
-    // 9. import config
+    // 8. import config
     await this.importConsoleConfig(consoleConfig)
+
+    // 9. install templates
+    await this.installTemplates(destDir, flags, templates)
 
     this.log(chalk.blue(chalk.bold(`Project initialized for Workspace ${workspace.name}, you can run 'aio app use -w <workspace>' to switch workspace.`)))
   }
@@ -168,7 +160,7 @@ class InitCommand extends AddCommand {
     // check that the template plugin has been installed
     const command = await this.config.findCommand('templates:install')
     if (!command) {
-      this.error(`aio-cli plugin @adobe/aio-cli-plugin-app-templates was not found. This plugin is required to install templates.`)
+      this.error('aio-cli plugin @adobe/aio-cli-plugin-app-templates was not found. This plugin is required to install templates.')
     }
 
     // const supportedServiceCodes = new Set(orgSupportedServices.map(s => s.code))
@@ -366,24 +358,6 @@ class InitCommand extends AddCommand {
       spinner.info(`Installing template ${template}`)
       await this.config.runCommand('templates:install', [template])
       spinner.succeed(`Installed template ${template}`)
-    }
-
-    const env = yeoman.createEnv()
-    // try to use appGen.composeWith
-    for (let i = 0; i < templates.length; ++i) {
-      env.register(require.resolve(templates[i], { paths: [destDir] }), 'template-to-run')
-      spinner.info(`Running template ${templates[i]}`)
-      await env.run('template-to-run',
-        {
-          options: {
-            'skip-prompt': flags.yes,
-            // do not prompt for overwrites
-            force: true,
-            // by default yeoman runs the install, we control installation from the app plugin
-            'skip-install': true
-          }
-        })
-      spinner.succeed(`Finished running template ${templates[i]}`)
     }
   }
 
