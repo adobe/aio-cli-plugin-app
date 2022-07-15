@@ -129,7 +129,7 @@ const sampleAppConfig = {
       dependencies: { dependency1: { location: 'fake.com/package' } }
     }
   },
-  actions: { src: '/actions', dist: '/dist/actions', devRemote: false },
+  actions: { src: '/actions', dist: '/dist/actions', isLocal: true },
   root: path.resolve('test/__fixtures__/sample-app')
 }
 
@@ -257,7 +257,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.bundle).toHaveBeenCalledWith('/web-src/index.html', '/dist/web-src-prod',
+    expect(mockWebLib.bundle).toHaveBeenCalledWith('/web-src/**/*.html', '/dist/web-src-prod',
       expect.objectContaining({ shouldDisableCache: true, shouldContentHash: true, logLevel: 'warn', shouldOptimize: false }),
       expect.any(Function)
     )
@@ -272,7 +272,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.bundle).toHaveBeenCalledWith('/web-src/index.html', '/dist/web-src-prod',
+    expect(mockWebLib.bundle).toHaveBeenCalledWith('/web-src/**/*.html', '/dist/web-src-prod',
       expect.objectContaining({ shouldDisableCache: true, shouldContentHash: false, logLevel: 'warn', shouldOptimize: false }),
       expect.any(Function)
     )
@@ -287,7 +287,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.bundle).toHaveBeenCalledWith('/web-src/index.html', '/dist/web-src-prod',
+    expect(mockWebLib.bundle).toHaveBeenCalledWith('/web-src/**/*.html', '/dist/web-src-prod',
       expect.objectContaining({ shouldDisableCache: true, shouldContentHash: false, logLevel: 'verbose', shouldOptimize: false }),
       expect.any(Function)
     )
