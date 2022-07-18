@@ -57,6 +57,7 @@ class Deploy extends BuildCommand {
 
     try {
       const aioConfig = this.getFullConfig().aio
+
       // 1. update log forwarding configuration
       // note: it is possible that .aio file does not exist, which means there is no local lg config
       if (aioConfig &&
@@ -85,7 +86,23 @@ class Deploy extends BuildCommand {
           throw error
         }
       }
-      // 2. deploy actions and web assets for each extension
+
+      // 2. Bail if workspace is production and application status is PUBLISHED, honor force-publish
+      if (aioConfig.project.workspace.name === "Production" && flags.publish && !flags['force-publish']) {
+        try {
+          let extension = await this.getApplicationExtension(libConsoleCLI, aioConfig, spinner)
+          spinner.info(chalk.dim(JSON.stringify(extension)))
+          if (extension.status === 'PUBLISHED') {
+            spinner.info(chalk.red('This application is published and the current workspace is Production, deployment will be skipped. You must first retract this application in Adobe Exchange to deploy updates.'))
+            return
+          }
+        } catch (err) {
+          spinner.fail(chalk.red('Error checking extension status'))
+          throw err
+        }
+      }
+
+      // 3. deploy actions and web assets for each extension
       // Possible improvements:
       // - parallelize
       // - break into smaller pieces deploy, allowing to first deploy all actions then all web assets
@@ -250,6 +267,12 @@ class Deploy extends BuildCommand {
     // publish without overwritting, meaning partial publish (for a subset of ext points) are supported
     newPayload = await libConsoleCLI.updateExtensionPointsWithoutOverwrites(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, payload)
     return newPayload
+  }
+
+  async getApplicationExtension (libConsoleCLI, aioConfig, spinner) {
+    let { appId } = await libConsoleCLI.getProject(aioConfig.project.org.id, aioConfig.project.id)
+    let applicationExtensions = await libConsoleCLI.getApplicationExtensions(aioConfig.project.org.id, appId)
+    return applicationExtensions.find(extension => extension.appId === appId)
   }
 }
 
