@@ -88,8 +88,8 @@ class Deploy extends BuildCommand {
       }
 
       // 2. Bail if workspace is production and application status is PUBLISHED, honor force-deploy
-      if (aioConfig.project.workspace.name === "Production" && flags.publish && !flags['force-deploy']) {
-        let extension = await this.getApplicationExtension(libConsoleCLI, aioConfig, spinner)
+      if (aioConfig.project.workspace.name === 'Production' && flags.publish && !flags['force-deploy']) {
+        const extension = await this.getApplicationExtension(libConsoleCLI, aioConfig, spinner)
         spinner.info(chalk.dim(JSON.stringify(extension)))
         if (extension && extension.status === 'PUBLISHED') {
           spinner.info(chalk.red('This application is published and the current workspace is Production, deployment will be skipped. You must first retract this application in Adobe Exchange to deploy updates.'))
@@ -265,8 +265,8 @@ class Deploy extends BuildCommand {
   }
 
   async getApplicationExtension (libConsoleCLI, aioConfig) {
-    let { appId } = await libConsoleCLI.getProject(aioConfig.project.org.id, aioConfig.project.id)
-    let applicationExtensions = await libConsoleCLI.getApplicationExtensions(aioConfig.project.org.id, appId)
+    const { appId } = await libConsoleCLI.getProject(aioConfig.project.org.id, aioConfig.project.id)
+    const applicationExtensions = await libConsoleCLI.getApplicationExtensions(aioConfig.project.org.id, appId)
     return applicationExtensions.find(extension => extension.appId === appId)
   }
 }

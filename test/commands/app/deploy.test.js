@@ -103,6 +103,14 @@ const mockExtRegExcShellAndNuiPayload = () => {
   mockLibConsoleCLI.updateExtensionPoints.mockReturnValueOnce(payload)
 }
 
+const mockGetExtensionPointsRetractedApp = () => {
+  const payload = [{
+    status: 'RETRACTED',
+    appId: '1234'
+  }]
+  mockLibConsoleCLI.getApplicationExtensions.mockReturnValueOnce(payload)
+}
+
 const mockGetExtensionPointsPublishedApp = () => {
   const payload = [{
     status: 'PUBLISHED',
@@ -114,14 +122,14 @@ const mockGetExtensionPointsPublishedApp = () => {
 const mockGetProject = () => {
   const payload = {
     appId: '1234'
-  } 
+  }
   mockLibConsoleCLI.getProject.mockReturnValueOnce(payload)
 }
 
 const mockLibConsoleCLI = {
   updateExtensionPoints: jest.fn(),
   updateExtensionPointsWithoutOverwrites: jest.fn(),
-  getProject: jest.fn(), 
+  getProject: jest.fn(),
   getApplicationExtensions: jest.fn()
 }
 
@@ -133,6 +141,7 @@ const mockLogForwarding = {
 
 afterAll(() => {
   jest.restoreAllMocks()
+  jest.resetAllMocks()
 })
 
 beforeEach(() => {
@@ -816,7 +825,7 @@ describe('run', () => {
           workspace: {
             name: 'Production'
           },
-          org: { 
+          org: {
             id: '1111'
           }
         }
@@ -843,7 +852,7 @@ describe('run', () => {
           workspace: {
             name: 'Production'
           },
-          org: { 
+          org: {
             id: '1111'
           }
         }
@@ -855,6 +864,35 @@ describe('run', () => {
 
     expect(mockLibConsoleCLI.getProject).toHaveBeenCalledTimes(0)
     expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(1)
+  })
+
+  test('deploy for RETRACTED Production extension - publish', async () => {
+    mockLibConsoleCLI.getApplicationExtensions.mockReset()
+
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig, 'exc'))
+    mockGetExtensionPointsRetractedApp()
+    mockGetProject()
+    command.getFullConfig.mockReturnValue({
+      aio: {
+        project: {
+          workspace: {
+            name: 'Production'
+          },
+          org: {
+            id: '1111'
+          }
+        }
+      }
+    })
+    mockExtRegExcShellPayload()
+    await command.run()
+
+    expect(mockLibConsoleCLI.getProject).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
