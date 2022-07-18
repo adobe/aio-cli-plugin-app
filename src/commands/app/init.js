@@ -356,7 +356,11 @@ class InitCommand extends AddCommand {
     // install the templates in sequence
     for (const template of templates) {
       spinner.info(`Installing template ${template}`)
-      await this.config.runCommand('templates:install', [template])
+      const installArgs = [template]
+      if (flags.yes) {
+        installArgs.push('--yes')
+      }
+      await this.config.runCommand('templates:install', installArgs)
       spinner.succeed(`Installed template ${template}`)
     }
   }
