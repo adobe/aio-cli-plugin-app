@@ -87,18 +87,13 @@ class Deploy extends BuildCommand {
         }
       }
 
-      // 2. Bail if workspace is production and application status is PUBLISHED, honor force-publish
-      if (aioConfig.project.workspace.name === "Production" && flags.publish && !flags['force-publish']) {
-        try {
-          let extension = await this.getApplicationExtension(libConsoleCLI, aioConfig, spinner)
-          spinner.info(chalk.dim(JSON.stringify(extension)))
-          if (extension.status === 'PUBLISHED') {
-            spinner.info(chalk.red('This application is published and the current workspace is Production, deployment will be skipped. You must first retract this application in Adobe Exchange to deploy updates.'))
-            return
-          }
-        } catch (err) {
-          spinner.fail(chalk.red('Error checking extension status'))
-          throw err
+      // 2. Bail if workspace is production and application status is PUBLISHED, honor force-deploy
+      if (aioConfig.project.workspace.name === "Production" && flags.publish && !flags['force-deploy']) {
+        let extension = await this.getApplicationExtension(libConsoleCLI, aioConfig, spinner)
+        spinner.info(chalk.dim(JSON.stringify(extension)))
+        if (extension && extension.status === 'PUBLISHED') {
+          spinner.info(chalk.red('This application is published and the current workspace is Production, deployment will be skipped. You must first retract this application in Adobe Exchange to deploy updates.'))
+          return
         }
       }
 
@@ -112,7 +107,7 @@ class Deploy extends BuildCommand {
         await this.deploySingleConfig(k, v, flags, spinner)
       }
 
-      // 3. deploy extension manifest
+      // 4. deploy extension manifest
       if (flags.publish) {
         const payload = await this.publishExtensionPoints(libConsoleCLI, deployConfigs, aioConfig, flags['force-publish'])
         this.log(chalk.blue(chalk.bold(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': '${Object.keys(payload.endpoints)}'`)))
@@ -269,7 +264,7 @@ class Deploy extends BuildCommand {
     return newPayload
   }
 
-  async getApplicationExtension (libConsoleCLI, aioConfig, spinner) {
+  async getApplicationExtension (libConsoleCLI, aioConfig) {
     let { appId } = await libConsoleCLI.getProject(aioConfig.project.org.id, aioConfig.project.id)
     let applicationExtensions = await libConsoleCLI.getApplicationExtensions(aioConfig.project.org.id, appId)
     return applicationExtensions.find(extension => extension.appId === appId)
@@ -346,6 +341,10 @@ Deploy.flags = {
     allowNo: true,
     default: true,
     exclusive: ['action']
+  }),
+  'force-deploy': flags.boolean({
+    description: '[default: false] Force deploy extensions regardless of published status or workspace',
+    default: false
   }),
   'force-publish': flags.boolean({
     description: 'Force publish extension(s) to Exchange, delete previously published extension points',
