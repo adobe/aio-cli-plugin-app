@@ -46,7 +46,7 @@ async function runDev (config, dataDir, options = {}, log = () => {}) {
   // control variables
   const hasFrontend = config.app.hasFrontend
   const withBackend = config.app.hasBackend && !skipActions
-  const isLocal = !options.devRemote // applies only for backend
+  const isLocal = options.isLocal // applies only for backend
   const portToUse = parseInt(process.env.PORT) || SERVER_DEFAULT_PORT
   const uiPort = await getPort({ port: portToUse })
   if (uiPort !== portToUse) {
@@ -80,7 +80,7 @@ async function runDev (config, dataDir, options = {}, log = () => {}) {
 
       // build and deploy actions
       log('building actions..')
-      await buildActions(devConfig)
+      await buildActions(devConfig, null, true /* force build */)
 
       const { cleanup: watcherCleanup } = await actionsWatcher({ config: devConfig, isLocal, log })
       cleanup.add(() => watcherCleanup(), 'stopping action watcher...')
@@ -101,7 +101,7 @@ async function runDev (config, dataDir, options = {}, log = () => {}) {
       if (!options.skipServe) {
         const script = await utils.runScript(config.hooks['build-static'])
         if (!script) {
-          const entryFile = config.web.src + '/index.html'
+          const entries = config.web.src + '/**/*.html'
           bundleOptions.serveOptions = {
             port: uiPort,
             https: bundleOptions.https
@@ -113,7 +113,7 @@ async function runDev (config, dataDir, options = {}, log = () => {}) {
           bundleOptions.additionalReporters = [
             { packageName: '@parcel/reporter-cli', resolveFrom: __filename }
           ]
-          defaultBundler = await bundle(entryFile, config.web.distDev, bundleOptions, log)
+          defaultBundler = await bundle(entries, config.web.distDev, bundleOptions, log)
         }
       }
     }

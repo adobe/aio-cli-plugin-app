@@ -10,7 +10,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 const BaseCommand = require('../../BaseCommand')
 const { wrapError } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
@@ -35,7 +35,7 @@ class Logs extends BaseCommand {
   }
 
   async run () {
-    const { flags } = this.parse(Logs)
+    const { flags } = await this.parse(Logs)
     const fullConfig = this.getFullConfig()
 
     // has any backend
@@ -95,7 +95,7 @@ class Logs extends BaseCommand {
 
     try {
       const owConfig = { ow: Object.values(fullConfig.all)[0].ow }
-      await rtLib.printActionLogs(owConfig, this.log, flags.limit, filterActions, flags.strip, flags.poll || flags.tail || flags.watch)
+      await rtLib.printActionLogs(owConfig, this.log.bind(this), flags.limit, filterActions, flags.strip, flags.poll || flags.tail || flags.watch)
     } catch (error) {
       this.error(wrapError(error))
     }
@@ -107,34 +107,34 @@ Logs.description = `Fetch logs for an Adobe I/O App
 
 Logs.flags = {
   ...BaseCommand.flags,
-  limit: flags.integer({
+  limit: Flags.integer({
     description: 'Limit number of activations to fetch logs from ( 1-50 )',
     default: 1,
     char: 'l'
   }),
-  action: flags.string({
+  action: Flags.string({
     description: 'Fetch logs for a specific action',
     char: 'a',
     multiple: true
   }),
-  strip: flags.boolean({
+  strip: Flags.boolean({
     char: 'r',
     description: 'strip timestamp information and output first line only',
     default: false
   }),
-  tail: flags.boolean({
+  tail: Flags.boolean({
     description: 'Fetch logs continuously',
     char: 't',
     default: false,
     exclusive: ['watch', 'poll']
   }),
-  watch: flags.boolean({
+  watch: Flags.boolean({
     description: 'Fetch logs continuously',
     default: false,
     char: 'w',
     exclusive: ['tail', 'poll']
   }),
-  poll: flags.boolean({
+  poll: Flags.boolean({
     description: 'Fetch logs continuously',
     default: false,
     char: 'o',

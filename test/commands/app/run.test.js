@@ -42,8 +42,19 @@ jest.mock('fs-extra')
 jest.mock('@adobe/aio-lib-core-config')
 const mockConfig = require('@adobe/aio-lib-core-config')
 
-jest.mock('cli-ux')
-const { cli } = require('cli-ux')
+jest.mock('@oclif/core', () => {
+  return {
+    ...jest.requireActual('@oclif/core'),
+    CliUx: {
+      ux: {
+        cli: {
+          open: jest.fn()
+        }
+      }
+    }
+  }
+})
+const { CliUx: { ux: cli } } = require('@oclif/core')
 
 jest.mock('https')
 const https = require('https')
@@ -226,7 +237,7 @@ describe('run', () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     mockRunDev.mockImplementation((config, dataDir, options, logFunc) => {
       logFunc('boo')
-      expect(options.devRemote).toBe(true)
+      expect(options.isLocal).toBe(undefined)
     })
     command.argv = ['--verbose']
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
@@ -240,7 +251,7 @@ describe('run', () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     mockRunDev.mockImplementation((config, dataDir, options, logFunc) => {
       logFunc('boo')
-      expect(options.devRemote).toBe(true)
+      expect(options.isLocal).toBe(undefined)
     })
     command.argv = []
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
@@ -273,7 +284,7 @@ describe('run', () => {
       parcel: expect.objectContaining({
         logLevel: 'warn'
       }),
-      devRemote: true
+      isLocal: undefined
     }), expect.any(Function))
   })
 
@@ -289,7 +300,7 @@ describe('run', () => {
     }), expect.any(Function))
   })
 
-  test('app:run with -verbose', async () => {
+  test('app:run with --verbose', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     command.argv = ['--verbose']
     const appConfig = createAppConfig(command.appConfig)
@@ -302,14 +313,14 @@ describe('run', () => {
       parcel: expect.objectContaining({
         logLevel: 'verbose'
       }),
-      devRemote: true
+      isLocal: undefined
     }), expect.any(Function))
   })
 
   test('app:run with --local', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     mockRunDev.mockImplementation((config, dataDir, options, logFunc) => {
-      expect(options.devRemote).toBe(false)
+      expect(options.isLocal).toBe(true)
     })
     command.argv = ['--local']
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
@@ -332,7 +343,7 @@ describe('run', () => {
       parcel: expect.objectContaining({
         logLevel: 'verbose'
       }),
-      devRemote: false
+      isLocal: true
     }), expect.any(Function))
   })
 

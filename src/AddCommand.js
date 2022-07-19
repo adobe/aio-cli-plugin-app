@@ -10,7 +10,7 @@ governing permissions and limitations under the License.
 */
 
 const BaseCommand = require('./BaseCommand')
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 const { installPackages } = require('./lib/app-helper')
 
 class AddCommand extends BaseCommand {
@@ -25,12 +25,12 @@ class AddCommand extends BaseCommand {
 }
 
 AddCommand.flags = {
-  'skip-install': flags.boolean({
+  'skip-install': Flags.boolean({
     description: '[deprecated] Please use --no-install',
     char: 's',
     default: false
   }),
-  install: flags.boolean({
+  install: Flags.boolean({
     description: '[default: true] Run npm installation after files are created',
     default: true,
     allowNo: true

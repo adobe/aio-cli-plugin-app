@@ -11,7 +11,7 @@ governing permissions and limitations under the License.
 
 const BaseCommand = require('../../../BaseCommand')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 const fs = require('fs-extra')
 const inquirer = require('inquirer')
 const { atLeastOne } = require('../../../lib/app-helper')
@@ -21,7 +21,7 @@ const path = require('path')
 
 class DeleteWebAssetsCommand extends BaseCommand {
   async run () {
-    const { flags } = this.parse(DeleteWebAssetsCommand)
+    const { flags } = await this.parse(DeleteWebAssetsCommand)
 
     aioLogger.debug(`deleting web assets from the project, using flags: ${JSON.stringify(flags)}`)
 
@@ -90,7 +90,7 @@ DeleteWebAssetsCommand.description = `Delete existing web assets
 `
 
 DeleteWebAssetsCommand.flags = {
-  yes: flags.boolean({
+  yes: Flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
