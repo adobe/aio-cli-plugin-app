@@ -2,12 +2,11 @@
   "runtimes": {
     "nodejs": [
       {
-        "kind": "nodejs:14",
-        "default": true,
+        "kind": "nodejs:10",
         "image": {
           "prefix": "adobeapiplatform",
-          "name": "adobe-action-nodejs-v14",
-          "tag": "3.0.28"
+          "name": "adobe-action-nodejs-v10",
+          "tag": "3.0.32"
         }
       },
       {
@@ -15,15 +14,24 @@
         "image": {
           "prefix": "adobeapiplatform",
           "name": "adobe-action-nodejs-v12",
-          "tag": "3.0.28"
+          "tag": "3.0.32"
         }
       },
       {
-        "kind": "nodejs:10",
+        "kind": "nodejs:14",
         "image": {
           "prefix": "adobeapiplatform",
-          "name": "adobe-action-nodejs-v10",
-          "tag": "3.0.28"
+          "name": "adobe-action-nodejs-v14",
+          "tag": "3.0.32"
+        }
+      },
+      {
+        "kind": "nodejs:16",
+        "default": true,
+        "image": {
+          "prefix": "adobeapiplatform",
+          "name": "adobe-action-nodejs-v16",
+          "tag": "3.0.32"
         }
       }
     ]
