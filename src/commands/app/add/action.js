@@ -46,6 +46,7 @@ class AddActionCommand extends AddCommand {
     const supportedOrgServices = aioConfigLoader.get('project.org.details.services') || []
 
     const env = yeoman.createEnv()
+    env.options = { skipInstall: true }
     const addActionGen = env.instantiate(generators['add-action'], {
       options: {
         'skip-prompt': flags.yes,
@@ -53,10 +54,10 @@ class AddActionCommand extends AddCommand {
         'config-path': configData.file,
         'adobe-services': servicesToGeneratorInput(workspaceServices),
         'supported-adobe-services': servicesToGeneratorInput(supportedOrgServices),
-        'full-key-to-manifest': configData.key,
+        'full-key-to-manifest': configData.key
         // force: true,
         // by default yeoman runs the install, we control installation from the app plugin
-        'skip-install': true
+        // Moving ['skip-install': true] to env.options due to yeoman environment issue https://github.com/yeoman/environment/issues/421
       }
     })
     await env.runGenerator(addActionGen)
