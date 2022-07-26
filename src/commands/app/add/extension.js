@@ -91,6 +91,7 @@ class AddExtensionCommand extends AddCommand {
 
   async runCodeGenerators (flags, implementations) {
     const env = yeoman.createEnv()
+    env.options = { skipInstall: true }
     for (let i = 0; i < implementations.length; ++i) {
       const implementation = implementations[i]
       const gen = env.instantiate(implementation.generator,
@@ -98,9 +99,9 @@ class AddExtensionCommand extends AddCommand {
           options: {
             'skip-prompt': flags.yes,
             // no yeoman overwrite prompts
-            force: true,
+            force: true
             // by default yeoman runs the install, we control installation from the app plugin
-            'skip-install': true
+            // Moving ['skip-install': true] to env.options due to yeoman environment issue https://github.com/yeoman/environment/issues/421
           }
         })
       this.log(chalk.blue(chalk.bold(`Running generator for ${implementation.name}`)))

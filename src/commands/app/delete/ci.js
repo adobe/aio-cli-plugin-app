@@ -22,11 +22,12 @@ class DeleteCICommand extends BaseCommand {
     aioLogger.debug(`deleting CI files from the project, using flags: ${JSON.stringify(flags)}`)
 
     const env = yeoman.createEnv()
+    env.options = { skipInstall: true }
     const gen = env.instantiate(generators['delete-ci'], {
       options: {
-        'skip-prompt': flags.yes,
+        'skip-prompt': flags.yes
         // by default yeoman runs the install, we control installation from the app plugin
-        'skip-install': true
+        // Moving ['skip-install': true] to env.options due to yeoman environment issue https://github.com/yeoman/environment/issues/421
       }
     })
     await env.runGenerator(gen)

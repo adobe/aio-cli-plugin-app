@@ -39,15 +39,16 @@ class AddWebAssetsCommand extends AddCommand {
       []
 
     const env = yeoman.createEnv()
+    env.options = { skipInstall: true }
     const gen = env.instantiate(generators['add-web-assets'], {
       options: {
         'skip-prompt': flags.yes,
         'project-name': projectName,
         'web-src-folder': webSrcFolder,
-        'adobe-services': servicesToGeneratorInput(workspaceServices),
+        'adobe-services': servicesToGeneratorInput(workspaceServices)
         // force: true,
         // by default yeoman runs the install, we control installation from the app plugin
-        'skip-install': true
+        // Moving ['skip-install': true] to env.options due to yeoman environment issue https://github.com/yeoman/environment/issues/421
       }
     })
     await env.runGenerator(gen)

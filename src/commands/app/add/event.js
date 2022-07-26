@@ -35,6 +35,7 @@ class AddEventCommand extends AddCommand {
     const configData = this.getRuntimeManifestConfigFile(configName)
 
     const env = yeoman.createEnv()
+    env.options = { skipInstall: true }
     const eventsGen = env.instantiate(generators['add-events'], {
       options: {
         'skip-prompt': flags.yes,
@@ -42,9 +43,9 @@ class AddEventCommand extends AddCommand {
         'config-path': configData.file,
         'full-key-to-manifest': configData.key,
         // force overwrites, no useless prompts, this is a feature exposed by yeoman itself
-        force: true,
+        force: true
         // by default yeoman runs the install, we control installation from the app plugin
-        'skip-install': true
+        // Moving ['skip-install': true] to env.options due to yeoman environment issue https://github.com/yeoman/environment/issues/421
       }
     })
     await env.runGenerator(eventsGen)
