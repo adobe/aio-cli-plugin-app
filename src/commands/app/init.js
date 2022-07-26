@@ -94,7 +94,7 @@ class InitCommand extends AddCommand {
     await this.runCodeGenerators(destDir, flags, templates, projectName)
 
     // 4. install templates
-    await this.installTemplates(destDir, flags, templates)
+    await this.installTemplates(flags, templates)
 
     // 5. import config - if any
     if (flags.import) {
@@ -133,7 +133,7 @@ class InitCommand extends AddCommand {
     await this.importConsoleConfig(consoleConfig)
 
     // 9. install templates
-    await this.installTemplates(destDir, flags, templates)
+    await this.installTemplates(flags, templates)
 
     this.log(chalk.blue(chalk.bold(`Project initialized for Workspace ${workspace.name}, you can run 'aio app use -w <workspace>' to switch workspace.`)))
   }
@@ -350,7 +350,7 @@ class InitCommand extends AddCommand {
     }
   }
 
-  async installTemplates (destDir, flags, templates) {
+  async installTemplates (flags, templates) {
     const spinner = ora()
 
     // install the templates in sequence
@@ -359,6 +359,9 @@ class InitCommand extends AddCommand {
       const installArgs = [template]
       if (flags.yes) {
         installArgs.push('--yes')
+      }
+      if (!flags.login) {
+        installArgs.push('--no-process-install-config')
       }
       await this.config.runCommand('templates:install', installArgs)
       spinner.succeed(`Installed template ${template}`)
