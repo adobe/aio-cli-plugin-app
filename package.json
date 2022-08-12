@@ -13,7 +13,7 @@
     "@adobe/aio-lib-env": "^1.1.0",
     "@adobe/aio-lib-ims": "^5.0.0",
     "@adobe/aio-lib-runtime": "^4.0.0",
-    "@adobe/aio-lib-templates": "^1.1.0",
+    "@adobe/aio-lib-templates": "^2.0.0",
     "@adobe/aio-lib-web": "next",
     "@adobe/generator-aio-app": "next",
     "@oclif/command": "^1.5.11",
