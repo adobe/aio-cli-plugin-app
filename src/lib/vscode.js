@@ -42,6 +42,7 @@ function update (config) {
     }
 
     const env = yeoman.createEnv()
+    // by default yeoman runs the install, we control installation from the app plugin
     env.options = { skipInstall: true }
     const gen = env.instantiate(generators['add-vscode-config'], {
       options: {
@@ -49,8 +50,6 @@ function update (config) {
         'env-file': config.envFile,
         'frontend-url': props.frontEndUrl,
         'skip-prompt': true
-        // by default yeoman runs the install, we control installation from the app plugin
-        // Moving ['skip-install': true] to env.options due to yeoman environment issue https://github.com/yeoman/environment/issues/421
       }
     })
     await env.runGenerator(gen)

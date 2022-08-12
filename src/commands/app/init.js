@@ -271,6 +271,7 @@ class InitCommand extends AddCommand {
 
   async runCodeGenerators (flags, extensionPoints, projectName) {
     let env = yeoman.createEnv()
+    // by default yeoman runs the install, we control installation from the app plugin
     env.options = { skipInstall: true }
     const initialGenerators = ['base-app', 'add-ci']
     // first run app generator that will generate the root skeleton + ci
@@ -279,8 +280,6 @@ class InitCommand extends AddCommand {
         options: {
           'skip-prompt': flags.yes,
           'project-name': projectName
-          // by default yeoman runs the install, we control installation from the app plugin
-          // Moving ['skip-install': true] to env.options due to yeoman environment issue https://github.com/yeoman/environment/issues/421
         }
       })
       await env.runGenerator(appGen)
@@ -290,6 +289,7 @@ class InitCommand extends AddCommand {
     // https://github.com/yeoman/environment/issues/324
 
     env = yeoman.createEnv()
+    // by default yeoman runs the install, we control installation from the app plugin
     env.options = { skipInstall: true }
     // try to use appGen.composeWith
     for (let i = 0; i < extensionPoints.length; ++i) {
@@ -300,8 +300,6 @@ class InitCommand extends AddCommand {
             'skip-prompt': flags.yes,
             // do not prompt for overwrites
             force: true
-            // by default yeoman runs the install, we control installation from the app plugin
-            // Moving ['skip-install': true] to env.options due to yeoman environment issue https://github.com/yeoman/environment/issues/421
           }
         })
       await env.runGenerator(extGen)
