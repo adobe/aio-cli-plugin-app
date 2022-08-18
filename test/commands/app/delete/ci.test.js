@@ -60,8 +60,7 @@ describe('good flags', () => {
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockInstantiate).toHaveBeenCalledWith(expect.any(Function), {
       options: {
-        'skip-prompt': true,
-        'skip-install': true
+        'skip-prompt': true
       }
     })
   })
@@ -72,8 +71,7 @@ describe('good flags', () => {
     expect(yeoman.createEnv).toHaveBeenCalled()
     expect(mockInstantiate).toHaveBeenCalledWith(expect.any(Function), {
       options: {
-        'skip-prompt': false,
-        'skip-install': true
+        'skip-prompt': false
       }
     })
   })
