@@ -98,8 +98,7 @@ describe('good flags', () => {
         'skip-prompt': true,
         'project-name': 'legacy-app',
         'web-src-folder': path.resolve('/web-src'),
-        'adobe-services': undefined,
-        'skip-install': true
+        'adobe-services': undefined
       }
     })
     expect(mockRunGenerator).toHaveBeenCalledWith('gen')
@@ -116,8 +115,7 @@ describe('good flags', () => {
         'skip-prompt': true,
         'project-name': 'legacy-app',
         'web-src-folder': path.resolve('/web-src'),
-        'adobe-services': undefined,
-        'skip-install': true
+        'adobe-services': undefined
       }
     })
     expect(helpers.installPackages).toHaveBeenCalledTimes(0)
@@ -133,8 +131,7 @@ describe('good flags', () => {
         'skip-prompt': false,
         'project-name': 'legacy-app',
         'web-src-folder': path.resolve('/web-src'),
-        'adobe-services': undefined,
-        'skip-install': true
+        'adobe-services': undefined
       }
     })
     expect(helpers.installPackages).toHaveBeenCalledTimes(0)
@@ -150,8 +147,7 @@ describe('good flags', () => {
         'skip-prompt': false,
         'project-name': 'legacy-app',
         'web-src-folder': path.resolve('/web-src'),
-        'adobe-services': undefined,
-        'skip-install': true
+        'adobe-services': undefined
       }
     })
   })
@@ -165,8 +161,7 @@ describe('good flags', () => {
         'skip-prompt': false,
         'project-name': 'legacy-app',
         'web-src-folder': path.resolve('/web-src'),
-        'adobe-services': undefined,
-        'skip-install': true
+        'adobe-services': undefined
       }
     })
   })
@@ -181,8 +176,7 @@ describe('good flags', () => {
         'skip-prompt': false,
         'project-name': 'legacy-app',
         'web-src-folder': path.resolve('/web-src'),
-        'adobe-services': 'CampaignSDK,AdobeAnalyticsSDK',
-        'skip-install': true
+        'adobe-services': 'CampaignSDK,AdobeAnalyticsSDK'
       }
     })
   })

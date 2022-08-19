@@ -60,7 +60,7 @@ describe('no flags', () => {
     await TheCommand.run([])
 
     expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-ci'], { options: { 'skip-install': true } })
+    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-ci'], { options: { } })
     expect(mockRunGenerator).toHaveBeenCalled()
   })
 })

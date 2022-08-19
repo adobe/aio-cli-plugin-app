@@ -98,8 +98,7 @@ describe('good flags', () => {
         'action-folder': 'myactions',
         'config-path': undefined,
         'full-key-to-manifest': 'undefined.runtimeManifest',
-        force: true,
-        'skip-install': true
+        force: true
       }
     })
     expect(mockRunGenerator).toHaveBeenCalledWith('eventsGen')
@@ -126,8 +125,7 @@ describe('good flags', () => {
         'action-folder': 'myactions',
         'config-path': undefined,
         'full-key-to-manifest': 'undefined.runtimeManifest',
-        force: true,
-        'skip-install': true
+        force: true
       }
     })
     expect(helpers.installPackages).toHaveBeenCalledTimes(0)
