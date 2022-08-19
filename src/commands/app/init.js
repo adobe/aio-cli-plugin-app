@@ -315,7 +315,6 @@ class InitCommand extends AddCommand {
     const configBuffer = Buffer.from(JSON.stringify(config))
     const interactive = false
     const merge = true
-    console.log("====>>>> \n", config, "\n\n ========= <<<<<<");
     await importConfigJson(
       // NOTE: importConfigJson should support reading json directly
       configBuffer,
