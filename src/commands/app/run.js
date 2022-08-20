@@ -107,7 +107,7 @@ class Run extends BaseCommand {
         spinner.start()
       }
 
-    const frontendUrl = await runDev(config, this.config.dataDir, runOptions, onProgress)
+    const frontendUrl = await runDev(config, this.config.dataDir, runOptions, onProgress, this.config.runHook)
     try {
       await runScript(config.hooks['post-app-run'])
     } catch (err) {

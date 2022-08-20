@@ -110,7 +110,8 @@ class Build extends BaseCommand {
           if (script) {
             spinner.fail(chalk.green(`build-static skipped by hook '${name}'`))
           } else {
-            const entries = config.web.src + '/**/*.html'
+            const entries = config.web.src + '/index.html'
+            console.log('entries = ', entries)
             const bundleOptions = {
               shouldDisableCache: true,
               shouldContentHash: flags['content-hash'],

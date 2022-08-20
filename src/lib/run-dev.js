@@ -30,7 +30,8 @@ const { run: logPoller } = require('./log-poller')
 const getPort = require('get-port')
 
 /** @private */
-async function runDev (config, dataDir, options = {}, log = () => {}) {
+async function runDev (config, dataDir, options = {}, log = () => {}, inprocHook) {
+  console.log('in runDev config = ', config)
   /* parcel bundle options */
   const bundleOptions = {
     shouldDisableCache: true,
@@ -82,7 +83,7 @@ async function runDev (config, dataDir, options = {}, log = () => {}) {
       log('building actions..')
       await buildActions(devConfig, null, true /* force build */)
 
-      const { cleanup: watcherCleanup } = await actionsWatcher({ config: devConfig, isLocal, log })
+      const { cleanup: watcherCleanup } = await actionsWatcher({ config: devConfig, isLocal, log, inprocHook })
       cleanup.add(() => watcherCleanup(), 'stopping action watcher...')
     }
 

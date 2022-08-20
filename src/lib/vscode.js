@@ -41,18 +41,18 @@ function update (config) {
       }
     }
 
-    const env = yeoman.createEnv()
-    const gen = env.instantiate(generators['add-vscode-config'], {
-      options: {
-        'app-config': config,
-        'env-file': config.envFile,
-        'frontend-url': props.frontEndUrl,
-        'skip-prompt': true,
-        // by default yeoman runs the install, we control installation from the app plugin
-        'skip-install': true
-      }
-    })
-    await env.runGenerator(gen)
+    // const env = yeoman.createEnv()
+    // const gen = env.instantiate(generators['add-vscode-config'], {
+    //   options: {
+    //     'app-config': config,
+    //     'env-file': config.envFile,
+    //     'frontend-url': props.frontEndUrl,
+    //     'skip-prompt': true,
+    //     // by default yeoman runs the install, we control installation from the app plugin
+    //     'skip-install': true
+    //   }
+    // })
+    // await env.runGenerator(gen)
   }
 }
 

@@ -21,10 +21,13 @@ const { deployActions } = require('@adobe/aio-lib-runtime')
  * @param {Function} [log] a log function
  * @param {boolean} filter true if a filter by built actions is desired.
  */
-/** @private */
-module.exports = async (config, isLocalDev = false, log = () => {}, filter = false) => {
+module.exports = async (config, isLocalDev = false, log = () => {}, filter = false, inprocHook) => {
+  
+  console.log("asdasdasdasd inprocHook=", inprocHook)
   utils.runScript(config.hooks['pre-app-deploy'])
   const script = await utils.runScript(config.hooks['deploy-actions'])
+  let deployedRuntimeEntities
+
   if (!script) {
     const deployConfig = {
       isLocalDev,
@@ -32,10 +35,14 @@ module.exports = async (config, isLocalDev = false, log = () => {}, filter = fal
         byBuiltActions: filter
       }
     }
-    const entities = await deployActions(config, deployConfig, log)
-    if (entities.actions) {
-      const web = entities.actions.filter(utils.createWebExportFilter(true))
-      const nonWeb = entities.actions.filter(utils.createWebExportFilter(false))
+    if (inprocHook) { 
+      await inprocHook('deploy-actions', deployConfig)
+    }
+     
+    deployedRuntimeEntities = await deployActions(config, deployConfig, log)
+    if (deployedRuntimeEntities.actions) {
+      const web = deployedRuntimeEntities.actions.filter(utils.createWebExportFilter(true))
+      const nonWeb = deployedRuntimeEntities.actions.filter(utils.createWebExportFilter(false))
 
       if (web.length > 0) {
         log('web actions:')
@@ -53,4 +60,5 @@ module.exports = async (config, isLocalDev = false, log = () => {}, filter = fal
     }
   }
   utils.runScript(config.hooks['post-app-deploy'])
+  return deployedRuntimeEntities
 }

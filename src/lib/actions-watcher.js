@@ -36,8 +36,7 @@ const deployActions = require('./deploy-actions')
  * @returns {WatchReturnObject} the WatchReturnObject
  */
 module.exports = async (watcherOptions) => {
-  const { config, log } = watcherOptions
-
+  const { config, log, inprocHook } = watcherOptions
   log(`watching action files at ${config.actions.src}...`)
   const watcher = chokidar.watch(config.actions.src)
 
@@ -61,10 +60,10 @@ module.exports = async (watcherOptions) => {
  * @param {Array<string>} filterActions add filters to deploy only specified OpenWhisk actions
  */
 async function buildAndDeploy (watcherOptions, filterActions) {
-  const { config, isLocal, log } = watcherOptions
+  const { config, isLocal, log, inprocHook } = watcherOptions
 
   await buildActions(config, filterActions)
-  await deployActions(config, isLocal, log, filterActions)
+  await deployActions(config, isLocal, log, filterActions, inprocHook)
 }
 
 /**
@@ -74,13 +73,14 @@ async function buildAndDeploy (watcherOptions, filterActions) {
  * @returns {Function} the onchange handler for the watcher
  */
 function createChangeHandler (watcherOptions) {
-  const { watcher, log } = watcherOptions
+  const { watcher, log, inprocHook } = watcherOptions
 
   let deploymentInProgress = false
   let fileChanged = false
   let undeployedFile = ''
 
   return async (filePath) => {
+    console.log('the watcher is watching')
     aioLogger.debug('Code change triggered...')
     if (deploymentInProgress) {
       aioLogger.debug(`${filePath} has changed. Deploy in progress. This change will be deployed after completion of current deployment.`)
@@ -90,7 +90,7 @@ function createChangeHandler (watcherOptions) {
     }
     deploymentInProgress = true
     try {
-      aioLogger.debug(`${filePath} has changed. Redeploying actions.`)
+      aioLogger.debug(`${filePath} has changed. Redeploying actions. ${Object.keys(watcherOptions)}`)
       const filterActions = getActionNameFromPath(filePath, watcherOptions)
       if (!filterActions.length) {
         log('  -> A non-action file was changed, restart is required to deploy...')

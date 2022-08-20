@@ -150,6 +150,7 @@ class Deploy extends BuildCommand {
           try {
             const script = await runScript(config.hooks['deploy-actions'])
             if (!script) {
+              await this.config.runHook('deploy-actions', filterEntities)
               deployedRuntimeEntities = await rtLib.deployActions(config, { filterEntities }, onProgress)
             }
 
