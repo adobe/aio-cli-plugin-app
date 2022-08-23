@@ -18,6 +18,7 @@ const chalk = require('chalk')
 // const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { Flags } = require('@oclif/core')
 const generators = require('@adobe/generator-aio-app')
+const hyperlinker = require('hyperlinker')
 
 const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
 const { atLeastOne } = require('../../lib/app-helper')
@@ -133,7 +134,7 @@ class InitCommand extends AddCommand {
     if (!isTermAccepted) {
       const terms = await consoleCLI.getDevTermsForOrg()
       const confirmDevTerms = await consoleCLI.prompt.promptConfirm(`${terms.text}
-      \nDo you agree with the new Developer Terms?`)
+      \nYou have not accepted the Developer Terms of Service. Go to ${hyperlinker('https://www.adobe.com/go/developer-terms', 'https://www.adobe.com/go/developer-terms')} to view the terms. Do you accept the terms? (y/n):`)
       if (!confirmDevTerms) {
         this.error('The Developer Terms of Service were declined')
       } else {

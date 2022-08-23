@@ -28,6 +28,7 @@
     "get-port": "^5.1.1",
     "hjson": "^3.2.1",
     "http-terminator": "^2.0.3",
+    "hyperlinker": "^1.0.0",
     "inquirer": "^7.0.0",
     "js-yaml": "^3.13.1",
     "lodash.clonedeep": "^4.5.0",
