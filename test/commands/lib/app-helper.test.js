@@ -15,7 +15,8 @@ jest.unmock('@adobe/aio-lib-runtime')
 
 const mockFetch = jest.fn()
 jest.mock('@adobe/aio-lib-core-networking', () => ({
-  createFetch: jest.fn(() => mockFetch)
+  createFetch: jest.fn(() => mockFetch),
+  HttpExponentialBackoff: jest.fn()
 }))
 
 jest.mock('@adobe/aio-lib-core-config')
