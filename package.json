@@ -11,7 +11,7 @@
     "@adobe/aio-lib-core-logging": "^1.1.0",
     "@adobe/aio-lib-core-networking": "^2.0.0",
     "@adobe/aio-lib-env": "^1.1.0",
-    "@adobe/aio-lib-ims": "^5.0.0",
+    "@adobe/aio-lib-ims": "^6.0.0",
     "@adobe/aio-lib-runtime": "^4.0.0",
     "@adobe/aio-lib-web": "^5.1.0",
     "@adobe/generator-aio-app": "^3.0.0",
@@ -28,6 +28,7 @@
     "get-port": "^5.1.1",
     "hjson": "^3.2.1",
     "http-terminator": "^2.0.3",
+    "hyperlinker": "^1.0.0",
     "inquirer": "^7.0.0",
     "js-yaml": "^3.13.1",
     "lodash.clonedeep": "^4.5.0",
@@ -90,7 +91,8 @@
     "prepack": "oclif manifest && oclif readme",
     "test": "npm run unit-tests && npm run lint",
     "unit-tests": "jest -c jest.config.js",
-    "version": "oclif readme && git add README.md"
+    "version": "oclif readme && git add README.md",
+    "update-openwhisk-runtimes": "node bin/openwhisk-standalone-config/get-runtimes.js > bin/openwhisk-standalone-config/runtimes.json"
   },
   "bin": {
     "aio-next": "./bin/run"

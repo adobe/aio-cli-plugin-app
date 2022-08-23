@@ -18,6 +18,7 @@ const chalk = require('chalk')
 // const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { Flags } = require('@oclif/core')
 const generators = require('@adobe/generator-aio-app')
+const hyperlinker = require('hyperlinker')
 
 const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
 const { atLeastOne } = require('../../lib/app-helper')
@@ -133,7 +134,7 @@ class InitCommand extends AddCommand {
     if (!isTermAccepted) {
       const terms = await consoleCLI.getDevTermsForOrg()
       const confirmDevTerms = await consoleCLI.prompt.promptConfirm(`${terms.text}
-      \nDo you agree with the new Developer Terms?`)
+      \nYou have not accepted the Developer Terms of Service. Go to ${hyperlinker('https://www.adobe.com/go/developer-terms', 'https://www.adobe.com/go/developer-terms')} to view the terms. Do you accept the terms? (y/n):`)
       if (!confirmDevTerms) {
         this.error('The Developer Terms of Service were declined')
       } else {
@@ -271,15 +272,15 @@ class InitCommand extends AddCommand {
 
   async runCodeGenerators (flags, extensionPoints, projectName) {
     let env = yeoman.createEnv()
+    // by default yeoman runs the install, we control installation from the app plugin
+    env.options = { skipInstall: true }
     const initialGenerators = ['base-app', 'add-ci']
     // first run app generator that will generate the root skeleton + ci
     for (const generatorKey of initialGenerators) {
       const appGen = env.instantiate(generators[generatorKey], {
         options: {
           'skip-prompt': flags.yes,
-          'project-name': projectName,
-          // by default yeoman runs the install, we control installation from the app plugin
-          'skip-install': true
+          'project-name': projectName
         }
       })
       await env.runGenerator(appGen)
@@ -289,6 +290,8 @@ class InitCommand extends AddCommand {
     // https://github.com/yeoman/environment/issues/324
 
     env = yeoman.createEnv()
+    // by default yeoman runs the install, we control installation from the app plugin
+    env.options = { skipInstall: true }
     // try to use appGen.composeWith
     for (let i = 0; i < extensionPoints.length; ++i) {
       const extGen = env.instantiate(
@@ -297,9 +300,7 @@ class InitCommand extends AddCommand {
           options: {
             'skip-prompt': flags.yes,
             // do not prompt for overwrites
-            force: true,
-            // by default yeoman runs the install, we control installation from the app plugin
-            'skip-install': true
+            force: true
           }
         })
       await env.runGenerator(extGen)
