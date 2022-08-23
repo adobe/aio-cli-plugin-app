@@ -37,6 +37,11 @@
             "integration_type": "service"
           },
           {
+            "id": "17561139",
+            "name": "Projéct_C",
+            "integration_type": "apikey"
+          },
+          {
             "id": "17950",
             "name": "New_Test_Intégration_8",
             "integration_type": "oauthandroid"
