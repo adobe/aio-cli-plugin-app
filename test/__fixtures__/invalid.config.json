@@ -42,6 +42,14 @@
                         }
                     },
                     {
+                        "id": "17561138",
+                        "name": "Projéct C",
+                        "integration_type": "apikey",
+                        "oauth2": {
+                            "client_secret": "XYXYXYXYZZZZZZ"
+                        }
+                    },
+                    {
                         "id": "17950",
                         "name": "NewTestIntegration8",
                         "integration_type": "oauthandroid",

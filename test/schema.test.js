@@ -13,7 +13,8 @@ test('validate failure', () => {
   const ajv = new Ajv({ allErrors: true })
   const validate = ajv.compile(schema)
   const valid = validate(fixtureJson('invalid.config.json'))
-  // the 4 errors are the missing name properties, and techacct migration to two new properties
-  expect(validate.errors.length).toEqual(4)
+  // the 4 errors are the missing name properties, techacct migration to two new properties
+  // the rest 2 are missing client_id and failing keyword `then`
+  expect(validate.errors.length).toEqual(6)
   expect(valid).toBeFalsy()
 })
