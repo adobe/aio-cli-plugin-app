@@ -18,7 +18,7 @@ const chalk = require('chalk')
 // const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { Flags } = require('@oclif/core')
 const generators = require('@adobe/generator-aio-app')
-const hyperlinker = require('hyperlinker');
+const hyperlinker = require('hyperlinker')
 
 const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
 const { atLeastOne } = require('../../lib/app-helper')
