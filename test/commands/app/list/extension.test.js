@@ -104,7 +104,7 @@ describe('run', () => {
     }
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(command.log).toHaveBeenCalledWith(yaml.safeDump(expectedResult))
+    expect(command.log).toHaveBeenCalledWith(yaml.dump(expectedResult))
   })
 
   test('list all extension points legacy app', async () => {

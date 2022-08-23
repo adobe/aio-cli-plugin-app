@@ -674,7 +674,7 @@ describe('buildExcShellViewExtensionMetadata', () => {
           id: 'yay',
           name: 'yo',
           details: {
-            services: services
+            services
           }
         },
         id: 'bonjour'

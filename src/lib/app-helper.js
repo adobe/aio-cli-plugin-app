@@ -486,12 +486,12 @@ function atLeastOne (input) {
 
 /** @private */
 function deleteUserConfig (configData) {
-  const phyConfig = yaml.safeLoad(fs.readFileSync(configData.file))
+  const phyConfig = yaml.load(fs.readFileSync(configData.file))
   const interKeys = configData.key.split('.')
   const phyActionConfigParent = interKeys.slice(0, -1).reduce((obj, k) => obj && obj[k], phyConfig)
   // like delete configFile.runtimeManifest.packages.actions.theaction
   delete phyActionConfigParent[interKeys.slice(-1)]
-  fs.writeFileSync(configData.file, yaml.safeDump(phyConfig))
+  fs.writeFileSync(configData.file, yaml.dump(phyConfig))
 }
 
 /** @private */
