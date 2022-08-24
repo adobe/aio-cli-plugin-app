@@ -72,6 +72,7 @@ describe('EventPoller', () => {
   test('start', () => {
     const poller = new EventPoller(1234)
     poller.emit = jest.fn()
+    jest.spyOn(global, 'setTimeout')
 
     poller.start('some fake args')
     expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), 1234)
@@ -82,6 +83,7 @@ describe('EventPoller', () => {
   test('stop', () => {
     const poller = new EventPoller(1234)
     poller.emit = jest.fn()
+    jest.spyOn(global, 'setTimeout')
 
     poller.start('some fake args')
     expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), 1234)
