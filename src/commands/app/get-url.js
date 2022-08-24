@@ -68,7 +68,7 @@ class GetUrlCommand extends BaseCommand {
       if (flags.json) {
         this.log(JSON.stringify(urls))
       } else if (flags.yml) {
-        this.log(yaml.safeDump(urls))
+        this.log(yaml.dump(urls))
       } else if (flags.hson) {
         this.log(urls)
       } else {

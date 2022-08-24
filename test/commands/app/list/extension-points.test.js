@@ -110,6 +110,6 @@ describe('run', () => {
     command.getFullConfig.mockReturnValue(appConfig)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(command.log).toHaveBeenCalledWith(yaml.safeDump(extOutPut))
+    expect(command.log).toHaveBeenCalledWith(yaml.dump(extOutPut))
   })
 })
