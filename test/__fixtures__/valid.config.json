@@ -48,9 +48,7 @@
                         "id": "17561139",
                         "name": "Projéct C",
                         "integration_type": "apikey",
-                        "oauth2": {
-                            "client_id": "XYXYXYXYXYXYXYXYX"
-                        }
+                        "apiKey": "AKAKAKAKAKAKAKAKAKAKAKAK"
                     },
                     {
                         "id": "17950",
