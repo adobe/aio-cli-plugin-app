@@ -14,7 +14,7 @@ const ora = require('ora')
 const chalk = require('chalk')
 
 const BaseCommand = require('../../BaseCommand')
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 const { runScript, writeConfig } = require('../../lib/app-helper')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
 const { bundle } = require('@adobe/aio-lib-web')
@@ -24,7 +24,7 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 class Build extends BaseCommand {
   async run () {
     // cli input
-    const { flags } = this.parse(Build)
+    const { flags } = await this.parse(Build)
     // flags
     flags['web-assets'] = flags['web-assets'] && !flags['skip-static'] && !flags['skip-web-assets'] && !flags.action
     flags.actions = flags.actions && !flags['skip-actions']
@@ -110,14 +110,14 @@ class Build extends BaseCommand {
           if (script) {
             spinner.fail(chalk.green(`build-static skipped by hook '${name}'`))
           } else {
-            const entryFile = config.web.src + '/index.html'
+            const entries = config.web.src + '/**/*.html'
             const bundleOptions = {
               shouldDisableCache: true,
               shouldContentHash: flags['content-hash'],
               shouldOptimize: flags['web-optimize'],
               logLevel: flags.verbose ? 'verbose' : 'warn'
             }
-            const bundler = await bundle(entryFile, config.web.distProd, bundleOptions, onProgress)
+            const bundler = await bundle(entries, config.web.distProd, bundleOptions, onProgress)
             await bundler.run()
             spinner.succeed(chalk.green(`Building web assets for '${name}'`))
           }
@@ -144,47 +144,47 @@ This will always force a rebuild unless --no-force-build is set.
 
 Build.flags = {
   ...BaseCommand.flags,
-  'skip-static': flags.boolean({
+  'skip-static': Flags.boolean({
     description: '[deprecated] Please use --no-web-assets'
   }),
-  'skip-web-assets': flags.boolean({
+  'skip-web-assets': Flags.boolean({
     description: '[deprecated] Please use --no-web-assets'
   }),
-  'skip-actions': flags.boolean({
+  'skip-actions': Flags.boolean({
     description: '[deprecated] Please use --no-actions'
   }),
-  actions: flags.boolean({
+  actions: Flags.boolean({
     description: '[default: true] Build actions if any',
     default: true,
     allowNo: true,
     exclusive: ['action'] // should be action exclusive --no-action but see https://github.com/oclif/oclif/issues/600
   }),
-  action: flags.string({
+  action: Flags.string({
     description: 'Build only a specific action, the flags can be specified multiple times, this will set --no-publish',
     char: 'a',
     exclusive: ['extension'],
     multiple: true
   }),
-  'web-assets': flags.boolean({
+  'web-assets': Flags.boolean({
     description: '[default: true] Build web-assets if any',
     default: true,
     allowNo: true
   }),
-  'force-build': flags.boolean({
+  'force-build': Flags.boolean({
     description: '[default: true] Force a build even if one already exists',
     default: true,
     allowNo: true
   }),
-  'content-hash': flags.boolean({
+  'content-hash': Flags.boolean({
     description: '[default: true] Enable content hashing in browser code',
     default: true,
     allowNo: true
   }),
-  'web-optimize': flags.boolean({
+  'web-optimize': Flags.boolean({
     description: '[default: false] Enable optimization (minification) of js/css/html',
     default: false
   }),
-  extension: flags.string({
+  extension: Flags.string({
     description: 'Build only a specific extension point, the flags can be specified multiple times',
     exclusive: ['action'],
     multiple: true,

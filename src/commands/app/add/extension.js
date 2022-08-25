@@ -12,7 +12,7 @@ governing permissions and limitations under the License.
 const AddCommand = require('../../../AddCommand')
 const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 const ora = require('ora')
 
 const { atLeastOne } = require('../../../lib/app-helper')
@@ -22,7 +22,7 @@ const chalk = require('chalk')
 
 class AddExtensionCommand extends AddCommand {
   async run () {
-    const { flags } = this.parse(AddExtensionCommand)
+    const { flags } = await this.parse(AddExtensionCommand)
 
     aioLogger.debug(`add extensions with flags: ${JSON.stringify(flags)}`)
     const spinner = ora()
@@ -91,6 +91,8 @@ class AddExtensionCommand extends AddCommand {
 
   async runCodeGenerators (flags, implementations) {
     const env = yeoman.createEnv()
+    // by default yeoman runs the install, we control installation from the app plugin
+    env.options = { skipInstall: true }
     for (let i = 0; i < implementations.length; ++i) {
       const implementation = implementations[i]
       const gen = env.instantiate(implementation.generator,
@@ -98,9 +100,7 @@ class AddExtensionCommand extends AddCommand {
           options: {
             'skip-prompt': flags.yes,
             // no yeoman overwrite prompts
-            force: true,
-            // by default yeoman runs the install, we control installation from the app plugin
-            'skip-install': true
+            force: true
           }
         })
       this.log(chalk.blue(chalk.bold(`Running generator for ${implementation.name}`)))
@@ -112,12 +112,12 @@ class AddExtensionCommand extends AddCommand {
 AddExtensionCommand.description = `Add new extensions or a standalone application to the project
 `
 AddExtensionCommand.flags = {
-  yes: flags.boolean({
+  yes: Flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
   }),
-  extension: flags.string({
+  extension: Flags.string({
     description: 'Specify extensions to add, skips selection prompt',
     char: 'e',
     multiple: true

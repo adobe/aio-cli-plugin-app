@@ -15,9 +15,8 @@ const chalk = require('chalk')
 const fs = require('fs-extra')
 const https = require('https')
 const getPort = require('get-port')
-const { cli } = require('cli-ux')
 
-const { flags } = require('@oclif/command')
+const { Flags, CliUx: { ux: cli } } = require('@oclif/core')
 const coreConfig = require('@adobe/aio-lib-core-config')
 
 const BaseCommand = require('../../BaseCommand')
@@ -33,7 +32,7 @@ const CONFIG_KEY = 'aio-dev.dev-keys'
 class Run extends BaseCommand {
   async run () {
     // cli input
-    const { flags } = this.parse(Run)
+    const { flags } = await this.parse(Run)
     // aliases
     flags.actions = flags.actions && !flags['skip-actions']
 
@@ -78,7 +77,7 @@ class Run extends BaseCommand {
         shouldContentHash: false
       },
       fetchLogs: true,
-      devRemote: !flags.local,
+      isLocal: flags.local,
       verbose: flags.verbose
     }
 
@@ -203,31 +202,31 @@ Run.description = 'Run an Adobe I/O App'
 
 Run.flags = {
   ...BaseCommand.flags,
-  local: flags.boolean({
+  local: Flags.boolean({
     description: 'Run/debug actions locally ( requires Docker running )',
     exclusive: ['skip-actions']
   }),
-  serve: flags.boolean({
+  serve: Flags.boolean({
     description: '[default: true] Start frontend server (experimental)',
     default: true,
     allowNo: true
   }),
-  'skip-actions': flags.boolean({
+  'skip-actions': Flags.boolean({
     description: '[deprecated] Please use --no-actions',
     exclusive: ['local'],
     default: false
   }),
-  actions: flags.boolean({
+  actions: Flags.boolean({
     description: '[default: true] Run actions, defaults to true, to skip actions use --no-actions',
     exclusive: ['local'], // no-actions and local don't work together
     default: true,
     allowNo: true
   }),
-  open: flags.boolean({
+  open: Flags.boolean({
     description: 'Open the default web browser after a successful run, only valid if your app has a front-end',
     default: false
   }),
-  extension: flags.string({
+  extension: Flags.string({
     description: 'Run only a specific extension, this flag can only be specified once',
     char: 'e',
     // we do not support multiple yet

@@ -12,7 +12,7 @@ governing permissions and limitations under the License.
 
 const chalk = require('chalk')
 
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 
 const BaseCommand = require('../../BaseCommand')
 const { wrapError } = require('../../lib/app-helper')
@@ -23,7 +23,7 @@ const { loadLocalDevConfig } = require('../../lib/run-local-runtime')
 class GetUrlCommand extends BaseCommand {
   async run () {
     // cli input
-    const { args, flags } = this.parse(GetUrlCommand)
+    const { args, flags } = await this.parse(GetUrlCommand)
 
     try {
       const options = {}
@@ -68,7 +68,7 @@ class GetUrlCommand extends BaseCommand {
       if (flags.json) {
         this.log(JSON.stringify(urls))
       } else if (flags.yml) {
-        this.log(yaml.safeDump(urls))
+        this.log(yaml.dump(urls))
       } else if (flags.hson) {
         this.log(urls)
       } else {
@@ -96,22 +96,22 @@ GetUrlCommand.description = 'Get action URLs'
 
 GetUrlCommand.flags = {
   ...BaseCommand.flags,
-  cdn: flags.boolean({
+  cdn: Flags.boolean({
     description: 'Display CDN based action URLs'
   }),
-  json: flags.boolean({
+  json: Flags.boolean({
     description: 'Output json',
     char: 'j'
   }),
-  hson: flags.boolean({
+  hson: Flags.boolean({
     description: 'Output human readable json',
     char: 'h'
   }),
-  yml: flags.boolean({
+  yml: Flags.boolean({
     description: 'Output yml',
     char: 'y'
   }),
-  local: flags.boolean({
+  local: Flags.boolean({
     description: 'Display locally based action URLs'
   })
 }

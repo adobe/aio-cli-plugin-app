@@ -12,7 +12,7 @@ governing permissions and limitations under the License.
 const BaseCommand = require('../../../BaseCommand')
 
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:list:extension-points', { provider: 'debug' })
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 
 const { EXTENSION_POINT_LIST } = require('../../../lib/defaults')
 const chalk = require('chalk')
@@ -20,14 +20,14 @@ const yaml = require('js-yaml')
 
 class ListExtensionPointsCommand extends BaseCommand {
   async run () {
-    const { flags } = this.parse(ListExtensionPointsCommand)
+    const { flags } = await this.parse(ListExtensionPointsCommand)
     aioLogger.debug(`list all extensions points with flags: ${JSON.stringify(flags)}`)
 
     // print
     if (flags.json) {
       this.log(JSON.stringify(EXTENSION_POINT_LIST))
     } else if (flags.yml) {
-      this.log(yaml.safeDump(EXTENSION_POINT_LIST))
+      this.log(yaml.dump(EXTENSION_POINT_LIST))
     } else {
       this.log(chalk.bold('Extensions Points'))
       Object.keys(EXTENSION_POINT_LIST).forEach(key => {
@@ -45,11 +45,11 @@ ListExtensionPointsCommand.description = `List all extension points for the sele
 `
 ListExtensionPointsCommand.flags = {
   ...BaseCommand.flags,
-  json: flags.boolean({
+  json: Flags.boolean({
     description: 'Output json',
     char: 'j'
   }),
-  yml: flags.boolean({
+  yml: Flags.boolean({
     description: 'Output yml',
     char: 'y'
   })

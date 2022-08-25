@@ -12,14 +12,14 @@ governing permissions and limitations under the License.
 const AddCommand = require('../../../AddCommand')
 const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:event', { provider: 'debug' })
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 const ora = require('ora')
 const path = require('path')
 const generators = require('@adobe/generator-aio-app')
 
 class AddEventCommand extends AddCommand {
   async run () {
-    const { flags } = this.parse(AddEventCommand)
+    const { flags } = await this.parse(AddEventCommand)
 
     aioLogger.debug(`add events with flags: ${JSON.stringify(flags)}`)
     const spinner = ora()
@@ -35,6 +35,8 @@ class AddEventCommand extends AddCommand {
     const configData = this.getRuntimeManifestConfigFile(configName)
 
     const env = yeoman.createEnv()
+    // by default yeoman runs the install, we control installation from the app plugin
+    env.options = { skipInstall: true }
     const eventsGen = env.instantiate(generators['add-events'], {
       options: {
         'skip-prompt': flags.yes,
@@ -42,9 +44,7 @@ class AddEventCommand extends AddCommand {
         'config-path': configData.file,
         'full-key-to-manifest': configData.key,
         // force overwrites, no useless prompts, this is a feature exposed by yeoman itself
-        force: true,
-        // by default yeoman runs the install, we control installation from the app plugin
-        'skip-install': true
+        force: true
       }
     })
     await env.runGenerator(eventsGen)
@@ -57,12 +57,12 @@ AddEventCommand.description = `Add a new Adobe I/O Events action
 `
 
 AddEventCommand.flags = {
-  yes: flags.boolean({
+  yes: Flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
   }),
-  extension: flags.string({
+  extension: Flags.string({
     description: 'Add actions to a specific extension',
     char: 'e',
     multiple: false,

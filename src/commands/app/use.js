@@ -11,7 +11,7 @@ governing permissions and limitations under the License.
 
 const BaseCommand = require('../../BaseCommand')
 const { CONSOLE_CONFIG_KEY, importConfigJson, loadAndValidateConfigFile } = require('../../lib/import')
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 const inquirer = require('inquirer')
 const config = require('@adobe/aio-lib-core-config')
 const { EOL } = require('os')
@@ -25,7 +25,7 @@ const chalk = require('chalk')
 
 class Use extends BaseCommand {
   async run () {
-    const { flags, args } = this.parse(Use)
+    const { flags, args } = await this.parse(Use)
 
     flags.workspace = flags.workspace || flags['workspace-name'] || ''
 
@@ -370,49 +370,49 @@ To download the configuration file for your project, select the 'Download' butto
 
 Use.flags = {
   ...BaseCommand.flags,
-  overwrite: flags.boolean({
+  overwrite: Flags.boolean({
     description: 'Overwrite any .aio and .env files during import of the Adobe Developer Console configuration file',
     default: false,
     exclusive: ['merge']
   }),
-  merge: flags.boolean({
+  merge: Flags.boolean({
     description: 'Merge any .aio and .env files during import of the Adobe Developer Console configuration file',
     default: false,
     exclusive: ['overwrite']
   }),
-  global: flags.boolean({
+  global: Flags.boolean({
     description: 'Use the global Adobe Developer Console Org / Project / Workspace configuration, which can be set via `aio console` commands',
     default: false,
     char: 'g',
     exclusive: ['workspace']
   }),
-  workspace: flags.string({
+  workspace: Flags.string({
     description: 'Specify the Adobe Developer Console Workspace name or Workspace id to import the configuration from',
     default: '',
     char: 'w',
     exclusive: ['global', 'workspace-name']
   }),
-  'confirm-new-workspace': flags.boolean({
+  'confirm-new-workspace': Flags.boolean({
     description: 'Skip and confirm prompt for creating a new workspace',
     default: false
   }),
-  'workspace-name': flags.string({
+  'workspace-name': Flags.string({
     description: '[DEPRECATED]: please use --workspace instead',
     default: '',
     char: 'w',
     exclusive: ['global', 'workspace']
   }),
-  'no-service-sync': flags.boolean({
+  'no-service-sync': Flags.boolean({
     description: 'Skip the Service sync prompt and do not attach current Service subscriptions to the new Workspace',
     default: false,
     exclusive: ['confirm-service-sync']
   }),
-  'confirm-service-sync': flags.boolean({
+  'confirm-service-sync': Flags.boolean({
     description: 'Skip the Service sync prompt and overwrite Service subscriptions in the new Workspace with current subscriptions',
     default: false,
     exclusive: ['no-service-sync']
   }),
-  'no-input': flags.boolean({
+  'no-input': Flags.boolean({
     description: 'Skip user prompts by setting --no-service-sync and --merge. Requires one of config_file_path or --global or --workspace',
     default: false
   })

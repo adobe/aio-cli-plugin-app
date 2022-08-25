@@ -11,7 +11,7 @@ governing permissions and limitations under the License.
 */
 
 const { runScript } = require('../../lib/app-helper')
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 const BaseCommand = require('../../BaseCommand')
 const chalk = require('chalk')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:test', { provider: 'debug' })
@@ -19,7 +19,7 @@ const path = require('path')
 
 class Test extends BaseCommand {
   async run () {
-    const { flags } = this.parse(Test)
+    const { flags } = await this.parse(Test)
     let { all, unit, e2e, action, extension } = flags
 
     // 'all' overrides the setting of either the unit or e2e flag
@@ -201,27 +201,27 @@ class Test extends BaseCommand {
 }
 
 Test.flags = {
-  extension: flags.string({
+  extension: Flags.string({
     char: 'e',
     description: 'the extension(s) to test',
     exclusive: ['action'],
     multiple: true
   }),
-  action: flags.string({
+  action: Flags.string({
     char: 'a',
     description: 'the action(s) to test',
     exclusive: ['extension'],
     multiple: true
   }),
-  all: flags.boolean({
+  all: Flags.boolean({
     description: 'run both unit and e2e tests',
     default: false
   }),
-  e2e: flags.boolean({
+  e2e: Flags.boolean({
     description: 'run e2e tests',
     default: false
   }),
-  unit: flags.boolean({
+  unit: Flags.boolean({
     description: 'run unit tests',
     default: false
   })

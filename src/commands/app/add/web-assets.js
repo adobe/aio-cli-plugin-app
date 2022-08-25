@@ -12,7 +12,7 @@ governing permissions and limitations under the License.
 const AddCommand = require('../../../AddCommand')
 const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:web-assets', { provider: 'debug' })
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 const ora = require('ora')
 const generators = require('@adobe/generator-aio-app')
 const aioConfigLoader = require('@adobe/aio-lib-core-config')
@@ -20,7 +20,7 @@ const { servicesToGeneratorInput } = require('../../../lib/app-helper')
 
 class AddWebAssetsCommand extends AddCommand {
   async run () {
-    const { flags } = this.parse(AddWebAssetsCommand)
+    const { flags } = await this.parse(AddWebAssetsCommand)
     const spinner = ora()
     aioLogger.debug(`add web-assets with flags: ${JSON.stringify(flags)}`)
 
@@ -39,15 +39,15 @@ class AddWebAssetsCommand extends AddCommand {
       []
 
     const env = yeoman.createEnv()
+    // by default yeoman runs the install, we control installation from the app plugin
+    env.options = { skipInstall: true }
     const gen = env.instantiate(generators['add-web-assets'], {
       options: {
         'skip-prompt': flags.yes,
         'project-name': projectName,
         'web-src-folder': webSrcFolder,
-        'adobe-services': servicesToGeneratorInput(workspaceServices),
-        // force: true,
-        // by default yeoman runs the install, we control installation from the app plugin
-        'skip-install': true
+        'adobe-services': servicesToGeneratorInput(workspaceServices)
+        // force: true
       }
     })
     await env.runGenerator(gen)
@@ -60,12 +60,12 @@ AddWebAssetsCommand.description = `Add web assets support
 `
 
 AddWebAssetsCommand.flags = {
-  yes: flags.boolean({
+  yes: Flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
   }),
-  extension: flags.string({
+  extension: Flags.string({
     description: 'Add web-assets to a specific extension',
     char: 'e',
     multiple: false,

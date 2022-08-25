@@ -12,7 +12,7 @@ governing permissions and limitations under the License.
 const BaseCommand = require('../../../BaseCommand')
 
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:list:extensions', { provider: 'debug' })
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 
 const { EXTENSION_POINT_LIST } = require('../../../lib/defaults')
 const chalk = require('chalk')
@@ -20,7 +20,7 @@ const yaml = require('js-yaml')
 
 class ListExtensionCommand extends BaseCommand {
   async run () {
-    const { flags } = this.parse(ListExtensionCommand)
+    const { flags } = await this.parse(ListExtensionCommand)
     aioLogger.debug(`list extensions with flags: ${JSON.stringify(flags)}`)
 
     const extConfig = this.getAppExtConfigs(flags)
@@ -54,7 +54,7 @@ class ListExtensionCommand extends BaseCommand {
     if (flags.json) {
       this.log(JSON.stringify(extSummary))
     } else if (flags.yml) {
-      this.log(yaml.safeDump(extSummary))
+      this.log(yaml.dump(extSummary))
     } else {
       if (Object.keys(extSummary).length > 0) {
         this.log(chalk.bold('Extensions'))
@@ -81,11 +81,11 @@ ListExtensionCommand.description = `List implemented extensions
 `
 ListExtensionCommand.flags = {
   ...BaseCommand.flags,
-  json: flags.boolean({
+  json: Flags.boolean({
     description: 'Output json',
     char: 'j'
   }),
-  yml: flags.boolean({
+  yml: Flags.boolean({
     description: 'Output yml',
     char: 'y'
   })

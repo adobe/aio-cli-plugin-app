@@ -100,8 +100,7 @@ describe('good flags', () => {
         'config-path': undefined,
         'adobe-services': undefined,
         'supported-adobe-services': undefined,
-        'full-key-to-manifest': 'undefined.runtimeManifest',
-        'skip-install': true
+        'full-key-to-manifest': 'undefined.runtimeManifest'
       }
     })
     expect(mockRunGenerator).toHaveBeenCalledWith('actionGen')
@@ -120,8 +119,7 @@ describe('good flags', () => {
         'config-path': undefined,
         'adobe-services': undefined,
         'supported-adobe-services': undefined,
-        'full-key-to-manifest': 'undefined.runtimeManifest',
-        'skip-install': true
+        'full-key-to-manifest': 'undefined.runtimeManifest'
       }
     })
     expect(helpers.installPackages).toHaveBeenCalledTimes(0)
@@ -139,8 +137,7 @@ describe('good flags', () => {
         'config-path': undefined,
         'adobe-services': undefined,
         'supported-adobe-services': undefined,
-        'full-key-to-manifest': 'undefined.runtimeManifest',
-        'skip-install': true
+        'full-key-to-manifest': 'undefined.runtimeManifest'
       }
     })
   })
@@ -157,8 +154,7 @@ describe('good flags', () => {
         'config-path': undefined,
         'adobe-services': undefined,
         'supported-adobe-services': undefined,
-        'full-key-to-manifest': 'undefined.runtimeManifest',
-        'skip-install': true
+        'full-key-to-manifest': 'undefined.runtimeManifest'
       }
     })
   })
@@ -174,8 +170,7 @@ describe('good flags', () => {
         'config-path': undefined,
         'adobe-services': undefined,
         'supported-adobe-services': undefined,
-        'full-key-to-manifest': 'undefined.runtimeManifest',
-        'skip-install': true
+        'full-key-to-manifest': 'undefined.runtimeManifest'
       }
     })
   })
@@ -203,8 +198,7 @@ describe('good flags', () => {
         'config-path': undefined,
         'adobe-services': 'CampaignSDK,AdobeAnalyticsSDK',
         'supported-adobe-services': 'CampaignSDK,AdobeAnalyticsSDK,AnotherOneSDK',
-        'full-key-to-manifest': 'undefined.runtimeManifest',
-        'skip-install': true
+        'full-key-to-manifest': 'undefined.runtimeManifest'
       }
     })
   })
@@ -232,8 +226,7 @@ describe('good flags', () => {
         'config-path': undefined,
         'adobe-services': 'CampaignSDK,AdobeAnalyticsSDK',
         'supported-adobe-services': 'CampaignSDK,AdobeAnalyticsSDK,AnotherOneSDK',
-        'full-key-to-manifest': 'undefined.runtimeManifest',
-        'skip-install': true
+        'full-key-to-manifest': 'undefined.runtimeManifest'
       }
     })
   })

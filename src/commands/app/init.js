@@ -16,11 +16,12 @@ const fs = require('fs-extra')
 const ora = require('ora')
 const chalk = require('chalk')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 const generators = require('@adobe/generator-aio-app')
 const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
 const inquirer = require('inquirer')
 const inquirerTablePrompt = require('inquirer-table-prompt')
+const hyperlinker = require('hyperlinker')
 
 const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
 const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV } = require('../../lib/defaults')
@@ -29,7 +30,7 @@ const DEFAULT_WORKSPACE = 'Stage'
 
 class InitCommand extends AddCommand {
   async run () {
-    const { args, flags } = this.parse(InitCommand)
+    const { args, flags } = await this.parse(InitCommand)
 
     if (!flags.login && flags.workspace !== DEFAULT_WORKSPACE) {
       this.error('--no-login and --workspace flags cannot be used together.')
@@ -143,7 +144,7 @@ class InitCommand extends AddCommand {
     if (!isTermAccepted) {
       const terms = await consoleCLI.getDevTermsForOrg()
       const confirmDevTerms = await consoleCLI.prompt.promptConfirm(`${terms.text}
-      \nDo you agree with the new Developer Terms?`)
+      \nYou have not accepted the Developer Terms of Service. Go to ${hyperlinker('https://www.adobe.com/go/developer-terms', 'https://www.adobe.com/go/developer-terms')} to view the terms. Do you accept the terms? (y/n):`)
       if (!confirmDevTerms) {
         this.error('The Developer Terms of Service were declined')
       } else {
@@ -330,6 +331,7 @@ class InitCommand extends AddCommand {
 
   async runCodeGenerators (destDir, flags, templates, projectName) {
     const env = yeoman.createEnv()
+    env.options = { skipInstall: true }
     const initialGenerators = ['base-app', 'add-ci']
 
     if (flags['standalone-app']) {
@@ -341,9 +343,7 @@ class InitCommand extends AddCommand {
       const appGen = env.instantiate(generators[generatorKey], {
         options: {
           'skip-prompt': flags.yes,
-          'project-name': projectName,
-          // by default yeoman runs the install, we control installation from the app plugin
-          'skip-install': true
+          'project-name': projectName
         }
       })
       await env.runGenerator(appGen)
@@ -391,37 +391,37 @@ InitCommand.description = `Create a new Adobe I/O App
 
 InitCommand.flags = {
   ...AddCommand.flags,
-  yes: flags.boolean({
+  yes: Flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
   }),
-  import: flags.string({
+  import: Flags.string({
     description: 'Import an Adobe I/O Developer Console configuration file',
     char: 'i'
   }),
-  login: flags.boolean({
+  login: Flags.boolean({
     description: 'Login using your Adobe ID for interacting with Adobe I/O Developer Console',
     default: true,
     allowNo: true
   }),
-  'standalone-app': flags.boolean({
+  'standalone-app': Flags.boolean({
     description: 'Create a stand-alone application',
     default: false,
     exclusive: ['template']
   }),
-  template: flags.string({
+  template: Flags.string({
     description: 'Specify a link to a template that will be installed',
     char: 't',
     multiple: true
   }),
-  workspace: flags.string({
+  workspace: Flags.string({
     description: 'Specify the Adobe Developer Console Workspace to init from, defaults to Stage',
     default: DEFAULT_WORKSPACE,
     char: 'w',
     exclusive: ['import'] // also no-login
   }),
-  'confirm-new-workspace': flags.boolean({
+  'confirm-new-workspace': Flags.boolean({
     description: 'Skip and confirm prompt for creating a new workspace',
     default: false
   })

@@ -12,21 +12,21 @@ governing permissions and limitations under the License.
 const BaseCommand = require('../../../BaseCommand')
 const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
-const { flags } = require('@oclif/command')
+const { Flags } = require('@oclif/core')
 const generators = require('@adobe/generator-aio-app')
 
 class DeleteCICommand extends BaseCommand {
   async run () {
-    const { flags } = this.parse(DeleteCICommand)
+    const { flags } = await this.parse(DeleteCICommand)
 
     aioLogger.debug(`deleting CI files from the project, using flags: ${JSON.stringify(flags)}`)
 
     const env = yeoman.createEnv()
+    // by default yeoman runs the install, we control installation from the app plugin
+    env.options = { skipInstall: true }
     const gen = env.instantiate(generators['delete-ci'], {
       options: {
-        'skip-prompt': flags.yes,
-        // by default yeoman runs the install, we control installation from the app plugin
-        'skip-install': true
+        'skip-prompt': flags.yes
       }
     })
     await env.runGenerator(gen)
@@ -37,7 +37,7 @@ DeleteCICommand.description = `Delete existing CI files
 `
 
 DeleteCICommand.flags = {
-  yes: flags.boolean({
+  yes: Flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
