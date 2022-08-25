@@ -537,11 +537,8 @@ function transformCredentials (credentials, imsOrgId) {
   }
 
   return credentials.reduce((acc, credential) => {
-    // the json schema enforces either jwt OR oauth2 keys in a credential
-    let value = credential.oauth2
-    if (!value) {
-      value = credential.jwt
-    }
+    // the json schema enforces either jwt OR oauth2 OR apiKey in a credential
+    const value = credential.oauth2 || credential.jwt || credential.apiKey
 
     const name = credential.name.replace(/ /gi, '_') // replace any spaces with underscores
     acc[name] = value
