@@ -205,7 +205,7 @@ class InitCommand extends AddCommand {
     }
 
     const rows = templateList.map(template => {
-      const extensionPoint = template.extension ? template.extension.serviceCode : 'N/A'
+      const extensionPoint = template.extensions ? template.extensions.map(ext => ext.extensionPointId).join(',') : 'N/A'
       const name = template.adobeRecommended ? `${template.name} *` : template.name
       return {
         value: template.name,
