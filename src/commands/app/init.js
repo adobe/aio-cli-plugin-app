@@ -223,7 +223,7 @@ class InitCommand extends AddCommand {
         {
           type: 'table',
           name: promptName,
-          bottomContent: '* = recommended by Adobe; to learn more about the templates, go to http://adobe.ly/templates',
+          bottomContent: `* = recommended by Adobe; to learn more about the templates, go to ${hyperlinker('http://adobe.ly/templates', 'http://adobe.ly/templates')}`,
           message: 'Choose the template(s) to install:',
           style: { head: [], border: [] },
           wordWrap: true,
@@ -233,7 +233,7 @@ class InitCommand extends AddCommand {
             { name: COLUMNS.COL_TEMPLATE },
             { name: COLUMNS.COL_DESCRIPTION, wrapOnWordBoundary: true },
             { name: COLUMNS.COL_EXTENSION_POINT },
-            { name: COLUMNS.COL_CATEGORIES, wrapOnWordBoundary: true }
+            { name: COLUMNS.COL_CATEGORIES, wrapOnWordBoundary: false }
           ],
           rows
         }
