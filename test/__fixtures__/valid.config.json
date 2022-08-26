@@ -48,7 +48,9 @@
                         "id": "17656565",
                         "name": "Project C",
                         "integration_type": "apikey",
-                        "apiKey": "AKAKAKAKAKAKAKAKAKAKAKAK"
+                        "api_key": {
+                            "client_id": "AKAKAKAKAKAKAKAKAKAKAKAK"
+                        }
                     },
                     {
                         "id": "17950",

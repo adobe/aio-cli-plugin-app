@@ -129,14 +129,14 @@
                     ]
                 },
                 "jwt": { "$ref": "#/definitions/jwt" },
-                "apiKey": { "$ref": "#/definitions/apikey" },
+                "api_key": { "$ref": "#/definitions/api_key" },
                 "oauth2": { "$ref": "#/definitions/oauth2" }
             },
             "required": [ "id", "name" ],
             "oneOf": [
                 { "required": ["oauth2"] },
                 { "required": ["jwt"] },
-                { "required": ["apiKey"] }
+                { "required": ["api_key"] }
             ]
         },
         "service": {
@@ -174,8 +174,12 @@
             },
             "required": [ "client_id", "client_secret", "redirect_uri", "defaultRedirectUri" ]
         },
-        "apikey": {
-            "type": "string"
+        "api_key": {
+            "type": "object",
+            "properties": {
+                "client_id": { "type": "string" }
+            },
+            "required": ["client_id"]
         },
         "jwt": {
             "type": "object",
