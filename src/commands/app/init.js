@@ -87,7 +87,7 @@ class InitCommand extends AddCommand {
     if (flags.template) {
       templates = flags.template
     } else if (!flags['standalone-app']) {
-      templates = await this.selectTemplates(flags)
+      templates = await this.selectTemplates()
     }
 
     // 3. run base code generators
@@ -121,7 +121,7 @@ class InitCommand extends AddCommand {
     if (flags.template) {
       templates = flags.template
     } else if (!flags['standalone-app']) {
-      templates = await this.selectTemplates(flags, orgSupportedServices)
+      templates = await this.selectTemplates(orgSupportedServices)
     }
 
     // 6. download workspace config
@@ -157,26 +157,75 @@ class InitCommand extends AddCommand {
     }
   }
 
-  async selectTemplates (flags, orgSupportedServices = null) {
+  async getSearchCriteria (orgSupportedServices) {
+    const choices = [
+      {
+        name: 'All Templates',
+        value: 'allTemplates',
+        checked: true
+      },
+      {
+        name: 'All Extension Points',
+        value: 'allExtensionPoints',
+        checked: false
+      }
+    ]
+
+    if (orgSupportedServices) {
+      choices.push({
+        name: 'Only Templates Supported By My Org',
+        value: 'orgTemplates',
+        checked: false
+      })
+    }
+
+    const { components: selection } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'components',
+        message: 'What templates do you want to search for?',
+        loop: false,
+        choices
+      }
+    ])
+
+    const searchCriteria = {
+      [TemplateRegistryAPI.SEARCH_CRITERIA_STATUSES]: TemplateRegistryAPI.TEMPLATE_STATUS_APPROVED
+    }
+
+    switch (selection) {
+      case 'orgTemplates': {
+        const supportedServiceCodes = new Set(orgSupportedServices.map(s => s.code))
+        searchCriteria[TemplateRegistryAPI.SEARCH_CRITERIA_APIS] = Array.from(supportedServiceCodes)
+      }
+        break
+      case 'allExtensionPoints':
+        searchCriteria[TemplateRegistryAPI.SEARCH_CRITERIA_EXTENSIONS] = TemplateRegistryAPI.SEARCH_CRITERIA_FILTER_ANY
+        break
+      case 'allTemplates':
+      default:
+        break
+    }
+
+    const { name: selectionLabel } = choices.find(item => item.value === selection)
+
+    // an optional OrderBy Criteria object
+    const orderByCriteria = {
+      [TemplateRegistryAPI.ORDER_BY_CRITERIA_PUBLISH_DATE]: TemplateRegistryAPI.ORDER_BY_CRITERIA_SORT_DESC
+    }
+
+    return [searchCriteria, orderByCriteria, selection, selectionLabel]
+  }
+
+  async getTemplates (searchCriteria, orderByCriteria) {
     // check that the template plugin has been installed
     const command = await this.config.findCommand('templates:install')
     if (!command) {
       this.error('aio-cli plugin @adobe/aio-cli-plugin-app-templates was not found. This plugin is required to install templates.')
     }
 
-    // const supportedServiceCodes = new Set(orgSupportedServices.map(s => s.code))
     const templateRegistryClient = TemplateRegistryAPI.init()
 
-    const searchCriteria = {
-      [TemplateRegistryAPI.SEARCH_CRITERIA_CATEGORIES]: flags.category,
-      [TemplateRegistryAPI.SEARCH_CRITERIA_STATUSES]: TemplateRegistryAPI.TEMPLATE_STATUS_APPROVED //,
-      // [TemplateRegistryAPI.SEARCH_CRITERIA_APIS]: Array.from(supportedServiceCodes)
-    }
-
-    // an optional OrderBy Criteria object
-    const orderByCriteria = {
-      [TemplateRegistryAPI.ORDER_BY_CRITERIA_PUBLISH_DATE]: TemplateRegistryAPI.ORDER_BY_CRITERIA_SORT_DESC
-    }
 
     const spinner = ora()
     const templateList = []
@@ -192,9 +241,21 @@ class InitCommand extends AddCommand {
     aioLogger.debug('template list', JSON.stringify(templateList, null, 2))
     spinner.succeed('Downloaded the list of templates')
 
+    return templateList
+  }
+
+  async selectTemplates (orgSupportedServices = null) {
+    const [searchCriteria, orderByCriteria, selection, selectionLabel] = await this.getSearchCriteria(orgSupportedServices)
+    aioLogger.debug('searchCriteria', JSON.stringify(searchCriteria, null, 2))
+    aioLogger.debug('orderByCriteria', JSON.stringify(orderByCriteria, null, 2))
+    aioLogger.debug('selection', selection)
+    aioLogger.debug('selectionLabel', selectionLabel)
+
+    const templateList = await this.getTemplates(searchCriteria, orderByCriteria)
+    aioLogger.debug('templateList', JSON.stringify(templateList, null, 2))
+
     if (templateList.length === 0) {
-      console.warn('There are no templates that match the query.')
-      return
+      this.error(`There are no templates that match the query for selection "${selectionLabel}"`)
     }
 
     const COLUMNS = {
