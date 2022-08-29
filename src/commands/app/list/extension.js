@@ -24,36 +24,31 @@ class ListExtensionCommand extends BaseCommand {
 
     const extConfig = this.getAppExtConfigs(flags)
     const extSummary = {}
-    const extPointList = {}
 
-    Object.keys(extConfig).forEach(key => {
-      const name = extConfig[key].name
-      const operations = Object.keys(extConfig[key].operations)
-      extPointList[name] = { operations }
-    })
+    Object.keys(extConfig).forEach(extPoint => {
+      if (extPoint === 'application') {
+        return
+      }
 
-    Object.keys(extPointList).forEach(extPoint => {
       const extension = extConfig[extPoint]
-      if (extension) {
-        const extDetails = { operations: {} }
-        extSummary[extPoint] = extDetails
+      const extDetails = { operations: {} }
+      extSummary[extPoint] = extDetails
 
-        // get view impl details
-        if (extension.operations.view) {
-          extDetails.operations.view = [
-            {
-              impl: extension.operations.view[0].impl
-            }
-          ]
-        }
-        // get worker impl details
-        if (extension.operations.workerProcess) {
-          extDetails.operations.workerProcess = [
-            {
-              impl: extension.operations.workerProcess[0].impl
-            }
-          ]
-        }
+      // get view impl details
+      if (extension.operations.view) {
+        extDetails.operations.view = [
+          {
+            impl: extension.operations.view[0].impl
+          }
+        ]
+      }
+      // get worker impl details
+      if (extension.operations.workerProcess) {
+        extDetails.operations.workerProcess = [
+          {
+            impl: extension.operations.workerProcess[0].impl
+          }
+        ]
       }
     })
     // print

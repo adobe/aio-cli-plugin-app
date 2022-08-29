@@ -25,10 +25,12 @@ class ListExtensionPointsCommand extends BaseCommand {
     const extConfig = this.getAppExtConfigs(flags)
     const extPointList = {}
 
-    Object.keys(extConfig).forEach(key => {
-      const name = extConfig[key].name
-      const operations = Object.keys(extConfig[key].operations)
-      extPointList[name] = { operations }
+    Object.keys(extConfig).forEach(name => {
+      if (name !== 'application') {
+        extPointList[name] = {
+          operations: Object.keys(extConfig[name].operations)
+        }
+      }
     })
 
     // print
