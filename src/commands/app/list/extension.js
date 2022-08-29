@@ -14,7 +14,6 @@ const BaseCommand = require('../../../BaseCommand')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:list:extensions', { provider: 'debug' })
 const { Flags } = require('@oclif/core')
 
-const { EXTENSION_POINT_LIST } = require('../../../lib/defaults')
 const chalk = require('chalk')
 const yaml = require('js-yaml')
 
@@ -25,8 +24,15 @@ class ListExtensionCommand extends BaseCommand {
 
     const extConfig = this.getAppExtConfigs(flags)
     const extSummary = {}
+    const extPointList = {}
 
-    Object.keys(EXTENSION_POINT_LIST).forEach(extPoint => {
+    Object.keys(extConfig).forEach(key => {
+      const name = extConfig[key].name
+      const operations = Object.keys(extConfig[key].operations)
+      extPointList[name] = { operations }
+    })
+
+    Object.keys(extPointList).forEach(extPoint => {
       const extension = extConfig[extPoint]
       if (extension) {
         const extDetails = { operations: {} }
