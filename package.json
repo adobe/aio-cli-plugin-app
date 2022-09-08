@@ -13,7 +13,7 @@
     "@adobe/aio-lib-env": "^2.0.0",
     "@adobe/aio-lib-ims": "^6.0.0",
     "@adobe/aio-lib-runtime": "^5.0.0",
-    "@adobe/aio-lib-web": "^6.0.0",
+    "@adobe/aio-lib-web": "^6.0.1",
     "@adobe/generator-aio-app": "^4.0.0",
     "@oclif/core": "^1.15.0",
     "@parcel/core": "^2.7.0",
