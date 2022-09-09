@@ -154,7 +154,7 @@ class Run extends BaseCommand {
     // 1. generate them using aio certificate generate command
     const CertCmd = this.config.findCommand('certificate:generate')
     if (CertCmd) {
-      const Instance = CertCmd.load()
+      const Instance =  await CertCmd.load()
       await Instance.run([`--keyout=${PRIVATE_KEY_PATH}`, `--out=${PUB_CERT_PATH}`, '-n=DeveloperSelfSigned.cert'])
     } else {
       // could not find the cert command, error is caught below
