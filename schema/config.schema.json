@@ -128,13 +128,15 @@
                         "oauthsinglepageapp"
                     ]
                 },
-                "oauth2": { "$ref": "#/definitions/oauth2" },
-                "jwt": { "$ref": "#/definitions/jwt" }
+                "jwt": { "$ref": "#/definitions/jwt" },
+                "api_key": { "$ref": "#/definitions/api_key" },
+                "oauth2": { "$ref": "#/definitions/oauth2" }
             },
             "required": [ "id", "name" ],
             "oneOf": [
                 { "required": ["oauth2"] },
-                { "required": ["jwt"] }
+                { "required": ["jwt"] },
+                { "required": ["api_key"] }
             ]
         },
         "service": {
@@ -171,6 +173,13 @@
                 }
             },
             "required": [ "client_id", "client_secret", "redirect_uri", "defaultRedirectUri" ]
+        },
+        "api_key": {
+            "type": "object",
+            "properties": {
+                "client_id": { "type": "string" }
+            },
+            "required": ["client_id"]
         },
         "jwt": {
             "type": "object",

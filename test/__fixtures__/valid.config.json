@@ -45,6 +45,14 @@
                         }
                     },
                     {
+                        "id": "17656565",
+                        "name": "Project C",
+                        "integration_type": "apikey",
+                        "api_key": {
+                            "client_id": "AKAKAKAKAKAKAKAKAKAKAKAK"
+                        }
+                    },
+                    {
                         "id": "17950",
                         "name": "New Test Intégration 8",
                         "integration_type": "oauthandroid",

@@ -39,7 +39,7 @@ class Info extends BaseCommand {
       this.log(JSON.stringify(appConfig))
     } else if (flags.yml) {
       // remove undefined fields
-      this.log(yaml.safeDump(JSON.parse(JSON.stringify(appConfig)), {}))
+      this.log(yaml.dump(JSON.parse(JSON.stringify(appConfig)), {}))
     } else { // flags.hson
       this.log(JSON.stringify(appConfig, null, 2))
     }

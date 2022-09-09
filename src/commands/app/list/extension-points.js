@@ -27,7 +27,7 @@ class ListExtensionPointsCommand extends BaseCommand {
     if (flags.json) {
       this.log(JSON.stringify(EXTENSION_POINT_LIST))
     } else if (flags.yml) {
-      this.log(yaml.safeDump(EXTENSION_POINT_LIST))
+      this.log(yaml.dump(EXTENSION_POINT_LIST))
     } else {
       this.log(chalk.bold('Extensions Points'))
       Object.keys(EXTENSION_POINT_LIST).forEach(key => {

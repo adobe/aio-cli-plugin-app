@@ -54,7 +54,7 @@ class ListExtensionCommand extends BaseCommand {
     if (flags.json) {
       this.log(JSON.stringify(extSummary))
     } else if (flags.yml) {
-      this.log(yaml.safeDump(extSummary))
+      this.log(yaml.dump(extSummary))
     } else {
       if (Object.keys(extSummary).length > 0) {
         this.log(chalk.bold('Extensions'))
