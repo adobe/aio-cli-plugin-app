@@ -10,10 +10,16 @@ governing permissions and limitations under the License.
 */
 
 const BaseCommand = require('../../../BaseCommand')
-const yeoman = require('yeoman-environment')
+const path = require('path')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
 const { Flags } = require('@oclif/core')
-const generators = require('@adobe/generator-aio-app')
+const fs = require('fs-extra')
+
+const { constants } = require('@adobe/generator-app-common-lib')
+const { ciDirName } = constants
+const DEPLOY_PROD_FILENAME = '/workflows/deploy_prod.yml'
+const DEPLOY_STAGE_FILENAME = '/workflows/deploy_stage.yml'
+const TEST_PR_FILENAME = '/workflows/pr_test.yml'
 
 class DeleteCICommand extends BaseCommand {
   async run () {
@@ -21,15 +27,24 @@ class DeleteCICommand extends BaseCommand {
 
     aioLogger.debug(`deleting CI files from the project, using flags: ${JSON.stringify(flags)}`)
 
-    const env = yeoman.createEnv()
-    // by default yeoman runs the install, we control installation from the app plugin
-    env.options = { skipInstall: true }
-    const gen = env.instantiate(generators['delete-ci'], {
-      options: {
-        'skip-prompt': flags.yes
+    if (!fs.existsSync(ciDirName)) {
+      this.error('you have no CI in your project')
+    }
+
+    const resConfirm = await this.prompt([
+      {
+        type: 'confirm',
+        name: 'deleteCI',
+        message: `Please confirm the deletion of all your CI files in '${ciDirName}'`,
+        when: !flags.yes
       }
-    })
-    await env.runGenerator(gen)
+    ])
+    if (flags.yes || resConfirm.deleteCI) {
+      fs.removeSync(path.join(ciDirName, DEPLOY_PROD_FILENAME))
+      fs.removeSync(path.join(ciDirName, DEPLOY_STAGE_FILENAME))
+      fs.removeSync(path.join(ciDirName, TEST_PR_FILENAME))
+      this.log('✔ deleted CI files locally')
+    }
   }
 }
 
