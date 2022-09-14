@@ -60,7 +60,7 @@
     "eslint-plugin-promise": "^6.0.0",
     "jest": "^28",
     "jest-plugin-fs": "^2.9.0",
-    "oclif": "^3.0.1",
+    "oclif": "^3.2.0",
     "stdout-stderr": "^0.1.9",
     "typescript": "^4.7.4"
   },
@@ -91,7 +91,7 @@
   "scripts": {
     "postpack": "rm -f oclif.manifest.json",
     "lint": "eslint src test",
-    "prepack": "oclif manifest && oclif readme",
+    "prepack": "oclif manifest && oclif readme --no-aliases",
     "test": "npm run unit-tests && npm run lint",
     "unit-tests": "jest -c jest.config.js",
     "version": "oclif readme && git add README.md",
