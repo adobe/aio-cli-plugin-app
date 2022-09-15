@@ -15,13 +15,12 @@ const path = require('path')
 const fs = require('fs-extra')
 const ora = require('ora')
 const chalk = require('chalk')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { Flags } = require('@oclif/core')
 const generators = require('@adobe/generator-aio-app')
 const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
 const inquirer = require('inquirer')
-const inquirerTablePrompt = require('inquirer-table-prompt')
 const hyperlinker = require('hyperlinker')
+const { selectTemplates, installTemplates } = require('../../lib/templates-helper')
 
 const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
 const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV } = require('../../lib/defaults')
@@ -34,6 +33,12 @@ class InitCommand extends AddCommand {
 
     if (!flags.login && flags.workspace !== DEFAULT_WORKSPACE) {
       this.error('--no-login and --workspace flags cannot be used together.')
+    }
+
+    // check that the template plugin has been installed
+    const command = await this.config.findCommand('templates:install')
+    if (!command) {
+      this.error('aio-cli plugin @adobe/aio-cli-plugin-app-templates was not found. This plugin is required to install templates.')
     }
 
     if (flags.import) {
@@ -87,7 +92,7 @@ class InitCommand extends AddCommand {
     if (flags.template) {
       templates = flags.template
     } else if (!flags['standalone-app']) {
-      templates = await this.selectTemplates()
+      templates = await selectTemplates()
     }
 
     // 3. run base code generators
@@ -95,7 +100,8 @@ class InitCommand extends AddCommand {
     await this.runCodeGenerators(destDir, flags, templates, projectName)
 
     // 4. install templates
-    await this.installTemplates(flags, templates)
+    const installer = (args) => this.config.runCommand('templates:install', args)
+    await installTemplates(flags.yes, true, templates, installer)
 
     // 5. import config - if any
     if (flags.import) {
@@ -121,7 +127,8 @@ class InitCommand extends AddCommand {
     if (flags.template) {
       templates = flags.template
     } else if (!flags['standalone-app']) {
-      templates = await this.selectTemplates(orgSupportedServices)
+      const [searchCriteria, orderByCriteria] = await this.getSearchCriteria(orgSupportedServices)
+      templates = await selectTemplates(searchCriteria, orderByCriteria)
     }
 
     // 6. download workspace config
@@ -134,7 +141,8 @@ class InitCommand extends AddCommand {
     await this.importConsoleConfig(consoleConfig)
 
     // 9. install templates
-    await this.installTemplates(flags, templates)
+    const installer = (args) => this.config.runCommand('templates:install', args)
+    await installTemplates(flags.yes, false, templates, installer)
 
     this.log(chalk.blue(chalk.bold(`Project initialized for Workspace ${workspace.name}, you can run 'aio app use -w <workspace>' to switch workspace.`)))
   }
@@ -216,91 +224,6 @@ class InitCommand extends AddCommand {
     }
 
     return [searchCriteria, orderByCriteria, selection, selectionLabel]
-  }
-
-  async getTemplates (searchCriteria, orderByCriteria) {
-    // check that the template plugin has been installed
-    const command = await this.config.findCommand('templates:install')
-    if (!command) {
-      this.error('aio-cli plugin @adobe/aio-cli-plugin-app-templates was not found. This plugin is required to install templates.')
-    }
-
-    const templateRegistryClient = TemplateRegistryAPI.init()
-
-    const spinner = ora()
-    const templateList = []
-
-    spinner.start('Getting available templates')
-    const templatesIterator = templateRegistryClient.getTemplates(searchCriteria, orderByCriteria)
-
-    for await (const templates of templatesIterator) {
-      for (const template of templates) {
-        templateList.push(template)
-      }
-    }
-    aioLogger.debug('template list', JSON.stringify(templateList, null, 2))
-    spinner.succeed('Downloaded the list of templates')
-
-    return templateList
-  }
-
-  async selectTemplates (orgSupportedServices = null) {
-    const [searchCriteria, orderByCriteria, selection, selectionLabel] = await this.getSearchCriteria(orgSupportedServices)
-    aioLogger.debug('searchCriteria', JSON.stringify(searchCriteria, null, 2))
-    aioLogger.debug('orderByCriteria', JSON.stringify(orderByCriteria, null, 2))
-    aioLogger.debug('selection', selection)
-    aioLogger.debug('selectionLabel', selectionLabel)
-
-    const templateList = await this.getTemplates(searchCriteria, orderByCriteria)
-    aioLogger.debug('templateList', JSON.stringify(templateList, null, 2))
-
-    if (templateList.length === 0) {
-      this.error(`There are no templates that match the query for selection "${selectionLabel}"`)
-    }
-
-    const COLUMNS = {
-      COL_TEMPLATE: 'Template',
-      COL_DESCRIPTION: 'Description',
-      COL_EXTENSION_POINT: 'Extension Point',
-      COL_CATEGORIES: 'Categories'
-    }
-
-    const rows = templateList.map(template => {
-      const extensionPoint = template.extensions ? template.extensions.map(ext => ext.extensionPointId).join(',') : 'N/A'
-      const name = template.adobeRecommended ? `${template.name} *` : template.name
-      return {
-        value: template.name,
-        [COLUMNS.COL_TEMPLATE]: name,
-        [COLUMNS.COL_DESCRIPTION]: template.description,
-        [COLUMNS.COL_EXTENSION_POINT]: extensionPoint,
-        [COLUMNS.COL_CATEGORIES]: template.categories.join(', ')
-      }
-    })
-    const promptName = 'select template'
-
-    inquirer.registerPrompt('table', inquirerTablePrompt)
-    const answers = await inquirer
-      .prompt([
-        {
-          type: 'table',
-          name: promptName,
-          bottomContent: `* = recommended by Adobe; to learn more about the templates, go to ${hyperlinker('http://adobe.ly/templates', 'http://adobe.ly/templates')}`,
-          message: 'Choose the template(s) to install:',
-          style: { head: [], border: [] },
-          wordWrap: true,
-          wrapOnWordBoundary: false,
-          colWidths: [30, 30, 20, 15],
-          columns: [
-            { name: COLUMNS.COL_TEMPLATE },
-            { name: COLUMNS.COL_DESCRIPTION, wrapOnWordBoundary: true },
-            { name: COLUMNS.COL_EXTENSION_POINT },
-            { name: COLUMNS.COL_CATEGORIES, wrapOnWordBoundary: false }
-          ],
-          rows
-        }
-      ])
-
-    return answers[promptName]
   }
 
   async selectConsoleOrg (consoleCLI) {
@@ -408,24 +331,6 @@ class InitCommand extends AddCommand {
         }
       })
       await env.runGenerator(appGen)
-    }
-  }
-
-  async installTemplates (flags, templates) {
-    const spinner = ora()
-
-    // install the templates in sequence
-    for (const template of templates) {
-      spinner.info(`Installing template ${template}`)
-      const installArgs = [template]
-      if (flags.yes) {
-        installArgs.push('--yes')
-      }
-      if (!flags.login) {
-        installArgs.push('--no-process-install-config')
-      }
-      await this.config.runCommand('templates:install', installArgs)
-      spinner.succeed(`Installed template ${template}`)
     }
   }
 
