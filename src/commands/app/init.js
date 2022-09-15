@@ -190,7 +190,8 @@ class InitCommand extends AddCommand {
     ])
 
     const searchCriteria = {
-      [TemplateRegistryAPI.SEARCH_CRITERIA_STATUSES]: TemplateRegistryAPI.TEMPLATE_STATUS_APPROVED
+      [TemplateRegistryAPI.SEARCH_CRITERIA_STATUSES]: TemplateRegistryAPI.TEMPLATE_STATUS_APPROVED,
+      [TemplateRegistryAPI.SEARCH_CRITERIA_CATEGORIES]: TemplateRegistryAPI.SEARCH_CRITERIA_FILTER_NOT + 'helper-template'
     }
 
     switch (selection) {
@@ -225,7 +226,6 @@ class InitCommand extends AddCommand {
     }
 
     const templateRegistryClient = TemplateRegistryAPI.init()
-
 
     const spinner = ora()
     const templateList = []
