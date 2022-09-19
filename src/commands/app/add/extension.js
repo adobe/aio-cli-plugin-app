@@ -26,11 +26,11 @@ class AddExtensionCommand extends AddCommand {
       this.error('--extension= must also be provided when using --yes')
     }
 
-    // const fullConfig = this.getFullConfig({ allowNoImpl: true })
-    // TODO: fullConfig.implements is an array of extension ids already in the project (for filtering)
+    const fullConfig = this.getFullConfig({ allowNoImpl: true })
+    const excludeExtensions = fullConfig.implements.map(e => `${TemplateRegistryAPI.SEARCH_CRITERIA_FILTER_NOT}${e}`)
 
     const searchCriteria = {
-      [TemplateRegistryAPI.SEARCH_CRITERIA_EXTENSIONS]: TemplateRegistryAPI.SEARCH_CRITERIA_FILTER_ANY
+      [TemplateRegistryAPI.SEARCH_CRITERIA_EXTENSIONS]: excludeExtensions
     }
     const orderByCriteria = {
       [TemplateRegistryAPI.ORDER_BY_CRITERIA_PUBLISH_DATE]: TemplateRegistryAPI.ORDER_BY_CRITERIA_SORT_DESC
