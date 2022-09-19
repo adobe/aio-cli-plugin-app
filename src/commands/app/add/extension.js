@@ -37,8 +37,12 @@ class AddExtensionCommand extends AddCommand {
     }
 
     const templates = await selectTemplates(searchCriteria, orderByCriteria)
-    const installer = (args) => this.config.runCommand('templates:install', args)
-    await installTemplates(flags.yes, false, templates, installer)
+    if (templates.length === 0) {
+      this.error('No extensions were chosen to be installed.')
+    } else {
+      const installer = (args) => this.config.runCommand('templates:install', args)
+      await installTemplates(flags.yes, false, templates, installer)
+    }
   }
 }
 
