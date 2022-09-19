@@ -50,6 +50,17 @@ async function selectTemplates (searchCriteria, orderByCriteria) {
     throw new Error('There are no templates that match the query for selection')
   }
 
+  // eslint-disable-next-line node/no-unsupported-features/es-syntax
+  const { default: terminalSize } = await import('term-size')
+  const { columns: terminalColumns } = terminalSize()
+
+  const colPadding = 3
+  const colWidths = [
+    Math.round(0.3 * terminalColumns) - colPadding,
+    Math.round(0.3 * terminalColumns) - colPadding,
+    Math.round(0.2 * terminalColumns) - colPadding,
+    Math.round(0.2 * terminalColumns) - colPadding]
+
   const COLUMNS = {
     COL_TEMPLATE: 'Template',
     COL_DESCRIPTION: 'Description',
@@ -81,7 +92,7 @@ async function selectTemplates (searchCriteria, orderByCriteria) {
         style: { head: [], border: [] },
         wordWrap: true,
         wrapOnWordBoundary: false,
-        colWidths: [30, 30, 20, 15],
+        colWidths,
         columns: [
           { name: COLUMNS.COL_TEMPLATE },
           { name: COLUMNS.COL_DESCRIPTION, wrapOnWordBoundary: true },
