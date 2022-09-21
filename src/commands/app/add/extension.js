@@ -9,13 +9,12 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const AddCommand = require('../../../AddCommand')
+const TemplatesCommand = require('../../../TemplatesCommand')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
 const { Flags } = require('@oclif/core')
 const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
-const { selectTemplates, installTemplates } = require('../../../lib/templates-helper')
 
-class AddExtensionCommand extends AddCommand {
+class AddExtensionCommand extends TemplatesCommand {
   async run () {
     const { flags } = await this.parse(AddExtensionCommand)
 
@@ -36,12 +35,11 @@ class AddExtensionCommand extends AddCommand {
       [TemplateRegistryAPI.ORDER_BY_CRITERIA_PUBLISH_DATE]: TemplateRegistryAPI.ORDER_BY_CRITERIA_SORT_DESC
     }
 
-    const templates = await selectTemplates(searchCriteria, orderByCriteria)
+    const templates = await this.selectTemplates(searchCriteria, orderByCriteria)
     if (templates.length === 0) {
       this.error('No extensions were chosen to be installed.')
     } else {
-      const installer = (args) => this.config.runCommand('templates:install', args)
-      await installTemplates(flags.yes, false, templates, installer)
+      await this.installTemplates(flags.yes, false, templates)
     }
   }
 }
@@ -54,7 +52,7 @@ AddExtensionCommand.flags = {
     default: false,
     char: 'y'
   }),
-  ...AddCommand.flags
+  ...TemplatesCommand.flags
 }
 
 AddExtensionCommand.aliases = ['app:add:ext', 'app:add:extensions']

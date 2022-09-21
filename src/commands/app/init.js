@@ -9,7 +9,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const AddCommand = require('../../AddCommand')
+const TemplatesCommand = require('../../TemplatesCommand')
 const yeoman = require('yeoman-environment')
 const path = require('path')
 const fs = require('fs-extra')
@@ -20,14 +20,13 @@ const generators = require('@adobe/generator-aio-app')
 const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
 const inquirer = require('inquirer')
 const hyperlinker = require('hyperlinker')
-const { selectTemplates, installTemplates } = require('../../lib/templates-helper')
 
 const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
 const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV } = require('../../lib/defaults')
 
 const DEFAULT_WORKSPACE = 'Stage'
 
-class InitCommand extends AddCommand {
+class InitCommand extends TemplatesCommand {
   async run () {
     const { args, flags } = await this.parse(InitCommand)
 
@@ -92,7 +91,7 @@ class InitCommand extends AddCommand {
     if (flags.template) {
       templates = flags.template
     } else if (!flags['standalone-app']) {
-      templates = await selectTemplates()
+      templates = await this.selectTemplates()
     }
 
     // 3. run base code generators
@@ -100,8 +99,7 @@ class InitCommand extends AddCommand {
     await this.runCodeGenerators(destDir, flags, templates, projectName)
 
     // 4. install templates
-    const installer = (args) => this.config.runCommand('templates:install', args)
-    await installTemplates(flags.yes, true, templates, installer)
+    await this.installTemplates(flags.yes, true, templates)
 
     // 5. import config - if any
     if (flags.import) {
@@ -128,7 +126,7 @@ class InitCommand extends AddCommand {
       templates = flags.template
     } else if (!flags['standalone-app']) {
       const [searchCriteria, orderByCriteria] = await this.getSearchCriteria(orgSupportedServices)
-      templates = await selectTemplates(searchCriteria, orderByCriteria)
+      templates = await this.selectTemplates(searchCriteria, orderByCriteria)
     }
 
     // 6. download workspace config
@@ -141,8 +139,7 @@ class InitCommand extends AddCommand {
     await this.importConsoleConfig(consoleConfig)
 
     // 9. install templates
-    const installer = (args) => this.config.runCommand('templates:install', args)
-    await installTemplates(flags.yes, false, templates, installer)
+    await this.installTemplates(flags.yes, false, templates)
 
     this.log(chalk.blue(chalk.bold(`Project initialized for Workspace ${workspace.name}, you can run 'aio app use -w <workspace>' to switch workspace.`)))
   }
@@ -356,7 +353,7 @@ InitCommand.description = `Create a new Adobe I/O App
 `
 
 InitCommand.flags = {
-  ...AddCommand.flags,
+  ...TemplatesCommand.flags,
   yes: Flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
