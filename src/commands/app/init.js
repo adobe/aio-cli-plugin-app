@@ -52,7 +52,8 @@ class InitCommand extends TemplatesCommand {
     }
 
     const spinner = ora()
-    if (flags.import || !flags.login) {
+    const noLogin = flags.import || !flags.login
+    if (noLogin) {
       // import a console config - no login required!
       await this.initNoLogin(destDir, flags)
     } else {
@@ -64,7 +65,11 @@ class InitCommand extends TemplatesCommand {
     await this.runInstallPackages(flags, spinner)
 
     this.log(chalk.bold(chalk.green('✔ App initialization finished!')))
-    this.log('> Tip: you can add more actions, web-assets and events to your project via the `aio app add` commands')
+    this.log(`> Tip: you can add more actions, web-assets and events to your project via the '${this.config.bin} app add' commands`)
+
+    if (noLogin) {
+      this.log(`> Run '${this.config.bin} templates info --required-services' to list the required services for the installed templates`)
+    }
   }
 
   /** @private */
@@ -91,7 +96,14 @@ class InitCommand extends TemplatesCommand {
     if (flags.template) {
       templates = flags.template
     } else if (!flags['standalone-app']) {
-      templates = await this.selectTemplates()
+      const searchCriteria = {
+        [TemplateRegistryAPI.SEARCH_CRITERIA_STATUSES]: TemplateRegistryAPI.TEMPLATE_STATUS_APPROVED,
+        [TemplateRegistryAPI.SEARCH_CRITERIA_CATEGORIES]: TemplateRegistryAPI.SEARCH_CRITERIA_FILTER_NOT + 'helper-template'
+      }
+      const orderByCriteria = {
+        [TemplateRegistryAPI.ORDER_BY_CRITERIA_PUBLISH_DATE]: TemplateRegistryAPI.ORDER_BY_CRITERIA_SORT_DESC
+      }
+      templates = await this.selectTemplates(searchCriteria, orderByCriteria)
     }
 
     // 3. run base code generators
