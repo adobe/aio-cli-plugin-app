@@ -9,22 +9,19 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const AddCommand = require('../../../AddCommand')
-const yeoman = require('yeoman-environment')
+const TemplatesCommand = require('../../../TemplatesCommand')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
 const { Flags } = require('@oclif/core')
-const ora = require('ora')
 const path = require('path')
-const generators = require('@adobe/generator-aio-app')
-const { servicesToGeneratorInput } = require('../../../lib/app-helper')
 const aioConfigLoader = require('@adobe/aio-lib-core-config')
+const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
+const inquirer = require('inquirer')
 
-class AddActionCommand extends AddCommand {
+class AddActionCommand extends TemplatesCommand {
   async run () {
     const { flags } = await this.parse(AddActionCommand)
 
     aioLogger.debug(`add actions with flags: ${JSON.stringify(flags)}`)
-    const spinner = ora()
 
     // guaranteed to have at least one, otherwise would throw in config load or in matching the ext name
     const entries = Object.entries(this.getAppExtConfigs(flags))
@@ -35,33 +32,85 @@ class AddActionCommand extends AddCommand {
     const config = entries[0][1]
 
     const actionFolder = path.relative(config.root, config.actions.src)
-
     const configData = this.getRuntimeManifestConfigFile(configName)
 
-    // NOTE: we could get fresh data from console if we know that user is logged in
-    const workspaceServices =
-      aioConfigLoader.get('services') || // legacy
-      aioConfigLoader.get('project.workspace.details.services') ||
-      []
-    const supportedOrgServices = aioConfigLoader.get('project.org.details.services') || []
+    const consoleCLI = await this.getLibConsoleCLI()
+    const supportedOrgServices = await consoleCLI.getEnabledServicesForOrg(aioConfigLoader.get('project.org.id'))
 
-    const env = yeoman.createEnv()
-    // by default yeoman runs the install, we control installation from the app plugin
-    env.options = { skipInstall: true }
-    const addActionGen = env.instantiate(generators['add-action'], {
-      options: {
-        'skip-prompt': flags.yes,
-        'action-folder': actionFolder,
-        'config-path': configData.file,
-        'adobe-services': servicesToGeneratorInput(workspaceServices),
-        'supported-adobe-services': servicesToGeneratorInput(supportedOrgServices),
-        'full-key-to-manifest': configData.key
-        // force: true
+    const templateOptions = {
+      'skip-prompt': flags.yes,
+      'action-folder': actionFolder,
+      'config-path': configData.file,
+      'full-key-to-manifest': configData.key
+    }
+
+    const [searchCriteria, orderByCriteria] = await this.getSearchCriteria(supportedOrgServices)
+    const templates = await this.selectTemplates(searchCriteria, orderByCriteria)
+    if (templates.length === 0) {
+      this.error('No action templates were chosen to be installed.')
+    } else {
+      await this.installTemplates({
+        useDefaultValues: flags.yes,
+        skipInstallConfig: false,
+        templateOptions,
+        templates
+      })
+    }
+  }
+
+  async getSearchCriteria (orgSupportedServices) {
+    const choices = [
+      {
+        name: 'All Action Templates',
+        value: 'allActionTemplates',
+        checked: true
       }
-    })
-    await env.runGenerator(addActionGen)
+    ]
 
-    await this.runInstallPackages(flags, spinner)
+    if (orgSupportedServices) {
+      choices.push({
+        name: 'Only Action Templates Supported By My Org',
+        value: 'orgActionTemplates',
+        checked: false
+      })
+    }
+
+    const { components: selection } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'components',
+        message: 'What action templates do you want to search for?',
+        loop: false,
+        choices
+      }
+    ])
+
+    const TEMPLATE_CATEGORIES = ['action', 'helper-template']
+    const searchCriteria = {
+      [TemplateRegistryAPI.SEARCH_CRITERIA_STATUSES]: TemplateRegistryAPI.TEMPLATE_STATUS_APPROVED,
+      [TemplateRegistryAPI.SEARCH_CRITERIA_CATEGORIES]: TEMPLATE_CATEGORIES,
+      [TemplateRegistryAPI.SEARCH_CRITERIA_EXTENSIONS]: TemplateRegistryAPI.SEARCH_CRITERIA_FILTER_NONE
+    }
+
+    switch (selection) {
+      case 'orgActionTemplates': {
+        const supportedServiceCodes = new Set(orgSupportedServices.map(s => s.code))
+        searchCriteria[TemplateRegistryAPI.SEARCH_CRITERIA_APIS] = Array.from(supportedServiceCodes)
+      }
+        break
+      case 'allActionTemplates':
+      default:
+        break
+    }
+
+    const { name: selectionLabel } = choices.find(item => item.value === selection)
+
+    // an optional OrderBy Criteria object
+    const orderByCriteria = {
+      [TemplateRegistryAPI.ORDER_BY_CRITERIA_PUBLISH_DATE]: TemplateRegistryAPI.ORDER_BY_CRITERIA_SORT_DESC
+    }
+
+    return [searchCriteria, orderByCriteria, selection, selectionLabel]
   }
 }
 
@@ -80,7 +129,7 @@ AddActionCommand.flags = {
     multiple: false,
     parse: str => [str]
   }),
-  ...AddCommand.flags
+  ...TemplatesCommand.flags
 }
 
 AddActionCommand.aliases = ['app:add:actions']

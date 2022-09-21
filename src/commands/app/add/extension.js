@@ -39,7 +39,11 @@ class AddExtensionCommand extends TemplatesCommand {
     if (templates.length === 0) {
       this.error('No extensions were chosen to be installed.')
     } else {
-      await this.installTemplates(flags.yes, false, templates)
+      await this.installTemplates({
+        useDefaultValues: flags.yes,
+        skipInstallConfig: false,
+        templates
+      })
     }
   }
 }

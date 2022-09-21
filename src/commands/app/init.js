@@ -99,7 +99,7 @@ class InitCommand extends TemplatesCommand {
     await this.runCodeGenerators(destDir, flags, templates, projectName)
 
     // 4. install templates
-    await this.installTemplates(flags.yes, true, templates)
+    await this.installTemplates(flags.yes, true, null, templates)
 
     // 5. import config - if any
     if (flags.import) {
@@ -139,7 +139,11 @@ class InitCommand extends TemplatesCommand {
     await this.importConsoleConfig(consoleConfig)
 
     // 9. install templates
-    await this.installTemplates(flags.yes, false, templates)
+    await this.installTemplates({
+      useDefaultValues: flags.yes,
+      skipInstallConfig: false,
+      templates
+    })
 
     this.log(chalk.blue(chalk.bold(`Project initialized for Workspace ${workspace.name}, you can run 'aio app use -w <workspace>' to switch workspace.`)))
   }

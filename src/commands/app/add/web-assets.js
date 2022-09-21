@@ -9,19 +9,14 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const AddCommand = require('../../../AddCommand')
-const yeoman = require('yeoman-environment')
+const TemplatesCommand = require('../../../TemplatesCommand')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:web-assets', { provider: 'debug' })
 const { Flags } = require('@oclif/core')
-const ora = require('ora')
-const generators = require('@adobe/generator-aio-app')
-const aioConfigLoader = require('@adobe/aio-lib-core-config')
-const { servicesToGeneratorInput } = require('../../../lib/app-helper')
+const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
 
-class AddWebAssetsCommand extends AddCommand {
+class AddWebAssetsCommand extends TemplatesCommand {
   async run () {
     const { flags } = await this.parse(AddWebAssetsCommand)
-    const spinner = ora()
     aioLogger.debug(`add web-assets with flags: ${JSON.stringify(flags)}`)
 
     const projectName = this.getFullConfig().packagejson.name
@@ -33,26 +28,33 @@ class AddWebAssetsCommand extends AddCommand {
     const config = entries[0][1]
     const webSrcFolder = config.web.src
 
-    const workspaceServices =
-      aioConfigLoader.get('services') || // legacy
-      aioConfigLoader.get('project.workspace.details.services') ||
-      []
+    const templateOptions = {
+      'skip-prompt': flags.yes,
+      'project-name': projectName,
+      'web-src-folder': webSrcFolder
+    }
 
-    const env = yeoman.createEnv()
-    // by default yeoman runs the install, we control installation from the app plugin
-    env.options = { skipInstall: true }
-    const gen = env.instantiate(generators['add-web-assets'], {
-      options: {
-        'skip-prompt': flags.yes,
-        'project-name': projectName,
-        'web-src-folder': webSrcFolder,
-        'adobe-services': servicesToGeneratorInput(workspaceServices)
-        // force: true
-      }
-    })
-    await env.runGenerator(gen)
+    const TEMPLATE_CATEGORIES = ['ui', 'helper-template']
+    const searchCriteria = {
+      [TemplateRegistryAPI.SEARCH_CRITERIA_STATUSES]: TemplateRegistryAPI.TEMPLATE_STATUS_APPROVED,
+      [TemplateRegistryAPI.SEARCH_CRITERIA_CATEGORIES]: TEMPLATE_CATEGORIES,
+      [TemplateRegistryAPI.SEARCH_CRITERIA_EXTENSIONS]: TemplateRegistryAPI.SEARCH_CRITERIA_FILTER_NONE
+    }
+    const orderByCriteria = {
+      [TemplateRegistryAPI.ORDER_BY_CRITERIA_PUBLISH_DATE]: TemplateRegistryAPI.ORDER_BY_CRITERIA_SORT_DESC
+    }
 
-    await this.runInstallPackages(flags, spinner)
+    const templates = await this.selectTemplates(searchCriteria, orderByCriteria)
+    if (templates.length === 0) {
+      this.error('No web-asset templates were chosen to be installed.')
+    } else {
+      await this.installTemplates({
+        useDefaultValues: flags.yes,
+        skipInstallConfig: false,
+        templateOptions,
+        templates
+      })
+    }
   }
 }
 
@@ -71,7 +73,7 @@ AddWebAssetsCommand.flags = {
     multiple: false,
     parse: str => [str]
   }),
-  ...AddCommand.flags
+  ...TemplatesCommand.flags
 }
 
 AddWebAssetsCommand.args = []

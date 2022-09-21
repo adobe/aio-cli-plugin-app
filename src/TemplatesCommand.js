@@ -122,11 +122,18 @@ class TemplatesCommand extends AddCommand {
   /**
    * Install the templates.
    *
-   * @param {boolean} [useDefaultValues=false] use default values when installing the template
-   * @param {boolean} [skipInstallConfig=false] skip processing the install.yml of the template
-   * @param {Array} templates the list of templates to install
+   * @param {object} templateData the template data
+   * @param {boolean} [templateData.useDefaultValues=false] use default values when installing the template
+   * @param {boolean} [templateData.skipInstallConfig=false] skip processing the install.yml of the template
+   * @param {object} [templateData.templateOptions=null] set the template options for installation
+   * @param {Array} templateData.templates the list of templates to install
    */
-  async installTemplates (useDefaultValues = false, skipInstallConfig = false, templates) {
+  async installTemplates ({
+    useDefaultValues = false,
+    skipInstallConfig = false,
+    templateOptions = null,
+    templates = []
+  } = {}) {
     const spinner = ora()
 
     // install the templates in sequence
@@ -138,6 +145,14 @@ class TemplatesCommand extends AddCommand {
       }
       if (skipInstallConfig) {
         installArgs.push('--no-process-install-config')
+      }
+
+      if (templateOptions) {
+        if (typeof templateOptions !== 'object' || Array.isArray(templateOptions)) { // must be a non-array object
+          throw new Error(`templateOptions ${templateOptions} is not a JavaScript object.`)
+        }
+        const jsonString = JSON.stringify(templateOptions)
+        installArgs.push(`--template-options=${Buffer.from(jsonString).toString('base64')}`)
       }
 
       await this.config.runCommand('templates:install', installArgs)
