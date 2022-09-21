@@ -16,6 +16,7 @@ const inquirer = require('inquirer')
 const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
 const hyperlinker = require('hyperlinker')
 const ora = require('ora')
+const terminalSize = require('term-size')
 
 class TemplatesCommand extends AddCommand {
   /**
@@ -63,8 +64,6 @@ class TemplatesCommand extends AddCommand {
       throw new Error('There are no templates that match the query for selection')
     }
 
-    // eslint-disable-next-line node/no-unsupported-features/es-syntax
-    const { default: terminalSize } = await import('term-size')
     const { columns: terminalColumns } = terminalSize()
 
     const colPadding = 3
@@ -100,7 +99,7 @@ class TemplatesCommand extends AddCommand {
         {
           type: 'table',
           name: promptName,
-          bottomContent: `* = recommended by Adobe; to learn more about the templates, go to ${hyperlinker('http://adobe.ly/templates', 'http://adobe.ly/templates')}`,
+          bottomContent: `* = recommended by Adobe; to learn more about the templates, go to ${hyperlinker('https://adobe.ly/templates', 'https://adobe.ly/templates')}`,
           message: 'Choose the template(s) to install:',
           style: { head: [], border: [] },
           wordWrap: true,
