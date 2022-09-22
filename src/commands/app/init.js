@@ -153,7 +153,6 @@ class InitCommand extends TemplatesCommand {
     // 9. install templates
     await this.installTemplates({
       useDefaultValues: flags.yes,
-      skipInstallConfig: false,
       templates
     })
 

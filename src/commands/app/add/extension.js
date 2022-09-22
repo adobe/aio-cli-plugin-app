@@ -19,7 +19,6 @@ class AddExtensionCommand extends TemplatesCommand {
     const { flags } = await this.parse(AddExtensionCommand)
 
     aioLogger.debug(`add extensions with flags: ${JSON.stringify(flags)}`)
-    // const spinner = ora()
 
     if (flags.yes && !flags.extension) {
       this.error('--extension= must also be provided when using --yes')
@@ -29,13 +28,13 @@ class AddExtensionCommand extends TemplatesCommand {
     const alreadyImplemented = fullConfig.implements
 
     if (flags.extension) {
-      await this.installExtensionsByName(flags.extension, alreadyImplemented, flags.yes)
+      await this.installExtensionsByName(flags.extension, alreadyImplemented, flags.yes, flags.install)
     } else {
-      await this.selectExtensionsToInstall(alreadyImplemented, flags.yes)
+      await this.selectExtensionsToInstall(alreadyImplemented, flags.yes, flags.install)
     }
   }
 
-  async selectExtensionsToInstall (alreadyImplemented, useDefaultValues) {
+  async selectExtensionsToInstall (alreadyImplemented, useDefaultValues, installNpm) {
     const excludeExtensions = alreadyImplemented.map(e => `${TemplateRegistryAPI.SEARCH_CRITERIA_FILTER_NOT}${e}`)
 
     const orderByCriteria = {
@@ -53,7 +52,7 @@ class AddExtensionCommand extends TemplatesCommand {
     } else {
       await this.installTemplates({
         useDefaultValues,
-        skipInstallConfig: false,
+        installNpm,
         templates
       })
     }
@@ -63,7 +62,7 @@ class AddExtensionCommand extends TemplatesCommand {
     return Array.from(new Set(array))
   }
 
-  async installExtensionsByName (extensions, alreadyImplemented, useDefaultValues) {
+  async installExtensionsByName (extensions, alreadyImplemented, useDefaultValues, installNpm) {
     const orderByCriteria = {
       [TemplateRegistryAPI.ORDER_BY_CRITERIA_PUBLISH_DATE]: TemplateRegistryAPI.ORDER_BY_CRITERIA_SORT_DESC
     }
@@ -91,14 +90,14 @@ class AddExtensionCommand extends TemplatesCommand {
 
     const extensionsNotFound = this._uniqueArray(extensions).filter(x => !extensionsFound.includes(x))
     if (extensionsNotFound.length > 0) {
-      this.warn(`Extension(s) '${extensionsNotFound.join(', ')}' not found in the Template Registry.`)
+      this.error(`Extension(s) '${extensionsNotFound.join(', ')}' not found in the Template Registry.`)
     }
 
     if (extensionsFound.length > 0) {
       this.log(`Extension(s) '${extensionsFound.join(', ')}' found in the Template Registry. Installing...`)
       await this.installTemplates({
         useDefaultValues,
-        skipInstallConfig: false,
+        installNpm,
         templates: templateList.map(t => t.name)
       })
     }

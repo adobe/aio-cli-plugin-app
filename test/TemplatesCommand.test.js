@@ -1,5 +1,5 @@
 /*
-Copyright 2019 Adobe. All rights reserved.
+Copyright 2022 Adobe. All rights reserved.
 This file is licensed to you under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License. You may obtain a copy
 of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -10,24 +10,19 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-module.exports = {
-  testEnvironment: 'node',
-  verbose: true,
-  setupFilesAfterEnv: ['./test/jest.setup.js'],
-  collectCoverage: true,
-  testPathIgnorePatterns: [
-    '<rootDir>/src/*'
-  ],
-  collectCoverageFrom: [
-    'src/commands/**/*.js',
-    'src/lib/*.js',
-    'src/*.js'
-  ],
-  coverageThreshold: {
-    global: {
-      branches: 100,
-      lines: 100,
-      statements: 100
-    }
-  }
-}
+const TheCommand = require('../src/TemplatesCommand')
+const BaseCommand = require('../src/BaseCommand')
+
+beforeEach(() => {
+})
+
+describe('Command Prototype', () => {
+  test('exports', async () => {
+    expect(typeof TheCommand).toEqual('function')
+    expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
+    expect(typeof TheCommand.flags).toBe('object')
+  })
+  test('flags', async () => {
+    expect(TheCommand.flags).toEqual(expect.objectContaining(BaseCommand.flags))
+  })
+})

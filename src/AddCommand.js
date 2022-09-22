@@ -15,8 +15,7 @@ const { installPackages } = require('./lib/app-helper')
 
 class AddCommand extends BaseCommand {
   async runInstallPackages (flags, spinner) {
-    const doInstall = flags.install && !flags['skip-install']
-    if (doInstall) {
+    if (flags.install) {
       await installPackages('.', { spinner, verbose: flags.verbose })
     } else {
       this.log('skipped installation, make sure to run \'npm install\' later on')
@@ -25,11 +24,6 @@ class AddCommand extends BaseCommand {
 }
 
 AddCommand.flags = {
-  'skip-install': Flags.boolean({
-    description: '[deprecated] Please use --no-install',
-    char: 's',
-    default: false
-  }),
   install: Flags.boolean({
     description: '[default: true] Run npm installation after files are created',
     default: true,

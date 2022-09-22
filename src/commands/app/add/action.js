@@ -51,7 +51,7 @@ class AddActionCommand extends TemplatesCommand {
     } else {
       await this.installTemplates({
         useDefaultValues: flags.yes,
-        skipInstallConfig: false,
+        installNpm: flags.install,
         templateOptions,
         templates
       })

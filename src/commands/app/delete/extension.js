@@ -108,9 +108,10 @@ DeleteExtensionCommand.flags = {
     default: false,
     char: 'y'
   }),
-  'skip-install': Flags.boolean({
-    description: 'Skip npm installation after files are created',
-    default: false
+  install: Flags.boolean({
+    description: '[default: true] Run npm installation after files are created',
+    default: true,
+    allowNo: true
   }),
   extension: Flags.string({
     description: 'Specify extensions to delete, skips selection prompt',

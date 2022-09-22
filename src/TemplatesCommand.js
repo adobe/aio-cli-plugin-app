@@ -123,13 +123,15 @@ class TemplatesCommand extends AddCommand {
    *
    * @param {object} templateData the template data
    * @param {boolean} [templateData.useDefaultValues=false] use default values when installing the template
-   * @param {boolean} [templateData.skipInstallConfig=false] skip processing the install.yml of the template
+   * @param {boolean} [templateData.installConfig=true] process the install.yml of the template
+   * @param {boolean} [templateData.installNpm=true] run npm install after installing the template
    * @param {object} [templateData.templateOptions=null] set the template options for installation
    * @param {Array} templateData.templates the list of templates to install
    */
   async installTemplates ({
     useDefaultValues = false,
-    skipInstallConfig = false,
+    installConfig = false,
+    installNpm = true,
     templateOptions = null,
     templates = []
   } = {}) {
@@ -142,8 +144,11 @@ class TemplatesCommand extends AddCommand {
       if (useDefaultValues) {
         installArgs.push('--yes')
       }
-      if (skipInstallConfig) {
+      if (!installConfig) {
         installArgs.push('--no-process-install-config')
+      }
+      if (!installNpm) {
+        installArgs.push('--no-install')
       }
 
       if (templateOptions) {

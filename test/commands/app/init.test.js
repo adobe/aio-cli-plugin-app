@@ -161,9 +161,9 @@ describe('Command Prototype', () => {
     expect(TheCommand.flags.yes.char).toBe('y')
     expect(TheCommand.flags.yes.default).toBe(false)
 
-    expect(typeof TheCommand.flags['skip-install']).toBe('object')
-    expect(TheCommand.flags['skip-install'].char).toBe('s')
-    expect(TheCommand.flags['skip-install'].default).toBe(false)
+    expect(typeof TheCommand.flags.install).toBe('object')
+    expect(TheCommand.flags.install.char).toBe('s')
+    expect(TheCommand.flags.install.default).toBe(false)
 
     expect(TheCommand.flags.login.allowNo).toBe(true)
     expect(TheCommand.flags.login.default).toBe(true)
@@ -289,9 +289,9 @@ describe('run', () => {
     expect(mockImport.importConfigJson).not.toHaveBeenCalled()
   })
 
-  test('--no-login --yes --skip-install, select excshell', async () => {
+  test('--no-login --yes --no-install, select excshell', async () => {
     mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
-    await TheCommand.run(['--no-login', '--yes', '--skip-install'])
+    await TheCommand.run(['--no-login', '--yes', '--no-install'])
     expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
@@ -311,9 +311,9 @@ describe('run', () => {
     expect(mockImport.importConfigJson).not.toHaveBeenCalled()
   })
 
-  test('--no-login --yes --skip-install, --extension dx/asset-compute/worker/1', async () => {
+  test('--no-login --yes --no-install, --extension dx/asset-compute/worker/1', async () => {
     mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
-    await TheCommand.run(['--no-login', '--yes', '--skip-install', '--extension', 'dx/asset-compute/worker/1'])
+    await TheCommand.run(['--no-login', '--yes', '--no-install', '--extension', 'dx/asset-compute/worker/1'])
     expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
     expect(mockGenInstantiate).toHaveBeenCalledWith(
       'fake-gen-base-app',
