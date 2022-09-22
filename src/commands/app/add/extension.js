@@ -26,13 +26,25 @@ class AddExtensionCommand extends TemplatesCommand {
     }
 
     const fullConfig = this.getFullConfig({ allowNoImpl: true })
-    const excludeExtensions = fullConfig.implements.map(e => `${TemplateRegistryAPI.SEARCH_CRITERIA_FILTER_NOT}${e}`)
+    const alreadyImplemented = fullConfig.implements
 
-    const searchCriteria = {
-      [TemplateRegistryAPI.SEARCH_CRITERIA_EXTENSIONS]: excludeExtensions
+    if (flags.extension) {
+      await this.installExtensionsByName(flags.extension, alreadyImplemented, flags.yes)
+    } else {
+      await this.selectExtensionsToInstall(alreadyImplemented, flags.yes)
     }
+  }
+
+  async selectExtensionsToInstall (alreadyImplemented, useDefaultValues) {
+    const excludeExtensions = alreadyImplemented.map(e => `${TemplateRegistryAPI.SEARCH_CRITERIA_FILTER_NOT}${e}`)
+
     const orderByCriteria = {
       [TemplateRegistryAPI.ORDER_BY_CRITERIA_PUBLISH_DATE]: TemplateRegistryAPI.ORDER_BY_CRITERIA_SORT_DESC
+    }
+
+    const searchCriteria = {
+      [TemplateRegistryAPI.SEARCH_CRITERIA_STATUSES]: TemplateRegistryAPI.TEMPLATE_STATUS_APPROVED,
+      [TemplateRegistryAPI.SEARCH_CRITERIA_EXTENSIONS]: excludeExtensions
     }
 
     const templates = await this.selectTemplates(searchCriteria, orderByCriteria)
@@ -40,9 +52,54 @@ class AddExtensionCommand extends TemplatesCommand {
       this.error('No extensions were chosen to be installed.')
     } else {
       await this.installTemplates({
-        useDefaultValues: flags.yes,
+        useDefaultValues,
         skipInstallConfig: false,
         templates
+      })
+    }
+  }
+
+  _uniqueArray (array) {
+    return Array.from(new Set(array))
+  }
+
+  async installExtensionsByName (extensions, alreadyImplemented, useDefaultValues) {
+    const orderByCriteria = {
+      [TemplateRegistryAPI.ORDER_BY_CRITERIA_PUBLISH_DATE]: TemplateRegistryAPI.ORDER_BY_CRITERIA_SORT_DESC
+    }
+
+    // no prompt
+    const alreadyThere = extensions.filter(i => alreadyImplemented.includes(i))
+    if (alreadyThere.length > 0) {
+      throw new Error(`'${alreadyThere}' is/are already implemented by this project`)
+    }
+
+    const searchCriteria = {
+      [TemplateRegistryAPI.SEARCH_CRITERIA_STATUSES]: TemplateRegistryAPI.TEMPLATE_STATUS_APPROVED,
+      [TemplateRegistryAPI.SEARCH_CRITERIA_EXTENSIONS]: extensions
+    }
+
+    const templateList = await this.getTemplates(searchCriteria, orderByCriteria)
+    aioLogger.debug('templateList', JSON.stringify(templateList, null, 2))
+
+    // check whether we got all extensions
+    const extensionsFound = this._uniqueArray(templateList
+      .map(t => t.extensions.map(e => e.extensionPointId)) // array of array of extensionPointIds
+      .filter(ids => extensions.some(item => ids.includes(item)))
+      .flat()
+    )
+
+    const extensionsNotFound = this._uniqueArray(extensions).filter(x => !extensionsFound.includes(x))
+    if (extensionsNotFound.length > 0) {
+      this.warn(`Extension(s) '${extensionsNotFound.join(', ')}' not found in the Template Registry.`)
+    }
+
+    if (extensionsFound.length > 0) {
+      this.log(`Extension(s) '${extensionsFound.join(', ')}' found in the Template Registry. Installing...`)
+      await this.installTemplates({
+        useDefaultValues,
+        skipInstallConfig: false,
+        templates: templateList.map(t => t.name)
       })
     }
   }
@@ -55,6 +112,11 @@ AddExtensionCommand.flags = {
     description: 'Skip questions, and use all default values',
     default: false,
     char: 'y'
+  }),
+  extension: Flags.string({
+    description: 'Specify extensions to add, skips selection prompt',
+    char: 'e',
+    multiple: true
   }),
   ...TemplatesCommand.flags
 }
