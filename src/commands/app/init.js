@@ -22,7 +22,7 @@ const inquirer = require('inquirer')
 const hyperlinker = require('hyperlinker')
 
 const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
-const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV } = require('../../lib/defaults')
+const { SERVICE_API_KEY_ENV } = require('../../lib/defaults')
 
 const DEFAULT_WORKSPACE = 'Stage'
 
@@ -55,10 +55,10 @@ class InitCommand extends TemplatesCommand {
     const noLogin = flags.import || !flags.login
     if (noLogin) {
       // import a console config - no login required!
-      await this.initNoLogin(destDir, flags)
+      await this.initNoLogin(flags)
     } else {
       // we can login
-      await this.initWithLogin(destDir, flags)
+      await this.initWithLogin(flags)
     }
 
     // install packages, always at the end, so user can ctrl+c
@@ -72,6 +72,17 @@ class InitCommand extends TemplatesCommand {
     }
   }
 
+  getInitialGenerators (flags) {
+    // TODO read from config to override
+    const initialGenerators = ['base-app', 'add-ci']
+
+    if (flags['standalone-app']) {
+      initialGenerators.push('application')
+    }
+
+    return initialGenerators
+  }
+
   /** @private */
   destDir (args) {
     let destDir = '.'
@@ -83,7 +94,7 @@ class InitCommand extends TemplatesCommand {
   }
 
   /** @private */
-  async initNoLogin (destDir, flags) {
+  async initNoLogin (flags) {
     // 1. load console details - if any
     let consoleConfig
     if (flags.import) {
@@ -108,10 +119,14 @@ class InitCommand extends TemplatesCommand {
 
     // 3. run base code generators
     const projectName = (consoleConfig && consoleConfig.project.name) || path.basename(process.cwd())
-    await this.runCodeGenerators(destDir, flags, templates, projectName)
+    await this.runCodeGenerators(this.getInitialGenerators(flags), flags.yes, projectName)
 
     // 4. install templates
-    await this.installTemplates(flags.yes, true, null, templates)
+    await this.installTemplates({
+      useDefaultValues: flags.yes,
+      installNpm: flags.install,
+      templates
+    })
 
     // 5. import config - if any
     if (flags.import) {
@@ -119,7 +134,7 @@ class InitCommand extends TemplatesCommand {
     }
   }
 
-  async initWithLogin (destDir, flags) {
+  async initWithLogin (flags) {
     // this will trigger a login
     const consoleCLI = await this.getLibConsoleCLI()
 
@@ -145,7 +160,7 @@ class InitCommand extends TemplatesCommand {
     const consoleConfig = await consoleCLI.getWorkspaceConfig(org.id, project.id, workspace.id, orgSupportedServices)
 
     // 7. run base code generators
-    await this.runCodeGenerators(destDir, flags, templates, consoleConfig.project.name)
+    await this.runCodeGenerators(this.getInitialGenerators(flags), flags.yes, consoleConfig.project.name)
 
     // 8. import config
     await this.importConsoleConfig(consoleConfig)
@@ -153,6 +168,7 @@ class InitCommand extends TemplatesCommand {
     // 9. install templates
     await this.installTemplates({
       useDefaultValues: flags.yes,
+      installNpm: flags.install,
       templates
     })
 
@@ -282,63 +298,15 @@ class InitCommand extends TemplatesCommand {
     return workspace
   }
 
-  async addServices (consoleCLI, org, project, workspace, orgSupportedServices, requiredServices) {
-    // add required services if needed (for extension point)
-    const currServiceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
-      org.id,
-      project.id,
-      workspace,
-      orgSupportedServices
-    )
-    const serviceCodesToAdd = requiredServices.filter(s => !currServiceProperties.some(sp => sp.sdkCode === s))
-    if (serviceCodesToAdd.length > 0) {
-      const servicePropertiesToAdd = serviceCodesToAdd
-        .map(s => {
-          // previous check ensures orgSupportedServices has required services
-          const orgServiceDefinition = orgSupportedServices.find(os => os.code === s)
-          return {
-            sdkCode: s,
-            name: orgServiceDefinition.name,
-            roles: orgServiceDefinition.properties.roles,
-            // add all licenseConfigs
-            licenseConfigs: orgServiceDefinition.properties.licenseConfigs
-          }
-        })
-      await consoleCLI.subscribeToServices(
-        org.id,
-        project,
-        workspace,
-        // certDir if need to create integration
-        path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER),
-        // new service properties
-        currServiceProperties.concat(servicePropertiesToAdd)
-      )
-    }
-    return workspace
-  }
-
-  getAllRequiredServicesFromExtPoints (extensionPoints) {
-    const requiredServicesWithDuplicates = extensionPoints
-      .map(e => e.requiredServices)
-      // flat not supported in node 10
-      .reduce((res, arr) => res.concat(arr), [])
-    return [...new Set(requiredServicesWithDuplicates)]
-  }
-
-  async runCodeGenerators (destDir, flags, templates, projectName) {
+  async runCodeGenerators (generatorNames, skipPrompt, projectName) {
     const env = yeoman.createEnv()
     env.options = { skipInstall: true }
-    const initialGenerators = ['base-app', 'add-ci']
-
-    if (flags['standalone-app']) {
-      initialGenerators.push('application')
-    }
 
     // first run app generator that will generate the root skeleton + ci
-    for (const generatorKey of initialGenerators) {
+    for (const generatorKey of generatorNames) {
       const appGen = env.instantiate(generators[generatorKey], {
         options: {
-          'skip-prompt': flags.yes,
+          'skip-prompt': skipPrompt,
           'project-name': projectName
         }
       })
