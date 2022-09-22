@@ -42,6 +42,11 @@
             "integration_type": "apikey"
           },
           {
+            "id": "17656570",
+            "name": "Project_D",
+            "integration_type": "oauthsinglepageapp"
+          },
+          {
             "id": "17950",
             "name": "New_Test_Intégration_8",
             "integration_type": "oauthandroid"
