@@ -14,7 +14,6 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const { Flags } = require('@oclif/core')
 
 const { atLeastOne, deleteUserConfig } = require('../../../lib/app-helper')
-const { implPromptChoices } = require('../../../lib/defaults')
 const chalk = require('chalk')
 const fs = require('fs-extra')
 const { EOL } = require('os')
@@ -59,16 +58,15 @@ class DeleteExtensionCommand extends BaseCommand {
       throw new Error('There are no implementations left in the project')
     }
     if (!flags.extension) {
-      const alreadyImplementedChoices = implPromptChoices.filter(i => alreadyImplemented.includes(i.value.name))
       // prompt
       const answers = await this.prompt([{
         type: 'checkbox',
         name: 'res',
-        message: 'Which new implementation(s) do you wish to add to the project ?',
-        choices: alreadyImplementedChoices,
+        message: 'Which implementation(s) do you wish to delete from the project?',
+        choices: alreadyImplemented,
         validate: atLeastOne
       }])
-      flags.extension = answers.res.map(v => v.name)
+      flags.extension = answers.res
     }
     return this.getAppExtConfigs(flags)
   }
