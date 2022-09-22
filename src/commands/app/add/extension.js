@@ -93,14 +93,12 @@ class AddExtensionCommand extends TemplatesCommand {
       this.error(`Extension(s) '${extensionsNotFound.join(', ')}' not found in the Template Registry.`)
     }
 
-    if (extensionsFound.length > 0) {
-      this.log(`Extension(s) '${extensionsFound.join(', ')}' found in the Template Registry. Installing...`)
-      await this.installTemplates({
-        useDefaultValues,
-        installNpm,
-        templates: templateList.map(t => t.name)
-      })
-    }
+    this.log(`Extension(s) '${extensionsFound.join(', ')}' found in the Template Registry. Installing...`)
+    await this.installTemplates({
+      useDefaultValues,
+      installNpm,
+      templates: templateList.map(t => t.name)
+    })
   }
 }
 

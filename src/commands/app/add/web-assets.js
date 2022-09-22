@@ -50,6 +50,7 @@ class AddWebAssetsCommand extends TemplatesCommand {
     } else {
       await this.installTemplates({
         useDefaultValues: flags.yes,
+        installNpm: flags.install,
         templateOptions,
         templates
       })

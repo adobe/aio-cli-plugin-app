@@ -61,37 +61,89 @@ test('bad flags', async () => {
   await expect(() => command.run()).rejects.toThrow('Unexpected argument: --wtf\nSee more help with --help')
 })
 
-describe('good flags', () => {
-  test('--yes', async () => {
-    command.argv = ['--yes']
-    await command.run()
-  })
+test('--yes', async () => {
+  const installOptions = {
+    useDefaultValues: true,
+    installNpm: true,
+    templates: ['@adobe/my-extension'],
+    templateOptions: expect.any(Object)
+  }
 
-  test('--yes --no-install', async () => {
-    command.argv = ['--yes', '--no-install']
-    await command.run()
-  })
+  command.argv = ['--yes']
+  command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
-  test('--no-install', async () => {
-    command.argv = ['--no-install']
-    await command.run()
-  })
+  await command.run()
+  expect(command.installTemplates).toBeCalledWith(installOptions)
+})
 
-  test('--extension', async () => {
-    command.argv = ['--extension', 'application']
-    await command.run([])
-  })
+test('--yes --no-install', async () => {
+  const installOptions = {
+    useDefaultValues: true,
+    installNpm: false,
+    templates: ['@adobe/my-extension'],
+    templateOptions: expect.any(Object)
+  }
 
-  test('no flags', async () => {
-    await command.run([])
-  })
+  command.argv = ['--yes', '--no-install']
+  command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
-  test('no flags, service code defined in config', async () => {
-    await command.run([])
-  })
+  await command.run()
+  expect(command.installTemplates).toBeCalledWith(installOptions)
+})
 
-  test('multiple ext configs', async () => {
-    command.getAppExtConfigs.mockReturnValue({ application: 'value', excshell: 'value' })
-    await expect(command.run()).rejects.toThrow('Please use the \'-e\' flag to specify to which implementation you want to add web-assets to.')
-  })
+test('--no-install', async () => {
+  const installOptions = {
+    useDefaultValues: false,
+    installNpm: false,
+    templates: ['@adobe/my-extension'],
+    templateOptions: expect.any(Object)
+  }
+
+  command.argv = ['--no-install']
+  command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
+
+  await command.run()
+  expect(command.installTemplates).toBeCalledWith(installOptions)
+})
+
+test('--extension', async () => {
+  const installOptions = {
+    useDefaultValues: false,
+    installNpm: true,
+    templates: ['@adobe/my-extension'],
+    templateOptions: expect.any(Object)
+  }
+
+  command.argv = ['--extension', 'application']
+  command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
+
+  await command.run()
+  expect(command.installTemplates).toBeCalledWith(installOptions)
+})
+
+test('no flags', async () => {
+  const installOptions = {
+    useDefaultValues: false,
+    installNpm: true,
+    templates: ['@adobe/my-extension'],
+    templateOptions: expect.any(Object)
+  }
+
+  command.argv = []
+  command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
+
+  await command.run()
+  expect(command.installTemplates).toBeCalledWith(installOptions)
+})
+
+test('no templates selected', async () => {
+  command.argv = []
+  command.selectTemplates.mockResolvedValue([])
+
+  await expect(command.run()).rejects.toThrow('No web-asset templates were chosen to be installed.')
+})
+
+test('multiple ext configs', async () => {
+  command.getAppExtConfigs.mockReturnValue({ application: 'value', excshell: 'value' })
+  await expect(command.run()).rejects.toThrow('Please use the \'-e\' flag to specify to which implementation you want to add web-assets to.')
 })

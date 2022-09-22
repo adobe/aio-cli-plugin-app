@@ -27,7 +27,11 @@ const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
   appConfig.application = { ...appConfig.application, ...aioConfig }
   return appConfig
 }
+
+const mockGetEnabledServicesForOrg = jest.fn()
+
 let command
+
 beforeEach(() => {
   command = new TheCommand([])
   command.getAppExtConfigs = jest.fn()
@@ -46,13 +50,14 @@ beforeEach(() => {
   command.getConfigFileForKey.mockReturnValue({})
   command.getLibConsoleCLI = jest.fn()
   command.getLibConsoleCLI.mockResolvedValue({
-    getEnabledServicesForOrg: jest.fn()
+    getEnabledServicesForOrg: mockGetEnabledServicesForOrg
   })
 
   command.selectTemplates = jest.fn()
   command.selectTemplates.mockResolvedValue([])
   command.installTemplates = jest.fn()
 
+  mockGetEnabledServicesForOrg.mockClear()
   inquirer.prompt.mockClear()
 })
 
@@ -69,100 +74,126 @@ test('bad flags', async () => {
   await expect(() => command.run()).rejects.toThrow('Unexpected argument: --wtf\nSee more help with --help')
 })
 
-describe('good flags', () => {
-  test('--yes', async () => {
-    const installOptions = {
-      useDefaultValues: true,
-      installNpm: true,
-      templates: ['@adobe/my-extension'],
-      templateOptions: expect.any(Object)
-    }
+test('--yes', async () => {
+  const installOptions = {
+    useDefaultValues: true,
+    installNpm: true,
+    templates: ['@adobe/my-extension'],
+    templateOptions: expect.any(Object)
+  }
 
-    command.argv = ['--yes']
-    inquirer.prompt.mockResolvedValue({
-      components: 'allActionTemplates'
-    })
-
-    command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
-
-    await command.run()
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+  command.argv = ['--yes']
+  inquirer.prompt.mockResolvedValue({
+    components: 'allActionTemplates'
   })
 
-  test('--yes --no-install', async () => {
-    const installOptions = {
-      useDefaultValues: true,
-      installNpm: false,
-      templates: ['@adobe/my-extension'],
-      templateOptions: expect.any(Object)
-    }
+  command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
-    command.argv = ['--yes', '--no-install']
-    inquirer.prompt.mockResolvedValue({
-      components: 'allActionTemplates'
-    })
-    command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
+  await command.run()
+  expect(command.installTemplates).toBeCalledWith(installOptions)
+})
 
-    await command.run()
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+test('--yes --no-install', async () => {
+  const installOptions = {
+    useDefaultValues: true,
+    installNpm: false,
+    templates: ['@adobe/my-extension'],
+    templateOptions: expect.any(Object)
+  }
+
+  command.argv = ['--yes', '--no-install']
+  inquirer.prompt.mockResolvedValue({
+    components: 'allActionTemplates'
   })
+  command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
-  test('--no-install', async () => {
-    const installOptions = {
-      useDefaultValues: false,
-      installNpm: false,
-      templates: ['@adobe/my-extension'],
-      templateOptions: expect.any(Object)
-    }
+  await command.run()
+  expect(command.installTemplates).toBeCalledWith(installOptions)
+})
 
-    command.argv = ['--no-install']
-    inquirer.prompt.mockResolvedValue({
-      components: 'allActionTemplates'
-    })
-    command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
+test('--no-install', async () => {
+  const installOptions = {
+    useDefaultValues: false,
+    installNpm: false,
+    templates: ['@adobe/my-extension'],
+    templateOptions: expect.any(Object)
+  }
 
-    await command.run()
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+  command.argv = ['--no-install']
+  inquirer.prompt.mockResolvedValue({
+    components: 'allActionTemplates'
   })
+  command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
-  test('--extension', async () => {
-    const installOptions = {
-      useDefaultValues: false,
-      installNpm: true,
-      templates: ['@adobe/my-extension'],
-      templateOptions: expect.any(Object)
-    }
+  await command.run()
+  expect(command.installTemplates).toBeCalledWith(installOptions)
+})
 
-    command.argv = ['--extension', 'application']
-    inquirer.prompt.mockResolvedValue({
-      components: 'allActionTemplates'
-    })
-    command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
+test('--extension', async () => {
+  const installOptions = {
+    useDefaultValues: false,
+    installNpm: true,
+    templates: ['@adobe/my-extension'],
+    templateOptions: expect.any(Object)
+  }
 
-    await command.run()
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+  command.argv = ['--extension', 'application']
+  inquirer.prompt.mockResolvedValue({
+    components: 'allActionTemplates'
   })
+  command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
-  test('no flags', async () => {
-    const installOptions = {
-      useDefaultValues: false,
-      installNpm: true,
-      templates: ['@adobe/my-extension'],
-      templateOptions: expect.any(Object)
-    }
+  await command.run()
+  expect(command.installTemplates).toBeCalledWith(installOptions)
+})
 
-    command.argv = []
-    inquirer.prompt.mockResolvedValue({
-      components: 'allActionTemplates'
-    })
-    command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
+test('no flags (all action templates)', async () => {
+  const installOptions = {
+    useDefaultValues: false,
+    installNpm: true,
+    templates: ['@adobe/my-extension'],
+    templateOptions: expect.any(Object)
+  }
 
-    await command.run()
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+  command.argv = []
+  inquirer.prompt.mockResolvedValue({
+    components: 'allActionTemplates'
   })
+  command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
-  test('multiple ext configs', async () => {
-    command.getAppExtConfigs.mockReturnValue({ application: 'value', excshell: 'value' })
-    await expect(command.run()).rejects.toThrow('Please use the \'-e\' flag to specify to which implementation you want to add actions to.')
+  await command.run()
+  expect(command.installTemplates).toBeCalledWith(installOptions)
+})
+
+test('no flags (org action templates)', async () => {
+  const installOptions = {
+    useDefaultValues: false,
+    installNpm: true,
+    templates: ['@adobe/my-extension'],
+    templateOptions: expect.any(Object)
+  }
+
+  command.argv = []
+  inquirer.prompt.mockResolvedValue({
+    components: 'orgActionTemplates'
   })
+  command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
+  mockGetEnabledServicesForOrg.mockResolvedValue([{ code: 'MyServiceCode' }])
+  await command.run()
+  expect(command.installTemplates).toBeCalledWith(installOptions)
+})
+
+test('no templates selected', async () => {
+  command.argv = []
+  inquirer.prompt.mockResolvedValue({
+    components: 'allActionTemplates'
+  })
+  command.selectTemplates.mockResolvedValue([])
+
+  await expect(command.run()).rejects.toThrow('No action templates were chosen to be installed.')
+})
+
+test('multiple ext configs', async () => {
+  command.getAppExtConfigs.mockReturnValue({ application: 'value', excshell: 'value' })
+  await expect(command.run()).rejects.toThrow('Please use the \'-e\' flag to specify to which implementation you want to add actions to.')
 })

@@ -167,3 +167,25 @@ test('invalid extension', async () => {
 
   await expect(command.run()).rejects.toThrow(`Extension(s) '${extName}' not found in the Template Registry.`)
 })
+
+test('extensions found in Template Registry, will install', async () => {
+  const installOptions = {
+    useDefaultValues: false,
+    installNpm: true,
+    templates: ['@adobe/my-extension']
+  }
+  const extName = 'dx/excshell/1'
+
+  command.argv = ['--extension', extName]
+  command.getTemplates.mockResolvedValue([
+    {
+      name: '@adobe/my-extension',
+      extensions: [
+        { extensionPointId: 'dx/excshell/1' }
+      ]
+    }
+  ])
+
+  await command.run()
+  expect(command.installTemplates).toBeCalledWith(installOptions)
+})
