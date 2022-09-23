@@ -10,9 +10,5 @@
         "jsdoc": {
             "ignorePrivate": true
         }
-    },
-    "parserOptions": {
-        "ecmaVersion": "latest",
-        "sourceType": "module"
-    }    
+    }
 }
