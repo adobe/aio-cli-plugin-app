@@ -24,10 +24,11 @@ class TemplatesCommand extends AddCommand {
    *
    * @param {object} searchCriteria the Template Registry API search criteria
    * @param {object} orderByCriteria the Template Registry API orderBy criteria
+   * @param {object} [templateRegistryConfig={}] the optional Template Registry API config
    * @returns {Array<object>} list of templates
    */
-  async getTemplates (searchCriteria, orderByCriteria) {
-    const templateRegistryClient = TemplateRegistryAPI.init()
+  async getTemplates (searchCriteria, orderByCriteria, templateRegistryConfig = {}) {
+    const templateRegistryClient = TemplateRegistryAPI.init(templateRegistryConfig)
     const templateList = []
 
     const templatesIterator = templateRegistryClient.getTemplates(searchCriteria, orderByCriteria)
@@ -47,16 +48,17 @@ class TemplatesCommand extends AddCommand {
    *
    * @param {object} searchCriteria the Template Registry API search criteria
    * @param {object} orderByCriteria the Template Registry API orderBy criteria
+   * @param {object} [templateRegistryConfig={}] the optional Template Registry API config
    * @returns {string} the selected template module name
    */
-  async selectTemplates (searchCriteria, orderByCriteria) {
+  async selectTemplates (searchCriteria, orderByCriteria, templateRegistryConfig = {}) {
     aioLogger.debug('searchCriteria', JSON.stringify(searchCriteria, null, 2))
     aioLogger.debug('orderByCriteria', JSON.stringify(orderByCriteria, null, 2))
 
     const spinner = ora()
     spinner.start('Getting available templates')
 
-    const templateList = await this.getTemplates(searchCriteria, orderByCriteria)
+    const templateList = await this.getTemplates(searchCriteria, orderByCriteria, templateRegistryConfig)
     aioLogger.debug('templateList', JSON.stringify(templateList, null, 2))
     spinner.succeed('Downloaded the list of templates')
 

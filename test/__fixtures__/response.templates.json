@@ -1,0 +1,153 @@
+{
+    "_links": {
+        "self": {
+            "href": "https://template-registry-api.adobe.tbd/apis/v1.0.0/templates?size=50"
+        }
+    },
+    "items": [
+        {
+            "_links": {
+                "self": {
+                    "href": "https://template-registry-api.adobe.tbd/apis/v1.0.0/templates/@author/app-builder-template-1"
+                }
+            },
+            "id": "d1dc1000-f32e-4172-a0ec-9b2f3ef6ac47",
+            "author": "Adobe Inc.",
+            "name": "@author/app-builder-template-1",
+            "description": "A template for testing purposes",
+            "latestVersion": "1.0.0",
+            "publishDate": "2022-05-01T03:50:39.658Z",
+            "apis": [
+                {
+                    "code": "AnalyticsSDK",
+                    "credentials": "OAuth"
+                },
+                {
+                    "code": "CampaignStandard"
+                },
+                {
+                    "code": "Runtime"
+                },
+                {
+                    "code": "Events",
+                    "hooks": [
+                        {
+                            "postdeploy": "some command"
+                        }
+                    ]
+                },
+                {
+                    "code": "Mesh",
+                    "endpoints": [
+                        {
+                            "my-action": "https://some-action.com/action"
+                        }
+                    ]
+                }
+            ],
+            "adobeRecommended": true,
+            "keywords": [
+                "aio",
+                "adobeio",
+                "app",
+                "templates",
+                "aio-app-builder-template"
+            ],
+            "status": "Approved",
+            "links": {
+                "npm": "https://www.npmjs.com/package/@author/app-builder-template-1",
+                "github": "https://github.com/author/app-builder-template-1"
+            },
+            "extensions": [
+                {
+                    "extensionPointId": "dx/excshell/1"
+                }
+            ],
+            "categories": [
+                "action",
+                "ui"
+            ]
+        },
+        {
+            "_links": {
+                "review": {
+                    "description": "A link to the \"Template Review Request\" Github issue.",
+                    "href": "https://github.com/adobe/aio-template-submission/issues/xxx-2"
+                },
+                "self": {
+                    "href": "https://template-registry-api.adobe.tbd/apis/v1.0.0/templates/@author/app-builder-template-2"
+                }
+            },
+            "id": "d1dc1000-f32e-4172-a0ec-9b2f3ef6ac48",
+            "name": "@author/app-builder-template-2",
+            "status": "InVerification",
+            "links": {
+                "npm": "https://www.npmjs.com/package/@author/app-builder-template-2",
+                "github": "https://github.com/author/app-builder-template-2"
+            }
+        },
+        {
+            "_links": {
+                "review": {
+                    "description": "A link to the \"Template Review Request\" Github issue.",
+                    "href": "https://github.com/adobe/aio-template-submission/issues/xxx-3"
+                },
+                "self": {
+                    "href": "https://template-registry-api.adobe.tbd/apis/v1.0.0/templates/@author/app-builder-template-3"
+                }
+            },
+            "id": "d1dc1000-f32e-4172-a0ec-9b2f3ef6cc48",
+            "name": "@author/app-builder-template-3",
+            "status": "Rejected",
+            "links": {
+                "npm": "https://www.npmjs.com/package/@author/app-builder-template-3",
+                "github": "https://github.com/author/app-builder-template-3"
+            }
+        },
+        {
+            "_links": {
+                "self": {
+                    "href": "https://template-registry-api.adobe.tbd/apis/v1.0.0/templates/@author/app-builder-template-4"
+                }
+            },
+            "id": "d1ac1000-f12e-4172-a0ec-9b2f3ef6ac62",
+            "author": "Adobe Inc.",
+            "name": "@author/app-builder-template-4",
+            "description": "A template for testing purposes",
+            "latestVersion": "2.1.0",
+            "publishDate": "2022-05-17T02:44:39.658Z",
+            "apis": [
+                {
+                    "code": "AnalyticsSDK",
+                    "credentials": "OAuth"
+                },
+                {
+                    "code": "Mesh",
+                    "endpoints": [
+                        {
+                            "my-action": "https://some-action.com/action"
+                        }
+                    ]
+                }
+            ],
+            "adobeRecommended": true,
+            "keywords": [
+                "aio",
+                "adobeio",
+                "app",
+                "templates",
+                "aio-app-builder-template"
+            ],
+            "status": "Approved",
+            "links": {
+                "npm": "https://www.npmjs.com/package/@author/app-builder-template-4",
+                "github": "https://github.com/author/app-builder-template-4"
+            },
+            "categories": [
+                "action",
+                "ui"
+            ],
+            "runtime": true
+        }
+    ]
+}

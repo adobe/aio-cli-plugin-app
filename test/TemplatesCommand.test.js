@@ -12,8 +12,19 @@ governing permissions and limitations under the License.
 
 const TheCommand = require('../src/TemplatesCommand')
 const BaseCommand = require('../src/BaseCommand')
+const nock = require('nock')
+
+const templateRegistryConfig = {
+  server: {
+    url: 'https://template-registry-api.adobe.tbd',
+    version: 'v1.0.0'
+  }
+}
+
+let command
 
 beforeEach(() => {
+  command = new TheCommand()
 })
 
 describe('Command Prototype', () => {
@@ -25,4 +36,30 @@ describe('Command Prototype', () => {
   test('flags', async () => {
     expect(TheCommand.flags).toEqual(expect.objectContaining(BaseCommand.flags))
   })
+})
+
+test('getTemplates', async () => {
+  const searchCriteria = {
+    categories: ['action', 'ui'],
+    statuses: ['Approved'],
+    adobeRecommended: true
+  }
+  const orderByCriteria = {
+    names: 'desc'
+  }
+
+  nock(templateRegistryConfig.server.url)
+    .get(`/apis/${templateRegistryConfig.server.version}/templates`)
+    .query({
+      size: 50,
+      categories: 'action,ui',
+      statuses: 'Approved',
+      adobeRecommended: true,
+      orderBy: 'names desc'
+    })
+    .times(1)
+    .reply(200, fixtureFile('response.templates.json'))
+
+  const templates = await command.getTemplates(searchCriteria, orderByCriteria, templateRegistryConfig)
+  expect(templates).not.toEqual(null)
 })

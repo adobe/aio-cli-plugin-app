@@ -63,6 +63,7 @@
     "eslint-plugin-promise": "^6.0.0",
     "jest": "^28",
     "jest-plugin-fs": "^2.9.0",
+    "nock": "^13.2.9",
     "oclif": "^3.2.0",
     "stdout-stderr": "^0.1.9"
   },
