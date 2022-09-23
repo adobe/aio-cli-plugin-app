@@ -49,7 +49,7 @@ class TemplatesCommand extends AddCommand {
    * @param {object} searchCriteria the Template Registry API search criteria
    * @param {object} orderByCriteria the Template Registry API orderBy criteria
    * @param {object} [templateRegistryConfig={}] the optional Template Registry API config
-   * @returns {string} the selected template module name
+   * @returns {Array<string>} an array of selected template module name(s)
    */
   async selectTemplates (searchCriteria, orderByCriteria, templateRegistryConfig = {}) {
     aioLogger.debug('searchCriteria', JSON.stringify(searchCriteria, null, 2))
@@ -90,7 +90,7 @@ class TemplatesCommand extends AddCommand {
         [COLUMNS.COL_TEMPLATE]: name,
         [COLUMNS.COL_DESCRIPTION]: template.description,
         [COLUMNS.COL_EXTENSION_POINT]: extensionPoint,
-        [COLUMNS.COL_CATEGORIES]: template.categories.join(', ')
+        [COLUMNS.COL_CATEGORIES]: template?.categories?.join(', ')
       }
     })
     const promptName = 'select template'
@@ -132,7 +132,7 @@ class TemplatesCommand extends AddCommand {
    */
   async installTemplates ({
     useDefaultValues = false,
-    installConfig = false,
+    installConfig = true,
     installNpm = true,
     templateOptions = null,
     templates = []
@@ -155,7 +155,8 @@ class TemplatesCommand extends AddCommand {
 
       if (templateOptions) {
         if (typeof templateOptions !== 'object' || Array.isArray(templateOptions)) { // must be a non-array object
-          throw new Error(`templateOptions ${templateOptions} is not a JavaScript object.`)
+          aioLogger.debug('malformed templateOptions', templateOptions)
+          throw new Error('The templateOptions is not a JavaScript object.')
         }
         const jsonString = JSON.stringify(templateOptions)
         installArgs.push(`--template-options=${Buffer.from(jsonString).toString('base64')}`)

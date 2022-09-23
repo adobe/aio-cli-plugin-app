@@ -84,7 +84,11 @@
             "links": {
                 "npm": "https://www.npmjs.com/package/@author/app-builder-template-2",
                 "github": "https://github.com/author/app-builder-template-2"
-            }
+            },
+            "categories": [
+                "action",
+                "ui"
+            ]
         },
         {
             "_links": {
