@@ -53,6 +53,16 @@
                         }
                     },
                     {
+                        "id": "17656570",
+                        "name": "Project D",
+                        "integration_type": "oauthsinglepageapp",
+                        "oauth2": {
+                            "client_id": "KAKAKAKAKAKAKAKAKAKAKAKA",
+                            "redirect_uri": [ "https://test123" ],
+                            "defaultRedirectUri": "https://test123"
+                        }
+                    },
+                    {
                         "id": "17950",
                         "name": "New Test Intégration 8",
                         "integration_type": "oauthandroid",
