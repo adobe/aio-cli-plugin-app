@@ -34,33 +34,61 @@ const DEFAULT_TEMPLATE_REGISTRY_CONFIG = {
   }
 }
 
+const defaultSearchCriteria = () => ({
+  categories: ['action', 'ui'],
+  statuses: ['Approved'],
+  adobeRecommended: true
+})
+
+const defaultOrderByCriteria = () => ({
+  names: 'desc'
+})
+
+/** @private */
+function createQuery (searchCriteria, orderByCriteria) {
+  const orderBy = Object
+    .entries(orderByCriteria)
+    .map(([key, value]) => `${key} ${value}`)
+
+  const size = 50
+  return Object
+    .entries(searchCriteria)
+    .reduce((acc, [key, value]) => {
+      if (Array.isArray(value)) {
+        value = value.join(',')
+      }
+      return {
+        ...acc,
+        [key]: value
+      }
+    },
+    {
+      size,
+      orderBy: orderBy.join(',')
+    })
+}
+
 /** @private */
 function nockGetTemplates ({
   contents = fixtureFile('response.templates.json'),
-  config = CUSTOM_TEMPLATE_REGISTRY_CONFIG
+  config = DEFAULT_TEMPLATE_REGISTRY_CONFIG,
+  searchCriteria = defaultSearchCriteria(),
+  orderByCriteria = defaultOrderByCriteria(),
+  query = createQuery(searchCriteria, orderByCriteria)
 } = {}) {
-  const searchCriteria = {
-    categories: ['action', 'ui'],
-    statuses: ['Approved'],
-    adobeRecommended: true
-  }
-  const orderByCriteria = {
-    names: 'desc'
-  }
-
   nock(config.server.url)
     .get(`/apis/${config.server.version}/templates`)
-    .query({
-      size: 50,
-      categories: 'action,ui',
-      statuses: 'Approved',
-      adobeRecommended: true,
-      orderBy: 'names desc'
-    })
+    .query(query)
     .times(1)
     .reply(200, contents)
 
-  return [searchCriteria, orderByCriteria]
+  return {
+    contents,
+    config,
+    searchCriteria,
+    orderByCriteria,
+    query
+  }
 }
 
 let command
@@ -88,16 +116,18 @@ describe('Command Prototype', () => {
 
 describe('getTemplates', () => {
   test('custom Template Registry API config', async () => {
-    const [searchCriteria, orderByCriteria] = nockGetTemplates()
+    const config = CUSTOM_TEMPLATE_REGISTRY_CONFIG
+    const { searchCriteria, orderByCriteria } = nockGetTemplates({
+      config
+    })
 
-    const templates = await command.getTemplates(searchCriteria, orderByCriteria, CUSTOM_TEMPLATE_REGISTRY_CONFIG)
+    const templates = await command.getTemplates(searchCriteria, orderByCriteria, config)
     expect(templates.length).toBeGreaterThan(0)
   })
 
   test('default Template Registry API config', async () => {
-    const [searchCriteria, orderByCriteria] = nockGetTemplates({
-      config: DEFAULT_TEMPLATE_REGISTRY_CONFIG
-    })
+    const config = DEFAULT_TEMPLATE_REGISTRY_CONFIG
+    const { searchCriteria, orderByCriteria } = nockGetTemplates({ config })
 
     const templates = await command.getTemplates(searchCriteria, orderByCriteria)
     expect(templates.length).toBeGreaterThan(0)
@@ -106,28 +136,31 @@ describe('getTemplates', () => {
 
 describe('selectTemplates', () => {
   test('query has at least one item', async () => {
-    const [searchCriteria, orderByCriteria] = nockGetTemplates()
+    const config = CUSTOM_TEMPLATE_REGISTRY_CONFIG
+    const { searchCriteria, orderByCriteria } = nockGetTemplates({ config })
     inquirer.prompt.mockResolvedValue({
       'select template': ['my-template']
     })
 
-    const templates = await command.selectTemplates(searchCriteria, orderByCriteria, CUSTOM_TEMPLATE_REGISTRY_CONFIG)
+    const templates = await command.selectTemplates(searchCriteria, orderByCriteria, config)
     expect(templates.length).toBeGreaterThan(0)
   })
 
   test('query has no items', async () => {
+    const config = CUSTOM_TEMPLATE_REGISTRY_CONFIG
     const contents = {
       _links: {},
       items: []
     }
 
-    const [searchCriteria, orderByCriteria] = nockGetTemplates({ contents })
-    await expect(command.selectTemplates(searchCriteria, orderByCriteria, CUSTOM_TEMPLATE_REGISTRY_CONFIG))
+    const { searchCriteria, orderByCriteria } = nockGetTemplates({ contents, config })
+    await expect(command.selectTemplates(searchCriteria, orderByCriteria, config))
       .rejects.toThrow('There are no templates that match the query for selection')
   })
 
   test('use default Template Registry API config', async () => {
-    const [searchCriteria, orderByCriteria] = nockGetTemplates({ config: DEFAULT_TEMPLATE_REGISTRY_CONFIG })
+    const config = DEFAULT_TEMPLATE_REGISTRY_CONFIG
+    const { searchCriteria, orderByCriteria } = nockGetTemplates({ config })
     inquirer.prompt.mockResolvedValue({
       'select template': ['my-template']
     })
@@ -185,5 +218,106 @@ describe('installTemplates', () => {
       templates: ['template-1']
     }
     await expect(command.installTemplates(options)).rejects.toThrow('The templateOptions is not a JavaScript object.')
+  })
+})
+
+describe('install extensions by name', () => {
+  test('extension not found in Template Registry', async () => {
+    const config = DEFAULT_TEMPLATE_REGISTRY_CONFIG
+    const contents = {
+      _links: {},
+      items: [
+        {
+          name: '@adobe/my-extension',
+          extensions: [
+            { extensionPointId: 'dx/excshell/1' }
+          ]
+        }
+      ]
+    }
+
+    const extensionsToInstall = ['dx/excshell/1', 'unknown-extension']
+    const extensionsAlreadyImplemented = []
+
+    nockGetTemplates({
+      contents,
+      config,
+      searchCriteria: {
+        statuses: ['Approved'],
+        extensions: extensionsToInstall
+      },
+      orderByCriteria: {
+        publishDate: 'desc'
+      }
+    })
+
+    await expect(command.installExtensionsByName(extensionsToInstall, extensionsAlreadyImplemented))
+      .rejects.toThrow('Extension(s) \'unknown-extension\' not found in the Template Registry.')
+  })
+
+  test('extension found, will install', async () => {
+    const config = DEFAULT_TEMPLATE_REGISTRY_CONFIG
+    const contents = {
+      _links: {},
+      items: [
+        {
+          name: '@adobe/my-extension',
+          extensions: [
+            { extensionPointId: 'dx/excshell/1' }
+          ]
+        }
+      ]
+    }
+
+    const extensionsToInstall = ['dx/excshell/1']
+    const extensionsAlreadyImplemented = []
+
+    nockGetTemplates({
+      contents,
+      config,
+      searchCriteria: {
+        statuses: ['Approved'],
+        extensions: extensionsToInstall
+      },
+      orderByCriteria: {
+        publishDate: 'desc'
+      }
+    })
+
+    await command.installExtensionsByName(extensionsToInstall, extensionsAlreadyImplemented)
+    expect(command.config.runCommand).toHaveBeenCalledTimes(1)
+  })
+
+  test('extension already implemented', async () => {
+    const config = DEFAULT_TEMPLATE_REGISTRY_CONFIG
+    const contents = {
+      _links: {},
+      items: [
+        {
+          name: '@adobe/my-extension',
+          extensions: [
+            { extensionPointId: 'dx/excshell/1' }
+          ]
+        }
+      ]
+    }
+
+    const extensionsToInstall = ['dx/excshell/1', 'foo/bar', 'bar/baz']
+    const extensionsAlreadyImplemented = ['dx/excshell/1', 'foo/bar']
+
+    nockGetTemplates({
+      contents,
+      config,
+      searchCriteria: {
+        statuses: ['Approved'],
+        extensions: extensionsToInstall
+      },
+      orderByCriteria: {
+        publishDate: 'desc'
+      }
+    })
+
+    await expect(command.installExtensionsByName(extensionsToInstall, extensionsAlreadyImplemented))
+      .rejects.toThrow("'dx/excshell/1, foo/bar' extension(s) are already implemented in this project.")
   })
 })

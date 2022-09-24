@@ -166,6 +166,59 @@ class TemplatesCommand extends AddCommand {
       spinner.succeed(`Installed template ${template}`)
     }
   }
+
+  /** @private */
+  _uniqueArray (array) {
+    return Array.from(new Set(array))
+  }
+
+  /**
+   * Install extensions by name (extensionPointId).
+   *
+   * @param {Array<string>} extensions an array of extension point ids to install.
+   * @param {Array<string>} alreadyImplemented an array of extension point ids that have already been implemented (to filter)
+   * @param {boolean} [useDefaultValues=false] use default values when installing the template(s)
+   * @param {boolean} [installNpm=true] run npm install after installing the template(s)
+   * @param {object} [templateRegistryConfig={}] the optional Template Registry API config
+   */
+  async installExtensionsByName (extensions, alreadyImplemented, useDefaultValues = false, installNpm = true, templateRegistryConfig = {}) {
+    const orderByCriteria = {
+      [TemplateRegistryAPI.ORDER_BY_CRITERIA_PUBLISH_DATE]: TemplateRegistryAPI.ORDER_BY_CRITERIA_SORT_DESC
+    }
+
+    // no prompt
+    const alreadyThere = extensions.filter(i => alreadyImplemented.includes(i))
+    if (alreadyThere.length > 0) {
+      throw new Error(`'${alreadyThere.join(', ')}' extension(s) are already implemented in this project.`)
+    }
+
+    const searchCriteria = {
+      [TemplateRegistryAPI.SEARCH_CRITERIA_STATUSES]: TemplateRegistryAPI.TEMPLATE_STATUS_APPROVED,
+      [TemplateRegistryAPI.SEARCH_CRITERIA_EXTENSIONS]: extensions
+    }
+
+    const templateList = await this.getTemplates(searchCriteria, orderByCriteria, templateRegistryConfig)
+    aioLogger.debug('templateList', JSON.stringify(templateList, null, 2))
+
+    // check whether we got all extensions
+    const extensionsFound = this._uniqueArray(templateList
+      .map(t => t.extensions.map(e => e.extensionPointId)) // array of array of extensionPointIds
+      .filter(ids => extensions.some(item => ids.includes(item)))
+      .flat()
+    )
+
+    const extensionsNotFound = this._uniqueArray(extensions).filter(x => !extensionsFound.includes(x))
+    if (extensionsNotFound.length > 0) {
+      this.error(`Extension(s) '${extensionsNotFound.join(', ')}' not found in the Template Registry.`)
+    }
+
+    this.log(`Extension(s) '${extensionsFound.join(', ')}' found in the Template Registry. Installing...`)
+    await this.installTemplates({
+      useDefaultValues,
+      installNpm,
+      templates: templateList.map(t => t.name)
+    })
+  }
 }
 
 TemplatesCommand.flags = {

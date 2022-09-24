@@ -57,49 +57,6 @@ class AddExtensionCommand extends TemplatesCommand {
       })
     }
   }
-
-  _uniqueArray (array) {
-    return Array.from(new Set(array))
-  }
-
-  async installExtensionsByName (extensions, alreadyImplemented, useDefaultValues, installNpm) {
-    const orderByCriteria = {
-      [TemplateRegistryAPI.ORDER_BY_CRITERIA_PUBLISH_DATE]: TemplateRegistryAPI.ORDER_BY_CRITERIA_SORT_DESC
-    }
-
-    // no prompt
-    const alreadyThere = extensions.filter(i => alreadyImplemented.includes(i))
-    if (alreadyThere.length > 0) {
-      throw new Error(`'${alreadyThere}' is/are already implemented by this project`)
-    }
-
-    const searchCriteria = {
-      [TemplateRegistryAPI.SEARCH_CRITERIA_STATUSES]: TemplateRegistryAPI.TEMPLATE_STATUS_APPROVED,
-      [TemplateRegistryAPI.SEARCH_CRITERIA_EXTENSIONS]: extensions
-    }
-
-    const templateList = await this.getTemplates(searchCriteria, orderByCriteria)
-    aioLogger.debug('templateList', JSON.stringify(templateList, null, 2))
-
-    // check whether we got all extensions
-    const extensionsFound = this._uniqueArray(templateList
-      .map(t => t.extensions.map(e => e.extensionPointId)) // array of array of extensionPointIds
-      .filter(ids => extensions.some(item => ids.includes(item)))
-      .flat()
-    )
-
-    const extensionsNotFound = this._uniqueArray(extensions).filter(x => !extensionsFound.includes(x))
-    if (extensionsNotFound.length > 0) {
-      this.error(`Extension(s) '${extensionsNotFound.join(', ')}' not found in the Template Registry.`)
-    }
-
-    this.log(`Extension(s) '${extensionsFound.join(', ')}' found in the Template Registry. Installing...`)
-    await this.installTemplates({
-      useDefaultValues,
-      installNpm,
-      templates: templateList.map(t => t.name)
-    })
-  }
 }
 
 AddExtensionCommand.description = `Add new extensions to the project

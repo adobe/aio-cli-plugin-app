@@ -50,6 +50,7 @@ beforeEach(() => {
   command.getTemplates = jest.fn()
   command.getTemplates.mockResolvedValue([])
   command.installTemplates = jest.fn()
+  command.installExtensionsByName = jest.fn()
 })
 
 describe('Command Prototype', () => {
@@ -65,18 +66,12 @@ test('bad flags', async () => {
   await expect(() => command.run()).rejects.toThrow('Unexpected argument: --wtf\nSee more help with --help')
 })
 
-test('--yes with no extension', async () => {
+test('--yes (no extension)', async () => {
   command.argv = ['--yes']
   await expect(command.run()).rejects.toThrow('--extension= must also be provided when using --yes')
 })
 
-test('--yes', async () => {
-  const installOptions = {
-    useDefaultValues: true,
-    installNpm: true,
-    templates: ['@adobe/my-extension']
-  }
-
+test('--yes (with extension)', async () => {
   command.argv = ['--yes', '--extension', 'dx/excshell/1']
   command.getTemplates.mockResolvedValue([
     {
@@ -88,16 +83,10 @@ test('--yes', async () => {
   ])
 
   await command.run()
-  expect(command.installTemplates).toBeCalledWith(installOptions)
+  expect(command.installExtensionsByName).toBeCalled()
 })
 
-test('--yes --no-install', async () => {
-  const installOptions = {
-    useDefaultValues: true,
-    installNpm: false,
-    templates: ['@adobe/my-extension']
-  }
-
+test('--yes --no-install (with extension)', async () => {
   command.argv = ['--yes', '--extension', 'dx/excshell/1', '--no-install']
   command.getTemplates.mockResolvedValue([
     {
@@ -109,7 +98,7 @@ test('--yes --no-install', async () => {
   ])
 
   await command.run()
-  expect(command.installTemplates).toBeCalledWith(installOptions)
+  expect(command.installExtensionsByName).toBeCalled()
 })
 
 test('--no-install', async () => {
@@ -145,47 +134,4 @@ test('no templates selected', async () => {
   command.selectTemplates.mockResolvedValue([])
 
   await expect(command.run()).rejects.toThrow('No extensions were chosen to be installed.')
-})
-
-test('given extension already implemented', async () => {
-  command.argv = ['--no-install', '--extension', 'application']
-
-  await expect(command.run()).rejects.toThrow('\'application\' is/are already implemented by this project')
-})
-
-test('invalid extension', async () => {
-  const extName = 'invalidextension'
-  command.argv = ['--no-install', '--extension', extName]
-  command.getTemplates.mockResolvedValue([
-    {
-      name: '@adobe/my-extension',
-      extensions: [
-        { extensionPointId: 'dx/excshell/1' }
-      ]
-    }
-  ])
-
-  await expect(command.run()).rejects.toThrow(`Extension(s) '${extName}' not found in the Template Registry.`)
-})
-
-test('extensions found in Template Registry, will install', async () => {
-  const installOptions = {
-    useDefaultValues: false,
-    installNpm: true,
-    templates: ['@adobe/my-extension']
-  }
-  const extName = 'dx/excshell/1'
-
-  command.argv = ['--extension', extName]
-  command.getTemplates.mockResolvedValue([
-    {
-      name: '@adobe/my-extension',
-      extensions: [
-        { extensionPointId: 'dx/excshell/1' }
-      ]
-    }
-  ])
-
-  await command.run()
-  expect(command.installTemplates).toBeCalledWith(installOptions)
 })
