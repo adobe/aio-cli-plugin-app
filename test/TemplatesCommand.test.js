@@ -221,7 +221,77 @@ describe('installTemplates', () => {
   })
 })
 
-describe('install extensions by name', () => {
+describe('get templates by extension point ids', () => {
+  test('not found', async () => {
+    const config = DEFAULT_TEMPLATE_REGISTRY_CONFIG
+    const contents = {
+      _links: {},
+      items: [
+        {
+          name: '@adobe/my-extension',
+          extensions: [
+            { extensionPointId: 'dx/excshell/1' }
+          ]
+        }
+      ]
+    }
+
+    const extensions = ['dx/excshell/1', 'unknown-extension']
+
+    nockGetTemplates({
+      contents,
+      config,
+      searchCriteria: {
+        statuses: ['Approved'],
+        extensions
+      },
+      orderByCriteria: {
+        publishDate: 'desc'
+      }
+    })
+
+    const { found, notFound, templates } = await command.getTemplatesByExtensionPointIds(extensions)
+    expect(found.length).toEqual(1)
+    expect(notFound.length).toEqual(1)
+    expect(templates.length).toEqual(1)
+  })
+
+  test('all found', async () => {
+    const config = DEFAULT_TEMPLATE_REGISTRY_CONFIG
+    const contents = {
+      _links: {},
+      items: [
+        {
+          name: '@adobe/my-extension',
+          extensions: [
+            { extensionPointId: 'dx/excshell/1' }
+          ]
+        }
+      ]
+    }
+
+    const extensions = ['dx/excshell/1']
+
+    nockGetTemplates({
+      contents,
+      config,
+      searchCriteria: {
+        statuses: ['Approved'],
+        extensions
+      },
+      orderByCriteria: {
+        publishDate: 'desc'
+      }
+    })
+
+    const { found, notFound, templates } = await command.getTemplatesByExtensionPointIds(extensions)
+    expect(found.length).toEqual(1)
+    expect(notFound.length).toEqual(0)
+    expect(templates.length).toEqual(1)
+  })
+})
+
+describe('install extensions by extension point ids', () => {
   test('extension not found in Template Registry', async () => {
     const config = DEFAULT_TEMPLATE_REGISTRY_CONFIG
     const contents = {
@@ -251,7 +321,7 @@ describe('install extensions by name', () => {
       }
     })
 
-    await expect(command.installExtensionsByName(extensionsToInstall, extensionsAlreadyImplemented))
+    await expect(command.installTemplatesByExtensionPointIds(extensionsToInstall, extensionsAlreadyImplemented))
       .rejects.toThrow('Extension(s) \'unknown-extension\' not found in the Template Registry.')
   })
 
@@ -284,7 +354,7 @@ describe('install extensions by name', () => {
       }
     })
 
-    await command.installExtensionsByName(extensionsToInstall, extensionsAlreadyImplemented)
+    await command.installTemplatesByExtensionPointIds(extensionsToInstall, extensionsAlreadyImplemented)
     expect(command.config.runCommand).toHaveBeenCalledTimes(1)
   })
 
@@ -317,7 +387,7 @@ describe('install extensions by name', () => {
       }
     })
 
-    await expect(command.installExtensionsByName(extensionsToInstall, extensionsAlreadyImplemented))
+    await expect(command.installTemplatesByExtensionPointIds(extensionsToInstall, extensionsAlreadyImplemented))
       .rejects.toThrow("'dx/excshell/1, foo/bar' extension(s) are already implemented in this project.")
   })
 })

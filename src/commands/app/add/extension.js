@@ -28,7 +28,7 @@ class AddExtensionCommand extends TemplatesCommand {
     const alreadyImplemented = fullConfig.implements
 
     if (flags.extension) {
-      await this.installExtensionsByName(flags.extension, alreadyImplemented, flags.yes, flags.install)
+      await this.installTemplatesByExtensionPointIds(flags.extension, alreadyImplemented, flags.yes, flags.install)
     } else {
       await this.selectExtensionsToInstall(alreadyImplemented, flags.yes, flags.install)
     }

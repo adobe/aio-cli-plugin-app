@@ -103,19 +103,7 @@ class InitCommand extends TemplatesCommand {
     }
 
     // 2. prompt for templates to be installed
-    let templates = []
-    if (flags.template) {
-      templates = flags.template
-    } else if (!flags['standalone-app']) {
-      const searchCriteria = {
-        [TemplateRegistryAPI.SEARCH_CRITERIA_STATUSES]: TemplateRegistryAPI.TEMPLATE_STATUS_APPROVED,
-        [TemplateRegistryAPI.SEARCH_CRITERIA_CATEGORIES]: TemplateRegistryAPI.SEARCH_CRITERIA_FILTER_NOT + 'helper-template'
-      }
-      const orderByCriteria = {
-        [TemplateRegistryAPI.ORDER_BY_CRITERIA_PUBLISH_DATE]: TemplateRegistryAPI.ORDER_BY_CRITERIA_SORT_DESC
-      }
-      templates = await this.selectTemplates(searchCriteria, orderByCriteria)
-    }
+    const templates = await this.getTemplatesForFlags(flags)
 
     // 3. run base code generators
     const projectName = (consoleConfig && consoleConfig.project.name) || path.basename(process.cwd())
@@ -148,13 +136,7 @@ class InitCommand extends TemplatesCommand {
     const workspace = await this.retrieveWorkspaceFromName(consoleCLI, org, project, flags)
 
     // 5. get list of templates to install
-    let templates = []
-    if (flags.template) {
-      templates = flags.template
-    } else if (!flags['standalone-app']) {
-      const [searchCriteria, orderByCriteria] = await this.getSearchCriteria(orgSupportedServices)
-      templates = await this.selectTemplates(searchCriteria, orderByCriteria)
-    }
+    const templates = await this.getTemplatesForFlags(flags, orgSupportedServices)
 
     // 6. download workspace config
     const consoleConfig = await consoleCLI.getWorkspaceConfig(org.id, project.id, workspace.id, orgSupportedServices)
@@ -173,6 +155,33 @@ class InitCommand extends TemplatesCommand {
     })
 
     this.log(chalk.blue(chalk.bold(`Project initialized for Workspace ${workspace.name}, you can run 'aio app use -w <workspace>' to switch workspace.`)))
+  }
+
+  async getTemplatesForFlags (flags, orgSupportedServices = null) {
+    if (flags.template) {
+      return flags.template
+    } else if (flags.extension) {
+      const { notFound, templates: extensionTemplates } = await this.getTemplatesByExtensionPointIds(flags.extension)
+      if (notFound.length > 0) {
+        this.error(`Extension(s) '${notFound.join(', ')}' not found in the Template Registry.`)
+      }
+      return extensionTemplates.map(t => t.name)
+    } else if (!flags['standalone-app']) {
+      const noLogin = flags.import || !flags.login
+      let [searchCriteria, orderByCriteria] = await this.getSearchCriteria(orgSupportedServices)
+      if (noLogin) {
+        searchCriteria = {
+          [TemplateRegistryAPI.SEARCH_CRITERIA_STATUSES]: TemplateRegistryAPI.TEMPLATE_STATUS_APPROVED,
+          [TemplateRegistryAPI.SEARCH_CRITERIA_CATEGORIES]: TemplateRegistryAPI.SEARCH_CRITERIA_FILTER_NOT + 'helper-template'
+        }
+        orderByCriteria = {
+          [TemplateRegistryAPI.ORDER_BY_CRITERIA_PUBLISH_DATE]: TemplateRegistryAPI.ORDER_BY_CRITERIA_SORT_DESC
+        }
+      }
+      return this.selectTemplates(searchCriteria, orderByCriteria)
+    } else {
+      return []
+    }
   }
 
   async ensureDevTermAccepted (consoleCLI, orgId) {
@@ -350,6 +359,12 @@ InitCommand.flags = {
     description: 'Login using your Adobe ID for interacting with Adobe I/O Developer Console',
     default: true,
     allowNo: true
+  }),
+  extension: Flags.string({
+    description: 'Extension point(s) to implement',
+    char: 'e',
+    multiple: true,
+    exclusive: ['template']
   }),
   'standalone-app': Flags.boolean({
     description: 'Create a stand-alone application',

@@ -50,7 +50,7 @@ beforeEach(() => {
   command.getTemplates = jest.fn()
   command.getTemplates.mockResolvedValue([])
   command.installTemplates = jest.fn()
-  command.installExtensionsByName = jest.fn()
+  command.installTemplatesByExtensionPointIds = jest.fn()
 })
 
 describe('Command Prototype', () => {
@@ -83,7 +83,7 @@ test('--yes (with extension)', async () => {
   ])
 
   await command.run()
-  expect(command.installExtensionsByName).toBeCalled()
+  expect(command.installTemplatesByExtensionPointIds).toBeCalled()
 })
 
 test('--yes --no-install (with extension)', async () => {
@@ -98,7 +98,7 @@ test('--yes --no-install (with extension)', async () => {
   ])
 
   await command.run()
-  expect(command.installExtensionsByName).toBeCalled()
+  expect(command.installTemplatesByExtensionPointIds).toBeCalled()
 })
 
 test('--no-install', async () => {
