@@ -55,6 +55,7 @@ class Deploy extends BuildCommand {
 
     try {
       const aioConfig = this.getFullConfig().aio
+
       // 1. update log forwarding configuration
       // note: it is possible that .aio file does not exist, which means there is no local lg config
       if (aioConfig &&
@@ -83,7 +84,18 @@ class Deploy extends BuildCommand {
           throw error
         }
       }
-      // 2. deploy actions and web assets for each extension
+
+      // 2. Bail if workspace is production and application status is PUBLISHED, honor force-deploy
+      if (aioConfig.project.workspace.name === 'Production' && !flags['force-deploy']) {
+        const extension = await this.getApplicationExtension(libConsoleCLI, aioConfig)
+        spinner.info(chalk.dim(JSON.stringify(extension)))
+        if (extension && extension.status === 'PUBLISHED') {
+          spinner.info(chalk.red('This application is published and the current workspace is Production, deployment will be skipped. You must first retract this application in Adobe Exchange to deploy updates.'))
+          return
+        }
+      }
+
+      // 3. deploy actions and web assets for each extension
       // Possible improvements:
       // - parallelize
       // - break into smaller pieces deploy, allowing to first deploy all actions then all web assets
@@ -93,7 +105,7 @@ class Deploy extends BuildCommand {
         await this.deploySingleConfig(k, v, flags, spinner)
       }
 
-      // 3. deploy extension manifest
+      // 4. deploy extension manifest
       if (flags.publish) {
         const payload = await this.publishExtensionPoints(libConsoleCLI, deployConfigs, aioConfig, flags['force-publish'])
         this.log(chalk.blue(chalk.bold(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': '${Object.keys(payload.endpoints)}'`)))
@@ -249,6 +261,12 @@ class Deploy extends BuildCommand {
     newPayload = await libConsoleCLI.updateExtensionPointsWithoutOverwrites(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, payload)
     return newPayload
   }
+
+  async getApplicationExtension (libConsoleCLI, aioConfig) {
+    const { appId } = await libConsoleCLI.getProject(aioConfig.project.org.id, aioConfig.project.id)
+    const applicationExtensions = await libConsoleCLI.getApplicationExtensions(aioConfig.project.org.id, appId)
+    return applicationExtensions.find(extension => extension.appId === appId)
+  }
 }
 
 Deploy.description = `Build and deploy an Adobe I/O App
@@ -322,8 +340,12 @@ Deploy.flags = {
     default: true,
     exclusive: ['action']
   }),
+  'force-deploy': Flags.boolean({
+    description: '[default: false] Force deploy changes, regardless of production Workspace being published in Exchange.',
+    default: false
+  }),
   'force-publish': Flags.boolean({
-    description: 'Force publish extension(s) to Exchange, delete previously published extension points',
+    description: '[default: false] Force publish extension(s) to Exchange, delete previously published extension points',
     default: false,
     exclusive: ['action', 'publish'] // no-publish is excluded
   }),
