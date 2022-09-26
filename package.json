@@ -1,7 +1,7 @@
 {
   "name": "@adobe/aio-cli-plugin-app",
   "description": "Create, Build and Deploy Adobe I/O Applications",
-  "version": "9.1.0",
+  "version": "9.1.1",
   "author": "Adobe Inc.",
   "bugs": "https://github.com/adobe/aio-cli-plugin-app/issues",
   "dependencies": {
@@ -15,6 +15,7 @@
     "@adobe/aio-lib-runtime": "^5.0.0",
     "@adobe/aio-lib-web": "^6.0.1",
     "@adobe/generator-aio-app": "^4.0.0",
+    "@adobe/generator-app-common-lib": "^0.3.3",
     "@oclif/core": "^1.15.0",
     "@parcel/core": "^2.7.0",
     "@parcel/reporter-cli": "^2.7.0",
@@ -59,11 +60,9 @@
     "eslint-plugin-promise": "^6.0.0",
     "jest": "^28",
     "jest-plugin-fs": "^2.9.0",
-    "oclif": "^3.0.1",
-    "stdout-stderr": "^0.1.9",
-    "typescript": "^4.7.4"
+    "oclif": "^3.2.0",
+    "stdout-stderr": "^0.1.9"
   },
-  "engineStrict": true,
   "engines": {
     "node": "^14.18 || ^16.13 || >=18"
   },
@@ -83,14 +82,14 @@
   "oclif": {
     "commands": "./src/commands",
     "bin": "aio",
-    "topicSeparator": ":",
+    "topicSeparator": " ",
     "repositoryPrefix": "<%- repo %>/blob/<%- version %>/<%- commandPath %>"
   },
   "repository": "adobe/aio-cli-plugin-app",
   "scripts": {
     "postpack": "rm -f oclif.manifest.json",
     "lint": "eslint src test",
-    "prepack": "oclif manifest && oclif readme",
+    "prepack": "oclif manifest && oclif readme --no-aliases",
     "test": "npm run unit-tests && npm run lint",
     "unit-tests": "jest -c jest.config.js",
     "version": "oclif readme && git add README.md",

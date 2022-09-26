@@ -129,10 +129,12 @@
                     ]
                 },
                 "jwt": { "$ref": "#/definitions/jwt" },
-                "api_key": { "$ref": "#/definitions/api_key" },
-                "oauth2": { "$ref": "#/definitions/oauth2" }
+                "api_key": { "$ref": "#/definitions/api_key" }
             },
             "required": [ "id", "name" ],
+            "if": { "properties": { "integration_type": { "const": "oauthsinglepageapp" } } },
+            "then": { "properties": { "oauth2": { "$ref": "#/definitions/oauthsinglepageapp" } } },
+            "else": { "properties": { "oauth2": { "$ref": "#/definitions/oauth2" } } },
             "oneOf": [
                 { "required": ["oauth2"] },
                 { "required": ["jwt"] },
@@ -173,6 +175,24 @@
                 }
             },
             "required": [ "client_id", "client_secret", "redirect_uri", "defaultRedirectUri" ]
+        },
+        "oauthsinglepageapp": {
+            "type": "object",
+            "properties": {
+                "client_id": { "type": "string" },
+                "defaultRedirectUri": {
+                    "type": "string",
+                    "format": "uri"
+                },
+                "redirect_uri": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "format": "uri"
+                    }
+                }
+            },
+            "required": [ "client_id", "redirect_uri", "defaultRedirectUri" ]
         },
         "api_key": {
             "type": "object",

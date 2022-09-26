@@ -14,7 +14,6 @@ const BaseCommand = require('../../../BaseCommand')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:list:extensions', { provider: 'debug' })
 const { Flags } = require('@oclif/core')
 
-const { EXTENSION_POINT_LIST } = require('../../../lib/defaults')
 const chalk = require('chalk')
 const yaml = require('js-yaml')
 
@@ -26,28 +25,30 @@ class ListExtensionCommand extends BaseCommand {
     const extConfig = this.getAppExtConfigs(flags)
     const extSummary = {}
 
-    Object.keys(EXTENSION_POINT_LIST).forEach(extPoint => {
-      const extension = extConfig[extPoint]
-      if (extension) {
-        const extDetails = { operations: {} }
-        extSummary[extPoint] = extDetails
+    Object.keys(extConfig).forEach(extPoint => {
+      if (extPoint === 'application') {
+        return
+      }
 
-        // get view impl details
-        if (extension.operations.view) {
-          extDetails.operations.view = [
-            {
-              impl: extension.operations.view[0].impl
-            }
-          ]
-        }
-        // get worker impl details
-        if (extension.operations.workerProcess) {
-          extDetails.operations.workerProcess = [
-            {
-              impl: extension.operations.workerProcess[0].impl
-            }
-          ]
-        }
+      const extension = extConfig[extPoint]
+      const extDetails = { operations: {} }
+      extSummary[extPoint] = extDetails
+
+      // get view impl details
+      if (extension.operations.view) {
+        extDetails.operations.view = [
+          {
+            impl: extension.operations.view[0].impl
+          }
+        ]
+      }
+      // get worker impl details
+      if (extension.operations.workerProcess) {
+        extDetails.operations.workerProcess = [
+          {
+            impl: extension.operations.workerProcess[0].impl
+          }
+        ]
       }
     })
     // print
