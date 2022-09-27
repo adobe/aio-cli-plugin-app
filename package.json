@@ -13,9 +13,11 @@
     "@adobe/aio-lib-env": "^2.0.0",
     "@adobe/aio-lib-ims": "^6.0.0",
     "@adobe/aio-lib-runtime": "^5.0.0",
+    "@adobe/aio-lib-templates": "^2.1.0",
     "@adobe/aio-lib-web": "^6.0.1",
     "@adobe/generator-aio-app": "^4.0.0",
     "@adobe/generator-app-common-lib": "^0.3.3",
+    "@adobe/inquirer-table-checkbox": "^1.0.1",
     "@oclif/core": "^1.15.0",
     "@parcel/core": "^2.7.0",
     "@parcel/reporter-cli": "^2.7.0",
@@ -38,6 +40,7 @@
     "ora": "^5",
     "pure-http": "^3",
     "serve-static": "^1.14.1",
+    "term-size": "^2.2.1",
     "upath": "^2",
     "which": "^2.0.1",
     "yeoman-environment": "^3.2.0"
@@ -60,6 +63,7 @@
     "eslint-plugin-promise": "^6.0.0",
     "jest": "^28",
     "jest-plugin-fs": "^2.9.0",
+    "nock": "^13.2.9",
     "oclif": "^3.2.0",
     "stdout-stderr": "^0.1.9"
   },

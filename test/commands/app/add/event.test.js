@@ -105,8 +105,8 @@ describe('good flags', () => {
     expect(helpers.installPackages).toHaveBeenCalledTimes(1)
   })
 
-  test('--yes --skip-install', async () => {
-    command.argv = ['--yes', '--skip-install']
+  test('--yes --no-install', async () => {
+    command.argv = ['--yes', '--no-install']
     await command.run()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
@@ -114,8 +114,8 @@ describe('good flags', () => {
     expect(helpers.installPackages).toHaveBeenCalledTimes(0)
   })
 
-  test('--skip-install', async () => {
-    command.argv = ['--skip-install']
+  test('--no-install', async () => {
+    command.argv = ['--no-install']
     await command.run()
 
     expect(yeoman.createEnv).toHaveBeenCalled()
