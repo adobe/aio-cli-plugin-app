@@ -11,7 +11,7 @@ governing permissions and limitations under the License.
 
 const AddCommand = require('./AddCommand')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:TemplatesCommand', { provider: 'debug' })
-const inquirerTablePrompt = require('inquirer-table-prompt')
+const inquirerTableCheckbox = require('@adobe/inquirer-table-checkbox')
 const inquirer = require('inquirer')
 const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
 const hyperlinker = require('hyperlinker')
@@ -95,7 +95,7 @@ class TemplatesCommand extends AddCommand {
     })
     const promptName = 'select template'
 
-    inquirer.registerPrompt('table', inquirerTablePrompt)
+    inquirer.registerPrompt('table', inquirerTableCheckbox)
     const answers = await inquirer
       .prompt([
         {
