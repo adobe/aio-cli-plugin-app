@@ -317,7 +317,8 @@ class InitCommand extends TemplatesCommand {
       const appGen = env.instantiate(generators[generatorKey], {
         options: {
           'skip-prompt': skipPrompt,
-          'project-name': projectName
+          'project-name': projectName,
+          force: true
         }
       })
       await env.runGenerator(appGen)
