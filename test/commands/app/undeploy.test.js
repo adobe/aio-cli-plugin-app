@@ -83,15 +83,6 @@ test('aliases', async () => {
 })
 
 test('flags', async () => {
-  expect(typeof TheCommand.flags['skip-actions']).toBe('object')
-  expect(typeof TheCommand.flags['skip-actions'].description).toBe('string')
-
-  expect(typeof TheCommand.flags['skip-static']).toBe('object')
-  expect(typeof TheCommand.flags['skip-static'].description).toBe('string')
-
-  expect(typeof TheCommand.flags['skip-web-assets']).toBe('object')
-  expect(typeof TheCommand.flags['skip-web-assets'].description).toBe('string')
-
   expect(typeof TheCommand.flags.actions).toBe('object')
   expect(typeof TheCommand.flags.actions.description).toBe('string')
   expect(TheCommand.flags.actions.default).toEqual(true)
@@ -168,14 +159,14 @@ describe('run', () => {
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(0)
   })
 
-  test('pre post undeploy hook errors --skip-actions --skip-static', async () => {
+  test('pre post undeploy hook errors --no-actions --no-web-assets', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
 
     helpers.runScript
       .mockRejectedValueOnce('error-pre-app-undeploy') // pre-app-deploy (logs error)
       .mockRejectedValueOnce('error-post-app-undeploy') // post-app-deploy (logs error)
 
-    command.argv = ['--skip-actions', '--skip-static']
+    command.argv = ['--no-actions', '--no-web-assets']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(0)
@@ -195,20 +186,20 @@ describe('run', () => {
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
   })
 
-  test('undeploy skip-actions', async () => {
+  test('undeploy no-actions', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
 
-    command.argv = ['--skip-actions']
+    command.argv = ['--no-actions']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
   })
 
-  test('undeploy skip-actions verbose', async () => {
+  test('undeploy no-actions verbose', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
 
-    command.argv = ['--skip-actions', '-v']
+    command.argv = ['--no-actions', '-v']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(0)
@@ -218,7 +209,7 @@ describe('run', () => {
   test('undeploy skip static', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
 
-    command.argv = ['--skip-static']
+    command.argv = ['--no-web-assets']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
@@ -228,7 +219,7 @@ describe('run', () => {
   test('undeploy skip web assets', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
 
-    command.argv = ['--skip-web-assets']
+    command.argv = ['--no-web-assets']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
@@ -238,7 +229,7 @@ describe('run', () => {
   test('undeploy skip static verbose', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
 
-    command.argv = ['--skip-static', '-v']
+    command.argv = ['--no-web-assets', '-v']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
@@ -402,7 +393,7 @@ describe('run', () => {
     expect(scriptSequence[3]).toEqual('post-app-undeploy')
   })
 
-  test('nothing to be undeployed (--no-publish, --build, --skip-deploy)', async () => {
+  test('nothing to be undeployed (--no-publish, --build, --no-deploy)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
 
     command.argv = ['--no-unpublish', '--no-web-assets', '--no-actions']

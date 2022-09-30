@@ -26,10 +26,6 @@ class Undeploy extends BaseCommand {
     // cli input
     const { flags } = await this.parse(Undeploy)
 
-    // flags
-    flags['web-assets'] = flags['web-assets'] && !flags['skip-static'] && !flags['skip-web-assets'] && !flags.action
-    flags.actions = flags.actions && !flags['skip-actions']
-
     const undeployConfigs = this.getAppExtConfigs(flags)
     let libConsoleCLI
     if (flags.unpublish) {
@@ -146,15 +142,6 @@ Undeploy.description = `Undeploys an Adobe I/O App
 
 Undeploy.flags = {
   ...BaseCommand.flags,
-  'skip-static': Flags.boolean({
-    description: '[deprecated] Please use --no-web-assets'
-  }),
-  'skip-web-assets': Flags.boolean({
-    description: '[deprecated] Please use --no-web-assets'
-  }),
-  'skip-actions': Flags.boolean({
-    description: '[deprecated] Please use --no-actions'
-  }),
   actions: Flags.boolean({
     description: '[default: true] Undeploy actions if any',
     default: true,

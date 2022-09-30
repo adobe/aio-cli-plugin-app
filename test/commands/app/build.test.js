@@ -172,15 +172,6 @@ test('flags', async () => {
   expect(typeof TheCommand.flags.action.description).toBe('string')
   expect(TheCommand.flags.action.exclusive).toEqual(['extension'])
 
-  expect(typeof TheCommand.flags['skip-actions']).toBe('object')
-  expect(typeof TheCommand.flags['skip-actions'].description).toBe('string')
-
-  expect(typeof TheCommand.flags['skip-static']).toBe('object')
-  expect(typeof TheCommand.flags['skip-static'].description).toBe('string')
-
-  expect(typeof TheCommand.flags['skip-web-assets']).toBe('object')
-  expect(typeof TheCommand.flags['skip-web-assets'].description).toBe('string')
-
   expect(typeof TheCommand.flags.actions).toBe('object')
   expect(typeof TheCommand.flags.actions.description).toBe('string')
   expect(TheCommand.flags.actions.exclusive).toEqual(['action'])
@@ -317,18 +308,9 @@ describe('run', () => {
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
   })
 
-  test('build & deploy --skip-static', async () => {
+  test('build & deploy --no-web-assets', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
-    command.argv = ['--skip-static']
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.bundle).toHaveBeenCalledTimes(0)
-  })
-
-  test('build & deploy --skip-web-assets', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
-    command.argv = ['--skip-web-assets']
+    command.argv = ['--no-web-assets']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
@@ -338,7 +320,7 @@ describe('run', () => {
   test('build & deploy only some actions using --action', async () => {
     const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
-    command.argv = ['--skip-static', '-a', 'a', '-a=b', '--action', 'c']
+    command.argv = ['--no-web-assets', '-a', 'a', '-a=b', '--action', 'c']
     mockRuntimeLib.buildActions.mockReturnValue(['a', 'b', 'c'])
     await command.run()
     expect(spinner.start).toBeCalledWith('Building actions for \'application\'')
@@ -361,10 +343,10 @@ describe('run', () => {
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
   })
 
-  test('build & deploy with --skip-actions', async () => {
+  test('build & deploy with --no-actions', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
-    command.argv = ['--skip-actions']
+    command.argv = ['--no-actions']
     mockFS.existsSync.mockReturnValue(true)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -372,12 +354,12 @@ describe('run', () => {
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
   })
 
-  test('build & deploy with --skip-actions with no frontend', async () => {
+  test('build & deploy with --no-actions with no frontend', async () => {
     command.appConfig.app.hasFrontend = false
     command.appConfig.app.hasBackend = true
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
-    command.argv = ['--skip-actions']
+    command.argv = ['--no-actions']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
@@ -442,7 +424,7 @@ describe('run', () => {
     expect(scriptSequence[3]).toEqual('post-app-build')
   })
 
-  test('build (--skip-actions and --skip-static)', async () => {
+  test('build (--no-actions and --no-web-assets)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     const noScriptFound = undefined
@@ -450,13 +432,13 @@ describe('run', () => {
       .mockResolvedValueOnce(noScriptFound) // pre-app-build
       .mockResolvedValueOnce(noScriptFound) // post-app-build
 
-    command.argv = ['--skip-actions', '--skip-static']
+    command.argv = ['--no-actions', '--no-web-assets']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledWith(expect.stringMatching(/Nothing to be done/))
   })
 
-  test('build (--skip-actions)', async () => {
+  test('build (--no-actions)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     mockWebLib.bundle.mockImplementation((a, b, c, log) => {
@@ -469,14 +451,14 @@ describe('run', () => {
       .mockResolvedValueOnce(noScriptFound) // pre-app-build
       .mockResolvedValueOnce(noScriptFound) // post-app-build
 
-    command.argv = ['--skip-actions']
+    command.argv = ['--no-actions']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
   })
 
-  test('build (--skip-actions, --verbose) (coverage)', async () => {
+  test('build (--no-actions, --verbose) (coverage)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     mockWebLib.bundle.mockImplementation((a, b, c, log) => {
@@ -489,14 +471,14 @@ describe('run', () => {
       .mockResolvedValueOnce(noScriptFound) // pre-app-build
       .mockResolvedValueOnce(noScriptFound) // post-app-build
 
-    command.argv = ['--skip-actions', '--verbose']
+    command.argv = ['--no-actions', '--verbose']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
   })
 
-  test('build (--skip-static)', async () => {
+  test('build (--no-web-assets)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     const noScriptFound = undefined
@@ -504,7 +486,7 @@ describe('run', () => {
       .mockResolvedValueOnce(noScriptFound) // pre-app-build
       .mockResolvedValueOnce(noScriptFound) // post-app-build
 
-    command.argv = ['--skip-static']
+    command.argv = ['--no-web-assets']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(0)
@@ -528,14 +510,14 @@ describe('run', () => {
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
   })
 
-  test('build (pre and post hooks have errors, --skip-actions and --skip-static)', async () => {
+  test('build (pre and post hooks have errors, --no-actions and --no-web-assets)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     helpers.runScript
       .mockRejectedValueOnce('error-pre-app-build') // pre-app-build (logs error)
       .mockRejectedValueOnce('error-post-app-build') // post-app-build (logs error)
 
-    command.argv = ['--skip-actions', '--skip-static']
+    command.argv = ['--no-actions', '--no-web-assets']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(1) // nothing to be done, because of the flags
     expect(command.error).toHaveBeenCalledWith(expect.stringMatching(/Nothing to be done/))

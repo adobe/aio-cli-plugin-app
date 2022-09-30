@@ -27,10 +27,8 @@ class Deploy extends BuildCommand {
     const { flags } = await this.parse(Deploy)
 
     // flags
-    flags['web-assets'] = flags['web-assets'] && !flags['skip-web-assets'] && !flags['skip-static'] && !flags.action
-    flags.actions = flags.actions && !flags['skip-actions']
+    flags['web-assets'] = flags['web-assets'] && !flags.action
     flags.publish = flags.publish && !flags.action
-    flags.build = flags.build && !flags['skip-build']
 
     const deployConfigs = this.getAppExtConfigs(flags)
     const keys = Object.keys(deployConfigs)
@@ -45,9 +43,7 @@ class Deploy extends BuildCommand {
     }
 
     if (
-      (!flags.publish && !flags['web-assets'] && !flags.actions) ||
-      // NOTE skip deploy is deprecated
-      (!flags.publish && !flags.build && flags['skip-deploy'])
+      (!flags.publish && !flags['web-assets'] && !flags.actions)
     ) {
       this.error('Nothing to be done 🚫')
     }
@@ -144,103 +140,101 @@ class Deploy extends BuildCommand {
 
     const filterActions = flags.action
 
-    if (!flags['skip-deploy']) {
-      try {
-        await runScript(config.hooks['pre-app-deploy'])
-      } catch (err) {
-        this.log(err)
-      }
+    try {
+      await runScript(config.hooks['pre-app-deploy'])
+    } catch (err) {
+      this.log(err)
+    }
 
-      if (flags.actions) {
-        if (config.app.hasBackend) {
-          let filterEntities
-          if (filterActions) {
-            filterEntities = { actions: filterActions }
-          }
-          const message = `Deploying actions for '${name}'`
-          spinner.start(message)
-          try {
-            const script = await runScript(config.hooks['deploy-actions'])
-            if (!script) {
-              deployedRuntimeEntities = await rtLib.deployActions(config, { filterEntities }, onProgress)
-            }
-
-            if (deployedRuntimeEntities.actions && deployedRuntimeEntities.actions.length > 0) {
-              spinner.succeed(chalk.green(`Deployed ${deployedRuntimeEntities.actions.length} action(s) for '${name}'`))
-            } else {
-              if (script) {
-                spinner.fail(chalk.green(`deploy-actions skipped by hook '${name}'`))
-              } else {
-                spinner.fail(chalk.green(`No actions deployed for '${name}'`))
-              }
-            }
-          } catch (err) {
-            spinner.fail(chalk.green(message))
-            throw err
-          }
-        } else {
-          this.log(`no backend, skipping action deploy '${name}'`)
+    if (flags.actions) {
+      if (config.app.hasBackend) {
+        let filterEntities
+        if (filterActions) {
+          filterEntities = { actions: filterActions }
         }
-      }
+        const message = `Deploying actions for '${name}'`
+        spinner.start(message)
+        try {
+          const script = await runScript(config.hooks['deploy-actions'])
+          if (!script) {
+            deployedRuntimeEntities = await rtLib.deployActions(config, { filterEntities }, onProgress)
+          }
 
-      if (flags['web-assets']) {
-        if (config.app.hasFrontend) {
-          const message = `Deploying web assets for '${name}'`
-          spinner.start(message)
-          try {
-            const script = await runScript(config.hooks['deploy-static'])
+          if (deployedRuntimeEntities.actions && deployedRuntimeEntities.actions.length > 0) {
+            spinner.succeed(chalk.green(`Deployed ${deployedRuntimeEntities.actions.length} action(s) for '${name}'`))
+          } else {
             if (script) {
-              spinner.fail(chalk.green(`deploy-static skipped by hook '${name}'`))
+              spinner.fail(chalk.green(`deploy-actions skipped by hook '${name}'`))
             } else {
-              deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
-              spinner.succeed(chalk.green(message))
+              spinner.fail(chalk.green(`No actions deployed for '${name}'`))
             }
-          } catch (err) {
-            spinner.fail(chalk.green(message))
-            throw err
           }
-        } else {
-          this.log(`no frontend, skipping frontend deploy '${name}'`)
+        } catch (err) {
+          spinner.fail(chalk.green(message))
+          throw err
         }
+      } else {
+        this.log(`no backend, skipping action deploy '${name}'`)
+      }
+    }
+
+    if (flags['web-assets']) {
+      if (config.app.hasFrontend) {
+        const message = `Deploying web assets for '${name}'`
+        spinner.start(message)
+        try {
+          const script = await runScript(config.hooks['deploy-static'])
+          if (script) {
+            spinner.fail(chalk.green(`deploy-static skipped by hook '${name}'`))
+          } else {
+            deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
+            spinner.succeed(chalk.green(message))
+          }
+        } catch (err) {
+          spinner.fail(chalk.green(message))
+          throw err
+        }
+      } else {
+        this.log(`no frontend, skipping frontend deploy '${name}'`)
+      }
+    }
+
+    // log deployed resources
+    if (deployedRuntimeEntities.actions && deployedRuntimeEntities.actions.length > 0) {
+      this.log(chalk.blue(chalk.bold('Your deployed actions:')))
+      const web = deployedRuntimeEntities.actions.filter(createWebExportFilter(true))
+      const nonWeb = deployedRuntimeEntities.actions.filter(createWebExportFilter(false))
+
+      if (web.length > 0) {
+        this.log('web actions:')
+        web.forEach(a => {
+          this.log(chalk.blue(chalk.bold(`  -> ${a.url || a.name} `)))
+        })
       }
 
-      // log deployed resources
-      if (deployedRuntimeEntities.actions && deployedRuntimeEntities.actions.length > 0) {
-        this.log(chalk.blue(chalk.bold('Your deployed actions:')))
-        const web = deployedRuntimeEntities.actions.filter(createWebExportFilter(true))
-        const nonWeb = deployedRuntimeEntities.actions.filter(createWebExportFilter(false))
-
-        if (web.length > 0) {
-          this.log('web actions:')
-          web.forEach(a => {
-            this.log(chalk.blue(chalk.bold(`  -> ${a.url || a.name} `)))
-          })
-        }
-
-        if (nonWeb.length > 0) {
-          this.log('non-web actions:')
-          nonWeb.forEach(a => {
-            this.log(chalk.blue(chalk.bold(`  -> ${a.url || a.name} `)))
-          })
-        }
+      if (nonWeb.length > 0) {
+        this.log('non-web actions:')
+        nonWeb.forEach(a => {
+          this.log(chalk.blue(chalk.bold(`  -> ${a.url || a.name} `)))
+        })
       }
-      // TODO urls should depend on extension point, exc shell only for exc shell extension point - use a post-app-deploy hook ?
-      if (deployedFrontendUrl) {
-        this.log(chalk.blue(chalk.bold(`To view your deployed application:\n  -> ${deployedFrontendUrl}`)))
-        const launchUrl = this.getLaunchUrlPrefix() + deployedFrontendUrl
-        if (flags.open) {
-          this.log(chalk.blue(chalk.bold(`Opening your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
-          cli.open(launchUrl)
-        } else {
-          this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
-        }
+    }
+    // TODO urls should depend on extension point, exc shell only for exc shell extension point - use a post-app-deploy hook ?
+    if (deployedFrontendUrl) {
+      this.log(chalk.blue(chalk.bold(`To view your deployed application:\n  -> ${deployedFrontendUrl}`)))
+      const launchUrl = this.getLaunchUrlPrefix() + deployedFrontendUrl
+      if (flags.open) {
+        this.log(chalk.blue(chalk.bold(`Opening your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
+        cli.open(launchUrl)
+      } else {
+        this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
       }
+    }
 
-      try {
-        await runScript(config.hooks['post-app-deploy'])
-      } catch (err) {
-        this.log(err)
-      }
+    try {
+      await runScript(config.hooks['post-app-deploy'])
+    } catch (err) {
+      this.log(err)
     }
   }
 
@@ -276,21 +270,6 @@ This will always force a rebuild unless --no-force-build is set.
 
 Deploy.flags = {
   ...BaseCommand.flags,
-  'skip-build': Flags.boolean({
-    description: '[deprecated] Please use --no-build'
-  }),
-  'skip-deploy': Flags.boolean({
-    description: '[deprecated] Please use \'aio app build\''
-  }),
-  'skip-static': Flags.boolean({
-    description: '[deprecated] Please use --no-web-assets'
-  }),
-  'skip-web-assets': Flags.boolean({
-    description: '[deprecated] Please use --no-web-assets'
-  }),
-  'skip-actions': Flags.boolean({
-    description: '[deprecated] Please use --no-actions'
-  }),
   actions: Flags.boolean({
     description: '[default: true] Deploy actions if any',
     default: true,
