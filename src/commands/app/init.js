@@ -113,6 +113,7 @@ class InitCommand extends TemplatesCommand {
     await this.installTemplates({
       useDefaultValues: flags.yes,
       installNpm: flags.install,
+      installConfig: flags.login,
       templates
     })
 

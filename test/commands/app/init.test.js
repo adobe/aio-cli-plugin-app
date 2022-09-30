@@ -228,6 +228,7 @@ describe('--no-login', () => {
     const installOptions = {
       useDefaultValues: false,
       installNpm: true,
+      installConfig: false,
       templates: ['@adobe/my-extension']
     }
     command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
@@ -247,6 +248,7 @@ describe('--no-login', () => {
     const installOptions = {
       useDefaultValues: false,
       installNpm: true,
+      installConfig: false,
       templates: ['@adobe/my-extension']
     }
     command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
@@ -263,6 +265,7 @@ describe('--no-login', () => {
     const installOptions = {
       useDefaultValues: false,
       installNpm: true,
+      installConfig: false,
       templates: [] // stand-alone, we use the initial generators only, nothing to install from Template Registry
     }
 
@@ -278,6 +281,7 @@ describe('--no-login', () => {
     const installOptions = {
       useDefaultValues: true,
       installNpm: false,
+      installConfig: false,
       templates: ['@adobe/my-extension']
     }
     command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
@@ -294,6 +298,7 @@ describe('--no-login', () => {
     const installOptions = {
       useDefaultValues: true,
       installNpm: false,
+      installConfig: false,
       templates: ['@adobe/my-extension']
     }
 
@@ -309,6 +314,7 @@ describe('--no-login', () => {
     const installOptions = {
       useDefaultValues: true,
       installNpm: false,
+      installConfig: false,
       templates: ['@adobe/my-extension', '@adobe/your-extension']
     }
 
