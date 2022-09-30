@@ -150,20 +150,15 @@ describe('run command definition', () => {
   test('flags', async () => {
     expect(typeof TheCommand.flags.local).toBe('object')
     expect(typeof TheCommand.flags.local.description).toBe('string')
-    expect(TheCommand.flags.local.exclusive).toEqual(['skip-actions'])
+    expect(TheCommand.flags.local.exclusive).toEqual(['no-actions'])
 
     expect(typeof TheCommand.flags.serve).toBe('object')
     expect(typeof TheCommand.flags.serve.description).toBe('string')
     expect(TheCommand.flags.serve.default).toEqual(true)
     expect(TheCommand.flags.serve.allowNo).toEqual(true)
 
-    expect(typeof TheCommand.flags['skip-actions']).toBe('object')
-    expect(typeof TheCommand.flags['skip-actions'].description).toBe('string')
-    expect(TheCommand.flags['skip-actions'].exclusive).toEqual(['local'])
-
     expect(typeof TheCommand.flags.actions).toBe('object')
     expect(typeof TheCommand.flags.actions.description).toBe('string')
-    expect(TheCommand.flags.actions.exclusive).toEqual(['local'])
     expect(TheCommand.flags.actions.default).toEqual(true)
     expect(TheCommand.flags.actions.allowNo).toEqual(true)
 
@@ -211,18 +206,18 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledWith(Error('nothing to run.. there is no frontend and no manifest.yml, are you in a valid app?'))
   })
 
-  test('app:run with no web-src and --skip-actions should fail', async () => {
-    command.argv = ['--skip-actions']
+  test('app:run with no web-src and --no-actions should fail', async () => {
+    command.argv = ['--no-actions']
     command.appConfig.app.hasFrontend = false
     command.appConfig.app.hasBackend = true
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
-    expect(command.error).toHaveBeenCalledWith(Error('nothing to run.. there is no frontend and --skip-actions is set'))
-    // await expect(command.run()).rejects.toThrow('nothing to run.. there is no frontend and --skip-actions is set')
+    expect(command.error).toHaveBeenCalledWith(Error('nothing to run.. there is no frontend and --no-actions is set'))
+    // await expect(command.run()).rejects.toThrow('nothing to run.. there is no frontend and --no-actions is set')
   })
 
-  test('app:run with web-src and --skip-actions', async () => {
+  test('app:run with web-src and --no-actions', async () => {
     command.argv = []
     command.appConfig.app.hasFrontend = false
     command.appConfig.app.hasBackend = true

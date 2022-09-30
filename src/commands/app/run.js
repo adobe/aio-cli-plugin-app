@@ -33,8 +33,6 @@ class Run extends BaseCommand {
   async run () {
     // cli input
     const { flags } = await this.parse(Run)
-    // aliases
-    flags.actions = flags.actions && !flags['skip-actions']
 
     const spinner = ora()
 
@@ -64,8 +62,8 @@ class Run extends BaseCommand {
     if (!hasBackend && !hasFrontend) {
       this.error(new Error('nothing to run.. there is no frontend and no manifest.yml, are you in a valid app?'))
     }
-    if (flags['skip-actions'] && !hasFrontend) {
-      this.error(new Error('nothing to run.. there is no frontend and --skip-actions is set'))
+    if (!flags.actions && !hasFrontend) {
+      this.error(new Error('nothing to run.. there is no frontend and --no-actions is set'))
     }
 
     const runOptions = {
@@ -203,22 +201,16 @@ Run.description = 'Run an Adobe I/O App'
 Run.flags = {
   ...BaseCommand.flags,
   local: Flags.boolean({
-    description: 'Run/debug actions locally ( requires Docker running )',
-    exclusive: ['skip-actions']
+    description: 'Run/debug actions locally (requires Docker running)',
+    exclusive: ['no-actions']
   }),
   serve: Flags.boolean({
     description: '[default: true] Start frontend server (experimental)',
     default: true,
     allowNo: true
   }),
-  'skip-actions': Flags.boolean({
-    description: '[deprecated] Please use --no-actions',
-    exclusive: ['local'],
-    default: false
-  }),
   actions: Flags.boolean({
     description: '[default: true] Run actions, defaults to true, to skip actions use --no-actions',
-    exclusive: ['local'], // no-actions and local don't work together
     default: true,
     allowNo: true
   }),

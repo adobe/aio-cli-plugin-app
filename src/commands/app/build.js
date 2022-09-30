@@ -26,8 +26,7 @@ class Build extends BaseCommand {
     // cli input
     const { flags } = await this.parse(Build)
     // flags
-    flags['web-assets'] = flags['web-assets'] && !flags['skip-static'] && !flags['skip-web-assets'] && !flags.action
-    flags.actions = flags.actions && !flags['skip-actions']
+    flags['web-assets'] = flags['web-assets'] && !flags.action
 
     const buildConfigs = this.getAppExtConfigs(flags)
 
@@ -144,15 +143,6 @@ This will always force a rebuild unless --no-force-build is set.
 
 Build.flags = {
   ...BaseCommand.flags,
-  'skip-static': Flags.boolean({
-    description: '[deprecated] Please use --no-web-assets'
-  }),
-  'skip-web-assets': Flags.boolean({
-    description: '[deprecated] Please use --no-web-assets'
-  }),
-  'skip-actions': Flags.boolean({
-    description: '[deprecated] Please use --no-actions'
-  }),
   actions: Flags.boolean({
     description: '[default: true] Build actions if any',
     default: true,
