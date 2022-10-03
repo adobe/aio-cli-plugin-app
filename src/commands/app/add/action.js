@@ -94,7 +94,7 @@ class AddActionCommand extends TemplatesCommand {
 
     switch (selection) {
       case 'orgActionTemplates': {
-        const supportedServiceCodes = new Set(orgSupportedServices.map(s => s.code))
+        const supportedServiceCodes = new Set(orgSupportedServices.map(s => `|${s.code}`)) // | symbol denotes an OR clause
         searchCriteria[TemplateRegistryAPI.SEARCH_CRITERIA_APIS] = Array.from(supportedServiceCodes)
       }
         break
