@@ -753,6 +753,26 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledWith(expect.stringMatching(/Nothing to be done/))
   })
 
+  test('deploy for standalone app --no-publish (no login)', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig, 'exc'))
+    mockGetExtensionPointsPublishedApp()
+    mockGetProject()
+    command.getFullConfig.mockReturnValue({
+      aio: {
+      }
+    })
+    mockExtRegExcShellPayload()
+    command.argv = ['--no-publish']
+    await command.run()
+
+    expect(mockLibConsoleCLI.getProject).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(0)
+  })
+
   test('deploy for PUBLISHED Production extension - no publish', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig, 'exc'))
     mockGetExtensionPointsPublishedApp()
