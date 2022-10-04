@@ -104,6 +104,10 @@ class InitCommand extends TemplatesCommand {
 
     // 2. prompt for templates to be installed
     const templates = await this.getTemplatesForFlags(flags)
+    // If no templates selected, init a standalone app
+    if (templates.length <= 0) {
+      flags['standalone-app'] = true
+    }
 
     // 3. run base code generators
     const projectName = (consoleConfig && consoleConfig.project.name) || path.basename(process.cwd())
@@ -138,6 +142,10 @@ class InitCommand extends TemplatesCommand {
 
     // 5. get list of templates to install
     const templates = await this.getTemplatesForFlags(flags, orgSupportedServices)
+    // If no templates selected, init a standalone app
+    if (templates.length <= 0) {
+      flags['standalone-app'] = true
+    }
 
     // 6. download workspace config
     const consoleConfig = await consoleCLI.getWorkspaceConfig(org.id, project.id, workspace.id, orgSupportedServices)
@@ -242,7 +250,7 @@ class InitCommand extends TemplatesCommand {
 
     switch (selection) {
       case 'orgTemplates': {
-        const supportedServiceCodes = new Set(orgSupportedServices.map(s => s.code))
+        const supportedServiceCodes = new Set(orgSupportedServices.map(s => `|${s.code}`)) // | symbol denotes an OR clause
         searchCriteria[TemplateRegistryAPI.SEARCH_CRITERIA_APIS] = Array.from(supportedServiceCodes)
       }
         break
