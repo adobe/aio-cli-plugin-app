@@ -14,8 +14,9 @@ const TheCommand = require('../../../../src/commands/app/add/action')
 const TemplatesCommand = require('../../../../src/TemplatesCommand')
 const dataMocks = require('../../../data-mocks/config-loader')
 const inquirer = require('inquirer')
-jest.mock('@adobe/aio-lib-core-config')
+const config = require('@adobe/aio-lib-core-config')
 
+jest.mock('@adobe/aio-lib-core-config')
 jest.mock('fs-extra')
 jest.mock('inquirer', () => ({
   registerPrompt: jest.fn(),
@@ -33,6 +34,12 @@ const mockGetEnabledServicesForOrg = jest.fn()
 let command
 
 beforeEach(() => {
+  config.get = jest.fn((key) => {
+    if (key === 'project.org.id') {
+      return 'some-id'
+    }
+  })
+
   command = new TheCommand([])
   command.getAppExtConfigs = jest.fn()
   command.getAppExtConfigs.mockReturnValue(createAppConfig(command.appConfig))
@@ -52,6 +59,7 @@ beforeEach(() => {
   command.getLibConsoleCLI.mockResolvedValue({
     getEnabledServicesForOrg: mockGetEnabledServicesForOrg
   })
+  command.config = { bin: 'aio' }
 
   command.selectTemplates = jest.fn()
   command.selectTemplates.mockResolvedValue([])
@@ -72,6 +80,12 @@ describe('Command Prototype', () => {
 test('bad flags', async () => {
   command.argv = ['--wtf']
   await expect(() => command.run()).rejects.toThrow('Unexpected argument: --wtf\nSee more help with --help')
+})
+
+test('.aio config missing', async () => {
+  config.get = jest.fn() // return nothing from the config
+  command.argv = []
+  await expect(command.run()).rejects.toThrow('Incomplete .aio configuration')
 })
 
 test('--yes', async () => {
