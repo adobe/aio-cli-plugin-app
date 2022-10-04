@@ -34,8 +34,13 @@ class AddActionCommand extends TemplatesCommand {
     const actionFolder = path.relative(config.root, config.actions.src)
     const configData = this.getRuntimeManifestConfigFile(configName)
 
+    const projectOrgId = aioConfigLoader.get('project.org.id')
+    if (!projectOrgId) {
+      this.error(`Incomplete .aio configuration, please import a valid Adobe Developer Console configuration via \`${this.config.bin} app use\` first.`)
+    }
+
     const consoleCLI = await this.getLibConsoleCLI()
-    const orgSupportedServices = await consoleCLI.getEnabledServicesForOrg(aioConfigLoader.get('project.org.id'))
+    const orgSupportedServices = await consoleCLI.getEnabledServicesForOrg(projectOrgId)
 
     const templateOptions = {
       'skip-prompt': flags.yes,
