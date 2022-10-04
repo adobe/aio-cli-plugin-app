@@ -137,12 +137,24 @@ describe('getTemplates', () => {
 describe('selectTemplates', () => {
   test('query has at least one item', async () => {
     const config = CUSTOM_TEMPLATE_REGISTRY_CONFIG
+    const orgSupportedServices = ['api1']
     const { searchCriteria, orderByCriteria } = nockGetTemplates({ config })
     inquirer.prompt.mockResolvedValue({
       'select template': ['my-template']
     })
 
-    const templates = await command.selectTemplates(searchCriteria, orderByCriteria, config)
+    const templates = await command.selectTemplates(searchCriteria, orderByCriteria, orgSupportedServices, config)
+    expect(templates.length).toBeGreaterThan(0)
+  })
+
+  test('query has at least one item, no template apis', async () => {
+    const config = CUSTOM_TEMPLATE_REGISTRY_CONFIG
+    const { searchCriteria, orderByCriteria } = nockGetTemplates({ config })
+    inquirer.prompt.mockResolvedValue({
+      'select template': ['my-template']
+    })
+
+    const templates = await command.selectTemplates(searchCriteria, orderByCriteria, undefined, config)
     expect(templates.length).toBeGreaterThan(0)
   })
 
@@ -154,18 +166,19 @@ describe('selectTemplates', () => {
     }
 
     const { searchCriteria, orderByCriteria } = nockGetTemplates({ contents, config })
-    await expect(command.selectTemplates(searchCriteria, orderByCriteria, config))
+    await expect(command.selectTemplates(searchCriteria, orderByCriteria, undefined, config))
       .rejects.toThrow('There are no templates that match the query for selection')
   })
 
   test('use default Template Registry API config', async () => {
     const config = DEFAULT_TEMPLATE_REGISTRY_CONFIG
+    const orgSupportedServices = []
     const { searchCriteria, orderByCriteria } = nockGetTemplates({ config })
     inquirer.prompt.mockResolvedValue({
       'select template': ['my-template']
     })
 
-    const templates = await command.selectTemplates(searchCriteria, orderByCriteria)
+    const templates = await command.selectTemplates(searchCriteria, orderByCriteria, orgSupportedServices)
     expect(templates.length).toBeGreaterThan(0)
   })
 })

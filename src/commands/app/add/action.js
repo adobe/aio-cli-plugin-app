@@ -35,7 +35,7 @@ class AddActionCommand extends TemplatesCommand {
     const configData = this.getRuntimeManifestConfigFile(configName)
 
     const consoleCLI = await this.getLibConsoleCLI()
-    const supportedOrgServices = await consoleCLI.getEnabledServicesForOrg(aioConfigLoader.get('project.org.id'))
+    const orgSupportedServices = await consoleCLI.getEnabledServicesForOrg(aioConfigLoader.get('project.org.id'))
 
     const templateOptions = {
       'skip-prompt': flags.yes,
@@ -44,8 +44,8 @@ class AddActionCommand extends TemplatesCommand {
       'full-key-to-manifest': configData.key
     }
 
-    const [searchCriteria, orderByCriteria] = await this.getSearchCriteria(supportedOrgServices)
-    const templates = await this.selectTemplates(searchCriteria, orderByCriteria)
+    const [searchCriteria, orderByCriteria] = await this.getSearchCriteria(orgSupportedServices)
+    const templates = await this.selectTemplates(searchCriteria, orderByCriteria, orgSupportedServices)
     if (templates.length === 0) {
       this.error('No action templates were chosen to be installed.')
     } else {

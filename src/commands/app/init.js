@@ -187,7 +187,7 @@ class InitCommand extends TemplatesCommand {
           [TemplateRegistryAPI.ORDER_BY_CRITERIA_PUBLISH_DATE]: TemplateRegistryAPI.ORDER_BY_CRITERIA_SORT_DESC
         }
       }
-      return this.selectTemplates(searchCriteria, orderByCriteria)
+      return this.selectTemplates(searchCriteria, orderByCriteria, orgSupportedServices)
     } else {
       return []
     }

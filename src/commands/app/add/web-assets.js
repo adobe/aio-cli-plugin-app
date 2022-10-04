@@ -43,7 +43,6 @@ class AddWebAssetsCommand extends TemplatesCommand {
     const orderByCriteria = {
       [TemplateRegistryAPI.ORDER_BY_CRITERIA_PUBLISH_DATE]: TemplateRegistryAPI.ORDER_BY_CRITERIA_SORT_DESC
     }
-
     const templates = await this.selectTemplates(searchCriteria, orderByCriteria)
     if (templates.length === 0) {
       this.error('No web-asset templates were chosen to be installed.')

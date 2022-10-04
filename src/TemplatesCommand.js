@@ -48,12 +48,17 @@ class TemplatesCommand extends AddCommand {
    *
    * @param {object} searchCriteria the Template Registry API search criteria
    * @param {object} orderByCriteria the Template Registry API orderBy criteria
+   * @param {Array<object>} orgSupportedServices Services supported by the org
    * @param {object} [templateRegistryConfig={}] the optional Template Registry API config
    * @returns {Array<string>} an array of selected template module name(s)
    */
-  async selectTemplates (searchCriteria, orderByCriteria, templateRegistryConfig = {}) {
+  async selectTemplates (searchCriteria, orderByCriteria, orgSupportedServices = undefined, templateRegistryConfig = {}) {
     aioLogger.debug('searchCriteria', JSON.stringify(searchCriteria, null, 2))
     aioLogger.debug('orderByCriteria', JSON.stringify(orderByCriteria, null, 2))
+    let supportedServiceCodes
+    if (orgSupportedServices) {
+      supportedServiceCodes = new Set(orgSupportedServices.map(s => s.code))
+    }
 
     const spinner = ora()
     spinner.start('Getting available templates')
@@ -85,8 +90,13 @@ class TemplatesCommand extends AddCommand {
     const rows = templateList.map(template => {
       const extensionPoint = template.extensions ? template.extensions.map(ext => ext.extensionPointId).join(',') : 'N/A'
       const name = template.adobeRecommended ? `${template.name} *` : template.name
+      let disabled = false
+      if (template.apis && supportedServiceCodes) {
+        disabled = !template.apis.map(api => api.code).every(code => supportedServiceCodes.has(code))
+      }
       return {
         value: template.name,
+        disabled,
         [COLUMNS.COL_TEMPLATE]: name,
         [COLUMNS.COL_DESCRIPTION]: template.description,
         [COLUMNS.COL_EXTENSION_POINT]: extensionPoint,
