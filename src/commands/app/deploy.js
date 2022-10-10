@@ -33,9 +33,10 @@ class Deploy extends BuildCommand {
     const deployConfigs = this.getAppExtConfigs(flags)
     const keys = Object.keys(deployConfigs)
     const values = Object.values(deployConfigs)
+    const isStandaloneApp = (keys.length === 1 && keys[0] === 'application')
 
     // if there are no extensions, then set publish to false
-    flags.publish = flags.publish && !(keys.length === 1 && keys[0] === 'application')
+    flags.publish = flags.publish && !isStandaloneApp
     let libConsoleCLI
     if (flags.publish) {
       // force login at beginning (if required)
@@ -82,7 +83,7 @@ class Deploy extends BuildCommand {
       }
 
       // 2. Bail if workspace is production and application status is PUBLISHED, honor force-deploy
-      if (aioConfig?.project?.workspace?.name === 'Production' && !flags['force-deploy']) {
+      if (!isStandaloneApp && aioConfig?.project?.workspace?.name === 'Production' && !flags['force-deploy']) {
         const extension = await this.getApplicationExtension(libConsoleCLI, aioConfig)
         spinner.info(chalk.dim(JSON.stringify(extension)))
         if (extension && extension.status === 'PUBLISHED') {
