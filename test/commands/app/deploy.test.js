@@ -828,6 +828,31 @@ describe('run', () => {
     expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(1)
   })
 
+  test('deploy for Production legacy app', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.getFullConfig.mockReturnValue({
+      aio: {
+        project: {
+          workspace: {
+            name: 'Production'
+          },
+          org: {
+            id: '1111'
+          }
+        }
+      }
+    })
+    command.argv = []
+    await command.run()
+
+    expect(mockLibConsoleCLI.getProject).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(0)
+  })
+
   test('deploy for RETRACTED Production extension - publish', async () => {
     mockLibConsoleCLI.getApplicationExtensions.mockReset()
 
