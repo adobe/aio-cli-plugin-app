@@ -250,7 +250,10 @@ class InitCommand extends TemplatesCommand {
 
     switch (selection) {
       case 'orgTemplates': {
-        const supportedServiceCodes = new Set(orgSupportedServices.map(s => `|${s.code}`)) // | symbol denotes an OR clause
+        const supportedServiceCodes = new Set(orgSupportedServices.map((elem, index) => {
+          const operator = index > 0 ? '|' : '' // | symbol denotes an OR clause (only if it's not the first item)
+          return `${operator}${elem.code}`
+        }))
         searchCriteria[TemplateRegistryAPI.SEARCH_CRITERIA_APIS] = Array.from(supportedServiceCodes)
       }
         break

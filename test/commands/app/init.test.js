@@ -543,11 +543,29 @@ describe('no args', () => {
     inquirer.prompt.mockResolvedValue({
       components: 'orgTemplates'
     })
-    const fakeSupportedOrgServices = [{ code: 'AssetComputeSDK', properties: {} }, { code: 'another', properties: {} }]
+
+    const fakeSupportedOrgServices = [
+      { code: 'AssetComputeSDK', properties: {} },
+      { code: 'AnotherSDK', properties: {} },
+      { code: 'YetAnotherSDK', properties: {} }
+    ]
     mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
 
     command.argv = []
     await command.run()
+
+    const searchCriteria = command.selectTemplates.mock.calls[0][0] // first arg of first call
+    expect(searchCriteria).toEqual(
+      {
+        apis: [
+          'AssetComputeSDK', // | symbol denotes an OR clause (only if it's not the first item)
+          '|AnotherSDK',
+          '|YetAnotherSDK'
+        ],
+        categories: '!helper-template',
+        statuses: 'Approved'
+      }
+    )
 
     expect(command.installTemplates).toBeCalledWith(installOptions)
     expect(LibConsoleCLI.init).toHaveBeenCalled()
