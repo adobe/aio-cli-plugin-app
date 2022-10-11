@@ -53,18 +53,19 @@ class TemplatesCommand extends AddCommand {
    * @returns {Array<string>} an array of selected template module name(s)
    */
   async selectTemplates (searchCriteria, orderByCriteria, orgSupportedServices = undefined, templateRegistryConfig = {}) {
-    aioLogger.debug('searchCriteria', JSON.stringify(searchCriteria, null, 2))
-    aioLogger.debug('orderByCriteria', JSON.stringify(orderByCriteria, null, 2))
+    aioLogger.debug(`searchCriteria ${JSON.stringify(searchCriteria, null, 2)}`)
+    aioLogger.debug(`orderByCriteria ${JSON.stringify(orderByCriteria, null, 2)}`)
     let supportedServiceCodes
     if (orgSupportedServices) {
       supportedServiceCodes = new Set(orgSupportedServices.map(s => s.code))
     }
+    aioLogger.debug(`supportedServiceCodes ${JSON.stringify(supportedServiceCodes, null, 2)}`)
 
     const spinner = ora()
     spinner.start('Getting available templates')
 
     const templateList = await this.getTemplates(searchCriteria, orderByCriteria, templateRegistryConfig)
-    aioLogger.debug('templateList', JSON.stringify(templateList, null, 2))
+    aioLogger.debug(`templateList ${JSON.stringify(templateList, null, 2)}`)
     spinner.succeed('Downloaded the list of templates')
 
     if (templateList.length === 0) {
