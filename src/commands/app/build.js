@@ -160,6 +160,11 @@ Build.flags = {
     default: true,
     allowNo: true
   }),
+  'feature-use-webpack-for-web-assets': Flags.boolean({
+    default: false,
+    description: '(experimental) Use webpack to bundle web assets',
+    dependsOn: ['web-assets']
+  }),
   'force-build': Flags.boolean({
     description: '[default: true] Force a build even if one already exists',
     default: true,
