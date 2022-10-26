@@ -153,7 +153,6 @@ class Deploy extends BuildCommand {
         if (filterActions) {
           filterEntities = { actions: filterActions }
         }
-        
         const options = { actionCode: flags['action-code'] }
 
         const message = `Deploying actions for '${name}'`
