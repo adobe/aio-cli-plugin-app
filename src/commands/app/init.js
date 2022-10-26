@@ -9,26 +9,24 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const AddCommand = require('../../AddCommand')
+const TemplatesCommand = require('../../TemplatesCommand')
 const yeoman = require('yeoman-environment')
 const path = require('path')
 const fs = require('fs-extra')
 const ora = require('ora')
 const chalk = require('chalk')
-// const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 const { Flags } = require('@oclif/core')
 const generators = require('@adobe/generator-aio-app')
+const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
+const inquirer = require('inquirer')
 const hyperlinker = require('hyperlinker')
 
 const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
-const { atLeastOne } = require('../../lib/app-helper')
-
-const { ENTP_INT_CERTS_FOLDER, SERVICE_API_KEY_ENV, implPromptChoices } = require('../../lib/defaults')
-const cloneDeep = require('lodash.clonedeep')
+const { SERVICE_API_KEY_ENV } = require('../../lib/defaults')
 
 const DEFAULT_WORKSPACE = 'Stage'
 
-class InitCommand extends AddCommand {
+class InitCommand extends TemplatesCommand {
   async run () {
     const { args, flags } = await this.parse(InitCommand)
 
@@ -36,19 +34,26 @@ class InitCommand extends AddCommand {
       this.error('--no-login and --workspace flags cannot be used together.')
     }
 
+    // check that the template plugin has been installed
+    const command = await this.config.findCommand('templates:install')
+    if (!command) {
+      this.error('aio-cli plugin @adobe/aio-cli-plugin-app-templates was not found. This plugin is required to install templates.')
+    }
+
     if (flags.import) {
       // resolve to absolute path before any chdir
       flags.import = path.resolve(flags.import)
     }
 
-    if (args.path !== '.') {
-      const destDir = path.resolve(args.path)
+    const destDir = this.destDir(args)
+    if (destDir !== '.') {
       fs.ensureDirSync(destDir)
       process.chdir(destDir)
     }
 
     const spinner = ora()
-    if (flags.import || !flags.login) {
+    const noLogin = flags.import || !flags.login
+    if (noLogin) {
       // import a console config - no login required!
       await this.initNoLogin(flags)
     } else {
@@ -60,7 +65,32 @@ class InitCommand extends AddCommand {
     await this.runInstallPackages(flags, spinner)
 
     this.log(chalk.bold(chalk.green('✔ App initialization finished!')))
-    this.log('> Tip: you can add more actions, web-assets and events to your project via the `aio app add` commands')
+    this.log(`> Tip: you can add more actions, web-assets and events to your project via the '${this.config.bin} app add' commands`)
+
+    if (noLogin) {
+      this.log(`> Run '${this.config.bin} templates info --required-services' to list the required services for the installed templates`)
+    }
+  }
+
+  getInitialGenerators (flags) {
+    // TODO read from config to override
+    const initialGenerators = ['base-app', 'add-ci']
+
+    if (flags['standalone-app']) {
+      initialGenerators.push('application')
+    }
+
+    return initialGenerators
+  }
+
+  /** @private */
+  destDir (args) {
+    let destDir = '.'
+    if (args.path !== '.') {
+      destDir = path.resolve(args.path)
+    }
+
+    return destDir
   }
 
   /** @private */
@@ -72,23 +102,28 @@ class InitCommand extends AddCommand {
       this.log(chalk.green(`Loaded Adobe Developer Console configuration file for the Project '${consoleConfig.project.title}' in the Organization '${consoleConfig.project.org.name}'`))
     }
 
-    // 2. prompt for extension points to be implemented
-    const extensionPoints = await this.selectExtensionPoints(flags)
-
-    // 3. run extension point code generators
-    const projectName = (consoleConfig && consoleConfig.project.name) || path.basename(process.cwd())
-    await this.runCodeGenerators(flags, extensionPoints, projectName)
-
-    // 4. import config - if any
-    if (flags.import) {
-      await this.importConsoleConfig(consoleConfig)
+    // 2. prompt for templates to be installed
+    const templates = await this.getTemplatesForFlags(flags)
+    // If no templates selected, init a standalone app
+    if (templates.length <= 0) {
+      flags['standalone-app'] = true
     }
 
-    // 5. This flow supports non logged in users so we can't now for sure if the project has
-    //    required services installed. So we output a note on required services instead.
-    const requiredServices = this.getAllRequiredServicesFromExtPoints(extensionPoints)
-    if (requiredServices.length > 0) {
-      this.log(chalk.bold(`Please ensure the following service(s) are enabled in the Organization and added to the Console Workspace: '${requiredServices}'`))
+    // 3. run base code generators
+    const projectName = (consoleConfig && consoleConfig.project.name) || path.basename(process.cwd())
+    await this.runCodeGenerators(this.getInitialGenerators(flags), flags.yes, projectName)
+
+    // 4. install templates
+    await this.installTemplates({
+      useDefaultValues: flags.yes,
+      installNpm: flags.install,
+      installConfig: flags.login,
+      templates
+    })
+
+    // 5. import config - if any
+    if (flags.import) {
+      await this.importConsoleConfig(consoleConfig)
     }
   }
 
@@ -104,29 +139,58 @@ class InitCommand extends AddCommand {
     const project = await this.selectOrCreateConsoleProject(consoleCLI, org)
     // 4. retrieve workspace details, defaults to Stage
     const workspace = await this.retrieveWorkspaceFromName(consoleCLI, org, project, flags)
-    // 5. ask for exensionPoints, only allow selection for extensions that have services enabled in Org
-    const extensionPoints = await this.selectExtensionPoints(flags, orgSupportedServices)
-    // 6. add any required services to Workspace
-    const requiredServices = this.getAllRequiredServicesFromExtPoints(extensionPoints)
-    await this.addServices(
-      consoleCLI,
-      org,
-      project,
-      workspace,
-      orgSupportedServices,
-      requiredServices
-    )
 
-    // 7. download workspace config
+    // 5. get list of templates to install
+    const templates = await this.getTemplatesForFlags(flags, orgSupportedServices)
+    // If no templates selected, init a standalone app
+    if (templates.length <= 0) {
+      flags['standalone-app'] = true
+    }
+
+    // 6. download workspace config
     const consoleConfig = await consoleCLI.getWorkspaceConfig(org.id, project.id, workspace.id, orgSupportedServices)
 
-    // 8. run code generators
-    await this.runCodeGenerators(flags, extensionPoints, consoleConfig.project.name)
+    // 7. run base code generators
+    await this.runCodeGenerators(this.getInitialGenerators(flags), flags.yes, consoleConfig.project.name)
 
-    // 9. import config
+    // 8. import config
     await this.importConsoleConfig(consoleConfig)
 
+    // 9. install templates
+    await this.installTemplates({
+      useDefaultValues: flags.yes,
+      installNpm: flags.install,
+      templates
+    })
+
     this.log(chalk.blue(chalk.bold(`Project initialized for Workspace ${workspace.name}, you can run 'aio app use -w <workspace>' to switch workspace.`)))
+  }
+
+  async getTemplatesForFlags (flags, orgSupportedServices = null) {
+    if (flags.template) {
+      return flags.template
+    } else if (flags.extension) {
+      const { notFound, templates: extensionTemplates } = await this.getTemplatesByExtensionPointIds(flags.extension)
+      if (notFound.length > 0) {
+        this.error(`Extension(s) '${notFound.join(', ')}' not found in the Template Registry.`)
+      }
+      return extensionTemplates.map(t => t.name)
+    } else if (!flags['standalone-app']) {
+      const noLogin = flags.import || !flags.login
+      let [searchCriteria, orderByCriteria] = await this.getSearchCriteria(orgSupportedServices)
+      if (noLogin) {
+        searchCriteria = {
+          [TemplateRegistryAPI.SEARCH_CRITERIA_STATUSES]: TemplateRegistryAPI.TEMPLATE_STATUS_APPROVED,
+          [TemplateRegistryAPI.SEARCH_CRITERIA_CATEGORIES]: TemplateRegistryAPI.SEARCH_CRITERIA_FILTER_NOT + 'helper-template'
+        }
+        orderByCriteria = {
+          [TemplateRegistryAPI.ORDER_BY_CRITERIA_PUBLISH_DATE]: TemplateRegistryAPI.ORDER_BY_CRITERIA_SORT_DESC
+        }
+      }
+      return this.selectTemplates(searchCriteria, orderByCriteria, orgSupportedServices)
+    } else {
+      return []
+    }
   }
 
   async ensureDevTermAccepted (consoleCLI, orgId) {
@@ -147,40 +211,68 @@ class InitCommand extends AddCommand {
     }
   }
 
-  async selectExtensionPoints (flags, orgSupportedServices = null) {
-    if (!flags.extensions) {
-      return [implPromptChoices.find(i => i.value.name === 'application').value]
-    } else if (flags.extension) {
-      const extList = implPromptChoices.filter(i => flags.extension.indexOf(i.value.name) > -1)
-        .map(i => i.value)
-      if (extList.length < 1) {
-        throw new Error(`--extension=${flags.extension} not found.`)
+  async getSearchCriteria (orgSupportedServices) {
+    const choices = [
+      {
+        name: 'All Templates',
+        value: 'allTemplates',
+        checked: true
+      },
+      {
+        name: 'All Extension Points',
+        value: 'allExtensionPoints',
+        checked: false
       }
-      return extList
-    } else {
-      const choices = cloneDeep(implPromptChoices)
+    ]
 
-      // disable extensions that lack required services
-      if (orgSupportedServices) {
-        const supportedServiceCodes = new Set(orgSupportedServices.map(s => s.code))
-        // filter choices
-        choices.forEach(c => {
-          const missingServices = c.value.requiredServices.filter(s => !supportedServiceCodes.has(s))
-          if (missingServices.length > 0) {
-            c.disabled = true
-            c.name = `${c.name}: missing service(s) in Org: '${missingServices}'`
-          }
-        })
-      }
-      const answers = await this.prompt([{
-        type: 'checkbox',
-        name: 'res',
-        message: 'Which extension point(s) do you wish to implement ?',
-        choices,
-        validate: atLeastOne
-      }])
-      return answers.res
+    if (orgSupportedServices) {
+      choices.push({
+        name: 'Only Templates Supported By My Org',
+        value: 'orgTemplates',
+        checked: false
+      })
     }
+
+    const { components: selection } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'components',
+        message: 'What templates do you want to search for?',
+        loop: false,
+        choices
+      }
+    ])
+
+    const searchCriteria = {
+      [TemplateRegistryAPI.SEARCH_CRITERIA_STATUSES]: TemplateRegistryAPI.TEMPLATE_STATUS_APPROVED,
+      [TemplateRegistryAPI.SEARCH_CRITERIA_CATEGORIES]: TemplateRegistryAPI.SEARCH_CRITERIA_FILTER_NOT + 'helper-template'
+    }
+
+    switch (selection) {
+      case 'orgTemplates': {
+        const supportedServiceCodes = new Set(orgSupportedServices.map((elem, index) => {
+          const operator = index > 0 ? '|' : '' // | symbol denotes an OR clause (only if it's not the first item)
+          return `${operator}${elem.code}`
+        }))
+        searchCriteria[TemplateRegistryAPI.SEARCH_CRITERIA_APIS] = Array.from(supportedServiceCodes)
+      }
+        break
+      case 'allExtensionPoints':
+        searchCriteria[TemplateRegistryAPI.SEARCH_CRITERIA_EXTENSIONS] = TemplateRegistryAPI.SEARCH_CRITERIA_FILTER_ANY
+        break
+      case 'allTemplates':
+      default:
+        break
+    }
+
+    const { name: selectionLabel } = choices.find(item => item.value === selection)
+
+    // an optional OrderBy Criteria object
+    const orderByCriteria = {
+      [TemplateRegistryAPI.ORDER_BY_CRITERIA_PUBLISH_DATE]: TemplateRegistryAPI.ORDER_BY_CRITERIA_SORT_DESC
+    }
+
+    return [searchCriteria, orderByCriteria, selection, selectionLabel]
   }
 
   async selectConsoleOrg (consoleCLI) {
@@ -227,83 +319,20 @@ class InitCommand extends AddCommand {
     return workspace
   }
 
-  async addServices (consoleCLI, org, project, workspace, orgSupportedServices, requiredServices) {
-    // add required services if needed (for extension point)
-    const currServiceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
-      org.id,
-      project.id,
-      workspace,
-      orgSupportedServices
-    )
-    const serviceCodesToAdd = requiredServices.filter(s => !currServiceProperties.some(sp => sp.sdkCode === s))
-    if (serviceCodesToAdd.length > 0) {
-      const servicePropertiesToAdd = serviceCodesToAdd
-        .map(s => {
-          // previous check ensures orgSupportedServices has required services
-          const orgServiceDefinition = orgSupportedServices.find(os => os.code === s)
-          return {
-            sdkCode: s,
-            name: orgServiceDefinition.name,
-            roles: orgServiceDefinition.properties.roles,
-            // add all licenseConfigs
-            licenseConfigs: orgServiceDefinition.properties.licenseConfigs
-          }
-        })
-      await consoleCLI.subscribeToServices(
-        org.id,
-        project,
-        workspace,
-        // certDir if need to create integration
-        path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER),
-        // new service properties
-        currServiceProperties.concat(servicePropertiesToAdd)
-      )
-    }
-    return workspace
-  }
-
-  getAllRequiredServicesFromExtPoints (extensionPoints) {
-    const requiredServicesWithDuplicates = extensionPoints
-      .map(e => e.requiredServices)
-      // flat not supported in node 10
-      .reduce((res, arr) => res.concat(arr), [])
-    return [...new Set(requiredServicesWithDuplicates)]
-  }
-
-  async runCodeGenerators (flags, extensionPoints, projectName) {
-    let env = yeoman.createEnv()
-    // by default yeoman runs the install, we control installation from the app plugin
+  async runCodeGenerators (generatorNames, skipPrompt, projectName) {
+    const env = yeoman.createEnv()
     env.options = { skipInstall: true }
-    const initialGenerators = ['base-app', 'add-ci']
+
     // first run app generator that will generate the root skeleton + ci
-    for (const generatorKey of initialGenerators) {
+    for (const generatorKey of generatorNames) {
       const appGen = env.instantiate(generators[generatorKey], {
         options: {
-          'skip-prompt': flags.yes,
-          'project-name': projectName
+          'skip-prompt': skipPrompt,
+          'project-name': projectName,
+          force: true
         }
       })
       await env.runGenerator(appGen)
-    }
-
-    // Creating new Yeoman env here to workaround an issue where yeoman reuses the conflicter from previous environment.
-    // https://github.com/yeoman/environment/issues/324
-
-    env = yeoman.createEnv()
-    // by default yeoman runs the install, we control installation from the app plugin
-    env.options = { skipInstall: true }
-    // try to use appGen.composeWith
-    for (let i = 0; i < extensionPoints.length; ++i) {
-      const extGen = env.instantiate(
-        extensionPoints[i].generator,
-        {
-          options: {
-            'skip-prompt': flags.yes,
-            // do not prompt for overwrites
-            force: true
-          }
-        })
-      await env.runGenerator(extGen)
     }
   }
 
@@ -329,7 +358,7 @@ InitCommand.description = `Create a new Adobe I/O App
 `
 
 InitCommand.flags = {
-  ...AddCommand.flags,
+  ...TemplatesCommand.flags,
   yes: Flags.boolean({
     description: 'Skip questions, and use all default values',
     default: false,
@@ -344,16 +373,21 @@ InitCommand.flags = {
     default: true,
     allowNo: true
   }),
-  extensions: Flags.boolean({
-    description: 'Use --no-extensions to create a blank application that does not integrate with Exchange',
-    default: true,
-    allowNo: true
-  }),
   extension: Flags.string({
     description: 'Extension point(s) to implement',
     char: 'e',
     multiple: true,
-    exclusive: ['extensions']
+    exclusive: ['template']
+  }),
+  'standalone-app': Flags.boolean({
+    description: 'Create a stand-alone application',
+    default: false,
+    exclusive: ['template']
+  }),
+  template: Flags.string({
+    description: 'Specify a link to a template that will be installed',
+    char: 't',
+    multiple: true
   }),
   workspace: Flags.string({
     description: 'Specify the Adobe Developer Console Workspace to init from, defaults to Stage',

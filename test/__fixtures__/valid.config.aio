@@ -29,9 +29,14 @@
             "integration_type": "service"
           },
           {
-            "id": "17561139",
-            "name": "Projéct_C",
+            "id": "17656565",
+            "name": "Project_C",
             "integration_type": "apikey"
+          },
+          {
+            "id": "17656570",
+            "name": "Project_D",
+            "integration_type": "oauthsinglepageapp"
           },
           {
             "id": "17950",

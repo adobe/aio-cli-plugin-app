@@ -114,9 +114,34 @@ const mockExtRegExcShellAndNuiPayload = () => {
   mockLibConsoleCLI.updateExtensionPoints.mockReturnValueOnce(payload)
 }
 
+const mockGetExtensionPointsRetractedApp = () => {
+  const payload = [{
+    status: 'RETRACTED',
+    appId: '1234'
+  }]
+  mockLibConsoleCLI.getApplicationExtensions.mockReturnValueOnce(payload)
+}
+
+const mockGetExtensionPointsPublishedApp = () => {
+  const payload = [{
+    status: 'PUBLISHED',
+    appId: '1234'
+  }]
+  mockLibConsoleCLI.getApplicationExtensions.mockReturnValueOnce(payload)
+}
+
+const mockGetProject = () => {
+  const payload = {
+    appId: '1234'
+  }
+  mockLibConsoleCLI.getProject.mockReturnValueOnce(payload)
+}
+
 const mockLibConsoleCLI = {
   updateExtensionPoints: jest.fn(),
-  updateExtensionPointsWithoutOverwrites: jest.fn()
+  updateExtensionPointsWithoutOverwrites: jest.fn(),
+  getProject: jest.fn(),
+  getApplicationExtensions: jest.fn()
 }
 
 const mockLogForwarding = {
@@ -127,6 +152,7 @@ const mockLogForwarding = {
 
 afterAll(() => {
   jest.restoreAllMocks()
+  jest.resetAllMocks()
 })
 
 beforeEach(() => {
@@ -166,21 +192,6 @@ test('flags', async () => {
   expect(typeof TheCommand.flags.action.description).toBe('string')
   expect(TheCommand.flags.action.exclusive).toEqual(['extension'])
 
-  expect(typeof TheCommand.flags['skip-actions']).toBe('object')
-  expect(typeof TheCommand.flags['skip-actions'].description).toBe('string')
-
-  expect(typeof TheCommand.flags['skip-static']).toBe('object')
-  expect(typeof TheCommand.flags['skip-static'].description).toBe('string')
-
-  expect(typeof TheCommand.flags['skip-web-assets']).toBe('object')
-  expect(typeof TheCommand.flags['skip-web-assets'].description).toBe('string')
-
-  expect(typeof TheCommand.flags['skip-deploy']).toBe('object')
-  expect(typeof TheCommand.flags['skip-deploy'].description).toBe('string')
-
-  expect(typeof TheCommand.flags['skip-build']).toBe('object')
-  expect(typeof TheCommand.flags['skip-build'].description).toBe('string')
-
   expect(typeof TheCommand.flags['web-assets']).toBe('object')
   expect(typeof TheCommand.flags['web-assets'].description).toBe('string')
   expect(TheCommand.flags['web-assets'].default).toEqual(true)
@@ -206,6 +217,10 @@ test('flags', async () => {
   expect(TheCommand.flags.publish.default).toEqual(true)
   expect(TheCommand.flags.publish.allowNo).toEqual(true)
   expect(TheCommand.flags.publish.exclusive).toEqual(['action'])
+
+  expect(typeof TheCommand.flags['force-deploy']).toBe('object')
+  expect(typeof TheCommand.flags['force-deploy'].description).toBe('string')
+  expect(TheCommand.flags['force-deploy'].default).toEqual(false)
 
   expect(typeof TheCommand.flags['force-publish']).toBe('object')
   expect(typeof TheCommand.flags['force-publish'].description).toBe('string')
@@ -291,44 +306,31 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, verbose: true }), expect.anything())
   })
 
-  test('build & deploy --skip-static', async () => {
+  test('build & deploy --no-web-assets', async () => {
     const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
 
-    command.argv = ['--skip-static']
+    command.argv = ['--no-web-assets']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
-    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, 'skip-static': true }), expect.anything())
-  })
-
-  test('build & deploy --skip-web-assets', async () => {
-    const appConfig = createAppConfig(command.appConfig)
-    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
-
-    command.argv = ['--skip-web-assets']
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
-    expect(command.buildOneExt).toHaveBeenCalledTimes(1)
-    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, 'skip-web-assets': true }), expect.anything())
+    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, 'web-assets': false }), expect.anything())
   })
 
   test('build & deploy only some actions using --action', async () => {
     const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
 
-    command.argv = ['--skip-static', '-a', 'a', '-a', 'b', '--action', 'c']
+    command.argv = ['--no-web-assets', '-a', 'a', '-a', 'b', '--action', 'c']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
 
-    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, 'skip-static': true, action: ['a', 'b', 'c'] }), expect.anything())
+    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, 'web-assets': false, action: ['a', 'b', 'c'] }), expect.anything())
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(appConfig.application, {
       filterEntities: { actions: ['a', 'b', 'c'] }
     },
@@ -342,19 +344,19 @@ describe('run', () => {
     const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
 
-    command.argv = ['--skip-static']
+    command.argv = ['--no-web-assets']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
-    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, 'skip-static': true }), expect.anything())
+    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, 'web-assets': false }), expect.anything())
   })
 
   test('build & deploy actions with no actions folder but with a manifest', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
-    command.argv = ['--skip-static']
+    command.argv = ['--no-web-assets']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
@@ -362,32 +364,32 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
   })
 
-  test('build & deploy with --skip-actions', async () => {
+  test('build & deploy with --no-actions', async () => {
     const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
 
-    command.argv = ['--skip-actions']
+    command.argv = ['--no-actions']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
-    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, 'skip-actions': true }), expect.anything())
+    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, actions: false }), expect.anything())
   })
 
-  test('build & deploy with --skip-actions with no static folder', async () => {
+  test('build & deploy with --no-actions with no static folder', async () => {
     command.appConfig.app.hasFrontend = false
     command.appConfig.app.hasBackend = false
     const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockReturnValueOnce(appConfig)
 
-    command.argv = ['--skip-actions']
+    command.argv = ['--no-actions']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
-    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, 'skip-actions': true }), expect.anything())
+    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, actions: false }), expect.anything())
   })
 
   test('build & deploy with no manifest.yml', async () => {
@@ -404,46 +406,10 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true }), expect.anything())
   })
 
-  test('--skip-deploy', async () => {
-    const appConfig = createAppConfig(command.appConfig)
-    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
-
-    command.argv = ['--skip-deploy']
-    await command.run()
-    expect(command.error).not.toHaveBeenCalled()
-    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
-    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true }), expect.anything())
-  })
-
-  test('--skip-deploy --verbose', async () => {
-    const appConfig = createAppConfig(command.appConfig)
-    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
-
-    command.argv = ['--skip-deploy', '--verbose']
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
-    expect(command.buildOneExt).toHaveBeenCalledTimes(1)
-    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, verbose: true }), expect.anything())
-  })
-
-  test('--skip-deploy --skip-static', async () => {
+  test('--no-build', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
-    command.argv = ['--skip-deploy', '--skip-static']
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
-    expect(command.buildOneExt).toHaveBeenCalledTimes(1)
-  })
-
-  test('--skip-build', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
-
-    command.argv = ['--skip-build']
+    command.argv = ['--no-build']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
@@ -451,10 +417,10 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(0)
   })
 
-  test('--skip-build --verbose', async () => {
+  test('--no-build --verbose', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
-    command.argv = ['--skip-build', '--verbose']
+    command.argv = ['--no-build', '--verbose']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
@@ -462,10 +428,10 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(0)
   })
 
-  test('--skip-build --skip-actions', async () => {
+  test('--no-build --no-actions', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
-    command.argv = ['--skip-build', '--skip-actions']
+    command.argv = ['--no-build', '--no-actions']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
@@ -473,10 +439,10 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(0)
   })
 
-  test('--skip-build --skip-static', async () => {
+  test('--no-build --no-web-assets', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
 
-    command.argv = ['--skip-build', '--skip-static']
+    command.argv = ['--no-build', '--no-web-assets']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
@@ -671,14 +637,14 @@ describe('run', () => {
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
   })
 
-  test('deploy (--skip-actions and --skip-static) for application - nothing to be done', async () => {
+  test('deploy (--no-actions and --no-web-assets) for application - nothing to be done', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
     helpers.runScript
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
       .mockResolvedValueOnce(noScriptFound) // post-app-deploy
 
-    command.argv = ['--skip-actions', '--skip-static']
+    command.argv = ['--no-actions', '--no-web-assets']
     await command.run()
 
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
@@ -686,7 +652,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledWith('Nothing to be done 🚫')
   })
 
-  test('deploy (--skip-actions and --skip-static) for extension - publish', async () => {
+  test('deploy (--no-actions and --no-web-assets) for extension - publish', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig, 'exc'))
     command.getFullConfig.mockReturnValue({
       aio: {
@@ -703,7 +669,7 @@ describe('run', () => {
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
       .mockResolvedValueOnce(noScriptFound) // post-app-deploy
 
-    command.argv = ['--skip-actions', '--skip-static']
+    command.argv = ['--no-actions', '--no-web-assets']
     await command.run()
 
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
@@ -712,28 +678,28 @@ describe('run', () => {
     expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(1)
   })
 
-  test('deploy (--skip-actions)', async () => {
+  test('deploy (--no-actions)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
     helpers.runScript
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
       .mockResolvedValueOnce(noScriptFound) // post-app-deploy
 
-    command.argv = ['--skip-actions']
+    command.argv = ['--no-actions']
     await command.run()
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(0)
   })
 
-  test('deploy (--skip-static)', async () => {
+  test('deploy (--no-web-assets)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
     helpers.runScript
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
       .mockResolvedValueOnce(noScriptFound) // post-app-deploy
 
-    command.argv = ['--skip-static']
+    command.argv = ['--no-web-assets']
     await command.run()
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
@@ -810,13 +776,133 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledWith(expect.stringMatching(/Nothing to be done/))
   })
 
-  test('nothing to be done for exc (--no-publish, --no-build, --skip-deploy)', async () => {
+  test('deploy for standalone app --no-publish (no login)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig, 'exc'))
-
-    command.argv = ['--no-publish', '--no-build', '--skip-deploy']
+    mockGetExtensionPointsPublishedApp()
+    mockGetProject()
+    command.getFullConfig.mockReturnValue({
+      aio: {
+      }
+    })
+    mockExtRegExcShellPayload()
+    command.argv = ['--no-publish']
     await command.run()
-    expect(command.error).toHaveBeenCalledTimes(1)
-    expect(command.error).toHaveBeenCalledWith(expect.stringMatching(/Nothing to be done/))
+
+    expect(mockLibConsoleCLI.getProject).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(0)
+  })
+
+  test('deploy for PUBLISHED Production extension - no publish', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig, 'exc'))
+    mockGetExtensionPointsPublishedApp()
+    mockGetProject()
+    command.getFullConfig.mockReturnValue({
+      aio: {
+        project: {
+          workspace: {
+            name: 'Production'
+          },
+          org: {
+            id: '1111'
+          }
+        }
+      }
+    })
+    mockExtRegExcShellPayload()
+    await command.run()
+
+    expect(mockLibConsoleCLI.getProject).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(0)
+  })
+
+  test('deploy for PUBLISHED Production extension - force deploy', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig, 'exc'))
+    mockGetExtensionPointsPublishedApp()
+    mockGetProject()
+    command.getFullConfig.mockReturnValue({
+      aio: {
+        project: {
+          workspace: {
+            name: 'Production'
+          },
+          org: {
+            id: '1111'
+          }
+        }
+      }
+    })
+    mockExtRegExcShellPayload()
+    command.argv = ['--force-deploy']
+    await command.run()
+
+    expect(mockLibConsoleCLI.getProject).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(1)
+  })
+
+  test('deploy for Production legacy app', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.getFullConfig.mockReturnValue({
+      aio: {
+        project: {
+          workspace: {
+            name: 'Production'
+          },
+          org: {
+            id: '1111'
+          }
+        }
+      }
+    })
+    command.argv = []
+    await command.run()
+
+    expect(mockLibConsoleCLI.getProject).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(0)
+  })
+
+  test('deploy for RETRACTED Production extension - publish', async () => {
+    mockLibConsoleCLI.getApplicationExtensions.mockReset()
+
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig, 'exc'))
+    mockGetExtensionPointsRetractedApp()
+    mockGetProject()
+    command.getFullConfig.mockReturnValue({
+      aio: {
+        project: {
+          workspace: {
+            name: 'Production'
+          },
+          org: {
+            id: '1111'
+          }
+        }
+      }
+    })
+    mockExtRegExcShellPayload()
+    await command.run()
+
+    expect(mockLibConsoleCLI.getProject).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(1)
   })
 
   test('publish phase (no force, exc+nui payload)', async () => {

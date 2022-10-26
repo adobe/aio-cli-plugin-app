@@ -9,31 +9,17 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-const fs = require('fs-extra')
-
 const TheCommand = require('../../../../src/commands/app/add/extension')
-const BaseCommand = require('../../../../src/BaseCommand')
-const generators = require('@adobe/generator-aio-app')
-const { implPromptChoices: availableImplementations } = require('../../../../src/lib/defaults')
+const TemplatesCommand = require('../../../../src/TemplatesCommand')
 const dataMocks = require('../../../data-mocks/config-loader')
 
-const config = require('@adobe/aio-lib-core-config')
 jest.mock('@adobe/aio-lib-core-config')
 
 jest.mock('fs-extra')
-
-jest.mock('../../../../src/lib/app-helper.js')
-const helpers = require('../../../../src/lib/app-helper.js')
-
-jest.mock('yeoman-environment')
-const yeoman = require('yeoman-environment')
-
-const mockInstantiate = jest.fn()
-const mockRunGenerator = jest.fn()
-yeoman.createEnv.mockReturnValue({
-  instantiate: mockInstantiate,
-  runGenerator: mockRunGenerator
-})
+jest.mock('inquirer', () => ({
+  registerPrompt: jest.fn(),
+  prompt: jest.fn()
+}))
 
 const createFullConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
   const appConfig = dataMocks(appFixtureName, aioConfig)
@@ -44,8 +30,9 @@ const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
   appConfig.application = { ...appConfig.application, ...aioConfig }
   return appConfig
 }
+
 let command
-// console.log(createAppConfig())
+
 beforeEach(() => {
   command = new TheCommand([])
   command.getAppExtConfigs = jest.fn()
@@ -54,141 +41,97 @@ beforeEach(() => {
   command.getFullConfig.mockReturnValue(createFullConfig({}))
   command.getConfigFileForKey = jest.fn()
   command.getConfigFileForKey.mockReturnValue({})
-  command.prompt = jest.fn()
-  command.prompt.mockReturnValue({ res: [{ name: 'dx/excshell/1', requiredServices: [], generator: generators.extensions['dx/excshell/1'] }] })
-  mockInstantiate.mockReset()
-  mockRunGenerator.mockReset()
-  yeoman.createEnv.mockClear()
-  helpers.installPackages.mockClear()
-  helpers.servicesToGeneratorInput.mockClear()
-  fs.ensureDirSync.mockClear()
-  config.get.mockReset()
+  command.config = {
+    runCommand: jest.fn()
+  }
+
+  command.selectTemplates = jest.fn()
+  command.selectTemplates.mockResolvedValue([])
+  command.getTemplates = jest.fn()
+  command.getTemplates.mockResolvedValue([])
+  command.installTemplates = jest.fn()
+  command.installTemplatesByExtensionPointIds = jest.fn()
 })
 
 describe('Command Prototype', () => {
   test('exports', async () => {
     expect(typeof TheCommand).toEqual('function')
-    expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
+    expect(TheCommand.prototype instanceof TemplatesCommand).toBeTruthy()
     expect(typeof TheCommand.flags).toBe('object')
   })
 })
 
-describe('bad flags', () => {
-  test('unknown', async () => {
-    await expect(TheCommand.run(['--wtf'])).rejects.toThrow('Unexpected argument')
-  })
+test('bad flags', async () => {
+  command.argv = ['--wtf']
+  await expect(() => command.run()).rejects.toThrow('Unexpected argument: --wtf\nSee more help with --help')
 })
 
-describe('template module cannot be registered', () => {
-  test('unknown error', async () => {
-    mockInstantiate.mockImplementation(() => { throw new Error('some error') })
-    await expect(command.run()).rejects.toThrow('some error')
-  })
+test('--yes (no extension)', async () => {
+  command.argv = ['--yes']
+  await expect(command.run()).rejects.toThrow('--extension= must also be provided when using --yes')
 })
 
-describe('good flags', () => {
-  test('--yes with no extension', async () => {
-    command.argv = ['--yes']
-    await expect(command.run()).rejects.toThrow('--extension= must also be provided when using --yes')
-  })
+test('--yes (with extension)', async () => {
+  command.argv = ['--yes', '--extension', 'dx/excshell/1']
+  command.getTemplates.mockResolvedValue([
+    {
+      name: '@adobe/my-extension',
+      extensions: [
+        { extensionPointId: 'dx/excshell/1' }
+      ]
+    }
+  ])
 
-  test('--yes', async () => {
-    command.argv = ['--yes', '--extension', 'dx/excshell/1']
-    mockInstantiate.mockReturnValueOnce('extGen')
-    await command.run()
+  await command.run()
+  expect(command.installTemplatesByExtensionPointIds).toBeCalled()
+})
 
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators.extensions['dx/excshell/1'], {
-      options: {
-        'skip-prompt': true,
-        force: true
-      }
-    })
-    expect(mockRunGenerator).toHaveBeenCalledWith('extGen')
-    expect(helpers.installPackages).toHaveBeenCalledTimes(1)
-  })
+test('--yes --no-install (with extension)', async () => {
+  command.argv = ['--yes', '--extension', 'dx/excshell/1', '--no-install']
+  command.getTemplates.mockResolvedValue([
+    {
+      name: '@adobe/my-extension',
+      extensions: [
+        { extensionPointId: 'dx/excshell/1' }
+      ]
+    }
+  ])
 
-  test('--yes --skip-install', async () => {
-    command.argv = ['--yes', '--extension', 'dx/excshell/1', '--skip-install']
-    await command.run()
+  await command.run()
+  expect(command.installTemplatesByExtensionPointIds).toBeCalled()
+})
 
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators.extensions['dx/excshell/1'], {
-      options: {
-        'skip-prompt': true,
-        force: true
-      }
-    })
-    expect(helpers.installPackages).toHaveBeenCalledTimes(0)
-  })
+test('--no-install', async () => {
+  const installOptions = {
+    useDefaultValues: false,
+    installNpm: false,
+    templates: ['@adobe/my-extension']
+  }
 
-  test('--skip-install', async () => {
-    command.argv = ['--skip-install']
-    await command.run()
+  command.argv = ['--no-install']
+  command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators.extensions['dx/excshell/1'], {
-      options: {
-        'skip-prompt': false,
-        force: true
-      }
-    })
-  })
+  await command.run()
+  expect(command.installTemplates).toBeCalledWith(installOptions)
+})
 
-  test('no flags', async () => {
-    await command.run()
+test('no flags', async () => {
+  const installOptions = {
+    useDefaultValues: false,
+    installNpm: true,
+    templates: ['@adobe/my-extension']
+  }
 
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators.extensions['dx/excshell/1'], {
-      options: {
-        'skip-prompt': false,
-        force: true
-      }
-    })
-  })
+  command.argv = []
+  command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
-  test('required services not added', async () => {
-    command.argv = ['--skip-install', '--extension', 'dx/asset-compute/worker/1']
-    command.warn = jest.fn()
-    config.get.mockImplementation(c => {
-      if (c === 'project.org.details.services') {
-        // supported services
-        return [{ code: 'CampaignSDK' }, { code: 'AdobeAnalyticsSDK' }, { code: 'AnotherOneSDK' }]
-      } else if (c === 'services') {
-        // added to workspace
-        return [{ code: 'CampaignSDK' }, { code: 'AdobeAnalyticsSDK' }]
-      }
-      return undefined
-    })
-    await command.run()
-    expect(command.warn).toHaveBeenCalledWith('Please add missing services \'AssetComputeSDK\' required by \'dx/asset-compute/worker/1\'')
+  await command.run()
+  expect(command.installTemplates).toBeCalledWith(installOptions)
+})
 
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators.extensions['dx/asset-compute/worker/1'], {
-      options: {
-        'skip-prompt': false,
-        force: true
-      }
-    })
-  })
+test('no templates selected', async () => {
+  command.argv = []
+  command.selectTemplates.mockResolvedValue([])
 
-  test('all extensions already implemented', async () => {
-    command.argv = ['--skip-install']
-    command.getAppExtConfigs.mockReturnValue(createAppConfig(command.appConfig, 'app-exc-nui'))
-    command.getFullConfig.mockReturnValue(createFullConfig({}, 'app-exc-nui'))
-
-    await expect(command.run()).rejects.toThrow('All available extensions are already implemented in this project.')
-  })
-
-  test('given extension already implemented', async () => {
-    command.argv = ['--skip-install', '--extension', 'application']
-
-    await expect(command.run()).rejects.toThrow('\'application\' is/are already implemented by this project')
-  })
-
-  test('invalid extension', async () => {
-    command.argv = ['--skip-install', '--extension', 'invalidextension']
-    const availableImplementationNames = availableImplementations.map(i => i.value.name)
-    await expect(command.run()).rejects.toThrow(`Invalid extension(s) 'invalidextension', available implementations are '${availableImplementationNames}'`)
-  })
+  await expect(command.run()).rejects.toThrow('No extensions were chosen to be installed.')
 })

@@ -16,63 +16,59 @@ const BaseCommand = require('../../../../src/BaseCommand')
 
 jest.mock('fs-extra')
 
-jest.mock('yeoman-environment')
-const yeoman = require('yeoman-environment')
-
-const mockRunGenerator = jest.fn()
-const mockInstantiate = jest.fn()
-yeoman.createEnv.mockReturnValue({
-  runGenerator: mockRunGenerator,
-  instantiate: mockInstantiate
-})
+let command
 
 beforeEach(() => {
-  mockRunGenerator.mockReset()
-  mockInstantiate.mockReset()
-  yeoman.createEnv.mockClear()
   fs.ensureDirSync.mockClear()
+  fs.removeSync.mockClear()
+  fs.existsSync.mockClear()
+  command = new TheCommand([])
+  command.prompt = jest.fn()
 })
 
-describe('Command Prototype', () => {
-  test('exports', async () => {
-    expect(typeof TheCommand).toEqual('function')
-    expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
-    expect(typeof TheCommand.flags).toBe('object')
-  })
+test('exports', async () => {
+  expect(typeof TheCommand).toEqual('function')
+  expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
+  expect(typeof TheCommand.flags).toBe('object')
 })
 
-describe('bad flags', () => {
-  test('unknown', async () => {
-    await expect(TheCommand.run(['--wtf'])).rejects.toThrow('Unexpected argument')
-  })
+test('unknown flag', async () => {
+  command.argv = ['--wtf']
+  await expect(command.run()).rejects.toThrow('Unexpected argument')
 })
 
-describe('template module cannot be registered', () => {
-  test('unknown error', async () => {
-    mockInstantiate.mockImplementation(() => { throw new Error('some error') })
-    await expect(TheCommand.run([])).rejects.toThrow('some error')
-  })
+test('no ci dir', async () => {
+  fs.existsSync.mockReturnValue(false)
+  command.argv = []
+  await expect(command.run()).rejects.toThrow('you have no CI in your project')
 })
 
-describe('good flags', () => {
-  test('--yes', async () => {
-    await TheCommand.run(['--yes'])
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(expect.any(Function), {
-      options: {
-        'skip-prompt': true
-      }
-    })
+test('--yes flag', async () => {
+  command.prompt.mockResolvedValue({})
+  command.argv = ['--yes']
+  fs.existsSync.mockReturnValue(true)
+  await command.run([])
+
+  // everything will be deleted
+  expect(fs.removeSync).toBeCalledTimes(3)
+})
+
+describe('no flags', () => {
+  test('confirm delete true', async () => {
+    command.prompt.mockResolvedValue({ deleteCI: true })
+    fs.existsSync.mockReturnValue(true)
+    await command.run([])
+
+    // everything will be deleted
+    expect(fs.removeSync).toBeCalledTimes(3)
   })
 
-  test('no flags', async () => {
-    await TheCommand.run([])
+  test('confirm delete false', async () => {
+    command.prompt.mockResolvedValue({ deleteCI: false })
+    fs.existsSync.mockReturnValue(true)
+    await command.run([])
 
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(expect.any(Function), {
-      options: {
-        'skip-prompt': false
-      }
-    })
+    // nothing will be deleted
+    expect(fs.removeSync).not.toBeCalled()
   })
 })

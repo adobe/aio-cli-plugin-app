@@ -32,10 +32,6 @@ describe('Command Prototype', () => {
   test('flags', async () => {
     expect(TheCommand.flags).toEqual(expect.objectContaining(BaseCommand.flags))
 
-    expect(typeof TheCommand.flags['skip-install']).toBe('object')
-    expect(TheCommand.flags['skip-install'].char).toBe('s')
-    expect(TheCommand.flags['skip-install'].default).toBe(false)
-
     expect(typeof TheCommand.flags.install).toBe('object')
     expect(TheCommand.flags.install.default).toBe(true)
     expect(TheCommand.flags.install.allowNo).toBe(true)
@@ -53,14 +49,6 @@ describe('installPackages', () => {
     const command = new TheCommand()
     command.log = jest.fn()
     await command.runInstallPackages({ install: false }, () => {})
-    expect(mockInstallPackages).not.toHaveBeenCalled()
-    expect(command.log).toHaveBeenCalledWith(expect.stringContaining('skipped installation'))
-  })
-
-  test('--skip-install', async () => {
-    const command = new TheCommand()
-    command.log = jest.fn()
-    await command.runInstallPackages({ 'skip-install': true }, () => {})
     expect(mockInstallPackages).not.toHaveBeenCalled()
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('skipped installation'))
   })

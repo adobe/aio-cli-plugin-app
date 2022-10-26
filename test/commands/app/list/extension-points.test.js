@@ -20,17 +20,10 @@ const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
 const mockConsoleCLIInstance = {}
 LibConsoleCLI.init.mockResolvedValue(mockConsoleCLIInstance)
 
-const createFullConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
-  const appConfig = dataMocks(appFixtureName, aioConfig)
+const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
+  const appConfig = dataMocks(appFixtureName, aioConfig).all
+  appConfig.application = { ...appConfig.application, ...aioConfig }
   return appConfig
-}
-
-const fakeAioConfig = {
-  console: {
-    project: {
-      org_id: 'fakeOrg'
-    }
-  }
 }
 
 test('exports', async () => {
@@ -69,13 +62,12 @@ describe('run', () => {
     command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
-    command.getFullConfig = jest.fn()
-    const appConfig = createFullConfig({})
-    appConfig.aio = fakeAioConfig
-    command.getFullConfig.mockReturnValue(appConfig)
+    command.getAppExtConfigs = jest.fn()
   })
 
   test('get all extension points', async () => {
+    command.getAppExtConfigs.mockReturnValue(createAppConfig(command.appConfig, 'app-exc-nui'))
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('Extensions Points'))
@@ -88,28 +80,22 @@ describe('run', () => {
   })
 
   test('get all extension points --json', async () => {
-    command = new TheCommand(['--json'])
-    command.error = jest.fn()
-    command.log = jest.fn()
-    command.getFullConfig = jest.fn()
-    const appConfig = createFullConfig({})
-    appConfig.aio = fakeAioConfig
-    command.getFullConfig.mockReturnValue(appConfig)
+    command.getAppExtConfigs.mockReturnValue(createAppConfig(command.appConfig, 'app-exc-nui'))
+    command.argv = ['--json']
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith(JSON.stringify(extOutPut))
   })
 
   test('get all extension points --yml', async () => {
-    command = new TheCommand(['--yml'])
+    command.getAppExtConfigs.mockReturnValue(createAppConfig(command.appConfig, 'app-exc-nui'))
+    command.argv = ['--yml']
     command.error = jest.fn()
     command.log = jest.fn()
-    command.getFullConfig = jest.fn()
-    const appConfig = createFullConfig({})
-    appConfig.aio = fakeAioConfig
-    command.getFullConfig.mockReturnValue(appConfig)
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(command.log).toHaveBeenCalledWith(yaml.safeDump(extOutPut))
+    expect(command.log).toHaveBeenCalledWith(yaml.dump(extOutPut))
   })
 })

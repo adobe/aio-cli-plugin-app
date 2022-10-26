@@ -34,7 +34,7 @@ class AddServiceCommand extends BaseCommand {
     // load console configuration from .aio and .env files
     const projectConfig = config.get('project')
     if (!projectConfig) {
-      this.error('Incomplete .aio configuration, please import a valid Adobe Developer Console configuration via `aio app use` first.')
+      this.error(`Incomplete .aio configuration, please import a valid Adobe Developer Console configuration via \`${this.config.bin} app use\` first.`)
     }
     const orgId = projectConfig.org.id
     const project = { name: projectConfig.name, id: projectConfig.id }

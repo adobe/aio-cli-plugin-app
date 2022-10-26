@@ -9,38 +9,37 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-const fs = require('fs-extra')
 
 const TheCommand = require('../../../../src/commands/app/add/action')
-const BaseCommand = require('../../../../src/BaseCommand')
-const generators = require('@adobe/generator-aio-app')
+const TemplatesCommand = require('../../../../src/TemplatesCommand')
 const dataMocks = require('../../../data-mocks/config-loader')
-
+const inquirer = require('inquirer')
 const config = require('@adobe/aio-lib-core-config')
+
 jest.mock('@adobe/aio-lib-core-config')
-
 jest.mock('fs-extra')
-
-const helpers = require('../../../../src/lib/app-helper.js')
-jest.mock('../../../../src/lib/app-helper.js')
-
-jest.mock('yeoman-environment')
-const yeoman = require('yeoman-environment')
-
-const mockInstantiate = jest.fn()
-const mockRunGenerator = jest.fn()
-yeoman.createEnv.mockReturnValue({
-  instantiate: mockInstantiate,
-  runGenerator: mockRunGenerator
-})
+jest.mock('inquirer', () => ({
+  registerPrompt: jest.fn(),
+  prompt: jest.fn()
+}))
 
 const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
   const appConfig = dataMocks(appFixtureName, aioConfig).all
   appConfig.application = { ...appConfig.application, ...aioConfig }
   return appConfig
 }
+
+const mockGetEnabledServicesForOrg = jest.fn()
+
 let command
+
 beforeEach(() => {
+  config.get = jest.fn((key) => {
+    if (key === 'project.org.id') {
+      return 'some-id'
+    }
+  })
+
   command = new TheCommand([])
   command.getAppExtConfigs = jest.fn()
   command.getAppExtConfigs.mockReturnValue(createAppConfig(command.appConfig))
@@ -56,183 +55,159 @@ beforeEach(() => {
   })
   command.getConfigFileForKey = jest.fn()
   command.getConfigFileForKey.mockReturnValue({})
-  mockInstantiate.mockReset()
-  mockRunGenerator.mockReset()
-  yeoman.createEnv.mockClear()
-  helpers.installPackages.mockClear()
-  helpers.servicesToGeneratorInput.mockClear()
-  fs.ensureDirSync.mockClear()
-  config.get.mockReset()
+  command.getLibConsoleCLI = jest.fn()
+  command.getLibConsoleCLI.mockResolvedValue({
+    getEnabledServicesForOrg: mockGetEnabledServicesForOrg
+  })
+  command.config = { bin: 'aio' }
+
+  command.selectTemplates = jest.fn()
+  command.selectTemplates.mockResolvedValue([])
+  command.installTemplates = jest.fn()
+
+  mockGetEnabledServicesForOrg.mockClear()
+  inquirer.prompt.mockClear()
 })
 
 describe('Command Prototype', () => {
   test('exports', async () => {
     expect(typeof TheCommand).toEqual('function')
-    expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
+    expect(TheCommand.prototype instanceof TemplatesCommand).toBeTruthy()
     expect(typeof TheCommand.flags).toBe('object')
   })
 })
 
-describe('bad flags', () => {
-  test('unknown', async () => {
-    await expect(TheCommand.run(['--wtf'])).rejects.toThrow('Unexpected argument')
-  })
+test('bad flags', async () => {
+  command.argv = ['--wtf']
+  await expect(() => command.run()).rejects.toThrow('Unexpected argument: --wtf\nSee more help with --help')
 })
 
-describe('template module cannot be registered', () => {
-  test('unknown error', async () => {
-    mockInstantiate.mockImplementation(() => { throw new Error('some error') })
-    await expect(command.run()).rejects.toThrow('some error')
-  })
+test('.aio config missing', async () => {
+  config.get = jest.fn() // return nothing from the config
+  command.argv = []
+  await expect(command.run()).rejects.toThrow('Incomplete .aio configuration')
 })
 
-describe('good flags', () => {
-  test('--yes', async () => {
-    command.argv = ['--yes']
-    mockInstantiate.mockReturnValueOnce('actionGen')
-    await command.run()
+test('--yes', async () => {
+  const installOptions = {
+    useDefaultValues: true,
+    installNpm: true,
+    templates: ['@adobe/my-extension'],
+    templateOptions: expect.any(Object)
+  }
 
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-action'], {
-      options: {
-        'skip-prompt': true,
-        'action-folder': 'myactions',
-        'config-path': undefined,
-        'adobe-services': undefined,
-        'supported-adobe-services': undefined,
-        'full-key-to-manifest': 'undefined.runtimeManifest'
-      }
-    })
-    expect(mockRunGenerator).toHaveBeenCalledWith('actionGen')
-    expect(helpers.installPackages).toHaveBeenCalledTimes(1)
+  command.argv = ['--yes']
+  inquirer.prompt.mockResolvedValue({
+    components: 'allActionTemplates'
   })
 
-  test('--yes --skip-install', async () => {
-    command.argv = ['--yes', '--skip-install']
-    await command.run()
+  command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-action'], {
-      options: {
-        'skip-prompt': true,
-        'action-folder': 'myactions',
-        'config-path': undefined,
-        'adobe-services': undefined,
-        'supported-adobe-services': undefined,
-        'full-key-to-manifest': 'undefined.runtimeManifest'
-      }
-    })
-    expect(helpers.installPackages).toHaveBeenCalledTimes(0)
+  await command.run()
+  expect(command.installTemplates).toBeCalledWith(installOptions)
+})
+
+test('--yes --no-install', async () => {
+  const installOptions = {
+    useDefaultValues: true,
+    installNpm: false,
+    templates: ['@adobe/my-extension'],
+    templateOptions: expect.any(Object)
+  }
+
+  command.argv = ['--yes', '--no-install']
+  inquirer.prompt.mockResolvedValue({
+    components: 'allActionTemplates'
   })
+  command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
-  test('--skip-install', async () => {
-    command.argv = ['--skip-install']
-    await command.run()
+  await command.run()
+  expect(command.installTemplates).toBeCalledWith(installOptions)
+})
 
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-action'], {
-      options: {
-        'skip-prompt': false,
-        'action-folder': 'myactions',
-        'config-path': undefined,
-        'adobe-services': undefined,
-        'supported-adobe-services': undefined,
-        'full-key-to-manifest': 'undefined.runtimeManifest'
-      }
-    })
+test('--no-install', async () => {
+  const installOptions = {
+    useDefaultValues: false,
+    installNpm: false,
+    templates: ['@adobe/my-extension'],
+    templateOptions: expect.any(Object)
+  }
+
+  command.argv = ['--no-install']
+  inquirer.prompt.mockResolvedValue({
+    components: 'allActionTemplates'
   })
+  command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
-  test('--extension', async () => {
-    command.argv = ['--extension', 'application']
-    await command.run()
+  await command.run()
+  expect(command.installTemplates).toBeCalledWith(installOptions)
+})
 
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-action'], {
-      options: {
-        'skip-prompt': false,
-        'action-folder': 'myactions',
-        'config-path': undefined,
-        'adobe-services': undefined,
-        'supported-adobe-services': undefined,
-        'full-key-to-manifest': 'undefined.runtimeManifest'
-      }
-    })
+test('--extension', async () => {
+  const installOptions = {
+    useDefaultValues: false,
+    installNpm: true,
+    templates: ['@adobe/my-extension'],
+    templateOptions: expect.any(Object)
+  }
+
+  command.argv = ['--extension', 'application']
+  inquirer.prompt.mockResolvedValue({
+    components: 'allActionTemplates'
   })
+  command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
-  test('no flags', async () => {
-    await command.run()
+  await command.run()
+  expect(command.installTemplates).toBeCalledWith(installOptions)
+})
 
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-action'], {
-      options: {
-        'skip-prompt': false,
-        'action-folder': 'myactions',
-        'config-path': undefined,
-        'adobe-services': undefined,
-        'supported-adobe-services': undefined,
-        'full-key-to-manifest': 'undefined.runtimeManifest'
-      }
-    })
+test('no flags (all action templates)', async () => {
+  const installOptions = {
+    useDefaultValues: false,
+    installNpm: true,
+    templates: ['@adobe/my-extension'],
+    templateOptions: expect.any(Object)
+  }
+
+  command.argv = []
+  inquirer.prompt.mockResolvedValue({
+    components: 'allActionTemplates'
   })
+  command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
-  test('pass services config codes to generator-aio-app', async () => {
-    helpers.servicesToGeneratorInput.mockImplementation((services) => jest.requireActual('../../../../src/lib/app-helper.js').servicesToGeneratorInput(services))
-    config.get.mockImplementation(c => {
-      if (c === 'project.org.details.services') {
-        // supported services
-        return [{ code: 'CampaignSDK' }, { code: 'AdobeAnalyticsSDK' }, { code: 'AnotherOneSDK' }]
-      } else if (c === 'project.workspace.details.services') {
-        // added to workspace
-        return [{ code: 'CampaignSDK' }, { code: 'AdobeAnalyticsSDK' }]
-      }
-      return undefined
-    })
+  await command.run()
+  expect(command.installTemplates).toBeCalledWith(installOptions)
+})
 
-    await command.run()
+test('no flags (org action templates)', async () => {
+  const installOptions = {
+    useDefaultValues: false,
+    installNpm: true,
+    templates: ['@adobe/my-extension'],
+    templateOptions: expect.any(Object)
+  }
 
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-action'], {
-      options: {
-        'skip-prompt': false,
-        'action-folder': 'myactions',
-        'config-path': undefined,
-        'adobe-services': 'CampaignSDK,AdobeAnalyticsSDK',
-        'supported-adobe-services': 'CampaignSDK,AdobeAnalyticsSDK,AnotherOneSDK',
-        'full-key-to-manifest': 'undefined.runtimeManifest'
-      }
-    })
+  command.argv = []
+  inquirer.prompt.mockResolvedValue({
+    components: 'orgActionTemplates'
   })
+  command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
+  mockGetEnabledServicesForOrg.mockResolvedValue([{ code: 'MyServiceCode' }])
+  await command.run()
+  expect(command.installTemplates).toBeCalledWith(installOptions)
+})
 
-  test('pass services config codes from legacy service config key to generator-aio-app', async () => {
-    helpers.servicesToGeneratorInput.mockImplementation((services) => jest.requireActual('../../../../src/lib/app-helper.js').servicesToGeneratorInput(services))
-    config.get.mockImplementation(c => {
-      if (c === 'project.org.details.services') {
-        // supported services
-        return [{ code: 'CampaignSDK' }, { code: 'AdobeAnalyticsSDK' }, { code: 'AnotherOneSDK' }]
-      } else if (c === 'services') {
-        // added to workspace
-        return [{ code: 'CampaignSDK' }, { code: 'AdobeAnalyticsSDK' }]
-      }
-      return undefined
-    })
-
-    await command.run([])
-
-    expect(yeoman.createEnv).toHaveBeenCalled()
-    expect(mockInstantiate).toHaveBeenCalledWith(generators['add-action'], {
-      options: {
-        'skip-prompt': false,
-        'action-folder': 'myactions',
-        'config-path': undefined,
-        'adobe-services': 'CampaignSDK,AdobeAnalyticsSDK',
-        'supported-adobe-services': 'CampaignSDK,AdobeAnalyticsSDK,AnotherOneSDK',
-        'full-key-to-manifest': 'undefined.runtimeManifest'
-      }
-    })
+test('no templates selected', async () => {
+  command.argv = []
+  inquirer.prompt.mockResolvedValue({
+    components: 'allActionTemplates'
   })
+  command.selectTemplates.mockResolvedValue([])
 
-  test('multiple ext configs', async () => {
-    command.getAppExtConfigs.mockReturnValue({ application: 'value', excshell: 'value' })
-    await expect(command.run()).rejects.toThrow('Please use the \'-e\' flag to specify to which implementation you want to add actions to.')
-  })
+  await expect(command.run()).rejects.toThrow('No action templates were chosen to be installed.')
+})
+
+test('multiple ext configs', async () => {
+  command.getAppExtConfigs.mockReturnValue({ application: 'value', excshell: 'value' })
+  await expect(command.run()).rejects.toThrow('Please use the \'-e\' flag to specify to which implementation you want to add actions to.')
 })

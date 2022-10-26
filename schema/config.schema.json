@@ -128,15 +128,17 @@
                         "oauthsinglepageapp"
                     ]
                 },
-                "jwt": { "$ref": "#/definitions/jwt" }
+                "jwt": { "$ref": "#/definitions/jwt" },
+                "api_key": { "$ref": "#/definitions/api_key" }
             },
             "required": [ "id", "name" ],
-            "if": { "properties": { "integration_type": { "const": "apikey" } } },
-            "then": { "properties": { "oauth2": { "$ref": "#/definitions/apikey" } } },
+            "if": { "properties": { "integration_type": { "const": "oauthsinglepageapp" } } },
+            "then": { "properties": { "oauth2": { "$ref": "#/definitions/oauthsinglepageapp" } } },
             "else": { "properties": { "oauth2": { "$ref": "#/definitions/oauth2" } } },
             "oneOf": [
                 { "required": ["oauth2"] },
-                { "required": ["jwt"] }
+                { "required": ["jwt"] },
+                { "required": ["api_key"] }
             ]
         },
         "service": {
@@ -174,12 +176,30 @@
             },
             "required": [ "client_id", "client_secret", "redirect_uri", "defaultRedirectUri" ]
         },
-        "apikey": {
+        "oauthsinglepageapp": {
+            "type": "object",
+            "properties": {
+                "client_id": { "type": "string" },
+                "defaultRedirectUri": {
+                    "type": "string",
+                    "format": "uri"
+                },
+                "redirect_uri": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "format": "uri"
+                    }
+                }
+            },
+            "required": [ "client_id", "redirect_uri", "defaultRedirectUri" ]
+        },
+        "api_key": {
             "type": "object",
             "properties": {
                 "client_id": { "type": "string" }
             },
-            "required": [ "client_id" ]
+            "required": ["client_id"]
         },
         "jwt": {
             "type": "object",

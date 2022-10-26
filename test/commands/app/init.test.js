@@ -11,24 +11,21 @@ governing permissions and limitations under the License.
 */
 const fs = require('fs-extra')
 const path = require('path')
-jest.mock('fs-extra')
-
-// mock config load
-const mockImport = {
-  loadAndValidateConfigFile: jest.fn(),
-  importConfigJson: jest.fn()
-}
-jest.mock('../../../src/lib/import', () => mockImport)
-
-// mock generators
-jest.mock('yeoman-environment')
+const TheCommand = require('../../../src/commands/app/init')
+const BaseCommand = require('../../../src/BaseCommand')
+const importLib = require('../../../src/lib/import')
+const inquirer = require('inquirer')
+const savedDataDir = process.env.XDG_DATA_HOME
 const yeoman = require('yeoman-environment')
-const mockGenInstantiate = jest.fn()
-const mockRun = jest.fn()
-yeoman.createEnv.mockReturnValue({
-  instantiate: mockGenInstantiate,
-  runGenerator: mockRun
-})
+
+jest.mock('@adobe/aio-lib-core-config')
+jest.mock('fs-extra')
+jest.mock('../../../src/lib/import')
+jest.mock('inquirer', () => ({
+  registerPrompt: jest.fn(),
+  prompt: jest.fn(),
+  createPromptModule: jest.fn()
+}))
 
 // mock login
 jest.mock('@adobe/aio-lib-ims')
@@ -56,9 +53,6 @@ const mockConsoleCLIInstance = {
   prompt: {
     promptConfirm: jest.fn()
   }
-  // promptForServiceSubscriptionsOperation: jest.fn(),
-  // confirmNewServiceSubscriptions: jest.fn(),
-  // promptForSelectServiceProperties: jest.fn()
 }
 LibConsoleCLI.init.mockResolvedValue(mockConsoleCLIInstance)
 /** @private */
@@ -72,78 +66,107 @@ function resetMockConsoleCLI () {
   mockConsoleCLIInstance.prompt.promptConfirm.mockReset()
 }
 
-jest.mock('@adobe/generator-aio-app', () => ({
-  application: 'fake-gen-application',
-  'base-app': 'fake-gen-base-app',
-  'add-ci': 'fake-gen-add-ci',
-  extensions: {
-    'dx/excshell/1': 'fake-gen-excshell',
-    'dx/asset-compute/worker/1': 'fake-gen-nui'
+jest.mock('yeoman-environment')
+yeoman.createEnv.mockReturnValue({
+  instantiate: jest.fn(),
+  runGenerator: jest.fn()
+})
+
+// FAKE DATA ///////////////////////
+
+// // some fake data
+const fakeSupportedOrgServices = [{ code: 'AssetComputeSDK', properties: {} }, { code: 'another', properties: {} }]
+const fakeProject = { id: 'fakeprojid', name: 'bestproject', title: 'best project' }
+const fakeOrg = { id: 'fakeorgid', name: 'bestorg' }
+const fakeWorkspaces = [{ id: 'fakewspcid1', name: 'Stage' }, { id: 'fkewspcid2', name: 'dev' }]
+const fakeServicePropertiesNoAssetCompute = [{ sdkCode: 'another' }]
+
+// fake imported config
+const fakeConfig = {
+  project: {
+    name: 'hola',
+    title: 'hola world',
+    org: { name: 'bestorg' },
+    workspace: {
+      details: {
+        credentials: [
+          {
+            jwt: {
+              client_id: 'fakeclientid'
+            }
+          }
+        ]
+      }
+    }
   }
-}))
-
-// mock prompt hardcoded generator list
-jest.mock('inquirer')
-const inquirer = require('inquirer')
-const mockExtensionPrompt = jest.fn()
-inquirer.createPromptModule = jest.fn().mockReturnValue(mockExtensionPrompt)
-const { implPromptChoices } = require('../../../src/lib/defaults')
-const extChoices = implPromptChoices
-const excshellSelection = [implPromptChoices.find(c => c.value.name === 'dx/excshell/1').value]
-const assetComputeSelection = [implPromptChoices.find(c => c.value.name === 'dx/asset-compute/worker/1').value]
-
-// mock install app helper
-const mockInstallPackages = jest.fn()
-jest.mock('../../../src/lib/app-helper.js', () => ({
-  installPackages: mockInstallPackages,
-  atLeastOne: () => true,
-  getCliInfo: () => ({ accessToken: 'fake', env: 'prod' }) // for base command
-}))
+}
+// ///////////////////////
 
 // mock cwd
 let fakeCwd
 const savedChdir = process.chdir
 const savedCwd = process.cwd
+
+afterAll(() => {
+  process.chdir = savedChdir
+  process.cwd = savedCwd
+})
+
+let command
+
 beforeEach(() => {
   fakeCwd = 'cwd'
   process.chdir = jest.fn().mockImplementation(dir => { fakeCwd = dir })
   process.cwd = jest.fn().mockImplementation(() => fakeCwd)
   process.chdir.mockClear()
   process.cwd.mockClear()
-})
-afterAll(() => {
-  process.chdir = savedChdir
-  process.cwd = savedCwd
-})
 
-const TheCommand = require('../../../src/commands/app/init')
-const BaseCommand = require('../../../src/BaseCommand')
-const runtimeLib = require('@adobe/aio-lib-runtime') // eslint-disable-line no-unused-vars
+  command = new TheCommand([])
+  command.config = {
+    findCommand: jest.fn(() => ({}))
+  }
 
-const savedDataDir = process.env.XDG_DATA_HOME
-beforeEach(() => {
-  mockGenInstantiate.mockReset()
-  mockRun.mockReset()
-  yeoman.createEnv.mockClear()
+  command.selectTemplates = jest.fn()
+  command.selectTemplates.mockResolvedValue([])
+  command.installTemplates = jest.fn()
+  command.getTemplatesByExtensionPointIds = jest.fn()
+  command.runInstallPackages = jest.fn()
+
+  inquirer.prompt.mockResolvedValue({
+    components: 'allTemplates'
+  })
+
+  resetMockConsoleCLI()
+  mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue({ id: 'my-org' })
+  mockConsoleCLIInstance.getDevTermsForOrg.mockResolvedValue({ text: 'These are the Dev Terms.' })
+  mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
+  mockConsoleCLIInstance.createProject.mockResolvedValue({})
+  mockConsoleCLIInstance.getWorkspaces.mockResolvedValue([{ name: 'Stage' }, { name: 'Production' }])
+  mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue({
+    project: {
+      name: 'my-project',
+      workspace: {
+        details: {
+          credentials: [
+          ]
+        }
+      }
+    }
+  })
+
   fs.ensureDirSync.mockClear()
   fs.unlinkSync.mockClear()
   // set config.dataDir in oclif
   process.env.XDG_DATA_HOME = 'data-dir'
 
-  resetMockConsoleCLI()
-  mockExtensionPrompt.mockReset()
-  mockInstallPackages.mockClear()
-
   // default
-  mockImport.importConfigJson.mockReset()
-  mockImport.loadAndValidateConfigFile.mockReset()
+  importLib.importConfigJson.mockReset()
+  importLib.loadAndValidateConfigFile.mockReset()
 })
+
 afterAll(() => {
   process.env.XDG_DATA_HOME = savedDataDir
 })
-
-// universal path
-const certDir = path.join('data-dir', '@adobe', 'aio-cli-plugin-app', 'entp-int-certs')
 
 describe('Command Prototype', () => {
   test('exports', async () => {
@@ -151,26 +174,33 @@ describe('Command Prototype', () => {
     expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
     expect(typeof TheCommand.flags).toBe('object')
   })
+
   test('flags', async () => {
     expect(TheCommand.flags).toEqual(expect.objectContaining(BaseCommand.flags))
-
-    expect(typeof TheCommand.flags.import).toBe('object')
-    expect(TheCommand.flags.import.char).toBe('i')
 
     expect(typeof TheCommand.flags.yes).toBe('object')
     expect(TheCommand.flags.yes.char).toBe('y')
     expect(TheCommand.flags.yes.default).toBe(false)
 
-    expect(typeof TheCommand.flags['skip-install']).toBe('object')
-    expect(TheCommand.flags['skip-install'].char).toBe('s')
-    expect(TheCommand.flags['skip-install'].default).toBe(false)
+    expect(typeof TheCommand.flags.import).toBe('object')
+    expect(TheCommand.flags.import.char).toBe('i')
 
     expect(TheCommand.flags.login.allowNo).toBe(true)
     expect(TheCommand.flags.login.default).toBe(true)
 
+    expect(TheCommand.flags['standalone-app'].type).toBe('boolean')
+    expect(TheCommand.flags['standalone-app'].default).toBe(false)
+
+    expect(TheCommand.flags.template.multiple).toBe(true)
+    expect(TheCommand.flags.template.char).toBe('t')
+    expect(TheCommand.flags.template.type).toEqual('option')
+
     expect(TheCommand.flags.workspace.default).toBe('Stage')
     expect(TheCommand.flags.workspace.char).toBe('w')
     expect(TheCommand.flags.workspace.exclusive).toEqual(['import'])
+
+    expect(TheCommand.flags['confirm-new-workspace'].type).toBe('boolean')
+    expect(TheCommand.flags['confirm-new-workspace'].default).toBe(false)
   })
 
   test('args', async () => {
@@ -184,507 +214,193 @@ describe('Command Prototype', () => {
 
 describe('bad args/flags', () => {
   test('unknown', async () => {
-    await expect(TheCommand.run(['.', '--wtf'])).rejects.toThrow('Unexpected argument')
+    command.argv = ['--wtf', 'dev'] // TODO: oclif bug: if no arg is set, an invalid flag does not fail
+    await expect(command.run()).rejects.toThrow('Unexpected argument')
   })
   test('--no-login and --workspace', async () => {
-    await expect(TheCommand.run(['--no-login', '--workspace', 'dev'])).rejects.toThrow('--no-login and --workspace flags cannot be used together.')
-  })
-  test('--no-login and --extension does not exist', async () => {
-    await expect(TheCommand.run(['--no-login', '--extension', 'dev'])).rejects.toThrow('--extension=dev not found.')
+    command.argv = ['--no-login', '--workspace', 'dev']
+    await expect(command.run()).rejects.toThrow('--no-login and --workspace flags cannot be used together.')
   })
 })
 
-describe('run', () => {
-  test('--no-login, select excshell', async () => {
-    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
-    await TheCommand.run(['--no-login'])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'cwd' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'cwd' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
-    )
-    expect(mockInstallPackages).toHaveBeenCalled()
-    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
-    expect(mockImport.importConfigJson).not.toHaveBeenCalled()
-  })
+describe('--no-login', () => {
+  test('select excshell, arg: /otherdir', async () => {
+    const installOptions = {
+      useDefaultValues: false,
+      installNpm: true,
+      installConfig: false,
+      templates: ['@adobe/my-extension']
+    }
+    command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
-  test('--no-login, select excshell, arg: /otherdir', async () => {
-    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
-    await TheCommand.run(['--no-login', '/otherdir'])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'otherdir' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'otherdir' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
-    )
-    expect(mockInstallPackages).toHaveBeenCalled()
+    command.argv = ['--no-login', '/otherdir']
+    await command.run()
+
+    expect(command.installTemplates).toBeCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
-    expect(mockImport.importConfigJson).not.toHaveBeenCalled()
+    expect(importLib.importConfigJson).not.toHaveBeenCalled()
 
     expect(fs.ensureDirSync).toHaveBeenCalledWith(path.resolve('/otherdir'))
     expect(process.chdir).toHaveBeenCalledWith(path.resolve('/otherdir'))
   })
 
-  test('--no-login, select both', async () => {
-    mockExtensionPrompt.mockReturnValue({ res: excshellSelection.concat(assetComputeSelection) })
-    await TheCommand.run(['--no-login'])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(4)
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'cwd' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'cwd' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-nui',
-      { options: { 'skip-prompt': false, force: true } }
-    )
-    expect(mockInstallPackages).toHaveBeenCalled()
-    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
-    expect(mockImport.importConfigJson).not.toHaveBeenCalled()
-  })
-
-  test('--no-login --no-extensions', async () => {
-    await TheCommand.run(['--no-login', '--no-extensions'])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'cwd' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'cwd' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-application',
-      { options: { 'skip-prompt': false, force: true } }
-    )
-    expect(mockInstallPackages).toHaveBeenCalled()
-    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(mockExtensionPrompt).not.toHaveBeenCalled()
-    expect(mockImport.importConfigJson).not.toHaveBeenCalled()
-  })
-
-  test('--no-login --yes --skip-install, select excshell', async () => {
-    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
-    await TheCommand.run(['--no-login', '--yes', '--skip-install'])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-base-app',
-      { options: { 'skip-prompt': true, 'project-name': 'cwd' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-add-ci',
-      { options: { 'skip-prompt': true, 'project-name': 'cwd' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-excshell',
-      { options: { 'skip-prompt': true, force: true } }
-    )
-    expect(mockInstallPackages).not.toHaveBeenCalled()
-    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
-    expect(mockImport.importConfigJson).not.toHaveBeenCalled()
-  })
-
-  test('--no-login --yes --skip-install, --extension dx/asset-compute/worker/1', async () => {
-    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
-    await TheCommand.run(['--no-login', '--yes', '--skip-install', '--extension', 'dx/asset-compute/worker/1'])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-base-app',
-      { options: { 'skip-prompt': true, 'project-name': 'cwd' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-add-ci',
-      { options: { 'skip-prompt': true, 'project-name': 'cwd' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-nui',
-      { options: { 'skip-prompt': true, force: true } }
-    )
-    expect(mockInstallPackages).not.toHaveBeenCalled()
-    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(mockExtensionPrompt).not.toHaveBeenCalled()
-    expect(mockImport.importConfigJson).not.toHaveBeenCalled()
-  })
-
-  // fake imported config
-  const fakeConfig = {
-    project: {
-      name: 'hola',
-      title: 'hola world',
-      org: { name: 'bestorg' },
-      workspace: {
-        details: {
-          credentials: [
-            {
-              jwt: {
-                client_id: 'fakeclientid'
-              }
-            }
-          ]
-        }
-      }
+  test('select a template', async () => {
+    const installOptions = {
+      useDefaultValues: false,
+      installNpm: true,
+      installConfig: false,
+      templates: ['@adobe/my-extension']
     }
-  }
-  const fakeConfigNoCredentials = {
-    project: {
-      name: 'hola',
-      title: 'hola world',
-      org: { name: 'bestorg' },
-      workspace: {
-        details: {
-        }
-      }
+    command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
+
+    command.argv = ['--no-login']
+    await command.run()
+
+    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(importLib.importConfigJson).not.toHaveBeenCalled()
+  })
+
+  test('--standalone-app', async () => {
+    const installOptions = {
+      useDefaultValues: false,
+      installNpm: true,
+      installConfig: false,
+      templates: [] // stand-alone, we use the initial generators only, nothing to install from Template Registry
     }
-  }
 
-  test('--import fakeconfig.json, select excshell', async () => {
-    mockImport.loadAndValidateConfigFile.mockReturnValue({ values: fakeConfig })
-    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
-    await TheCommand.run(['--import', 'fakeconfig.json'])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
-    )
-    expect(mockInstallPackages).toHaveBeenCalled()
+    command.argv = ['--no-login', '--standalone-app']
+    await command.run()
+
+    expect(command.installTemplates).toBeCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
-    expect(mockImport.importConfigJson).toHaveBeenCalledWith(
-      Buffer.from(JSON.stringify(fakeConfig)),
-      'cwd',
-      { interactive: false, merge: true },
-      { SERVICE_API_KEY: 'fakeclientid' }
-    )
+    expect(importLib.importConfigJson).not.toHaveBeenCalled()
   })
 
-  test('--import fakeconfig.json, select excshell, no client id', async () => {
-    mockImport.loadAndValidateConfigFile.mockReturnValue({ values: fakeConfigNoCredentials })
-    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
-    await TheCommand.run(['--import', 'fakeconfig.json'])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
-    )
-    expect(mockInstallPackages).toHaveBeenCalled()
+  test('--yes --no-install, select excshell', async () => {
+    const installOptions = {
+      useDefaultValues: true,
+      installNpm: false,
+      installConfig: false,
+      templates: ['@adobe/my-extension']
+    }
+    command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
+
+    command.argv = ['--no-login', '--yes', '--no-install']
+    await command.run()
+
+    expect(command.installTemplates).toBeCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
-    expect(mockImport.importConfigJson).toHaveBeenCalledWith(
-      Buffer.from(JSON.stringify(fakeConfigNoCredentials)),
+    expect(importLib.importConfigJson).not.toHaveBeenCalled()
+  })
+
+  test('--yes --no-install, --template @adobe/my-extension', async () => {
+    const installOptions = {
+      useDefaultValues: true,
+      installNpm: false,
+      installConfig: false,
+      templates: ['@adobe/my-extension']
+    }
+
+    command.argv = ['--no-login', '--yes', '--no-install', '--template', '@adobe/my-extension']
+    await command.run()
+
+    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(importLib.importConfigJson).not.toHaveBeenCalled()
+  })
+
+  test('--yes --no-install, --template @adobe/my-extension --template @adobe/your-extension', async () => {
+    const installOptions = {
+      useDefaultValues: true,
+      installNpm: false,
+      installConfig: false,
+      templates: ['@adobe/my-extension', '@adobe/your-extension']
+    }
+
+    command.argv = ['--no-login', '--yes', '--no-install', '--template', '@adobe/my-extension', '--template', '@adobe/your-extension']
+    await command.run()
+
+    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(importLib.importConfigJson).not.toHaveBeenCalled()
+  })
+})
+
+describe('--login', () => {
+  test('--standalone-app', async () => {
+    const installOptions = {
+      useDefaultValues: false,
+      installNpm: true,
+      templates: [] // stand-alone, we use the initial generators only, nothing to install from Template Registry
+    }
+
+    command.argv = ['--standalone-app']
+    await command.run()
+
+    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(LibConsoleCLI.init).toHaveBeenCalled()
+    expect(importLib.importConfigJson).toHaveBeenCalled()
+  })
+
+  test('--yes --no-install, --template @adobe/my-extension --template @adobe/your-extension', async () => {
+    const installOptions = {
+      useDefaultValues: true,
+      installNpm: false,
+      templates: ['@adobe/my-extension', '@adobe/your-extension']
+    }
+
+    command.argv = ['--yes', '--no-install', '--template', '@adobe/my-extension', '--template', '@adobe/your-extension']
+    await command.run()
+
+    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(LibConsoleCLI.init).toHaveBeenCalled()
+    expect(importLib.importConfigJson).toHaveBeenCalled()
+  })
+
+  test('--import fakeconfig.json', async () => {
+    importLib.loadAndValidateConfigFile.mockReturnValue({ values: fakeConfig })
+
+    command.argv = ['--import', 'fakeconfig.json']
+    await command.run()
+
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+      Buffer.from(JSON.stringify(fakeConfig)),
       'cwd',
       { interactive: false, merge: true },
-      { SERVICE_API_KEY: '' }
+      { SERVICE_API_KEY: 'fakeclientid' }
     )
   })
 
-  // some fake data
-  const fakeSupportedOrgServices = [{ code: 'AssetComputeSDK', properties: {} }, { code: 'another', properties: {} }]
-  const fakeSupportedOrgServicesNoAssetCompute = [{ code: 'another', properties: {} }]
-  const fakeProject = { id: 'fakeprojid', name: 'bestproject', title: 'best project' }
-  const fakeOrg = { id: 'fakeorgid', name: 'bestorg' }
-  const fakeWorkspaces = [{ id: 'fakewspcid1', name: 'Stage' }, { id: 'fkewspcid2', name: 'dev' }]
-  const fakeServicePropertiesNoAssetCompute = [{ sdkCode: 'another' }]
+  test('select template, -w dev', async () => {
+    const installOptions = {
+      useDefaultValues: false,
+      installNpm: true,
+      templates: ['@adobe/my-extension']
+    }
+    command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
+    inquirer.prompt.mockResolvedValue({
+      components: 'orgTemplates'
+    })
 
-  test('with login, select excshell', async () => {
-    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
+    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
+    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
     mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
     mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
-    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
-    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
-    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
-    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
-    await TheCommand.run([])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
-    )
-    expect(mockInstallPackages).toHaveBeenCalled()
+
+    command.argv = ['-w', 'dev']
+    await command.run()
+
+    expect(command.installTemplates).toBeCalledWith(installOptions)
     expect(LibConsoleCLI.init).toHaveBeenCalled()
-    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
-    expect(mockImport.importConfigJson).toHaveBeenCalledWith(
-      Buffer.from(JSON.stringify(fakeConfig)),
-      'cwd',
-      { interactive: false, merge: true },
-      { SERVICE_API_KEY: 'fakeclientid' }
-    )
-    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(fakeOrg.id, fakeProject.id, fakeWorkspaces[0].id, fakeSupportedOrgServices)
-    // exchshell has no required service to be added
-    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
-    expect(mockConsoleCLIInstance.createProject).not.toHaveBeenCalled()
-  })
-
-  test('with login, select asset-compute', async () => {
-    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
-    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
-    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
-    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
-    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
-    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
-
-    mockExtensionPrompt.mockReturnValue({ res: assetComputeSelection })
-    await TheCommand.run([])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-nui',
-      { options: { 'skip-prompt': false, force: true } }
-    )
-    expect(mockInstallPackages).toHaveBeenCalled()
-    expect(LibConsoleCLI.init).toHaveBeenCalled()
-    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
-    expect(mockImport.importConfigJson).toHaveBeenCalledWith(
-      Buffer.from(JSON.stringify(fakeConfig)),
-      'cwd',
-      { interactive: false, merge: true },
-      { SERVICE_API_KEY: 'fakeclientid' }
-    )
-    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(fakeOrg.id, fakeProject.id, fakeWorkspaces[0].id, fakeSupportedOrgServices)
-    // adding the required nui service (exchshell has no required service)
-    expect(mockConsoleCLIInstance.subscribeToServices).toHaveBeenCalledWith(
-      fakeOrg.id,
-      fakeProject,
-      fakeWorkspaces[0],
-      expect.stringContaining(certDir),
-      [{ sdkCode: 'another' }, { sdkCode: 'AssetComputeSDK' }]
-    )
-    expect(mockConsoleCLIInstance.createProject).not.toHaveBeenCalled()
-  })
-
-  test('with login, select excshell, no asset compute service in org', async () => {
-    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
-    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
-    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
-    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
-    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServicesNoAssetCompute)
-    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
-
-    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
-    await TheCommand.run([])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
-    )
-    expect(mockInstallPackages).toHaveBeenCalled()
-    expect(LibConsoleCLI.init).toHaveBeenCalled()
-    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining(
-      {
-        choices: [
-        // exc shell
-          extChoices[0],
-          extChoices[1],
-          // disabled nui
-          expect.objectContaining({
-            disabled: true,
-            name: expect.stringContaining('missing service(s) in Org: \'AssetComputeSDK\''),
-            value: expect.any(Object)
-          })
-        ]
-      })])
-    expect(mockImport.importConfigJson).toHaveBeenCalledWith(
-      Buffer.from(JSON.stringify(fakeConfig)),
-      'cwd',
-      { interactive: false, merge: true },
-      { SERVICE_API_KEY: 'fakeclientid' }
-    )
-    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(fakeOrg.id, fakeProject.id, fakeWorkspaces[0].id, fakeSupportedOrgServicesNoAssetCompute)
-    // exchshell has no required service to be added
-    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
-    expect(mockConsoleCLIInstance.createProject).not.toHaveBeenCalled()
-  })
-
-  test('with login, select excshell, create new project', async () => {
-    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
-    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
-    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(null) // null = user selects to create a project
-    mockConsoleCLIInstance.createProject.mockResolvedValue(fakeProject)
-    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
-    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
-    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
-    mockConsoleCLIInstance.promptForCreateProjectDetails.mockResolvedValue('fakedetails')
-    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
-    await TheCommand.run([])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
-    )
-    expect(mockInstallPackages).toHaveBeenCalled()
-    expect(LibConsoleCLI.init).toHaveBeenCalled()
-    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
-    expect(mockImport.importConfigJson).toHaveBeenCalledWith(
-      Buffer.from(JSON.stringify(fakeConfig)),
-      'cwd',
-      { interactive: false, merge: true },
-      { SERVICE_API_KEY: 'fakeclientid' }
-    )
-    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(fakeOrg.id, fakeProject.id, fakeWorkspaces[0].id, fakeSupportedOrgServices)
-    // exchshell has no required service to be added
-    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
-    expect(mockConsoleCLIInstance.createProject).toHaveBeenCalledWith(fakeOrg.id, 'fakedetails')
-  })
-
-  test('with login, --extension excshell, create new project', async () => {
-    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
-    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
-    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(null) // null = user selects to create a project
-    mockConsoleCLIInstance.createProject.mockResolvedValue(fakeProject)
-    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
-    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
-    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
-    mockConsoleCLIInstance.promptForCreateProjectDetails.mockResolvedValue('fakedetails')
-    mockExtensionPrompt.mockReturnValue({})
-
-    await TheCommand.run(['--extension', 'dx/excshell/1'])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
-    )
-    expect(mockInstallPackages).toHaveBeenCalled()
-    expect(LibConsoleCLI.init).toHaveBeenCalled()
-    expect(mockExtensionPrompt).not.toHaveBeenCalled()
-    expect(mockImport.importConfigJson).toHaveBeenCalledWith(
-      Buffer.from(JSON.stringify(fakeConfig)),
-      'cwd',
-      { interactive: false, merge: true },
-      { SERVICE_API_KEY: 'fakeclientid' }
-    )
-    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(fakeOrg.id, fakeProject.id, fakeWorkspaces[0].id, fakeSupportedOrgServices)
-    // exchshell has no required service to be added
-    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
-    expect(mockConsoleCLIInstance.createProject).toHaveBeenCalledWith(fakeOrg.id, 'fakedetails')
-  })
-
-  test('with login, select excshell, -w dev', async () => {
-    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
-    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
-    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
-    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
-    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
-    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
-
-    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
-    await TheCommand.run(['-w', 'dev'])
-    expect(mockGenInstantiate).toHaveBeenCalledTimes(3)
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-base-app',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-add-ci',
-      { options: { 'skip-prompt': false, 'project-name': 'hola' } }
-    )
-    expect(mockGenInstantiate).toHaveBeenCalledWith(
-      'fake-gen-excshell',
-      { options: { 'skip-prompt': false, force: true } }
-    )
-    expect(mockInstallPackages).toHaveBeenCalled()
-    expect(LibConsoleCLI.init).toHaveBeenCalled()
-    expect(mockExtensionPrompt).toBeCalledWith([expect.objectContaining({ choices: extChoices })])
-    expect(mockImport.importConfigJson).toHaveBeenCalledWith(
-      Buffer.from(JSON.stringify(fakeConfig)),
-      'cwd',
-      { interactive: false, merge: true },
-      { SERVICE_API_KEY: 'fakeclientid' }
-    )
-    // get config for dev workspace (fakeWorkspaces[1])
+    expect(importLib.importConfigJson).toHaveBeenCalled()
     expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(fakeOrg.id, fakeProject.id, fakeWorkspaces[1].id, fakeSupportedOrgServices)
-    // exchshell has no required service to be added
-    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
     expect(mockConsoleCLIInstance.createProject).not.toHaveBeenCalled()
   })
 
-  test('with login, select excshell, -w notexists, promptConfirm true', async () => {
+  test('select template, -w notexists, promptConfirm true', async () => {
     mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
     mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValue(true)
     mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
@@ -693,14 +409,16 @@ describe('run', () => {
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
     mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
     mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
-    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
     mockConsoleCLIInstance.createWorkspace.mockResolvedValue(fakeWorkspaces[0])
 
-    await TheCommand.run(['-w', 'notexists'])
+    command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
+
+    command.argv = ['-w', 'notexists']
+    await command.run()
     expect(mockConsoleCLIInstance.createWorkspace).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({ name: 'notexists', title: '' }))
   })
 
-  test('with login, select excshell, -w notexists, promptConfirm false, should throw', async () => {
+  test('select template, -w notexists, promptConfirm false, should throw', async () => {
     const workspaceName = 'notexists'
     mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
     mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValue(false)
@@ -710,12 +428,15 @@ describe('run', () => {
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
     mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
     mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
-    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
     mockConsoleCLIInstance.createWorkspace.mockResolvedValue(fakeWorkspaces[0])
 
-    await expect(TheCommand.run(['-w', workspaceName])).rejects.toThrow(`Workspace '${workspaceName}' does not exist and creation aborted`)
+    command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
+
+    command.argv = ['-w', workspaceName]
+    await expect(command.run()).rejects.toThrow(`Workspace '${workspaceName}' does not exist and creation aborted`)
   })
-  test('with login, select excshell, -w notexists, --confirm-new-workspace', async () => {
+
+  test('select template, -w notexists, --confirm-new-workspace', async () => {
     const notexistsWorkspace = 'notexists'
     mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
     mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValue(true)
@@ -725,65 +446,163 @@ describe('run', () => {
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
     mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
     mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
-    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
     mockConsoleCLIInstance.createWorkspace.mockResolvedValue(fakeWorkspaces[0])
 
-    await TheCommand.run(['-w', notexistsWorkspace, '--confirm-new-workspace'])
+    command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
+
+    command.argv = ['-w', notexistsWorkspace, '--confirm-new-workspace']
+    await command.run()
     expect(mockConsoleCLIInstance.prompt.promptConfirm).not.toHaveBeenCalled()
     expect(mockConsoleCLIInstance.createWorkspace).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({ name: 'notexists', title: '' }))
   })
-  test('with login, developer terms not accepted, accept', async () => {
-    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
-    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
-    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
-    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
-    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
-    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
-    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(false)
-    mockConsoleCLIInstance.getDevTermsForOrg.mockResolvedValue({ text: 'pls, accept this', locale: 'eng' })
-    mockConsoleCLIInstance.acceptDevTermsForOrg.mockResolvedValueOnce(true)
-    mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValueOnce(true)
-    await TheCommand.run([])
-    expect(mockConsoleCLIInstance.checkDevTermsForOrg).toHaveBeenCalledTimes(1)
-    expect(mockConsoleCLIInstance.prompt.promptConfirm).toHaveBeenCalledTimes(1)
-    expect(mockConsoleCLIInstance.getDevTermsForOrg).toHaveBeenCalledTimes(1)
-    expect(mockConsoleCLIInstance.acceptDevTermsForOrg).toHaveBeenCalledTimes(1)
+
+  test('--extension dx/excshell/1 --extension dx/something/1 (found)', async () => {
+    const extensionPointIds = ['dx/excshell/1', 'dx/something/1']
+    command.argv = ['--extension', extensionPointIds[0], '--extension', extensionPointIds[1]]
+    command.getTemplatesByExtensionPointIds.mockResolvedValue({
+      found: extensionPointIds,
+      notFound: [],
+      templates: [
+        { name: '@adobe/myrepo1' },
+        { name: '@adobe/myrepo2' }
+      ]
+    })
+
+    const installOptions = {
+      installNpm: true,
+      templates: ['@adobe/myrepo1', '@adobe/myrepo2'],
+      useDefaultValues: false
+    }
+
+    await command.run()
+    expect(command.installTemplates).toBeCalledWith(installOptions)
   })
-  test('with login, developer terms not accepted, declined by user', async () => {
-    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
-    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
-    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
-    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
-    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
-    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
-    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(false)
-    mockConsoleCLIInstance.getDevTermsForOrg.mockResolvedValue({ text: 'pls, accept this', locale: 'eng' })
-    mockConsoleCLIInstance.acceptDevTermsForOrg.mockResolvedValueOnce(true)
-    mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValueOnce(false)
-    await expect(TheCommand.run([])).rejects.toThrow('The Developer Terms of Service were declined')
-    expect(mockConsoleCLIInstance.checkDevTermsForOrg).toHaveBeenCalledTimes(1)
-    expect(mockConsoleCLIInstance.getDevTermsForOrg).toHaveBeenCalledTimes(1)
-    expect(mockConsoleCLIInstance.prompt.promptConfirm).toHaveBeenCalledTimes(1)
-    expect(mockConsoleCLIInstance.acceptDevTermsForOrg).toHaveBeenCalledTimes(0)
+
+  test('--extension foo/bar/1 --extension bar/baz/1 (not found)', async () => {
+    const extensionPointIds = ['foo/bar/1', 'bar/baz/1']
+    command.argv = ['--extension', extensionPointIds[0], '--extension', extensionPointIds[1]]
+    command.getTemplatesByExtensionPointIds.mockResolvedValue({
+      found: [],
+      notFound: extensionPointIds,
+      templates: []
+    })
+    await expect(command.run()).rejects.toThrow(`Extension(s) '${extensionPointIds.join(', ')}' not found in the Template Registry.`)
   })
-  test('with login, developer terms not accepted, acceptDevTermsForOrg: accepted = false', async () => {
-    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
-    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
-    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
+})
+
+describe('no args', () => {
+  test('select a template (all templates)', async () => {
+    const installOptions = {
+      useDefaultValues: false,
+      installNpm: true,
+      templates: ['@adobe/my-extension']
+    }
+    command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
+    inquirer.prompt.mockResolvedValue({
+      components: 'allTemplates'
+    })
+    const fakeSupportedOrgServices = [{ code: 'AssetComputeSDK', properties: {} }, { code: 'another', properties: {} }]
     mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
-    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
-    mockExtensionPrompt.mockReturnValue({ res: excshellSelection })
+
+    command.argv = []
+    await command.run()
+
+    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(LibConsoleCLI.init).toHaveBeenCalled()
+    expect(importLib.importConfigJson).toHaveBeenCalled()
+  })
+
+  test('select a template (all extensions)', async () => {
+    const installOptions = {
+      useDefaultValues: false,
+      installNpm: true,
+      templates: ['@adobe/my-extension']
+    }
+    command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
+    inquirer.prompt.mockResolvedValue({
+      components: 'allExtensionPoints'
+    })
+    const fakeSupportedOrgServices = [{ code: 'AssetComputeSDK', properties: {} }, { code: 'another', properties: {} }]
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
+
+    command.argv = []
+    await command.run()
+
+    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(LibConsoleCLI.init).toHaveBeenCalled()
+    expect(importLib.importConfigJson).toHaveBeenCalled()
+  })
+
+  test('select a template (org templates)', async () => {
+    const installOptions = {
+      useDefaultValues: false,
+      installNpm: true,
+      templates: ['@adobe/my-extension']
+    }
+    command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
+    inquirer.prompt.mockResolvedValue({
+      components: 'orgTemplates'
+    })
+
+    const fakeSupportedOrgServices = [
+      { code: 'AssetComputeSDK', properties: {} },
+      { code: 'AnotherSDK', properties: {} },
+      { code: 'YetAnotherSDK', properties: {} }
+    ]
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
+
+    command.argv = []
+    await command.run()
+
+    const searchCriteria = command.selectTemplates.mock.calls[0][0] // first arg of first call
+    expect(searchCriteria).toEqual(
+      {
+        apis: [
+          'AssetComputeSDK', // | symbol denotes an OR clause (only if it's not the first item)
+          '|AnotherSDK',
+          '|YetAnotherSDK'
+        ],
+        categories: '!helper-template',
+        statuses: 'Approved'
+      }
+    )
+
+    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(LibConsoleCLI.init).toHaveBeenCalled()
+    expect(importLib.importConfigJson).toHaveBeenCalled()
+  })
+
+  test('templates plugin is not installed', async () => {
+    command.config.findCommand.mockResolvedValue(null)
+    await expect(command.run()).rejects.toThrow('aio-cli plugin @adobe/aio-cli-plugin-app-templates was not found. This plugin is required to install templates.')
+  })
+})
+
+describe('dev terms', () => {
+  test('not accepted', async () => {
     mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(false)
-    mockConsoleCLIInstance.getDevTermsForOrg.mockResolvedValue({ text: 'pls, accept this', locale: 'eng' })
-    mockConsoleCLIInstance.acceptDevTermsForOrg.mockResolvedValueOnce(false)
-    mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValueOnce(true)
-    await expect(TheCommand.run([])).rejects.toThrow('The Developer Terms of Service could not be accepted')
-    expect(mockConsoleCLIInstance.checkDevTermsForOrg).toHaveBeenCalledTimes(1)
-    expect(mockConsoleCLIInstance.getDevTermsForOrg).toHaveBeenCalledTimes(1)
-    expect(mockConsoleCLIInstance.prompt.promptConfirm).toHaveBeenCalledTimes(1)
-    expect(mockConsoleCLIInstance.acceptDevTermsForOrg).toHaveBeenCalledTimes(1)
+    mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValue(false)
+    await expect(command.run()).rejects.toThrow('The Developer Terms of Service were declined')
+  })
+
+  test('accepted (check was successful)', async () => {
+    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
+    await expect(command.run()).resolves.toBeUndefined()
+  })
+
+  test('accepted (check was unsuccessful, prompt to confirm acceptance, confirmed acceptance on the server)', async () => {
+    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(false)
+    mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValue(true)
+    mockConsoleCLIInstance.acceptDevTermsForOrg.mockResolvedValue(true)
+
+    await expect(command.run()).resolves.toBeUndefined()
+  })
+
+  test('accepted (check was unsuccessful, prompt to confirm acceptance, unconfirmed acceptance on the server)', async () => {
+    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(false)
+    mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValue(true)
+    mockConsoleCLIInstance.acceptDevTermsForOrg.mockResolvedValue(false)
+
+    await expect(command.run()).rejects.toThrow('The Developer Terms of Service could not be accepted')
   })
 })

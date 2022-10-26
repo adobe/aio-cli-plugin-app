@@ -27,17 +27,16 @@ class Deploy extends BuildCommand {
     const { flags } = await this.parse(Deploy)
 
     // flags
-    flags['web-assets'] = flags['web-assets'] && !flags['skip-web-assets'] && !flags['skip-static'] && !flags.action
-    flags.actions = flags.actions && !flags['skip-actions']
+    flags['web-assets'] = flags['web-assets'] && !flags.action
     flags.publish = flags.publish && !flags.action
-    flags.build = flags.build && !flags['skip-build']
 
     const deployConfigs = this.getAppExtConfigs(flags)
     const keys = Object.keys(deployConfigs)
     const values = Object.values(deployConfigs)
+    const isStandaloneApp = (keys.length === 1 && keys[0] === 'application')
 
     // if there are no extensions, then set publish to false
-    flags.publish = flags.publish && !(keys.length === 1 && keys[0] === 'application')
+    flags.publish = flags.publish && !isStandaloneApp
     let libConsoleCLI
     if (flags.publish) {
       // force login at beginning (if required)
@@ -45,9 +44,7 @@ class Deploy extends BuildCommand {
     }
 
     if (
-      (!flags.publish && !flags['web-assets'] && !flags.actions) ||
-      // NOTE skip deploy is deprecated
-      (!flags.publish && !flags.build && flags['skip-deploy'])
+      (!flags.publish && !flags['web-assets'] && !flags.actions)
     ) {
       this.error('Nothing to be done 🚫')
     }
@@ -55,6 +52,7 @@ class Deploy extends BuildCommand {
 
     try {
       const aioConfig = this.getFullConfig().aio
+
       // 1. update log forwarding configuration
       // note: it is possible that .aio file does not exist, which means there is no local lg config
       if (aioConfig &&
@@ -83,7 +81,18 @@ class Deploy extends BuildCommand {
           throw error
         }
       }
-      // 2. deploy actions and web assets for each extension
+
+      // 2. Bail if workspace is production and application status is PUBLISHED, honor force-deploy
+      if (!isStandaloneApp && aioConfig?.project?.workspace?.name === 'Production' && !flags['force-deploy']) {
+        const extension = await this.getApplicationExtension(libConsoleCLI, aioConfig)
+        spinner.info(chalk.dim(JSON.stringify(extension)))
+        if (extension && extension.status === 'PUBLISHED') {
+          spinner.info(chalk.red('This application is published and the current workspace is Production, deployment will be skipped. You must first retract this application in Adobe Exchange to deploy updates.'))
+          return
+        }
+      }
+
+      // 3. deploy actions and web assets for each extension
       // Possible improvements:
       // - parallelize
       // - break into smaller pieces deploy, allowing to first deploy all actions then all web assets
@@ -93,7 +102,7 @@ class Deploy extends BuildCommand {
         await this.deploySingleConfig(k, v, flags, spinner)
       }
 
-      // 3. deploy extension manifest
+      // 4. deploy extension manifest
       if (flags.publish) {
         const payload = await this.publishExtensionPoints(libConsoleCLI, deployConfigs, aioConfig, flags['force-publish'])
         this.log(chalk.blue(chalk.bold(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': '${Object.keys(payload.endpoints)}'`)))
@@ -132,106 +141,104 @@ class Deploy extends BuildCommand {
 
     const filterActions = flags.action
 
-    if (!flags['skip-deploy']) {
-      try {
-        await runScript(config.hooks['pre-app-deploy'])
-      } catch (err) {
-        this.log(err)
-      }
+    try {
+      await runScript(config.hooks['pre-app-deploy'])
+    } catch (err) {
+      this.log(err)
+    }
 
-      if (flags.actions) {
-        if (config.app.hasBackend) {
-          let filterEntities
-          if (filterActions) {
-            filterEntities = { actions: filterActions }
-          }
-
-          const options = { actionCode: flags['action-code'] }
-
-          const message = `Deploying actions for '${name}'`
-          spinner.start(message)
-          try {
-            const script = await runScript(config.hooks['deploy-actions'])
-            if (!script) {
-              deployedRuntimeEntities = await rtLib.deployActions(config, { filterEntities }, onProgress, options)
-            }
-
-            if (deployedRuntimeEntities.actions && deployedRuntimeEntities.actions.length > 0) {
-              spinner.succeed(chalk.green(`Deployed ${deployedRuntimeEntities.actions.length} action(s) for '${name}'`))
-            } else {
-              if (script) {
-                spinner.fail(chalk.green(`deploy-actions skipped by hook '${name}'`))
-              } else {
-                spinner.fail(chalk.green(`No actions deployed for '${name}'`))
-              }
-            }
-          } catch (err) {
-            spinner.fail(chalk.green(message))
-            throw err
-          }
-        } else {
-          this.log(`no backend, skipping action deploy '${name}'`)
+    if (flags.actions) {
+      if (config.app.hasBackend) {
+        let filterEntities
+        if (filterActions) {
+          filterEntities = { actions: filterActions }
         }
-      }
+        
+        const options = { actionCode: flags['action-code'] }
 
-      if (flags['web-assets']) {
-        if (config.app.hasFrontend) {
-          const message = `Deploying web assets for '${name}'`
-          spinner.start(message)
-          try {
-            const script = await runScript(config.hooks['deploy-static'])
+        const message = `Deploying actions for '${name}'`
+        spinner.start(message)
+        try {
+          const script = await runScript(config.hooks['deploy-actions'])
+          if (!script) {
+            deployedRuntimeEntities = await rtLib.deployActions(config, { filterEntities }, onProgress, options)
+          }
+
+          if (deployedRuntimeEntities.actions && deployedRuntimeEntities.actions.length > 0) {
+            spinner.succeed(chalk.green(`Deployed ${deployedRuntimeEntities.actions.length} action(s) for '${name}'`))
+          } else {
             if (script) {
-              spinner.fail(chalk.green(`deploy-static skipped by hook '${name}'`))
+              spinner.fail(chalk.green(`deploy-actions skipped by hook '${name}'`))
             } else {
-              deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
-              spinner.succeed(chalk.green(message))
+              spinner.fail(chalk.green(`No actions deployed for '${name}'`))
             }
-          } catch (err) {
-            spinner.fail(chalk.green(message))
-            throw err
           }
-        } else {
-          this.log(`no frontend, skipping frontend deploy '${name}'`)
+        } catch (err) {
+          spinner.fail(chalk.green(message))
+          throw err
         }
+      } else {
+        this.log(`no backend, skipping action deploy '${name}'`)
+      }
+    }
+
+    if (flags['web-assets']) {
+      if (config.app.hasFrontend) {
+        const message = `Deploying web assets for '${name}'`
+        spinner.start(message)
+        try {
+          const script = await runScript(config.hooks['deploy-static'])
+          if (script) {
+            spinner.fail(chalk.green(`deploy-static skipped by hook '${name}'`))
+          } else {
+            deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
+            spinner.succeed(chalk.green(message))
+          }
+        } catch (err) {
+          spinner.fail(chalk.green(message))
+          throw err
+        }
+      } else {
+        this.log(`no frontend, skipping frontend deploy '${name}'`)
+      }
+    }
+
+    // log deployed resources
+    if (deployedRuntimeEntities.actions && deployedRuntimeEntities.actions.length > 0) {
+      this.log(chalk.blue(chalk.bold('Your deployed actions:')))
+      const web = deployedRuntimeEntities.actions.filter(createWebExportFilter(true))
+      const nonWeb = deployedRuntimeEntities.actions.filter(createWebExportFilter(false))
+
+      if (web.length > 0) {
+        this.log('web actions:')
+        web.forEach(a => {
+          this.log(chalk.blue(chalk.bold(`  -> ${a.url || a.name} `)))
+        })
       }
 
-      // log deployed resources
-      if (deployedRuntimeEntities.actions && deployedRuntimeEntities.actions.length > 0) {
-        this.log(chalk.blue(chalk.bold('Your deployed actions:')))
-        const web = deployedRuntimeEntities.actions.filter(createWebExportFilter(true))
-        const nonWeb = deployedRuntimeEntities.actions.filter(createWebExportFilter(false))
-
-        if (web.length > 0) {
-          this.log('web actions:')
-          web.forEach(a => {
-            this.log(chalk.blue(chalk.bold(`  -> ${a.url || a.name} `)))
-          })
-        }
-
-        if (nonWeb.length > 0) {
-          this.log('non-web actions:')
-          nonWeb.forEach(a => {
-            this.log(chalk.blue(chalk.bold(`  -> ${a.url || a.name} `)))
-          })
-        }
+      if (nonWeb.length > 0) {
+        this.log('non-web actions:')
+        nonWeb.forEach(a => {
+          this.log(chalk.blue(chalk.bold(`  -> ${a.url || a.name} `)))
+        })
       }
-      // TODO urls should depend on extension point, exc shell only for exc shell extension point - use a post-app-deploy hook ?
-      if (deployedFrontendUrl) {
-        this.log(chalk.blue(chalk.bold(`To view your deployed application:\n  -> ${deployedFrontendUrl}`)))
-        const launchUrl = this.getLaunchUrlPrefix() + deployedFrontendUrl
-        if (flags.open) {
-          this.log(chalk.blue(chalk.bold(`Opening your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
-          cli.open(launchUrl)
-        } else {
-          this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
-        }
+    }
+    // TODO urls should depend on extension point, exc shell only for exc shell extension point - use a post-app-deploy hook ?
+    if (deployedFrontendUrl) {
+      this.log(chalk.blue(chalk.bold(`To view your deployed application:\n  -> ${deployedFrontendUrl}`)))
+      const launchUrl = this.getLaunchUrlPrefix() + deployedFrontendUrl
+      if (flags.open) {
+        this.log(chalk.blue(chalk.bold(`Opening your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
+        cli.open(launchUrl)
+      } else {
+        this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
       }
+    }
 
-      try {
-        await runScript(config.hooks['post-app-deploy'])
-      } catch (err) {
-        this.log(err)
-      }
+    try {
+      await runScript(config.hooks['post-app-deploy'])
+    } catch (err) {
+      this.log(err)
     }
   }
 
@@ -252,6 +259,12 @@ class Deploy extends BuildCommand {
     newPayload = await libConsoleCLI.updateExtensionPointsWithoutOverwrites(aioConfig.project.org, aioConfig.project, aioConfig.project.workspace, payload)
     return newPayload
   }
+
+  async getApplicationExtension (libConsoleCLI, aioConfig) {
+    const { appId } = await libConsoleCLI.getProject(aioConfig.project.org.id, aioConfig.project.id)
+    const applicationExtensions = await libConsoleCLI.getApplicationExtensions(aioConfig.project.org.id, appId)
+    return applicationExtensions.find(extension => extension.appId === appId)
+  }
 }
 
 Deploy.description = `Build and deploy an Adobe I/O App
@@ -261,21 +274,6 @@ This will always force a rebuild unless --no-force-build is set.
 
 Deploy.flags = {
   ...BaseCommand.flags,
-  'skip-build': Flags.boolean({
-    description: '[deprecated] Please use --no-build'
-  }),
-  'skip-deploy': Flags.boolean({
-    description: '[deprecated] Please use \'aio app build\''
-  }),
-  'skip-static': Flags.boolean({
-    description: '[deprecated] Please use --no-web-assets'
-  }),
-  'skip-web-assets': Flags.boolean({
-    description: '[deprecated] Please use --no-web-assets'
-  }),
-  'skip-actions': Flags.boolean({
-    description: '[deprecated] Please use --no-actions'
-  }),
   actions: Flags.boolean({
     description: '[default: true] Deploy actions if any',
     default: true,
@@ -325,8 +323,12 @@ Deploy.flags = {
     default: true,
     exclusive: ['action']
   }),
+  'force-deploy': Flags.boolean({
+    description: '[default: false] Force deploy changes, regardless of production Workspace being published in Exchange.',
+    default: false
+  }),
   'force-publish': Flags.boolean({
-    description: 'Force publish extension(s) to Exchange, delete previously published extension points',
+    description: '[default: false] Force publish extension(s) to Exchange, delete previously published extension points',
     default: false,
     exclusive: ['action', 'publish'] // no-publish is excluded
   }),
