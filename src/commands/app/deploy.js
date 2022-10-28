@@ -37,7 +37,7 @@ class Deploy extends BuildCommand {
 
     // if there are no extensions, then set publish to false
     flags.publish = flags.publish && !isStandaloneApp
-    let libConsoleCLI
+    let libConsoleCLI // <= this can be undefined later on, and it was not checked
     if (flags.publish) {
       // force login at beginning (if required)
       libConsoleCLI = await this.getLibConsoleCLI()
@@ -83,7 +83,7 @@ class Deploy extends BuildCommand {
       }
 
       // 2. Bail if workspace is production and application status is PUBLISHED, honor force-deploy
-      if (!isStandaloneApp && aioConfig?.project?.workspace?.name === 'Production' && !flags['force-deploy']) {
+      if (libConsoleCLI && !isStandaloneApp && aioConfig?.project?.workspace?.name === 'Production' && !flags['force-deploy']) {
         const extension = await this.getApplicationExtension(libConsoleCLI, aioConfig)
         spinner.info(chalk.dim(JSON.stringify(extension)))
         if (extension && extension.status === 'PUBLISHED') {
@@ -158,6 +158,12 @@ class Deploy extends BuildCommand {
         try {
           const script = await runScript(config.hooks['deploy-actions'])
           if (!script) {
+            console.log('In DeployActions ... filterActions = ', filterActions || [])
+            await this.config.runHook('deploy-actions', {
+              appConfig: config,
+              filterEntities: filterActions || [],
+              isLocalDev: false
+            })
             deployedRuntimeEntities = await rtLib.deployActions(config, { filterEntities }, onProgress)
           }
 
