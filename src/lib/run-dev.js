@@ -157,7 +157,6 @@ async function runDev (config, dataDir, options = {}, log = () => {}, inprocHook
     }
     cleanup.wait()
   } catch (e) {
-    console.log('Error : ', e.stack)
     aioLogger.error('unexpected error, cleaning up...')
     await cleanup.run()
     throw e

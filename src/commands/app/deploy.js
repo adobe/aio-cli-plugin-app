@@ -158,7 +158,6 @@ class Deploy extends BuildCommand {
         try {
           const script = await runScript(config.hooks['deploy-actions'])
           if (!script) {
-            console.log('In DeployActions ... filterActions = ', filterActions || [])
             await this.config.runHook('deploy-actions', {
               appConfig: config,
               filterEntities: filterActions || [],
