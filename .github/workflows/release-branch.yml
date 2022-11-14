@@ -3,6 +3,10 @@
 
 name: Release Branch CI
 
+on:
+  pull_request:
+    branches: [ 'release-*', 'branch-prerelease' ]
+
 jobs:
   build:
     uses: adobe/aio-resuable-workflows/.github/workflows/release-branch.yml@main
