@@ -20,11 +20,11 @@ const {
   warnIfOverwriteServicesInProductionWorkspace
 } = require('../../../lib/app-helper')
 
-const BaseCommand = require('../../../BaseCommand')
+const Use = require('../use')
 
 const { ENTP_INT_CERTS_FOLDER } = require('../../../lib/defaults')
 
-class AddServiceCommand extends BaseCommand {
+class AddServiceCommand extends Use {
   async run () {
     const { flags } = await this.parse(AddServiceCommand)
 
@@ -130,8 +130,12 @@ class AddServiceCommand extends BaseCommand {
         path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER),
         newServiceProperties
       )
-      // update the service configuration with the latest subscriptions
-      setWorkspaceServicesConfig(newServiceProperties)
+
+      // update environment
+      const globalConfig = this.loadGlobalConfiguration()
+      const buffer = await this.downloadConsoleConfigToBuffer(consoleCLI, globalConfig, supportedServices)
+      await this.importConsoleConfig(buffer, flags)
+
       // success !
       this.log(chalk.green(chalk.bold(`Successfully updated Service Subscriptions in Workspace ${workspace.name}`)))
       return newServiceProperties
@@ -145,7 +149,7 @@ AddServiceCommand.description = `Subscribe to Services in the current Workspace
 `
 
 AddServiceCommand.flags = {
-  ...BaseCommand.flags
+  ...Use.flags
 }
 
 AddServiceCommand.aliases = ['app:add:services']
