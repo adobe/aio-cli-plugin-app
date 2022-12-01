@@ -9,6 +9,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
+const { importConsoleConfig, downloadConsoleConfigToBuffer } = require('../../../lib/import')
 const path = require('path')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:service', { provider: 'debug' })
 const config = require('@adobe/aio-lib-core-config')
@@ -20,11 +21,11 @@ const {
   warnIfOverwriteServicesInProductionWorkspace
 } = require('../../../lib/app-helper')
 
-const Use = require('../use')
+const BaseCommand = require('../../../BaseCommand')
 
 const { ENTP_INT_CERTS_FOLDER } = require('../../../lib/defaults')
 
-class AddServiceCommand extends Use {
+class AddServiceCommand extends BaseCommand {
   async run () {
     const { flags } = await this.parse(AddServiceCommand)
 
@@ -132,9 +133,13 @@ class AddServiceCommand extends Use {
       )
 
       // update environment
-      const globalConfig = this.loadGlobalConfiguration()
-      const buffer = await this.downloadConsoleConfigToBuffer(consoleCLI, globalConfig, supportedServices)
-      await this.importConsoleConfig(buffer, flags)
+      const config = {
+        org: { id: projectConfig.org.id },
+        project: { id: projectConfig.id },
+        workspace: { id: projectConfig.workspace.id }
+      }
+      const buffer = await downloadConsoleConfigToBuffer(consoleCLI, config, supportedServices)
+      await importConsoleConfig(buffer, flags)
 
       // success !
       this.log(chalk.green(chalk.bold(`Successfully updated Service Subscriptions in Workspace ${workspace.name}`)))
@@ -149,7 +154,7 @@ AddServiceCommand.description = `Subscribe to Services in the current Workspace
 `
 
 AddServiceCommand.flags = {
-  ...Use.flags
+  ...BaseCommand.flags
 }
 
 AddServiceCommand.aliases = ['app:add:services']

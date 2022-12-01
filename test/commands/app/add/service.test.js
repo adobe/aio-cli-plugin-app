@@ -10,7 +10,6 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 const consoleDataMocks = require('@adobe/aio-cli-lib-console/test/data-mocks')
-const importLib = require('../../../../src/lib/import')
 
 jest.mock('@adobe/aio-cli-lib-console')
 const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
@@ -22,8 +21,7 @@ const mockConsoleCLIInstance = {
   subscribeToServices: jest.fn(),
   getServicePropertiesFromWorkspace: jest.fn(),
   confirmNewServiceSubscriptions: jest.fn(),
-  promptForSelectServiceProperties: jest.fn(),
-  getWorkspaceConfig: jest.fn()
+  promptForSelectServiceProperties: jest.fn()
 }
 LibConsoleCLI.init.mockResolvedValue(mockConsoleCLIInstance)
 /** @private */
@@ -44,51 +42,22 @@ function setDefaultMockConsoleCLI () {
   mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(consoleDataMocks.serviceProperties)
   mockConsoleCLIInstance.promptForServiceSubscriptionsOperation.mockResolvedValue('nop')
   mockConsoleCLIInstance.confirmNewServiceSubscriptions.mockResolvedValue(true)
-  mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue({ ...fixtureJson('valid.config.json') })
 }
-
-// mock import config
-jest.mock('../../../../src/lib/import')
-const project = {
-  name: 'projectname',
-  workspace: {
-    details: {
-      credentials: null
-    }
-  }
-}
-importLib.loadAndValidateConfigFile.mockReturnValue({
-  values: { project }
-})
 
 // mock config
 const config = require('@adobe/aio-lib-core-config')
 jest.mock('@adobe/aio-lib-core-config')
-
-let fakeCurrentConfig; let fakeGlobalConfig = {}
-let mockWorkspace, mockProject, mockOrgId
+let mockConfigProject, mockWorkspace, mockProject, mockOrgId
 /** @private */
 function setDefaultMockConfig () {
-  fakeCurrentConfig = fixtureJson('valid.config.json').project
-  mockWorkspace = { name: fakeCurrentConfig.workspace.name, id: fakeCurrentConfig.workspace.id }
-  mockProject = { name: fakeCurrentConfig.name, id: fakeCurrentConfig.id }
-  mockOrgId = fakeCurrentConfig.org.id
-
-  fakeGlobalConfig = {
-    org: { name: 'org name', id: 'org-id' },
-    project: { name: 'projectname2', id: 'projectid2' },
-    workspace: { name: 'workspacename2', id: 'workspaceid2' }
-  }
-
-  config.get.mockImplementation(k => {
-    if (k === 'project') {
-      return fakeCurrentConfig
-    }
-    if (k === 'console') {
-      return fakeGlobalConfig
-    }
-  })
+  mockConfigProject = fixtureJson('valid.config.json').project
+  mockWorkspace = { name: mockConfigProject.workspace.name, id: mockConfigProject.workspace.id }
+  mockProject = { name: mockConfigProject.name, id: mockConfigProject.id }
+  mockOrgId = mockConfigProject.org.id
+  config.get.mockReturnValue(mockConfigProject)
 }
+
+jest.mock('../../../../src/lib/import')
 
 // mock login - mocks underlying methods behind getCliInfo
 const mockAccessToken = 'some-access-token'
@@ -175,7 +144,7 @@ describe('Run', () => {
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(currentServiceProps)
     // mock selection
     mockConsoleCLIInstance.promptForSelectServiceProperties.mockResolvedValue(additionalServiceProps)
-    await TheCommand.run()
+    await TheCommand.run([])
     expect(mockConsoleCLIInstance.subscribeToServices).toHaveBeenCalledWith(
       mockOrgId,
       mockProject,
@@ -186,19 +155,6 @@ describe('Run', () => {
     expect(mockConsoleCLIInstance.promptForSelectServiceProperties).toHaveBeenCalledWith(
       mockWorkspace.name,
       expect.not.arrayContaining(currentServiceProps.map(s => ({ name: s.name, value: s })))
-    )
-    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
-      fakeGlobalConfig.org.id,
-      fakeGlobalConfig.project.id,
-      fakeGlobalConfig.workspace.id,
-      consoleDataMocks.enabledServices
-    )
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
-      expect.any(Buffer),
-      process.cwd(),
-      // --no-input sets --merge to true
-      { merge: false, overwrite: false, interactive: true },
-      { SERVICE_API_KEY: '' }
     )
   })
 
@@ -219,19 +175,6 @@ describe('Run', () => {
       mockWorkspace,
       certDir,
       otherServiceProps
-    )
-    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
-      fakeGlobalConfig.org.id,
-      fakeGlobalConfig.project.id,
-      fakeGlobalConfig.workspace.id,
-      consoleDataMocks.enabledServices
-    )
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
-      expect.any(Buffer),
-      process.cwd(),
-      // --no-input sets --merge to true
-      { merge: false, overwrite: false, interactive: true },
-      { SERVICE_API_KEY: '' }
     )
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(
       `Service subscriptions in Workspace '${mockWorkspace.name}' will be overwritten.`
@@ -256,19 +199,6 @@ describe('Run', () => {
       certDir,
       otherServiceProps
     )
-    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
-      fakeGlobalConfig.org.id,
-      fakeGlobalConfig.project.id,
-      fakeGlobalConfig.workspace.id,
-      consoleDataMocks.enabledServices
-    )
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
-      expect.any(Buffer),
-      process.cwd(),
-      // --no-input sets --merge to true
-      { merge: false, overwrite: false, interactive: true },
-      { SERVICE_API_KEY: '' }
-    )
     expect(logSpy).not.toHaveBeenCalledWith(expect.stringContaining(
       `Service subscriptions in Workspace '${mockWorkspace.name}' will be overwritten.`
     ))
@@ -284,7 +214,7 @@ describe('Run', () => {
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServiceProps)
     // second call is to retrieve src wkspce services
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(otherServiceProps)
-    fakeCurrentConfig.workspace.name = 'Production'
+    mockConfigProject.workspace.name = 'Production'
     mockWorkspace.name = 'Production'
     await TheCommand.run([])
     expect(mockConsoleCLIInstance.subscribeToServices).toHaveBeenCalledWith(
@@ -293,19 +223,6 @@ describe('Run', () => {
       mockWorkspace,
       certDir,
       otherServiceProps
-    )
-    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
-      fakeGlobalConfig.org.id,
-      fakeGlobalConfig.project.id,
-      fakeGlobalConfig.workspace.id,
-      consoleDataMocks.enabledServices
-    )
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
-      expect.any(Buffer),
-      process.cwd(),
-      // --no-input sets --merge to true
-      { merge: false, overwrite: false, interactive: true },
-      { SERVICE_API_KEY: '' }
     )
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(
       `⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace in Project '${mockProject.name}'.`
@@ -375,6 +292,8 @@ describe('Run', () => {
       ],
       true
     )
+
+    // after addition
     expect(config.set).toHaveBeenCalledWith(
       'project.org.details.services', [
         { name: 'first', code: 'firsts', type: 'entp' },
