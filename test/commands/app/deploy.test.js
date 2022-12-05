@@ -190,7 +190,7 @@ test('flags', async () => {
   expect(typeof TheCommand.flags.action).toBe('object')
   expect(TheCommand.flags.action.char).toBe('a')
   expect(typeof TheCommand.flags.action.description).toBe('string')
-  expect(TheCommand.flags.action.exclusive).toEqual(['extension'])
+  expect(JSON.stringify(TheCommand.flags.action.exclusive)).toStrictEqual(JSON.stringify(['extension', { name: 'publish', when: () => {} }]))
 
   expect(typeof TheCommand.flags['web-assets']).toBe('object')
   expect(typeof TheCommand.flags['web-assets'].description).toBe('string')
@@ -216,7 +216,6 @@ test('flags', async () => {
   expect(typeof TheCommand.flags.publish.description).toBe('string')
   expect(TheCommand.flags.publish.default).toEqual(true)
   expect(TheCommand.flags.publish.allowNo).toEqual(true)
-  expect(TheCommand.flags.publish.exclusive).toEqual(['action'])
 
   expect(typeof TheCommand.flags['force-deploy']).toBe('object')
   expect(typeof TheCommand.flags['force-deploy'].description).toBe('string')
@@ -328,6 +327,24 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, 'web-assets': false, action: ['a', 'b', 'c'] }), expect.anything())
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(appConfig.application, {
       filterEntities: { actions: ['a', 'b', 'c'] }
+    },
+    expect.any(Function))
+  })
+
+  test('build & deploy only an action using --action and --no-publish', async () => {
+    const appConfig = createAppConfig(command.appConfig)
+    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+
+    command.argv = ['--no-web-assets', '--action', 'c', '--no-publish']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
+    expect(command.buildOneExt).toHaveBeenCalledTimes(1)
+
+    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, 'web-assets': false, action: ['c'] }), expect.anything())
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(appConfig.application, {
+      filterEntities: { actions: ['c'] }
     },
     expect.any(Function))
   })

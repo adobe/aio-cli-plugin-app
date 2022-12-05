@@ -94,7 +94,7 @@ DESCRIPTION
   Create, run, test, and deploy Adobe I/O Apps
 ```
 
-_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/10.0.2/src/commands/app/index.js)_
+_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/10.0.3/src/commands/app/index.js)_
 
 ## `aio app add`
 
@@ -130,6 +130,7 @@ FLAGS
 DESCRIPTION
   Add new actions
 
+
 ALIASES
   $ aio app add actions
 ```
@@ -151,6 +152,7 @@ FLAGS
 
 DESCRIPTION
   Add new actions
+
 
 ALIASES
   $ aio app add actions
@@ -190,6 +192,7 @@ FLAGS
 DESCRIPTION
   Add a new Adobe I/O Events action
 
+
 ALIASES
   $ aio app add events
 ```
@@ -212,6 +215,7 @@ FLAGS
 DESCRIPTION
   Add a new Adobe I/O Events action
 
+
 ALIASES
   $ aio app add events
 ```
@@ -233,6 +237,7 @@ FLAGS
 
 DESCRIPTION
   Add new extensions to the project
+
 
 ALIASES
   $ aio app add ext
@@ -257,6 +262,7 @@ FLAGS
 DESCRIPTION
   Add new extensions to the project
 
+
 ALIASES
   $ aio app add ext
   $ aio app add extensions
@@ -280,6 +286,7 @@ FLAGS
 DESCRIPTION
   Add new extensions to the project
 
+
 ALIASES
   $ aio app add ext
   $ aio app add extensions
@@ -300,6 +307,7 @@ FLAGS
 DESCRIPTION
   Subscribe to Services in the current Workspace
 
+
 ALIASES
   $ aio app add services
 ```
@@ -318,6 +326,7 @@ FLAGS
 
 DESCRIPTION
   Subscribe to Services in the current Workspace
+
 
 ALIASES
   $ aio app add services
@@ -602,6 +611,7 @@ FLAGS
 DESCRIPTION
   Delete existing actions
 
+
 ALIASES
   $ aio app delete actions
 ```
@@ -624,6 +634,7 @@ FLAGS
 
 DESCRIPTION
   Delete existing actions
+
 
 ALIASES
   $ aio app delete actions
@@ -665,6 +676,7 @@ FLAGS
 DESCRIPTION
   Delete existing Adobe I/O Events actions
 
+
 ALIASES
   $ aio app delete events
 ```
@@ -688,6 +700,7 @@ FLAGS
 DESCRIPTION
   Delete existing Adobe I/O Events actions
 
+
 ALIASES
   $ aio app delete events
 ```
@@ -709,6 +722,7 @@ FLAGS
 
 DESCRIPTION
   Delete existing extensions
+
 
 ALIASES
   $ aio app delete ext
@@ -733,6 +747,7 @@ FLAGS
 DESCRIPTION
   Delete existing extensions
 
+
 ALIASES
   $ aio app delete ext
   $ aio app delete extensions
@@ -756,6 +771,7 @@ FLAGS
 DESCRIPTION
   Delete existing extensions
 
+
 ALIASES
   $ aio app delete ext
   $ aio app delete extensions
@@ -776,6 +792,7 @@ FLAGS
 DESCRIPTION
   Delete Services in the current Workspace
 
+
 ALIASES
   $ aio app delete services
 ```
@@ -794,6 +811,7 @@ FLAGS
 
 DESCRIPTION
   Delete Services in the current Workspace
+
 
 ALIASES
   $ aio app delete services
@@ -823,7 +841,7 @@ Build and deploy an Adobe I/O App
 ```
 USAGE
   $ aio app deploy [-v] [--version] [--actions | -a <value>] [--web-assets] [--force-build | ] [--content-hash]
-    [--web-optimize] [-e <value> | ] [--build] [--open] [--force-deploy] [--force-publish |  | [--publish | ]]
+    [--web-optimize] [-e <value> | ] [--build] [--open] [--force-deploy] [--force-publish |  | --publish]
     [--log-forwarding-update]
 
 FLAGS
@@ -957,6 +975,7 @@ FLAGS
 DESCRIPTION
   List implemented extensions
 
+
 ALIASES
   $ aio app list ext
   $ aio app list extensions
@@ -978,6 +997,7 @@ FLAGS
 
 DESCRIPTION
   List all extension points for the selected org
+
 
 ALIASES
   $ aio app list ext-points
@@ -1001,6 +1021,7 @@ FLAGS
 DESCRIPTION
   List implemented extensions
 
+
 ALIASES
   $ aio app list ext
   $ aio app list extensions
@@ -1023,6 +1044,7 @@ FLAGS
 DESCRIPTION
   List all extension points for the selected org
 
+
 ALIASES
   $ aio app list ext-points
   $ aio app list extension-points
@@ -1044,6 +1066,7 @@ FLAGS
 
 DESCRIPTION
   List implemented extensions
+
 
 ALIASES
   $ aio app list ext
@@ -1112,13 +1135,10 @@ FLAGS
 
 DESCRIPTION
   Run tests for an Adobe I/O App
-
   If no flags are specified, by default only unit-tests are run.
 
   For the --action flag, it tries a substring search on the 'package-name/action-name' pair for an action.
-
   For the --extension flag, it tries a substring search on the 'extension-name' only.
-
   If the extension has a hook called 'test' in its 'ext.config.yaml', the script specified will be run instead.
 ```
 
