@@ -42,25 +42,49 @@ class Package extends BaseCommand {
       aioLogger.debug(`changed current working directory to: ${resolvedPath}`)
     }
 
-    // build phase
+    // 1. build phase
     if (flags.build) {
+      this.log('Building app...')
       await this.config.runCommand('app:build', [])
     } else {
-      aioLogger.debug('skipping build')
+      this.log('Skipping build.')
     }
 
-    this.log('TODO: create DD Metadata json based on configuration definition in app.config.yaml')
-    await fs.outputFile(DEFAULTS.UI_METADATA_FILE, '{}')
-    this.log('TODO: create install.yaml based on package.json, .aio, app.config.yaml, etc')
-    await fs.outputFile(DEFAULTS.INSTALL_YAML_FILE, '# TODO')
-
-    // add files/folder to app-package folder
-    this.log(`Copying artifacts to ${DEFAULTS.ARTIFACTS_FOLDER} folder in path ${args.path}`)
+    // 2. create artifacts phase
+    this.log('Creating package artifacts...')
     await fs.ensureDir(DEFAULTS.ARTIFACTS_FOLDER)
-    await fs.copy('dist', `${DEFAULTS.ARTIFACTS_FOLDER}/dist`) // TODO: the dist folder is specified in the config
-    // TODO: hooks copy
-    await fs.copy(DEFAULTS.INSTALL_YAML_FILE, `${DEFAULTS.ARTIFACTS_FOLDER}/${DEFAULTS.INSTALL_YAML_FILE}`)
-    await fs.copy(DEFAULTS.UI_METADATA_FILE, `${DEFAULTS.ARTIFACTS_FOLDER}/${DEFAULTS.UI_METADATA_FILE}`)
+
+    await this.createUIMetadataFile()
+    await this.createInstallYamlFile()
+    // await this.copyPackageFiles(['dist'/* ,'hooks' */]) // TODO: the dist folder is specified in the config, hooks TBD
+    await this.copyPackageFiles(['dist', 'hooks']) // TODO: the dist folder is specified in the config, hooks TBD
+
+    // 3. zip package phase
+    this.log(`Zipping package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER}' to '${flags.output}'...`)
+    await this.zipHelper(DEFAULTS.ARTIFACTS_FOLDER, flags.output)
+    this.log('Packaging done.')
+  }
+
+  async createUIMetadataFile () {
+    this.log('TODO: create DD Metadata json based on configuration definition in app.config.yaml')
+    await fs.outputFile(`${DEFAULTS.ARTIFACTS_FOLDER}/${DEFAULTS.UI_METADATA_FILE}`, '{}')
+  }
+
+  async createInstallYamlFile () {
+    this.log('TODO: create install.yaml based on package.json, .aio, app.config.yaml, etc')
+    await fs.outputFile(`${DEFAULTS.ARTIFACTS_FOLDER}/${DEFAULTS.INSTALL_YAML_FILE}`, '# TODO')
+  }
+
+  async copyPackageFiles (files) {
+    files.forEach(async (src) => {
+      const dest = `${DEFAULTS.ARTIFACTS_FOLDER}/${src}`
+      if (await fs.pathExists(src)) {
+        aioLogger.debug(`Copying ${src} to ${dest}`)
+        await fs.copy(src, dest)
+      } else {
+        aioLogger.debug(`Skipping copy for ${src} (path does not exist)`)
+      }
+    })
   }
 
   /**
@@ -71,7 +95,7 @@ class Package extends BaseCommand {
    * @param {boolean} pathInZip internal path in zip
    * @returns {Promise} returns with a blank promise when done
    */
-  zip (filePath, out, pathInZip = false) {
+  zipHelper (filePath, out, pathInZip = false) {
     aioLogger.debug(`Creating zip of file/folder ${filePath}`)
     const stream = fs.createWriteStream(out)
     const archive = archiver('zip', { zlib: { level: 9 } })
