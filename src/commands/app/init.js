@@ -21,7 +21,7 @@ const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
 const inquirer = require('inquirer')
 const hyperlinker = require('hyperlinker')
 
-const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import')
+const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import-helper')
 const { SERVICE_API_KEY_ENV } = require('../../lib/defaults')
 
 const DEFAULT_WORKSPACE = 'Stage'
