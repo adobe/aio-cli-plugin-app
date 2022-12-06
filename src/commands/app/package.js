@@ -57,7 +57,7 @@ class Package extends BaseCommand {
     await this.createUIMetadataFile()
     await this.createInstallYamlFile()
     // await this.copyPackageFiles(['dist'/* ,'hooks' */]) // TODO: the dist folder is specified in the config, hooks TBD
-    await this.copyPackageFiles(['dist', 'hooks']) // TODO: the dist folder is specified in the config, hooks TBD
+    await this.copyPackageFiles(DEFAULTS.ARTIFACTS_FOLDER, ['dist', 'hooks']) // TODO: the dist folder is specified in the config, hooks TBD
 
     // 3. zip package phase
     this.log(`Zipping package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER}' to '${flags.output}'...`)
@@ -75,9 +75,9 @@ class Package extends BaseCommand {
     await fs.outputFile(`${DEFAULTS.ARTIFACTS_FOLDER}/${DEFAULTS.INSTALL_YAML_FILE}`, '# TODO')
   }
 
-  async copyPackageFiles (files) {
-    files.forEach(async (src) => {
-      const dest = `${DEFAULTS.ARTIFACTS_FOLDER}/${src}`
+  async copyPackageFiles (destinationFolder, filesList) {
+    filesList.forEach(async (src) => {
+      const dest = `${destinationFolder}/${src}`
       if (await fs.pathExists(src)) {
         aioLogger.debug(`Copying ${src} to ${dest}`)
         await fs.copy(src, dest)
