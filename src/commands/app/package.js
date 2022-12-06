@@ -12,8 +12,16 @@ governing permissions and limitations under the License.
 const BaseCommand = require('../../BaseCommand')
 const { Flags } = require('@oclif/core')
 const path = require('node:path')
-const { resolve } = require('node:path')
+const fs = require('fs-extra')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:package', { provider: 'debug' })
+const archiver = require('archiver')
+
+const DEFAULTS = {
+  OUTPUT_ZIP_FILE: 'app.zip',
+  ARTIFACTS_FOLDER: 'app-package',
+  INSTALL_YAML_FILE: 'install.yaml',
+  UI_METADATA_FILE: 'ui-metadata.json'
+}
 
 class Package extends BaseCommand {
   async run () {
@@ -42,7 +50,52 @@ class Package extends BaseCommand {
     }
 
     this.log('TODO: create DD Metadata json based on configuration definition in app.config.yaml')
+    await fs.outputFile(DEFAULTS.UI_METADATA_FILE, '{}')
     this.log('TODO: create install.yaml based on package.json, .aio, app.config.yaml, etc')
+    await fs.outputFile(DEFAULTS.INSTALL_YAML_FILE, '# TODO')
+
+    // add files/folder to app-package folder
+    this.log(`Copying artifacts to ${DEFAULTS.ARTIFACTS_FOLDER} folder in path ${args.path}`)
+    await fs.ensureDir(DEFAULTS.ARTIFACTS_FOLDER)
+    await fs.copy('dist', `${DEFAULTS.ARTIFACTS_FOLDER}/dist`) // TODO: the dist folder is specified in the config
+    // TODO: hooks copy
+    await fs.copy(DEFAULTS.INSTALL_YAML_FILE, `${DEFAULTS.ARTIFACTS_FOLDER}/${DEFAULTS.INSTALL_YAML_FILE}`)
+    await fs.copy(DEFAULTS.UI_METADATA_FILE, `${DEFAULTS.ARTIFACTS_FOLDER}/${DEFAULTS.UI_METADATA_FILE}`)
+  }
+
+  /**
+   * Zip a file/folder using archiver
+   *
+   * @param {string} filePath path of file.folder to zip
+   * @param {string} out output path
+   * @param {boolean} pathInZip internal path in zip
+   * @returns {Promise} returns with a blank promise when done
+   */
+  zip (filePath, out, pathInZip = false) {
+    aioLogger.debug(`Creating zip of file/folder ${filePath}`)
+    const stream = fs.createWriteStream(out)
+    const archive = archiver('zip', { zlib: { level: 9 } })
+
+    return new Promise((resolve, reject) => {
+      stream.on('close', () => resolve())
+      archive.pipe(stream)
+      archive.on('error', err => reject(err))
+
+      let stats
+      try {
+        stats = fs.lstatSync(filePath) // throws if enoent
+      } catch (e) {
+        archive.destroy()
+        reject(e)
+      }
+
+      if (stats.isDirectory()) {
+        archive.directory(filePath, pathInZip)
+      } else { //  if (stats.isFile()) {
+        archive.file(filePath, { name: pathInZip || path.basename(filePath) })
+      }
+      archive.finalize()
+    })
   }
 }
 
@@ -56,7 +109,7 @@ Package.flags = {
   output: Flags.string({
     description: 'The packaged app output file path',
     char: 'o',
-    default: 'app.zip'
+    default: DEFAULTS.OUTPUT_ZIP_FILE
   }),
   build: Flags.boolean({
     description: '[default: true] Run the build phase before packaging',
