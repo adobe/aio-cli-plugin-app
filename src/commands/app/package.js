@@ -57,7 +57,6 @@ class Package extends BaseCommand {
 
     await this.createUIMetadataFile()
     await this.createInstallYamlFile()
-    // await this.copyPackageFiles(['dist'/* ,'hooks' */]) // TODO: the dist folder is specified in the config, hooks TBD
     await this.copyPackageFiles(DEFAULTS.ARTIFACTS_FOLDER, ['dist', 'hooks']) // TODO: the dist folder is specified in the config, hooks TBD
 
     // 3. zip package phase
@@ -69,22 +68,22 @@ class Package extends BaseCommand {
 
   async createUIMetadataFile () {
     this.log('TODO: create DD Metadata json based on configuration definition in app.config.yaml')
-    await fs.outputFile(`${DEFAULTS.ARTIFACTS_FOLDER}/${DEFAULTS.UI_METADATA_FILE}`, '{}')
+    await fs.outputFile(path.join(DEFAULTS.ARTIFACTS_FOLDER,DEFAULTS.UI_METADATA_FILE), '{}')
   }
 
   async createInstallYamlFile () {
     this.log('TODO: create install.yaml based on package.json, .aio, app.config.yaml, etc')
-    await fs.outputFile(`${DEFAULTS.ARTIFACTS_FOLDER}/${DEFAULTS.INSTALL_YAML_FILE}`, '# TODO')
+    await fs.outputFile(path.join(DEFAULTS.ARTIFACTS_FOLDER, DEFAULTS.INSTALL_YAML_FILE), '# TODO')
   }
 
   async copyPackageFiles (destinationFolder, filesList) {
     const ignoreFiles = ['.DS_Store']
-    const filterFunc = (src, dest) => {
+    const filterFunc = (src) => {
       return !(ignoreFiles.includes(path.basename(src)))
     }
 
     for (const src of filesList) {
-      const dest = `${destinationFolder}/${src}`
+      const dest = path.join(destinationFolder, src)
       if (await fs.pathExists(src)) {
         aioLogger.debug(`Copying ${src} to ${dest}`)
         await fs.copy(src, dest, { filter: filterFunc })
@@ -103,7 +102,7 @@ class Package extends BaseCommand {
    * @returns {Promise} returns with a blank promise when done
    */
   zipHelper (filePath, out, pathInZip = false) {
-    aioLogger.debug(`Creating zip of file/folder ${filePath}`)
+    aioLogger.debug(`Creating zip of file/folder '${filePath}'`)
     const stream = fs.createWriteStream(out)
     const archive = archiver('zip', { zlib: { level: 9 } })
 
