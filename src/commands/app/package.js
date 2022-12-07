@@ -15,6 +15,7 @@ const path = require('node:path')
 const fs = require('fs-extra')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:package', { provider: 'debug' })
 const archiver = require('archiver')
+const yaml = require('js-yaml')
 
 const DEFAULTS = {
   OUTPUT_ZIP_FILE: 'app.zip',
@@ -73,7 +74,19 @@ class Package extends BaseCommand {
 
   async createInstallYamlFile () {
     this.log('TODO: create install.yaml based on package.json, .aio, app.config.yaml, etc')
-    await fs.outputFile(path.join(DEFAULTS.ARTIFACTS_FOLDER, DEFAULTS.INSTALL_YAML_FILE), '# TODO')
+
+    // read name and version from package.json
+    const installJson = {
+      $schema: 'http://json-schema.org/draft-07/schema',
+      $id: 'https://adobe.io/schemas/app-builder-templates/1',
+      application: {
+        name: this.config.pjson.name,
+        version: this.config.pjson.version
+      }
+    }
+
+    const installYaml = yaml.dump(installJson)
+    await fs.outputFile(path.join(DEFAULTS.ARTIFACTS_FOLDER, DEFAULTS.INSTALL_YAML_FILE), installYaml)
   }
 
   async copyPackageFiles (destinationFolder, filesList) {
