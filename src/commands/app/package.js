@@ -21,7 +21,7 @@ const DEFAULTS = {
   OUTPUT_ZIP_FILE: 'app.zip',
   ARTIFACTS_FOLDER: 'app-package',
   INSTALL_YAML_FILE: 'install.yaml',
-  UI_METADATA_FILE: 'ui-metadata.json'
+  DD_METADATA_FILE: 'dd-metadata.json'
 }
 
 class Package extends BaseCommand {
@@ -30,6 +30,8 @@ class Package extends BaseCommand {
 
     aioLogger.debug(`flags: ${JSON.stringify(flags, null, 2)}`)
     aioLogger.debug(`args: ${JSON.stringify(args, null, 2)}`)
+
+    const appConfig = this.getFullConfig()
 
     if (flags.output) {
       // resolve to absolute path before any chdir
@@ -56,11 +58,15 @@ class Package extends BaseCommand {
     await fs.remove(DEFAULTS.ARTIFACTS_FOLDER)
     await fs.ensureDir(DEFAULTS.ARTIFACTS_FOLDER)
 
-    await this.createUIMetadataFile()
-    await this.createInstallYamlFile()
-    await this.copyPackageFiles(DEFAULTS.ARTIFACTS_FOLDER, ['dist', 'hooks']) // TODO: the dist folder is specified in the config, hooks TBD
+    await this.createUIMetadataFile(appConfig)
+    await this.createInstallYamlFile(appConfig)
 
-    // 3. zip package phase
+    // 3. copy dist folders phase
+    const extensionNames = Object.keys(appConfig.all)
+    const distFolders = extensionNames.map(extensionName => path.relative(appConfig.root, appConfig.all[extensionName].app.dist))
+    await this.copyPackageFiles(DEFAULTS.ARTIFACTS_FOLDER, [...distFolders, 'hooks'])
+
+    // 4. zip package phase
     this.log(`Zipping package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER}' to '${flags.output}'...`)
     await fs.remove(flags.output)
     await this.zipHelper(DEFAULTS.ARTIFACTS_FOLDER, flags.output)
@@ -69,20 +75,46 @@ class Package extends BaseCommand {
 
   async createUIMetadataFile () {
     this.log('TODO: create DD Metadata json based on configuration definition in app.config.yaml')
-    await fs.outputFile(path.join(DEFAULTS.ARTIFACTS_FOLDER, DEFAULTS.UI_METADATA_FILE), '{}')
+    await fs.outputFile(path.join(DEFAULTS.ARTIFACTS_FOLDER, DEFAULTS.DD_METADATA_FILE), '{}')
   }
 
-  async createInstallYamlFile () {
-    this.log('TODO: create install.yaml based on package.json, .aio, app.config.yaml, etc')
+  async createInstallYamlFile (appConfig) {
+    // get extensions
+    let extensions
+    if (appConfig.implements?.filter(item => item !== 'application').length > 0) {
+      extensions = appConfig.implements.map(ext => ({ extensionPointId: ext }))
+    }
+
+    // get workspaces
+    const workspaces = []
+    workspaces.push(appConfig.aio?.project?.workspace?.name)
+
+    // get apis
+    let apis
+    if (appConfig.aio?.project?.workspace?.details?.services?.length > 0) {
+      apis = appConfig.aio.project.workspace.details.services.map(service => ({ code: service.code }))
+    }
+
+    // get runtimeManifests
+    const runtimeManifest = { packages: {} }
+    Object.keys(appConfig.all).forEach(extName => {
+      runtimeManifest.packages[extName] = appConfig.all[extName]?.manifest?.full?.packages
+    })
 
     // read name and version from package.json
+    const application = {
+      id: appConfig.packagejson.name,
+      version: appConfig.packagejson.version
+    }
+
     const installJson = {
       $schema: 'http://json-schema.org/draft-07/schema',
       $id: 'https://adobe.io/schemas/app-builder-templates/1',
-      application: {
-        name: this.config.pjson.name,
-        version: this.config.pjson.version
-      }
+      application,
+      extensions,
+      workspaces,
+      apis,
+      runtimeManifest
     }
 
     const installYaml = yaml.dump(installJson)
