@@ -68,7 +68,7 @@ class Package extends BaseCommand {
 
   async createUIMetadataFile () {
     this.log('TODO: create DD Metadata json based on configuration definition in app.config.yaml')
-    await fs.outputFile(path.join(DEFAULTS.ARTIFACTS_FOLDER,DEFAULTS.UI_METADATA_FILE), '{}')
+    await fs.outputFile(path.join(DEFAULTS.ARTIFACTS_FOLDER, DEFAULTS.UI_METADATA_FILE), '{}')
   }
 
   async createInstallYamlFile () {
