@@ -11,7 +11,7 @@ governing permissions and limitations under the License.
 */
 
 const rtLib = require('@adobe/aio-lib-runtime')
-const { writeAio, writeEnv } = require('./import')
+const { writeAio, writeEnv } = require('./import-helper')
 const crypto = require('crypto')
 const fs = require('fs-extra')
 const path = require('path')

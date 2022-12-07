@@ -9,6 +9,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
+const { importConsoleConfig, downloadConsoleConfigToBuffer } = require('../../../lib/import')
 const path = require('path')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:service', { provider: 'debug' })
 const config = require('@adobe/aio-lib-core-config')
@@ -130,8 +131,16 @@ class AddServiceCommand extends BaseCommand {
         path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER),
         newServiceProperties
       )
-      // update the service configuration with the latest subscriptions
-      setWorkspaceServicesConfig(newServiceProperties)
+
+      // update environment
+      const config = {
+        org: { id: projectConfig.org.id },
+        project: { id: projectConfig.id },
+        workspace: { id: projectConfig.workspace.id }
+      }
+      const buffer = await downloadConsoleConfigToBuffer(consoleCLI, config, supportedServices)
+      await importConsoleConfig(buffer, flags)
+
       // success !
       this.log(chalk.green(chalk.bold(`Successfully updated Service Subscriptions in Workspace ${workspace.name}`)))
       return newServiceProperties
