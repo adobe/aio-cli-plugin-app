@@ -52,6 +52,7 @@ class Package extends BaseCommand {
 
     // 2. create artifacts phase
     this.log('Creating package artifacts...')
+    await fs.remove(DEFAULTS.ARTIFACTS_FOLDER)
     await fs.ensureDir(DEFAULTS.ARTIFACTS_FOLDER)
 
     await this.createUIMetadataFile()
@@ -61,6 +62,7 @@ class Package extends BaseCommand {
 
     // 3. zip package phase
     this.log(`Zipping package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER}' to '${flags.output}'...`)
+    await fs.remove(flags.output)
     await this.zipHelper(DEFAULTS.ARTIFACTS_FOLDER, flags.output)
     this.log('Packaging done.')
   }
@@ -76,15 +78,20 @@ class Package extends BaseCommand {
   }
 
   async copyPackageFiles (destinationFolder, filesList) {
-    filesList.forEach(async (src) => {
+    const ignoreFiles = ['.DS_Store']
+    const filterFunc = (src, dest) => {
+      return !(ignoreFiles.includes(path.basename(src)))
+    }
+
+    for (const src of filesList) {
       const dest = `${destinationFolder}/${src}`
       if (await fs.pathExists(src)) {
         aioLogger.debug(`Copying ${src} to ${dest}`)
-        await fs.copy(src, dest)
+        await fs.copy(src, dest, { filter: filterFunc })
       } else {
         aioLogger.debug(`Skipping copy for ${src} (path does not exist)`)
       }
-    })
+    }
   }
 
   /**
