@@ -121,7 +121,9 @@ class Package extends BaseCommand {
     // get runtimeManifests
     const runtimeManifest = { packages: {} }
     Object.keys(appConfig.all).forEach(extName => {
-      runtimeManifest.packages[extName] = appConfig.all[extName]?.manifest?.full?.packages
+      Object.keys(appConfig.all[extName]?.manifest?.full?.packages).forEach(packageName => {
+        runtimeManifest.packages[extName] = appConfig.all[extName]?.manifest?.full?.packages[packageName]
+      })
     })
 
     // read name and version from package.json
