@@ -137,6 +137,7 @@ class Package extends BaseCommand {
       extensions,
       workspaces,
       apis,
+      runtime: true, // always true for App Builder apps
       runtimeManifest
     }
 
