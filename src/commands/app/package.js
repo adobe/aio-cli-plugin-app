@@ -82,7 +82,7 @@ class Package extends BaseCommand {
       properties: {}
     }
 
-    appConfig.configManifest.forEach(uiDefinition => {
+    appConfig.configManifest?.forEach(uiDefinition => {
       const { label, input, mapToEnv, optional } = uiDefinition
       const isRequired = (!!optional !== true)
       const propertyKey = label.toLowerCase().replace(/[^a-zA-Z0-9]+(.)/g, (m, chr) => chr.toUpperCase()) // camelCase
