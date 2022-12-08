@@ -73,9 +73,32 @@ class Package extends BaseCommand {
     this.log('Packaging done.')
   }
 
-  async createUIMetadataFile () {
-    this.log('TODO: create DD Metadata json based on configuration definition in app.config.yaml')
-    await fs.outputFile(path.join(DEFAULTS.ARTIFACTS_FOLDER, DEFAULTS.DD_METADATA_FILE), '{}')
+  async createUIMetadataFile (appConfig) {
+    const uiMetadata = {
+      title: 'App Builder Package - Configuration',
+      description: 'Data to be gathered from the user in the Distribution Portal',
+      type: 'object',
+      required: [],
+      properties: {}
+    }
+
+    appConfig.configManifest.forEach(uiDefinition => {
+      const { label, input, mapToEnv, optional } = uiDefinition
+      const isRequired = (!!optional !== true)
+      const propertyKey = label.toLowerCase().replace(/[^a-zA-Z0-9]+(.)/g, (m, chr) => chr.toUpperCase()) // camelCase
+
+      if (isRequired) {
+        uiMetadata.required.push(propertyKey)
+      }
+
+      uiMetadata.properties[propertyKey] = {
+        type: input,
+        title: label,
+        mapToEnv
+      }
+    })
+
+    await fs.outputFile(path.join(DEFAULTS.ARTIFACTS_FOLDER, DEFAULTS.DD_METADATA_FILE), JSON.stringify(uiMetadata, null, 2))
   }
 
   async createInstallYamlFile (appConfig) {
