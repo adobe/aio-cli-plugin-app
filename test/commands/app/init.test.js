@@ -13,14 +13,14 @@ const fs = require('fs-extra')
 const path = require('path')
 const TheCommand = require('../../../src/commands/app/init')
 const BaseCommand = require('../../../src/BaseCommand')
-const importLib = require('../../../src/lib/import')
+const importLib = require('../../../src/lib/import-helper')
 const inquirer = require('inquirer')
 const savedDataDir = process.env.XDG_DATA_HOME
 const yeoman = require('yeoman-environment')
 
 jest.mock('@adobe/aio-lib-core-config')
 jest.mock('fs-extra')
-jest.mock('../../../src/lib/import')
+jest.mock('../../../src/lib/import-helper')
 jest.mock('inquirer', () => ({
   registerPrompt: jest.fn(),
   prompt: jest.fn(),
