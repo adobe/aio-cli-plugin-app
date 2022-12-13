@@ -57,6 +57,8 @@ function setDefaultMockConfig () {
   config.get.mockReturnValue(mockConfigProject)
 }
 
+jest.mock('../../../../src/lib/import')
+
 // mock login - mocks underlying methods behind getCliInfo
 const mockAccessToken = 'some-access-token'
 const mockSetCli = jest.fn()
@@ -283,26 +285,20 @@ describe('Run', () => {
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue([fakeServiceProps[0]])
     await TheCommand.run([])
     // updates before and after adding services
-    expect(config.set).toHaveBeenCalledTimes(3)
+    expect(config.set).toHaveBeenCalledTimes(2)
     expect(config.set).toHaveBeenCalledWith(
       'project.workspace.details.services', [
         { name: 'first', code: 'firsts' }
       ],
       true
     )
+
+    // after addition
     expect(config.set).toHaveBeenCalledWith(
       'project.org.details.services', [
         { name: 'first', code: 'firsts', type: 'entp' },
         { name: 'sec', code: 'secs', type: 'entp' },
         { name: 'third', code: 'thirds', type: 'entp' }
-      ],
-      true
-    )
-    // after addition
-    expect(config.set).toHaveBeenCalledWith(
-      'project.workspace.details.services', [
-        { name: 'sec', code: 'secs' },
-        { name: 'first', code: 'firsts' }
       ],
       true
     )

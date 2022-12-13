@@ -11,7 +11,7 @@ governing permissions and limitations under the License.
 */
 const TheCommand = require('../../../src/commands/app/use')
 const BaseCommand = require('../../../src/BaseCommand')
-const importLib = require('../../../src/lib/import')
+const importHelperLib = require('../../../src/lib/import-helper')
 const inquirer = require('inquirer')
 const { EOL } = require('os')
 
@@ -96,7 +96,16 @@ jest.mock('@adobe/aio-lib-ims', () => {
 })
 
 // mock import config
-jest.mock('../../../src/lib/import')
+jest.mock('../../../src/lib/import-helper', () => {
+  const allAutoMocked = jest.createMockFromModule('../../../src/lib/import-helper')
+  const actual = jest.requireActual('../../../src/lib/import-helper')
+  return {
+    __esModules: true,
+    ...allAutoMocked,
+    formatPlayerName: actual.formatPlayerName
+  }
+})
+
 /** @private */
 function mockConsoleImportConfig ({ name = 'projectname', credentials = null } = {}) {
   const project = {
@@ -107,7 +116,7 @@ function mockConsoleImportConfig ({ name = 'projectname', credentials = null } =
       }
     }
   }
-  importLib.loadAndValidateConfigFile.mockReturnValue({
+  importHelperLib.loadAndValidateConfigFile.mockReturnValue({
     values: { project }
   })
 
@@ -115,7 +124,7 @@ function mockConsoleImportConfig ({ name = 'projectname', credentials = null } =
 }
 /** @private */
 function mockInvalidConsoleImportConfig () {
-  importLib.loadAndValidateConfigFile.mockImplementation(() => { throw new Error('fake error') })
+  importHelperLib.loadAndValidateConfigFile.mockImplementation(() => { throw new Error('fake error') })
 }
 
 // mock data dir
@@ -127,8 +136,8 @@ const certDir = path.join('data-dir', '@adobe', 'aio-cli-plugin-app', 'entp-int-
 beforeEach(() => {
   jest.clearAllMocks()
   mockGetCli.mockReturnValue({})
-  importLib.loadConfigFile.mockReset()
-  importLib.validateConfig.mockReset()
+  importHelperLib.loadConfigFile.mockReset()
+  importHelperLib.validateConfig.mockReset()
   resetMockConsoleCLI()
   mockConsoleCLIInstance.prompt.promptConfirm.mockReset()
   setDefaultMockConsoleCLI()
@@ -222,7 +231,7 @@ describe('run with config file arg', () => {
   test('config-file', async () => {
     mockConsoleImportConfig()
     await TheCommand.run(['config-file'])
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       'config-file',
       process.cwd(),
       { merge: false, overwrite: false, interactive: true },
@@ -232,7 +241,7 @@ describe('run with config file arg', () => {
   test('config-file --merge', async () => {
     mockConsoleImportConfig()
     await TheCommand.run(['config-file', '--merge'])
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       'config-file',
       process.cwd(),
       { merge: true, overwrite: false, interactive: false },
@@ -243,7 +252,7 @@ describe('run with config file arg', () => {
   test('config-file --overwrite', async () => {
     mockConsoleImportConfig()
     await TheCommand.run(['config-file', '--overwrite'])
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       'config-file',
       process.cwd(),
       { merge: false, overwrite: true, interactive: false },
@@ -254,7 +263,7 @@ describe('run with config file arg', () => {
   test('config-file --no-input', async () => {
     mockConsoleImportConfig()
     await TheCommand.run(['config-file', '--no-input'])
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       'config-file',
       process.cwd(),
       { merge: true, overwrite: false, interactive: false },
@@ -270,7 +279,7 @@ describe('run with config file arg', () => {
       ]
     })
     await TheCommand.run(['config-file', '--no-input'])
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       'config-file',
       process.cwd(),
       { merge: true, overwrite: false, interactive: false },
@@ -300,7 +309,7 @@ describe('run with global configuration', () => {
       fakeGlobalConfig.workspace.id,
       consoleDataMocks.enabledServices
     )
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
       { merge: false, overwrite: false, interactive: true },
@@ -324,7 +333,7 @@ describe('run with global configuration', () => {
       fakeGlobalConfig.workspace.id,
       consoleDataMocks.enabledServices
     )
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
       { merge: false, overwrite: false, interactive: true },
@@ -341,7 +350,7 @@ describe('run with global configuration', () => {
       fakeGlobalConfig.workspace.id,
       consoleDataMocks.enabledServices
     )
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
       { merge: true, overwrite: false, interactive: false },
@@ -361,7 +370,7 @@ describe('run with global configuration', () => {
       fakeGlobalConfig.workspace.id,
       consoleDataMocks.enabledServices
     )
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
       { merge: true, overwrite: false, interactive: false },
@@ -385,7 +394,7 @@ describe('run with global configuration', () => {
       fakeGlobalConfig.workspace.id,
       consoleDataMocks.enabledServices
     )
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
       { merge: true, overwrite: false, interactive: false },
@@ -418,7 +427,7 @@ describe('run with global configuration', () => {
       fakeGlobalConfig.workspace.id,
       consoleDataMocks.enabledServices
     )
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
       { merge: false, overwrite: false, interactive: true },
@@ -453,7 +462,7 @@ describe('run with global configuration', () => {
       fakeGlobalConfig.workspace.id,
       consoleDataMocks.enabledServices
     )
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
       { merge: false, overwrite: false, interactive: true },
@@ -481,7 +490,7 @@ describe('run with global configuration', () => {
       fakeGlobalConfig.workspace.id,
       consoleDataMocks.enabledServices
     )
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
       { merge: false, overwrite: false, interactive: true },
@@ -512,7 +521,7 @@ describe('run with global configuration', () => {
       fakeGlobalConfig.workspace.id,
       consoleDataMocks.enabledServices
     )
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
       { merge: false, overwrite: false, interactive: true },
@@ -570,7 +579,7 @@ describe('switch to a workspace in the same org', () => {
       newWorkspace.id,
       consoleDataMocks.enabledServices
     )
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
       { merge: false, overwrite: false, interactive: true },
@@ -600,7 +609,7 @@ describe('switch to a workspace in the same org', () => {
       newWorkspace.id,
       consoleDataMocks.enabledServices
     )
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
       { merge: false, overwrite: false, interactive: true },
@@ -636,7 +645,7 @@ describe('switch to a workspace in the same org', () => {
       newWorkspace.id,
       consoleDataMocks.enabledServices
     )
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
       { merge: false, overwrite: false, interactive: true },
@@ -664,7 +673,7 @@ describe('switch to a workspace in the same org', () => {
       newWorkspace.id,
       consoleDataMocks.enabledServices
     )
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
       // --no-input sets --merge to true
@@ -696,7 +705,7 @@ describe('switch to a workspace in the same org', () => {
       newWorkspace.id,
       consoleDataMocks.enabledServices
     )
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
       // --no-input sets --merge to true

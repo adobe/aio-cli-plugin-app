@@ -145,6 +145,13 @@ async function runDev (config, dataDir, options = {}, log = () => {}, inprocHook
       }
     }
 
+    // if there is no frontEndUrl, this is because the hook serve-static was set
+    // since there is no way for us to know what serve-static does (to possibly get the front-end url from it),
+    // we treat this effectively as there is no front end, for the vscode config generator
+    if (!frontEndUrl) {
+      devConfig.app.hasFrontend = false
+    }
+
     log('setting up vscode debug configuration files...')
     const vscodeConfig = vscode(devConfig)
     await vscodeConfig.update({ frontEndUrl })

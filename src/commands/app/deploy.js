@@ -285,7 +285,7 @@ Deploy.flags = {
   action: Flags.string({
     description: 'Deploy only a specific action, the flags can be specified multiple times, this will set --no-publish',
     char: 'a',
-    exclusive: ['extension'],
+    exclusive: ['extension', { name: 'publish', when: async (flags) => flags.publish === true }],
     multiple: true
   }),
   'web-assets': Flags.boolean({
@@ -322,8 +322,7 @@ Deploy.flags = {
   publish: Flags.boolean({
     description: '[default: true] Publish extension(s) to Exchange',
     allowNo: true,
-    default: true,
-    exclusive: ['action']
+    default: true
   }),
   'force-deploy': Flags.boolean({
     description: '[default: false] Force deploy changes, regardless of production Workspace being published in Exchange.',
