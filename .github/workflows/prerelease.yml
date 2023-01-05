@@ -17,4 +17,4 @@ on:
 
 jobs:
   checkout:
-    uses: adobe/aio-resuable-workflows/.github/workflows/prerelease.yml@main
+    uses: adobe/aio-reusable-workflows/.github/workflows/prerelease.yml@main

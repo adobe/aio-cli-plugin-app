@@ -12,4 +12,4 @@ on:
         default: 'latest'
 jobs:
   checkout:
-    uses: adobe/aio-resuable-workflows/.github/workflows/version-bump-publish.yml@main
+    uses: adobe/aio-reusable-workflows/.github/workflows/version-bump-publish.yml@main

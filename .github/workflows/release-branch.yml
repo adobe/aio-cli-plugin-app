@@ -9,4 +9,4 @@ on:
 
 jobs:
   build:
-    uses: adobe/aio-resuable-workflows/.github/workflows/release-branch.yml@main
+    uses: adobe/aio-reusable-workflows/.github/workflows/release-branch.yml@main
