@@ -1,19 +1,20 @@
 name: publish-prerelease
+
 on:
   workflow_dispatch:
     inputs:
       pre-release-tag:
-        description: 'The pre-release tag use in the version'
+        description: "The pre-release tag use in the version"
         required: false
-        default: 'pre'
+        default: "pre"
       dist-tag:
-        description: 'The dist-tag use'
+        description: "The dist-tag use"
         required: false
-        default: 'next'
+        default: "next"
       dependencies-to-update:
-        description: 'csv of dependencies to update with the dist-tag'
+        description: "csv of dependencies to update with the dist-tag"
         required: false
-        default: '@adobe/aio-cli-lib-app-config,@adobe/aio-cli-lib-console,@adobe/aio-lib-core-config,@adobe/aio-lib-core-logging,@adobe/aio-lib-core-networking,@adobe/aio-lib-env,@adobe/aio-lib-ims,@adobe/aio-lib-runtime,@adobe/aio-lib-web,@adobe/generator-aio-app'
+        default: "@adobe/aio-cli-lib-app-config,@adobe/aio-cli-lib-console,@adobe/aio-lib-core-config,@adobe/aio-lib-core-logging,@adobe/aio-lib-core-networking,@adobe/aio-lib-env,@adobe/aio-lib-ims,@adobe/aio-lib-runtime,@adobe/aio-lib-web,@adobe/generator-aio-app"
 
 jobs:
   checkout:
