@@ -10,14 +10,15 @@ governing permissions and limitations under the License.
 */
 
 const BaseCommand = require('../../BaseCommand')
-const { CONSOLE_CONFIG_KEY, importConfigJson, loadAndValidateConfigFile } = require('../../lib/import')
+const { CONSOLE_CONFIG_KEY } = require('../../lib/import-helper')
+const { importConsoleConfig, downloadConsoleConfigToBuffer } = require('../../lib/import')
 const { Flags } = require('@oclif/core')
 const inquirer = require('inquirer')
 const config = require('@adobe/aio-lib-core-config')
 const { EOL } = require('os')
 const { warnIfOverwriteServicesInProductionWorkspace } = require('../../lib/app-helper')
 const path = require('path')
-const { SERVICE_API_KEY_ENV, ENTP_INT_CERTS_FOLDER } = require('../../lib/defaults')
+const { ENTP_INT_CERTS_FOLDER } = require('../../lib/defaults')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:use', { provider: 'debug' })
 const chalk = require('chalk')
 
@@ -45,7 +46,7 @@ class Use extends BaseCommand {
     this.log(`You are currently in:${EOL}${currentConfigString}${EOL}`)
 
     if (args.config_file_path) {
-      const consoleConfig = await this.importConsoleConfig(args.config_file_path, flags)
+      const consoleConfig = await importConsoleConfig(args.config_file_path, flags)
       this.finalLogMessage(consoleConfig)
       return
     }
@@ -107,9 +108,9 @@ class Use extends BaseCommand {
     }
 
     // download the console configuration for the newly selected org, project, workspace
-    const buffer = await this.downloadConsoleConfigToBuffer(consoleCLI, newConfig, supportedServices)
+    const buffer = await downloadConsoleConfigToBuffer(consoleCLI, newConfig, supportedServices)
 
-    const consoleConfig = await this.importConsoleConfig(buffer, flags)
+    const consoleConfig = await importConsoleConfig(buffer, flags)
     this.finalLogMessage(consoleConfig)
   }
 
@@ -306,36 +307,6 @@ class Use extends BaseCommand {
     )
 
     console.error(`✔ Successfully updated Services in Project ${newConfig.project.name} and Workspace ${newConfig.workspace.name}.`)
-  }
-
-  async importConsoleConfig (consoleConfigFileOrBuffer, flags) {
-    const overwrite = flags.overwrite
-    const merge = flags.merge
-    let interactive = true
-
-    if (overwrite || merge) {
-      interactive = false
-    }
-
-    // before importing the config, first extract the service api key id
-    const { values: config } = loadAndValidateConfigFile(consoleConfigFileOrBuffer)
-    const project = config.project
-    const jwtConfig = project.workspace.details.credentials && project.workspace.details.credentials.find(c => c.jwt)
-    const serviceClientId = (jwtConfig && jwtConfig.jwt.client_id) || ''
-    const extraEnvVars = { [SERVICE_API_KEY_ENV]: serviceClientId }
-
-    await importConfigJson(consoleConfigFileOrBuffer, process.cwd(), { interactive, overwrite, merge }, extraEnvVars)
-    return config
-  }
-
-  async downloadConsoleConfigToBuffer (consoleCLI, config, supportedServices) {
-    const workspaceConfig = await consoleCLI.getWorkspaceConfig(
-      config.org.id,
-      config.project.id,
-      config.workspace.id,
-      supportedServices
-    )
-    return Buffer.from(JSON.stringify(workspaceConfig))
   }
 
   async finalLogMessage (consoleConfig) {

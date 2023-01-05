@@ -12,11 +12,11 @@ governing permissions and limitations under the License.
 
 const RuntimeLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../../src/lib/log-forwarding')
-const { writeAio, writeEnv } = require('../../../src/lib/import')
+const { writeAio, writeEnv } = require('../../../src/lib/import-helper')
 const fs = require('fs-extra')
 const path = require('path')
 
-jest.mock('../../../src/lib/import', () => {
+jest.mock('../../../src/lib/import-helper', () => {
   return {
     writeAio: jest.fn(),
     writeEnv: jest.fn()
