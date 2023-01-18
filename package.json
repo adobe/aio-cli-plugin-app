@@ -22,7 +22,7 @@
     "@parcel/core": "^2.7.0",
     "@parcel/reporter-cli": "^2.7.0",
     "ajv": "^6",
-    "chalk": "^4",
+    "chalk": "^5",
     "chokidar": "^3.5.2",
     "debug": "^4.1.1",
     "dedent-js": "^1.0.1",
