@@ -28,7 +28,7 @@
     "dedent-js": "^1.0.1",
     "dotenv": "^16",
     "execa": "^5.0.0",
-    "fs-extra": "^10",
+    "fs-extra": "^11",
     "get-port": "^5",
     "hjson": "^3.2.1",
     "http-terminator": "^3",
