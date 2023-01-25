@@ -83,7 +83,7 @@ class Deploy extends BuildCommand {
       }
 
       // 2. Bail if workspace is production and application status is PUBLISHED, honor force-deploy
-      if (libConsoleCLI && !isStandaloneApp && aioConfig?.project?.workspace?.name === 'Production' && !flags['force-deploy']) {
+      if (!isStandaloneApp && aioConfig?.project?.workspace?.name === 'Production' && !flags['force-deploy']) {
         const extension = await this.getApplicationExtension(libConsoleCLI, aioConfig)
         spinner.info(chalk.dim(JSON.stringify(extension)))
         if (extension && extension.status === 'PUBLISHED') {
