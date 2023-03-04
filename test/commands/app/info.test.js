@@ -10,7 +10,6 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-global.mockFs()
 const TheCommand = require('../../../src/commands/app/info.js')
 const BaseCommand = require('../../../src/BaseCommand.js')
 const yaml = require('js-yaml')
@@ -57,10 +56,6 @@ describe('instance methods', () => {
 })
 
 describe('run', () => {
-  beforeEach(() => {
-    // mock files
-    global.loadFixtureApp('exc')
-  })
   const checkHiddenSecrets = (logMock) => {
     expect(logMock).not.toHaveBeenCalledWith(expect.stringContaining(global.fakeConfig.creds.runtime.auth))
     expect(logMock).not.toHaveBeenCalledWith(expect.stringContaining(global.fakeS3Creds.accessKeyId))
