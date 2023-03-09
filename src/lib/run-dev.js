@@ -30,7 +30,7 @@ const { run: logPoller } = require('./log-poller')
 const getPort = require('get-port')
 
 /** @private */
-async function runDev (config, dataDir, options = {}, log = () => {}) {
+async function runDev (config, dataDir, options = {}, log = () => {}, inprocHook) {
   /* parcel bundle options */
   const bundleOptions = {
     shouldDisableCache: true,
@@ -38,6 +38,7 @@ async function runDev (config, dataDir, options = {}, log = () => {}) {
     shouldOptimize: false,
     ...options.parcel
   }
+
   /* skip actions */
   const skipActions = !!options.skipActions
   /* fetch logs for actions option */
@@ -48,6 +49,7 @@ async function runDev (config, dataDir, options = {}, log = () => {}) {
   const withBackend = config.app.hasBackend && !skipActions
   const isLocal = options.isLocal // applies only for backend
   const portToUse = parseInt(process.env.PORT) || SERVER_DEFAULT_PORT
+
   const uiPort = await getPort({ port: portToUse })
   if (uiPort !== portToUse) {
     log(`Could not use port:${portToUse}, using port:${uiPort} instead`)
@@ -82,7 +84,7 @@ async function runDev (config, dataDir, options = {}, log = () => {}) {
       log('building actions..')
       await buildActions(devConfig, null, true /* force build */)
 
-      const { cleanup: watcherCleanup } = await actionsWatcher({ config: devConfig, isLocal, log })
+      const { cleanup: watcherCleanup } = await actionsWatcher({ config: devConfig, isLocal, log, inprocHook })
       cleanup.add(() => watcherCleanup(), 'stopping action watcher...')
     }
 
@@ -121,7 +123,7 @@ async function runDev (config, dataDir, options = {}, log = () => {}) {
     // Deploy Phase - deploy actions
     if (withBackend) {
       log('redeploying actions..')
-      await deployActions(devConfig, isLocal, log, true)
+      await deployActions(devConfig, isLocal, log, true, inprocHook)
     }
 
     // Deploy Phase - serve the web UI
