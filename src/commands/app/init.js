@@ -107,9 +107,6 @@ class InitCommand extends TemplatesCommand {
     // If no templates selected, init a standalone app
     if (templates.length <= 0) {
       flags['standalone-app'] = true
-      this.config.runHook('telemetry', { data: 'installTemplates:standalone-app' })
-    } else {
-      this.config.runHook('telemetry', { data: `installTemplates:${templates}` })
     }
 
     // 3. run base code generators
@@ -148,9 +145,6 @@ class InitCommand extends TemplatesCommand {
     // If no templates selected, init a standalone app
     if (templates.length <= 0) {
       flags['standalone-app'] = true
-      this.config.runHook('telemetry', { data: 'installTemplates:standalone-app' })
-    } else {
-      this.config.runHook('telemetry', { data: `installTemplates:${templates}` })
     }
 
     // 6. download workspace config

@@ -123,8 +123,7 @@ beforeEach(() => {
 
   command = new TheCommand([])
   command.config = {
-    findCommand: jest.fn(() => ({})),
-    runHook: jest.fn()
+    findCommand: jest.fn(() => ({}))
   }
 
   command.selectTemplates = jest.fn()
