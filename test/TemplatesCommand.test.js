@@ -96,7 +96,8 @@ let command
 beforeEach(() => {
   command = new TheCommand()
   command.config = {
-    runCommand: jest.fn()
+    runCommand: jest.fn(),
+    runHook: jest.fn()
   }
 
   inquirer.registerPrompt.mockReset()
