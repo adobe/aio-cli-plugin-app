@@ -66,7 +66,6 @@ async function installPackages (dir, options = { spinner: null, verbose: false }
   return ret
 }
 
-/** @private */
 async function runPackageScript (scriptName, dir, cmdArgs = []) {
   aioLogger.debug(`running npm run-script ${scriptName} in dir: ${dir}`)
   const pkg = await fs.readJSON(path.join(dir, 'package.json'))
@@ -79,7 +78,22 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
   }
 }
 
-/** @private */
+/** TODO */
+async function runInProcess(hookPath, config) {
+  if(!hookPath) {
+    console.log('no hook path')
+    return null
+  }
+  console.log('running in process .. ', hookPath)
+  try {
+    const hook = require(path.resolve(hookPath))
+    return hook(config)
+  } catch (e) {
+    console.error('error running hook in process, running as script instead')
+    return runScript(hookPath)
+  }
+}
+
 async function runScript (command, dir, cmdArgs = []) {
   if (!command) {
     return null
@@ -514,6 +528,7 @@ module.exports = {
   isGitInstalled,
   installPackages,
   runScript,
+  runInProcess,
   runPackageScript,
   wrapError,
   getCliInfo,

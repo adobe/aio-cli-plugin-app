@@ -15,7 +15,7 @@ const chalk = require('chalk')
 
 const BaseCommand = require('../../BaseCommand')
 const { Flags } = require('@oclif/core')
-const { runScript, writeConfig } = require('../../lib/app-helper')
+const { runScript, runInProcess, writeConfig } = require('../../lib/app-helper')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
 const { bundle } = require('@adobe/aio-lib-web')
 const fs = require('fs-extra')
@@ -64,7 +64,8 @@ class Build extends BaseCommand {
 
     const filterActions = flags.action
     try {
-      await runScript(config.hooks['pre-app-build'])
+      await runInProcess(config.hooks['pre-app-build'], config)
+      // await runScript(config.hooks['pre-app-build'])
     } catch (err) {
       this.log(err)
     }
