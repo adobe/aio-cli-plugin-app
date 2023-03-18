@@ -17,7 +17,7 @@ const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { Flags, CliUx: { ux: cli } } = require('@oclif/core')
-const { createWebExportFilter, runScript, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata } = require('../../lib/app-helper')
+const { createWebExportFilter, runScript, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
 
@@ -142,7 +142,8 @@ class Deploy extends BuildCommand {
     const filterActions = flags.action
 
     try {
-      await runScript(config.hooks['pre-app-deploy'])
+      await runInProcess(config.hooks['pre-app-deploy'], config)
+      //await runScript(config.hooks['pre-app-deploy'])
     } catch (err) {
       this.log(err)
     }
