@@ -22,7 +22,7 @@ const { deployActions } = require('@adobe/aio-lib-runtime')
  * @param {boolean} filter true if a filter by built actions is desired.
  */
 /** @private */
-module.exports = async (config, isLocalDev = false, log = () => {}, filter = false) => {
+module.exports = async (config, isLocalDev = false, log = () => {}, filter = false, inprocHook) => {
   utils.runScript(config.hooks['pre-app-deploy'])
   const script = await utils.runScript(config.hooks['deploy-actions'])
   if (!script) {
@@ -31,6 +31,14 @@ module.exports = async (config, isLocalDev = false, log = () => {}, filter = fal
       filterEntities: {
         byBuiltActions: filter
       }
+    }
+    if (inprocHook) {
+      const hookFilterEntities = Array.isArray(filter) ? filter : []
+      await inprocHook('deploy-actions', {
+        appConfig: config,
+        filterEntities: hookFilterEntities,
+        isLocalDev
+      })
     }
     const entities = await deployActions(config, deployConfig, log)
     if (entities.actions) {

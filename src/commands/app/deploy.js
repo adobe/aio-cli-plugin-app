@@ -37,7 +37,7 @@ class Deploy extends BuildCommand {
 
     // if there are no extensions, then set publish to false
     flags.publish = flags.publish && !isStandaloneApp
-    let libConsoleCLI
+    let libConsoleCLI // <= this can be undefined later on, and it was not checked
     if (flags.publish) {
       // force login at beginning (if required)
       libConsoleCLI = await this.getLibConsoleCLI()
@@ -158,6 +158,11 @@ class Deploy extends BuildCommand {
         try {
           const script = await runScript(config.hooks['deploy-actions'])
           if (!script) {
+            await this.config.runHook('deploy-actions', {
+              appConfig: config,
+              filterEntities: filterActions || [],
+              isLocalDev: false
+            })
             deployedRuntimeEntities = await rtLib.deployActions(config, { filterEntities }, onProgress)
           }
 

@@ -251,7 +251,7 @@ describe('run', () => {
     command.appConfig = cloneDeep(mockConfigData)
     command.appConfig.actions = { dist: 'actions' }
     command.appConfig.web.distProd = 'dist'
-    command.config = { runCommand: jest.fn() }
+    command.config = { runCommand: jest.fn(), runHook: jest.fn() }
     command.buildOneExt = jest.fn()
     command.getAppExtConfigs = jest.fn()
     command.getLibConsoleCLI = jest.fn(() => mockLibConsoleCLI)
@@ -727,6 +727,13 @@ describe('run', () => {
 
     command.argv = []
     await command.run()
+    expect(command.config.runHook).toHaveBeenCalledTimes(1)
+    expect(command.config.runHook).toHaveBeenCalledWith('deploy-actions',
+      expect.objectContaining({
+        appConfig: expect.any(Object),
+        filterEntities: [],
+        isLocalDev: false
+      }))
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(0)
