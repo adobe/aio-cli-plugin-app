@@ -95,7 +95,7 @@
     "prepack": "oclif manifest && oclif readme --no-aliases",
     "test": "npm run unit-tests && npm run lint",
     "unit-tests": "jest -c jest.config.js",
-    "version": "oclif readme && git add README.md",
+    "version": "oclif readme --no-aliases && git add README.md",
     "update-openwhisk-runtimes": "node bin/openwhisk-standalone-config/get-runtimes.js > bin/openwhisk-standalone-config/runtimes.json"
   },
   "bin": {
