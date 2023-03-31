@@ -1,7 +1,7 @@
 {
   "name": "@adobe/aio-cli-plugin-app",
   "description": "Create, Build and Deploy Adobe I/O Applications",
-  "version": "10.0.4",
+  "version": "10.1.0",
   "author": "Adobe Inc.",
   "bugs": "https://github.com/adobe/aio-cli-plugin-app/issues",
   "dependencies": {
@@ -15,7 +15,7 @@
     "@adobe/aio-lib-runtime": "^5.0.0",
     "@adobe/aio-lib-templates": "^2.2.0",
     "@adobe/aio-lib-web": "^6.0.1",
-    "@adobe/generator-aio-app": "^4.0.0",
+    "@adobe/generator-aio-app": "^5.1.0",
     "@adobe/generator-app-common-lib": "^0.3.3",
     "@adobe/inquirer-table-checkbox": "^1.2.0",
     "@oclif/core": "^1.15.0",
@@ -95,7 +95,7 @@
     "prepack": "oclif manifest && oclif readme --no-aliases",
     "test": "npm run unit-tests && npm run lint",
     "unit-tests": "jest -c jest.config.js",
-    "version": "oclif readme && git add README.md",
+    "version": "oclif readme --no-aliases && git add README.md",
     "update-openwhisk-runtimes": "node bin/openwhisk-standalone-config/get-runtimes.js > bin/openwhisk-standalone-config/runtimes.json"
   },
   "bin": {
