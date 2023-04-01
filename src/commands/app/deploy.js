@@ -239,7 +239,8 @@ class Deploy extends BuildCommand {
     }
 
     try {
-      await runScript(config.hooks['post-app-deploy'])
+      await runInProcess(config.hooks['post-app-deploy'], config)
+      // await runScript(config.hooks['post-app-deploy'])
     } catch (err) {
       this.log(err)
     }
