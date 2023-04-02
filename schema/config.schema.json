@@ -117,7 +117,9 @@
                 },
                 "integration_type": {
                     "type": "string",
-                    "enum": [ 
+                    "enum": [
+                        "oauth_server_to_server",
+                        "oauth_server_to_server_migrate",
                         "oauthweb", 
                         "oauthios", 
                         "oauthandroid", 
@@ -128,17 +130,58 @@
                         "oauthsinglepageapp"
                     ]
                 },
+                "oauth_server_to_server": { "$ref": "#/definitions/oauth_server_to_server" },
                 "jwt": { "$ref": "#/definitions/jwt" },
                 "api_key": { "$ref": "#/definitions/api_key" }
             },
             "required": [ "id", "name" ],
-            "if": { "properties": { "integration_type": { "const": "oauthsinglepageapp" } } },
-            "then": { "properties": { "oauth2": { "$ref": "#/definitions/oauthsinglepageapp" } } },
-            "else": { "properties": { "oauth2": { "$ref": "#/definitions/oauth2" } } },
+            "allOf": [
+                {
+                  "if": { "properties": { "integration_type": { "const": "oauthsinglepageapp" } } },
+                  "then": { "properties": { "oauth2": { "$ref": "#/definitions/oauthsinglepageapp" } } },
+                  "else": { "properties": { "oauth2": { "$ref": "#/definitions/oauth2" } } }
+                }
+            ],
             "oneOf": [
-                { "required": ["oauth2"] },
-                { "required": ["jwt"] },
-                { "required": ["api_key"] }
+                {
+                  "required": ["oauth2"],
+                  "allOf": [
+                    { "not": { "required": ["api_key"] } },
+                    { "not": { "required": ["jwt"] } },
+                    { "not": { "required": ["oauth_server_to_server"] } }
+                  ] 
+                },
+                {
+                  "required": ["jwt"],
+                  "allOf": [
+                    { "not": { "required": ["api_key"] } },
+                    { "not": { "required": ["oauth2"] } },
+                    { "not": { "required": ["oauth_server_to_server"] } }
+                  ] 
+                },
+                {
+                  "required": ["api_key"],
+                  "allOf": [
+                    { "not": { "required": ["jwt"] } },
+                    { "not": { "required": ["oauth2"] } },
+                    { "not": { "required": ["oauth_server_to_server"] } }
+                  ] 
+                },
+                {
+                  "required": ["oauth_server_to_server"],
+                  "allOf": [
+                    { "not": { "required": ["api_key"] } },
+                    { "not": { "required": ["jwt"] } },
+                    { "not": { "required": ["oauth2"] } }
+                  ] 
+                },
+                {
+                  "required": ["jwt", "oauth_server_to_server"],
+                  "allOf": [
+                    { "not": { "required": ["api_key"] } },
+                    { "not": { "required": ["oauth2"] } }
+                  ] 
+                }
             ]
         },
         "service": {
@@ -200,6 +243,31 @@
                 "client_id": { "type": "string" }
             },
             "required": ["client_id"]
+        },
+        "oauth_server_to_server": {
+            "type": "object",
+            "properties": {
+                "client_id": { "type": "string" },
+                "client_secrets": { 
+                    "type": "array", 
+                    "items": { "type": "string" },
+                    "default": []
+                },
+                "technical_account_email": {
+                    "type": "string",
+                    "format": "email"
+                },
+                "technical_account_id": {
+                    "type": "string",
+                    "format": "email"
+                },
+                "scopes": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "default": []
+                }
+            },
+            "required": [ "client_id", "client_secrets", "technical_account_email", "technical_account_id", "scopes" ]
         },
         "jwt": {
             "type": "object",

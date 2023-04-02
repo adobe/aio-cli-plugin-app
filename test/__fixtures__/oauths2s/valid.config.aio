@@ -1,0 +1,75 @@
+{
+  "project": {
+    "id": "123",
+    "name": "TestProject123",
+    "title": "Test Title ",
+    "description": "My project description ",
+    "org": {
+      "id": "25591412",
+      "name": "Developers-Developers-Dévêlöpèrš",
+      "ims_org_id": "XOXOXOXOXOXOX@AdobeOrg"
+    },
+    "workspace": {
+      "id": "1356",
+      "name": "TestWörkspacé",
+      "title": "Tést Tïtle ",
+      "description": " My wörkspacè description",
+      "action_url": "https://ABCD-TestProject-TestWorkspace.adobeioruntime.net",
+      "app_url": "https://ABCD-TestProject-TestWorkspace.adobestatic.net",
+      "details": {
+        "credentials": [
+          {
+            "id": "17561142",
+            "name": "Projéct_A",
+            "integration_type": "oauthweb"
+          },
+          {
+            "id": "17606512",
+            "name": "PröjectB",
+            "integration_type": "service"
+          },
+          {
+            "id": "17656565",
+            "name": "Project_C",
+            "integration_type": "apikey"
+          },
+          {
+            "id": "17656570",
+            "name": "Project_D",
+            "integration_type": "oauthsinglepageapp"
+          },
+          {
+            "id": "17950",
+            "name": "New_Test_Intégration_8",
+            "integration_type": "oauthandroid"
+          },
+          {
+            "id": "17951",
+            "name": "New_Test_Intégration_9",
+            "integration_type": "oauthwebapp"
+          },
+          {
+            "id": "17952",
+            "name": "New_Test_Intégration_10",
+            "integration_type": "oauthnativeapp"
+          },
+          {
+            "id": "17953",
+            "name": "New_Test_Intégration_11",
+            "integration_type": "oauthsinglepageapp"
+          }
+        ],
+        "services": [
+          {
+            "code": "AdobeIOManagementAPISDK",
+            "name": "I/O Management API"
+          },
+          {
+            "code": "CC SDK",
+            "name": "Creative SDK"
+          }
+        ]
+      }
+    }
+  }
+}
