@@ -18,7 +18,17 @@ const inquirer = require('inquirer')
 const mockPrompt = jest.fn()
 inquirer.createPromptModule.mockReturnValue(mockPrompt)
 
-const { importConfigJson, writeAio, writeEnv, mergeEnv, splitEnvLine, flattenObjectWithSeparator, loadConfigFile, writeDefaultAppConfig } = require('../../../src/lib/import-helper')
+const {
+  loadAndValidateConfigFile,
+  importConfigJson,
+  writeAio,
+  writeEnv,
+  mergeEnv,
+  splitEnvLine,
+  flattenObjectWithSeparator,
+  loadConfigFile,
+  writeDefaultAppConfig
+} = require('../../../src/lib/import-helper')
 
 jest.mock('fs-extra')
 
@@ -27,6 +37,9 @@ beforeEach(() => {
 })
 
 test('exports', () => {
+  expect(loadAndValidateConfigFile).toBeDefined()
+  expect(loadAndValidateConfigFile).toBeInstanceOf(Function)
+
   expect(importConfigJson).toBeDefined()
   expect(importConfigJson).toBeInstanceOf(Function)
 
@@ -322,4 +335,23 @@ test('do not enrich ims.contexts.jwt with ims_org_id if no jwt credentials defin
   await expect(fs.writeFile.mock.calls[1][1]).toMatchFixture('config.orgid.no.jwt.aio')
   await expect(fs.writeFile.mock.calls[1][2]).toMatchObject({ flag: 'w' })
   expect(fs.writeFile).toHaveBeenCalledTimes(2)
+})
+
+describe('loadAndValidateConfigFile', () => {
+  const expectedErrorMessage = 'Mutually exclusive credentials: "integration_type" values: service, oauth_server_to_server, oauth_server_to_server_migrate'
+
+  test('service and oauth_server_to_server integration_types are mutually exclusive', () => {
+    fs.readFileSync.mockReturnValueOnce(fixtureFile('oauths2s/invalid.config.json'))
+    expect(() => loadAndValidateConfigFile(fixturePath('oauths2s/invalid.config.json'))).toThrow(expectedErrorMessage)
+  })
+
+  test('service and oauth_server_to_server_migrate integration_types are mutually exclusive', () => {
+    fs.readFileSync.mockReturnValueOnce(fixtureFile('oauths2s/invalid.config.2.json'))
+    expect(() => loadAndValidateConfigFile(fixturePath('oauths2s/invalid.config.2.json'))).toThrow(expectedErrorMessage)
+  })
+
+  test('oauth_server_to_server and oauth_server_to_server_migrate integration_types are mutually exclusive', () => {
+    fs.readFileSync.mockReturnValueOnce(fixtureFile('oauths2s/invalid.config.3.json'))
+    expect(() => loadAndValidateConfigFile(fixturePath('oauths2s/invalid.config.3.json'))).toThrow(expectedErrorMessage)
+  })
 })

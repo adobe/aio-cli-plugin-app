@@ -97,6 +97,22 @@ function loadAndValidateConfigFile (fileOrBuffer) {
     const message = `Missing or invalid keys in config: ${JSON.stringify(configErrors, null, 2)}`
     throw new Error(message)
   }
+
+  // OAuth S2S: secondary check that JSON-Schema can't handle (array item check): credentials of `integration_type`
+  // "service", "oauth_server_to_server", and "oauth_server_to_server_migrate" are mutually exclusive
+  const { values: config } = res
+  const project = config.project
+  const serviceIntegration = project?.workspace?.details?.credentials?.find(c => c.integration_type === 'service')
+  const oauthS2SIntegration = project?.workspace?.details?.credentials?.find(c => c.integration_type === 'oauth_server_to_server')
+  const oauthS2SMigrateIntegration = project?.workspace?.details?.credentials?.find(c => c.integration_type === 'oauth_server_to_server_migrate')
+  if ((serviceIntegration && oauthS2SIntegration) ||
+      (serviceIntegration && oauthS2SMigrateIntegration) ||
+      (oauthS2SIntegration && oauthS2SMigrateIntegration)
+  ) {
+    const message = 'Mutually exclusive credentials: "integration_type" values: service, oauth_server_to_server, oauth_server_to_server_migrate'
+    throw new Error(message)
+  }
+
   return res
 }
 

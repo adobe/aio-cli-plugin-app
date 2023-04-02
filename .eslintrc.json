@@ -1,6 +1,7 @@
 {
     "extends": "@adobe/eslint-config-aio-lib-config",
     "globals": {
+      "fixturePath": true,
       "fixtureFile": true,
       "fixtureJson": true,
       "fixtureHjson": true,
