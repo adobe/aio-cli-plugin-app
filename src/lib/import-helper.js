@@ -650,7 +650,7 @@ async function importConfigJson (configFileOrBuffer, destinationFolder = process
  * @returns {string} the service api key
  */
 function getServiceApiKey (configFileJson, useJwt) {
-  const project = configFileJson.project
+  const project = configFileJson?.project
 
   const jwtConfig = project?.workspace?.details?.credentials?.find(c => c.jwt)
   const oauthS2SConfig = project?.workspace?.details?.credentials?.find(c => c.oauth_server_to_server)

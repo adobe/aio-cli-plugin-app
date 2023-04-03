@@ -364,4 +364,27 @@ describe('loadAndValidateConfigFile', () => {
 })
 
 describe('getServiceApiKey', () => {
+  test('bad config file', () => {
+    expect(getServiceApiKey(undefined)).toEqual('')
+  })
+
+  test('config file only has jwt', () => {
+    const config = fixtureHjson('valid.config.json')
+    expect(getServiceApiKey(config)).toEqual('XUXUXUXUXUXUXUX')
+  })
+
+  test('config file has OAuth S2S', () => {
+    const config = fixtureHjson('oauths2s/valid.config.json')
+    expect(getServiceApiKey(config)).toEqual('CXCXCXCXCXCXCXCXC')
+  })
+
+  test('config file has OAuth S2S (migration, contains jwt, useJwt=false)', () => {
+    const config = fixtureHjson('oauths2s/valid.config.migrate.json')
+    expect(getServiceApiKey(config)).toEqual('CXCXCXCXCXCXCXCXC')
+  })
+
+  test('config file has OAuth S2S (migration, contains jwt, useJwt=true)', () => {
+    const config = fixtureHjson('oauths2s/valid.config.migrate.json')
+    expect(getServiceApiKey(config, true)).toEqual('XUXUXUXUXUXUXUX')
+  })
 })
