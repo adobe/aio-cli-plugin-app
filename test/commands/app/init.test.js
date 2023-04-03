@@ -373,7 +373,7 @@ describe('--login', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       Buffer.from(JSON.stringify(fakeConfig)),
       'cwd',
-      { interactive: false, merge: true, overwrite: undefined },
+      { interactive: false, merge: true, overwrite: undefined, useJwt: false },
       { SERVICE_API_KEY: 'fakeclientid' }
     )
   })

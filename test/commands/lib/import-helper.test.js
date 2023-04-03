@@ -232,6 +232,56 @@ describe('importConfigJson', () => {
 
     await expect(fs.writeFile).toHaveBeenCalledTimes(4)
   })
+
+  test('with oauth_server_to_server credentials (migrate)', async () => {
+    const workingFolder = 'my-working-folder'
+    const aioPath = path.join(workingFolder, '.aio')
+    const envPath = path.join(workingFolder, '.env')
+    const configPath = '/some/config/path'
+
+    fs.readFileSync.mockReturnValueOnce(fixtureFile('oauths2s/valid.config.migrate.json'))
+    await importConfigJson(configPath, workingFolder, { overwrite: true })
+
+    await expect(fs.writeFile.mock.calls[0][0]).toMatch(envPath)
+    await expect(fs.writeFile.mock.calls[0][1]).toMatchFixture('oauths2s/valid.config.migrate.1.env')
+    await expect(fs.writeFile.mock.calls[0][2]).toMatchObject({ flag: 'w' })
+
+    await expect(fs.writeFile.mock.calls[1][0]).toMatch(aioPath)
+    await expect(fs.writeFile.mock.calls[1][1]).toMatchFixture('oauths2s/valid.config.migrate.1.aio')
+    await expect(fs.writeFile.mock.calls[1][2]).toMatchObject({ flag: 'w' })
+
+    fs.readFileSync.mockReturnValueOnce(fixtureFile('oauths2s/valid.config.migrate.json'))
+    await importConfigJson(configPath) // for coverage (defaults), no overwrite
+    await expect(fs.writeFile.mock.calls[2][2]).toMatchObject({ flag: 'wx' })
+    await expect(fs.writeFile.mock.calls[3][2]).toMatchObject({ flag: 'wx' })
+
+    await expect(fs.writeFile).toHaveBeenCalledTimes(4)
+  })
+
+  test('with oauth_server_to_server credentials (migrate) useJwt=true', async () => {
+    const workingFolder = 'my-working-folder'
+    const aioPath = path.join(workingFolder, '.aio')
+    const envPath = path.join(workingFolder, '.env')
+    const configPath = '/some/config/path'
+
+    fs.readFileSync.mockReturnValueOnce(fixtureFile('oauths2s/valid.config.migrate.json'))
+    await importConfigJson(configPath, workingFolder, { overwrite: true, useJwt: true })
+
+    await expect(fs.writeFile.mock.calls[0][0]).toMatch(envPath)
+    await expect(fs.writeFile.mock.calls[0][1]).toMatchFixture('oauths2s/valid.config.migrate.2.env')
+    await expect(fs.writeFile.mock.calls[0][2]).toMatchObject({ flag: 'w' })
+
+    await expect(fs.writeFile.mock.calls[1][0]).toMatch(aioPath)
+    await expect(fs.writeFile.mock.calls[1][1]).toMatchFixture('oauths2s/valid.config.migrate.2.aio')
+    await expect(fs.writeFile.mock.calls[1][2]).toMatchObject({ flag: 'w' })
+
+    fs.readFileSync.mockReturnValueOnce(fixtureFile('oauths2s/valid.config.migrate.json'))
+    await importConfigJson(configPath) // for coverage (defaults), no overwrite
+    await expect(fs.writeFile.mock.calls[2][2]).toMatchObject({ flag: 'wx' })
+    await expect(fs.writeFile.mock.calls[3][2]).toMatchObject({ flag: 'wx' })
+
+    await expect(fs.writeFile).toHaveBeenCalledTimes(4)
+  })
 })
 
 test('loadConfigFile (coverage)', async () => {

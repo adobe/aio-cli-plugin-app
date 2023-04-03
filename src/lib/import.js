@@ -25,7 +25,7 @@ async function importConsoleConfig (consoleConfigFileOrBuffer, flags) {
   const serviceClientId = getServiceApiKey(config, useJwt)
   const extraEnvVars = { [SERVICE_API_KEY_ENV]: serviceClientId }
 
-  await importConfigJson(consoleConfigFileOrBuffer, process.cwd(), { interactive, overwrite, merge }, extraEnvVars)
+  await importConfigJson(consoleConfigFileOrBuffer, process.cwd(), { interactive, overwrite, merge, useJwt }, extraEnvVars)
   return config
 }
 

@@ -96,6 +96,7 @@ function postValidateChecks (configFileJson) {
   const serviceIntegration = project?.workspace?.details?.credentials?.find(c => c.integration_type === 'service')
   const oauthS2SIntegration = project?.workspace?.details?.credentials?.find(c => c.integration_type === 'oauth_server_to_server')
   const oauthS2SMigrateIntegration = project?.workspace?.details?.credentials?.find(c => c.integration_type === 'oauth_server_to_server_migrate')
+
   if ((serviceIntegration && oauthS2SIntegration) ||
       (serviceIntegration && oauthS2SMigrateIntegration) ||
       (oauthS2SIntegration && oauthS2SMigrateIntegration)
@@ -521,6 +522,46 @@ function transformRuntime (runtime) {
 }
 
 /**
+ * Gets the service credential from the credentials.
+ *
+ * This is different if Jwt or OAuth Server to Server is available, and whether
+ * there is a migration going on from Jwt -> OAuth Server to Server.
+ *
+ * @private
+ * @param {object} credentials all the credentials for the workspace
+ * @param {boolean} useJwt prefer jwt, if available.
+ * @returns {object} the service credential object
+ */
+function getServiceCredential (credentials, imsOrgId, useJwt) {
+  // find jwt / oauth_server_to_server credential
+  const jwtCredential = credentials.find(credential => typeof credential.jwt === 'object')
+  const oauthS2SCredential = credentials.find(credential => typeof credential.oauth_server_to_server === 'object')
+
+  // enrich jwt / oauth_server_to_server credentials with ims org id
+  if (jwtCredential && jwtCredential.jwt && !jwtCredential.jwt.ims_org_id) {
+    aioLogger.debug('adding ims_org_id to ims.jwt config')
+    jwtCredential.jwt.ims_org_id = imsOrgId
+  }
+
+  if (oauthS2SCredential && oauthS2SCredential.oauth_server_to_server && !oauthS2SCredential.oauth_server_to_server.ims_org_id) {
+    aioLogger.debug('adding ims_org_id to ims.oauth_server_to_server config')
+    oauthS2SCredential.oauth_server_to_server.ims_org_id = imsOrgId
+  }
+
+  if (jwtCredential && oauthS2SCredential) {
+    if (useJwt) {
+      return jwtCredential.jwt
+    } else {
+      return oauthS2SCredential.oauth_server_to_server
+    }
+  } else if (oauthS2SCredential) {
+    return oauthS2SCredential.oauth_server_to_server
+  } else if (jwtCredential) {
+    return jwtCredential.jwt
+  }
+}
+
+/**
  * Transforms a credentials array to an object, to what this plugin expects.
  * Enrich with ims_org_id if it is a jwt credential.
  *
@@ -547,28 +588,17 @@ function transformRuntime (runtime) {
  *
  * @param {Array} credentials array from Downloadable File Format
  * @param {string} imsOrgId the ims org id
+ * @param {boolean} useJwt prefer jwt credential (in in OAuth Server to Server migration scenario)
  * @returns {object} the Credentials object
  * @private
  */
-function transformCredentials (credentials, imsOrgId) {
-  // find jwt / oauth_server_to_server credential
-  const jwtCredential = credentials.find(credential => typeof credential.jwt === 'object')
-  const oauthS2SCredential = credentials.find(credential => typeof credential.oauth_server_to_server === 'object')
-
-  // enrich jwt / oauth_server_to_server credentials with ims org id
-  if (jwtCredential && jwtCredential.jwt && !jwtCredential.jwt.ims_org_id) {
-    aioLogger.debug('adding ims_org_id to ims.jwt config')
-    jwtCredential.jwt.ims_org_id = imsOrgId
-  }
-
-  if (oauthS2SCredential && oauthS2SCredential.oauth_server_to_server && !oauthS2SCredential.oauth_server_to_server.ims_org_id) {
-    aioLogger.debug('adding ims_org_id to ims.oauth_server_to_server config')
-    oauthS2SCredential.oauth_server_to_server.ims_org_id = imsOrgId
-  }
+function transformCredentials (credentials, imsOrgId, useJwt) {
+  // get jwt / oauth_server_to_server credential
+  const serviceCredential = getServiceCredential(credentials, imsOrgId, useJwt)
 
   return credentials.reduce((acc, credential) => {
-    // the json schema enforces for jwt OR oauth2 OR apiKey in a credential
-    const value = credential.oauth2 || credential.jwt || credential.api_key || credential.oauth_server_to_server
+    // the json schema enforces for oauth2 OR apiKey OR jwt OR oauth_server_to_server in a credential
+    const value = credential.oauth2 || credential.api_key || serviceCredential
 
     const name = credential.name.replace(/ /gi, '_') // replace any spaces with underscores
     acc[name] = value
@@ -631,7 +661,7 @@ async function importConfigJson (configFileOrBuffer, destinationFolder = process
 
   await writeEnv({
     runtime: transformRuntime(runtime),
-    ims: { contexts: transformCredentials(credentials, config.project.org.ims_org_id) }
+    ims: { contexts: transformCredentials(credentials, config.project.org.ims_org_id, flags.useJwt) }
   }, destinationFolder, flags, extraEnvVars)
 
   // remove the credentials
