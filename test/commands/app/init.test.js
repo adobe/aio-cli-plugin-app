@@ -13,7 +13,7 @@ const fs = require('fs-extra')
 const path = require('path')
 const TheCommand = require('../../../src/commands/app/init')
 const BaseCommand = require('../../../src/BaseCommand')
-const importLib = require('../../../src/lib/import-helper')
+const importHelperLib = require('../../../src/lib/import-helper')
 const inquirer = require('inquirer')
 const savedDataDir = process.env.XDG_DATA_HOME
 const yeoman = require('yeoman-environment')
@@ -160,8 +160,12 @@ beforeEach(() => {
   process.env.XDG_DATA_HOME = 'data-dir'
 
   // default
-  importLib.importConfigJson.mockReset()
-  importLib.loadAndValidateConfigFile.mockReset()
+  importHelperLib.loadAndValidateConfigFile.mockReset()
+  importHelperLib.loadConfigFile.mockReset()
+  importHelperLib.getServiceApiKey.mockReset()
+  importHelperLib.importConfigJson.mockReset()
+
+  importHelperLib.loadConfigFile.mockReturnValue({ values: fakeConfig })
 })
 
 afterAll(() => {
@@ -238,7 +242,7 @@ describe('--no-login', () => {
 
     expect(command.installTemplates).toBeCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(importLib.importConfigJson).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
 
     expect(fs.ensureDirSync).toHaveBeenCalledWith(path.resolve('/otherdir'))
     expect(process.chdir).toHaveBeenCalledWith(path.resolve('/otherdir'))
@@ -258,7 +262,7 @@ describe('--no-login', () => {
 
     expect(command.installTemplates).toBeCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(importLib.importConfigJson).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
 
   test('--standalone-app', async () => {
@@ -274,7 +278,7 @@ describe('--no-login', () => {
 
     expect(command.installTemplates).toBeCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(importLib.importConfigJson).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
 
   test('--yes --no-install, select excshell', async () => {
@@ -291,7 +295,7 @@ describe('--no-login', () => {
 
     expect(command.installTemplates).toBeCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(importLib.importConfigJson).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
 
   test('--yes --no-install, --template @adobe/my-extension', async () => {
@@ -307,7 +311,7 @@ describe('--no-login', () => {
 
     expect(command.installTemplates).toBeCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(importLib.importConfigJson).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
 
   test('--yes --no-install, --template @adobe/my-extension --template @adobe/your-extension', async () => {
@@ -323,7 +327,7 @@ describe('--no-login', () => {
 
     expect(command.installTemplates).toBeCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(importLib.importConfigJson).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
 })
 
@@ -340,7 +344,7 @@ describe('--login', () => {
 
     expect(command.installTemplates).toBeCalledWith(installOptions)
     expect(LibConsoleCLI.init).toHaveBeenCalled()
-    expect(importLib.importConfigJson).toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).toHaveBeenCalled()
   })
 
   test('--yes --no-install, --template @adobe/my-extension --template @adobe/your-extension', async () => {
@@ -355,20 +359,21 @@ describe('--login', () => {
 
     expect(command.installTemplates).toBeCalledWith(installOptions)
     expect(LibConsoleCLI.init).toHaveBeenCalled()
-    expect(importLib.importConfigJson).toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).toHaveBeenCalled()
   })
 
   test('--import fakeconfig.json', async () => {
-    importLib.loadAndValidateConfigFile.mockReturnValue({ values: fakeConfig })
+    importHelperLib.loadAndValidateConfigFile.mockReturnValue({ values: fakeConfig })
+    importHelperLib.getServiceApiKey.mockReturnValue('fakeclientid')
 
     command.argv = ['--import', 'fakeconfig.json']
     await command.run()
 
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       Buffer.from(JSON.stringify(fakeConfig)),
       'cwd',
-      { interactive: false, merge: true },
+      { interactive: false, merge: true, overwrite: undefined },
       { SERVICE_API_KEY: 'fakeclientid' }
     )
   })
@@ -395,7 +400,7 @@ describe('--login', () => {
 
     expect(command.installTemplates).toBeCalledWith(installOptions)
     expect(LibConsoleCLI.init).toHaveBeenCalled()
-    expect(importLib.importConfigJson).toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).toHaveBeenCalled()
     expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(fakeOrg.id, fakeProject.id, fakeWorkspaces[1].id, fakeSupportedOrgServices)
     expect(mockConsoleCLIInstance.createProject).not.toHaveBeenCalled()
   })
@@ -509,7 +514,7 @@ describe('no args', () => {
 
     expect(command.installTemplates).toBeCalledWith(installOptions)
     expect(LibConsoleCLI.init).toHaveBeenCalled()
-    expect(importLib.importConfigJson).toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).toHaveBeenCalled()
   })
 
   test('select a template (all extensions)', async () => {
@@ -530,7 +535,7 @@ describe('no args', () => {
 
     expect(command.installTemplates).toBeCalledWith(installOptions)
     expect(LibConsoleCLI.init).toHaveBeenCalled()
-    expect(importLib.importConfigJson).toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).toHaveBeenCalled()
   })
 
   test('select a template (org templates)', async () => {
@@ -569,7 +574,7 @@ describe('no args', () => {
 
     expect(command.installTemplates).toBeCalledWith(installOptions)
     expect(LibConsoleCLI.init).toHaveBeenCalled()
-    expect(importLib.importConfigJson).toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).toHaveBeenCalled()
   })
 
   test('templates plugin is not installed', async () => {

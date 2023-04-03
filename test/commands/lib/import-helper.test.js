@@ -40,6 +40,9 @@ test('exports', () => {
   expect(loadAndValidateConfigFile).toBeDefined()
   expect(loadAndValidateConfigFile).toBeInstanceOf(Function)
 
+  expect(loadConfigFile).toBeDefined()
+  expect(loadConfigFile).toBeInstanceOf(Function)
+
   expect(importConfigJson).toBeDefined()
   expect(importConfigJson).toBeInstanceOf(Function)
 

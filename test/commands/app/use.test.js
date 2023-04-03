@@ -137,10 +137,13 @@ beforeEach(() => {
   jest.clearAllMocks()
   mockGetCli.mockReturnValue({})
   importHelperLib.loadConfigFile.mockReset()
+  importHelperLib.getServiceApiKey.mockReset()
   importHelperLib.validateConfig.mockReset()
   resetMockConsoleCLI()
   mockConsoleCLIInstance.prompt.promptConfirm.mockReset()
   setDefaultMockConsoleCLI()
+
+  importHelperLib.getServiceApiKey.mockReturnValue('')
 
   fakeCurrentConfig = {
     name: 'projectname',
@@ -272,6 +275,7 @@ describe('run with config file arg', () => {
   })
 
   test('config-file --no-input, config has credentials (SERVICE_API_KEY)', async () => {
+    importHelperLib.getServiceApiKey.mockReturnValue('apikey')
     mockConsoleImportConfig({
       credentials: [
         { oauth: { client_id: 'hola' } },

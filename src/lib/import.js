@@ -1,4 +1,4 @@
-const { loadAndValidateConfigFile, importConfigJson } = require('./import-helper')
+const { loadAndValidateConfigFile, importConfigJson, loadConfigFile, getServiceApiKey } = require('./import-helper')
 const { SERVICE_API_KEY_ENV } = require('./defaults')
 
 /**
@@ -11,17 +11,18 @@ const { SERVICE_API_KEY_ENV } = require('./defaults')
 async function importConsoleConfig (consoleConfigFileOrBuffer, flags) {
   const overwrite = flags.overwrite
   const merge = flags.merge
+  const skipValidation = flags.skipValidation
+  const useJwt = flags['use-jwt'] // for migration purposes
   let interactive = true
 
   if (overwrite || merge) {
     interactive = false
   }
 
-  // before importing the config, first extract the service api key id
-  const { values: config } = loadAndValidateConfigFile(consoleConfigFileOrBuffer)
-  const project = config.project
-  const jwtConfig = project.workspace.details.credentials && project.workspace.details.credentials.find(c => c.jwt)
-  const serviceClientId = (jwtConfig && jwtConfig.jwt.client_id) || ''
+  const loadFunc = skipValidation ? loadConfigFile : loadAndValidateConfigFile
+  const config = loadFunc(consoleConfigFileOrBuffer).values
+
+  const serviceClientId = getServiceApiKey(config, useJwt)
   const extraEnvVars = { [SERVICE_API_KEY_ENV]: serviceClientId }
 
   await importConfigJson(consoleConfigFileOrBuffer, process.cwd(), { interactive, overwrite, merge }, extraEnvVars)

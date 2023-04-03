@@ -85,6 +85,27 @@ function loadConfigFile (fileOrBuffer) {
 }
 
 /**
+ * Run any post-validation checks, for checks that can't be captured in JSON Schema.
+ *
+ * @private
+ */
+function postValidateChecks (configFileJson) {
+  // OAuth S2S: secondary check that JSON-Schema can't handle (array item check): credentials of `integration_type`
+  // "service", "oauth_server_to_server", and "oauth_server_to_server_migrate" are mutually exclusive
+  const project = configFileJson.project
+  const serviceIntegration = project?.workspace?.details?.credentials?.find(c => c.integration_type === 'service')
+  const oauthS2SIntegration = project?.workspace?.details?.credentials?.find(c => c.integration_type === 'oauth_server_to_server')
+  const oauthS2SMigrateIntegration = project?.workspace?.details?.credentials?.find(c => c.integration_type === 'oauth_server_to_server_migrate')
+  if ((serviceIntegration && oauthS2SIntegration) ||
+      (serviceIntegration && oauthS2SMigrateIntegration) ||
+      (oauthS2SIntegration && oauthS2SMigrateIntegration)
+  ) {
+    const message = 'Mutually exclusive credentials: "integration_type" values: service, oauth_server_to_server, oauth_server_to_server_migrate'
+    throw new Error(message)
+  }
+}
+
+/**
  * Load and validate a config file
  *
  * @param {string} fileOrBuffer the path to the config file or a Buffer
@@ -98,20 +119,7 @@ function loadAndValidateConfigFile (fileOrBuffer) {
     throw new Error(message)
   }
 
-  // OAuth S2S: secondary check that JSON-Schema can't handle (array item check): credentials of `integration_type`
-  // "service", "oauth_server_to_server", and "oauth_server_to_server_migrate" are mutually exclusive
-  const { values: config } = res
-  const project = config.project
-  const serviceIntegration = project?.workspace?.details?.credentials?.find(c => c.integration_type === 'service')
-  const oauthS2SIntegration = project?.workspace?.details?.credentials?.find(c => c.integration_type === 'oauth_server_to_server')
-  const oauthS2SMigrateIntegration = project?.workspace?.details?.credentials?.find(c => c.integration_type === 'oauth_server_to_server_migrate')
-  if ((serviceIntegration && oauthS2SIntegration) ||
-      (serviceIntegration && oauthS2SMigrateIntegration) ||
-      (oauthS2SIntegration && oauthS2SMigrateIntegration)
-  ) {
-    const message = 'Mutually exclusive credentials: "integration_type" values: service, oauth_server_to_server, oauth_server_to_server_migrate'
-    throw new Error(message)
-  }
+  postValidateChecks(res.values)
 
   return res
 }
@@ -631,7 +639,25 @@ async function importConfigJson (configFileOrBuffer, destinationFolder = process
   return writeAio(config, destinationFolder, flags)
 }
 
+/**
+ * Gets the service api key from the config file.
+ *
+ * This is different if Jwt or OAuth Server to Server is available, and whether
+ * there is a migration going on from Jwt -> OAuth Server to Server.
+ *
+ * @param {object} configFileJson the config file json
+ * @returns {string} the service api key
+ */
+function getServiceApiKey (configFileJson) {
+  const project = configFileJson.project
+  const jwtConfig = project.workspace.details.credentials && project.workspace.details.credentials.find(c => c.jwt)
+  const serviceClientId = (jwtConfig && jwtConfig.jwt.client_id) || ''
+
+  return serviceClientId
+}
+
 module.exports = {
+  getServiceApiKey,
   validateConfig,
   loadConfigFile,
   loadAndValidateConfigFile,
