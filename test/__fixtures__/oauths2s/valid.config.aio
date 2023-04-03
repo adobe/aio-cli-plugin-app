@@ -26,7 +26,7 @@
           {
             "id": "17606512",
             "name": "PröjectB",
-            "integration_type": "service"
+            "integration_type": "oauth_server_to_server"
           },
           {
             "id": "17656565",

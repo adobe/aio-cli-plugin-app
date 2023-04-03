@@ -182,29 +182,56 @@ test('invalid config', async () => {
   return expect(importConfigJson(configPath, workingFolder, { overwrite: true })).rejects.toThrow('Missing or invalid keys in config:')
 })
 
-test('importConfigJson', async () => {
-  const workingFolder = 'my-working-folder'
-  const aioPath = path.join(workingFolder, '.aio')
-  const envPath = path.join(workingFolder, '.env')
-  const configPath = '/some/config/path'
+describe('importConfigJson', () => {
+  test('with jwt, api_key, oauth2 credentials', async () => {
+    const workingFolder = 'my-working-folder'
+    const aioPath = path.join(workingFolder, '.aio')
+    const envPath = path.join(workingFolder, '.env')
+    const configPath = '/some/config/path'
 
-  fs.readFileSync.mockReturnValueOnce(fixtureFile('valid.config.json'))
-  await importConfigJson(configPath, workingFolder, { overwrite: true })
+    fs.readFileSync.mockReturnValueOnce(fixtureFile('valid.config.json'))
+    await importConfigJson(configPath, workingFolder, { overwrite: true })
 
-  await expect(fs.writeFile.mock.calls[0][0]).toMatch(envPath)
-  await expect(fs.writeFile.mock.calls[0][1]).toMatchFixture('valid.config.env')
-  await expect(fs.writeFile.mock.calls[0][2]).toMatchObject({ flag: 'w' })
+    await expect(fs.writeFile.mock.calls[0][0]).toMatch(envPath)
+    await expect(fs.writeFile.mock.calls[0][1]).toMatchFixture('valid.config.env')
+    await expect(fs.writeFile.mock.calls[0][2]).toMatchObject({ flag: 'w' })
 
-  await expect(fs.writeFile.mock.calls[1][0]).toMatch(aioPath)
-  await expect(fs.writeFile.mock.calls[1][1]).toMatchFixture('valid.config.aio')
-  await expect(fs.writeFile.mock.calls[1][2]).toMatchObject({ flag: 'w' })
+    await expect(fs.writeFile.mock.calls[1][0]).toMatch(aioPath)
+    await expect(fs.writeFile.mock.calls[1][1]).toMatchFixture('valid.config.aio')
+    await expect(fs.writeFile.mock.calls[1][2]).toMatchObject({ flag: 'w' })
 
-  fs.readFileSync.mockReturnValueOnce(fixtureFile('valid.config.json'))
-  await importConfigJson(configPath) // for coverage (defaults), no overwrite
-  await expect(fs.writeFile.mock.calls[2][2]).toMatchObject({ flag: 'wx' })
-  await expect(fs.writeFile.mock.calls[3][2]).toMatchObject({ flag: 'wx' })
+    fs.readFileSync.mockReturnValueOnce(fixtureFile('valid.config.json'))
+    await importConfigJson(configPath) // for coverage (defaults), no overwrite
+    await expect(fs.writeFile.mock.calls[2][2]).toMatchObject({ flag: 'wx' })
+    await expect(fs.writeFile.mock.calls[3][2]).toMatchObject({ flag: 'wx' })
 
-  await expect(fs.writeFile).toHaveBeenCalledTimes(4)
+    await expect(fs.writeFile).toHaveBeenCalledTimes(4)
+  })
+
+  test('with oauth_server_to_server credentials', async () => {
+    const workingFolder = 'my-working-folder'
+    const aioPath = path.join(workingFolder, '.aio')
+    const envPath = path.join(workingFolder, '.env')
+    const configPath = '/some/config/path'
+
+    fs.readFileSync.mockReturnValueOnce(fixtureFile('oauths2s/valid.config.json'))
+    await importConfigJson(configPath, workingFolder, { overwrite: true })
+
+    await expect(fs.writeFile.mock.calls[0][0]).toMatch(envPath)
+    await expect(fs.writeFile.mock.calls[0][1]).toMatchFixture('oauths2s/valid.config.env')
+    await expect(fs.writeFile.mock.calls[0][2]).toMatchObject({ flag: 'w' })
+
+    await expect(fs.writeFile.mock.calls[1][0]).toMatch(aioPath)
+    await expect(fs.writeFile.mock.calls[1][1]).toMatchFixture('oauths2s/valid.config.aio')
+    await expect(fs.writeFile.mock.calls[1][2]).toMatchObject({ flag: 'w' })
+
+    fs.readFileSync.mockReturnValueOnce(fixtureFile('oauths2s/valid.config.json'))
+    await importConfigJson(configPath) // for coverage (defaults), no overwrite
+    await expect(fs.writeFile.mock.calls[2][2]).toMatchObject({ flag: 'wx' })
+    await expect(fs.writeFile.mock.calls[3][2]).toMatchObject({ flag: 'wx' })
+
+    await expect(fs.writeFile).toHaveBeenCalledTimes(4)
+  })
 })
 
 test('loadConfigFile (coverage)', async () => {

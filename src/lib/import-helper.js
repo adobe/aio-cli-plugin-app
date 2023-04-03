@@ -551,18 +551,24 @@ function transformRuntime (runtime) {
  * @private
  */
 function transformCredentials (credentials, imsOrgId) {
-  // find jwt credential
-  const credential = credentials.find(credential => typeof credential.jwt === 'object')
+  // find jwt / oauth_server_to_server credential
+  const jwtCredential = credentials.find(credential => typeof credential.jwt === 'object')
+  const oauthS2SCredential = credentials.find(credential => typeof credential.oauth_server_to_server === 'object')
 
-  // enrich jwt credentials with ims org id
-  if (credential && credential.jwt && !credential.jwt.ims_org_id) {
+  // enrich jwt / oauth_server_to_server credentials with ims org id
+  if (jwtCredential && jwtCredential.jwt && !jwtCredential.jwt.ims_org_id) {
     aioLogger.debug('adding ims_org_id to ims.jwt config')
-    credential.jwt.ims_org_id = imsOrgId
+    jwtCredential.jwt.ims_org_id = imsOrgId
+  }
+
+  if (oauthS2SCredential && oauthS2SCredential.oauth_server_to_server && !oauthS2SCredential.oauth_server_to_server.ims_org_id) {
+    aioLogger.debug('adding ims_org_id to ims.oauth_server_to_server config')
+    oauthS2SCredential.oauth_server_to_server.ims_org_id = imsOrgId
   }
 
   return credentials.reduce((acc, credential) => {
     // the json schema enforces for jwt OR oauth2 OR apiKey in a credential
-    const value = credential.oauth2 || credential.jwt || credential.api_key
+    const value = credential.oauth2 || credential.jwt || credential.api_key || credential.oauth_server_to_server
 
     const name = credential.name.replace(/ /gi, '_') // replace any spaces with underscores
     acc[name] = value
