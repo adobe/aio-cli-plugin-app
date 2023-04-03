@@ -646,14 +646,31 @@ async function importConfigJson (configFileOrBuffer, destinationFolder = process
  * there is a migration going on from Jwt -> OAuth Server to Server.
  *
  * @param {object} configFileJson the config file json
+ * @param {boolean} useJwt prefer the jwt credential, if available.
  * @returns {string} the service api key
  */
-function getServiceApiKey (configFileJson) {
+function getServiceApiKey (configFileJson, useJwt) {
   const project = configFileJson.project
-  const jwtConfig = project.workspace.details.credentials && project.workspace.details.credentials.find(c => c.jwt)
-  const serviceClientId = (jwtConfig && jwtConfig.jwt.client_id) || ''
 
-  return serviceClientId
+  const jwtConfig = project?.workspace?.details?.credentials?.find(c => c.jwt)
+  const oauthS2SConfig = project?.workspace?.details?.credentials?.find(c => c.oauth_server_to_server)
+
+  const jwtClientId = jwtConfig?.jwt?.client_id
+  const oauthS2SClientId = oauthS2SConfig?.oauth_server_to_server?.client_id
+
+  if (jwtConfig && oauthS2SConfig) {
+    if (useJwt) {
+      return jwtClientId
+    } else {
+      return oauthS2SClientId
+    }
+  } else if (oauthS2SConfig) {
+    return oauthS2SClientId
+  } else if (jwtConfig) {
+    return jwtClientId
+  }
+
+  return ''
 }
 
 module.exports = {

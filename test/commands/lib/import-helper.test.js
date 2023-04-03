@@ -19,6 +19,7 @@ const mockPrompt = jest.fn()
 inquirer.createPromptModule.mockReturnValue(mockPrompt)
 
 const {
+  getServiceApiKey,
   loadAndValidateConfigFile,
   importConfigJson,
   writeAio,
@@ -37,6 +38,9 @@ beforeEach(() => {
 })
 
 test('exports', () => {
+  expect(getServiceApiKey).toBeDefined()
+  expect(getServiceApiKey).toBeInstanceOf(Function)
+
   expect(loadAndValidateConfigFile).toBeDefined()
   expect(loadAndValidateConfigFile).toBeInstanceOf(Function)
 
@@ -357,4 +361,7 @@ describe('loadAndValidateConfigFile', () => {
     fs.readFileSync.mockReturnValueOnce(fixtureFile('oauths2s/invalid.config.3.json'))
     expect(() => loadAndValidateConfigFile(fixturePath('oauths2s/invalid.config.3.json'))).toThrow(expectedErrorMessage)
   })
+})
+
+describe('getServiceApiKey', () => {
 })
