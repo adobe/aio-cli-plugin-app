@@ -18,14 +18,7 @@ const appHelperActual = jest.requireActual('../../../src/lib/app-helper')
 jest.mock('../../../src/lib/app-helper')
 
 const createWebExportAnnotation = (value) => ({
-  body: {
-    annotations: [
-      {
-        key: 'web-export',
-        value
-      }
-    ]
-  }
+  annotations: { 'web-export': value }
 })
 
 beforeEach(() => {

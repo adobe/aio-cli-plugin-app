@@ -61,14 +61,7 @@ jest.mock('../../../src/lib/log-forwarding', () => {
 const LogForwarding = require('../../../src/lib/log-forwarding')
 
 const createWebExportAnnotation = (value) => ({
-  body: {
-    annotations: [
-      {
-        key: 'web-export',
-        value
-      }
-    ]
-  }
+  annotations: { 'web-export': value }
 })
 
 const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
