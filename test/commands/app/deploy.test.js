@@ -61,14 +61,7 @@ jest.mock('../../../src/lib/log-forwarding', () => {
 const LogForwarding = require('../../../src/lib/log-forwarding')
 
 const createWebExportAnnotation = (value) => ({
-  body: {
-    annotations: [
-      {
-        key: 'web-export',
-        value
-      }
-    ]
-  }
+  annotations: { 'web-export': value }
 })
 
 const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
@@ -151,7 +144,7 @@ const mockLogForwarding = {
 }
 
 afterAll(() => {
-  jest.restoreAllMocks()
+  jest.clearAllMocks()
   jest.resetAllMocks()
 })
 
@@ -165,7 +158,7 @@ beforeEach(() => {
   mockLogForwarding.getLocalConfigWithSecrets.mockReset()
   mockLogForwarding.updateServerConfig.mockReset()
 
-  jest.restoreAllMocks()
+  jest.clearAllMocks()
 
   helpers.wrapError.mockImplementation(msg => msg)
   helpers.createWebExportFilter.mockImplementation(filterValue => helpersActual.createWebExportFilter(filterValue))

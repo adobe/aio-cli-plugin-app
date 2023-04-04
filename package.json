@@ -5,7 +5,7 @@
   "author": "Adobe Inc.",
   "bugs": "https://github.com/adobe/aio-cli-plugin-app/issues",
   "dependencies": {
-    "@adobe/aio-cli-lib-app-config": "^1.0.0",
+    "@adobe/aio-cli-lib-app-config": "^1.0.1",
     "@adobe/aio-cli-lib-console": "^4.0.0",
     "@adobe/aio-lib-core-config": "^3.0.0",
     "@adobe/aio-lib-core-logging": "^2.0.0",
@@ -60,7 +60,7 @@
     "eslint-plugin-n": "^15.2.5",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^6.0.0",
-    "jest": "^28",
+    "jest": "^29.5.0",
     "jest-plugin-fs": "^2.9.0",
     "nock": "^13.2.9",
     "oclif": "^3.2.0",
