@@ -15,7 +15,7 @@ const BaseCommand = require('../../../src/BaseCommand')
 const InitCommand = require('../../../src/commands/app/init')
 
 beforeEach(() => {
-  jest.restoreAllMocks()
+  jest.clearAllMocks()
 })
 
 describe('Command Prototype', () => {
