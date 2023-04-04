@@ -144,7 +144,7 @@ const mockLogForwarding = {
 }
 
 afterAll(() => {
-  jest.restoreAllMocks()
+  jest.clearAllMocks()
   jest.resetAllMocks()
 })
 
@@ -158,7 +158,7 @@ beforeEach(() => {
   mockLogForwarding.getLocalConfigWithSecrets.mockReset()
   mockLogForwarding.updateServerConfig.mockReset()
 
-  jest.restoreAllMocks()
+  jest.clearAllMocks()
 
   helpers.wrapError.mockImplementation(msg => msg)
   helpers.createWebExportFilter.mockImplementation(filterValue => helpersActual.createWebExportFilter(filterValue))

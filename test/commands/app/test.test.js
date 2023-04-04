@@ -34,7 +34,7 @@ beforeAll(() => {
 })
 
 afterAll(() => {
-  jest.restoreAllMocks()
+  jest.clearAllMocks()
 })
 
 /** @private */
