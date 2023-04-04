@@ -237,7 +237,7 @@ describe('run with config file arg', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       'config-file',
       process.cwd(),
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
   })
@@ -247,7 +247,7 @@ describe('run with config file arg', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       'config-file',
       process.cwd(),
-      { merge: true, overwrite: false, interactive: false },
+      { merge: true, overwrite: false, interactive: false, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
   })
@@ -258,7 +258,7 @@ describe('run with config file arg', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       'config-file',
       process.cwd(),
-      { merge: false, overwrite: true, interactive: false },
+      { merge: false, overwrite: true, interactive: false, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
   })
@@ -269,7 +269,7 @@ describe('run with config file arg', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       'config-file',
       process.cwd(),
-      { merge: true, overwrite: false, interactive: false },
+      { merge: true, overwrite: false, interactive: false, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
   })
@@ -286,7 +286,7 @@ describe('run with config file arg', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       'config-file',
       process.cwd(),
-      { merge: true, overwrite: false, interactive: false },
+      { merge: true, overwrite: false, interactive: false, useJwt: false },
       { SERVICE_API_KEY: 'apikey' }
     )
   })
@@ -316,7 +316,7 @@ describe('run with global configuration', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
     // services are same in both workspaces in default mock
@@ -340,7 +340,7 @@ describe('run with global configuration', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
   })
@@ -357,7 +357,7 @@ describe('run with global configuration', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: true, overwrite: false, interactive: false },
+      { merge: true, overwrite: false, interactive: false, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
     // no-input sets no-service-sync
@@ -377,7 +377,7 @@ describe('run with global configuration', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: true, overwrite: false, interactive: false },
+      { merge: true, overwrite: false, interactive: false, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
     expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledTimes(2)
@@ -401,7 +401,7 @@ describe('run with global configuration', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: true, overwrite: false, interactive: false },
+      { merge: true, overwrite: false, interactive: false, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
     expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledTimes(2)
@@ -434,7 +434,7 @@ describe('run with global configuration', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
     expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledTimes(2)
@@ -469,7 +469,7 @@ describe('run with global configuration', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
     // when current config is not complete, we can switch to global config but not sync services
@@ -497,7 +497,7 @@ describe('run with global configuration', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
     expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledTimes(2)
@@ -528,7 +528,7 @@ describe('run with global configuration', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
     // service sync is not supported when orgs are not the same
@@ -586,7 +586,7 @@ describe('switch to a workspace in the same org', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
     // services are same in both workspaces in default mock
@@ -616,7 +616,7 @@ describe('switch to a workspace in the same org', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
 
@@ -652,7 +652,7 @@ describe('switch to a workspace in the same org', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
 
@@ -681,7 +681,7 @@ describe('switch to a workspace in the same org', () => {
       expect.any(Buffer),
       process.cwd(),
       // --no-input sets --merge to true
-      { merge: true, overwrite: false, interactive: false },
+      { merge: true, overwrite: false, interactive: false, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
 
@@ -713,7 +713,7 @@ describe('switch to a workspace in the same org', () => {
       expect.any(Buffer),
       process.cwd(),
       // --no-input sets --merge to true
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
 

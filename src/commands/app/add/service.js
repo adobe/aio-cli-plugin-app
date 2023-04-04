@@ -14,6 +14,7 @@ const path = require('path')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:service', { provider: 'debug' })
 const config = require('@adobe/aio-lib-core-config')
 const chalk = require('chalk')
+const { Flags } = require('@oclif/core')
 
 const {
   setOrgServicesConfig,
@@ -154,7 +155,11 @@ AddServiceCommand.description = `Subscribe to Services in the current Workspace
 `
 
 AddServiceCommand.flags = {
-  ...BaseCommand.flags
+  ...BaseCommand.flags,
+  'use-jwt': Flags.boolean({
+    description: 'if the config has both jwt and OAuth Server to Server Credentials (while migrating), prefer the JWT credentials',
+    default: false
+  })
 }
 
 AddServiceCommand.aliases = ['app:add:services']

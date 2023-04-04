@@ -386,6 +386,10 @@ Use.flags = {
   'no-input': Flags.boolean({
     description: 'Skip user prompts by setting --no-service-sync and --merge. Requires one of config_file_path or --global or --workspace',
     default: false
+  }),
+  'use-jwt': Flags.boolean({
+    description: 'if the config has both jwt and OAuth Server to Server Credentials (while migrating), prefer the JWT credentials',
+    default: false
   })
 }
 
