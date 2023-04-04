@@ -86,6 +86,7 @@ class Undeploy extends BaseCommand {
     if (flags.actions) {
       if (config.app.hasBackend) {
         try {
+          this.config.runHook('pre-undeploy-event-reg', { appConfig: config })
           const script = await runScript(config.hooks['undeploy-actions'])
           if (!script) {
             await rtLib.undeployActions(config)
@@ -117,6 +118,7 @@ class Undeploy extends BaseCommand {
     }
 
     try {
+      this.config.runHook('post-undeploy-event-reg', { appConfig: config })
       await runScript(config.hooks['post-app-undeploy'])
     } catch (err) {
       this.log(err)

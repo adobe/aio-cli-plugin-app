@@ -142,6 +142,7 @@ class Deploy extends BuildCommand {
     const filterActions = flags.action
 
     try {
+      this.config.runHook('pre-deploy-event-reg', { appConfig: config })
       await runInProcess(config.hooks['pre-app-deploy'], config)
       //await runScript(config.hooks['pre-app-deploy'])
     } catch (err) {
@@ -239,6 +240,7 @@ class Deploy extends BuildCommand {
     }
 
     try {
+      this.config.runHook('post-deploy-event-reg', { appConfig: config })
       await runInProcess(config.hooks['post-app-deploy'], config)
       // await runScript(config.hooks['post-app-deploy'])
     } catch (err) {
