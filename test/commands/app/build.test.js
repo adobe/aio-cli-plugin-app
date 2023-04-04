@@ -147,7 +147,7 @@ beforeEach(() => {
   mockFS.existsSync.mockReset()
   helpers.writeConfig.mockReset()
   helpers.runScript.mockReset()
-  jest.restoreAllMocks()
+  jest.clearAllMocks()
 
   helpers.wrapError.mockImplementation(msg => msg)
 })
