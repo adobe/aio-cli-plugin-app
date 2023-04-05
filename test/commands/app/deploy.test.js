@@ -61,14 +61,7 @@ jest.mock('../../../src/lib/log-forwarding', () => {
 const LogForwarding = require('../../../src/lib/log-forwarding')
 
 const createWebExportAnnotation = (value) => ({
-  body: {
-    annotations: [
-      {
-        key: 'web-export',
-        value
-      }
-    ]
-  }
+  annotations: { 'web-export': value }
 })
 
 const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
@@ -151,7 +144,7 @@ const mockLogForwarding = {
 }
 
 afterAll(() => {
-  jest.restoreAllMocks()
+  jest.clearAllMocks()
   jest.resetAllMocks()
 })
 
@@ -165,7 +158,7 @@ beforeEach(() => {
   mockLogForwarding.getLocalConfigWithSecrets.mockReset()
   mockLogForwarding.updateServerConfig.mockReset()
 
-  jest.restoreAllMocks()
+  jest.clearAllMocks()
 
   helpers.wrapError.mockImplementation(msg => msg)
   helpers.createWebExportFilter.mockImplementation(filterValue => helpersActual.createWebExportFilter(filterValue))
@@ -251,7 +244,7 @@ describe('run', () => {
     command.appConfig = cloneDeep(mockConfigData)
     command.appConfig.actions = { dist: 'actions' }
     command.appConfig.web.distProd = 'dist'
-    command.config = { runCommand: jest.fn() }
+    command.config = { runCommand: jest.fn(), runHook: jest.fn() }
     command.buildOneExt = jest.fn()
     command.getAppExtConfigs = jest.fn()
     command.getLibConsoleCLI = jest.fn(() => mockLibConsoleCLI)
@@ -727,6 +720,13 @@ describe('run', () => {
 
     command.argv = []
     await command.run()
+    expect(command.config.runHook).toHaveBeenCalledTimes(1)
+    expect(command.config.runHook).toHaveBeenCalledWith('deploy-actions',
+      expect.objectContaining({
+        appConfig: expect.any(Object),
+        filterEntities: [],
+        isLocalDev: false
+      }))
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(0)

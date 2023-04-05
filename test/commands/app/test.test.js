@@ -26,7 +26,6 @@ const appHelper = require('../../../src/lib/app-helper')
 
 // mocks
 jest.mock('../../../src/lib/app-helper')
-jest.mock('fs')
 
 const mockGetAppExtConfigs = jest.fn()
 
@@ -35,7 +34,7 @@ beforeAll(() => {
 })
 
 afterAll(() => {
-  jest.restoreAllMocks()
+  jest.clearAllMocks()
 })
 
 /** @private */

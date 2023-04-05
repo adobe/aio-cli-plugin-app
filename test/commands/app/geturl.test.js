@@ -23,7 +23,7 @@ const createFullConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
 }
 
 beforeEach(() => {
-  jest.restoreAllMocks()
+  jest.clearAllMocks()
 })
 
 test('exports', async () => {

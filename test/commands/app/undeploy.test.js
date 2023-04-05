@@ -66,7 +66,7 @@ beforeEach(() => {
   helpers.runScript.mockReset()
   mockFS.existsSync.mockReset()
   helpers.wrapError.mockImplementation(msg => msg)
-  jest.restoreAllMocks()
+  jest.clearAllMocks()
 })
 
 test('exports', async () => {

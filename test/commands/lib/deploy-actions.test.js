@@ -18,14 +18,7 @@ const appHelperActual = jest.requireActual('../../../src/lib/app-helper')
 jest.mock('../../../src/lib/app-helper')
 
 const createWebExportAnnotation = (value) => ({
-  body: {
-    annotations: [
-      {
-        key: 'web-export',
-        value
-      }
-    ]
-  }
+  annotations: { 'web-export': value }
 })
 
 beforeEach(() => {
@@ -84,7 +77,48 @@ test('it should deploy actions with filter param, (coverage)', async () => {
 
 test('no deploy-actions app hook available (use inbuilt)', async () => {
   await deployActions({ hooks: {} })
+  expect(rtDeployActions).toHaveBeenCalled()
+  expect(utils.runScript).toHaveBeenNthCalledWith(1, undefined) // pre-app-deploy
+  expect(utils.runScript).toHaveBeenNthCalledWith(2, undefined) // deploy-actions
+  expect(utils.runScript).toHaveBeenNthCalledWith(3, undefined) // post-app-deploy
+})
 
+test('call inprocHook no filter', async () => {
+  const mockHook = jest.fn()
+  await deployActions({ hooks: {} }, false, null, false, mockHook)
+  expect(mockHook).toHaveBeenCalledWith('deploy-actions', expect.objectContaining({
+    appConfig: { hooks: {} },
+    filterEntities: [],
+    isLocalDev: false
+  }))
+  expect(rtDeployActions).toHaveBeenCalled()
+  expect(utils.runScript).toHaveBeenNthCalledWith(1, undefined) // pre-app-deploy
+  expect(utils.runScript).toHaveBeenNthCalledWith(2, undefined) // deploy-actions
+  expect(utils.runScript).toHaveBeenNthCalledWith(3, undefined) // post-app-deploy
+})
+
+test('call inprocHook with filter : isLocalDev false', async () => {
+  const mockHook = jest.fn()
+  await deployActions({ hooks: {} }, false, null, ['boomer'], mockHook)
+  expect(mockHook).toHaveBeenCalledWith('deploy-actions', expect.objectContaining({
+    appConfig: { hooks: {} },
+    filterEntities: ['boomer'],
+    isLocalDev: false
+  }))
+  expect(rtDeployActions).toHaveBeenCalled()
+  expect(utils.runScript).toHaveBeenNthCalledWith(1, undefined) // pre-app-deploy
+  expect(utils.runScript).toHaveBeenNthCalledWith(2, undefined) // deploy-actions
+  expect(utils.runScript).toHaveBeenNthCalledWith(3, undefined) // post-app-deploy
+})
+
+test('call inprocHook with filter : isLocalDev true', async () => {
+  const mockHook = jest.fn()
+  await deployActions({ hooks: {} }, true, null, ['action-1', 'action-2'], mockHook)
+  expect(mockHook).toHaveBeenCalledWith('deploy-actions', expect.objectContaining({
+    appConfig: { hooks: {} },
+    filterEntities: ['action-1', 'action-2'],
+    isLocalDev: true
+  }))
   expect(rtDeployActions).toHaveBeenCalled()
   expect(utils.runScript).toHaveBeenNthCalledWith(1, undefined) // pre-app-deploy
   expect(utils.runScript).toHaveBeenNthCalledWith(2, undefined) // deploy-actions

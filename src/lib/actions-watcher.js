@@ -61,10 +61,9 @@ module.exports = async (watcherOptions) => {
  * @param {Array<string>} filterActions add filters to deploy only specified OpenWhisk actions
  */
 async function buildAndDeploy (watcherOptions, filterActions) {
-  const { config, isLocal, log } = watcherOptions
-
+  const { config, isLocal, log, inprocHook } = watcherOptions
   await buildActions(config, filterActions)
-  await deployActions(config, isLocal, log, filterActions)
+  await deployActions(config, isLocal, log, filterActions, inprocHook)
 }
 
 /**

@@ -150,6 +150,14 @@ class TemplatesCommand extends AddCommand {
   } = {}) {
     const spinner = ora()
 
+    if (templates.length <= 0) {
+      aioLogger.debug('installTemplates: standalone-app')
+      await this.config.runHook('telemetry', { data: 'installTemplates:standalone-app' })
+    } else {
+      aioLogger.debug(`installTemplates: ${templates}`)
+      await this.config.runHook('telemetry', { data: `installTemplates:${templates}` })
+    }
+
     // install the templates in sequence
     for (const template of templates) {
       spinner.info(`Installing template ${template}`)

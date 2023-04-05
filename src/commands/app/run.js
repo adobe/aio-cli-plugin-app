@@ -104,8 +104,8 @@ class Run extends BaseCommand {
         spinner.info(chalk.dim(`${info}`))
         spinner.start()
       }
-
-    const frontendUrl = await runDev(config, this.config.dataDir, runOptions, onProgress)
+    const inprocHook = this.config.runHook.bind(this.config)
+    const frontendUrl = await runDev(config, this.config.dataDir, runOptions, onProgress, inprocHook)
     try {
       await runScript(config.hooks['post-app-run'])
     } catch (err) {

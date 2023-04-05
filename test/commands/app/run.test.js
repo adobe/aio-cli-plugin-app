@@ -82,7 +82,7 @@ const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
 }
 
 beforeEach(() => {
-  jest.restoreAllMocks()
+  jest.clearAllMocks()
   mockRunDev.mockReset()
   helpers.runScript.mockReset()
 
@@ -108,6 +108,7 @@ beforeEach(() => {
   command.error = jest.fn()
   command.log = jest.fn()
   command.config = {
+    runHook: jest.fn(),
     findCommand: jest.fn().mockReturnValue({
       load: mockFindCommandLoad
     }),
@@ -280,7 +281,7 @@ describe('run', () => {
         logLevel: 'warn'
       }),
       isLocal: undefined
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
   })
 
   test('app:run check if fetchLogs flag is set when calling scripts', async () => {
@@ -292,7 +293,7 @@ describe('run', () => {
     await command.run()
     expect(mockRunDev).toHaveBeenCalledWith(appConfig.application, expect.any(String), expect.objectContaining({
       fetchLogs: true
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
   })
 
   test('app:run with --verbose', async () => {
@@ -309,7 +310,7 @@ describe('run', () => {
         logLevel: 'verbose'
       }),
       isLocal: undefined
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
   })
 
   test('app:run with --local', async () => {
@@ -339,7 +340,7 @@ describe('run', () => {
         logLevel: 'verbose'
       }),
       isLocal: true
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
   })
 
   test('app:run where scripts.runDev throws', async () => {
@@ -423,7 +424,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
   })
 
   test('app:run with UI and no cert files but has cert config', async () => {
@@ -446,7 +447,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
     expect(mockFS.ensureDir).toHaveBeenCalledWith(DEV_KEYS_DIR)
     expect(mockFS.writeFile).toHaveBeenCalledTimes(2)
     expect(mockFS.writeFile).toHaveBeenCalledWith(PUB_CERT_PATH, 'pub cert')
@@ -477,7 +478,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
     expect(mockFS.ensureDir).toHaveBeenCalledWith(DEV_KEYS_DIR)
     expect(command.config.findCommand).toHaveBeenCalledWith('certificate:generate')
     expect(mockFindCommandRun).toHaveBeenCalledWith([`--keyout=${PRIVATE_KEY_PATH}`, `--out=${PUB_CERT_PATH}`, '-n=DeveloperSelfSigned.cert'])
@@ -515,7 +516,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
     expect(mockConfig.set).toHaveBeenCalledTimes(2)
     expect(mockConfig.set).toHaveBeenCalledWith(CONFIG_KEY + '.privateKey', 'private key')
     expect(mockConfig.set).toHaveBeenCalledWith(CONFIG_KEY + '.publicCert', 'public cert')
@@ -555,7 +556,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
     expect(https.createServer).toHaveBeenCalledWith({ key: 'private key', cert: 'public cert' }, expect.any(Function))
     expect(getPort).toHaveBeenCalledWith({ port: SERVER_DEFAULT_PORT })
     expect(mockHttpsServerInstance.listen).toHaveBeenCalledWith(1111)
@@ -593,7 +594,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
     expect(getPort).toHaveBeenCalledWith({ port: 9999 })
     expect(mockHttpsServerInstance.listen).toHaveBeenCalledWith(1111)
     expect(cli.open).toHaveBeenCalledWith('https://localhost:1111')
@@ -632,7 +633,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
     expect(mockHttpsServerInstance.listen).toHaveBeenCalledWith(1111)
     expect(mockHttpsServerInstance.close).toHaveBeenCalledTimes(1)
     expect(cli.open).toHaveBeenCalledWith('https://localhost:1111')
