@@ -1,5 +1,5 @@
 /*
-Copyright 2022 Adobe. All rights reserved.
+Copyright 2023 Adobe. All rights reserved.
 This file is licensed to you under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License. You may obtain a copy
 of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -13,7 +13,7 @@ const BaseCommand = require('../../BaseCommand')
 const { Flags } = require('@oclif/core')
 const path = require('node:path')
 const fs = require('fs-extra')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:package', { provider: 'debug' })
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:pack', { provider: 'debug' })
 const archiver = require('archiver')
 const yaml = require('js-yaml')
 
@@ -24,9 +24,9 @@ const DEFAULTS = {
   DD_METADATA_FILE: 'dd-metadata.json'
 }
 
-class Package extends BaseCommand {
+class Pack extends BaseCommand {
   async run () {
-    const { args, flags } = await this.parse(Package)
+    const { args, flags } = await this.parse(Pack)
 
     aioLogger.debug(`flags: ${JSON.stringify(flags, null, 2)}`)
     aioLogger.debug(`args: ${JSON.stringify(args, null, 2)}`)
@@ -200,12 +200,12 @@ class Package extends BaseCommand {
   }
 }
 
-Package.description = `Package a new Adobe I/O App for distribution
+Pack.description = `Package a new Adobe Developer App for distribution
 
 This will always force a rebuild unless --no-force-build is set.
 `
 
-Package.flags = {
+Pack.flags = {
   ...BaseCommand.flags,
   output: Flags.string({
     description: 'The packaged app output file path',
@@ -225,7 +225,7 @@ Package.flags = {
   })
 }
 
-Package.args = [
+Pack.args = [
   {
     name: 'path',
     description: 'Path to the app directory to package',
@@ -233,4 +233,4 @@ Package.args = [
   }
 ]
 
-module.exports = Package
+module.exports = Pack
