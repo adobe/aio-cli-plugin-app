@@ -16,12 +16,12 @@ const fs = require('fs-extra')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:pack', { provider: 'debug' })
 const archiver = require('archiver')
 const yaml = require('js-yaml')
+const execa = require('execa')
 
 const DEFAULTS = {
   OUTPUT_ZIP_FILE: 'app.zip',
   ARTIFACTS_FOLDER: 'app-package',
-  INSTALL_YAML_FILE: 'install.yaml',
-  DD_METADATA_FILE: 'dd-metadata.json'
+  DEPLOY_YAML_FILE: 'deploy.yaml'
 }
 
 class Pack extends BaseCommand {
@@ -45,26 +45,20 @@ class Pack extends BaseCommand {
       aioLogger.debug(`changed current working directory to: ${resolvedPath}`)
     }
 
-    // 1. build phase
-    if (flags.build) {
-      this.log('Building app...')
-      await this.config.runCommand('app:build', [])
-    } else {
-      this.log('Skipping build.')
-    }
-
-    // 2. create artifacts phase
+    // 1. create artifacts phase
     this.log('Creating package artifacts...')
     await fs.remove(DEFAULTS.ARTIFACTS_FOLDER)
     await fs.ensureDir(DEFAULTS.ARTIFACTS_FOLDER)
 
-    await this.createUIMetadataFile(appConfig)
-    await this.createInstallYamlFile(appConfig)
+    // 2. copy files to package phase
+    this.log('Copying files...')
+    const fileList = await this.filesToPack(path.resolve(args.path))
+    await this.copyPackageFiles(DEFAULTS.ARTIFACTS_FOLDER, fileList)
 
-    // 3. copy dist folders phase
-    const extensionNames = Object.keys(appConfig.all)
-    const distFolders = extensionNames.map(extensionName => path.relative(appConfig.root, appConfig.all[extensionName].app.dist))
-    await this.copyPackageFiles(DEFAULTS.ARTIFACTS_FOLDER, [...distFolders, 'hooks'])
+    // 3. add/modify artifacts phase
+    this.log('Creating configuration files...')
+    await this.createDeployYamlFile(appConfig)
+    // TODO: modify artifacts as required
 
     // 4. zip package phase
     this.log(`Zipping package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER}' to '${flags.output}'...`)
@@ -73,35 +67,12 @@ class Pack extends BaseCommand {
     this.log('Packaging done.')
   }
 
-  async createUIMetadataFile (appConfig) {
-    const uiMetadata = {
-      title: 'App Builder Package - Configuration',
-      description: 'Data to be gathered from the user in the Distribution Portal',
-      type: 'object',
-      required: [],
-      properties: {}
-    }
-
-    appConfig.configManifest?.forEach(uiDefinition => {
-      const { label, input, mapToEnv, optional } = uiDefinition
-      const isRequired = (!!optional !== true)
-      const propertyKey = label.toLowerCase().replace(/[^a-zA-Z0-9]+(.)/g, (m, chr) => chr.toUpperCase()) // camelCase
-
-      if (isRequired) {
-        uiMetadata.required.push(propertyKey)
-      }
-
-      uiMetadata.properties[propertyKey] = {
-        type: input,
-        title: label,
-        mapToEnv
-      }
-    })
-
-    await fs.outputFile(path.join(DEFAULTS.ARTIFACTS_FOLDER, DEFAULTS.DD_METADATA_FILE), JSON.stringify(uiMetadata, null, 2))
-  }
-
-  async createInstallYamlFile (appConfig) {
+  /**
+   * Creates the deploy.yaml file
+   *
+   * @param {object} appConfig the app's configuration file
+   */
+  async createDeployYamlFile (appConfig) {
     // get extensions
     let extensions
     if (appConfig.implements?.filter(item => item !== 'application').length > 0) {
@@ -132,7 +103,7 @@ class Pack extends BaseCommand {
       version: appConfig.packagejson.version
     }
 
-    const installJson = {
+    const deployJson = {
       $schema: 'http://json-schema.org/draft-07/schema',
       $id: 'https://adobe.io/schemas/app-builder-templates/1',
       application,
@@ -143,21 +114,22 @@ class Pack extends BaseCommand {
       runtimeManifest
     }
 
-    const installYaml = yaml.dump(installJson)
-    await fs.outputFile(path.join(DEFAULTS.ARTIFACTS_FOLDER, DEFAULTS.INSTALL_YAML_FILE), installYaml)
+    const deployYaml = yaml.dump(deployJson)
+    await fs.outputFile(path.join(DEFAULTS.ARTIFACTS_FOLDER, DEFAULTS.DEPLOY_YAML_FILE), deployYaml)
   }
 
+  /**
+   * Copies a list of files to a folder.
+   *
+   * @param {string} destinationFolder the destination folder for the files
+   * @param {Array<string>} filesList a list of files to copy
+   */
   async copyPackageFiles (destinationFolder, filesList) {
-    const ignoreFiles = ['.DS_Store']
-    const filterFunc = (src) => {
-      return !(ignoreFiles.includes(path.basename(src)))
-    }
-
     for (const src of filesList) {
       const dest = path.join(destinationFolder, src)
       if (await fs.pathExists(src)) {
         aioLogger.debug(`Copying ${src} to ${dest}`)
-        await fs.copy(src, dest, { filter: filterFunc })
+        await fs.copy(src, dest)
       } else {
         aioLogger.debug(`Skipping copy for ${src} (path does not exist)`)
       }
@@ -198,11 +170,24 @@ class Pack extends BaseCommand {
       archive.finalize()
     })
   }
+
+  /**
+   * Gets a list of files that are to be packed.
+   *
+   * This runs `npm pack` to get the list.
+   *
+   * @param {string} workingDirectory the working directory to run `npm pack` in
+   * @returns {Array<string>} a list of files that are to be packed
+   */
+  async filesToPack (workingDirectory) {
+    const { stdout } = await execa('npm', ['pack', '--dry-run', '--json'], { cwd: workingDirectory })
+
+    const { files } = JSON.parse(stdout)[0]
+    return files.map(file => file.path)
+  }
 }
 
 Pack.description = `Package a new Adobe Developer App for distribution
-
-This will always force a rebuild unless --no-force-build is set.
 `
 
 Pack.flags = {
@@ -211,17 +196,6 @@ Pack.flags = {
     description: 'The packaged app output file path',
     char: 'o',
     default: DEFAULTS.OUTPUT_ZIP_FILE
-  }),
-  build: Flags.boolean({
-    description: '[default: true] Run the build phase before packaging',
-    default: true,
-    allowNo: true
-  }),
-  'force-build': Flags.boolean({
-    description: '[default: true] Force a build even if one already exists',
-    exclusive: ['no-build'], // no-build
-    default: true,
-    allowNo: true
   })
 }
 
