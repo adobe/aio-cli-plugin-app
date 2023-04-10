@@ -31,6 +31,11 @@ class Pack extends BaseCommand {
     aioLogger.debug(`flags: ${JSON.stringify(flags, null, 2)}`)
     aioLogger.debug(`args: ${JSON.stringify(args, null, 2)}`)
 
+    // TODO: fire pre-pack event for Events
+    // NOTE: events will modify the existing project config, and not the
+    // config in the artifacts folder (since at this point, it will not have 
+    // been copied yet)
+
     const appConfig = this.getFullConfig()
 
     if (flags.output) {
@@ -64,6 +69,9 @@ class Pack extends BaseCommand {
     this.log(`Zipping package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER}' to '${flags.output}'...`)
     await fs.remove(flags.output)
     await this.zipHelper(DEFAULTS.ARTIFACTS_FOLDER, flags.output)
+
+    // TODO: fire post-pack event for Events
+
     this.log('Packaging done.')
   }
 
