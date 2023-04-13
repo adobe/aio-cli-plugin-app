@@ -99,14 +99,6 @@ class Pack extends BaseCommand {
       apis = appConfig.aio.project.workspace.details.services.map(service => ({ code: service.code }))
     }
 
-    // get runtimeManifests
-    const runtimeManifest = { packages: {} }
-    Object.keys(appConfig.all).forEach(extName => {
-      Object.keys(appConfig.all[extName]?.manifest?.full?.packages).forEach(packageName => {
-        runtimeManifest.packages[extName] = appConfig.all[extName]?.manifest?.full?.packages[packageName]
-      })
-    })
-
     // read name and version from package.json
     const application = {
       id: appConfig.packagejson.name,
@@ -127,8 +119,7 @@ class Pack extends BaseCommand {
       workspaces,
       apis,
       meshConfig,
-      runtime: true, // always true for App Builder apps
-      runtimeManifest
+      runtime: true // always true for App Builder apps
     }
 
     const deployYaml = yaml.dump(deployJson)
