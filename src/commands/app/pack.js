@@ -17,6 +17,7 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const archiver = require('archiver')
 const yaml = require('js-yaml')
 const execa = require('execa')
+const { loadConfigFile, writeFile } = require('../../lib/import-helper')
 
 const DEFAULTS = {
   OUTPUT_ZIP_FILE: 'app.zip',
@@ -122,8 +123,10 @@ class Pack extends BaseCommand {
       runtime: true // always true for App Builder apps
     }
 
-    const deployYaml = yaml.dump(deployJson)
-    await fs.outputFile(path.join(DEFAULTS.ARTIFACTS_FOLDER, DEFAULTS.DEPLOY_YAML_FILE), deployYaml)
+    await writeFile(
+      path.join(DEFAULTS.ARTIFACTS_FOLDER, DEFAULTS.DEPLOY_YAML_FILE),
+      yaml.dump(deployJson),
+      { overwrite: true })
   }
 
   /**
@@ -202,8 +205,55 @@ class Pack extends BaseCommand {
    * @param {object} appConfig the app's configuration file
    */
   async addCodeDownloadAnnotation (appConfig) {
-    // ACNA-2039
-    // TODO:
+    // get the configFiles that have runtime manifests
+    const configFiles = []
+    for (const [, value] of Object.entries(appConfig.includeIndex)) {
+      const { key } = value
+      if (key === 'runtimeManifest' || key === 'application.runtimeManifest') {
+        configFiles.push(value)
+      }
+    }
+
+    // for each configFile, we modify each action to have the "code-download: false" annotation
+    for (const configFile of configFiles) {
+      const configFilePath = path.join(DEFAULTS.ARTIFACTS_FOLDER, configFile.file)
+      const { values } = loadConfigFile(configFilePath)
+
+      const runtimeManifest = this.getValue(values, configFile.key)
+      for (const [, pkgManifest] of Object.entries(runtimeManifest.packages)) {
+        // key is the package name (unused), value is the package manifest. we iterate through each package's "actions"
+        for (const [, actionManifest] of Object.entries(pkgManifest.actions)) {
+        // key is the action name (unused), value is the action manifest. we add the "code-download: false" annotation
+          actionManifest.annotations['code-download'] = false
+        }
+      }
+
+      // write back the modified manifest to disk
+      await writeFile(configFilePath, yaml.dump(values), { overwrite: true })
+    }
+  }
+
+  /**
+   * Get property from object with case insensitivity.
+   *
+   * @param {object} obj
+   * @param {string} key
+   * @private
+   */
+  getProp (obj, key) {
+    return obj[Object.keys(obj).find(k => k.toLowerCase() === key.toLowerCase())]
+  }
+
+  /**
+   * Get a value in an object by dot notation.
+   *
+   * @param {object} obj the object to get the value for the key from
+   * @param {string} key the key
+   * @returns {object} the value
+   */
+  getValue (obj, key) {
+    const keys = (key || '').toString().split('.')
+    return keys.filter(o => o.trim()).reduce((o, i) => o && this.getProp(o, i), obj)
   }
 }
 

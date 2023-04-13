@@ -616,6 +616,7 @@ async function importConfigJson (configFileOrBuffer, destinationFolder = process
 }
 
 module.exports = {
+  writeFile,
   validateConfig,
   loadConfigFile,
   loadAndValidateConfigFile,
