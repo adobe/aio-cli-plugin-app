@@ -59,7 +59,7 @@ class Pack extends BaseCommand {
 
     // 2. copy files to package phase
     this.log('Copying files...')
-    const fileList = await this.filesToPack(path.resolve(args.path))
+    const fileList = await this.filesToPack()
     await this.copyPackageFiles(DEFAULTS.ARTIFACTS_FOLDER, fileList)
 
     // 3. add/modify artifacts phase
@@ -106,11 +106,20 @@ class Pack extends BaseCommand {
       version: appConfig.packagejson.version
     }
 
-    const meshConfig = {}
+    let meshConfig
     // ACNA-2041
-    // TODO: get the mesh config by running the `aio api-mesh:get` command (if available)
-    // TODO: in the interim, we need to process the output to get the proper json config
+    // get the mesh config by running the `aio api-mesh:get` command (if available)
+    // in the interim, we need to process the output to get the proper json config
     // TODO: send a PR to their plugin to have a `--json` flag
+    const command = await this.config.findCommand('api-mesh:get')
+    if (command) {
+      const { stdout } = await execa('aio', ['api-mesh', 'get'], { cwd: process.cwd() })
+      // until we get the --json flag, we parse the output
+      const idx = stdout.indexOf('{')
+      meshConfig = JSON.parse(stdout.substring(idx))
+    } else {
+      aioLogger.debug('api-mesh:get command was not found, meshConfig is not available for app:pack')
+    }
 
     const deployJson = {
       $schema: 'http://json-schema.org/draft-07/schema',
@@ -190,7 +199,7 @@ class Pack extends BaseCommand {
    * @param {string} workingDirectory the working directory to run `npm pack` in
    * @returns {Array<string>} a list of files that are to be packed
    */
-  async filesToPack (workingDirectory) {
+  async filesToPack (workingDirectory = process.cwd()) {
     const { stdout } = await execa('npm', ['pack', '--dry-run', '--json'], { cwd: workingDirectory })
 
     const { files } = JSON.parse(stdout)[0]
@@ -223,7 +232,7 @@ class Pack extends BaseCommand {
       for (const [, pkgManifest] of Object.entries(runtimeManifest.packages)) {
         // key is the package name (unused), value is the package manifest. we iterate through each package's "actions"
         for (const [, actionManifest] of Object.entries(pkgManifest.actions)) {
-        // key is the action name (unused), value is the action manifest. we add the "code-download: false" annotation
+          // key is the action name (unused), value is the action manifest. we add the "code-download: false" annotation
           actionManifest.annotations['code-download'] = false
         }
       }
