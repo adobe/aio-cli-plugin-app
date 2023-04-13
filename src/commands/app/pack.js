@@ -31,9 +31,10 @@ class Pack extends BaseCommand {
     aioLogger.debug(`flags: ${JSON.stringify(flags, null, 2)}`)
     aioLogger.debug(`args: ${JSON.stringify(args, null, 2)}`)
 
+    // ACNA-2038
     // TODO: fire pre-pack event for Events
     // NOTE: events will modify the existing project config, and not the
-    // config in the artifacts folder (since at this point, it will not have 
+    // config in the artifacts folder (since at this point, it will not have
     // been copied yet)
 
     const appConfig = this.getFullConfig()
@@ -63,13 +64,14 @@ class Pack extends BaseCommand {
     // 3. add/modify artifacts phase
     this.log('Creating configuration files...')
     await this.createDeployYamlFile(appConfig)
-    // TODO: modify artifacts as required
+    await this.addCodeDownloadAnnotation(appConfig)
 
     // 4. zip package phase
     this.log(`Zipping package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER}' to '${flags.output}'...`)
     await fs.remove(flags.output)
     await this.zipHelper(DEFAULTS.ARTIFACTS_FOLDER, flags.output)
 
+    // ACNA-2038
     // TODO: fire post-pack event for Events
 
     this.log('Packaging done.')
@@ -111,6 +113,12 @@ class Pack extends BaseCommand {
       version: appConfig.packagejson.version
     }
 
+    const meshConfig = {}
+    // ACNA-2041
+    // TODO: get the mesh config by running the `aio api-mesh:get` command (if available)
+    // TODO: in the interim, we need to process the output to get the proper json config
+    // TODO: send a PR to their plugin to have a `--json` flag
+
     const deployJson = {
       $schema: 'http://json-schema.org/draft-07/schema',
       $id: 'https://adobe.io/schemas/app-builder-templates/1',
@@ -118,6 +126,7 @@ class Pack extends BaseCommand {
       extensions,
       workspaces,
       apis,
+      meshConfig,
       runtime: true, // always true for App Builder apps
       runtimeManifest
     }
@@ -192,6 +201,18 @@ class Pack extends BaseCommand {
 
     const { files } = JSON.parse(stdout)[0]
     return files.map(file => file.path)
+  }
+
+  /**
+   * An annotation called code-download will be added to all actions in app.config.yaml
+   * (and linked yaml configs for example in extensions). This value will be set to false.
+   * The annotation will by default be true if not set.
+   *
+   * @param {object} appConfig the app's configuration file
+   */
+  async addCodeDownloadAnnotation (appConfig) {
+    // ACNA-2039
+    // TODO:
   }
 }
 
