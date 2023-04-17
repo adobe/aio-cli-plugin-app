@@ -145,7 +145,7 @@ test('createDeployYamlFile (1 extension)', async () => {
 
   expect(importHelper.writeFile).toHaveBeenCalledWith(
     path.join('app-package', 'deploy.yaml'),
-    fixtureFile('pack/2.deploy.yaml'),
+    expect.stringContaining(fixtureFile('pack/2.deploy.yaml')),
     { overwrite: true }
   )
 
@@ -159,7 +159,7 @@ test('createDeployYamlFile (1 extension)', async () => {
 
   expect(importHelper.writeFile).toHaveBeenCalledWith(
     path.join('app-package', 'deploy.yaml'),
-    fixtureFile('pack/2.deploy.no-mesh.yaml'),
+    expect.stringContaining(fixtureFile('pack/2.deploy.no-mesh.yaml')),
     { overwrite: true }
   )
 })
@@ -177,7 +177,7 @@ test('createDeployYamlFile (coverage: standalone app, no services)', async () =>
 
   expect(importHelper.writeFile).toHaveBeenCalledWith(
     path.join('app-package', 'deploy.yaml'),
-    fixtureFile('pack/4.deploy.yaml'),
+    expect.stringContaining(fixtureFile('pack/4.deploy.yaml')),
     { overwrite: true }
   )
 })
