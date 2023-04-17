@@ -1,0 +1,26 @@
+$schema: http://json-schema.org/draft-07/schema
+$id: https://adobe.io/schemas/app-builder-templates/1
+application:
+  id: AppTest
+  version: 0.0.1
+extensions:
+  - extensionPointId: dx/excshell/1
+workspaces:
+  - Stage
+meshConfig:
+  lastUpdated: '2023-03-02T09:58:23.896Z'
+  meshConfig:
+    sources:
+      - name: Commerce
+        handler:
+          graphql:
+            endpoint: https://foo.bar/graphql/
+  meshId: abcd123
+  lastUpdatedBy:
+    firstName: John
+    lastName: Doe
+    userEmail: john.doe@fakedomain.net
+    userId: 123456@a3151.astaagq3
+    displayName: John Doe
+  meshStatus: success
+runtime: true

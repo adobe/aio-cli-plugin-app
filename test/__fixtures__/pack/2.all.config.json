@@ -1,0 +1,400 @@
+{
+  "all": {
+    "dx/excshell/1": {
+      "app": {
+        "hasBackend": true,
+        "hasFrontend": true,
+        "dist": "dist\\dx-excshell-1",
+        "defaultHostname": "adobeio-static.net",
+        "hostname": "adobeio-static.net",
+        "htmlCacheDuration": "60",
+        "jsCacheDuration": "604800",
+        "cssCacheDuration": "604800",
+        "imageCacheDuration": "604800",
+        "name": "AppTest",
+        "version": "0.0.1"
+      },
+      "ow": {
+        "auth": "app-test-fake-auth",
+        "namespace": "23294-apptest-stage",
+        "apihost": "https://adobeioruntime.net",
+        "defaultApihost": "https://adobeioruntime.net",
+        "apiversion": "v1",
+        "package": "AppTest-0.0.1"
+      },
+      "s3": {
+        "credsCacheFile": ".aws.tmp.creds.json",
+        "folder": "23294-apptest-stage"
+      },
+      "web": {
+        "src": "src\\dx-excshell-1\\web-src",
+        "injectedConfig": "src\\dx-excshell-1\\web-src\\src\\config.json",
+        "distDev": "dist\\dx-excshell-1\\web-dev",
+        "distProd": "dist\\dx-excshell-1\\web-prod"
+      },
+      "manifest": {
+        "src": "manifest.yml",
+        "full": {
+          "packages": {
+            "dx-excshell-1": {
+              "license": "Apache-2.0",
+              "actions": {
+                "generic": {
+                  "function": "src\\dx-excshell-1\\actions\\generic\\index.js",
+                  "web": "yes",
+                  "runtime": "nodejs:16",
+                  "inputs": {
+                    "LOG_LEVEL": "debug"
+                  },
+                  "annotations": {
+                    "require-adobe-auth": true,
+                    "final": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "packagePlaceholder": "__APP_PACKAGE__"
+      },
+      "actions": {
+        "src": "src\\dx-excshell-1\\actions",
+        "dist": "dist\\dx-excshell-1\\actions"
+      },
+      "tests": {
+        "unit": "src\\dx-excshell-1\\test",
+        "e2e": "src\\dx-excshell-1\\e2e"
+      },
+      "root": ".",
+      "name": "dx/excshell/1",
+      "hooks": {},
+      "imsOrgId": "ABC123@AdobeOrg",
+      "operations": {
+        "view": [
+          {
+            "type": "web",
+            "impl": "index.html"
+          }
+        ]
+      }
+    }
+  },
+  "implements": [
+    "dx/excshell/1"
+  ],
+  "includeIndex": {
+    "extensions": {
+      "file": "app.config.yaml",
+      "key": "extensions"
+    },
+    "extensions.dx/excshell/1": {
+      "file": "app.config.yaml",
+      "key": "extensions.dx/excshell/1"
+    },
+    "extensions.dx/excshell/1.$include": {
+      "file": "app.config.yaml",
+      "key": "extensions.dx/excshell/1.$include"
+    },
+    "extensions.dx/excshell/1.runtimeManifest": {
+      "file": "src/dx-excshell-1/ext.config.yaml",
+      "key": "runtimeManifest"
+    },
+    "extensions.dx/excshell/1.runtimeManifest.packages": {
+      "file": "src/dx-excshell-1/ext.config.yaml",
+      "key": "runtimeManifest.packages"
+    },
+    "extensions.dx/excshell/1.runtimeManifest.packages.dx-excshell-1": {
+      "file": "src/dx-excshell-1/ext.config.yaml",
+      "key": "runtimeManifest.packages.dx-excshell-1"
+    },
+    "extensions.dx/excshell/1.runtimeManifest.packages.dx-excshell-1.actions": {
+      "file": "src/dx-excshell-1/ext.config.yaml",
+      "key": "runtimeManifest.packages.dx-excshell-1.actions"
+    },
+    "extensions.dx/excshell/1.runtimeManifest.packages.dx-excshell-1.actions.generic": {
+      "file": "src/dx-excshell-1/ext.config.yaml",
+      "key": "runtimeManifest.packages.dx-excshell-1.actions.generic"
+    },
+    "extensions.dx/excshell/1.runtimeManifest.packages.dx-excshell-1.actions.generic.annotations": {
+      "file": "src/dx-excshell-1/ext.config.yaml",
+      "key": "runtimeManifest.packages.dx-excshell-1.actions.generic.annotations"
+    },
+    "extensions.dx/excshell/1.runtimeManifest.packages.dx-excshell-1.actions.generic.annotations.final": {
+      "file": "src/dx-excshell-1/ext.config.yaml",
+      "key": "runtimeManifest.packages.dx-excshell-1.actions.generic.annotations.final"
+    },
+    "extensions.dx/excshell/1.runtimeManifest.packages.dx-excshell-1.actions.generic.annotations.require-adobe-auth": {
+      "file": "src/dx-excshell-1/ext.config.yaml",
+      "key": "runtimeManifest.packages.dx-excshell-1.actions.generic.annotations.require-adobe-auth"
+    },
+    "extensions.dx/excshell/1.runtimeManifest.packages.dx-excshell-1.actions.generic.inputs": {
+      "file": "src/dx-excshell-1/ext.config.yaml",
+      "key": "runtimeManifest.packages.dx-excshell-1.actions.generic.inputs"
+    },
+    "extensions.dx/excshell/1.runtimeManifest.packages.dx-excshell-1.actions.generic.inputs.LOG_LEVEL": {
+      "file": "src/dx-excshell-1/ext.config.yaml",
+      "key": "runtimeManifest.packages.dx-excshell-1.actions.generic.inputs.LOG_LEVEL"
+    },
+    "extensions.dx/excshell/1.runtimeManifest.packages.dx-excshell-1.actions.generic.runtime": {
+      "file": "src/dx-excshell-1/ext.config.yaml",
+      "key": "runtimeManifest.packages.dx-excshell-1.actions.generic.runtime"
+    },
+    "extensions.dx/excshell/1.runtimeManifest.packages.dx-excshell-1.actions.generic.web": {
+      "file": "src/dx-excshell-1/ext.config.yaml",
+      "key": "runtimeManifest.packages.dx-excshell-1.actions.generic.web"
+    },
+    "extensions.dx/excshell/1.runtimeManifest.packages.dx-excshell-1.actions.generic.function": {
+      "file": "src/dx-excshell-1/ext.config.yaml",
+      "key": "runtimeManifest.packages.dx-excshell-1.actions.generic.function"
+    },
+    "extensions.dx/excshell/1.runtimeManifest.packages.dx-excshell-1.license": {
+      "file": "src/dx-excshell-1/ext.config.yaml",
+      "key": "runtimeManifest.packages.dx-excshell-1.license"
+    },
+    "extensions.dx/excshell/1.web": {
+      "file": "src/dx-excshell-1/ext.config.yaml",
+      "key": "web"
+    },
+    "extensions.dx/excshell/1.actions": {
+      "file": "src/dx-excshell-1/ext.config.yaml",
+      "key": "actions"
+    },
+    "extensions.dx/excshell/1.operations": {
+      "file": "src/dx-excshell-1/ext.config.yaml",
+      "key": "operations"
+    },
+    "extensions.dx/excshell/1.operations.view": {
+      "file": "src/dx-excshell-1/ext.config.yaml",
+      "key": "operations.view"
+    },
+    "extensions.dx/excshell/1.operations.view.0": {
+      "file": "src/dx-excshell-1/ext.config.yaml",
+      "key": "operations.view.0"
+    },
+    "extensions.dx/excshell/1.operations.view.0.impl": {
+      "file": "src/dx-excshell-1/ext.config.yaml",
+      "key": "operations.view.0.impl"
+    },
+    "extensions.dx/excshell/1.operations.view.0.type": {
+      "file": "src/dx-excshell-1/ext.config.yaml",
+      "key": "operations.view.0.type"
+    }
+  },
+  "aio": {
+    "aio-cli-telemetry": {
+      "optOut": false,
+      "clientId": 1010101010101
+    },
+    "ims": {
+      "contexts": {
+        "cli": {
+          "cli.bare-output": true,
+          "access_token": {
+            "token": "fake-access-token",
+            "expiry": 1681825753849
+          },
+          "refresh_token": {
+            "token": "fake-refresh-token",
+            "expiry": 1682948953850
+          }
+        }
+      }
+    },
+    "project": {
+      "id": "123123123123123",
+      "name": "AppTest",
+      "title": "AppTest",
+      "description": "none",
+      "org": {
+        "id": "12345",
+        "name": "My Dev Org",
+        "ims_org_id": "656565656565@AdobeOrg",
+        "details": {
+          "services": [
+            {
+              "name": "Adobe Stock",
+              "code": "StockSDK",
+              "type": "adobeid"
+            },
+            {
+              "name": "PDF Embed API",
+              "code": "ViewSDK",
+              "type": "adobeid"
+            },
+            {
+              "name": "Lightroom Services",
+              "code": "LightroomPartnersSDK",
+              "type": "adobeid"
+            },
+            {
+              "name": "Creative Cloud Libraries",
+              "code": "CC-Libraries-SDK",
+              "type": "adobeid"
+            },
+            {
+              "name": "Adobe Express Embed SDK",
+              "code": "CCEmbedCompanionAPI",
+              "type": "adobeid"
+            },
+            {
+              "name": "API Mesh for Adobe Developer App Builder",
+              "code": "GraphQLServiceSDK",
+              "type": "adobeid"
+            },
+            {
+              "name": "Adobe Commerce with Adobe ID",
+              "code": "AdobeCommerceWithAdobeID",
+              "type": "adobeid"
+            },
+            {
+              "name": "Adobe Analytics",
+              "code": "AdobeAnalyticsSDK",
+              "type": "analytics"
+            },
+            {
+              "name": "Audience Manager API",
+              "code": "AudienceManagerCustomerSDK",
+              "type": "entp"
+            },
+            {
+              "name": "Primetime Ad Insertion",
+              "code": "Ad Config Service",
+              "type": "entp"
+            },
+            {
+              "name": "Privacy Service API",
+              "code": "McGdprSDK",
+              "type": "entp"
+            },
+            {
+              "name": "Places",
+              "code": "McPlacesSDK",
+              "type": "entp"
+            },
+            {
+              "name": "Cloud Manager",
+              "code": "CloudManagerSDK",
+              "type": "entp"
+            },
+            {
+              "name": "Assurance API",
+              "code": "Griffon - Graffias",
+              "type": "entp"
+            },
+            {
+              "name": "I/O Management API",
+              "code": "AdobeIOManagementAPISDK",
+              "type": "entp"
+            },
+            {
+              "name": "Content AI (Beta)",
+              "code": "Sensei Enterprise Beta (MAX 2018)",
+              "type": "entp"
+            },
+            {
+              "name": "User Management API",
+              "code": "UserMgmtSDK",
+              "type": "entp"
+            },
+            {
+              "name": "Experience Platform API",
+              "code": "McDataServicesSdk",
+              "type": "entp"
+            },
+            {
+              "name": "Adobe Photoshop API",
+              "code": "CIS SDK",
+              "type": "entp"
+            },
+            {
+              "name": "Experience Platform Launch API",
+              "code": "McDtmSDK",
+              "type": "entp"
+            },
+            {
+              "name": "Adobe I/O Events for Adobe Commerce",
+              "code": "commerceeventing",
+              "type": "entp"
+            },
+            {
+              "name": "Smart Content",
+              "code": "MCSmartContentServicesSDK",
+              "type": "entp"
+            },
+            {
+              "name": "I/O Events",
+              "code": "CloudIntegrationSDK",
+              "type": "entp"
+            },
+            {
+              "name": "Adobe Status API",
+              "code": "StatusAPISDK",
+              "type": "entp"
+            },
+            {
+              "name": "Adobe Analytics",
+              "code": "AdobeAnalyticsSDK",
+              "type": "entp"
+            }
+          ]
+        }
+      },
+      "workspace": {
+        "id": "456456456456",
+        "name": "Stage",
+        "action_url": "https://23294-apptest-stage.adobeioruntime.net",
+        "app_url": "https://23294-apptest-stage.adobeio-static.net",
+        "details": {
+          "credentials": [],
+          "services": []
+        }
+      }
+    },
+    "runtime": {
+      "auth": "app-test-fake-auth",
+      "namespace": "23294-apptest-stage",
+      "apihost": "https://adobeioruntime.net",
+      "defaultApihost": "https://adobeioruntime.net",
+      "apiversion": "v1",
+      "package": "AppTest-0.0.1"
+    }
+  },
+  "packagejson": {
+    "name": "AppTest",
+    "version": "0.0.1",
+    "private": true,
+    "dependencies": {
+      "@adobe/generator-app-excshell": "^0.2.4",
+      "@adobe/aio-sdk": "^3.0.0",
+      "node-fetch": "^2.6.0",
+      "core-js": "^3.6.4",
+      "react": "^16.13.1",
+      "react-dom": "^16.13.1",
+      "react-router-dom": "^5.2.0",
+      "react-error-boundary": "^1.2.5",
+      "regenerator-runtime": "^0.13.5",
+      "@adobe/exc-app": "^0.2.21",
+      "@adobe/react-spectrum": "^3.4.0",
+      "@spectrum-icons/workflow": "^3.2.0"
+    },
+    "devDependencies": {
+      "jest": "^27.2.4",
+      "@openwhisk/wskdebug": "^1.3.0",
+      "@babel/core": "^7.8.7",
+      "@babel/polyfill": "^7.8.7",
+      "@babel/preset-env": "^7.8.7",
+      "@babel/plugin-transform-react-jsx": "^7.8.3"
+    },
+    "scripts": {
+      "test": "jest --passWithNoTests ./test",
+      "e2e": "jest --collectCoverage=false --testRegex ./e2e"
+    },
+    "engines": {
+      "node": "^14.18 || ^16.13 || >=18"
+    },
+    "aio-app-builder-templates": [
+      "@adobe/generator-app-excshell"
+    ]
+  },
+  "root": "."
+}

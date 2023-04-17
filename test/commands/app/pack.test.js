@@ -119,9 +119,29 @@ test('copyPackageFiles', async () => {
   })
 })
 
-test('createDeployYamlFile', () => {
-  // TODO:
-  expect(true).toBeFalsy()
+test('createDeployYamlFile', async () => {
+  const extConfig = fixtureJson('pack/2.all.config.json')
+  const meshOutput = fixtureFile('pack/3.api-mesh.get.txt')
+
+  const command = new TheCommand()
+  command.argv = []
+  command.config = {
+    findCommand: jest.fn().mockReturnValue({})
+  }
+
+  execa.mockImplementationOnce((cmd, args) => {
+    expect(cmd).toEqual('aio')
+    expect(args).toEqual(['api-mesh', 'get'])
+    return { stdout: meshOutput }
+  })
+
+  await command.createDeployYamlFile(extConfig)
+
+  expect(importHelper.writeFile).toHaveBeenCalledWith(
+    path.join('app-package', 'deploy.yaml'),
+    fixtureFile('pack/2.deploy.yaml'),
+    { overwrite: true }
+  )
 })
 
 test('zipHelper', () => {

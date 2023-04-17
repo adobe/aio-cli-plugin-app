@@ -1,0 +1,27 @@
+Selected organization: My Org
+Selected project: My Project
+Select workspace: Stage
+Successfully retrieved mesh {
+  "lastUpdated": "2023-03-02T09:58:23.896Z",
+  "meshConfig": {
+    "sources": [
+      {
+        "name": "Commerce",
+        "handler": {
+          "graphql": {
+            "endpoint": "https://foo.bar/graphql/"
+          }
+        }
+      }
+    ]
+  },
+  "meshId": "abcd123",
+  "lastUpdatedBy": {
+    "firstName": "John",
+    "lastName": "Doe",
+    "userEmail": "john.doe@fakedomain.net",
+    "userId": "123456@a3151.astaagq3",
+    "displayName": "John Doe"
+  },
+  "meshStatus": "success"
+}
