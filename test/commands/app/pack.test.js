@@ -23,9 +23,15 @@ governing permissions and limitations under the License.
 const TheCommand = require('../../../src/commands/app/pack')
 const BaseCommand = require('../../../src/BaseCommand')
 const execa = require('execa')
+const fs = require('fs-extra')
+const path = require('node:path')
+const importHelper = require('../../../src/lib/import-helper')
+const yaml = require('js-yaml')
 
 // mocks
 jest.mock('execa')
+jest.mock('fs-extra')
+jest.mock('../../../src/lib/import-helper')
 
 const mockGetFullConfig = jest.fn()
 
@@ -48,6 +54,9 @@ beforeEach(() => {
   execa.mockReset()
   execa.command.mockReset()
 
+  importHelper.loadConfigFile.mockReset()
+  importHelper.writeFile.mockReset()
+
   fakeCwd = 'cwd'
   process.chdir = jest.fn().mockImplementation(dir => { fakeCwd = dir })
   process.cwd = jest.fn().mockImplementation(() => fakeCwd)
@@ -55,6 +64,9 @@ beforeEach(() => {
   process.cwd.mockClear()
 
   mockGetFullConfig.mockClear()
+
+  fs.pathExists.mockClear()
+  fs.copy.mockClear()
 })
 
 test('exports', async () => {
@@ -86,17 +98,65 @@ test('unknown flag', async () => {
   await expect(command.run()).rejects.toEqual(expect.objectContaining({ message: expect.stringContaining(message) }))
 })
 
-test('copyPackageFiles', () => {
+test('copyPackageFiles', async () => {
+  fs.pathExists.mockReturnValue(true)
+
+  const dest = 'my-dest-folder'
+  const listOfFiles = ['fileA', 'fileB', 'fileC']
+
+  const command = new TheCommand()
+  command.argv = []
+  await command.copyPackageFiles(dest, listOfFiles)
+
+  listOfFiles.forEach(file => {
+    expect(fs.copy).toHaveBeenCalledWith(file, path.join(dest, file))
+  })
 })
 
 test('createDeployYamlFile', () => {
+  // TODO:
+  expect(true).toBeFalsy()
 })
 
 test('zipHelper', () => {
+  // TODO:
+  expect(true).toBeFalsy()
 })
 
-test('filesToPack', () => {
+test('filesToPack', async () => {
+  const jsonOutput = [{
+    files: [
+      { path: 'fileA' },
+      { path: 'fileB' }
+    ]
+  }]
+
+  execa.mockImplementationOnce((cmd, args) => {
+    expect(cmd).toEqual('npm')
+    expect(args).toEqual(['pack', '--dry-run', '--json'])
+    return { stdout: JSON.stringify(jsonOutput, null, 2) }
+  })
+
+  const command = new TheCommand()
+  command.argv = []
+  const filesToPack = await command.filesToPack()
+  expect(filesToPack).toEqual(['fileA', 'fileB'])
 })
 
-test('addCodeDownloadAnnotation', () => {
+test('addCodeDownloadAnnotation', async () => {
+  const extConfig = fixtureJson('pack/1.all.config.json')
+
+  importHelper.loadConfigFile.mockImplementation(() => {
+    return fixtureJson('pack/1.ext.config-loaded.json')
+  })
+
+  const command = new TheCommand()
+  command.argv = []
+  await command.addCodeDownloadAnnotation(extConfig)
+
+  expect(importHelper.writeFile).toHaveBeenCalledWith(
+    expect.any(String),
+    yaml.dump(fixtureJson('pack/1.annotation-added.config.json')),
+    { overwrite: true }
+  )
 })
