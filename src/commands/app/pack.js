@@ -18,6 +18,7 @@ const archiver = require('archiver')
 const yaml = require('js-yaml')
 const execa = require('execa')
 const { loadConfigFile, writeFile } = require('../../lib/import-helper')
+const { getObjectValue } = require('../../lib/app-helper')
 
 const DEFAULTS = {
   OUTPUT_ZIP_FILE: 'app.zip',
@@ -228,7 +229,7 @@ class Pack extends BaseCommand {
       const configFilePath = path.join(DEFAULTS.ARTIFACTS_FOLDER, configFile.file)
       const { values } = loadConfigFile(configFilePath)
 
-      const runtimeManifest = this.getValue(values, configFile.key)
+      const runtimeManifest = getObjectValue(values, configFile.key)
       for (const [, pkgManifest] of Object.entries(runtimeManifest.packages)) {
         // key is the package name (unused), value is the package manifest. we iterate through each package's "actions"
         for (const [, actionManifest] of Object.entries(pkgManifest.actions)) {
@@ -240,29 +241,6 @@ class Pack extends BaseCommand {
       // write back the modified manifest to disk
       await writeFile(configFilePath, yaml.dump(values), { overwrite: true })
     }
-  }
-
-  /**
-   * Get property from object with case insensitivity.
-   *
-   * @param {object} obj
-   * @param {string} key
-   * @private
-   */
-  getProp (obj, key) {
-    return obj[Object.keys(obj).find(k => k.toLowerCase() === key.toLowerCase())]
-  }
-
-  /**
-   * Get a value in an object by dot notation.
-   *
-   * @param {object} obj the object to get the value for the key from
-   * @param {string} key the key
-   * @returns {object} the value
-   */
-  getValue (obj, key) {
-    const keys = (key || '').toString().split('.')
-    return keys.filter(o => o.trim()).reduce((o, i) => o && this.getProp(o, i), obj)
   }
 }
 

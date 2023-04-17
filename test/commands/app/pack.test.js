@@ -14,7 +14,7 @@ governing permissions and limitations under the License.
   "error",
   {
     "assertFunctionNames": [
-        "expect", "expectNoErrors", "expectFlagError"
+        "expect"
     ]
   }
 ]
