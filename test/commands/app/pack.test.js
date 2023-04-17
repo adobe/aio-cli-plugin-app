@@ -143,11 +143,8 @@ test('createDeployYamlFile (1 extension)', async () => {
 
   await command.createDeployYamlFile(extConfig)
 
-  expect(importHelper.writeFile).toHaveBeenCalledWith(
-    path.join('app-package', 'deploy.yaml'),
-    expect.stringContaining(fixtureFile('pack/2.deploy.yaml')),
-    { overwrite: true }
-  )
+  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('app-package', 'deploy.yaml'))
+  await expect(importHelper.writeFile.mock.calls[0][1]).toMatchFixture('pack/2.deploy.yaml')
 
   // no api-mesh command
   command.config = {
@@ -157,11 +154,8 @@ test('createDeployYamlFile (1 extension)', async () => {
 
   await command.createDeployYamlFile(extConfig)
 
-  expect(importHelper.writeFile).toHaveBeenCalledWith(
-    path.join('app-package', 'deploy.yaml'),
-    expect.stringContaining(fixtureFile('pack/2.deploy.no-mesh.yaml')),
-    { overwrite: true }
-  )
+  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('app-package', 'deploy.yaml'))
+  await expect(importHelper.writeFile.mock.calls[0][1]).toMatchFixture('pack/2.deploy.no-mesh.yaml')
 })
 
 test('createDeployYamlFile (coverage: standalone app, no services)', async () => {
@@ -175,11 +169,8 @@ test('createDeployYamlFile (coverage: standalone app, no services)', async () =>
 
   await command.createDeployYamlFile(extConfig)
 
-  expect(importHelper.writeFile).toHaveBeenCalledWith(
-    path.join('app-package', 'deploy.yaml'),
-    expect.stringContaining(fixtureFile('pack/4.deploy.yaml')),
-    { overwrite: true }
-  )
+  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('app-package', 'deploy.yaml'))
+  await expect(importHelper.writeFile.mock.calls[0][1]).toMatchFixture('pack/4.deploy.yaml')
 })
 
 test('zipHelper', async () => {
