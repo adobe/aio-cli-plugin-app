@@ -117,9 +117,15 @@ test('copyPackageFiles', async () => {
   listOfFiles.forEach(file => {
     expect(fs.copy).toHaveBeenCalledWith(file, path.join(dest, file))
   })
+
+  // none of the files exist
+  fs.copy.mockClear()
+  fs.pathExists.mockReturnValue(false)
+  await command.copyPackageFiles(dest, listOfFiles)
+  expect(fs.copy).not.toHaveBeenCalled()
 })
 
-test('createDeployYamlFile', async () => {
+test('createDeployYamlFile (1 extension)', async () => {
   const extConfig = fixtureJson('pack/2.all.config.json')
   const meshOutput = fixtureFile('pack/3.api-mesh.get.txt')
 
@@ -142,10 +148,42 @@ test('createDeployYamlFile', async () => {
     fixtureFile('pack/2.deploy.yaml'),
     { overwrite: true }
   )
+
+  // no api-mesh command
+  command.config = {
+    findCommand: jest.fn().mockReturnValue(null)
+  }
+  importHelper.writeFile.mockClear()
+
+  await command.createDeployYamlFile(extConfig)
+
+  expect(importHelper.writeFile).toHaveBeenCalledWith(
+    path.join('app-package', 'deploy.yaml'),
+    fixtureFile('pack/2.deploy.no-mesh.yaml'),
+    { overwrite: true }
+  )
 })
 
-test('zipHelper', () => {
-  let endStream
+test('createDeployYamlFile (coverage: standalone app, no services)', async () => {
+  const extConfig = fixtureJson('pack/4.all.config.json')
+
+  const command = new TheCommand()
+  command.argv = []
+  command.config = {
+    findCommand: jest.fn().mockReturnValue(null)
+  }
+
+  await command.createDeployYamlFile(extConfig)
+
+  expect(importHelper.writeFile).toHaveBeenCalledWith(
+    path.join('app-package', 'deploy.yaml'),
+    fixtureFile('pack/4.deploy.yaml'),
+    { overwrite: true }
+  )
+})
+
+test('zipHelper', async () => {
+  let endStream, onError
   fs.createWriteStream.mockImplementation(() => {
     return {
       on: (evt, trigger) => {
@@ -159,9 +197,15 @@ test('zipHelper', () => {
   fs.lstatSync
     .mockImplementationOnce(() => ({ isDirectory: () => false }))
     .mockImplementationOnce(() => ({ isDirectory: () => true }))
+    .mockImplementationOnce(() => { throw new Error() })
+    .mockImplementationOnce(() => ({ isDirectory: () => false }))
 
   const archiverMock = {
-    on: jest.fn(),
+    on: jest.fn((evt, trigger) => {
+      if (evt === 'error') {
+        onError = trigger
+      }
+    }),
     pipe: jest.fn(),
     destroy: jest.fn(),
     directory: jest.fn(),
@@ -174,17 +218,31 @@ test('zipHelper', () => {
   const command = new TheCommand()
   command.argv = []
 
-  // not a directory, just a file (see lstatSync mock)
+  // not a directory, just a file (see lstatSync mock 1)
   command.zipHelper('my-file', 'app.zip')
   endStream()
   expect(archiverMock.file).toHaveBeenCalledWith('my-file', { name: 'my-file' })
   archiverMock.file.mockClear()
 
-  // a directory (see lstatSync mock)
+  // a directory (see lstatSync mock 2)
   command.zipHelper('my-folder', 'app.zip')
   endStream()
   expect(archiverMock.directory).toHaveBeenCalledWith('my-folder', false)
   archiverMock.directory.mockClear()
+
+  // lstatsync error (see lstatsync mock 3)
+  try {
+    await command.zipHelper('my-folder', 'app.zip')
+  } catch (e) {
+  } finally {
+    expect(archiverMock.destroy).toHaveBeenCalled()
+    archiverMock.destroy.mockClear()
+  }
+
+  // archiving error, for coverage (see lstatSync mock 4)
+  // eslint-disable-next-line jest/valid-expect-in-promise
+  command.zipHelper('my-file', 'app.zip').catch(console.error)
+  onError()
 })
 
 test('filesToPack', async () => {
@@ -219,8 +277,52 @@ test('addCodeDownloadAnnotation', async () => {
   await command.addCodeDownloadAnnotation(extConfig)
 
   expect(importHelper.writeFile).toHaveBeenCalledWith(
-    expect.any(String),
+    path.join('app-package', 'src', 'dx-excshell-1', 'ext.config.yaml'),
     yaml.dump(fixtureJson('pack/1.annotation-added.config.json')),
     { overwrite: true }
   )
+})
+
+test('run (coverage: defaults)', async () => {
+  mockGetFullConfig.mockImplementation(() => fixtureJson('pack/1.all.config.json'))
+
+  const command = new TheCommand()
+  command.argv = []
+
+  // since we already unit test the methods above, we mock it here
+  command.copyPackageFiles = jest.fn()
+  command.filesToPack = jest.fn()
+  command.createDeployYamlFile = jest.fn()
+  command.addCodeDownloadAnnotation = jest.fn()
+  command.zipHelper = jest.fn()
+
+  await command.run()
+
+  expect(command.copyPackageFiles).toHaveBeenCalledTimes(1)
+  expect(command.filesToPack).toHaveBeenCalledTimes(1)
+  expect(command.createDeployYamlFile).toHaveBeenCalledTimes(1)
+  expect(command.addCodeDownloadAnnotation).toHaveBeenCalledTimes(1)
+  expect(command.zipHelper).toHaveBeenCalledTimes(1)
+})
+
+test('run (coverage: output flag, path arg)', async () => {
+  mockGetFullConfig.mockImplementation(() => fixtureJson('pack/1.all.config.json'))
+
+  const command = new TheCommand()
+  command.argv = ['new_folder', '--output=app-2.zip']
+
+  // since we already unit test the methods above, we mock it here
+  command.copyPackageFiles = jest.fn()
+  command.filesToPack = jest.fn()
+  command.createDeployYamlFile = jest.fn()
+  command.addCodeDownloadAnnotation = jest.fn()
+  command.zipHelper = jest.fn()
+
+  await command.run()
+
+  expect(command.copyPackageFiles).toHaveBeenCalledTimes(1)
+  expect(command.filesToPack).toHaveBeenCalledTimes(1)
+  expect(command.createDeployYamlFile).toHaveBeenCalledTimes(1)
+  expect(command.addCodeDownloadAnnotation).toHaveBeenCalledTimes(1)
+  expect(command.zipHelper).toHaveBeenCalledTimes(1)
 })

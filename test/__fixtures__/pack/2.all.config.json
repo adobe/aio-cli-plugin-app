@@ -346,7 +346,20 @@
         "app_url": "https://23294-apptest-stage.adobeio-static.net",
         "details": {
           "credentials": [],
-          "services": []
+          "services": [
+            {
+              "code": "AdobeAnalyticsSDK",
+              "name": "Adobe Analytics"
+            },
+            {
+              "code": "AudienceManagerCustomerSDK",
+              "name": "Audience Manager API"
+            },
+            {
+              "code": "GraphQLServiceSDK",
+              "name": "API Mesh for Adobe Developer App Builder"
+            }
+          ]
         }
       }
     },

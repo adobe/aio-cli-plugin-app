@@ -40,11 +40,10 @@ class Pack extends BaseCommand {
     // been copied yet)
 
     const appConfig = this.getFullConfig()
+    console.log(JSON.stringify(appConfig, null, 2))
 
-    if (flags.output) {
-      // resolve to absolute path before any chdir
-      flags.output = path.resolve(flags.output)
-    }
+    // resolve to absolute path before any chdir
+    flags.output = path.resolve(flags.output)
 
     // change the cwd if necessary
     if (args.path !== '.') {
@@ -92,8 +91,11 @@ class Pack extends BaseCommand {
     }
 
     // get workspaces
-    const workspaces = []
-    workspaces.push(appConfig.aio?.project?.workspace?.name)
+    let workspaces
+    if (appConfig.aio?.project?.workspace?.name) {
+      workspaces = []
+      workspaces.push(appConfig.aio?.project?.workspace?.name)
+    }
 
     // get apis
     let apis

@@ -7,6 +7,10 @@ extensions:
   - extensionPointId: dx/excshell/1
 workspaces:
   - Stage
+apis:
+  - code: AdobeAnalyticsSDK
+  - code: AudienceManagerCustomerSDK
+  - code: GraphQLServiceSDK
 meshConfig:
   lastUpdated: '2023-03-02T09:58:23.896Z'
   meshConfig:
