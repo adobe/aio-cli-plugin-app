@@ -160,7 +160,7 @@ class Pack extends BaseCommand {
   /**
    * Zip a file/folder using archiver
    *
-   * @param {string} filePath path of file.folder to zip
+   * @param {string} filePath path of file/folder to zip
    * @param {string} out output path
    * @param {boolean} pathInZip internal path in zip
    * @returns {Promise} returns with a blank promise when done

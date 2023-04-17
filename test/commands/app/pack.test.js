@@ -27,11 +27,13 @@ const fs = require('fs-extra')
 const path = require('node:path')
 const importHelper = require('../../../src/lib/import-helper')
 const yaml = require('js-yaml')
+const archiver = require('archiver')
 
 // mocks
 jest.mock('execa')
 jest.mock('fs-extra')
 jest.mock('../../../src/lib/import-helper')
+jest.mock('archiver')
 
 const mockGetFullConfig = jest.fn()
 
@@ -67,6 +69,10 @@ beforeEach(() => {
 
   fs.pathExists.mockClear()
   fs.copy.mockClear()
+  fs.createWriteStream.mockClear()
+  fs.lstatSync.mockClear()
+
+  archiver.mockClear()
 })
 
 test('exports', async () => {
@@ -119,8 +125,46 @@ test('createDeployYamlFile', () => {
 })
 
 test('zipHelper', () => {
-  // TODO:
-  expect(true).toBeFalsy()
+  let endStream
+  fs.createWriteStream.mockImplementation(() => {
+    return {
+      on: (evt, trigger) => {
+        if (evt === 'close') {
+          endStream = trigger
+        }
+      }
+    }
+  })
+
+  fs.lstatSync
+    .mockImplementationOnce(() => ({ isDirectory: () => false }))
+    .mockImplementationOnce(() => ({ isDirectory: () => true }))
+
+  const archiverMock = {
+    on: jest.fn(),
+    pipe: jest.fn(),
+    destroy: jest.fn(),
+    directory: jest.fn(),
+    file: jest.fn(),
+    finalize: jest.fn()
+  }
+
+  archiver.mockImplementation(() => archiverMock)
+
+  const command = new TheCommand()
+  command.argv = []
+
+  // not a directory, just a file (see lstatSync mock)
+  command.zipHelper('my-file', 'app.zip')
+  endStream()
+  expect(archiverMock.file).toHaveBeenCalledWith('my-file', { name: 'my-file' })
+  archiverMock.file.mockClear()
+
+  // a directory (see lstatSync mock)
+  command.zipHelper('my-folder', 'app.zip')
+  endStream()
+  expect(archiverMock.directory).toHaveBeenCalledWith('my-folder', false)
+  archiverMock.directory.mockClear()
 })
 
 test('filesToPack', async () => {
