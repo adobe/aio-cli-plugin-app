@@ -1031,4 +1031,26 @@ describe('run', () => {
     await command.run()
     expect(mockLogForwarding.updateServerConfig).toBeCalledTimes(0)
   })
+
+  test('does NOT fire `event` hooks when feature flag is NOT enabled', async () => {
+    const runHook = jest.fn()
+    command.config = { runHook }
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.argv = []
+    await command.run()
+    expect(command.error).not.toHaveBeenCalled()
+    expect(runHook).not.toHaveBeenCalledWith('pre-deploy-event-reg')
+    expect(runHook).not.toHaveBeenCalledWith('post-deploy-event-reg')
+  })
+
+  test('DOES fire `event` hooks when feature flag IS enabled', async () => {
+    const runHook = jest.fn()
+    command.config = { runHook }
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.argv = ['--feature-event-hooks']
+    await command.run()
+    expect(command.error).not.toHaveBeenCalled()
+    expect(runHook).toHaveBeenCalledWith('pre-deploy-event-reg', expect.any(Object))
+    expect(runHook).toHaveBeenCalledWith('post-deploy-event-reg', expect.any(Object))
+  })
 })
