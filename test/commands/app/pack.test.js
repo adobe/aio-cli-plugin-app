@@ -132,7 +132,9 @@ test('createDeployYamlFile (1 extension)', async () => {
   const command = new TheCommand()
   command.argv = []
   command.config = {
-    findCommand: jest.fn().mockReturnValue({})
+    findCommand: jest.fn().mockReturnValue({}),
+    runCommand: jest.fn(),
+    runHook: jest.fn()
   }
 
   execa.mockImplementationOnce((cmd, args) => {
@@ -149,7 +151,9 @@ test('createDeployYamlFile (1 extension)', async () => {
 
   // no api-mesh command
   command.config = {
-    findCommand: jest.fn().mockReturnValue(null)
+    findCommand: jest.fn().mockReturnValue(null),
+    runCommand: jest.fn(),
+    runHook: jest.fn()
   }
   importHelper.writeFile.mockClear()
 
@@ -166,7 +170,9 @@ test('createDeployYamlFile (coverage: standalone app, no services)', async () =>
   const command = new TheCommand()
   command.argv = []
   command.config = {
-    findCommand: jest.fn().mockReturnValue(null)
+    findCommand: jest.fn().mockReturnValue(null),
+    runCommand: jest.fn(),
+    runHook: jest.fn()
   }
 
   await command.createDeployYamlFile(extConfig)
@@ -286,7 +292,8 @@ test('run (coverage: defaults)', async () => {
   command.createDeployYamlFile = jest.fn()
   command.addCodeDownloadAnnotation = jest.fn()
   command.zipHelper = jest.fn()
-
+  const runHook = jest.fn()
+  command.config = { runHook }
   await command.run()
 
   expect(command.copyPackageFiles).toHaveBeenCalledTimes(1)
@@ -294,6 +301,12 @@ test('run (coverage: defaults)', async () => {
   expect(command.createDeployYamlFile).toHaveBeenCalledTimes(1)
   expect(command.addCodeDownloadAnnotation).toHaveBeenCalledTimes(1)
   expect(command.zipHelper).toHaveBeenCalledTimes(1)
+  const expectedObj = {
+    artifactsFolder: 'app-package',
+    appConfig: expect.any(Object)
+  }
+  expect(runHook).toHaveBeenCalledWith('pre-pack', expectedObj)
+  expect(runHook).toHaveBeenCalledWith('post-pack', expectedObj)
 })
 
 test('run (coverage: output flag, path arg)', async () => {
@@ -308,6 +321,8 @@ test('run (coverage: output flag, path arg)', async () => {
   command.createDeployYamlFile = jest.fn()
   command.addCodeDownloadAnnotation = jest.fn()
   command.zipHelper = jest.fn()
+  const runHook = jest.fn()
+  command.config = { runHook }
 
   await command.run()
 
@@ -316,4 +331,11 @@ test('run (coverage: output flag, path arg)', async () => {
   expect(command.createDeployYamlFile).toHaveBeenCalledTimes(1)
   expect(command.addCodeDownloadAnnotation).toHaveBeenCalledTimes(1)
   expect(command.zipHelper).toHaveBeenCalledTimes(1)
+
+  const expectedObj = {
+    artifactsFolder: 'app-package',
+    appConfig: expect.any(Object)
+  }
+  expect(runHook).toHaveBeenCalledWith('pre-pack', expectedObj)
+  expect(runHook).toHaveBeenCalledWith('post-pack', expectedObj)
 })

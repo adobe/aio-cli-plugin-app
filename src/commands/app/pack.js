@@ -33,12 +33,6 @@ class Pack extends BaseCommand {
     aioLogger.debug(`flags: ${JSON.stringify(flags, null, 2)}`)
     aioLogger.debug(`args: ${JSON.stringify(args, null, 2)}`)
 
-    // ACNA-2038
-    // TODO: fire pre-pack event for Events
-    // NOTE: events will modify the existing project config, and not the
-    // config in the artifacts folder (since at this point, it will not have
-    // been copied yet)
-
     const appConfig = this.getFullConfig()
     console.log(JSON.stringify(appConfig, null, 2))
 
@@ -57,6 +51,10 @@ class Pack extends BaseCommand {
     await fs.remove(DEFAULTS.ARTIFACTS_FOLDER)
     await fs.ensureDir(DEFAULTS.ARTIFACTS_FOLDER)
 
+    // ACNA-2038
+    // not artifacts folder should exist before we fire the event
+    await this.config.runHook('pre-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER })
+
     // 2. copy files to package phase
     this.log('Copying files...')
     const fileList = await this.filesToPack()
@@ -66,14 +64,13 @@ class Pack extends BaseCommand {
     this.log('Creating configuration files...')
     await this.createDeployYamlFile(appConfig)
     await this.addCodeDownloadAnnotation(appConfig)
+    // doing this before zip so other things can be added to the zip
+    await this.config.runHook('post-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER })
 
     // 4. zip package phase
     this.log(`Zipping package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER}' to '${flags.output}'...`)
     await fs.remove(flags.output)
     await this.zipHelper(DEFAULTS.ARTIFACTS_FOLDER, flags.output)
-
-    // ACNA-2038
-    // TODO: fire post-pack event for Events
 
     this.log('Packaging done.')
   }
