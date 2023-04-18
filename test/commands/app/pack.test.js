@@ -145,6 +145,7 @@ test('createDeployYamlFile (1 extension)', async () => {
 
   await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('app-package', 'deploy.yaml'))
   await expect(importHelper.writeFile.mock.calls[0][1]).toMatchFixture('pack/2.deploy.yaml')
+  await expect(importHelper.writeFile.mock.calls[0][2]).toMatchObject({ overwrite: true })
 
   // no api-mesh command
   command.config = {
@@ -156,6 +157,7 @@ test('createDeployYamlFile (1 extension)', async () => {
 
   await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('app-package', 'deploy.yaml'))
   await expect(importHelper.writeFile.mock.calls[0][1]).toMatchFixture('pack/2.deploy.no-mesh.yaml')
+  await expect(importHelper.writeFile.mock.calls[0][2]).toMatchObject({ overwrite: true })
 })
 
 test('createDeployYamlFile (coverage: standalone app, no services)', async () => {
@@ -171,6 +173,7 @@ test('createDeployYamlFile (coverage: standalone app, no services)', async () =>
 
   await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('app-package', 'deploy.yaml'))
   await expect(importHelper.writeFile.mock.calls[0][1]).toMatchFixture('pack/4.deploy.yaml')
+  await expect(importHelper.writeFile.mock.calls[0][2]).toMatchObject({ overwrite: true })
 })
 
 test('zipHelper', async () => {
@@ -188,7 +191,7 @@ test('zipHelper', async () => {
   fs.lstatSync
     .mockImplementationOnce(() => ({ isDirectory: () => false }))
     .mockImplementationOnce(() => ({ isDirectory: () => true }))
-    .mockImplementationOnce(() => { throw new Error() })
+    .mockImplementationOnce(() => { throw new Error('folder not found') })
     .mockImplementationOnce(() => ({ isDirectory: () => false }))
 
   const archiverMock = {
@@ -212,26 +215,23 @@ test('zipHelper', async () => {
   // not a directory, just a file (see lstatSync mock 1)
   command.zipHelper('my-file', 'app.zip')
   endStream()
+  expect(archiverMock.directory).not.toHaveBeenCalled()
   expect(archiverMock.file).toHaveBeenCalledWith('my-file', { name: 'my-file' })
   archiverMock.file.mockClear()
 
   // a directory (see lstatSync mock 2)
   command.zipHelper('my-folder', 'app.zip')
   endStream()
+  expect(archiverMock.file).not.toHaveBeenCalled()
   expect(archiverMock.directory).toHaveBeenCalledWith('my-folder', false)
   archiverMock.directory.mockClear()
 
   // lstatsync error (see lstatsync mock 3)
-  try {
-    await command.zipHelper('my-folder', 'app.zip')
-  } catch (e) {
-  } finally {
-    expect(archiverMock.destroy).toHaveBeenCalled()
-    archiverMock.destroy.mockClear()
-  }
+  await expect(command.zipHelper('my-folder', 'app.zip')).rejects.toThrowError('folder not found')
+  expect(archiverMock.destroy).toHaveBeenCalled()
+  archiverMock.destroy.mockClear()
 
   // archiving error, for coverage (see lstatSync mock 4)
-  // eslint-disable-next-line jest/valid-expect-in-promise
   command.zipHelper('my-file', 'app.zip').catch(console.error)
   onError()
 })
@@ -300,7 +300,7 @@ test('run (coverage: output flag, path arg)', async () => {
   mockGetFullConfig.mockImplementation(() => fixtureJson('pack/1.all.config.json'))
 
   const command = new TheCommand()
-  command.argv = ['new_folder', '--output=app-2.zip']
+  command.argv = ['new_folder', '--output', 'app-2.zip']
 
   // since we already unit test the methods above, we mock it here
   command.copyPackageFiles = jest.fn()

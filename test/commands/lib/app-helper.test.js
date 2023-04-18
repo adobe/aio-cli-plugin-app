@@ -941,7 +941,7 @@ describe('object values', () => {
     expect(appHelper.getObjectValue(obj, 'foo.bar.baz')).toEqual('boo')
   })
 
-  test('getValue (no key)', () => {
+  test('getObjectValue (no key)', () => {
     const obj = {
       foo: 'bar'
     }
