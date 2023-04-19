@@ -29,7 +29,7 @@
     "dedent-js": "^1.0.1",
     "dotenv": "^16",
     "execa": "^5.0.0",
-    "fs-extra": "^10",
+    "fs-extra": "^11.1.1",
     "get-port": "^5",
     "hjson": "^3.2.1",
     "http-terminator": "^3",
@@ -62,7 +62,6 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^6.0.0",
     "jest": "^29.5.0",
-    "jest-plugin-fs": "^2.9.0",
     "nock": "^13.2.9",
     "oclif": "^3.2.0",
     "stdout-stderr": "^0.1.9"
