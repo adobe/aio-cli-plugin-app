@@ -20,51 +20,6 @@ const eol = require('eol')
 const path = require('path')
 const hjson = require('hjson')
 
-const fileSystem = require('jest-plugin-fs').default
-
-// dont touch the real fs
-global.mockFs = () => {
-  jest.unmock('fs-extra')
-  jest.mock('fs', () => require('jest-plugin-fs/mock'))
-
-  // set the fake filesystem
-  global.fakeFileSystem = {
-    addJson: (json) => {
-      // add to existing
-      fileSystem.mock(json)
-    },
-    removeKeys: (arr) => {
-      // remove from existing
-      const files = fileSystem.files()
-      for (const prop in files) {
-        if (arr.includes(prop)) {
-          delete files[prop]
-        }
-      }
-      fileSystem.restore()
-      fileSystem.mock(files)
-    },
-    clear: () => {
-      // reset to empty
-      fileSystem.restore()
-    },
-    reset: () => {
-      // reset file system
-      // TODO: add any defaults
-      fileSystem.restore()
-    },
-    files: () => {
-      return fileSystem.files()
-    }
-  }
-  // seed the fake filesystem
-  global.fakeFileSystem.reset()
-}
-
-global.unmockFs = () => {
-
-}
-
 // trap console log
 beforeEach(() => {
   stdout.start()
