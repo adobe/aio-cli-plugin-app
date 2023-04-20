@@ -22,6 +22,7 @@
     "@parcel/core": "^2.7.0",
     "@parcel/reporter-cli": "^2.7.0",
     "ajv": "^8",
+    "ajv-formats": "^2.1.1",
     "chalk": "^4",
     "chokidar": "^3.5.2",
     "debug": "^4.1.1",
