@@ -102,7 +102,7 @@
                 },
                 "ims_org_id": {
                     "type": "string",
-                    "format": "email"
+                    "pattern": "^(\\w+)@(\\w+)"
                 }
             },
             "required": [ "id", "name", "ims_org_id" ]
