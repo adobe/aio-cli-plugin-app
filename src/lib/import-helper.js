@@ -18,6 +18,7 @@ const inquirer = require('inquirer')
 const yaml = require('js-yaml')
 const hjson = require('hjson')
 const Ajv = require('ajv')
+const ajvAddFormats = require('ajv-formats')
 const { EOL } = require('os')
 
 const AIO_FILE = '.aio'
@@ -43,6 +44,7 @@ function validateConfig (configJson) {
   /* eslint-disable-next-line node/no-unpublished-require */
   const schema = require('../../schema/config.schema.json')
   const ajv = new Ajv({ allErrors: true })
+  ajvAddFormats(ajv)
   const validate = ajv.compile(schema)
 
   return { valid: validate(configJson), errors: validate.errors }
