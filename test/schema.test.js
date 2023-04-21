@@ -1,8 +1,10 @@
 const Ajv = require('ajv')
+const ajvAddFormats = require('ajv-formats')
 const schema = require('../schema/config.schema.json')
 
 test('validate success', () => {
   const ajv = new Ajv({ allErrors: true })
+  ajvAddFormats(ajv)
   const validate = ajv.compile(schema)
   const valid = validate(fixtureJson('valid.config.json'))
   expect(validate.errors).toEqual(null)
@@ -11,6 +13,7 @@ test('validate success', () => {
 
 test('validate failure', () => {
   const ajv = new Ajv({ allErrors: true })
+  ajvAddFormats(ajv)
   const validate = ajv.compile(schema)
   const valid = validate(fixtureJson('invalid.config.json'))
   // the 4 errors are the missing name properties, techacct migration to two new properties
