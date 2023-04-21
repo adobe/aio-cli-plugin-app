@@ -12,13 +12,15 @@ governing permissions and limitations under the License.
 
 const TheCommand = require('../../../src/commands/app/install.js')
 const BaseCommand = require('../../../src/BaseCommand.js')
-// const fs = require('fs-extra')
-// const unzipper = require('unzipper')
+const fs = require('fs-extra')
+const unzipper = require('unzipper')
 const execa = require('execa')
 
 jest.mock('execa')
 jest.mock('fs-extra')
 jest.mock('unzipper')
+
+const mockReadStreamPipe = jest.fn()
 
 beforeAll(() => {
 })
@@ -35,6 +37,14 @@ afterAll(() => {
 })
 
 beforeEach(() => {
+  mockReadStreamPipe.mockClear()
+  fs.createReadStream.mockImplementation(() => {
+    return {
+      pipe: mockReadStreamPipe
+    }
+  })
+  unzipper.Parse = jest.fn()
+
   execa.mockReset()
   execa.command.mockReset()
 
@@ -95,9 +105,37 @@ test('diffArray', () => {
   expect(command.diffArray(a4, b4)).toEqual(null)
 })
 
-test('validateZipDirectoryStructure', () => {
-  // TODO:
-  expect(this).toEqual('TODO: validateZipDirectoryStructure')
+describe('validateZipDirectoryStructure', () => {
+  const autodrain = jest.fn()
+
+  test('fail', async () => {
+    /** @private */
+    async function * iter () {
+      yield { path: 'a', autodrain }
+      yield { path: 'b', autodrain }
+    }
+
+    mockReadStreamPipe.mockReturnValue(iter())
+
+    const command = new TheCommand()
+    await expect(command.validateZipDirectoryStructure('app.zip'))
+      .rejects.toThrowError('The app package app.zip is missing these files:')
+  })
+
+  test('success', async () => {
+    /** @private */
+    async function * iter () {
+      yield { path: 'app.config.yaml', autodrain }
+      yield { path: 'deploy.yaml', autodrain }
+      yield { path: 'package.json', autodrain }
+    }
+
+    mockReadStreamPipe.mockReturnValue(iter())
+
+    const command = new TheCommand()
+    await expect(command.validateZipDirectoryStructure('app.zip'))
+      .resolves.not.toThrowError()
+  })
 })
 
 test('unzipFile', () => {
