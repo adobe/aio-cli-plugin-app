@@ -47,7 +47,11 @@ class InstallCommand extends BaseCommand {
   }
 
   diffArray (left, right) {
-    return left.filter(x => !right.includes(x))
+    if (!left || !right) {
+      return left
+    }
+
+    return left.filter(item => !right.includes(item))
   }
 
   async validateZipDirectoryStructure (zipFilePath) {
