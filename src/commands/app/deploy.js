@@ -143,6 +143,11 @@ class Deploy extends BuildCommand {
 
     try {
       await runScript(config.hooks['pre-app-deploy'])
+
+      if (flags['feature-event-hooks']) {
+        this.log('feature-event-hooks is enabled, running pre-deploy-event-reg hook')
+        await this.config.runHook('pre-deploy-event-reg', { appConfig: config })
+      }
     } catch (err) {
       this.log(err)
     }
@@ -239,6 +244,10 @@ class Deploy extends BuildCommand {
 
     try {
       await runScript(config.hooks['post-app-deploy'])
+      if (flags['feature-event-hooks']) {
+        this.log('feature-event-hooks is enabled, running post-deploy-event-reg hook')
+        await this.config.runHook('post-deploy-event-reg', { appConfig: config })
+      }
     } catch (err) {
       this.log(err)
     }
@@ -341,6 +350,12 @@ Deploy.flags = {
     description: '[default: true] Update log forwarding configuration on server',
     default: true,
     allowNo: true
+  }),
+  'feature-event-hooks': Flags.boolean({
+    description: '[default: false] Enable event hooks feature',
+    default: false,
+    allowNo: true,
+    hidden: true
   })
 }
 
