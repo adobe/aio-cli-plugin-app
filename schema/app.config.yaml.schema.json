@@ -1,4 +1,35 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://adobe.io/schemas/app-builder/app.config.yaml.json"
+  "$id": "https://adobe.io/schemas/app-builder/app.config.yaml.json/v1",
+  "type": "object",
+  "properties": {
+    "application": { "$ref": "#/definitions/application" },
+    "extensions": { "$ref": "#/definitions/extensions" }
+  },
+  "oneOf": [
+    {
+      "required": ["application"],
+      "allOf": [
+        { "not": { "required": ["extensions"] } }
+      ]
+    },
+    {
+      "required": ["extensions"],
+      "allOf": [
+        { "not": { "required": ["application"] } }
+      ]
+    }
+  ],
+  "definitions": {
+    "application": {
+      "type": "object",
+      "properties": {
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "properties": {
+      }
+    }  
+  }
 }

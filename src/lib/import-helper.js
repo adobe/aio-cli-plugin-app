@@ -17,9 +17,8 @@ const fs = require('fs-extra')
 const inquirer = require('inquirer')
 const yaml = require('js-yaml')
 const hjson = require('hjson')
-const Ajv = require('ajv')
-const ajvAddFormats = require('ajv-formats')
 const { EOL } = require('os')
+const { validateJsonWithSchema } = require('./install-helper')
 
 const AIO_FILE = '.aio'
 const ENV_FILE = '.env'
@@ -33,22 +32,6 @@ const CONSOLE_CONFIG_KEY = 'console'
 // Note: if this get's turned into a lib make sure to call
 // this into an init/constructor as it might create mocking issues in jest
 const prompt = inquirer.createPromptModule({ output: process.stderr })
-
-/**
- * Validate the config json
- *
- * @param {object} configJson the json to validate
- * @returns {object} with keys valid (boolean) and errors (object). errors is null if no errors
- */
-function validateConfig (configJson) {
-  /* eslint-disable-next-line node/no-unpublished-require */
-  const schema = require('../../schema/config.schema.json')
-  const ajv = new Ajv({ allErrors: true })
-  ajvAddFormats(ajv)
-  const validate = ajv.compile(schema)
-
-  return { valid: validate(configJson), errors: validate.errors }
-}
 
 /**
  * Load a config file
@@ -94,7 +77,7 @@ function loadConfigFile (fileOrBuffer) {
  */
 function loadAndValidateConfigFile (fileOrBuffer) {
   const res = loadConfigFile(fileOrBuffer)
-  const { valid: configIsValid, errors: configErrors } = validateConfig(res.values)
+  const { valid: configIsValid, errors: configErrors } = validateJsonWithSchema(res.values, 'config.json')
   if (!configIsValid) {
     const message = `Missing or invalid keys in config: ${JSON.stringify(configErrors, null, 2)}`
     throw new Error(message)
@@ -618,7 +601,6 @@ async function importConfigJson (configFileOrBuffer, destinationFolder = process
 }
 
 module.exports = {
-  validateConfig,
   loadConfigFile,
   loadAndValidateConfigFile,
   writeConsoleConfig,

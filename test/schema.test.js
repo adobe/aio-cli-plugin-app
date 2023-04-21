@@ -1,25 +1,101 @@
-const Ajv = require('ajv')
-const ajvAddFormats = require('ajv-formats')
-const schema = require('../schema/config.schema.json')
+const { validateJsonWithSchema } = require('../src/lib/install-helper')
 
-test('validate success', () => {
-  const ajv = new Ajv({ allErrors: true })
-  ajvAddFormats(ajv)
-  const validate = ajv.compile(schema)
-  const valid = validate(fixtureJson('valid.config.json'))
-  expect(validate.errors).toEqual(null)
-  expect(valid).toBeTruthy()
+describe('config.json', () => {
+  const schemaName = 'config.json'
+
+  test('validate success', () => {
+    const { valid, errors } = validateJsonWithSchema(
+      fixtureJson('valid.config.json'),
+      schemaName
+    )
+
+    expect(errors).toEqual(null)
+    expect(valid).toBeTruthy()
+  })
+
+  test('validate failure', () => {
+    const { valid, errors } = validateJsonWithSchema(
+      fixtureJson('invalid.config.json'),
+      schemaName
+    )
+
+    // the 4 errors are the missing name properties, techacct migration to two new properties
+    // the rest 3 are missing client_id and failing keyword `then`
+    // 2 for failing if & else condition
+    // 1 for failing client_id required criteria
+    expect(errors.length).toEqual(10)
+    expect(valid).toBeFalsy()
+  })
 })
 
-test('validate failure', () => {
-  const ajv = new Ajv({ allErrors: true })
-  ajvAddFormats(ajv)
-  const validate = ajv.compile(schema)
-  const valid = validate(fixtureJson('invalid.config.json'))
-  // the 4 errors are the missing name properties, techacct migration to two new properties
-  // the rest 3 are missing client_id and failing keyword `then`
-  // 2 for failing if & else condition
-  // 1 for failing client_id required criteria
-  expect(validate.errors.length).toEqual(10)
-  expect(valid).toBeFalsy()
+describe('app.config.yaml', () => {
+  const schemaName = 'app.config.yaml'
+
+  describe('extensions', () => {
+    test('validate success', () => {
+      const { valid, errors } = validateJsonWithSchema(
+        fixtureYaml('app.config.yaml/1.extensions.valid.yaml'),
+        schemaName
+      )
+
+      expect(errors).toEqual(null)
+      expect(valid).toBeTruthy()
+    })
+
+    test('validate failure', () => {
+      const { valid, errors } = validateJsonWithSchema(
+        fixtureYaml('app.config.yaml/1.extensions.invalid.yaml'),
+        schemaName
+      )
+
+      expect(errors.length).toEqual(3)
+      expect(valid).toBeFalsy()
+    })
+  })
+
+  describe('application', () => {
+    test('validate success', () => {
+      const { valid, errors } = validateJsonWithSchema(
+        fixtureYaml('app.config.yaml/2.application.valid.yaml'),
+        schemaName
+      )
+
+      expect(errors).toEqual(null)
+      expect(valid).toBeTruthy()
+    })
+
+    test('validate failure', () => {
+      const { valid, errors } = validateJsonWithSchema(
+        fixtureYaml('app.config.yaml/2.application.invalid.yaml'),
+        schemaName
+      )
+
+      expect(errors.length).toEqual(3)
+      expect(valid).toBeFalsy()
+    })
+  })
+})
+
+describe('deploy.yaml', () => {
+  const schemaName = 'deploy.yaml'
+
+  test('validate success', () => {
+    const { valid, errors } = validateJsonWithSchema(
+      fixtureYaml('deploy.yaml/1.valid.yaml'),
+      schemaName
+    )
+
+    expect(errors).toEqual(null)
+    expect(valid).toBeTruthy()
+  })
+
+  test('validate failure', () => {
+    const { valid, errors } = validateJsonWithSchema(
+      fixtureYaml('deploy.yaml/1.invalid.yaml'),
+      schemaName
+    )
+
+    expect(errors.length).toEqual(3)
+    expect(valid).toBeFalsy()
+  })
 })
