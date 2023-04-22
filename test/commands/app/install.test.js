@@ -157,14 +157,9 @@ test('unzipFile', async () => {
   expect(mockUnzipExtract).toHaveBeenCalledWith(expect.objectContaining({ path: 'my-dest-folder' }))
 })
 
-test('validateAppConfig', () => {
+test('validateConfig', () => {
   // TODO:
-  expect(this).toEqual('TODO: validateAppConfig')
-})
-
-test('validateDeployConfig', () => {
-  // TODO:
-  expect(this).toEqual('TODO: validateDeployConfig')
+  expect(this).toEqual('TODO: validateConfig')
 })
 
 test('runTests', () => {

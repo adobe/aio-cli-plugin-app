@@ -17,6 +17,7 @@ const path = require('node:path')
 const fs = require('fs-extra')
 const unzipper = require('unzipper')
 const execa = require('execa')
+const { validateJsonWithSchema } = require('../../lib/install-helper')
 
 class InstallCommand extends BaseCommand {
   async run () {
@@ -41,8 +42,8 @@ class InstallCommand extends BaseCommand {
 
     await this.validateZipDirectoryStructure(args.path)
     await this.unzipFile(args.path, outputPath)
-    await this.validateAppConfig(outputPath)
-    await this.validateDeployConfig(outputPath)
+    await this.validateConfig(outputPath, 'app.config.yaml')
+    await this.validateConfig(outputPath, 'deploy.yaml')
     await this.runTests(outputPath)
   }
 
@@ -86,12 +87,13 @@ class InstallCommand extends BaseCommand {
       .then(d => d.extract({ path: destFolderPath, concurrency: 5 }))
   }
 
-  async validateAppConfig () {
-    this.log('TODO: validating app config...')
-  }
-
-  async validateDeployConfig () {
-    this.log('TODO: validating deploy config...')
+  async validateConfig (outputPath, configFileName) {
+    this.log(`Validating ${configFileName}...`)
+    const { valid, errors } = validateJsonWithSchema(path.join(outputPath, configFileName), configFileName)
+    if (!valid) {
+      const message = `Missing or invalid keys in ${configFileName}: ${JSON.stringify(errors, null, 2)}`
+      this.error(message)
+    }
   }
 
   async runTests (outputPath) {
