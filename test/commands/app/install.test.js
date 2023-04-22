@@ -222,7 +222,37 @@ describe('runTests', () => {
   })
 })
 
-test('run', () => {
-  // TODO:
-  expect(this).toEqual('TODO: run')
+test('run (no flags)', async () => {
+  const command = new TheCommand()
+  command.argv = ['my-app.zip']
+
+  // since we already unit test the methods above, we mock it here
+  command.validateZipDirectoryStructure = jest.fn()
+  command.unzipFile = jest.fn()
+  command.validateConfig = jest.fn()
+  command.runTests = jest.fn()
+  await command.run()
+
+  expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
+  expect(command.unzipFile).toHaveBeenCalledTimes(1)
+  expect(command.validateConfig).toHaveBeenCalledTimes(2)
+  expect(command.runTests).toHaveBeenCalledTimes(1)
+})
+
+test('run (flag --output)', async () => {
+  const command = new TheCommand()
+  command.argv = ['my-app.zip', '--output', 'my-dest-folder']
+
+  // since we already unit test the methods above, we mock it here
+  command.validateZipDirectoryStructure = jest.fn()
+  command.unzipFile = jest.fn()
+  command.validateConfig = jest.fn()
+  command.runTests = jest.fn()
+  await command.run()
+
+  expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
+  expect(command.unzipFile).toHaveBeenCalledTimes(1)
+  expect(command.validateConfig).toHaveBeenCalledTimes(2)
+  expect(command.runTests).toHaveBeenCalledTimes(1)
+  expect(fakeCwd).toEqual(path.resolve('my-dest-folder'))
 })
