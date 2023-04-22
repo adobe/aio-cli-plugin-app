@@ -190,9 +190,36 @@ describe('validateConfig', () => {
   })
 })
 
-test('runTests', () => {
-  // TODO:
-  expect(this).toEqual('TODO: runTests')
+describe('runTests', () => {
+  test('success', async () => {
+    const outputPath = 'my-dest-folder'
+
+    execa.mockImplementationOnce((cmd, args, options) => {
+      expect(cmd).toEqual('aio')
+      expect(args).toEqual(['app', 'test'])
+      expect(options).toEqual(expect.objectContaining({ cwd: outputPath }))
+      return { exitCode: 0 }
+    })
+
+    const command = new TheCommand()
+    await expect(command.runTests(outputPath))
+      .resolves.toEqual(undefined)
+  })
+
+  test('failure', async () => {
+    const outputPath = 'my-dest-folder'
+
+    execa.mockImplementationOnce((cmd, args, options) => {
+      expect(cmd).toEqual('aio')
+      expect(args).toEqual(['app', 'test'])
+      expect(options).toEqual(expect.objectContaining({ cwd: outputPath }))
+      return { exitCode: 1 }
+    })
+
+    const command = new TheCommand()
+    await expect(command.runTests(outputPath))
+      .rejects.toThrow(`The tests failed for the app at ${outputPath}`)
+  })
 })
 
 test('run', () => {
