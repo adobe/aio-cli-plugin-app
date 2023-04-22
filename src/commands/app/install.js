@@ -95,7 +95,7 @@ class InstallCommand extends BaseCommand {
   }
 
   async runTests (outputPath) {
-    this.log('TODO: running tests...')
+    this.log('Running tests...')
     const { exitCode } = await execa('aio', ['app', 'test'], { cwd: outputPath, stdio: 'inherit' })
     if (exitCode !== 0) {
       process.exitCode = exitCode
