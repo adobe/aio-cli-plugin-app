@@ -21,6 +21,7 @@ jest.mock('fs-extra')
 jest.mock('unzipper')
 
 const mockReadStreamPipe = jest.fn()
+const mockUnzipExtract = jest.fn()
 
 beforeAll(() => {
 })
@@ -44,6 +45,13 @@ beforeEach(() => {
     }
   })
   unzipper.Parse = jest.fn()
+
+  mockUnzipExtract.mockClear()
+  unzipper.Open.file = jest.fn(async () => {
+    return {
+      extract: mockUnzipExtract
+    }
+  })
 
   execa.mockReset()
   execa.command.mockReset()
@@ -88,9 +96,9 @@ test('unknown flag', async () => {
 test('diffArray', () => {
   const command = new TheCommand()
 
-  const a1 = ['a', 'b', 'c']
-  const b1 = ['b']
-  expect(command.diffArray(a1, b1)).toEqual(['a', 'c'])
+  const a1 = ['a', 'b', 'c', 'd', 'e']
+  const b1 = ['b', 'e']
+  expect(command.diffArray(a1, b1)).toEqual(['a', 'c', 'd'])
 
   const a2 = ['a', 'b', 'c']
   const b2 = ['d']
@@ -138,9 +146,15 @@ describe('validateZipDirectoryStructure', () => {
   })
 })
 
-test('unzipFile', () => {
-  // TODO:
-  expect(this).toEqual('TODO: unzipFile')
+test('unzipFile', async () => {
+  const command = new TheCommand()
+  await expect(command.unzipFile('app.zip', 'my-dest-folder'))
+    .resolves.toEqual(undefined)
+
+  expect(unzipper.Open.file).toBeCalledTimes(1)
+  expect(unzipper.Open.file).toHaveBeenCalledWith('app.zip')
+  expect(mockUnzipExtract).toBeCalledTimes(1)
+  expect(mockUnzipExtract).toHaveBeenCalledWith(expect.objectContaining({ path: 'my-dest-folder' }))
 })
 
 test('validateAppConfig', () => {
