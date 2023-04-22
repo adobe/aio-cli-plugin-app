@@ -15,10 +15,13 @@ const BaseCommand = require('../../../src/BaseCommand.js')
 const fs = require('fs-extra')
 const unzipper = require('unzipper')
 const execa = require('execa')
+const installHelper = require('../../../src/lib/install-helper')
+const path = require('node:path')
 
 jest.mock('execa')
 jest.mock('fs-extra')
 jest.mock('unzipper')
+jest.mock('../../../src/lib/install-helper')
 
 const mockReadStreamPipe = jest.fn()
 const mockUnzipExtract = jest.fn()
@@ -38,6 +41,8 @@ afterAll(() => {
 })
 
 beforeEach(() => {
+  installHelper.validateJsonWithSchema.mockClear()
+
   mockReadStreamPipe.mockClear()
   fs.createReadStream.mockImplementation(() => {
     return {
@@ -157,9 +162,32 @@ test('unzipFile', async () => {
   expect(mockUnzipExtract).toHaveBeenCalledWith(expect.objectContaining({ path: 'my-dest-folder' }))
 })
 
-test('validateConfig', () => {
-  // TODO:
-  expect(this).toEqual('TODO: validateConfig')
+describe('validateConfig', () => {
+  test('success', async () => {
+    installHelper.validateJsonWithSchema.mockReturnValue({
+      valid: true,
+      errors: null
+    })
+
+    const command = new TheCommand()
+    await expect(command.validateConfig('my-dest-folder', 'app.config.yaml'))
+      .resolves.toEqual(undefined)
+    expect(installHelper.validateJsonWithSchema).toHaveBeenCalledWith(
+      path.join('my-dest-folder', 'app.config.yaml'),
+      'app.config.yaml'
+    )
+  })
+
+  test('failure', async () => {
+    installHelper.validateJsonWithSchema.mockReturnValue({
+      valid: false,
+      errors: ['missing some key']
+    })
+
+    const command = new TheCommand()
+    await expect(command.validateConfig('my-dest-folder', 'app.config.yaml'))
+      .rejects.toThrowError('Missing or invalid keys in app.config.yaml:')
+  })
 })
 
 test('runTests', () => {
