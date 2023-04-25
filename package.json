@@ -14,7 +14,7 @@
     "@adobe/aio-lib-ims": "^6.0.0",
     "@adobe/aio-lib-runtime": "^5.0.0",
     "@adobe/aio-lib-templates": "^2.2.0",
-    "@adobe/aio-lib-web": "^6.0.1",
+    "@adobe/aio-lib-web": "^6.1.0",
     "@adobe/generator-aio-app": "^5.1.0",
     "@adobe/generator-app-common-lib": "^0.3.3",
     "@adobe/inquirer-table-checkbox": "^1.2.0",
