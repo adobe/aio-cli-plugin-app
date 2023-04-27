@@ -5,6 +5,12 @@ application:
   version: 0.0.1
 workspaces:
   - Stage
+extensions:
+  - extensionPointId: dx/excshell/1
+apis:
+  - code: AdobeAnalyticsSDK
+  - code: AudienceManagerCustomerSDK
+  - code: GraphQLServiceSDK
 meshConfig:
   lastUpdated: '2023-03-02T09:58:23.896Z'
   meshConfig:

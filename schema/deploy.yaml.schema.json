@@ -17,12 +17,8 @@
     "application": {
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string"
-        },
-        "version": {
-          "type": "string"
-        }
+        "id": { "type": "string" },
+        "version": { "type": "string" }
       },
       "required": ["id", "version"]
     },
@@ -34,6 +30,50 @@
     "meshConfig": {
       "type": "object",
       "properties": {
+        "meshConfig": { "$ref": "#/definitions/meshConfigNested" },
+        "meshId": {
+          "type": "string"
+        },
+        "lastUpdatedBy": { "type": "object" },
+        "lastUpdated": {
+          "type": "string",
+          "pattern": "(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2}):(\\d{2}(?:\\.\\d*)?)((-(\\d{2}):(\\d{2})|Z)?)"
+        },
+        "meshStatus": { "type": "string" }
+      },
+      "required": ["meshConfig", "meshId"]
+    },
+    "meshConfigNested": {
+      "type": "object",
+      "properties": {
+        "sources": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/meshConfigSource" },
+          "default": []
+        }
+      }
+    },
+    "meshConfigSource": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "handler": { "$ref": "#/definitions/meshConfigSourceHandler" }
+      },
+      "required": ["name", "handler"]
+    },
+    "meshConfigSourceHandler": {
+      "type": "object",
+      "properties": {
+        "graphql": { "$ref": "#/definitions/graphql" }
+      }
+    },
+    "graphql": {
+      "type": "object",
+      "properties": {
+        "handler": {
+          "type": "string",
+          "format": "uri"
+        }
       }
     },
     "workspace": {
@@ -41,10 +81,26 @@
       "pattern": "^[A-Za-z0-9\u00C0-\u00D6\u00D8-\u00f6\u00f8-\u00ff]{1,20}$"
     },
     "extensions": {
-      "type": "string"
+      "type": "array",
+      "items": { "$ref": "#/definitions/extension" } 
+    },
+    "extension": {
+      "type": "object",
+      "properties": {
+        "extensionPointId": { "type": "string" }
+      },
+      "required": ["extensionPointId"]
     },
     "apis": {
-      "type": "string"
+      "type": "array",
+      "items": { "$ref": "#/definitions/api" } 
+    },
+    "api": {
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" }
+      },
+      "required": ["code"]
     }
   }
 }
