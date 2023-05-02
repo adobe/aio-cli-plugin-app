@@ -34,11 +34,16 @@ module.exports = async (config, isLocalDev = false, log = () => {}, filter = fal
     }
     if (inprocHook) {
       const hookFilterEntities = Array.isArray(filter) ? filter : []
-      await inprocHook('deploy-actions', {
+      const hookResults = await inprocHook('deploy-actions', {
         appConfig: config,
         filterEntities: hookFilterEntities,
         isLocalDev
       })
+      if (hookResults?.failures?.length > 0) {
+        // output should be "Error : <plugin-name> : <error-message>\n" for each failure
+        this.log('Error: ' + hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '))
+        throw new Error(`Hook 'deploy-actions' failed with ${hookResults.failures[0].error}`)
+      }
     }
     const entities = await deployActions(config, deployConfig, log)
     if (entities.actions) {
