@@ -17,11 +17,12 @@ const unzipper = require('unzipper')
 const execa = require('execa')
 const installHelper = require('../../../src/lib/install-helper')
 const path = require('node:path')
+const jsYaml = require('js-yaml')
 
-jest.mock('execa')
 jest.mock('fs-extra')
 jest.mock('unzipper')
 jest.mock('../../../src/lib/install-helper')
+jest.mock('js-yaml')
 
 const mockReadStreamPipe = jest.fn()
 const mockUnzipExtract = jest.fn()
@@ -44,6 +45,9 @@ beforeEach(() => {
   installHelper.validateJsonWithSchema.mockClear()
 
   mockReadStreamPipe.mockClear()
+  jsYaml.load.mockClear()
+
+  fs.readFileSync.mockClear()
   fs.createReadStream.mockImplementation(() => {
     return {
       pipe: mockReadStreamPipe
@@ -176,12 +180,14 @@ describe('validateConfig', () => {
       valid: true,
       errors: null
     })
+    fs.readFileSync.mockReturnValue('')
+    jsYaml.load.mockReturnValue({})
 
     const command = new TheCommand()
     await expect(command.validateConfig('my-dest-folder', 'app.config.yaml'))
       .resolves.toEqual(undefined)
     expect(installHelper.validateJsonWithSchema).toHaveBeenCalledWith(
-      path.join('my-dest-folder', 'app.config.yaml'),
+      expect.any(Object),
       'app.config.yaml'
     )
   })
@@ -199,34 +205,24 @@ describe('validateConfig', () => {
 })
 
 describe('runTests', () => {
+  let command
+
+  beforeEach(() => {
+    command = new TheCommand()
+    command.config = {
+      runCommand: jest.fn()
+    }
+  })
+
   test('success', async () => {
-    const outputPath = 'my-dest-folder'
-
-    execa.mockImplementationOnce((cmd, args, options) => {
-      expect(cmd).toEqual('aio')
-      expect(args).toEqual(['app', 'test'])
-      expect(options).toEqual(expect.objectContaining({ cwd: outputPath }))
-      return { exitCode: 0 }
-    })
-
-    const command = new TheCommand()
-    await expect(command.runTests(outputPath))
-      .resolves.toEqual(undefined)
+    command.config.runCommand.mockResolvedValue(undefined)
+    await expect(command.runTests()).resolves.toEqual(undefined)
   })
 
   test('failure', async () => {
-    const outputPath = 'my-dest-folder'
-
-    execa.mockImplementationOnce((cmd, args, options) => {
-      expect(cmd).toEqual('aio')
-      expect(args).toEqual(['app', 'test'])
-      expect(options).toEqual(expect.objectContaining({ cwd: outputPath }))
-      return { exitCode: 1 }
-    })
-
-    const command = new TheCommand()
-    await expect(command.runTests(outputPath))
-      .rejects.toThrow(`The tests failed for the app at ${outputPath}`)
+    command.config.runCommand.mockRejectedValue(new Error('The tests failed for the app'))
+    await expect(command.runTests())
+      .rejects.toThrow('The tests failed for the app')
   })
 })
 

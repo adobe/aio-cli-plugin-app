@@ -16,8 +16,8 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const path = require('node:path')
 const fs = require('fs-extra')
 const unzipper = require('unzipper')
-const execa = require('execa')
 const { validateJsonWithSchema } = require('../../lib/install-helper')
+const jsYaml = require('js-yaml')
 
 class InstallCommand extends BaseCommand {
   async run () {
@@ -44,7 +44,7 @@ class InstallCommand extends BaseCommand {
     await this.unzipFile(args.path, outputPath)
     await this.validateConfig(outputPath, 'app.config.yaml')
     await this.validateConfig(outputPath, 'deploy.yaml')
-    await this.runTests(outputPath)
+    await this.runTests()
   }
 
   diffArray (expected, actual) {
@@ -87,20 +87,19 @@ class InstallCommand extends BaseCommand {
 
   async validateConfig (outputPath, configFileName) {
     this.log(`Validating ${configFileName}...`)
-    const { valid, errors } = validateJsonWithSchema(path.join(outputPath, configFileName), configFileName)
+    const configFilePath = path.join(outputPath, configFileName)
+    const json = jsYaml.load(fs.readFileSync(configFilePath).toString())
+
+    const { valid, errors } = validateJsonWithSchema(json, configFileName)
     if (!valid) {
       const message = `Missing or invalid keys in ${configFileName}: ${JSON.stringify(errors, null, 2)}`
       this.error(message)
     }
   }
 
-  async runTests (outputPath) {
+  async runTests () {
     this.log('Running tests...')
-    const { exitCode } = await execa('aio', ['app', 'test'], { cwd: outputPath, stdio: 'inherit' })
-    if (exitCode !== 0) {
-      process.exitCode = exitCode
-      this.error(`The tests failed for the app at ${outputPath}`)
-    }
+    return this.config.runCommand('app:test')
   }
 }
 

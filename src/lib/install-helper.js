@@ -22,7 +22,11 @@ const ajvAddFormats = require('ajv-formats')
 function validateJsonWithSchema (fileJson, schemaName) {
   /* eslint-disable-next-line node/no-unpublished-require */
   const schemas = require('../../schema/index')
-  const ajv = new Ajv({ allErrors: true })
+  const ajv = new Ajv({
+    allErrors: true,
+    allowUnionTypes: true
+
+  })
   ajvAddFormats(ajv)
 
   const validate = ajv.compile(schemas[schemaName])
