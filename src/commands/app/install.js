@@ -47,12 +47,10 @@ class InstallCommand extends BaseCommand {
     await this.runTests(outputPath)
   }
 
-  diffArray (left, right) {
-    if (!left || !right) {
-      return left
-    }
-
-    return left.filter(item => !right.includes(item))
+  diffArray (expected, actual) {
+    const _expected = expected ?? []
+    const _actual = actual ?? []
+    return _expected.filter(item => !_actual.includes(item))
   }
 
   async validateZipDirectoryStructure (zipFilePath) {

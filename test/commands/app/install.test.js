@@ -115,7 +115,15 @@ test('diffArray', () => {
 
   const a4 = null
   const b4 = ['d']
-  expect(command.diffArray(a4, b4)).toEqual(null)
+  expect(command.diffArray(a4, b4)).toEqual([])
+
+  const a5 = ['a']
+  const b5 = null
+  expect(command.diffArray(a5, b5)).toEqual(a5)
+
+  const a6 = null
+  const b6 = null
+  expect(command.diffArray(a6, b6)).toEqual([])
 })
 
 describe('validateZipDirectoryStructure', () => {
