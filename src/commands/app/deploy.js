@@ -149,7 +149,7 @@ class Deploy extends BuildCommand {
         const hookResults = await this.config.runHook('pre-deploy-event-reg', { appConfig: config })
         if (hookResults?.failures?.length > 0) {
           // output should be "Error : <plugin-name> : <error-message>\n" for each failure
-          this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '))
+          this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
         }
       }
     } catch (err) {
@@ -174,7 +174,7 @@ class Deploy extends BuildCommand {
             })
             if (hookResults?.failures?.length > 0) {
               // output should be "Error : <plugin-name> : <error-message>\n" for each failure
-              this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '))
+              this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
             }
             deployedRuntimeEntities = await rtLib.deployActions(config, { filterEntities }, onProgress)
           }
@@ -257,7 +257,7 @@ class Deploy extends BuildCommand {
         const hookResults = await this.config.runHook('post-deploy-event-reg', { appConfig: config })
         if (hookResults?.failures?.length > 0) {
           // output should be "Error : <plugin-name> : <error-message>\n" for each failure
-          this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '))
+          this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
         }
       }
     } catch (err) {
