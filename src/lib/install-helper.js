@@ -25,7 +25,6 @@ function validateJsonWithSchema (fileJson, schemaName) {
   const ajv = new Ajv({
     allErrors: true,
     allowUnionTypes: true
-
   })
   ajvAddFormats(ajv)
 
