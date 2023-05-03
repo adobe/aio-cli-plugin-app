@@ -18,6 +18,7 @@ const fs = require('fs-extra')
 const unzipper = require('unzipper')
 const { validateJsonWithSchema } = require('../../lib/install-helper')
 const jsYaml = require('js-yaml')
+const { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE, EXT_CONFIG_FILE, INCLUDE_DIRECTIVE } = require('../../lib/defaults')
 
 class InstallCommand extends BaseCommand {
   async run () {
@@ -42,8 +43,8 @@ class InstallCommand extends BaseCommand {
 
     await this.validateZipDirectoryStructure(args.path)
     await this.unzipFile(args.path, outputPath)
-    await this.validateConfig(outputPath, 'app.config.yaml')
-    await this.validateConfig(outputPath, 'deploy.yaml')
+    await this.validateConfig(outputPath, USER_CONFIG_FILE)
+    await this.validateConfig(outputPath, DEPLOY_CONFIG_FILE)
     await this.runTests()
   }
 
@@ -56,7 +57,7 @@ class InstallCommand extends BaseCommand {
   async validateZipDirectoryStructure (zipFilePath) {
     aioLogger.debug(`validateZipDirectoryStructure: ${zipFilePath}`)
 
-    const expectedFiles = ['app.config.yaml', 'deploy.yaml', 'package.json']
+    const expectedFiles = [USER_CONFIG_FILE, DEPLOY_CONFIG_FILE, 'package.json']
     const foundFiles = []
 
     this.log(`Validating integrity of app package at ${zipFilePath}...`)
@@ -85,15 +86,25 @@ class InstallCommand extends BaseCommand {
       .then(d => d.extract({ path: destFolderPath, concurrency: 5 }))
   }
 
-  async validateConfig (outputPath, configFileName) {
+  async validateConfig (outputPath, configFileName, configFilePath = path.join(outputPath, configFileName)) {
     this.log(`Validating ${configFileName}...`)
-    const configFilePath = path.join(outputPath, configFileName)
-    const json = jsYaml.load(fs.readFileSync(configFilePath).toString())
+    aioLogger.debug(`validateConfig: ${configFileName} at ${configFilePath}`)
 
-    const { valid, errors } = validateJsonWithSchema(json, configFileName)
+    const configFileJson = jsYaml.load(fs.readFileSync(configFilePath).toString())
+    const { valid, errors } = validateJsonWithSchema(configFileJson, configFileName)
     if (!valid) {
       const message = `Missing or invalid keys in ${configFileName}: ${JSON.stringify(errors, null, 2)}`
       this.error(message)
+    }
+
+    // find any $include(d) extension configs for USER_CONFIG_FILE, validate them
+    if (configFileName === USER_CONFIG_FILE && configFileJson.extensions) {
+      for (const [, extValue] of Object.entries(configFileJson.extensions)) {
+        // we don't care for the extension name/key, only the value for now
+        if (extValue[INCLUDE_DIRECTIVE]) {
+          await this.validateConfig(outputPath, EXT_CONFIG_FILE, path.join(outputPath, extValue[INCLUDE_DIRECTIVE]))
+        }
+      }
     }
   }
 
