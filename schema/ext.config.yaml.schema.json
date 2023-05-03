@@ -1,0 +1,147 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://adobe.io/schemas/app-builder/ext.config.yaml.json/v1",
+  "type": "object",
+  "properties": {
+    "operations": { "$ref": "#/definitions/operations" },
+    "runtimeManifest": { "$ref": "#/definitions/runtimeManifest" },
+    "actions": { "type": "string" },
+    "unitTest": { "type": "string" },
+    "e2eTest": { "type": "string" },
+    "dist": { "type": "string" },
+    "tvmurl": { "type": "string" },
+    "awsaccesskeyid": { "type": "string" },
+    "awssecretaccesskey": { "type": "string" },
+    "s3bucket": { "type": "string" },
+    "events": { "type": "object" },
+    "hostname": { "type": "string" },
+    "htmlcacheduration": { "type": "number" },
+    "jscacheduration": { "type": "number" },
+    "csscacheduration": { "type": "number" },
+    "imagecacheduration": { "type": "number" },
+    "hooks": { "$ref": "#/definitions/hooks" },
+    "web": { "$ref": "#/definitions/web" }
+
+  },
+  "required": ["runtimeManifest", "operations"],
+  "definitions": {
+    "operations": {
+      "type": "object",
+      "properties": {
+        "view": { "$ref": "#/definitions/view" },
+        "workerProcess": { "$ref": "#/definitions/workerProcess" }
+      }
+    },
+    "view": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/operationItem" },
+      "default": []
+    },
+    "workerProcess": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/operationItem" },
+      "default": []
+    },
+    "operationItem": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string" },
+        "impl": { "type": "string" }
+      }
+    },
+    "web": {
+      "anyOf": [
+        {
+          "type": "string"
+        }, 
+        {
+          "type": "object",
+          "properties": {
+            "response-headers": { "type": "object" }
+          }
+        }
+      ]
+    },
+    "runtimeManifest": {
+      "type": "object",
+      "properties": {
+        "packages": { "$ref": "#/definitions/packages" }
+      },
+      "required": ["packages"]
+    },
+    "packages": {
+      "type": "object",
+      "patternProperties": {
+        "^[A-Za-z0-9-_\u00C0-\u00D6\u00D8-\u00f6\u00f8-\u00ff]{1,20}$": { 
+          "$ref": "#/definitions/package"
+        }
+      },
+      "additionalProperties": false
+    },
+    "package": {
+      "type": "object",
+      "properties": {
+        "license": { "type": "string" },
+        "actions": { "$ref": "#/definitions/actions" }
+      }
+    },
+    "actions": {
+      "type": "object",
+      "patternProperties": {
+        "^[A-Za-z0-9-_\u00C0-\u00D6\u00D8-\u00f6\u00f8-\u00ff]{1,20}$": { 
+          "$ref": "#/definitions/action"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action": {
+      "type": "object",
+      "properties": {
+        "function": { "type": "string" },
+        "web": { "type": "string" },
+        "runtime": { "type": "string" },
+        "inputs": { "$ref": "#/definitions/inputs" },
+        "annotations": { "$ref": "#/definitions/annotations" }
+      },
+      "required": ["function", "runtime"]
+    },
+    "inputs": {
+      "type": "object",
+      "patternProperties": {
+        "^[A-Za-z0-9-_\u00C0-\u00D6\u00D8-\u00f6\u00f8-\u00ff]{1,20}$": { 
+          "type": ["string", "boolean"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "type": "object",
+      "patternProperties": {
+        "^[A-Za-z0-9-_\u00C0-\u00D6\u00D8-\u00f6\u00f8-\u00ff]{1,20}$": { 
+          "type": ["string", "boolean"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "hooks": {
+      "type": "object",
+      "properties": {
+        "pre-app-build": { "type": "string" },
+        "post-app-build": { "type": "string" },
+        "build-actions": { "type": "string" },
+        "build-static": { "type": "string" },
+        "pre-app-deploy": { "type": "string" },
+        "post-app-deploy": { "type": "string" },
+        "deploy-actions": { "type": "string" },
+        "deploy-static": { "type": "string" },
+        "pre-app-undeploy": { "type": "string" },
+        "post-app-undeploy": { "type": "string" },
+        "undeploy-actions": { "type": "string" },
+        "undeploy-static": { "type": "string" },
+        "pre-app-run": { "type": "string" },
+        "post-app-run": { "type": "string" },
+        "serve-static": { "type": "string" }
+      }
+    }
+  }
+}

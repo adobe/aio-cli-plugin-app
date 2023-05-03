@@ -99,3 +99,27 @@ describe('deploy.yaml', () => {
     expect(valid).toBeFalsy()
   })
 })
+
+describe('ext.config.yaml', () => {
+  const schemaName = 'ext.config.yaml'
+
+  test('validate success', () => {
+    const { valid, errors } = validateJsonWithSchema(
+      fixtureYaml('ext.config.yaml/1.valid.yaml'),
+      schemaName
+    )
+
+    expect(errors).toEqual(null)
+    expect(valid).toBeTruthy()
+  })
+
+  test('validate failure', () => {
+    const { valid, errors } = validateJsonWithSchema(
+      fixtureYaml('ext.config.yaml/1.invalid.yaml'),
+      schemaName
+    )
+
+    expect(errors.length).toEqual(2)
+    expect(valid).toBeFalsy()
+  })
+})

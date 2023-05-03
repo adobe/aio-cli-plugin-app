@@ -13,5 +13,6 @@ governing permissions and limitations under the License.
 module.exports = {
   'config.json': require('./config.schema.json'),
   'app.config.yaml': require('./app.config.yaml.schema.json'),
-  'deploy.yaml': require('./deploy.yaml.schema.json')
+  'deploy.yaml': require('./deploy.yaml.schema.json'),
+  'ext.config.yaml': require('./ext.config.yaml.schema.json')
 }
