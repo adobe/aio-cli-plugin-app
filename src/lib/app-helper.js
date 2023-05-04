@@ -66,6 +66,7 @@ async function installPackages (dir, options = { spinner: null, verbose: false }
   return ret
 }
 
+// Is this still used? it is exported, but there are no references to it -jm
 async function runPackageScript (scriptName, dir, cmdArgs = []) {
   aioLogger.debug(`running npm run-script ${scriptName} in dir: ${dir}`)
   const pkg = await fs.readJSON(path.join(dir, 'package.json'))
@@ -78,22 +79,34 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
   }
 }
 
-/** TODO */
-async function runInProcess(hookPath, config) {
-  if(!hookPath) {
-    console.log('no hook path')
-    return null
-  }
-  console.log('running in process .. ', hookPath)
-  try {
-    const hook = require(path.resolve(hookPath))
-    return hook(config)
-  } catch (e) {
-    console.error('error running hook in process, running as script instead')
-    return runScript(hookPath)
+/**
+ *
+ * @param {String} hookPath to be require()'d and run. Should export an async function that takes a config object as its only argument
+ * @param {Object} config which will be passed to the hook
+ * @returns {Promise<*>} whatever the hook returns
+ */
+async function runInProcess (hookPath, config) {
+  if (hookPath) {
+    try {
+      const hook = require(path.resolve(hookPath))
+      aioLogger.debug('runInProcess: running project hook in process')
+      return hook(config)
+    } catch (e) {
+      aioLogger.debug('runInProcess: error running project hook in process, running as package script instead')
+      return runScript(hookPath)
+    }
+  } else {
+    aioLogger.debug('runInProcess: undefined hookPath')
   }
 }
 
+/**
+ * Runs a package script in a child process
+ * @param {String} command to run
+ * @param {String} dir to run command in
+ * @param {String[]} cmdArgs args to pass to command
+ * @returns {Promise<ChildProcess>} child process
+ */
 async function runScript (command, dir, cmdArgs = []) {
   if (!command) {
     return null
