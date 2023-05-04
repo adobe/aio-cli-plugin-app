@@ -17,7 +17,7 @@ const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { Flags, CliUx: { ux: cli } } = require('@oclif/core')
-const { createWebExportFilter, runScript, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata } = require('../../lib/app-helper')
+const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
 
@@ -144,9 +144,8 @@ class Deploy extends BuildCommand {
     try {
       this.config.runHook('pre-deploy-event-reg', { appConfig: config })
       await runInProcess(config.hooks['pre-app-deploy'], config)
-      //await runScript(config.hooks['pre-app-deploy'])
     } catch (err) {
-      this.log(err)
+      this.error(err)
     }
 
     if (flags.actions) {
@@ -158,7 +157,7 @@ class Deploy extends BuildCommand {
         const message = `Deploying actions for '${name}'`
         spinner.start(message)
         try {
-          const script = await runScript(config.hooks['deploy-actions'])
+          const script = await runInProcess(config.hooks['deploy-actions'], config)
           if (!script) {
             await this.config.runHook('deploy-actions', {
               appConfig: config,
@@ -191,7 +190,7 @@ class Deploy extends BuildCommand {
         const message = `Deploying web assets for '${name}'`
         spinner.start(message)
         try {
-          const script = await runScript(config.hooks['deploy-static'])
+          const script = await runInProcess(config.hooks['deploy-static'], config)
           if (script) {
             spinner.fail(chalk.green(`deploy-static skipped by hook '${name}'`))
           } else {
@@ -242,7 +241,6 @@ class Deploy extends BuildCommand {
     try {
       this.config.runHook('post-deploy-event-reg', { appConfig: config })
       await runInProcess(config.hooks['post-app-deploy'], config)
-      // await runScript(config.hooks['post-app-deploy'])
     } catch (err) {
       this.log(err)
     }
