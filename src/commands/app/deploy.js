@@ -55,9 +55,7 @@ class Deploy extends BuildCommand {
 
       // 1. update log forwarding configuration
       // note: it is possible that .aio file does not exist, which means there is no local lg config
-      if (aioConfig &&
-          aioConfig.project &&
-          aioConfig.project.workspace &&
+      if (aioConfig?.project?.workspace &&
           flags['log-forwarding-update'] &&
           flags.actions) {
         spinner.start('Updating log forwarding configuration')
