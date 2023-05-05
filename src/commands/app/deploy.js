@@ -140,8 +140,15 @@ class Deploy extends BuildCommand {
     const filterActions = flags.action
 
     try {
-      this.config.runHook('pre-deploy-event-reg', { appConfig: config })
       await runInProcess(config.hooks['pre-app-deploy'], config)
+      if (flags['feature-event-hooks']) {
+        this.log('feature-event-hooks is enabled, running pre-deploy-event-reg hook')
+        const hookResults = await this.config.runHook('pre-deploy-event-reg', { appConfig: config })
+        if (hookResults?.failures?.length > 0) {
+          // output should be "Error : <plugin-name> : <error-message>\n" for each failure
+          this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
+        }
+      }
     } catch (err) {
       this.error(err)
     }
@@ -157,11 +164,15 @@ class Deploy extends BuildCommand {
         try {
           const script = await runInProcess(config.hooks['deploy-actions'], config)
           if (!script) {
-            await this.config.runHook('deploy-actions', {
+            const hookResults = await this.config.runHook('deploy-actions', {
               appConfig: config,
               filterEntities: filterActions || [],
               isLocalDev: false
             })
+            if (hookResults?.failures?.length > 0) {
+              // output should be "Error : <plugin-name> : <error-message>\n" for each failure
+              this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
+            }
             deployedRuntimeEntities = await rtLib.deployActions(config, { filterEntities }, onProgress)
           }
 
@@ -237,8 +248,15 @@ class Deploy extends BuildCommand {
     }
 
     try {
-      this.config.runHook('post-deploy-event-reg', { appConfig: config })
       await runInProcess(config.hooks['post-app-deploy'], config)
+      if (flags['feature-event-hooks']) {
+        this.log('feature-event-hooks is enabled, running post-deploy-event-reg hook')
+        const hookResults = await this.config.runHook('post-deploy-event-reg', { appConfig: config })
+        if (hookResults?.failures?.length > 0) {
+          // output should be "Error : <plugin-name> : <error-message>\n" for each failure
+          this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
+        }
+      }
     } catch (err) {
       this.log(err)
     }
@@ -341,6 +359,12 @@ Deploy.flags = {
     description: '[default: true] Update log forwarding configuration on server',
     default: true,
     allowNo: true
+  }),
+  'feature-event-hooks': Flags.boolean({
+    description: '[default: false] Enable event hooks feature',
+    default: false,
+    allowNo: true,
+    hidden: true
   })
 }
 

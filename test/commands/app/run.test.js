@@ -82,7 +82,7 @@ const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
 }
 
 beforeEach(() => {
-  jest.restoreAllMocks()
+  jest.clearAllMocks()
   mockRunDev.mockReset()
   helpers.runScript.mockReset()
 

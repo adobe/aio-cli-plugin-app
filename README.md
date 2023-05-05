@@ -29,49 +29,26 @@ $ aio app --help
 * [`aio app`](#aio-app)
 * [`aio app add`](#aio-app-add)
 * [`aio app add action`](#aio-app-add-action)
-* [`aio app add actions`](#aio-app-add-actions)
 * [`aio app add ci`](#aio-app-add-ci)
 * [`aio app add event`](#aio-app-add-event)
-* [`aio app add events`](#aio-app-add-events)
-* [`aio app add ext`](#aio-app-add-ext)
 * [`aio app add extension`](#aio-app-add-extension)
-* [`aio app add extensions`](#aio-app-add-extensions)
 * [`aio app add service`](#aio-app-add-service)
-* [`aio app add services`](#aio-app-add-services)
 * [`aio app add web-assets`](#aio-app-add-web-assets)
 * [`aio app build`](#aio-app-build)
-* [`aio app config`](#aio-app-config)
-* [`aio app config get`](#aio-app-config-get)
-* [`aio app config get lf`](#aio-app-config-get-lf)
-* [`aio app config get lf errors`](#aio-app-config-get-lf-errors)
-* [`aio app config get log-forwarding`](#aio-app-config-get-log-forwarding)
-* [`aio app config get log-forwarding errors`](#aio-app-config-get-log-forwarding-errors)
-* [`aio app config set`](#aio-app-config-set)
-* [`aio app config set lf`](#aio-app-config-set-lf)
-* [`aio app config set log-forwarding`](#aio-app-config-set-log-forwarding)
 * [`aio app create [PATH]`](#aio-app-create-path)
 * [`aio app delete`](#aio-app-delete)
 * [`aio app delete action [ACTION-NAME]`](#aio-app-delete-action-action-name)
-* [`aio app delete actions [ACTION-NAME]`](#aio-app-delete-actions-action-name)
 * [`aio app delete ci`](#aio-app-delete-ci)
 * [`aio app delete event [EVENT-ACTION-NAME]`](#aio-app-delete-event-event-action-name)
-* [`aio app delete events [EVENT-ACTION-NAME]`](#aio-app-delete-events-event-action-name)
-* [`aio app delete ext`](#aio-app-delete-ext)
 * [`aio app delete extension`](#aio-app-delete-extension)
-* [`aio app delete extensions`](#aio-app-delete-extensions)
 * [`aio app delete service`](#aio-app-delete-service)
-* [`aio app delete services`](#aio-app-delete-services)
 * [`aio app delete web-assets`](#aio-app-delete-web-assets)
 * [`aio app deploy`](#aio-app-deploy)
 * [`aio app get-url [ACTION]`](#aio-app-get-url-action)
 * [`aio app info`](#aio-app-info)
 * [`aio app init [PATH]`](#aio-app-init-path)
 * [`aio app list`](#aio-app-list)
-* [`aio app list ext`](#aio-app-list-ext)
-* [`aio app list ext-points`](#aio-app-list-ext-points)
 * [`aio app list extension`](#aio-app-list-extension)
-* [`aio app list extension-points`](#aio-app-list-extension-points)
-* [`aio app list extensions`](#aio-app-list-extensions)
 * [`aio app logs`](#aio-app-logs)
 * [`aio app run`](#aio-app-run)
 * [`aio app test`](#aio-app-test)
@@ -94,7 +71,7 @@ DESCRIPTION
   Create, run, test, and deploy Adobe I/O Apps
 ```
 
-_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/10.0.4/src/commands/app/index.js)_
+_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/10.1.1/src/commands/app/index.js)_
 
 ## `aio app add`
 
@@ -119,29 +96,6 @@ Add new actions
 ```
 USAGE
   $ aio app add action [-v] [--version] [--install] [-y] [-e <value>]
-
-FLAGS
-  -e, --extension=<value>  Add actions to a specific extension
-  -v, --verbose            Verbose output
-  -y, --yes                Skip questions, and use all default values
-  --[no-]install           [default: true] Run npm installation after files are created
-  --version                Show version
-
-DESCRIPTION
-  Add new actions
-
-
-ALIASES
-  $ aio app add actions
-```
-
-## `aio app add actions`
-
-Add new actions
-
-```
-USAGE
-  $ aio app add actions [-v] [--version] [--install] [-y] [-e <value>]
 
 FLAGS
   -e, --extension=<value>  Add actions to a specific extension
@@ -197,53 +151,6 @@ ALIASES
   $ aio app add events
 ```
 
-## `aio app add events`
-
-Add a new Adobe I/O Events action
-
-```
-USAGE
-  $ aio app add events [-v] [--version] [--install] [-y] [-e <value>]
-
-FLAGS
-  -e, --extension=<value>  Add actions to a specific extension
-  -v, --verbose            Verbose output
-  -y, --yes                Skip questions, and use all default values
-  --[no-]install           [default: true] Run npm installation after files are created
-  --version                Show version
-
-DESCRIPTION
-  Add a new Adobe I/O Events action
-
-
-ALIASES
-  $ aio app add events
-```
-
-## `aio app add ext`
-
-Add new extensions to the project
-
-```
-USAGE
-  $ aio app add ext [-v] [--version] [--install] [-y] [-e <value>]
-
-FLAGS
-  -e, --extension=<value>...  Specify extensions to add, skips selection prompt
-  -v, --verbose               Verbose output
-  -y, --yes                   Skip questions, and use all default values
-  --[no-]install              [default: true] Run npm installation after files are created
-  --version                   Show version
-
-DESCRIPTION
-  Add new extensions to the project
-
-
-ALIASES
-  $ aio app add ext
-  $ aio app add extensions
-```
-
 ## `aio app add extension`
 
 Add new extensions to the project
@@ -268,30 +175,6 @@ ALIASES
   $ aio app add extensions
 ```
 
-## `aio app add extensions`
-
-Add new extensions to the project
-
-```
-USAGE
-  $ aio app add extensions [-v] [--version] [--install] [-y] [-e <value>]
-
-FLAGS
-  -e, --extension=<value>...  Specify extensions to add, skips selection prompt
-  -v, --verbose               Verbose output
-  -y, --yes                   Skip questions, and use all default values
-  --[no-]install              [default: true] Run npm installation after files are created
-  --version                   Show version
-
-DESCRIPTION
-  Add new extensions to the project
-
-
-ALIASES
-  $ aio app add ext
-  $ aio app add extensions
-```
-
 ## `aio app add service`
 
 Subscribe to Services in the current Workspace
@@ -299,26 +182,6 @@ Subscribe to Services in the current Workspace
 ```
 USAGE
   $ aio app add service [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Subscribe to Services in the current Workspace
-
-
-ALIASES
-  $ aio app add services
-```
-
-## `aio app add services`
-
-Subscribe to Services in the current Workspace
-
-```
-USAGE
-  $ aio app add services [-v] [--version]
 
 FLAGS
   -v, --verbose  Verbose output
@@ -376,184 +239,6 @@ DESCRIPTION
   Build an Adobe I/O App
 
   This will always force a rebuild unless --no-force-build is set.
-```
-
-## `aio app config`
-
-Manage app config
-
-```
-USAGE
-  $ aio app config [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Manage app config
-
-ALIASES
-  $ aio app config
-  $ aio app config
-```
-
-## `aio app config get`
-
-Get app config
-
-```
-USAGE
-  $ aio app config get [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Get app config
-
-ALIASES
-  $ aio app config get
-```
-
-## `aio app config get lf`
-
-Get log forwarding destination configuration
-
-```
-USAGE
-  $ aio app config get lf [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Get log forwarding destination configuration
-
-ALIASES
-  $ aio app config get log-forwarding
-  $ aio app config get lf
-```
-
-## `aio app config get lf errors`
-
-Get log forwarding errors
-
-```
-USAGE
-  $ aio app config get lf errors [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Get log forwarding errors
-
-ALIASES
-  $ aio app config get log-forwarding errors
-  $ aio app config get lf errors
-```
-
-## `aio app config get log-forwarding`
-
-Get log forwarding destination configuration
-
-```
-USAGE
-  $ aio app config get log-forwarding [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Get log forwarding destination configuration
-
-ALIASES
-  $ aio app config get log-forwarding
-  $ aio app config get lf
-```
-
-## `aio app config get log-forwarding errors`
-
-Get log forwarding errors
-
-```
-USAGE
-  $ aio app config get log-forwarding errors [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Get log forwarding errors
-
-ALIASES
-  $ aio app config get log-forwarding errors
-  $ aio app config get lf errors
-```
-
-## `aio app config set`
-
-Set app config
-
-```
-USAGE
-  $ aio app config set [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Set app config
-
-ALIASES
-  $ aio app config set
-```
-
-## `aio app config set lf`
-
-Set log forwarding destination configuration
-
-```
-USAGE
-  $ aio app config set lf [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Set log forwarding destination configuration
-
-ALIASES
-  $ aio app config set log-forwarding
-  $ aio app config set lf
-```
-
-## `aio app config set log-forwarding`
-
-Set log forwarding destination configuration
-
-```
-USAGE
-  $ aio app config set log-forwarding [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Set log forwarding destination configuration
-
-ALIASES
-  $ aio app config set log-forwarding
-  $ aio app config set lf
 ```
 
 ## `aio app create [PATH]`
@@ -616,30 +301,6 @@ ALIASES
   $ aio app delete actions
 ```
 
-## `aio app delete actions [ACTION-NAME]`
-
-Delete existing actions
-
-```
-USAGE
-  $ aio app delete actions [ACTION-NAME] [-v] [--version] [-y]
-
-ARGUMENTS
-  ACTION-NAME  Action `pkg/name` to delete, you can specify multiple actions via a comma separated list
-
-FLAGS
-  -v, --verbose  Verbose output
-  -y, --yes      Skip questions, and use all default values
-  --version      Show version
-
-DESCRIPTION
-  Delete existing actions
-
-
-ALIASES
-  $ aio app delete actions
-```
-
 ## `aio app delete ci`
 
 Delete existing CI files
@@ -681,54 +342,6 @@ ALIASES
   $ aio app delete events
 ```
 
-## `aio app delete events [EVENT-ACTION-NAME]`
-
-Delete existing Adobe I/O Events actions
-
-```
-USAGE
-  $ aio app delete events [EVENT-ACTION-NAME] [-v] [--version] [-y]
-
-ARGUMENTS
-  EVENT-ACTION-NAME  Action `pkg/name` to delete, you can specify multiple actions via a comma separated list
-
-FLAGS
-  -v, --verbose  Verbose output
-  -y, --yes      Skip questions, and use all default values
-  --version      Show version
-
-DESCRIPTION
-  Delete existing Adobe I/O Events actions
-
-
-ALIASES
-  $ aio app delete events
-```
-
-## `aio app delete ext`
-
-Delete existing extensions
-
-```
-USAGE
-  $ aio app delete ext [-v] [--version] [-y] [--install] [-e <value>]
-
-FLAGS
-  -e, --extension=<value>...  Specify extensions to delete, skips selection prompt
-  -v, --verbose               Verbose output
-  -y, --yes                   Skip questions, and use all default values
-  --[no-]install              [default: true] Run npm installation after files are created
-  --version                   Show version
-
-DESCRIPTION
-  Delete existing extensions
-
-
-ALIASES
-  $ aio app delete ext
-  $ aio app delete extensions
-```
-
 ## `aio app delete extension`
 
 Delete existing extensions
@@ -753,30 +366,6 @@ ALIASES
   $ aio app delete extensions
 ```
 
-## `aio app delete extensions`
-
-Delete existing extensions
-
-```
-USAGE
-  $ aio app delete extensions [-v] [--version] [-y] [--install] [-e <value>]
-
-FLAGS
-  -e, --extension=<value>...  Specify extensions to delete, skips selection prompt
-  -v, --verbose               Verbose output
-  -y, --yes                   Skip questions, and use all default values
-  --[no-]install              [default: true] Run npm installation after files are created
-  --version                   Show version
-
-DESCRIPTION
-  Delete existing extensions
-
-
-ALIASES
-  $ aio app delete ext
-  $ aio app delete extensions
-```
-
 ## `aio app delete service`
 
 Delete Services in the current Workspace
@@ -784,26 +373,6 @@ Delete Services in the current Workspace
 ```
 USAGE
   $ aio app delete service [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Delete Services in the current Workspace
-
-
-ALIASES
-  $ aio app delete services
-```
-
-## `aio app delete services`
-
-Delete Services in the current Workspace
-
-```
-USAGE
-  $ aio app delete services [-v] [--version]
 
 FLAGS
   -v, --verbose  Verbose output
@@ -958,52 +527,6 @@ DESCRIPTION
   List components for Adobe I/O App
 ```
 
-## `aio app list ext`
-
-List implemented extensions
-
-```
-USAGE
-  $ aio app list ext [-v] [--version] [-j] [-y]
-
-FLAGS
-  -j, --json     Output json
-  -v, --verbose  Verbose output
-  -y, --yml      Output yml
-  --version      Show version
-
-DESCRIPTION
-  List implemented extensions
-
-
-ALIASES
-  $ aio app list ext
-  $ aio app list extensions
-```
-
-## `aio app list ext-points`
-
-List all extension points for the selected org
-
-```
-USAGE
-  $ aio app list ext-points [-v] [--version] [-j] [-y]
-
-FLAGS
-  -j, --json     Output json
-  -v, --verbose  Verbose output
-  -y, --yml      Output yml
-  --version      Show version
-
-DESCRIPTION
-  List all extension points for the selected org
-
-
-ALIASES
-  $ aio app list ext-points
-  $ aio app list extension-points
-```
-
 ## `aio app list extension`
 
 List implemented extensions
@@ -1011,52 +534,6 @@ List implemented extensions
 ```
 USAGE
   $ aio app list extension [-v] [--version] [-j] [-y]
-
-FLAGS
-  -j, --json     Output json
-  -v, --verbose  Verbose output
-  -y, --yml      Output yml
-  --version      Show version
-
-DESCRIPTION
-  List implemented extensions
-
-
-ALIASES
-  $ aio app list ext
-  $ aio app list extensions
-```
-
-## `aio app list extension-points`
-
-List all extension points for the selected org
-
-```
-USAGE
-  $ aio app list extension-points [-v] [--version] [-j] [-y]
-
-FLAGS
-  -j, --json     Output json
-  -v, --verbose  Verbose output
-  -y, --yml      Output yml
-  --version      Show version
-
-DESCRIPTION
-  List all extension points for the selected org
-
-
-ALIASES
-  $ aio app list ext-points
-  $ aio app list extension-points
-```
-
-## `aio app list extensions`
-
-List implemented extensions
-
-```
-USAGE
-  $ aio app list extensions [-v] [--version] [-j] [-y]
 
 FLAGS
   -j, --json     Output json

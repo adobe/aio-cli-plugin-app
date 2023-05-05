@@ -874,7 +874,7 @@ describe('createWebExportFilter', () => {
 
   test('no web-export annotation', () => {
     const action = {
-      name: 'abcde', url: 'https://fake.site', body: { annotations: [] }
+      name: 'abcde', url: 'https://fake.site', annotations: []
     }
 
     expect(webFilter(action)).toEqual(false)
@@ -885,14 +885,7 @@ describe('createWebExportFilter', () => {
     const action1 = {
       name: 'abcde',
       url: 'https://fake.site',
-      body: {
-        annotations: [
-          {
-            key: 'web-export',
-            value: true
-          }
-        ]
-      }
+      annotations: { 'web-export': true }
     }
 
     expect(webFilter(action1)).toEqual(true)
@@ -901,14 +894,7 @@ describe('createWebExportFilter', () => {
     const action2 = {
       name: 'abcde',
       url: 'https://fake.site',
-      body: {
-        annotations: [
-          {
-            key: 'web-export',
-            value: 1
-          }
-        ]
-      }
+      annotations: { 'web-export': 1 }
     }
 
     expect(webFilter(action2)).toEqual(true)
@@ -919,14 +905,7 @@ describe('createWebExportFilter', () => {
     const action1 = {
       name: 'abcde',
       url: 'https://fake.site',
-      body: {
-        annotations: [
-          {
-            key: 'web-export',
-            value: false
-          }
-        ]
-      }
+      annotations: { 'web-export': false }
     }
 
     expect(webFilter(action1)).toEqual(false)
@@ -935,14 +914,7 @@ describe('createWebExportFilter', () => {
     const action2 = {
       name: 'abcde',
       url: 'https://fake.site',
-      body: {
-        annotations: [
-          {
-            key: 'web-export',
-            value: null
-          }
-        ]
-      }
+      annotations: { 'web-export': null }
     }
 
     expect(webFilter(action2)).toEqual(false)

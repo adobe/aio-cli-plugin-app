@@ -150,6 +150,16 @@ class TemplatesCommand extends AddCommand {
   } = {}) {
     const spinner = ora()
 
+    if (templates.length <= 0) {
+      aioLogger.debug('installTemplates: standalone-app')
+      // technically runHook can quietly fail, but we are choosing to ignore it as these are telemetry events
+      // and not mission critical
+      await this.config.runHook('telemetry', { data: 'installTemplates:standalone-app' })
+    } else {
+      aioLogger.debug(`installTemplates: ${templates}`)
+      await this.config.runHook('telemetry', { data: `installTemplates:${templates}` })
+    }
+
     // install the templates in sequence
     for (const template of templates) {
       spinner.info(`Installing template ${template}`)

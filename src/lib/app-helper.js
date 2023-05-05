@@ -524,14 +524,11 @@ function deleteUserConfig (configData) {
 /** @private */
 const createWebExportFilter = (filterValue) => {
   return (action) => {
-    if (!action || !action.body || !action.body.annotations) {
+    if (!action || !action.annotations) {
       return false
     }
 
-    const weAnnotation = action.body.annotations.filter(a => a.key === 'web-export')
-    const weValue = (weAnnotation.length > 0) ? !!(weAnnotation[0].value) : false
-
-    return (filterValue === weValue)
+    return String(!!action.annotations['web-export']) === String(filterValue)
   }
 }
 

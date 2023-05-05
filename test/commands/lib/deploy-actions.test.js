@@ -18,14 +18,7 @@ const appHelperActual = jest.requireActual('../../../src/lib/app-helper')
 jest.mock('../../../src/lib/app-helper')
 
 const createWebExportAnnotation = (value) => ({
-  body: {
-    annotations: [
-      {
-        key: 'web-export',
-        value
-      }
-    ]
-  }
+  annotations: { 'web-export': value }
 })
 
 beforeEach(() => {
@@ -130,6 +123,23 @@ test('call inprocHook with filter : isLocalDev true', async () => {
   expect(utils.runScript).toHaveBeenNthCalledWith(1, undefined) // pre-app-deploy
   expect(utils.runScript).toHaveBeenNthCalledWith(2, undefined) // deploy-actions
   expect(utils.runScript).toHaveBeenNthCalledWith(3, undefined) // post-app-deploy
+})
+
+test('throws if hook returns failures', async () => {
+  const mockHook = jest.fn().mockResolvedValueOnce({
+    successes: [],
+    failures: [{ plugin: { name: 'ifailedu' }, error: 'some error' }]
+  })
+  const mockLog = jest.fn()
+  await expect(deployActions({ hooks: {} }, true, mockLog, ['action-1', 'action-2'], mockHook)).rejects.toThrow('Hook \'deploy-actions\' failed with some error')
+  expect(mockHook).toHaveBeenCalledWith('deploy-actions', expect.objectContaining({
+    appConfig: { hooks: {} },
+    filterEntities: ['action-1', 'action-2'],
+    isLocalDev: true
+  }))
+  expect(rtDeployActions).not.toHaveBeenCalled()
+  expect(mockLog).toHaveBeenCalled()
+  expect(utils.runScript).toHaveBeenCalledTimes(2)
 })
 
 test('use default parameters (coverage)', async () => {
