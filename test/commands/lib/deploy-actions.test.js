@@ -22,6 +22,7 @@ const createWebExportAnnotation = (value) => ({
 })
 
 beforeEach(() => {
+  utils.runInProcess.mockReset()
   utils.runScript.mockReset()
   utils.createWebExportFilter.mockReset()
 
@@ -36,7 +37,7 @@ test('exports', () => {
 })
 
 test('deploy-actions app hook available', async () => {
-  utils.runScript.mockImplementation(script => {
+  utils.runInProcess.mockImplementation(script => {
     if (script === 'deploy-actions') {
       return script
     }
@@ -49,13 +50,13 @@ test('deploy-actions app hook available', async () => {
   })
 
   expect(rtDeployActions).not.toBeCalled()
-  expect(utils.runScript).toHaveBeenNthCalledWith(1, undefined) // pre-app-deploy
-  expect(utils.runScript).toHaveBeenNthCalledWith(2, 'deploy-actions')
-  expect(utils.runScript).toHaveBeenNthCalledWith(3, undefined) // post-app-deploy
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(1, undefined, expect.any(Object)) // pre-app-deploy
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(2, 'deploy-actions', expect.any(Object))
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(3, undefined, expect.any(Object)) // post-app-deploy
 })
 
 test('it should deploy actions with filter param, (coverage)', async () => {
-  utils.runScript.mockImplementation(() => false)
+  utils.runInProcess.mockImplementation(() => false)
 
   await deployActions({
     hooks: {
@@ -78,9 +79,9 @@ test('it should deploy actions with filter param, (coverage)', async () => {
 test('no deploy-actions app hook available (use inbuilt)', async () => {
   await deployActions({ hooks: {} })
   expect(rtDeployActions).toHaveBeenCalled()
-  expect(utils.runScript).toHaveBeenNthCalledWith(1, undefined) // pre-app-deploy
-  expect(utils.runScript).toHaveBeenNthCalledWith(2, undefined) // deploy-actions
-  expect(utils.runScript).toHaveBeenNthCalledWith(3, undefined) // post-app-deploy
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(1, undefined, expect.any(Object)) // pre-app-deploy
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(2, undefined, expect.any(Object)) // deploy-actions
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(3, undefined, expect.any(Object)) // post-app-deploy
 })
 
 test('call inprocHook no filter', async () => {
@@ -92,9 +93,9 @@ test('call inprocHook no filter', async () => {
     isLocalDev: false
   }))
   expect(rtDeployActions).toHaveBeenCalled()
-  expect(utils.runScript).toHaveBeenNthCalledWith(1, undefined) // pre-app-deploy
-  expect(utils.runScript).toHaveBeenNthCalledWith(2, undefined) // deploy-actions
-  expect(utils.runScript).toHaveBeenNthCalledWith(3, undefined) // post-app-deploy
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(1, undefined, expect.any(Object)) // pre-app-deploy
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(2, undefined, expect.any(Object)) // deploy-actions
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(3, undefined, expect.any(Object)) // post-app-deploy
 })
 
 test('call inprocHook with filter : isLocalDev false', async () => {
@@ -106,9 +107,9 @@ test('call inprocHook with filter : isLocalDev false', async () => {
     isLocalDev: false
   }))
   expect(rtDeployActions).toHaveBeenCalled()
-  expect(utils.runScript).toHaveBeenNthCalledWith(1, undefined) // pre-app-deploy
-  expect(utils.runScript).toHaveBeenNthCalledWith(2, undefined) // deploy-actions
-  expect(utils.runScript).toHaveBeenNthCalledWith(3, undefined) // post-app-deploy
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(1, undefined, expect.any(Object)) // pre-app-deploy
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(2, undefined, expect.any(Object)) // deploy-actions
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(3, undefined, expect.any(Object)) // post-app-deploy
 })
 
 test('call inprocHook with filter : isLocalDev true', async () => {
@@ -120,9 +121,9 @@ test('call inprocHook with filter : isLocalDev true', async () => {
     isLocalDev: true
   }))
   expect(rtDeployActions).toHaveBeenCalled()
-  expect(utils.runScript).toHaveBeenNthCalledWith(1, undefined) // pre-app-deploy
-  expect(utils.runScript).toHaveBeenNthCalledWith(2, undefined) // deploy-actions
-  expect(utils.runScript).toHaveBeenNthCalledWith(3, undefined) // post-app-deploy
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(1, undefined, expect.any(Object)) // pre-app-deploy
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(2, undefined, expect.any(Object)) // deploy-actions
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(3, undefined, expect.any(Object)) // post-app-deploy
 })
 
 test('throws if hook returns failures', async () => {
@@ -153,9 +154,9 @@ test('use default parameters (coverage)', async () => {
   await deployActions({ hooks: {} })
 
   expect(rtDeployActions).toHaveBeenCalled()
-  expect(utils.runScript).toHaveBeenNthCalledWith(1, undefined) // pre-app-deploy
-  expect(utils.runScript).toHaveBeenNthCalledWith(2, undefined) // deploy-actions
-  expect(utils.runScript).toHaveBeenNthCalledWith(3, undefined) // post-app-deploy
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(1, undefined, expect.any(Object)) // pre-app-deploy
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(2, undefined, expect.any(Object)) // deploy-actions
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(3, undefined, expect.any(Object)) // post-app-deploy
 })
 
 test('should log actions url or name when actions are deployed (web-export: true)', async () => {

@@ -697,7 +697,7 @@ describe('run', () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
     const childProcess = {}
-    helpers.runScript
+    helpers.runInProcess
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
       .mockResolvedValueOnce(childProcess) // deploy-actions (uses hook)
       .mockResolvedValueOnce(childProcess) // deploy-static (uses hook)
@@ -712,7 +712,7 @@ describe('run', () => {
 
   test('deploy (pre and post hooks have errors)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
-    helpers.runScript
+    helpers.runInProcess
       .mockRejectedValueOnce('error-pre-app-deploy') // pre-app-deploy
       .mockResolvedValueOnce(undefined) // deploy-actions
       .mockResolvedValueOnce(undefined) // deploy-static
@@ -720,7 +720,7 @@ describe('run', () => {
 
     command.argv = []
     await command.run()
-    expect(command.config.runHook).toHaveBeenCalledTimes(1)
+    expect(command.config.runHook).toHaveBeenCalledTimes(3)
     expect(command.config.runHook).toHaveBeenCalledWith('deploy-actions',
       expect.objectContaining({
         appConfig: expect.any(Object),
@@ -729,13 +729,13 @@ describe('run', () => {
       }))
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.error).toHaveBeenCalledTimes(1)
 
     expect(command.log).toHaveBeenCalledWith('error-pre-app-deploy')
     expect(command.log).toHaveBeenCalledWith('error-post-app-deploy')
   })
 
-  test('deploy (deploy-actions hook has an error)', async () => {
+  test.only('deploy (deploy-actions hook has an error)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
     helpers.runScript
