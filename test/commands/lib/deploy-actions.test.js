@@ -125,6 +125,23 @@ test('call inprocHook with filter : isLocalDev true', async () => {
   expect(utils.runScript).toHaveBeenNthCalledWith(3, undefined) // post-app-deploy
 })
 
+test('throws if hook returns failures', async () => {
+  const mockHook = jest.fn().mockResolvedValueOnce({
+    successes: [],
+    failures: [{ plugin: { name: 'ifailedu' }, error: 'some error' }]
+  })
+  const mockLog = jest.fn()
+  await expect(deployActions({ hooks: {} }, true, mockLog, ['action-1', 'action-2'], mockHook)).rejects.toThrow('Hook \'deploy-actions\' failed with some error')
+  expect(mockHook).toHaveBeenCalledWith('deploy-actions', expect.objectContaining({
+    appConfig: { hooks: {} },
+    filterEntities: ['action-1', 'action-2'],
+    isLocalDev: true
+  }))
+  expect(rtDeployActions).not.toHaveBeenCalled()
+  expect(mockLog).toHaveBeenCalled()
+  expect(utils.runScript).toHaveBeenCalledTimes(2)
+})
+
 test('use default parameters (coverage)', async () => {
   rtDeployActions.mockResolvedValue({
     actions: [
