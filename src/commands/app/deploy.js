@@ -17,7 +17,7 @@ const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { Flags, CliUx: { ux: cli } } = require('@oclif/core')
-const { createWebExportFilter, runScript, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata } = require('../../lib/app-helper')
+const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
 
@@ -140,7 +140,6 @@ class Deploy extends BuildCommand {
     const filterActions = flags.action
 
     try {
-      this.config.runHook('pre-deploy-event-reg', { appConfig: config })
       await runInProcess(config.hooks['pre-app-deploy'], config)
       if (flags['feature-event-hooks']) {
         this.log('feature-event-hooks is enabled, running pre-deploy-event-reg hook')
@@ -249,7 +248,6 @@ class Deploy extends BuildCommand {
     }
 
     try {
-      this.config.runHook('post-deploy-event-reg', { appConfig: config })
       await runInProcess(config.hooks['post-app-deploy'], config)
       if (flags['feature-event-hooks']) {
         this.log('feature-event-hooks is enabled, running post-deploy-event-reg hook')
