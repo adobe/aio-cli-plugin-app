@@ -1053,4 +1053,61 @@ describe('run', () => {
     expect(runHook).toHaveBeenCalledWith('pre-deploy-event-reg', expect.any(Object))
     expect(runHook).toHaveBeenCalledWith('post-deploy-event-reg', expect.any(Object))
   })
+
+  test('handles error and exits when first hook fails', async () => {
+    const runHook = jest.fn().mockResolvedValueOnce({
+      successes: [],
+      failures: [{ plugin: { name: 'ifailedu' }, error: 'some error' }]
+    })
+    command.config = { runHook }
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.argv = ['--feature-event-hooks']
+    await command.run()
+    expect(runHook).toHaveBeenCalledWith('pre-deploy-event-reg', expect.any(Object))
+    // technically, I think only the first hook should be called -jm
+    expect(runHook).toHaveBeenCalledWith('post-deploy-event-reg', expect.any(Object))
+    expect(command.error).toHaveBeenCalledTimes(1)
+  })
+
+  test('handles error and exits when second hook fails', async () => {
+    const runHook = jest.fn()
+      .mockResolvedValueOnce({
+        successes: [{ plugin: { name: 'imsuccess' }, result: 'some string' }],
+        failures: []
+      })
+      .mockResolvedValueOnce({
+        successes: [],
+        failures: [{ plugin: { name: 'ifailedu' }, error: 'some error' }]
+      })
+    command.config = { runHook }
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.argv = ['--feature-event-hooks']
+    await command.run()
+    expect(runHook).toHaveBeenCalledWith('pre-deploy-event-reg', expect.any(Object))
+    expect(runHook).toHaveBeenCalledWith('post-deploy-event-reg', expect.any(Object))
+    expect(command.error).toHaveBeenCalledTimes(1)
+  })
+
+  test('handles error and exits when third hook fails', async () => {
+    const runHook = jest.fn()
+      .mockResolvedValueOnce({
+        successes: [{ plugin: { name: 'imsuccess' }, result: 'some string' }],
+        failures: []
+      })
+      .mockResolvedValueOnce({
+        successes: [{ plugin: { name: 'imsuccess' }, result: 'some string' }],
+        failures: []
+      })
+      .mockResolvedValueOnce({
+        successes: [],
+        failures: [{ plugin: { name: 'ifailedu' }, error: 'some error' }]
+      })
+    command.config = { runHook }
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.argv = ['--feature-event-hooks']
+    await command.run()
+    expect(runHook).toHaveBeenCalledWith('pre-deploy-event-reg', expect.any(Object))
+    expect(runHook).toHaveBeenCalledWith('post-deploy-event-reg', expect.any(Object))
+    expect(command.error).toHaveBeenCalledTimes(1)
+  })
 })
