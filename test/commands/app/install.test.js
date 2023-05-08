@@ -193,33 +193,6 @@ describe('validateConfig', () => {
     )
   })
 
-  // test('success (has $include)', async () => {
-  //   installHelper.validateJsonWithSchema.mockReturnValue({
-  //     valid: true,
-  //     errors: null
-  //   })
-
-  //   const appConfigYaml = fixtureYaml('app.config.yaml/1.extensions.valid.yaml')
-  //   const extConfigYaml = fixtureYaml('ext.config.yaml/1.valid.yaml')
-
-  //   fs.readFileSync.mockReturnValue('') // doesn't matter what we return here, since we only care for the jsYaml mock return
-  //   jsYaml.load
-  //     .mockReturnValueOnce(appConfigYaml)
-  //     .mockReturnValueOnce(extConfigYaml)
-
-  //   const command = new TheCommand()
-  //   await expect(command.validateConfig('my-dest-folder', USER_CONFIG_FILE))
-  //     .resolves.toEqual(undefined)
-  //   expect(installHelper.validateJsonWithSchema).toHaveBeenCalledWith(
-  //     expect.any(Object),
-  //     USER_CONFIG_FILE
-  //   )
-  //   expect(installHelper.validateJsonWithSchema).toHaveBeenCalledWith(
-  //     expect.any(Object),
-  //     EXT_CONFIG_FILE
-  //   )
-  // })
-
   test('failure', async () => {
     installHelper.validateJsonWithSchema.mockReturnValue({
       valid: false,
