@@ -152,6 +152,8 @@ class TemplatesCommand extends AddCommand {
 
     if (templates.length <= 0) {
       aioLogger.debug('installTemplates: standalone-app')
+      // technically runHook can quietly fail, but we are choosing to ignore it as these are telemetry events
+      // and not mission critical
       await this.config.runHook('telemetry', { data: 'installTemplates:standalone-app' })
     } else {
       aioLogger.debug(`installTemplates: ${templates}`)
