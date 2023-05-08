@@ -34,7 +34,6 @@ class Pack extends BaseCommand {
     aioLogger.debug(`args: ${JSON.stringify(args, null, 2)}`)
 
     const appConfig = this.getFullConfig()
-    console.log(JSON.stringify(appConfig, null, 2))
 
     // resolve to absolute path before any chdir
     flags.output = path.resolve(flags.output)
@@ -112,6 +111,7 @@ class Pack extends BaseCommand {
     // TODO: send a PR to their plugin to have a `--json` flag
     const command = await this.config.findCommand('api-mesh:get')
     if (command) {
+      this.log('Getting api-mesh config...')
       const { stdout } = await execa('aio', ['api-mesh', 'get'], { cwd: process.cwd() })
       // until we get the --json flag, we parse the output
       const idx = stdout.indexOf('{')
