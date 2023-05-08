@@ -46,6 +46,8 @@ class InstallCommand extends BaseCommand {
     await this.validateConfig(outputPath, USER_CONFIG_FILE)
     await this.validateConfig(outputPath, DEPLOY_CONFIG_FILE)
     await this.runTests()
+
+    this.log('Install done.')
   }
 
   diffArray (expected, actual) {
