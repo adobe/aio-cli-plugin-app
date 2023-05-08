@@ -150,7 +150,7 @@ afterAll(() => {
 
 beforeEach(() => {
   helpers.writeConfig.mockReset()
-  helpers.runScript.mockReset()
+  helpers.runInProcess.mockReset()
   helpers.buildExtensionPointPayloadWoMetadata.mockReset()
   helpers.buildExcShellViewExtensionMetadata.mockReset()
   helpers.createWebExportFilter.mockReset()
@@ -627,7 +627,7 @@ describe('run', () => {
   test('deploy (--no-actions and --no-web-assets) for application - nothing to be done', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
-    helpers.runScript
+    helpers.runInProcess
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
       .mockResolvedValueOnce(noScriptFound) // post-app-deploy
 
@@ -652,7 +652,7 @@ describe('run', () => {
     })
     mockExtRegExcShellPayload()
     const noScriptFound = undefined
-    helpers.runScript
+    helpers.runInProcess
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
       .mockResolvedValueOnce(noScriptFound) // post-app-deploy
 
@@ -668,7 +668,7 @@ describe('run', () => {
   test('deploy (--no-actions)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
-    helpers.runScript
+    helpers.runInProcess
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
       .mockResolvedValueOnce(noScriptFound) // post-app-deploy
 
@@ -682,7 +682,7 @@ describe('run', () => {
   test('deploy (--no-web-assets)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
-    helpers.runScript
+    helpers.runInProcess
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
       .mockResolvedValueOnce(noScriptFound) // post-app-deploy
 
@@ -711,34 +711,48 @@ describe('run', () => {
   })
 
   test('deploy (pre and post hooks have errors)', async () => {
+    // only the pre error should be handled, and execution should stop
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     helpers.runInProcess
       .mockRejectedValueOnce('error-pre-app-deploy') // pre-app-deploy
+
+    command.error.mockImplementationOnce((msg) => { throw new Error(msg) })
+    command.argv = ['--feature-event-hooks']
+    await expect(command.run()).rejects.toThrowError('error-pre-app-deploy')
+
+    expect(helpers.runInProcess).toHaveBeenCalledTimes(1)
+    expect(command.config.runHook).not.toHaveBeenCalled()
+    expect(mockRuntimeLib.deployActions).not.toHaveBeenCalled()
+    expect(mockWebLib.deployWeb).not.toHaveBeenCalled()
+  })
+
+  test('deploy (post hooks have errors)', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    helpers.runInProcess
+      .mockResolvedValueOnce('error-pre-app-deploy') // pre-app-deploy
       .mockResolvedValueOnce(undefined) // deploy-actions
       .mockResolvedValueOnce(undefined) // deploy-static
       .mockRejectedValueOnce('error-post-app-deploy') // post-app-deploy
 
-    command.argv = []
-    await command.run()
-    expect(command.config.runHook).toHaveBeenCalledTimes(3)
+    command.error.mockImplementationOnce((msg) => { throw new Error(msg) })
+    command.argv = ['--feature-event-hooks']
+    await expect(command.run()).rejects.toThrowError('error-post-app-deploy')
+
     expect(command.config.runHook).toHaveBeenCalledWith('deploy-actions',
       expect.objectContaining({
         appConfig: expect.any(Object),
         filterEntities: [],
         isLocalDev: false
       }))
+    expect(command.config.runHook).toHaveBeenCalledTimes(2)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(command.error).toHaveBeenCalledTimes(1)
-
-    expect(command.log).toHaveBeenCalledWith('error-pre-app-deploy')
-    expect(command.log).toHaveBeenCalledWith('error-post-app-deploy')
   })
 
-  test.only('deploy (deploy-actions hook has an error)', async () => {
+  test('deploy (deploy-actions hook has an error)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
-    helpers.runScript
+    helpers.runInProcess
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy (no error)
       .mockRejectedValueOnce('error-deploy-actions') // deploy-actions (rethrows error)
       .mockResolvedValueOnce(noScriptFound) // deploy-static (will not reach here)
@@ -751,7 +765,7 @@ describe('run', () => {
   test('deploy (deploy-static hook has an error)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
-    helpers.runScript
+    helpers.runInProcess
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy (no error)
       .mockResolvedValueOnce(noScriptFound) // deploy-actions (uses inbuilt, no error)
       .mockRejectedValueOnce('error-deploy-static') // deploy-static (rethrows error)
@@ -983,7 +997,7 @@ describe('run', () => {
     }
 
     const scriptSequence = []
-    helpers.runScript.mockImplementation(script => {
+    helpers.runInProcess.mockImplementation(script => {
       scriptSequence.push(script)
     })
 
@@ -993,7 +1007,7 @@ describe('run', () => {
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
 
-    expect(helpers.runScript).toHaveBeenCalledTimes(4)
+    expect(helpers.runInProcess).toHaveBeenCalledTimes(4)
     expect(scriptSequence.length).toEqual(4)
     expect(scriptSequence[0]).toEqual('pre-app-deploy')
     expect(scriptSequence[1]).toEqual('deploy-actions')

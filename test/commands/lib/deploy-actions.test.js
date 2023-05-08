@@ -23,7 +23,7 @@ const createWebExportAnnotation = (value) => ({
 
 beforeEach(() => {
   utils.runInProcess.mockReset()
-  utils.runScript.mockReset()
+  // utils.runScript.mockReset()
   utils.createWebExportFilter.mockReset()
 
   rtDeployActions.mockReset()
@@ -140,7 +140,7 @@ test('throws if hook returns failures', async () => {
   }))
   expect(rtDeployActions).not.toHaveBeenCalled()
   expect(mockLog).toHaveBeenCalled()
-  expect(utils.runScript).toHaveBeenCalledTimes(2)
+  expect(utils.runInProcess).toHaveBeenCalledTimes(2)
 })
 
 test('use default parameters (coverage)', async () => {
