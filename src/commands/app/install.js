@@ -18,7 +18,7 @@ const fs = require('fs-extra')
 const unzipper = require('unzipper')
 const { validateJsonWithSchema } = require('../../lib/install-helper')
 const jsYaml = require('js-yaml')
-const { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE, EXT_CONFIG_FILE, INCLUDE_DIRECTIVE } = require('../../lib/defaults')
+const { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE } = require('../../lib/defaults')
 
 class InstallCommand extends BaseCommand {
   async run () {
@@ -95,16 +95,6 @@ class InstallCommand extends BaseCommand {
     if (!valid) {
       const message = `Missing or invalid keys in ${configFileName}: ${JSON.stringify(errors, null, 2)}`
       this.error(message)
-    }
-
-    // find any $include(d) extension configs for USER_CONFIG_FILE, validate them
-    if (configFileName === USER_CONFIG_FILE && configFileJson.extensions) {
-      for (const [, extValue] of Object.entries(configFileJson.extensions)) {
-        // we don't care for the extension name/key, only the value for now
-        if (extValue[INCLUDE_DIRECTIVE]) {
-          await this.validateConfig(outputPath, EXT_CONFIG_FILE, path.join(outputPath, extValue[INCLUDE_DIRECTIVE]))
-        }
-      }
     }
   }
 

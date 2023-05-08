@@ -16,7 +16,7 @@ const fs = require('fs-extra')
 const unzipper = require('unzipper')
 const execa = require('execa')
 const installHelper = require('../../../src/lib/install-helper')
-const { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE, EXT_CONFIG_FILE } = require('../../../src/lib/defaults')
+const { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE } = require('../../../src/lib/defaults')
 const path = require('node:path')
 const jsYaml = require('js-yaml')
 
@@ -193,32 +193,32 @@ describe('validateConfig', () => {
     )
   })
 
-  test('success (has $include)', async () => {
-    installHelper.validateJsonWithSchema.mockReturnValue({
-      valid: true,
-      errors: null
-    })
+  // test('success (has $include)', async () => {
+  //   installHelper.validateJsonWithSchema.mockReturnValue({
+  //     valid: true,
+  //     errors: null
+  //   })
 
-    const appConfigYaml = fixtureYaml('app.config.yaml/1.extensions.valid.yaml')
-    const extConfigYaml = fixtureYaml('ext.config.yaml/1.valid.yaml')
+  //   const appConfigYaml = fixtureYaml('app.config.yaml/1.extensions.valid.yaml')
+  //   const extConfigYaml = fixtureYaml('ext.config.yaml/1.valid.yaml')
 
-    fs.readFileSync.mockReturnValue('') // doesn't matter what we return here, since we only care for the jsYaml mock return
-    jsYaml.load
-      .mockReturnValueOnce(appConfigYaml)
-      .mockReturnValueOnce(extConfigYaml)
+  //   fs.readFileSync.mockReturnValue('') // doesn't matter what we return here, since we only care for the jsYaml mock return
+  //   jsYaml.load
+  //     .mockReturnValueOnce(appConfigYaml)
+  //     .mockReturnValueOnce(extConfigYaml)
 
-    const command = new TheCommand()
-    await expect(command.validateConfig('my-dest-folder', USER_CONFIG_FILE))
-      .resolves.toEqual(undefined)
-    expect(installHelper.validateJsonWithSchema).toHaveBeenCalledWith(
-      expect.any(Object),
-      USER_CONFIG_FILE
-    )
-    expect(installHelper.validateJsonWithSchema).toHaveBeenCalledWith(
-      expect.any(Object),
-      EXT_CONFIG_FILE
-    )
-  })
+  //   const command = new TheCommand()
+  //   await expect(command.validateConfig('my-dest-folder', USER_CONFIG_FILE))
+  //     .resolves.toEqual(undefined)
+  //   expect(installHelper.validateJsonWithSchema).toHaveBeenCalledWith(
+  //     expect.any(Object),
+  //     USER_CONFIG_FILE
+  //   )
+  //   expect(installHelper.validateJsonWithSchema).toHaveBeenCalledWith(
+  //     expect.any(Object),
+  //     EXT_CONFIG_FILE
+  //   )
+  // })
 
   test('failure', async () => {
     installHelper.validateJsonWithSchema.mockReturnValue({
