@@ -48,8 +48,7 @@ class Pack extends BaseCommand {
 
     // 1. create artifacts phase
     this.log('Creating package artifacts...')
-    await fs.remove(DEFAULTS.ARTIFACTS_FOLDER)
-    await fs.ensureDir(DEFAULTS.ARTIFACTS_FOLDER)
+    await fs.emptyDir(DEFAULTS.ARTIFACTS_FOLDER)
 
     // ACNA-2038
     // not artifacts folder should exist before we fire the event
