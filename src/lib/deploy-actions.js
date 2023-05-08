@@ -10,7 +10,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { runInProcess, createWebExportFilter} = require('./app-helper')
+const { runInProcess, createWebExportFilter } = require('./app-helper')
 const { deployActions } = require('@adobe/aio-lib-runtime')
 
 /**
@@ -24,7 +24,7 @@ const { deployActions } = require('@adobe/aio-lib-runtime')
 /** @private */
 module.exports = async (config, isLocalDev = false, log = () => {}, filter = false, inprocHook) => {
   runInProcess(config.hooks['pre-app-deploy'], config)
-  const script = await runInProcess(config.hooks['deploy-actions'], {config, options: {isLocalDev, filter}})
+  const script = await runInProcess(config.hooks['deploy-actions'], { config, options: { isLocalDev, filter } })
   if (!script) {
     const deployConfig = {
       isLocalDev,

@@ -258,7 +258,7 @@ class Deploy extends BuildCommand {
         }
       }
     } catch (err) {
-      this.log(err)
+      this.error(err)
     }
   }
 

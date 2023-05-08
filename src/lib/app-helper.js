@@ -67,6 +67,11 @@ async function installPackages (dir, options = { spinner: null, verbose: false }
 }
 
 // Is this still used? it is exported, but there are no references to it -jm
+/**
+ * @param {string} scriptName  npm script name
+ * @param {string} dir directory to run npm script in
+ * @param {string[]} cmdArgs args to pass to npm script
+ */
 async function runPackageScript (scriptName, dir, cmdArgs = []) {
   aioLogger.debug(`running npm run-script ${scriptName} in dir: ${dir}`)
   const pkg = await fs.readJSON(path.join(dir, 'package.json'))
@@ -81,8 +86,8 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
 
 /**
  *
- * @param {String} hookPath to be require()'d and run. Should export an async function that takes a config object as its only argument
- * @param {Object} config which will be passed to the hook
+ * @param {string} hookPath to be require()'d and run. Should export an async function that takes a config object as its only argument
+ * @param {object} config which will be passed to the hook
  * @returns {Promise<*>} whatever the hook returns
  */
 async function runInProcess (hookPath, config) {
@@ -101,10 +106,15 @@ async function runInProcess (hookPath, config) {
 }
 
 /**
+ * @typedef ChildProcess
+ */
+
+/**
  * Runs a package script in a child process
- * @param {String} command to run
- * @param {String} dir to run command in
- * @param {String[]} cmdArgs args to pass to command
+ *
+ * @param {string} command to run
+ * @param {string} dir to run command in
+ * @param {string[]} cmdArgs args to pass to command
  * @returns {Promise<ChildProcess>} child process
  */
 async function runScript (command, dir, cmdArgs = []) {
