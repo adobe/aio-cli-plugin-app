@@ -10,11 +10,10 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE, EXT_CONFIG_FILE, IMPORT_CONFIG_FILE } = require('../src/lib/defaults')
+const { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE, IMPORT_CONFIG_FILE } = require('../src/lib/defaults')
 
 module.exports = {
   [IMPORT_CONFIG_FILE]: require('./config.schema.json'),
   [USER_CONFIG_FILE]: require('./app.config.yaml.schema.json'),
-  [DEPLOY_CONFIG_FILE]: require('./deploy.yaml.schema.json'),
-  [EXT_CONFIG_FILE]: require('./ext.config.yaml.schema.json')
+  [DEPLOY_CONFIG_FILE]: require('./deploy.yaml.schema.json')
 }
