@@ -137,7 +137,6 @@ beforeEach(() => {
   jest.clearAllMocks()
   mockGetCli.mockReturnValue({})
   importHelperLib.loadConfigFile.mockReset()
-  importHelperLib.validateConfig.mockReset()
   resetMockConsoleCLI()
   mockConsoleCLIInstance.prompt.promptConfirm.mockReset()
   setDefaultMockConsoleCLI()
