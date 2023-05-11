@@ -959,3 +959,30 @@ describe('createWebExportFilter', () => {
     expect(nonWebFilter(action2)).toEqual(true)
   })
 })
+
+describe('object values', () => {
+  test('getObjectProp', () => {
+    const obj = {
+      FoO: 'bar'
+    }
+    expect(appHelper.getObjectProp(obj, 'foo')).toEqual('bar')
+  })
+
+  test('getObjectValue', () => {
+    const obj = {
+      foo: {
+        bar: {
+          baz: 'boo'
+        }
+      }
+    }
+    expect(appHelper.getObjectValue(obj, 'foo.bar.baz')).toEqual('boo')
+  })
+
+  test('getObjectValue (no key)', () => {
+    const obj = {
+      foo: 'bar'
+    }
+    expect(appHelper.getObjectValue(obj)).toEqual(obj)
+  })
+})

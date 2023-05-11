@@ -542,7 +542,32 @@ const createWebExportFilter = (filterValue) => {
   }
 }
 
+/**
+ * Get property from object with case insensitivity.
+ *
+ * @param {object} obj the object to wrap
+ * @param {string} key the key
+ * @private
+ */
+function getObjectProp (obj, key) {
+  return obj[Object.keys(obj).find(k => k.toLowerCase() === key.toLowerCase())]
+}
+
+/**
+ * Get a value in an object by dot notation.
+ *
+ * @param {object} obj the object to wrap
+ * @param {string} key the key
+ * @returns {object} the value
+ */
+function getObjectValue (obj, key) {
+  const keys = (key || '').toString().split('.')
+  return keys.filter(o => o.trim()).reduce((o, i) => o && getObjectProp(o, i), obj)
+}
+
 module.exports = {
+  getObjectValue,
+  getObjectProp,
   createWebExportFilter,
   isNpmInstalled,
   isGitInstalled,

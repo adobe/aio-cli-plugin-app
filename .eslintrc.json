@@ -4,6 +4,7 @@
       "fixtureFile": true,
       "fixtureJson": true,
       "fixtureHjson": true,
+      "fixtureYaml": true,
       "fakeFileSystem": true
     },
     "settings": {

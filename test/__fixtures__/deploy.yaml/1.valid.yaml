@@ -1,0 +1,30 @@
+$schema: http://json-schema.org/draft-07/schema
+$id: https://adobe.io/schemas/app-builder/deploy.yaml.json/v1
+application:
+  id: foo-bar
+  version: 0.0.1
+workspaces:
+  - Stage
+extensions:
+  - extensionPointId: dx/excshell/1
+apis:
+  - code: AdobeAnalyticsSDK
+  - code: AudienceManagerCustomerSDK
+  - code: GraphQLServiceSDK
+meshConfig:
+  lastUpdated: '2023-03-02T09:58:23.896Z'
+  meshConfig:
+    sources:
+      - name: Commerce
+        handler:
+          graphql:
+            endpoint: https://something/graphql/
+  meshId: 9ab270e2-f050-4387-a435-cc22084ce137
+  lastUpdatedBy:
+    firstName: John
+    lastName: Doe
+    userEmail: john.doe@example.com
+    userId: 91C61F84641C497D0A495CDE@7e351f83331c0ce2496cdd.e
+    displayName: John%20Doe
+  meshStatus: success
+runtime: true
