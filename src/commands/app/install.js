@@ -48,11 +48,12 @@ class InstallCommand extends BaseCommand {
       await this.unzipFile(args.path, outputPath)
       await this.validateConfig(outputPath, USER_CONFIG_FILE)
       await this.validateConfig(outputPath, DEPLOY_CONFIG_FILE)
-      await this.runTests(flags.verbose)
+      await this.npmInstall(flags.verbose)
+      await this.runTests()
       this.spinner.succeed('Install done.')
     } catch (e) {
       this.spinner.fail(e.message)
-      this.error(e.message)
+      this.error(flags.verbose ? e : e.message)
     }
   }
 
@@ -128,7 +129,6 @@ class InstallCommand extends BaseCommand {
   }
 
   async runTests (isVerbose) {
-    await this.npmInstall(isVerbose)
     this.spinner.start('Running app tests...')
     return this.config.runCommand('app:test').then((result) => {
       if (result === 0) { // success

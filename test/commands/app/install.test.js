@@ -287,15 +287,46 @@ describe('run', () => {
     command.unzipFile = jest.fn()
     command.validateConfig = jest.fn()
     command.runTests = jest.fn()
+    command.npmInstall = jest.fn()
+    command.error = jest.fn()
     await command.run()
 
     expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
     expect(command.unzipFile).toHaveBeenCalledTimes(1)
     expect(command.validateConfig).toHaveBeenCalledTimes(2)
     expect(command.runTests).toHaveBeenCalledTimes(1)
+    expect(command.npmInstall).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledTimes(0)
   })
 
-  test('subcommand throws error', async () => {
+  test('subcommand throws error (--verbose)', async () => {
+    const command = new TheCommand()
+    command.argv = ['my-app.zip', '--verbose']
+
+    const errorObject = new Error('this is a subcommand error message')
+
+    // since we already unit test the methods above, we mock it here
+    // we only reject one call, to simulate a subcommand failure
+    command.validateZipDirectoryStructure = jest.fn()
+    command.unzipFile = jest.fn()
+    command.validateConfig = jest.fn()
+    command.npmInstall = jest.fn()
+    command.error = jest.fn()
+    command.runTests = jest.fn(() => { throw errorObject })
+
+    await command.run()
+
+    expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
+    expect(command.unzipFile).toHaveBeenCalledTimes(1)
+    expect(command.validateConfig).toHaveBeenCalledTimes(2)
+    expect(command.runTests).toHaveBeenCalledTimes(1)
+    expect(command.npmInstall).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledTimes(1)
+
+    expect(command.error).toHaveBeenCalledWith(errorObject)
+  })
+
+  test('subcommand throws error (not verbose)', async () => {
     const command = new TheCommand()
     command.argv = ['my-app.zip']
 
@@ -306,16 +337,20 @@ describe('run', () => {
     command.validateZipDirectoryStructure = jest.fn()
     command.unzipFile = jest.fn()
     command.validateConfig = jest.fn()
-    command.runTests = jest.fn(() => {
-      throw new Error(errorMessage)
-    })
+    command.npmInstall = jest.fn()
+    command.error = jest.fn()
+    command.runTests = jest.fn(() => { throw new Error(errorMessage) })
 
-    await expect(command.run()).rejects.toThrow(errorMessage)
+    await command.run()
 
     expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
     expect(command.unzipFile).toHaveBeenCalledTimes(1)
     expect(command.validateConfig).toHaveBeenCalledTimes(2)
     expect(command.runTests).toHaveBeenCalledTimes(1)
+    expect(command.npmInstall).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledTimes(1)
+
+    expect(command.error).toHaveBeenCalledWith(errorMessage)
   })
 
   test('flag --output', async () => {
@@ -327,12 +362,17 @@ describe('run', () => {
     command.unzipFile = jest.fn()
     command.validateConfig = jest.fn()
     command.runTests = jest.fn()
+    command.npmInstall = jest.fn()
+    command.error = jest.fn()
+
     await command.run()
 
     expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
     expect(command.unzipFile).toHaveBeenCalledTimes(1)
     expect(command.validateConfig).toHaveBeenCalledTimes(2)
     expect(command.runTests).toHaveBeenCalledTimes(1)
+    expect(command.npmInstall).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledTimes(0)
     expect(fakeCwd).toEqual(path.resolve('my-dest-folder'))
   })
 })
