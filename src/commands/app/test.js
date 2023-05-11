@@ -48,6 +48,7 @@ class Test extends BaseCommand {
 
     this.printReport(totalResults)
     process.exitCode = exitCode
+    return exitCode
   }
 
   printReport (totalResults) {

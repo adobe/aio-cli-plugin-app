@@ -24,12 +24,11 @@ jest.mock('fs-extra')
 jest.mock('unzipper')
 jest.mock('../../../src/lib/install-helper')
 jest.mock('js-yaml')
+jest.mock('ora')
+jest.mock('execa')
 
 const mockReadStreamPipe = jest.fn()
 const mockUnzipExtract = jest.fn()
-
-beforeAll(() => {
-})
 
 // mock cwd
 let fakeCwd
@@ -43,6 +42,9 @@ afterAll(() => {
 })
 
 beforeEach(() => {
+  execa.mockReset()
+  execa.command.mockReset()
+
   installHelper.validateJsonWithSchema.mockClear()
 
   mockReadStreamPipe.mockClear()
@@ -205,6 +207,37 @@ describe('validateConfig', () => {
   })
 })
 
+describe('npmInstall', () => {
+  let command
+
+  beforeEach(() => {
+    execa.mockReset()
+    command = new TheCommand()
+  })
+
+  test('success', async () => {
+    execa.mockImplementationOnce((cmd, args) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['install'])
+      return Promise.resolve({ stdout: '' })
+    })
+
+    await expect(command.npmInstall()).resolves.toEqual(undefined)
+  })
+
+  test('failure', async () => {
+    const errorMessage = 'npm install error'
+
+    execa.mockImplementationOnce((cmd, args) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['install'])
+      throw new Error(errorMessage)
+    })
+
+    await expect(command.npmInstall()).rejects.toThrow(errorMessage)
+  })
+})
+
 describe('runTests', () => {
   let command
 
@@ -213,17 +246,20 @@ describe('runTests', () => {
     command.config = {
       runCommand: jest.fn()
     }
+    execa.mockImplementationOnce(() => {
+      return Promise.resolve({ stdout: '' })
+    })
   })
 
   test('success', async () => {
-    command.config.runCommand.mockResolvedValue(undefined)
+    command.config.runCommand.mockResolvedValue(0)
     await expect(command.runTests()).resolves.toEqual(undefined)
   })
 
   test('failure', async () => {
-    command.config.runCommand.mockRejectedValue(new Error('The tests failed for the app'))
+    command.config.runCommand.mockResolvedValue(1)
     await expect(command.runTests())
-      .rejects.toThrow('The tests failed for the app')
+      .rejects.toThrow('App tests failed')
   })
 })
 
