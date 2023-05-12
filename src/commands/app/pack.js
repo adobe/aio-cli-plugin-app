@@ -19,6 +19,7 @@ const yaml = require('js-yaml')
 const execa = require('execa')
 const { loadConfigFile, writeFile } = require('../../lib/import-helper')
 const { getObjectValue } = require('../../lib/app-helper')
+const ora = require('ora')
 
 const DEFAULTS = {
   OUTPUT_ZIP_FILE: 'app.zip',
@@ -36,7 +37,7 @@ class Pack extends BaseCommand {
     const appConfig = this.getFullConfig()
 
     // resolve to absolute path before any chdir
-    flags.output = path.resolve(flags.output)
+    const outputZipFile = path.resolve(flags.output)
 
     // change the cwd if necessary
     if (args.path !== '.') {
@@ -45,32 +46,52 @@ class Pack extends BaseCommand {
       aioLogger.debug(`changed current working directory to: ${resolvedPath}`)
     }
 
-    // 1. create artifacts phase
-    this.log('Creating package artifacts...')
-    await fs.emptyDir(DEFAULTS.ARTIFACTS_FOLDER)
+    try {
+      // 1. create artifacts phase
+      this.spinner.start(`Creating package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER}'...`)
+      await fs.emptyDir(DEFAULTS.ARTIFACTS_FOLDER)
+      this.spinner.succeed(`Created package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER}'`)
 
-    // ACNA-2038
-    // not artifacts folder should exist before we fire the event
-    await this.config.runHook('pre-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER })
+      // ACNA-2038
+      // not artifacts folder should exist before we fire the event
+      await this.config.runHook('pre-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER })
 
-    // 2. copy files to package phase
-    this.log('Copying files...')
-    const fileList = await this.filesToPack()
-    await this.copyPackageFiles(DEFAULTS.ARTIFACTS_FOLDER, fileList)
+      // 2. copy files to package phase
+      this.spinner.start('Copying project files...')
+      const fileList = await this.filesToPack([flags.output])
+      await this.copyPackageFiles(DEFAULTS.ARTIFACTS_FOLDER, fileList)
+      this.spinner.succeed('Copied project files')
 
-    // 3. add/modify artifacts phase
-    this.log('Creating configuration files...')
-    await this.createDeployYamlFile(appConfig)
-    await this.addCodeDownloadAnnotation(appConfig)
-    // doing this before zip so other things can be added to the zip
-    await this.config.runHook('post-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER })
+      // 3. add/modify artifacts phase
+      this.spinner.start('Creating configuration files...')
+      await this.createDeployYamlFile(appConfig)
+      this.spinner.succeed('Created configuration files')
 
-    // 4. zip package phase
-    this.log(`Zipping package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER}' to '${flags.output}'...`)
-    await fs.remove(flags.output)
-    await this.zipHelper(DEFAULTS.ARTIFACTS_FOLDER, flags.output)
+      this.spinner.start('Adding code-download annotations...')
+      await this.addCodeDownloadAnnotation(appConfig)
+      this.spinner.succeed('Added code-download annotations')
 
-    this.log('Packaging done.')
+      // doing this before zip so other things can be added to the zip
+      await this.config.runHook('post-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER })
+
+      // 4. zip package phase
+      this.spinner.start(`Zipping package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER}' to '${outputZipFile}'...`)
+      await fs.remove(outputZipFile)
+      await this.zipHelper(DEFAULTS.ARTIFACTS_FOLDER, outputZipFile)
+      this.spinner.succeed(`Zipped package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER}' to '${outputZipFile}'`)
+    } catch (e) {
+      this.spinner.fail(e.message)
+      this.error(flags.verbose ? e : e.message)
+    }
+
+    this.spinner.succeed('Packaging done.')
+  }
+
+  get spinner () {
+    if (!this._spinner) {
+      this._spinner = ora()
+    }
+    return this._spinner
   }
 
   /**
@@ -111,11 +132,13 @@ class Pack extends BaseCommand {
     // TODO: send a PR to their plugin to have a `--json` flag
     const command = await this.config.findCommand('api-mesh:get')
     if (command) {
-      this.log('Getting api-mesh config...')
+      this.spinner.start('Getting api-mesh config...')
       const { stdout } = await execa('aio', ['api-mesh', 'get'], { cwd: process.cwd() })
       // until we get the --json flag, we parse the output
       const idx = stdout.indexOf('{')
       meshConfig = JSON.parse(stdout.substring(idx))
+      aioLogger.debug(`api-mesh:get - ${JSON.stringify(meshConfig, null, 2)}`)
+      this.spinner.succeed('Got api-mesh config')
     } else {
       aioLogger.debug('api-mesh:get command was not found, meshConfig is not available for app:pack')
     }
@@ -195,14 +218,17 @@ class Pack extends BaseCommand {
    *
    * This runs `npm pack` to get the list.
    *
+   * @param {Array<string>} filesToExclude a list of files to exclude
    * @param {string} workingDirectory the working directory to run `npm pack` in
    * @returns {Array<string>} a list of files that are to be packed
    */
-  async filesToPack (workingDirectory = process.cwd()) {
+  async filesToPack (filesToExclude = [], workingDirectory = process.cwd()) {
     const { stdout } = await execa('npm', ['pack', '--dry-run', '--json'], { cwd: workingDirectory })
 
     const { files } = JSON.parse(stdout)[0]
-    return files.map(file => file.path)
+    return files
+      .map(file => file.path)
+      .filter(file => !filesToExclude.includes(file))
   }
 
   /**

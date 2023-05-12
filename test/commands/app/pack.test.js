@@ -280,62 +280,136 @@ test('addCodeDownloadAnnotation', async () => {
   )
 })
 
-test('run (coverage: defaults)', async () => {
-  mockGetFullConfig.mockImplementation(() => fixtureJson('pack/1.all.config.json'))
+describe('run', () => {
+  test('defaults', async () => {
+    mockGetFullConfig.mockImplementation(() => fixtureJson('pack/1.all.config.json'))
 
-  const command = new TheCommand()
-  command.argv = []
+    const command = new TheCommand()
+    command.argv = []
 
-  // since we already unit test the methods above, we mock it here
-  command.copyPackageFiles = jest.fn()
-  command.filesToPack = jest.fn()
-  command.createDeployYamlFile = jest.fn()
-  command.addCodeDownloadAnnotation = jest.fn()
-  command.zipHelper = jest.fn()
-  const runHook = jest.fn()
-  command.config = { runHook }
-  await command.run()
+    // since we already unit test the methods above, we mock it here
+    command.copyPackageFiles = jest.fn()
+    command.filesToPack = jest.fn()
+    command.createDeployYamlFile = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
+    command.zipHelper = jest.fn()
+    const runHook = jest.fn()
+    command.config = { runHook }
+    await command.run()
 
-  expect(command.copyPackageFiles).toHaveBeenCalledTimes(1)
-  expect(command.filesToPack).toHaveBeenCalledTimes(1)
-  expect(command.createDeployYamlFile).toHaveBeenCalledTimes(1)
-  expect(command.addCodeDownloadAnnotation).toHaveBeenCalledTimes(1)
-  expect(command.zipHelper).toHaveBeenCalledTimes(1)
-  const expectedObj = {
-    artifactsFolder: 'app-package',
-    appConfig: expect.any(Object)
-  }
-  expect(runHook).toHaveBeenCalledWith('pre-pack', expectedObj)
-  expect(runHook).toHaveBeenCalledWith('post-pack', expectedObj)
-})
+    expect(command.copyPackageFiles).toHaveBeenCalledTimes(1)
+    expect(command.filesToPack).toHaveBeenCalledTimes(1)
+    expect(command.createDeployYamlFile).toHaveBeenCalledTimes(1)
+    expect(command.addCodeDownloadAnnotation).toHaveBeenCalledTimes(1)
+    expect(command.zipHelper).toHaveBeenCalledTimes(1)
+    const expectedObj = {
+      artifactsFolder: 'app-package',
+      appConfig: expect.any(Object)
+    }
+    expect(runHook).toHaveBeenCalledWith('pre-pack', expectedObj)
+    expect(runHook).toHaveBeenCalledWith('post-pack', expectedObj)
+  })
 
-test('run (coverage: output flag, path arg)', async () => {
-  mockGetFullConfig.mockImplementation(() => fixtureJson('pack/1.all.config.json'))
+  test('subcommand throws error (--verbose)', async () => {
+    mockGetFullConfig.mockImplementation(() => fixtureJson('pack/1.all.config.json'))
 
-  const command = new TheCommand()
-  command.argv = ['new_folder', '--output', 'app-2.zip']
+    const command = new TheCommand()
+    command.argv = ['--verbose']
 
-  // since we already unit test the methods above, we mock it here
-  command.copyPackageFiles = jest.fn()
-  command.filesToPack = jest.fn()
-  command.createDeployYamlFile = jest.fn()
-  command.addCodeDownloadAnnotation = jest.fn()
-  command.zipHelper = jest.fn()
-  const runHook = jest.fn()
-  command.config = { runHook }
+    const errorObject = new Error('zip error')
 
-  await command.run()
+    // since we already unit test the methods above, we mock it here
+    command.copyPackageFiles = jest.fn()
+    command.filesToPack = jest.fn()
+    command.createDeployYamlFile = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
+    command.zipHelper = jest.fn(() => { throw errorObject })
+    command.error = jest.fn()
+    const runHook = jest.fn()
+    command.config = { runHook }
 
-  expect(command.copyPackageFiles).toHaveBeenCalledTimes(1)
-  expect(command.filesToPack).toHaveBeenCalledTimes(1)
-  expect(command.createDeployYamlFile).toHaveBeenCalledTimes(1)
-  expect(command.addCodeDownloadAnnotation).toHaveBeenCalledTimes(1)
-  expect(command.zipHelper).toHaveBeenCalledTimes(1)
+    await command.run()
 
-  const expectedObj = {
-    artifactsFolder: 'app-package',
-    appConfig: expect.any(Object)
-  }
-  expect(runHook).toHaveBeenCalledWith('pre-pack', expectedObj)
-  expect(runHook).toHaveBeenCalledWith('post-pack', expectedObj)
+    expect(command.copyPackageFiles).toHaveBeenCalledTimes(1)
+    expect(command.filesToPack).toHaveBeenCalledTimes(1)
+    expect(command.createDeployYamlFile).toHaveBeenCalledTimes(1)
+    expect(command.addCodeDownloadAnnotation).toHaveBeenCalledTimes(1)
+    expect(command.zipHelper).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledTimes(1)
+
+    const expectedObj = {
+      artifactsFolder: 'app-package',
+      appConfig: expect.any(Object)
+    }
+    expect(runHook).toHaveBeenCalledWith('pre-pack', expectedObj)
+    expect(runHook).toHaveBeenCalledWith('post-pack', expectedObj)
+    expect(command.error).toHaveBeenCalledWith(errorObject)
+  })
+
+  test('subcommand throws error (not verbose)', async () => {
+    mockGetFullConfig.mockImplementation(() => fixtureJson('pack/1.all.config.json'))
+
+    const command = new TheCommand()
+    command.argv = []
+
+    const errorMessage = 'zip error'
+
+    // since we already unit test the methods above, we mock it here
+    command.copyPackageFiles = jest.fn()
+    command.filesToPack = jest.fn()
+    command.createDeployYamlFile = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
+    command.zipHelper = jest.fn(() => { throw new Error(errorMessage) })
+    command.error = jest.fn()
+    const runHook = jest.fn()
+    command.config = { runHook }
+
+    await command.run()
+
+    expect(command.copyPackageFiles).toHaveBeenCalledTimes(1)
+    expect(command.filesToPack).toHaveBeenCalledTimes(1)
+    expect(command.createDeployYamlFile).toHaveBeenCalledTimes(1)
+    expect(command.addCodeDownloadAnnotation).toHaveBeenCalledTimes(1)
+    expect(command.zipHelper).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledTimes(1)
+
+    const expectedObj = {
+      artifactsFolder: 'app-package',
+      appConfig: expect.any(Object)
+    }
+    expect(runHook).toHaveBeenCalledWith('pre-pack', expectedObj)
+    expect(runHook).toHaveBeenCalledWith('post-pack', expectedObj)
+    expect(command.error).toHaveBeenCalledWith(errorMessage)
+  })
+
+  test('output flag, path arg', async () => {
+    mockGetFullConfig.mockImplementation(() => fixtureJson('pack/1.all.config.json'))
+
+    const command = new TheCommand()
+    command.argv = ['new_folder', '--output', 'app-2.zip']
+
+    // since we already unit test the methods above, we mock it here
+    command.copyPackageFiles = jest.fn()
+    command.filesToPack = jest.fn()
+    command.createDeployYamlFile = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
+    command.zipHelper = jest.fn()
+    const runHook = jest.fn()
+    command.config = { runHook }
+
+    await command.run()
+
+    expect(command.copyPackageFiles).toHaveBeenCalledTimes(1)
+    expect(command.filesToPack).toHaveBeenCalledTimes(1)
+    expect(command.createDeployYamlFile).toHaveBeenCalledTimes(1)
+    expect(command.addCodeDownloadAnnotation).toHaveBeenCalledTimes(1)
+    expect(command.zipHelper).toHaveBeenCalledTimes(1)
+
+    const expectedObj = {
+      artifactsFolder: 'app-package',
+      appConfig: expect.any(Object)
+    }
+    expect(runHook).toHaveBeenCalledWith('pre-pack', expectedObj)
+    expect(runHook).toHaveBeenCalledWith('post-pack', expectedObj)
+  })
 })

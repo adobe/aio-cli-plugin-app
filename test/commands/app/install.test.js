@@ -24,12 +24,11 @@ jest.mock('fs-extra')
 jest.mock('unzipper')
 jest.mock('../../../src/lib/install-helper')
 jest.mock('js-yaml')
+jest.mock('ora')
+jest.mock('execa')
 
 const mockReadStreamPipe = jest.fn()
 const mockUnzipExtract = jest.fn()
-
-beforeAll(() => {
-})
 
 // mock cwd
 let fakeCwd
@@ -43,6 +42,9 @@ afterAll(() => {
 })
 
 beforeEach(() => {
+  execa.mockReset()
+  execa.command.mockReset()
+
   installHelper.validateJsonWithSchema.mockClear()
 
   mockReadStreamPipe.mockClear()
@@ -205,6 +207,51 @@ describe('validateConfig', () => {
   })
 })
 
+describe('npmInstall', () => {
+  let command
+
+  beforeEach(() => {
+    execa.mockReset()
+    command = new TheCommand()
+  })
+
+  test('success', async () => {
+    execa.mockImplementationOnce((cmd, args, options) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['install'])
+      expect(options.stdio).toEqual('ignore')
+      return Promise.resolve({ stdout: '' })
+    })
+
+    const isVerbose = false
+    await expect(command.npmInstall(isVerbose)).resolves.toEqual(undefined)
+  })
+
+  test('success --verbose', async () => {
+    execa.mockImplementationOnce((cmd, args, options) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['install'])
+      expect(options.stdio).toEqual('inherit')
+      return Promise.resolve({ stdout: '' })
+    })
+
+    const isVerbose = true
+    await expect(command.npmInstall(isVerbose)).resolves.toEqual(undefined)
+  })
+
+  test('failure', async () => {
+    const errorMessage = 'npm install error'
+
+    execa.mockImplementationOnce((cmd, args) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['install'])
+      throw new Error(errorMessage)
+    })
+
+    await expect(command.npmInstall()).rejects.toThrow(errorMessage)
+  })
+})
+
 describe('runTests', () => {
   let command
 
@@ -213,51 +260,119 @@ describe('runTests', () => {
     command.config = {
       runCommand: jest.fn()
     }
+    execa.mockImplementationOnce(() => {
+      return Promise.resolve({ stdout: '' })
+    })
   })
 
   test('success', async () => {
-    command.config.runCommand.mockResolvedValue(undefined)
+    command.config.runCommand.mockResolvedValue(0)
     await expect(command.runTests()).resolves.toEqual(undefined)
   })
 
   test('failure', async () => {
-    command.config.runCommand.mockRejectedValue(new Error('The tests failed for the app'))
+    command.config.runCommand.mockResolvedValue(1)
     await expect(command.runTests())
-      .rejects.toThrow('The tests failed for the app')
+      .rejects.toThrow('App tests failed')
   })
 })
 
-test('run (no flags)', async () => {
-  const command = new TheCommand()
-  command.argv = ['my-app.zip']
+describe('run', () => {
+  test('no flags', async () => {
+    const command = new TheCommand()
+    command.argv = ['my-app.zip']
 
-  // since we already unit test the methods above, we mock it here
-  command.validateZipDirectoryStructure = jest.fn()
-  command.unzipFile = jest.fn()
-  command.validateConfig = jest.fn()
-  command.runTests = jest.fn()
-  await command.run()
+    // since we already unit test the methods above, we mock it here
+    command.validateZipDirectoryStructure = jest.fn()
+    command.unzipFile = jest.fn()
+    command.validateConfig = jest.fn()
+    command.runTests = jest.fn()
+    command.npmInstall = jest.fn()
+    command.error = jest.fn()
+    await command.run()
 
-  expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
-  expect(command.unzipFile).toHaveBeenCalledTimes(1)
-  expect(command.validateConfig).toHaveBeenCalledTimes(2)
-  expect(command.runTests).toHaveBeenCalledTimes(1)
-})
+    expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
+    expect(command.unzipFile).toHaveBeenCalledTimes(1)
+    expect(command.validateConfig).toHaveBeenCalledTimes(2)
+    expect(command.runTests).toHaveBeenCalledTimes(1)
+    expect(command.npmInstall).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledTimes(0)
+  })
 
-test('run (flag --output)', async () => {
-  const command = new TheCommand()
-  command.argv = ['my-app.zip', '--output', 'my-dest-folder']
+  test('subcommand throws error (--verbose)', async () => {
+    const command = new TheCommand()
+    command.argv = ['my-app.zip', '--verbose']
 
-  // since we already unit test the methods above, we mock it here
-  command.validateZipDirectoryStructure = jest.fn()
-  command.unzipFile = jest.fn()
-  command.validateConfig = jest.fn()
-  command.runTests = jest.fn()
-  await command.run()
+    const errorObject = new Error('this is a subcommand error message')
 
-  expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
-  expect(command.unzipFile).toHaveBeenCalledTimes(1)
-  expect(command.validateConfig).toHaveBeenCalledTimes(2)
-  expect(command.runTests).toHaveBeenCalledTimes(1)
-  expect(fakeCwd).toEqual(path.resolve('my-dest-folder'))
+    // since we already unit test the methods above, we mock it here
+    // we only reject one call, to simulate a subcommand failure
+    command.validateZipDirectoryStructure = jest.fn()
+    command.unzipFile = jest.fn()
+    command.validateConfig = jest.fn()
+    command.npmInstall = jest.fn()
+    command.error = jest.fn()
+    command.runTests = jest.fn(() => { throw errorObject })
+
+    await command.run()
+
+    expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
+    expect(command.unzipFile).toHaveBeenCalledTimes(1)
+    expect(command.validateConfig).toHaveBeenCalledTimes(2)
+    expect(command.runTests).toHaveBeenCalledTimes(1)
+    expect(command.npmInstall).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledTimes(1)
+
+    expect(command.error).toHaveBeenCalledWith(errorObject)
+  })
+
+  test('subcommand throws error (not verbose)', async () => {
+    const command = new TheCommand()
+    command.argv = ['my-app.zip']
+
+    const errorMessage = 'this is a subcommand error message'
+
+    // since we already unit test the methods above, we mock it here
+    // we only reject one call, to simulate a subcommand failure
+    command.validateZipDirectoryStructure = jest.fn()
+    command.unzipFile = jest.fn()
+    command.validateConfig = jest.fn()
+    command.npmInstall = jest.fn()
+    command.error = jest.fn()
+    command.runTests = jest.fn(() => { throw new Error(errorMessage) })
+
+    await command.run()
+
+    expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
+    expect(command.unzipFile).toHaveBeenCalledTimes(1)
+    expect(command.validateConfig).toHaveBeenCalledTimes(2)
+    expect(command.runTests).toHaveBeenCalledTimes(1)
+    expect(command.npmInstall).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledTimes(1)
+
+    expect(command.error).toHaveBeenCalledWith(errorMessage)
+  })
+
+  test('flag --output', async () => {
+    const command = new TheCommand()
+    command.argv = ['my-app.zip', '--output', 'my-dest-folder']
+
+    // since we already unit test the methods above, we mock it here
+    command.validateZipDirectoryStructure = jest.fn()
+    command.unzipFile = jest.fn()
+    command.validateConfig = jest.fn()
+    command.runTests = jest.fn()
+    command.npmInstall = jest.fn()
+    command.error = jest.fn()
+
+    await command.run()
+
+    expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
+    expect(command.unzipFile).toHaveBeenCalledTimes(1)
+    expect(command.validateConfig).toHaveBeenCalledTimes(2)
+    expect(command.runTests).toHaveBeenCalledTimes(1)
+    expect(command.npmInstall).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(fakeCwd).toEqual(path.resolve('my-dest-folder'))
+  })
 })

@@ -15,10 +15,12 @@ const { Flags } = require('@oclif/core')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:install', { provider: 'debug' })
 const path = require('node:path')
 const fs = require('fs-extra')
+const execa = require('execa')
 const unzipper = require('unzipper')
 const { validateJsonWithSchema } = require('../../lib/install-helper')
 const jsYaml = require('js-yaml')
 const { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE } = require('../../lib/defaults')
+const ora = require('ora')
 
 class InstallCommand extends BaseCommand {
   async run () {
@@ -41,13 +43,25 @@ class InstallCommand extends BaseCommand {
       aioLogger.debug(`changed current working directory to: ${outputPath}`)
     }
 
-    await this.validateZipDirectoryStructure(args.path)
-    await this.unzipFile(args.path, outputPath)
-    await this.validateConfig(outputPath, USER_CONFIG_FILE)
-    await this.validateConfig(outputPath, DEPLOY_CONFIG_FILE)
-    await this.runTests()
+    try {
+      await this.validateZipDirectoryStructure(args.path)
+      await this.unzipFile(args.path, outputPath)
+      await this.validateConfig(outputPath, USER_CONFIG_FILE)
+      await this.validateConfig(outputPath, DEPLOY_CONFIG_FILE)
+      await this.npmInstall(flags.verbose)
+      await this.runTests()
+      this.spinner.succeed('Install done.')
+    } catch (e) {
+      this.spinner.fail(e.message)
+      this.error(flags.verbose ? e : e.message)
+    }
+  }
 
-    this.log('Install done.')
+  get spinner () {
+    if (!this._spinner) {
+      this._spinner = ora()
+    }
+    return this._spinner
   }
 
   diffArray (expected, actual) {
@@ -62,7 +76,7 @@ class InstallCommand extends BaseCommand {
     const expectedFiles = [USER_CONFIG_FILE, DEPLOY_CONFIG_FILE, 'package.json']
     const foundFiles = []
 
-    this.log(`Validating integrity of app package at ${zipFilePath}...`)
+    this.spinner.start(`Validating integrity of app package at ${zipFilePath}...`)
 
     const zip = fs.createReadStream(zipFilePath).pipe(unzipper.Parse({ forceStream: true }))
     for await (const entry of zip) {
@@ -76,33 +90,53 @@ class InstallCommand extends BaseCommand {
 
     const diff = this.diffArray(expectedFiles, foundFiles)
     if (diff.length > 0) {
-      this.error(`The app package ${zipFilePath} is missing these files: ${JSON.stringify(diff, null, 2)}`)
+      throw new Error(`The app package ${zipFilePath} is missing these files: ${JSON.stringify(diff, null, 2)}`)
     }
+    this.spinner.succeed(`Validated integrity of app package at ${zipFilePath}`)
   }
 
   async unzipFile (zipFilePath, destFolderPath) {
     aioLogger.debug(`unzipFile: ${zipFilePath} to be extracted to ${destFolderPath}`)
 
-    this.log(`Extracting app package to ${destFolderPath}...`)
+    this.spinner.start(`Extracting app package to ${destFolderPath}...`)
     return unzipper.Open.file(zipFilePath)
-      .then(d => d.extract({ path: destFolderPath, concurrency: 5 }))
+      .then((d) => {
+        d.extract({ path: destFolderPath, concurrency: 5 })
+        this.spinner.succeed(`Extracted app package to ${destFolderPath}`)
+      })
   }
 
   async validateConfig (outputPath, configFileName, configFilePath = path.join(outputPath, configFileName)) {
-    this.log(`Validating ${configFileName}...`)
+    this.spinner.start(`Validating ${configFileName}...`)
     aioLogger.debug(`validateConfig: ${configFileName} at ${configFilePath}`)
 
     const configFileJson = jsYaml.load(fs.readFileSync(configFilePath).toString())
     const { valid, errors } = validateJsonWithSchema(configFileJson, configFileName)
     if (!valid) {
-      const message = `Missing or invalid keys in ${configFileName}: ${JSON.stringify(errors, null, 2)}`
-      this.error(message)
+      throw new Error(`Missing or invalid keys in ${configFileName}: ${JSON.stringify(errors, null, 2)}`)
+    } else {
+      this.spinner.succeed(`Validated ${configFileName}`)
     }
   }
 
-  async runTests () {
-    this.log('Running tests...')
-    return this.config.runCommand('app:test')
+  async npmInstall (isVerbose) {
+    this.spinner.start('Running npm install...')
+    const stdio = isVerbose ? 'inherit' : 'ignore'
+    return execa('npm', ['install'], { stdio })
+      .then(() => {
+        this.spinner.succeed('Ran npm install')
+      })
+  }
+
+  async runTests (isVerbose) {
+    this.spinner.start('Running app tests...')
+    return this.config.runCommand('app:test').then((result) => {
+      if (result === 0) { // success
+        this.spinner.succeed('App tests passed')
+      } else {
+        throw new Error('App tests failed')
+      }
+    })
   }
 }
 
