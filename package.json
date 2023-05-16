@@ -77,7 +77,7 @@
     "bin/openwhisk-standalone-config/",
     "oclif.manifest.json",
     "src",
-    "schema/config.schema.json"
+    "schema"
   ],
   "homepage": "https://github.com/adobe/aio-cli-plugin-app",
   "keywords": [
