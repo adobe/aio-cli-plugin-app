@@ -20,6 +20,7 @@ const execa = require('execa')
 const { loadConfigFile, writeFile } = require('../../lib/import-helper')
 const { getObjectValue } = require('../../lib/app-helper')
 const ora = require('ora')
+const chalk = require('chalk')
 
 const DEFAULTS = {
   OUTPUT_ZIP_FILE: 'app.zip',
@@ -30,6 +31,8 @@ const DEFAULTS = {
 class Pack extends BaseCommand {
   async run () {
     const { args, flags } = await this.parse(Pack)
+
+    this.preRelease()
 
     aioLogger.debug(`flags: ${JSON.stringify(flags, null, 2)}`)
     aioLogger.debug(`args: ${JSON.stringify(args, null, 2)}`)
@@ -268,8 +271,10 @@ class Pack extends BaseCommand {
   }
 }
 
-Pack.description = `Package a new Adobe Developer App for distribution
-`
+Pack.hidden = true // hide from help for pre-release
+
+Pack.description = chalk.yellow(`(Pre-release) This command will support packaging apps for redistribution.
+`)
 
 Pack.flags = {
   ...BaseCommand.flags,
