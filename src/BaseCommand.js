@@ -165,6 +165,10 @@ class BaseCommand extends Command {
   get appVersion () {
     return this.pjson.version
   }
+
+  preRelease () {
+    this.log(chalk.yellow('Pre-release warning: This command is in pre-release, and not suitable for production.'))
+  }
 }
 
 BaseCommand.flags = {
