@@ -21,10 +21,10 @@ const { buildActions } = require('@adobe/aio-lib-runtime')
  * @param {boolean} [forceBuild=false] force a build (skip file changed hash check)
  */
 module.exports = async (config, filterActions, forceBuild = false) => {
-  runInProcess(config.hooks['pre-app-build'], config)
+  await runInProcess(config.hooks['pre-app-build'], config)
   const script = await runInProcess(config.hooks['build-actions'], { config, options: { filterActions, forceBuild } })
   if (!script) {
     await buildActions(config, filterActions, forceBuild)
   }
-  runInProcess(config.hooks['post-app-build'], config)
+  await runInProcess(config.hooks['post-app-build'], config)
 }

@@ -23,7 +23,7 @@ const { deployActions } = require('@adobe/aio-lib-runtime')
  */
 /** @private */
 module.exports = async (config, isLocalDev = false, log = () => {}, filter = false, inprocHook) => {
-  runInProcess(config.hooks['pre-app-deploy'], config)
+  await runInProcess(config.hooks['pre-app-deploy'], config)
   const script = await runInProcess(config.hooks['deploy-actions'], { config, options: { isLocalDev, filter } })
   if (!script) {
     const deployConfig = {
@@ -65,5 +65,5 @@ module.exports = async (config, isLocalDev = false, log = () => {}, filter = fal
       }
     }
   }
-  runInProcess(config.hooks['post-app-deploy'], config)
+  await runInProcess(config.hooks['post-app-deploy'], config)
 }
