@@ -95,7 +95,7 @@ describe('deploy.yaml', () => {
       schemaName
     )
 
-    expect(errors.length).toEqual(3)
+    expect(errors.length).toEqual(2)
     expect(valid).toBeFalsy()
   })
 })

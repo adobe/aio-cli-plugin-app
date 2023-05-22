@@ -13,7 +13,7 @@
       "default": true
     }
   },
-  "required": ["application", "workspaces", "runtime"],
+  "required": ["application", "runtime"],
   "definitions": {
     "application": {
       "type": "object",
