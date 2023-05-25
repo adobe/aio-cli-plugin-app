@@ -145,11 +145,14 @@ class InitCommand extends TemplatesCommand {
     // 4. retrieve workspace details, defaults to Stage
     const workspace = await this.retrieveWorkspaceFromName(consoleCLI, org, project, flags)
 
-    // 5. get list of templates to install
-    const templates = await this.getTemplatesForFlags(flags, orgSupportedServices)
-    // If no templates selected, init a standalone app
-    if (templates.length <= 0) {
-      flags['standalone-app'] = true
+    let templates
+    if (!flags['quick-start']) {
+      // 5. get list of templates to install
+      templates = await this.getTemplatesForFlags(flags, orgSupportedServices)
+      // If no templates selected, init a standalone app
+      if (templates.length <= 0) {
+        flags['standalone-app'] = true
+      }
     }
 
     // 6. download workspace config
@@ -303,6 +306,9 @@ class InitCommand extends TemplatesCommand {
       { allowCreate: true }
     )
     if (!project) {
+      if (flags.project) {
+        this.error(`--project ${flags.project} not found`)
+      }
       // user has escaped project selection prompt, let's create a new one
       const projectDetails = await consoleCLI.promptForCreateProjectDetails()
       project = await consoleCLI.createProject(org.id, projectDetails)
