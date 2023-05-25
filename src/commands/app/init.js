@@ -137,11 +137,11 @@ class InitCommand extends TemplatesCommand {
     const consoleCLI = await this.getLibConsoleCLI()
 
     // 1. select org
-    const org = await this.selectConsoleOrg(consoleCLI)
+    const org = await this.selectConsoleOrg(consoleCLI, flags)
     // 2. get supported services
     const orgSupportedServices = await consoleCLI.getEnabledServicesForOrg(org.id)
     // 3. select or create project
-    const project = await this.selectOrCreateConsoleProject(consoleCLI, org)
+    const project = await this.selectOrCreateConsoleProject(consoleCLI, org, flags)
     // 4. retrieve workspace details, defaults to Stage
     const workspace = await this.retrieveWorkspaceFromName(consoleCLI, org, project, flags)
 
