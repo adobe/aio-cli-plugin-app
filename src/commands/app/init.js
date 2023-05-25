@@ -23,6 +23,7 @@ const hyperlinker = require('hyperlinker')
 
 const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import-helper')
 const { SERVICE_API_KEY_ENV } = require('../../lib/defaults')
+const { Octokit } = require('@octokit/rest')
 
 const DEFAULT_WORKSPACE = 'Stage'
 
@@ -102,24 +103,28 @@ class InitCommand extends TemplatesCommand {
       this.log(chalk.green(`Loaded Adobe Developer Console configuration file for the Project '${consoleConfig.project.title}' in the Organization '${consoleConfig.project.org.name}'`))
     }
 
-    // 2. prompt for templates to be installed
-    const templates = await this.getTemplatesForFlags(flags)
-    // If no templates selected, init a standalone app
-    if (templates.length <= 0) {
-      flags['standalone-app'] = true
+    if (flags['quick-start']) {
+      await this.withQuickstart(flags['quick-start'])
+    } else {
+      // 2. prompt for templates to be installed
+      const templates = await this.getTemplatesForFlags(flags)
+      // If no templates selected, init a standalone app
+      if (templates.length <= 0) {
+        flags['standalone-app'] = true
+      }
+
+      // 3. run base code generators
+      const projectName = (consoleConfig && consoleConfig.project.name) || path.basename(process.cwd())
+      await this.runCodeGenerators(this.getInitialGenerators(flags), flags.yes, projectName)
+
+      // 4. install templates
+      await this.installTemplates({
+        useDefaultValues: flags.yes,
+        installNpm: flags.install,
+        installConfig: flags.login,
+        templates
+      })
     }
-
-    // 3. run base code generators
-    const projectName = (consoleConfig && consoleConfig.project.name) || path.basename(process.cwd())
-    await this.runCodeGenerators(this.getInitialGenerators(flags), flags.yes, projectName)
-
-    // 4. install templates
-    await this.installTemplates({
-      useDefaultValues: flags.yes,
-      installNpm: flags.install,
-      installConfig: flags.login,
-      templates
-    })
 
     // 5. import config - if any
     if (flags.import) {
@@ -151,17 +156,25 @@ class InitCommand extends TemplatesCommand {
     const consoleConfig = await consoleCLI.getWorkspaceConfig(org.id, project.id, workspace.id, orgSupportedServices)
 
     // 7. run base code generators
-    await this.runCodeGenerators(this.getInitialGenerators(flags), flags.yes, consoleConfig.project.name)
+    if (!flags['quick-start']) {
+      await this.runCodeGenerators(this.getInitialGenerators(flags), flags.yes, consoleConfig.project.name)
+    }
 
     // 8. import config
     await this.importConsoleConfig(consoleConfig)
 
     // 9. install templates
-    await this.installTemplates({
-      useDefaultValues: flags.yes,
-      installNpm: flags.install,
-      templates
-    })
+    if (!flags['quick-start']) {
+      await this.installTemplates({
+        useDefaultValues: flags.yes,
+        installNpm: flags.install,
+        templates
+      })
+    }
+
+    if (flags['quick-start']) {
+      await this.withQuickstart(flags['quick-start'])
+    }
 
     this.log(chalk.blue(chalk.bold(`Project initialized for Workspace ${workspace.name}, you can run 'aio app use -w <workspace>' to switch workspace.`)))
   }
@@ -275,18 +288,18 @@ class InitCommand extends TemplatesCommand {
     return [searchCriteria, orderByCriteria, selection, selectionLabel]
   }
 
-  async selectConsoleOrg (consoleCLI) {
+  async selectConsoleOrg (consoleCLI, flags) {
     const organizations = await consoleCLI.getOrganizations()
-    const selectedOrg = await consoleCLI.promptForSelectOrganization(organizations)
+    const selectedOrg = await consoleCLI.promptForSelectOrganization(organizations, { orgId: flags.org, orgCode: flags.org })
     await this.ensureDevTermAccepted(consoleCLI, selectedOrg.id)
     return selectedOrg
   }
 
-  async selectOrCreateConsoleProject (consoleCLI, org) {
+  async selectOrCreateConsoleProject (consoleCLI, org, flags) {
     const projects = await consoleCLI.getProjects(org.id)
     let project = await consoleCLI.promptForSelectProject(
       projects,
-      {},
+      { projectId: flags.project, projectName: flags.project },
       { allowCreate: true }
     )
     if (!project) {
@@ -353,7 +366,54 @@ class InitCommand extends TemplatesCommand {
       { [SERVICE_API_KEY_ENV]: serviceClientId }
     )
   }
+
+  async withQuickstart (fullRepo) {
+    const octokit = new Octokit({
+      auth: ''
+    })
+
+    /** @private */
+    function relative (basePath, filePath) {
+      filePath = filePath.replace(/^\/+/, '') // remove fist slash
+      basePath = basePath.replace(/\/+$/, '') // remove last slash
+      if (!filePath.startsWith(basePath + '/')) {
+        return filePath
+      }
+      return filePath.slice(`${basePath}/`.length)
+    }
+
+    /** @private */
+    async function downloadRepoDirRecursive (owner, repo, filePath, basePath = '') {
+      const { data } = await octokit.repos.getContent({ owner, repo, path: filePath })
+
+      for (const fileOrDir of data) {
+        if (fileOrDir.type === 'dir') {
+          const destDir = relative(basePath, fileOrDir.path)
+
+          if (!fs.existsSync(destDir)) {
+            fs.mkdirSync(destDir, { recursive: true })
+          }
+
+          await downloadRepoDirRecursive(owner, repo, fileOrDir.path, basePath)
+        } else {
+          const response = await fetch(fileOrDir.download_url)
+          const jsonResponse = await response.text()
+          await fs.promises.writeFile(relative(basePath, fileOrDir.path), jsonResponse)
+        }
+      }
+    }
+
+    const [owner, repo, basePath] = fullRepo.split('/')
+    try {
+      await octokit.repos.getContent({ owner, repo, path: `${basePath}/app.config.yaml` })
+    } catch (e) {
+      this.error('--quick-start does not point to a valid Adobe App Builder app')
+    }
+
+    await downloadRepoDirRecursive(owner, repo, basePath, basePath)
+  }
 }
+
 InitCommand.description = `Create a new Adobe I/O App
 `
 
@@ -377,17 +437,25 @@ InitCommand.flags = {
     description: 'Extension point(s) to implement',
     char: 'e',
     multiple: true,
-    exclusive: ['template']
+    exclusive: ['template', 'quick-start']
   }),
   'standalone-app': Flags.boolean({
     description: 'Create a stand-alone application',
     default: false,
-    exclusive: ['template']
+    exclusive: ['template', 'quick-start']
   }),
   template: Flags.string({
     description: 'Specify a link to a template that will be installed',
     char: 't',
     multiple: true
+  }),
+  org: Flags.string({
+    description: 'Specify the Adobe Developer Console Org to init from',
+    exclusive: ['import'] // also no-login
+  }),
+  project: Flags.string({
+    description: 'Specify the Adobe Developer Console Project to init from',
+    exclusive: ['import'] // also no-login
   }),
   workspace: Flags.string({
     description: 'Specify the Adobe Developer Console Workspace to init from, defaults to Stage',
@@ -398,6 +466,10 @@ InitCommand.flags = {
   'confirm-new-workspace': Flags.boolean({
     description: 'Skip and confirm prompt for creating a new workspace',
     default: false
+  }),
+  'quick-start': Flags.string({
+    description: 'Init from gh repo',
+    exclusive: ['template', 'extension', 'standalone-app']
   })
 }
 
