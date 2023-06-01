@@ -19,6 +19,7 @@ const fs = jest.requireActual('fs')
 const eol = require('eol')
 const path = require('path')
 const hjson = require('hjson')
+const jsYaml = require('js-yaml')
 
 // trap console log
 beforeEach(() => {
@@ -66,6 +67,11 @@ global.fixtureJson = (output) => {
 // helper for fixtures
 global.fixtureHjson = (output) => {
   return hjson.parse(fs.readFileSync(global.fixturePath(output)).toString())
+}
+
+// helper for fixtures
+global.fixtureYaml = (output) => {
+  return jsYaml.load(fs.readFileSync(global.fixturePath(output)).toString())
 }
 
 // fixture matcher
