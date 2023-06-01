@@ -696,7 +696,6 @@ function getServiceApiKey (configFileJson, useJwt) {
 
 module.exports = {
   getServiceApiKey,
-  validateConfig,
   writeFile,
   loadConfigFile,
   loadAndValidateConfigFile,

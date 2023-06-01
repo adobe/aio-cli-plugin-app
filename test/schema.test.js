@@ -99,19 +99,3 @@ describe('deploy.yaml', () => {
     expect(valid).toBeFalsy()
   })
 })
-
-test('validate success - OAuth S2S', () => {
-  const ajv = new Ajv({ allErrors: true })
-  const validate = ajv.compile(schema)
-  const valid = validate(fixtureJson('oauths2s/valid.config.json'))
-  expect(validate.errors).toEqual(null)
-  expect(valid).toBeTruthy()
-})
-
-test('validate success - OAuth S2S Migrate', () => {
-  const ajv = new Ajv({ allErrors: true })
-  const validate = ajv.compile(schema)
-  const valid = validate(fixtureJson('oauths2s/valid.config.migrate.json'))
-  expect(validate.errors).toEqual(null)
-  expect(valid).toBeTruthy()
-})

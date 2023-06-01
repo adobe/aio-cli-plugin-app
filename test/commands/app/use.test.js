@@ -138,7 +138,6 @@ beforeEach(() => {
   mockGetCli.mockReturnValue({})
   importHelperLib.loadConfigFile.mockReset()
   importHelperLib.getServiceApiKey.mockReset()
-  importHelperLib.validateConfig.mockReset()
   resetMockConsoleCLI()
   mockConsoleCLIInstance.prompt.promptConfirm.mockReset()
   setDefaultMockConsoleCLI()
