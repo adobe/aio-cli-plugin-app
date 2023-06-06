@@ -103,8 +103,8 @@ class InitCommand extends TemplatesCommand {
       this.log(chalk.green(`Loaded Adobe Developer Console configuration file for the Project '${consoleConfig.project.title}' in the Organization '${consoleConfig.project.org.name}'`))
     }
 
-    if (flags['quick-start']) {
-      await this.withQuickstart(flags['quick-start'])
+    if (flags.repo) {
+      await this.withQuickstart(flags.repo)
     } else {
       // 2. prompt for templates to be installed
       const templates = await this.getTemplatesForFlags(flags)
@@ -146,7 +146,7 @@ class InitCommand extends TemplatesCommand {
     const workspace = await this.retrieveWorkspaceFromName(consoleCLI, org, project, flags)
 
     let templates
-    if (!flags['quick-start']) {
+    if (!flags.repo) {
       // 5. get list of templates to install
       templates = await this.getTemplatesForFlags(flags, orgSupportedServices)
       // If no templates selected, init a standalone app
@@ -159,7 +159,7 @@ class InitCommand extends TemplatesCommand {
     const consoleConfig = await consoleCLI.getWorkspaceConfig(org.id, project.id, workspace.id, orgSupportedServices)
 
     // 7. run base code generators
-    if (!flags['quick-start']) {
+    if (!flags.repo) {
       await this.runCodeGenerators(this.getInitialGenerators(flags), flags.yes, consoleConfig.project.name)
     }
 
@@ -167,7 +167,7 @@ class InitCommand extends TemplatesCommand {
     await this.importConsoleConfig(consoleConfig)
 
     // 9. install templates
-    if (!flags['quick-start']) {
+    if (!flags.repo) {
       await this.installTemplates({
         useDefaultValues: flags.yes,
         installNpm: flags.install,
@@ -175,8 +175,8 @@ class InitCommand extends TemplatesCommand {
       })
     }
 
-    if (flags['quick-start']) {
-      await this.withQuickstart(flags['quick-start'])
+    if (flags.repo) {
+      await this.withQuickstart(flags.repo)
     }
 
     this.log(chalk.blue(chalk.bold(`Project initialized for Workspace ${workspace.name}, you can run 'aio app use -w <workspace>' to switch workspace.`)))
@@ -413,7 +413,7 @@ class InitCommand extends TemplatesCommand {
     try {
       await octokit.repos.getContent({ owner, repo, path: `${basePath}/app.config.yaml` })
     } catch (e) {
-      this.error('--quick-start does not point to a valid Adobe App Builder app')
+      this.error('--repo does not point to a valid Adobe App Builder app')
     }
 
     await downloadRepoDirRecursive(owner, repo, basePath, basePath)
@@ -443,12 +443,12 @@ InitCommand.flags = {
     description: 'Extension point(s) to implement',
     char: 'e',
     multiple: true,
-    exclusive: ['template', 'quick-start']
+    exclusive: ['template', 'repo']
   }),
   'standalone-app': Flags.boolean({
     description: 'Create a stand-alone application',
     default: false,
-    exclusive: ['template', 'quick-start']
+    exclusive: ['template', 'repo']
   }),
   template: Flags.string({
     description: 'Specify a link to a template that will be installed',
@@ -473,8 +473,8 @@ InitCommand.flags = {
     description: 'Skip and confirm prompt for creating a new workspace',
     default: false
   }),
-  'quick-start': Flags.string({
-    description: 'Init from gh repo',
+  repo: Flags.string({
+    description: 'Init from gh quick-start repo',
     exclusive: ['template', 'extension', 'standalone-app']
   })
 }
