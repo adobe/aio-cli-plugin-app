@@ -226,18 +226,20 @@ class Use extends BaseCommand {
       console.error('Please verify Service subscriptions manually for the new Org/Project/Workspace configuration.')
       return
     }
-    const currentServiceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
-      currentConfig.org.id,
-      currentConfig.project.id,
-      currentConfig.workspace,
-      supportedServices
-    )
-    const serviceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
-      newConfig.org.id,
-      newConfig.project.id,
-      newConfig.workspace,
-      supportedServices
-    )
+    const currentServiceProperties = await consoleCLI.getServicePropertiesFromWorkspaceWithCredentialType({
+      orgId: currentConfig.org.id,
+      projectId: currentConfig.project.id,
+      workspace: currentConfig.workspace,
+      supportedServices,
+      credentialType: flags['use-jwt'] ? LibConsoleCLI.JWT_CREDENTIAL : LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+    })
+    const serviceProperties = await consoleCLI.getServicePropertiesFromWorkspaceWithCredentialType({
+      orgId: newConfig.org.id,
+      projectId: newConfig.project.id,
+      workspace: newConfig.workspace,
+      supportedServices,
+      credentialType: flags['use-jwt'] ? LibConsoleCLI.JWT_CREDENTIAL : LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+    })
 
     // service subscriptions are same
     if (this.equalSets(
