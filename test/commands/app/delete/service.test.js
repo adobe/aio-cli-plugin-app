@@ -16,7 +16,7 @@ const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
 const mockConsoleCLIInstance = {
   getEnabledServicesForOrg: jest.fn(),
   promptForRemoveServiceSubscriptions: jest.fn(),
-  subscribeToServices: jest.fn(),
+  subscribeToServicesWithCredentialType: jest.fn(),
   getServicePropertiesFromWorkspace: jest.fn(),
   confirmNewServiceSubscriptions: jest.fn()
 }
@@ -33,7 +33,7 @@ function resetMockConsoleCLI () {
 function setDefaultMockConsoleCLI () {
   mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(consoleDataMocks.enabledServices)
   mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockResolvedValue(consoleDataMocks.serviceProperties.slice(1))
-  mockConsoleCLIInstance.subscribeToServices.mockResolvedValue(consoleDataMocks.subscribeServicesResponse)
+  mockConsoleCLIInstance.subscribeToServicesWithCredentialType.mockResolvedValue(consoleDataMocks.subscribeServicesResponse)
   mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(consoleDataMocks.serviceProperties)
   // mock add service confirmation to true by default to avoid infinite loops
   mockConsoleCLIInstance.confirmNewServiceSubscriptions.mockResolvedValue(true)
@@ -113,7 +113,7 @@ describe('Run', () => {
   test('does not confirm deletion', async () => {
     mockConsoleCLIInstance.confirmNewServiceSubscriptions.mockResolvedValue(false)
     await expect(TheCommand.run([])).resolves.toEqual(null)
-    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).not.toHaveBeenCalled()
   })
 
   test('selects some services for deletion and confirm', async () => {
@@ -121,13 +121,29 @@ describe('Run', () => {
     // returns current service - selected for deletion
     mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockResolvedValue(newServiceProperties)
     await TheCommand.run([])
-    expect(mockConsoleCLIInstance.subscribeToServices).toHaveBeenCalledWith(
-      mockOrgId,
-      mockProject,
-      mockWorkspace,
-      null,
-      newServiceProperties
-    )
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
+      orgId: mockOrgId,
+      project: mockProject,
+      workspace: mockWorkspace,
+      certDir: null,
+      serviceProperties: newServiceProperties,
+      credentialType: LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+    })
+  })
+
+  test('selects some services for deletion and confirm, --use-jwt', async () => {
+    const newServiceProperties = consoleDataMocks.serviceProperties.slice(1)
+    // returns current service - selected for deletion
+    mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockResolvedValue(newServiceProperties)
+    await TheCommand.run(['--use-jwt'])
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
+      orgId: mockOrgId,
+      project: mockProject,
+      workspace: mockWorkspace,
+      certDir: null,
+      serviceProperties: newServiceProperties,
+      credentialType: LibConsoleCLI.JWT_CREDENTIAL
+    })
   })
 
   test('selects some services in the Production workspace for deletion and confirm', async () => {
@@ -137,13 +153,14 @@ describe('Run', () => {
     mockConfigProject.workspace.name = 'Production'
     mockWorkspace.name = 'Production'
     await TheCommand.run([])
-    expect(mockConsoleCLIInstance.subscribeToServices).toHaveBeenCalledWith(
-      mockOrgId,
-      mockProject,
-      mockWorkspace,
-      null,
-      newServiceProperties
-    )
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
+      orgId: mockOrgId,
+      project: mockProject,
+      workspace: mockWorkspace,
+      certDir: null,
+      serviceProperties: newServiceProperties,
+      credentialType: LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+    })
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace'))
   })
 

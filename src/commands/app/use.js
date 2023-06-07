@@ -22,7 +22,7 @@ const { ENTP_INT_CERTS_FOLDER } = require('../../lib/defaults')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:use', { provider: 'debug' })
 const chalk = require('chalk')
 
-/* global LibConsoleCLI */
+const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
 
 class Use extends BaseCommand {
   async run () {
@@ -298,13 +298,14 @@ class Use extends BaseCommand {
       }
     }
 
-    await consoleCLI.subscribeToServices(
-      newConfig.org.id,
-      newConfig.project,
-      newConfig.workspace,
-      path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER),
-      currentServiceProperties
-    )
+    await consoleCLI.subscribeToServicesWithCredentialType({
+      orgId: newConfig.org.id,
+      project: newConfig.project,
+      workspace: newConfig.workspace,
+      certDir: path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER),
+      serviceProperties: currentServiceProperties,
+      credentialType: flags['use-jwt'] ? LibConsoleCLI.JWT_CREDENTIAL : LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+    })
 
     console.error(`✔ Successfully updated Services in Project ${newConfig.project.name} and Workspace ${newConfig.workspace.name}.`)
   }

@@ -18,7 +18,7 @@ const mockConsoleCLIInstance = {
   promptForSelectWorkspace: jest.fn(),
   getEnabledServicesForOrg: jest.fn(),
   promptForServiceSubscriptionsOperation: jest.fn(),
-  subscribeToServices: jest.fn(),
+  subscribeToServicesWithCredentialType: jest.fn(),
   getServicePropertiesFromWorkspace: jest.fn(),
   confirmNewServiceSubscriptions: jest.fn(),
   promptForSelectServiceProperties: jest.fn()
@@ -38,7 +38,7 @@ function setDefaultMockConsoleCLI () {
   mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(consoleDataMocks.workspaces)
   mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(consoleDataMocks.enabledServices)
   mockConsoleCLIInstance.promptForSelectServiceProperties.mockResolvedValue(consoleDataMocks.serviceProperties)
-  mockConsoleCLIInstance.subscribeToServices.mockResolvedValue(consoleDataMocks.subscribeServicesResponse)
+  mockConsoleCLIInstance.subscribeToServicesWithCredentialType.mockResolvedValue(consoleDataMocks.subscribeServicesResponse)
   mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(consoleDataMocks.serviceProperties)
   mockConsoleCLIInstance.promptForServiceSubscriptionsOperation.mockResolvedValue('nop')
   mockConsoleCLIInstance.confirmNewServiceSubscriptions.mockResolvedValue(true)
@@ -145,13 +145,38 @@ describe('Run', () => {
     // mock selection
     mockConsoleCLIInstance.promptForSelectServiceProperties.mockResolvedValue(additionalServiceProps)
     await TheCommand.run([])
-    expect(mockConsoleCLIInstance.subscribeToServices).toHaveBeenCalledWith(
-      mockOrgId,
-      mockProject,
-      mockWorkspace,
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
+      orgId: mockOrgId,
+      project: mockProject,
+      workspace: mockWorkspace,
       certDir,
-      consoleDataMocks.serviceProperties
+      serviceProperties: consoleDataMocks.serviceProperties,
+      credentialType: LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+    })
+    expect(mockConsoleCLIInstance.promptForSelectServiceProperties).toHaveBeenCalledWith(
+      mockWorkspace.name,
+      expect.not.arrayContaining(currentServiceProps.map(s => ({ name: s.name, value: s })))
     )
+  })
+
+  test('select new services, --use-jwt', async () => {
+    const currentServiceProps = consoleDataMocks.serviceProperties.slice(1)
+    const additionalServiceProps = [consoleDataMocks.serviceProperties[0]]
+    const enabledServices = consoleDataMocks.enabledServices
+    mockConsoleCLIInstance.promptForServiceSubscriptionsOperation.mockResolvedValue('select')
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(enabledServices)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(currentServiceProps)
+    // mock selection
+    mockConsoleCLIInstance.promptForSelectServiceProperties.mockResolvedValue(additionalServiceProps)
+    await TheCommand.run(['--use-jwt'])
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
+      orgId: mockOrgId,
+      project: mockProject,
+      workspace: mockWorkspace,
+      certDir,
+      serviceProperties: consoleDataMocks.serviceProperties,
+      credentialType: LibConsoleCLI.JWT_CREDENTIAL
+    })
     expect(mockConsoleCLIInstance.promptForSelectServiceProperties).toHaveBeenCalledWith(
       mockWorkspace.name,
       expect.not.arrayContaining(currentServiceProps.map(s => ({ name: s.name, value: s })))
@@ -169,13 +194,14 @@ describe('Run', () => {
     // second call is to retrieve src wkspce services
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(otherServiceProps)
     await TheCommand.run([])
-    expect(mockConsoleCLIInstance.subscribeToServices).toHaveBeenCalledWith(
-      mockOrgId,
-      mockProject,
-      mockWorkspace,
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
+      orgId: mockOrgId,
+      project: mockProject,
+      workspace: mockWorkspace,
       certDir,
-      otherServiceProps
-    )
+      serviceProperties: otherServiceProps,
+      credentialType: LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+    })
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(
       `Service subscriptions in Workspace '${mockWorkspace.name}' will be overwritten.`
     ))
@@ -192,13 +218,14 @@ describe('Run', () => {
     // second call is to retrieve src wkspce services
     mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(otherServiceProps)
     await TheCommand.run([])
-    expect(mockConsoleCLIInstance.subscribeToServices).toHaveBeenCalledWith(
-      mockOrgId,
-      mockProject,
-      mockWorkspace,
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
+      orgId: mockOrgId,
+      project: mockProject,
+      workspace: mockWorkspace,
       certDir,
-      otherServiceProps
-    )
+      serviceProperties: otherServiceProps,
+      credentialType: LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+    })
     expect(logSpy).not.toHaveBeenCalledWith(expect.stringContaining(
       `Service subscriptions in Workspace '${mockWorkspace.name}' will be overwritten.`
     ))
@@ -217,13 +244,14 @@ describe('Run', () => {
     mockConfigProject.workspace.name = 'Production'
     mockWorkspace.name = 'Production'
     await TheCommand.run([])
-    expect(mockConsoleCLIInstance.subscribeToServices).toHaveBeenCalledWith(
-      mockOrgId,
-      mockProject,
-      mockWorkspace,
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
+      orgId: mockOrgId,
+      project: mockProject,
+      workspace: mockWorkspace,
       certDir,
-      otherServiceProps
-    )
+      serviceProperties: otherServiceProps,
+      credentialType: LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+    })
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(
       `⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace in Project '${mockProject.name}'.`
     ))
@@ -233,7 +261,7 @@ describe('Run', () => {
     mockConsoleCLIInstance.confirmNewServiceSubscriptions.mockResolvedValue(false)
     mockConsoleCLIInstance.promptForServiceSubscriptionsOperation.mockResolvedValue('select')
     await expect(TheCommand.run([])).resolves.toEqual(null)
-    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).not.toHaveBeenCalled()
   })
 
   test('updates config, nop', async () => {

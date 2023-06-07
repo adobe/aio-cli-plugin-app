@@ -25,6 +25,7 @@ const {
 const BaseCommand = require('../../../BaseCommand')
 
 const { ENTP_INT_CERTS_FOLDER } = require('../../../lib/defaults')
+const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
 
 class AddServiceCommand extends BaseCommand {
   async run () {
@@ -125,13 +126,14 @@ class AddServiceCommand extends BaseCommand {
     )
     if (confirm) {
       // if confirmed update the services
-      await consoleCLI.subscribeToServices(
+      await consoleCLI.subscribeToServicesWithCredentialType({
         orgId,
         project,
         workspace,
-        path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER),
-        newServiceProperties
-      )
+        certDir: path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER),
+        serviceProperties: newServiceProperties,
+        credentialType: flags['use-jwt'] ? LibConsoleCLI.JWT_CREDENTIAL : LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+      })
 
       // update environment
       const config = {

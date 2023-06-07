@@ -20,10 +20,12 @@ const {
 } = require('../../../lib/app-helper')
 
 const BaseCommand = require('../../../BaseCommand')
+const { Flags } = require('@oclif/core')
+const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
 
-class AddServiceCommand extends BaseCommand {
+class DeleteServiceCommand extends BaseCommand {
   async run () {
-    const { flags } = this.parse(AddServiceCommand)
+    const { flags } = await this.parse(DeleteServiceCommand)
 
     aioLogger.debug(`deleting Services in the current workspace, using flags: ${JSON.stringify(flags, null, 2)}`)
 
@@ -77,13 +79,14 @@ class AddServiceCommand extends BaseCommand {
     )
     if (confirm) {
       // if confirmed update the services
-      await consoleCLI.subscribeToServices(
+      await consoleCLI.subscribeToServicesWithCredentialType({
         orgId,
         project,
         workspace,
-        null, // no need to specify certDir, here we are sure that credentials are attached
-        newServiceProperties
-      )
+        certDir: null, // no need to specify certDir, here we are sure that credentials are attached
+        serviceProperties: newServiceProperties,
+        credentialType: flags['use-jwt'] ? LibConsoleCLI.JWT_CREDENTIAL : LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+      })
       // update the service configuration with the latest subscriptions
       setWorkspaceServicesConfig(newServiceProperties)
       // success !
@@ -95,14 +98,18 @@ class AddServiceCommand extends BaseCommand {
   }
 }
 
-AddServiceCommand.description = `Delete Services in the current Workspace
+DeleteServiceCommand.description = `Delete Services in the current Workspace
 `
 
-AddServiceCommand.flags = {
-  ...BaseCommand.flags
+DeleteServiceCommand.flags = {
+  ...BaseCommand.flags,
+  'use-jwt': Flags.boolean({
+    description: 'if the config has both jwt and OAuth Server to Server Credentials (while migrating), prefer the JWT credentials',
+    default: false
+  })
 }
 
-AddServiceCommand.aliases = ['app:delete:services']
-AddServiceCommand.args = []
+DeleteServiceCommand.aliases = ['app:delete:services']
+DeleteServiceCommand.args = []
 
-module.exports = AddServiceCommand
+module.exports = DeleteServiceCommand
