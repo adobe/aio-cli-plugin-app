@@ -127,8 +127,7 @@
                         "apikey", 
                         "oauthwebapp", 
                         "oauthnativeapp", 
-                        "oauthsinglepageapp",
-                        "oauth_server_to_server"
+                        "oauthsinglepageapp"
                     ]
                 },
                 "oauth_server_to_server": { "$ref": "#/definitions/oauth_server_to_server" },
@@ -182,11 +181,7 @@
                     { "not": { "required": ["api_key"] } },
                     { "not": { "required": ["oauth2"] } }
                   ] 
-                },
-                { "required": ["oauth2"] },
-                { "required": ["jwt"] },
-                { "required": ["api_key"] },
-                { "required": ["oauth_server_to_server"] }
+                }
             ]
         },
         "service": {
@@ -223,26 +218,6 @@
                 }
             },
             "required": [ "client_id", "client_secret", "redirect_uri", "defaultRedirectUri" ]
-        },
-        "oauth_server_to_server": {
-            "properties": {
-                "client_id": { "type": "string" },
-                "client_secrets": { "type": "array" },
-                "technical_account_email": {
-                    "type": "string",
-                    "format": "email"
-                },
-                "technical_account_id": {
-                    "type": "string",
-                    "format": "email"
-                },
-                "scopes": {
-                    "type": "array",
-                    "items": { "type": "string" },
-                    "default": []
-                }
-            },
-            "required": [ "client_id", "client_secrets", "technical_account_email", "technical_account_id", "scopes" ]
         },
         "oauthsinglepageapp": {
             "type": "object",
