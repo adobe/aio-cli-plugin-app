@@ -19,7 +19,7 @@ const mockConsoleCLIInstance = {
   getEnabledServicesForOrg: jest.fn(),
   promptForServiceSubscriptionsOperation: jest.fn(),
   subscribeToServicesWithCredentialType: jest.fn(),
-  getServicePropertiesFromWorkspace: jest.fn(),
+  getServicePropertiesFromWorkspaceWithCredentialType: jest.fn(),
   confirmNewServiceSubscriptions: jest.fn(),
   promptForSelectServiceProperties: jest.fn()
 }
@@ -39,7 +39,7 @@ function setDefaultMockConsoleCLI () {
   mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(consoleDataMocks.enabledServices)
   mockConsoleCLIInstance.promptForSelectServiceProperties.mockResolvedValue(consoleDataMocks.serviceProperties)
   mockConsoleCLIInstance.subscribeToServicesWithCredentialType.mockResolvedValue(consoleDataMocks.subscribeServicesResponse)
-  mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(consoleDataMocks.serviceProperties)
+  mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValue(consoleDataMocks.serviceProperties)
   mockConsoleCLIInstance.promptForServiceSubscriptionsOperation.mockResolvedValue('nop')
   mockConsoleCLIInstance.confirmNewServiceSubscriptions.mockResolvedValue(true)
 }
@@ -127,7 +127,7 @@ describe('Run', () => {
       { name: 'first', code: 'firstcode' },
       { name: 'second', code: 'secondcode' }
     ])
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue([
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValue([
       { name: 'first', sdkCode: 'firstcode' },
       { name: 'second', sdkCode: 'secondcode' }
     ])
@@ -141,7 +141,7 @@ describe('Run', () => {
     const enabledServices = consoleDataMocks.enabledServices
     mockConsoleCLIInstance.promptForServiceSubscriptionsOperation.mockResolvedValue('select')
     mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(enabledServices)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(currentServiceProps)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValue(currentServiceProps)
     // mock selection
     mockConsoleCLIInstance.promptForSelectServiceProperties.mockResolvedValue(additionalServiceProps)
     await TheCommand.run([])
@@ -165,7 +165,7 @@ describe('Run', () => {
     const enabledServices = consoleDataMocks.enabledServices
     mockConsoleCLIInstance.promptForServiceSubscriptionsOperation.mockResolvedValue('select')
     mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(enabledServices)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(currentServiceProps)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValue(currentServiceProps)
     // mock selection
     mockConsoleCLIInstance.promptForSelectServiceProperties.mockResolvedValue(additionalServiceProps)
     await TheCommand.run(['--use-jwt'])
@@ -190,9 +190,9 @@ describe('Run', () => {
     mockConsoleCLIInstance.promptForServiceSubscriptionsOperation.mockResolvedValue('clone')
     mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(enabledServices)
     // first time retrieve from current wkspce
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServiceProps)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(currentServiceProps)
     // second call is to retrieve src wkspce services
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(otherServiceProps)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(otherServiceProps)
     await TheCommand.run([])
     expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
       orgId: mockOrgId,
@@ -207,6 +207,30 @@ describe('Run', () => {
     ))
   })
 
+  test('clone services from another workspace, --use-jwt', async () => {
+    const currentServiceProps = consoleDataMocks.serviceProperties.slice(2)
+    const otherServiceProps = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[2]]
+    const enabledServices = consoleDataMocks.enabledServices
+    mockConsoleCLIInstance.promptForServiceSubscriptionsOperation.mockResolvedValue('clone')
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(enabledServices)
+    // first time retrieve from current wkspce
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(currentServiceProps)
+    // second call is to retrieve src wkspce services
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(otherServiceProps)
+    await TheCommand.run(['--use-jwt'])
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
+      orgId: mockOrgId,
+      project: mockProject,
+      workspace: mockWorkspace,
+      certDir,
+      serviceProperties: otherServiceProps,
+      credentialType: LibConsoleCLI.JWT_CREDENTIAL
+    })
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(
+      `Service subscriptions in Workspace '${mockWorkspace.name}' will be overwritten.`
+    ))
+  })
+
   test('clone services from another workspace into a workspace with no services', async () => {
     const currentServiceProps = []
     const otherServiceProps = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[2]]
@@ -214,9 +238,9 @@ describe('Run', () => {
     mockConsoleCLIInstance.promptForServiceSubscriptionsOperation.mockResolvedValue('clone')
     mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(enabledServices)
     // first time retrieve from current wkspce
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServiceProps)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(currentServiceProps)
     // second call is to retrieve src wkspce services
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(otherServiceProps)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(otherServiceProps)
     await TheCommand.run([])
     expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
       orgId: mockOrgId,
@@ -238,9 +262,9 @@ describe('Run', () => {
     mockConsoleCLIInstance.promptForServiceSubscriptionsOperation.mockResolvedValue('clone')
     mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(enabledServices)
     // first time retrieve from current wkspce
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServiceProps)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(currentServiceProps)
     // second call is to retrieve src wkspce services
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(otherServiceProps)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(otherServiceProps)
     mockConfigProject.workspace.name = 'Production'
     mockWorkspace.name = 'Production'
     await TheCommand.run([])
@@ -276,7 +300,7 @@ describe('Run', () => {
     ]
     mockConsoleCLIInstance.promptForServiceSubscriptionsOperation.mockResolvedValue('nop')
     mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeOrgServices)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServiceProps)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValue(fakeServiceProps)
     await TheCommand.run([])
     // before adding services updates config even if no confirmation
     expect(config.set).toHaveBeenCalledTimes(2)
@@ -310,7 +334,7 @@ describe('Run', () => {
     mockConsoleCLIInstance.promptForServiceSubscriptionsOperation.mockResolvedValue('select')
     mockConsoleCLIInstance.promptForSelectServiceProperties.mockResolvedValue([fakeServiceProps[1]])
     mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeOrgServices)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue([fakeServiceProps[0]])
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValue([fakeServiceProps[0]])
     await TheCommand.run([])
     // updates before and after adding services
     expect(config.set).toHaveBeenCalledTimes(2)

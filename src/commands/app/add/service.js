@@ -50,12 +50,13 @@ class AddServiceCommand extends BaseCommand {
     const supportedServices = await consoleCLI.getEnabledServicesForOrg(orgId)
 
     // get current service properties
-    const currentServiceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
+    const currentServiceProperties = await consoleCLI.getServicePropertiesFromWorkspaceWithCredentialType({
       orgId,
-      project.id,
+      projectId: project.id,
       workspace,
-      supportedServices
-    )
+      supportedServices,
+      credentialType: flags['use-jwt'] ? LibConsoleCLI.JWT_CREDENTIAL : LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+    })
 
     // update the service config, subscriptions and supported services
     setOrgServicesConfig(supportedServices)
@@ -106,12 +107,14 @@ class AddServiceCommand extends BaseCommand {
         { allowCreate: false }
       )
       // get serviceProperties from source workspace
-      newServiceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
+      newServiceProperties = await consoleCLI.getServicePropertiesFromWorkspaceWithCredentialType({
         orgId,
-        project.id,
-        workspaceFrom,
-        supportedServices
-      )
+        projectId: project.id,
+        workspace: workspaceFrom,
+        supportedServices,
+        credentialType: flags['use-jwt'] ? LibConsoleCLI.JWT_CREDENTIAL : LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+      })
+
       if (currentServiceNames.length > 0) {
         warnIfOverwriteServicesInProductionWorkspace(project.name, workspace.name)
         if (workspace.name !== 'Production') {

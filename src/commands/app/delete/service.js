@@ -46,12 +46,13 @@ class DeleteServiceCommand extends BaseCommand {
     const supportedServices = await consoleCLI.getEnabledServicesForOrg(orgId)
 
     // get current service properties
-    const currentServiceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
+    const currentServiceProperties = await consoleCLI.getServicePropertiesFromWorkspaceWithCredentialType({
       orgId,
-      project.id,
+      projectId: project.id,
       workspace,
-      supportedServices
-    )
+      supportedServices,
+      credentialType: flags['use-jwt'] ? LibConsoleCLI.JWT_CREDENTIAL : LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+    })
 
     // update the service config, subscriptions and supported services
     setOrgServicesConfig(supportedServices)

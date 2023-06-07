@@ -17,7 +17,7 @@ const mockConsoleCLIInstance = {
   getEnabledServicesForOrg: jest.fn(),
   promptForRemoveServiceSubscriptions: jest.fn(),
   subscribeToServicesWithCredentialType: jest.fn(),
-  getServicePropertiesFromWorkspace: jest.fn(),
+  getServicePropertiesFromWorkspaceWithCredentialType: jest.fn(),
   confirmNewServiceSubscriptions: jest.fn()
 }
 LibConsoleCLI.init.mockResolvedValue(mockConsoleCLIInstance)
@@ -34,7 +34,7 @@ function setDefaultMockConsoleCLI () {
   mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(consoleDataMocks.enabledServices)
   mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockResolvedValue(consoleDataMocks.serviceProperties.slice(1))
   mockConsoleCLIInstance.subscribeToServicesWithCredentialType.mockResolvedValue(consoleDataMocks.subscribeServicesResponse)
-  mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(consoleDataMocks.serviceProperties)
+  mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValue(consoleDataMocks.serviceProperties)
   // mock add service confirmation to true by default to avoid infinite loops
   mockConsoleCLIInstance.confirmNewServiceSubscriptions.mockResolvedValue(true)
 }
@@ -101,7 +101,7 @@ describe('Run', () => {
   })
 
   test('no services are attached', async () => {
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue([])
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValue([])
     await expect(TheCommand.run([])).rejects.toThrow('No Services are attached')
   })
 
@@ -177,7 +177,7 @@ describe('Run', () => {
     mockConsoleCLIInstance.confirmNewServiceSubscriptions.mockResolvedValue(false)
     mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockResolvedValue(fakeServiceProps.slice(1))
     mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeOrgServices)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServiceProps)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValue(fakeServiceProps)
     await TheCommand.run([])
     // before adding services updates config even if no confirmation
     expect(config.set).toHaveBeenCalledTimes(2)
@@ -210,7 +210,7 @@ describe('Run', () => {
     mockConsoleCLIInstance.confirmNewServiceSubscriptions.mockResolvedValue(true)
     mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockResolvedValue(fakeServiceProps.slice(1))
     mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeOrgServices)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServiceProps)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValue(fakeServiceProps)
     await TheCommand.run([])
     // updates before and after deletion
     expect(config.set).toHaveBeenCalledTimes(3)
