@@ -19,7 +19,7 @@ class Info extends BaseCommand {
   async run () {
     // cli input
     const { flags } = await this.parse(Info)
-    const appConfig = deepCopy(this.getFullConfig({ allowNoImpl: true }))
+    const appConfig = deepCopy(await this.getFullConfig({ allowNoImpl: true }))
 
     // includes .env secret delete all aio config for now
     delete appConfig.aio

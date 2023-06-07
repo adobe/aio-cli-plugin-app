@@ -201,7 +201,7 @@ describe('run', () => {
     command.argv = []
     command.appConfig.app.hasFrontend = false
     command.appConfig.app.hasBackend = false
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     expect(command.error).toHaveBeenCalledWith(Error('nothing to run.. there is no frontend and no manifest.yml, are you in a valid app?'))
@@ -211,7 +211,7 @@ describe('run', () => {
     command.argv = ['--no-actions']
     command.appConfig.app.hasFrontend = false
     command.appConfig.app.hasBackend = true
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     expect(command.error).toHaveBeenCalledWith(Error('nothing to run.. there is no frontend and --no-actions is set'))
@@ -222,7 +222,7 @@ describe('run', () => {
     command.argv = []
     command.appConfig.app.hasFrontend = false
     command.appConfig.app.hasBackend = true
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -236,7 +236,7 @@ describe('run', () => {
       expect(options.isLocal).toBe(undefined)
     })
     command.argv = ['--verbose']
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -250,7 +250,7 @@ describe('run', () => {
       expect(options.isLocal).toBe(undefined)
     })
     command.argv = []
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -260,7 +260,7 @@ describe('run', () => {
   test('app:run with manifest and no certificates', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     command.argv = []
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -271,7 +271,7 @@ describe('run', () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     command.argv = []
     const appConfig = createAppConfig(command.appConfig)
-    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -288,7 +288,7 @@ describe('run', () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     command.argv = []
     const appConfig = createAppConfig(command.appConfig)
-    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
 
     await command.run()
     expect(mockRunDev).toHaveBeenCalledWith(appConfig.application, expect.any(String), expect.objectContaining({
@@ -300,7 +300,7 @@ describe('run', () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     command.argv = ['--verbose']
     const appConfig = createAppConfig(command.appConfig)
-    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -319,7 +319,7 @@ describe('run', () => {
       expect(options.isLocal).toBe(true)
     })
     command.argv = ['--local']
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -330,7 +330,7 @@ describe('run', () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     command.argv = ['--local', '--verbose']
     const appConfig = createAppConfig(command.appConfig)
-    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -348,7 +348,7 @@ describe('run', () => {
     const errorString = 'my-error'
     mockRunDev.mockRejectedValue(errorString)
     command.argv = []
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await expect(command.run()).rejects.toEqual(errorString)
   })
@@ -358,7 +358,7 @@ describe('run', () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     mockRunDev.mockResolvedValue('http://localhost:1111')
     command.argv = []
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -370,7 +370,7 @@ describe('run', () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     mockRunDev.mockResolvedValue('http://localhost:1111')
     command.argv = ['--open']
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -383,7 +383,7 @@ describe('run', () => {
     mockConfig.get.mockReturnValue('http://prefix?fake=')
     mockRunDev.mockResolvedValue('http://localhost:1111')
     command.argv = []
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -396,7 +396,7 @@ describe('run', () => {
     mockConfig.get.mockReturnValue('http://prefix?fake=')
     mockRunDev.mockResolvedValue('http://localhost:1111')
     command.argv = ['--open']
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -410,7 +410,7 @@ describe('run', () => {
     mockFSExists(['web-src/', PRIVATE_KEY_PATH, PUB_CERT_PATH])
     command.argv = []
     const appConfig = createAppConfig(command.appConfig)
-    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -433,7 +433,7 @@ describe('run', () => {
 
     command.argv = []
     const appConfig = createAppConfig(command.appConfig)
-    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -464,7 +464,7 @@ describe('run', () => {
 
     command.argv = []
     const appConfig = createAppConfig(command.appConfig)
-    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -502,7 +502,7 @@ describe('run', () => {
 
     command.argv = []
     const appConfig = createAppConfig(command.appConfig)
-    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -542,7 +542,7 @@ describe('run', () => {
 
     command.argv = []
     const appConfig = createAppConfig(command.appConfig)
-    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -580,7 +580,7 @@ describe('run', () => {
 
     command.argv = []
     const appConfig = createAppConfig(command.appConfig)
-    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -619,7 +619,7 @@ describe('run', () => {
 
     command.argv = []
     const appConfig = createAppConfig(command.appConfig)
-    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -653,7 +653,7 @@ describe('run', () => {
     })
 
     command.argv = []
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await expect(command.run()).rejects.toThrow('error while generating certificate - no certificate:generate command found')
     expect(command.error).toHaveBeenCalledTimes(1)
@@ -668,7 +668,7 @@ describe('run', () => {
 
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     command.argv = []
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -678,7 +678,7 @@ describe('run', () => {
 
   test('cannot run multiple extensions', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig, 'app-exc-nui'))
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'app-exc-nui'))
 
     command.argv = []
     await command.run()
@@ -707,7 +707,7 @@ describe('run', () => {
   test('app hook sequence', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     const appConfig = createAppConfig()
-    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
 
     // set hooks (command the same as hook name, for easy reference)
     appConfig.application.hooks = {

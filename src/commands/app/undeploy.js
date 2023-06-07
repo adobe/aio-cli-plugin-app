@@ -26,7 +26,7 @@ class Undeploy extends BaseCommand {
     // cli input
     const { flags } = await this.parse(Undeploy)
 
-    const undeployConfigs = this.getAppExtConfigs(flags)
+    const undeployConfigs = await this.getAppExtConfigs(flags)
     let libConsoleCLI
     if (flags.unpublish) {
       // force login at beginning (if required)
@@ -52,7 +52,7 @@ class Undeploy extends BaseCommand {
       }
       // 2. unpublish extension manifest
       if (flags.unpublish && !(keys.length === 1 && keys[0] === 'application')) {
-        const aioConfig = this.getFullConfig().aio
+        const aioConfig = (await this.getFullConfig()).aio
         const payload = await this.unpublishExtensionPoints(libConsoleCLI, undeployConfigs, aioConfig, flags['force-unpublish'])
         this.log(chalk.blue(chalk.bold(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': '${Object.keys(payload.endpoints)}'`)))
       } else {

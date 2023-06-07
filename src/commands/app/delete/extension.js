@@ -28,7 +28,7 @@ class DeleteExtensionCommand extends BaseCommand {
       this.error('--extension= must also be provided when using --yes')
     }
 
-    const fullConfig = this.getFullConfig({ allowNoImpl: true })
+    const fullConfig = await this.getFullConfig({ allowNoImpl: true })
     const configs = await this.selectOrGetConfigsToDelete(flags, fullConfig)
 
     const resConfirm = await this.prompt([
@@ -68,11 +68,11 @@ class DeleteExtensionCommand extends BaseCommand {
       }])
       flags.extension = answers.res
     }
-    return this.getAppExtConfigs(flags)
+    return await this.getAppExtConfigs(flags)
   }
 
-  deleteImplementations (configs) {
-    Object.entries(configs).forEach(([id, c]) => {
+  async deleteImplementations (configs) {
+    for (const [id, c] of Object.entries(configs)) {
       // delete actions
       if (c.app.hasBackend) {
         fs.removeSync(c.actions.src)
@@ -89,14 +89,14 @@ class DeleteExtensionCommand extends BaseCommand {
       // delete config
       // try to find another config file => case of init extension in another folder
       const configKey = id === 'application' ? 'application' : `extensions.${id}`
-      const configDataOp = this.getConfigFileForKey(configKey + '.operations')
+      const configDataOp = await this.getConfigFileForKey(configKey + '.operations')
       if (configDataOp.file) {
         fs.removeSync(configDataOp.file)
       }
       // delete config in parent config file
-      const configData = this.getConfigFileForKey(configKey)
+      const configData = await this.getConfigFileForKey(configKey)
       deleteUserConfig(configData)
-    })
+    }
   }
 }
 

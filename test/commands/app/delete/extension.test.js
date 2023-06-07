@@ -41,11 +41,11 @@ beforeEach(() => {
   command = new TheCommand([])
 
   command.getAppExtConfigs = jest.fn()
-  command.getAppExtConfigs.mockReturnValue(createAppConfig(command.appConfig))
+  command.getAppExtConfigs.mockResolvedValue(createAppConfig(command.appConfig))
   command.getFullConfig = jest.fn()
-  command.getFullConfig.mockReturnValue(createFullConfig({}))
+  command.getFullConfig.mockResolvedValue(createFullConfig({}))
   command.getConfigFileForKey = jest.fn()
-  command.getConfigFileForKey.mockReturnValue({})
+  command.getConfigFileForKey.mockResolvedValue({})
   command.prompt = jest.fn()
   command.prompt.mockReturnValue({ res: [{ name: 'dx/excshell/1' }] })
 
@@ -86,7 +86,7 @@ describe('implements', () => {
   test('empty - none to delete', async () => {
     const mockConfig = createFullConfig({})
     mockConfig.implements = []
-    command.getFullConfig.mockReturnValue(mockConfig)
+    command.getFullConfig.mockResolvedValue(mockConfig)
     command.argv = ['-e', 'zoom-zoom']
     await expect(command.run()).rejects.toThrow('There are no implementations')
     expect(deleteUserConfig).not.toHaveBeenCalled()
@@ -99,7 +99,7 @@ describe('implements', () => {
     mockConfig.implements = ['dx/excshell/1']
     command.prompt.mockReturnValueOnce({ res: [{ name: 'dx/excshell/1' }] })
       .mockReturnValueOnce({ deleteExtensions: false })
-    command.getFullConfig.mockReturnValue(mockConfig)
+    command.getFullConfig.mockResolvedValue(mockConfig)
     command.argv = []
     await expect(command.run()).rejects.toThrow('aborting..')
     expect(command.prompt).toHaveBeenCalledTimes(2)
@@ -111,7 +111,7 @@ describe('implements', () => {
     mockConfig.implements = ['dx/excshell/1']
     command.prompt.mockReturnValueOnce({ res: [{ name: 'dx/excshell/1' }] })
       .mockReturnValueOnce({ deleteExtensions: true })
-    command.getFullConfig.mockReturnValue(mockConfig)
+    command.getFullConfig.mockResolvedValue(mockConfig)
     command.argv = []
     await command.run()
     expect(command.prompt).toHaveBeenCalledTimes(2)
@@ -123,10 +123,10 @@ describe('implements', () => {
 describe('good args', () => {
   test('should succeed, delete web/action source and userConfig', async () => {
     command.argv = ['--yes', '-e', 'application']
-    command.getConfigFileForKey.mockReturnValueOnce({ file: 'file-to-delete' })
-      .mockReturnValueOnce({ data: 'configData' })
+    command.getConfigFileForKey.mockResolvedValueOnce({ file: 'file-to-delete' })
+      .mockResolvedValueOnce({ data: 'configData' })
 
-    command.getAppExtConfigs.mockReturnValueOnce({
+    command.getAppExtConfigs.mockResolvedValueOnce({
       a: {
         app: {
           hasBackend: true,
@@ -156,10 +156,10 @@ describe('good args', () => {
 
   test('should succeed, delete file+userConfig - hasFrontend:false', async () => {
     command.argv = ['--yes', '-e', 'application']
-    command.getConfigFileForKey.mockReturnValueOnce({ file: 'file-to-delete' })
-      .mockReturnValueOnce({ data: 'configData' })
+    command.getConfigFileForKey.mockResolvedValueOnce({ file: 'file-to-delete' })
+      .mockResolvedValueOnce({ data: 'configData' })
 
-    command.getAppExtConfigs.mockReturnValueOnce({
+    command.getAppExtConfigs.mockResolvedValueOnce({
       a: {
         app: {
           hasBackend: true,
@@ -189,7 +189,7 @@ describe('good args', () => {
     command.getConfigFileForKey.mockReturnValueOnce({ file: 'file-to-delete' })
       .mockReturnValueOnce({ data: 'configData' })
 
-    command.getAppExtConfigs.mockReturnValueOnce({
+    command.getAppExtConfigs.mockResolvedValueOnce({
       a: {
         app: {
           hasBackend: false,

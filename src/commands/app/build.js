@@ -28,7 +28,7 @@ class Build extends BaseCommand {
     // flags
     flags['web-assets'] = flags['web-assets'] && !flags.action
 
-    const buildConfigs = this.getAppExtConfigs(flags)
+    const buildConfigs = await this.getAppExtConfigs(flags)
 
     // 1. build actions and web assets for each extension
     const keys = Object.keys(buildConfigs)

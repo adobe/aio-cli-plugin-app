@@ -25,14 +25,14 @@ class AddEventCommand extends AddCommand {
     const spinner = ora()
 
     // guaranteed to have at least one, otherwise would throw in config load or in matching the ext name
-    const entries = Object.entries(this.getAppExtConfigs(flags))
+    const entries = Object.entries(await this.getAppExtConfigs(flags))
     if (entries.length > 1) {
       this.error('Please use the \'-e\' flag to specify to which implementation you want to add events to.')
     }
     const configName = entries[0][0]
     const config = entries[0][1]
     const actionFolder = path.relative(config.root, config.actions.src)
-    const configData = this.getRuntimeManifestConfigFile(configName)
+    const configData = await this.getRuntimeManifestConfigFile(configName)
 
     const env = yeoman.createEnv()
     // by default yeoman runs the install, we control installation from the app plugin

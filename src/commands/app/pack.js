@@ -37,7 +37,7 @@ class Pack extends BaseCommand {
     aioLogger.debug(`flags: ${JSON.stringify(flags, null, 2)}`)
     aioLogger.debug(`args: ${JSON.stringify(args, null, 2)}`)
 
-    const appConfig = this.getFullConfig()
+    const appConfig = await this.getFullConfig()
 
     // resolve to absolute path before any chdir
     const outputZipFile = path.resolve(flags.output)

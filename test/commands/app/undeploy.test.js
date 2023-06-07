@@ -141,7 +141,7 @@ describe('run', () => {
   })
 
   test('undeploy an App with no flags no hooks', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -150,7 +150,7 @@ describe('run', () => {
   })
 
   test('undeploy an App with no flags with hooks', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
     __setupMockHooks()
 
     await command.run()
@@ -160,7 +160,7 @@ describe('run', () => {
   })
 
   test('pre post undeploy hook errors --no-actions --no-web-assets', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
 
     helpers.runScript
       .mockRejectedValueOnce('error-pre-app-undeploy') // pre-app-deploy (logs error)
@@ -177,7 +177,7 @@ describe('run', () => {
   })
 
   test('undeploy an App with --verbose', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
 
     command.argv = ['-v']
     await command.run()
@@ -187,7 +187,7 @@ describe('run', () => {
   })
 
   test('undeploy no-actions', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
 
     command.argv = ['--no-actions']
     await command.run()
@@ -197,7 +197,7 @@ describe('run', () => {
   })
 
   test('undeploy no-actions verbose', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
 
     command.argv = ['--no-actions', '-v']
     await command.run()
@@ -207,7 +207,7 @@ describe('run', () => {
   })
 
   test('undeploy skip static', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
 
     command.argv = ['--no-web-assets']
     await command.run()
@@ -217,7 +217,7 @@ describe('run', () => {
   })
 
   test('undeploy skip web assets', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
 
     command.argv = ['--no-web-assets']
     await command.run()
@@ -227,7 +227,7 @@ describe('run', () => {
   })
 
   test('undeploy skip static verbose', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
 
     command.argv = ['--no-web-assets', '-v']
     await command.run()
@@ -239,7 +239,7 @@ describe('run', () => {
   test('undeploy an app with no backend', async () => {
     const aioConfig = { app: { hasFrontend: true, hasBackend: false } }
     const appConfig = createAppConfig(aioConfig)
-    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -251,7 +251,7 @@ describe('run', () => {
   test('undeploy an app with no frontend', async () => {
     const aioConfig = { app: { hasFrontend: false, hasBackend: true } }
     const appConfig = createAppConfig(aioConfig)
-    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -261,7 +261,7 @@ describe('run', () => {
   })
 
   test('should fail if scripts.undeployActions fails', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
 
     const error = new Error('mock failure Actions')
     mockRuntimeLib.undeployActions.mockRejectedValue(error)
@@ -273,7 +273,7 @@ describe('run', () => {
   })
 
   test('should fail if scripts.undeployWeb fails', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
 
     const error = new Error('mock failure UI')
     mockWebLib.undeployWeb.mockRejectedValue(error)
@@ -285,7 +285,7 @@ describe('run', () => {
   })
 
   test('spinner should be called for progress logs on undeployWeb call , with verbose', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
 
     mockRuntimeLib.undeployActions.mockResolvedValue('ok')
     mockWebLib.undeployWeb.mockImplementation(async (config, log) => {
@@ -299,7 +299,7 @@ describe('run', () => {
   })
 
   test('spinner should be called for progress logs on undeployWeb call , without verbose', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
 
     mockRuntimeLib.undeployActions.mockResolvedValue('ok')
     mockWebLib.undeployWeb.mockImplementation(async (config, log) => {
@@ -311,8 +311,8 @@ describe('run', () => {
   })
 
   test('publish phase (no force, exc-shell payload)', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig({}, 'app-exc-nui'))
-    command.getFullConfig.mockReturnValue({
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig({}, 'app-exc-nui'))
+    command.getFullConfig.mockResolvedValue({
       aio: {
         project: {
           workspace: {
@@ -342,8 +342,8 @@ describe('run', () => {
   })
 
   test('publish phase (--force-nopublish, no exc-shell payload)', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig({}, 'exc'))
-    command.getFullConfig.mockReturnValue({
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig({}, 'exc'))
+    command.getFullConfig.mockResolvedValue({
       aio: {
         project: {
           workspace: {
@@ -364,7 +364,7 @@ describe('run', () => {
 
   test('app hook sequence', async () => {
     const appConfig = createAppConfig()
-    command.getAppExtConfigs.mockReturnValueOnce(appConfig)
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
 
     // set hooks (command the same as hook name, for easy reference)
     appConfig.application.hooks = {
@@ -394,7 +394,7 @@ describe('run', () => {
   })
 
   test('nothing to be undeployed (--no-publish, --build, --no-deploy)', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig())
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
 
     command.argv = ['--no-unpublish', '--no-web-assets', '--no-actions']
     await command.run()

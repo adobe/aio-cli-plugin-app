@@ -36,7 +36,7 @@ class Run extends BaseCommand {
 
     const spinner = ora()
 
-    const runConfigs = this.getAppExtConfigs(flags)
+    const runConfigs = await this.getAppExtConfigs(flags)
     const entries = Object.entries(runConfigs)
     if (entries.length > 1) {
       this.error('Your app implements multiple extensions. You can only run one at the time, please select which extension to run with the \'-e\' flag.')

@@ -14,7 +14,7 @@ const chalk = require('chalk')
 const coreConfig = require('@adobe/aio-lib-core-config')
 const DEFAULT_LAUNCH_PREFIX = 'https://experience.adobe.com/?devMode=true#/custom-apps/?localDevUrl='
 const STAGE_LAUNCH_PREFIX = 'https://experience-stage.adobe.com/?devMode=true#/custom-apps/?localDevUrl='
-const loadConfig = require('@adobe/aio-cli-lib-app-config')
+const libAppConfig = require('@adobe/aio-cli-lib-app-config')
 const inquirer = require('inquirer')
 const { CONSOLE_API_KEYS, APPLICATION_CONFIG_KEY, EXTENSIONS_CONFIG_KEY } = require('./lib/defaults')
 const { getCliInfo } = require('./lib/app-helper')
@@ -67,8 +67,8 @@ class BaseCommand extends Command {
     LibConsoleCLI.cleanStdOut()
   }
 
-  getAppExtConfigs (flags, options = {}) {
-    const all = this.getFullConfig(options).all
+  async getAppExtConfigs (flags, options = {}) {
+    const all = (await this.getFullConfig(options)).all
 
     // default case: no flags, return all
     let ret = all
@@ -98,25 +98,25 @@ class BaseCommand extends Command {
     return ret
   }
 
-  getRuntimeManifestConfigFile (implName) {
+  async getRuntimeManifestConfigFile (implName) {
     let configKey
     if (implName === APPLICATION_CONFIG_KEY) {
       configKey = APPLICATION_CONFIG_KEY
     } else {
       configKey = `${EXTENSIONS_CONFIG_KEY}.${implName}`
     }
-    let configData = this.getConfigFileForKey(`${configKey}.runtimeManifest`)
+    let configData = await this.getConfigFileForKey(`${configKey}.runtimeManifest`)
     if (!configData.file) {
       // first action manifest is not defined
-      configData = this.getConfigFileForKey(`${configKey}`)
+      configData = await this.getConfigFileForKey(`${configKey}`)
       configData.key = configData.key + '.runtimeManifest'
     }
     return configData
   }
 
-  getConfigFileForKey (fullKey) {
+  async getConfigFileForKey (fullKey) {
     // NOTE: the index returns undefined if the key is loaded from a legacy configuration file
-    const fullConfig = this.getFullConfig()
+    const fullConfig = await this.getFullConfig()
     // full key like 'extensions.dx/excshell/1.runtimeManifest'
     // returns { key: relKey, file: configFile}
     const configData = fullConfig.includeIndex[fullKey]
@@ -128,9 +128,9 @@ class BaseCommand extends Command {
     return configData || {}
   }
 
-  getFullConfig (options = {}) {
+  async getFullConfig (options = {}) {
     if (!this.appConfig) {
-      this.appConfig = loadConfig(options)
+      this.appConfig = await libAppConfig.load(options)
     }
     return this.appConfig
   }

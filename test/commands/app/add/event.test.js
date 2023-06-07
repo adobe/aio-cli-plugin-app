@@ -43,9 +43,9 @@ let command
 beforeEach(() => {
   command = new TheCommand([])
   command.getAppExtConfigs = jest.fn()
-  command.getAppExtConfigs.mockReturnValue(createAppConfig(command.appConfig))
+  command.getAppExtConfigs.mockResolvedValue(createAppConfig(command.appConfig))
   command.getFullConfig = jest.fn()
-  command.getFullConfig.mockReturnValue({
+  command.getFullConfig.mockResolvedValue({
     packagejson: {
       version: '1.0.0',
       name: 'legacy-app',
@@ -55,7 +55,7 @@ beforeEach(() => {
     }
   })
   command.getConfigFileForKey = jest.fn()
-  command.getConfigFileForKey.mockReturnValue({})
+  command.getConfigFileForKey.mockResolvedValue({})
   mockInstantiate.mockReset()
   mockRunGenerator.mockReset()
   yeoman.createEnv.mockClear()
@@ -151,7 +151,7 @@ describe('good flags', () => {
   })
 
   test('multiple ext configs', async () => {
-    command.getAppExtConfigs.mockReturnValue({ application: 'value', excshell: 'value' })
+    command.getAppExtConfigs.mockResolvedValue({ application: 'value', excshell: 'value' })
     await expect(command.run()).rejects.toThrow('Please use the \'-e\' flag to specify to which implementation you want to add events to.')
   })
 })
