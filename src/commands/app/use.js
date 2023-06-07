@@ -10,7 +10,7 @@ governing permissions and limitations under the License.
 */
 
 const BaseCommand = require('../../BaseCommand')
-const { CONSOLE_CONFIG_KEY } = require('../../lib/import-helper')
+const { CONSOLE_CONFIG_KEY, getProjectCredentialType } = require('../../lib/import-helper')
 const { importConsoleConfig, downloadConsoleConfigToBuffer } = require('../../lib/import')
 const { Flags } = require('@oclif/core')
 const inquirer = require('inquirer')
@@ -101,10 +101,12 @@ class Use extends BaseCommand {
     // get supported org services
     const supportedServices = await consoleCLI.getEnabledServicesForOrg(newConfig.org.id)
 
-    // sync services in target workspace
+    // only sync services if the current configuration is complete
     if (currentConfigIsComplete) {
-      // only sync if the current configuration is complete
-      await this.syncServicesToTargetWorkspace(consoleCLI, prompt, currentConfig, newConfig, supportedServices, flags)
+      // get project credential type
+      const projectCredentialType = getProjectCredentialType(currentConfig, flags)
+
+      await this.syncServicesToTargetWorkspace(consoleCLI, prompt, currentConfig, newConfig, supportedServices, flags, projectCredentialType)
     }
 
     // download the console configuration for the newly selected org, project, workspace
@@ -133,7 +135,7 @@ class Use extends BaseCommand {
     const projectConfig = config.get('project') || {}
     const org = (projectConfig.org && { id: projectConfig.org.id, name: projectConfig.org.name }) || {}
     const project = { name: projectConfig.name, id: projectConfig.id }
-    const workspace = (projectConfig.workspace && { name: projectConfig.workspace.name, id: projectConfig.workspace.id }) || {}
+    const workspace = (projectConfig.workspace && { ...projectConfig.workspace }) || {}
     return { org, project, workspace }
   }
 
@@ -220,7 +222,7 @@ class Use extends BaseCommand {
    * @param {LibConsoleCLI} consoleCLI lib console config
    * @private
    */
-  async syncServicesToTargetWorkspace (consoleCLI, prompt, currentConfig, newConfig, supportedServices, flags) {
+  async syncServicesToTargetWorkspace (consoleCLI, prompt, currentConfig, newConfig, supportedServices, flags, projectCredentialType) {
     if (flags['no-service-sync']) {
       console.error('Skipping Services sync as \'--no-service-sync=true\'')
       console.error('Please verify Service subscriptions manually for the new Org/Project/Workspace configuration.')
@@ -231,14 +233,14 @@ class Use extends BaseCommand {
       projectId: currentConfig.project.id,
       workspace: currentConfig.workspace,
       supportedServices,
-      credentialType: flags['use-jwt'] ? LibConsoleCLI.JWT_CREDENTIAL : LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+      credentialType: projectCredentialType
     })
     const serviceProperties = await consoleCLI.getServicePropertiesFromWorkspaceWithCredentialType({
       orgId: newConfig.org.id,
       projectId: newConfig.project.id,
       workspace: newConfig.workspace,
       supportedServices,
-      credentialType: flags['use-jwt'] ? LibConsoleCLI.JWT_CREDENTIAL : LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+      credentialType: projectCredentialType
     })
 
     // service subscriptions are same
@@ -306,7 +308,7 @@ class Use extends BaseCommand {
       workspace: newConfig.workspace,
       certDir: path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER),
       serviceProperties: currentServiceProperties,
-      credentialType: flags['use-jwt'] ? LibConsoleCLI.JWT_CREDENTIAL : LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+      credentialType: projectCredentialType
     })
 
     console.error(`✔ Successfully updated Services in Project ${newConfig.project.name} and Workspace ${newConfig.workspace.name}.`)

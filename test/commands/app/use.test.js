@@ -410,8 +410,7 @@ describe('run with global configuration', () => {
       project: fakeGlobalConfig.project,
       workspace: fakeGlobalConfig.workspace,
       certDir,
-      serviceProperties: currentServices,
-      credentialType: LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+      serviceProperties: currentServices
     })
   })
 
@@ -442,8 +441,7 @@ describe('run with global configuration', () => {
       project: fakeGlobalConfig.project,
       workspace: fakeGlobalConfig.workspace,
       certDir,
-      serviceProperties: currentServices,
-      credentialType: LibConsoleCLI.JWT_CREDENTIAL
+      serviceProperties: currentServices
     })
   })
 
@@ -476,8 +474,7 @@ describe('run with global configuration', () => {
       project: fakeGlobalConfig.project,
       workspace: fakeGlobalConfig.workspace,
       certDir,
-      serviceProperties: currentServices,
-      credentialType: LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+      serviceProperties: currentServices
     })
   })
 
@@ -659,8 +656,7 @@ describe('switch to a workspace in the same org', () => {
       project: { id: fakeCurrentConfig.id, name: fakeCurrentConfig.name },
       workspace: { id: newWorkspace.id, name: newWorkspace.name },
       certDir,
-      serviceProperties: currentServices,
-      credentialType: LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+      serviceProperties: currentServices
     })
   })
 
@@ -757,8 +753,7 @@ describe('switch to a workspace in the same org', () => {
       project: { id: fakeCurrentConfig.id, name: fakeCurrentConfig.name },
       workspace: { id: newWorkspace.id, name: newWorkspace.name },
       certDir,
-      serviceProperties: currentServices,
-      credentialType: LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+      serviceProperties: currentServices
     })
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(`⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace in Project '${fakeCurrentConfig.name}'`))
   })

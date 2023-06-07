@@ -151,30 +151,6 @@ describe('Run', () => {
       workspace: mockWorkspace,
       certDir,
       serviceProperties: consoleDataMocks.serviceProperties,
-      credentialType: LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
-    })
-    expect(mockConsoleCLIInstance.promptForSelectServiceProperties).toHaveBeenCalledWith(
-      mockWorkspace.name,
-      expect.not.arrayContaining(currentServiceProps.map(s => ({ name: s.name, value: s })))
-    )
-  })
-
-  test('select new services, --use-jwt', async () => {
-    const currentServiceProps = consoleDataMocks.serviceProperties.slice(1)
-    const additionalServiceProps = [consoleDataMocks.serviceProperties[0]]
-    const enabledServices = consoleDataMocks.enabledServices
-    mockConsoleCLIInstance.promptForServiceSubscriptionsOperation.mockResolvedValue('select')
-    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(enabledServices)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValue(currentServiceProps)
-    // mock selection
-    mockConsoleCLIInstance.promptForSelectServiceProperties.mockResolvedValue(additionalServiceProps)
-    await TheCommand.run(['--use-jwt'])
-    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
-      orgId: mockOrgId,
-      project: mockProject,
-      workspace: mockWorkspace,
-      certDir,
-      serviceProperties: consoleDataMocks.serviceProperties,
       credentialType: LibConsoleCLI.JWT_CREDENTIAL
     })
     expect(mockConsoleCLIInstance.promptForSelectServiceProperties).toHaveBeenCalledWith(
@@ -194,30 +170,6 @@ describe('Run', () => {
     // second call is to retrieve src wkspce services
     mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(otherServiceProps)
     await TheCommand.run([])
-    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
-      orgId: mockOrgId,
-      project: mockProject,
-      workspace: mockWorkspace,
-      certDir,
-      serviceProperties: otherServiceProps,
-      credentialType: LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
-    })
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(
-      `Service subscriptions in Workspace '${mockWorkspace.name}' will be overwritten.`
-    ))
-  })
-
-  test('clone services from another workspace, --use-jwt', async () => {
-    const currentServiceProps = consoleDataMocks.serviceProperties.slice(2)
-    const otherServiceProps = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[2]]
-    const enabledServices = consoleDataMocks.enabledServices
-    mockConsoleCLIInstance.promptForServiceSubscriptionsOperation.mockResolvedValue('clone')
-    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(enabledServices)
-    // first time retrieve from current wkspce
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(currentServiceProps)
-    // second call is to retrieve src wkspce services
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(otherServiceProps)
-    await TheCommand.run(['--use-jwt'])
     expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
       orgId: mockOrgId,
       project: mockProject,
@@ -248,7 +200,7 @@ describe('Run', () => {
       workspace: mockWorkspace,
       certDir,
       serviceProperties: otherServiceProps,
-      credentialType: LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+      credentialType: LibConsoleCLI.JWT_CREDENTIAL
     })
     expect(logSpy).not.toHaveBeenCalledWith(expect.stringContaining(
       `Service subscriptions in Workspace '${mockWorkspace.name}' will be overwritten.`
@@ -274,7 +226,7 @@ describe('Run', () => {
       workspace: mockWorkspace,
       certDir,
       serviceProperties: otherServiceProps,
-      credentialType: LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+      credentialType: LibConsoleCLI.JWT_CREDENTIAL
     })
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(
       `⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace in Project '${mockProject.name}'.`

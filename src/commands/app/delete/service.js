@@ -21,7 +21,8 @@ const {
 
 const BaseCommand = require('../../../BaseCommand')
 const { Flags } = require('@oclif/core')
-const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
+
+const { getProjectCredentialType } = require('../../../lib/import-helper')
 
 class DeleteServiceCommand extends BaseCommand {
   async run () {
@@ -45,13 +46,16 @@ class DeleteServiceCommand extends BaseCommand {
     // get latest support services
     const supportedServices = await consoleCLI.getEnabledServicesForOrg(orgId)
 
+    // get credential type
+    const projectCredentialType = getProjectCredentialType(projectConfig, flags)
+
     // get current service properties
     const currentServiceProperties = await consoleCLI.getServicePropertiesFromWorkspaceWithCredentialType({
       orgId,
       projectId: project.id,
       workspace,
       supportedServices,
-      credentialType: flags['use-jwt'] ? LibConsoleCLI.JWT_CREDENTIAL : LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+      credentialType: projectCredentialType
     })
 
     // update the service config, subscriptions and supported services
@@ -86,7 +90,7 @@ class DeleteServiceCommand extends BaseCommand {
         workspace,
         certDir: null, // no need to specify certDir, here we are sure that credentials are attached
         serviceProperties: newServiceProperties,
-        credentialType: flags['use-jwt'] ? LibConsoleCLI.JWT_CREDENTIAL : LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+        credentialType: projectCredentialType
       })
       // update the service configuration with the latest subscriptions
       setWorkspaceServicesConfig(newServiceProperties)

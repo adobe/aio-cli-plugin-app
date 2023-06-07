@@ -10,6 +10,7 @@ governing permissions and limitations under the License.
 */
 
 const { importConsoleConfig, downloadConsoleConfigToBuffer } = require('../../../lib/import')
+const { getProjectCredentialType } = require('../../../lib/import-helper')
 const path = require('path')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:service', { provider: 'debug' })
 const config = require('@adobe/aio-lib-core-config')
@@ -25,7 +26,6 @@ const {
 const BaseCommand = require('../../../BaseCommand')
 
 const { ENTP_INT_CERTS_FOLDER } = require('../../../lib/defaults')
-const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
 
 class AddServiceCommand extends BaseCommand {
   async run () {
@@ -46,6 +46,9 @@ class AddServiceCommand extends BaseCommand {
     const project = { name: projectConfig.name, id: projectConfig.id }
     const workspace = { name: projectConfig.workspace.name, id: projectConfig.workspace.id }
 
+    // get project credential type
+    const projectCredentialType = getProjectCredentialType(projectConfig, flags)
+
     // get latest support services
     const supportedServices = await consoleCLI.getEnabledServicesForOrg(orgId)
 
@@ -55,7 +58,7 @@ class AddServiceCommand extends BaseCommand {
       projectId: project.id,
       workspace,
       supportedServices,
-      credentialType: flags['use-jwt'] ? LibConsoleCLI.JWT_CREDENTIAL : LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+      credentialType: projectCredentialType
     })
 
     // update the service config, subscriptions and supported services
@@ -112,7 +115,7 @@ class AddServiceCommand extends BaseCommand {
         projectId: project.id,
         workspace: workspaceFrom,
         supportedServices,
-        credentialType: flags['use-jwt'] ? LibConsoleCLI.JWT_CREDENTIAL : LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+        credentialType: projectCredentialType
       })
 
       if (currentServiceNames.length > 0) {
@@ -135,7 +138,7 @@ class AddServiceCommand extends BaseCommand {
         workspace,
         certDir: path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER),
         serviceProperties: newServiceProperties,
-        credentialType: flags['use-jwt'] ? LibConsoleCLI.JWT_CREDENTIAL : LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+        credentialType: projectCredentialType
       })
 
       // update environment

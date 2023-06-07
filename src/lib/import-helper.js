@@ -19,6 +19,7 @@ const yaml = require('js-yaml')
 const hjson = require('hjson')
 const { EOL } = require('os')
 const { validateJsonWithSchema } = require('./install-helper')
+const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
 
 const AIO_FILE = '.aio'
 const ENV_FILE = '.env'
@@ -694,6 +695,31 @@ function getServiceApiKey (configFileJson, useJwt) {
   return ''
 }
 
+/**
+ * Gets the service credential type from .aio data
+ *
+ * @param {object} projectConfig Project config from .aio
+ * @param {object} flags Command flags
+ * @returns {string} the credential type
+ */
+const getProjectCredentialType = (projectConfig, flags) => {
+  // Get unique integration types
+  const integrationTypes = Array.from(new Set(projectConfig.workspace.details.credentials.map(credential => credential.integration_type)))
+
+  // Both service and oauth_server_to_server credentials are present
+  if (integrationTypes.includes('oauth_server_to_server_migrate')) {
+    // Use JWT only if the user explicitly specifies it
+    if (flags['use-jwt']) {
+      return LibConsoleCLI.JWT_CREDENTIAL
+    }
+    // Otherwise, use oauth_server_to_server
+    return LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+  }
+
+  // Only one type of credential in project, use it
+  return integrationTypes.includes('service') ? LibConsoleCLI.JWT_CREDENTIAL : LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+}
+
 module.exports = {
   getServiceApiKey,
   writeFile,
@@ -707,5 +733,6 @@ module.exports = {
   importConfigJson,
   mergeEnv,
   splitEnvLine,
+  getProjectCredentialType,
   CONSOLE_CONFIG_KEY
 }
