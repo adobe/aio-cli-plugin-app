@@ -1,5 +1,0 @@
-extensions:
-  dx/excshell/1:
-    $include: src/dx-excshell-1/ext.config.yaml
-  some/extension/1:
-    some_key: some_value

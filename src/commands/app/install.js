@@ -22,6 +22,7 @@ const jsYaml = require('js-yaml')
 const { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE } = require('../../lib/defaults')
 const ora = require('ora')
 const chalk = require('chalk')
+const libAppConfig = require('@adobe/aio-cli-lib-app-config')
 
 class InstallCommand extends BaseCommand {
   async run () {
@@ -49,7 +50,8 @@ class InstallCommand extends BaseCommand {
     try {
       await this.validateZipDirectoryStructure(args.path)
       await this.unzipFile(args.path, outputPath)
-      await this.validateConfig(outputPath, USER_CONFIG_FILE)
+      // first coalesce the app config (resolving $include files), then validate it
+      await libAppConfig.validate(await libAppConfig.coalesce(USER_CONFIG_FILE))
       await this.validateConfig(outputPath, DEPLOY_CONFIG_FILE)
       await this.npmInstall(flags.verbose)
       await this.runTests()

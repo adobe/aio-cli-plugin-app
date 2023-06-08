@@ -19,6 +19,7 @@ const installHelper = require('../../../src/lib/install-helper')
 const { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE } = require('../../../src/lib/defaults')
 const path = require('node:path')
 const jsYaml = require('js-yaml')
+const libAppConfig = require('@adobe/aio-cli-lib-app-config')
 
 jest.mock('fs-extra')
 jest.mock('unzipper')
@@ -26,6 +27,7 @@ jest.mock('../../../src/lib/install-helper')
 jest.mock('js-yaml')
 jest.mock('ora')
 jest.mock('execa')
+jest.mock('@adobe/aio-cli-lib-app-config')
 
 const mockReadStreamPipe = jest.fn()
 const mockUnzipExtract = jest.fn()
@@ -73,6 +75,11 @@ beforeEach(() => {
   process.cwd = jest.fn().mockImplementation(() => fakeCwd)
   process.chdir.mockClear()
   process.cwd.mockClear()
+
+  libAppConfig.validate.mockReset()
+  libAppConfig.load.mockReset()
+  libAppConfig.coalesce.mockReset()
+  libAppConfig.coalesce.mockResolvedValue({ coalesce: 'output' })
 })
 
 test('exports', () => {
@@ -293,7 +300,10 @@ describe('run', () => {
 
     expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
     expect(command.unzipFile).toHaveBeenCalledTimes(1)
-    expect(command.validateConfig).toHaveBeenCalledTimes(2)
+    expect(command.validateConfig).toHaveBeenCalledTimes(1) // validate deploy.yaml
+    expect(libAppConfig.validate).toHaveBeenCalledTimes(1) // validate user config
+    expect(libAppConfig.validate).toHaveBeenCalledWith({ coalesce: 'output' })
+    expect(libAppConfig.coalesce).toHaveBeenCalledTimes(1)
     expect(command.runTests).toHaveBeenCalledTimes(1)
     expect(command.npmInstall).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -318,7 +328,10 @@ describe('run', () => {
 
     expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
     expect(command.unzipFile).toHaveBeenCalledTimes(1)
-    expect(command.validateConfig).toHaveBeenCalledTimes(2)
+    expect(command.validateConfig).toHaveBeenCalledTimes(1) // validate deploy.yaml
+    expect(libAppConfig.validate).toHaveBeenCalledTimes(1) // validate user config
+    expect(libAppConfig.validate).toHaveBeenCalledWith({ coalesce: 'output' })
+    expect(libAppConfig.coalesce).toHaveBeenCalledTimes(1)
     expect(command.runTests).toHaveBeenCalledTimes(1)
     expect(command.npmInstall).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(1)
@@ -345,7 +358,10 @@ describe('run', () => {
 
     expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
     expect(command.unzipFile).toHaveBeenCalledTimes(1)
-    expect(command.validateConfig).toHaveBeenCalledTimes(2)
+    expect(command.validateConfig).toHaveBeenCalledTimes(1) // validate deploy.yaml
+    expect(libAppConfig.validate).toHaveBeenCalledTimes(1) // validate user config
+    expect(libAppConfig.validate).toHaveBeenCalledWith({ coalesce: 'output' })
+    expect(libAppConfig.coalesce).toHaveBeenCalledTimes(1)
     expect(command.runTests).toHaveBeenCalledTimes(1)
     expect(command.npmInstall).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(1)
@@ -369,7 +385,10 @@ describe('run', () => {
 
     expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
     expect(command.unzipFile).toHaveBeenCalledTimes(1)
-    expect(command.validateConfig).toHaveBeenCalledTimes(2)
+    expect(command.validateConfig).toHaveBeenCalledTimes(1) // validate deploy.yaml
+    expect(libAppConfig.validate).toHaveBeenCalledTimes(1) // validate user config
+    expect(libAppConfig.validate).toHaveBeenCalledWith({ coalesce: 'output' })
+    expect(libAppConfig.coalesce).toHaveBeenCalledTimes(1)
     expect(command.runTests).toHaveBeenCalledTimes(1)
     expect(command.npmInstall).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(0)

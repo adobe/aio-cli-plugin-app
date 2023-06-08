@@ -37,6 +37,7 @@ class Pack extends BaseCommand {
     aioLogger.debug(`flags: ${JSON.stringify(flags, null, 2)}`)
     aioLogger.debug(`args: ${JSON.stringify(args, null, 2)}`)
 
+    // NOTE: this will validate the app config file behind the scene
     const appConfig = await this.getFullConfig()
 
     // resolve to absolute path before any chdir
