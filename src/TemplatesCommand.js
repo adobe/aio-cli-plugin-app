@@ -113,7 +113,7 @@ class TemplatesCommand extends AddCommand {
           type: 'table',
           name: promptName,
           bottomContent: `* = recommended by Adobe; to learn more about the templates, go to ${hyperlinker('https://adobe.ly/templates', 'https://adobe.ly/templates')}`,
-          message: 'Choose the template(s) to install:',
+          message: 'Choose the template(s) to install: /n (use spacebar to select, up/down to navigate, enter to confirm) /n No selection will create a deafult standalone app',
           style: { head: [], border: [] },
           wordWrap: true,
           wrapOnWordBoundary: false,
