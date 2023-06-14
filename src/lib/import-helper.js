@@ -106,7 +106,9 @@ function loadAndValidateConfigFile (fileOrBuffer) {
     throw new Error(message)
   }
 
-  postValidateChecks(res.values)
+  // Skip post validate checks for now, it's okay to have both service and oauth 
+  // credentials, we just default to oauth unless the user specifies to use jwt - mgoberling
+  // postValidateChecks(res.values)
 
   return res
 }
@@ -703,21 +705,28 @@ function getServiceApiKey (configFileJson, useJwt) {
  * @returns {string} the credential type
  */
 const getProjectCredentialType = (projectConfig, flags) => {
-  // Get unique integration types
-  const integrationTypes = Array.from(new Set(projectConfig.workspace.details.credentials.map(credential => credential.integration_type)))
+  // Note: This only looks at the first credential of each type
+  const jwtConfig = projectConfig?.workspace?.details?.credentials?.find(c => c.integration_type === 'service')
+  const oauthS2SConfig = projectConfig?.workspace?.details?.credentials?.find(c => c.integration_type === 'oauth_server_to_server')
+  const oauthS2SMigrateConfig = projectConfig?.workspace?.details?.credentials?.find(c => c.integration_type === 'oauth_server_to_server_migrate')
 
-  // Both service and oauth_server_to_server credentials are present
-  if (integrationTypes.includes('oauth_server_to_server_migrate')) {
-    // Use JWT only if the user explicitly specifies it
+  if (jwtConfig && oauthS2SConfig) {
     if (flags['use-jwt']) {
       return LibConsoleCLI.JWT_CREDENTIAL
+    } else {
+      return LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
     }
-    // Otherwise, use oauth_server_to_server
+  } else if (oauthS2SConfig) {
     return LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+  // Note:  If somehow both jwt and oauth migrate (technically also jwt) are present, we prefer the
+  //        migrate credentials
+  } else if (oauthS2SMigrateConfig) {
+    return LibConsoleCLI.OAUTH_SERVER_TO_SERVER_MIGRATE_CREDENTIAL
+  } else if (jwtConfig) {
+    return LibConsoleCLI.JWT_CREDENTIAL
   }
 
-  // Only one type of credential in project, use it
-  return integrationTypes.includes('service') ? LibConsoleCLI.JWT_CREDENTIAL : LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+  return null
 }
 
 module.exports = {
