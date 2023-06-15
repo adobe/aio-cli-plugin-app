@@ -75,22 +75,24 @@ function loadConfigFile (fileOrBuffer) {
  *
  * @private
  */
-function postValidateChecks (configFileJson) {
-  // OAuth S2S: secondary check that JSON-Schema can't handle (array item check): credentials of `integration_type`
-  // "service", "oauth_server_to_server", and "oauth_server_to_server_migrate" are mutually exclusive
-  const project = configFileJson.project
-  const serviceIntegration = project?.workspace?.details?.credentials?.find(c => c.integration_type === 'service')
-  const oauthS2SIntegration = project?.workspace?.details?.credentials?.find(c => c.integration_type === 'oauth_server_to_server')
-  const oauthS2SMigrateIntegration = project?.workspace?.details?.credentials?.find(c => c.integration_type === 'oauth_server_to_server_migrate')
+// It's okay to have jwt and oauth credentials, we just default to oauth unless the user specifies to use jwt - mgoberling
+//
+// function postValidateChecks (configFileJson) {
+//   // OAuth S2S: secondary check that JSON-Schema can't handle (array item check): credentials of `integration_type`
+//   // "service", "oauth_server_to_server", and "oauth_server_to_server_migrate" are mutually exclusive
+//   const project = configFileJson.project
+//   const serviceIntegration = project?.workspace?.details?.credentials?.find(c => c.integration_type === 'service')
+//   const oauthS2SIntegration = project?.workspace?.details?.credentials?.find(c => c.integration_type === 'oauth_server_to_server')
+//   const oauthS2SMigrateIntegration = project?.workspace?.details?.credentials?.find(c => c.integration_type === 'oauth_server_to_server_migrate')
 
-  if ((serviceIntegration && oauthS2SIntegration) ||
-      (serviceIntegration && oauthS2SMigrateIntegration) ||
-      (oauthS2SIntegration && oauthS2SMigrateIntegration)
-  ) {
-    const message = 'Mutually exclusive credentials: "integration_type" values: service, oauth_server_to_server, oauth_server_to_server_migrate'
-    throw new Error(message)
-  }
-}
+//   if ((serviceIntegration && oauthS2SIntegration) ||
+//       (serviceIntegration && oauthS2SMigrateIntegration) ||
+//       (oauthS2SIntegration && oauthS2SMigrateIntegration)
+//   ) {
+//     const message = 'Mutually exclusive credentials: "integration_type" values: service, oauth_server_to_server, oauth_server_to_server_migrate'
+//     throw new Error(message)
+//   }
+// }
 
 /**
  * Load and validate a config file
@@ -106,7 +108,7 @@ function loadAndValidateConfigFile (fileOrBuffer) {
     throw new Error(message)
   }
 
-  // Skip post validate checks for now, it's okay to have both service and oauth 
+  // Skip post validate checks for now, it's okay to have both service and oauth
   // credentials, we just default to oauth unless the user specifies to use jwt - mgoberling
   // postValidateChecks(res.values)
 
@@ -718,15 +720,18 @@ const getProjectCredentialType = (projectConfig, flags) => {
     }
   } else if (oauthS2SConfig) {
     return LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
-  // Note:  If somehow both jwt and oauth migrate (technically also jwt) are present, we prefer the
-  //        migrate credentials
   } else if (oauthS2SMigrateConfig) {
-    return LibConsoleCLI.OAUTH_SERVER_TO_SERVER_MIGRATE_CREDENTIAL
+    if (flags['use-jwt']) {
+      return LibConsoleCLI.JWT_CREDENTIAL
+    } else {
+      return LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+    }
   } else if (jwtConfig) {
     return LibConsoleCLI.JWT_CREDENTIAL
   }
 
-  return null
+  // Default to JWT, like the other lib functions
+  return LibConsoleCLI.JWT_CREDENTIAL
 }
 
 module.exports = {

@@ -134,6 +134,24 @@ describe('Run', () => {
     })
   })
 
+  test('selects some services for deletion and confirm, no credentials', async () => {
+    mockConfigProject = fixtureJson('oauths2s/valid.config.no.creds.json').project
+    config.get.mockReturnValue(mockConfigProject)
+
+    const newServiceProperties = consoleDataMocks.serviceProperties.slice(1)
+    // returns current service - selected for deletion
+    mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockResolvedValue(newServiceProperties)
+    await TheCommand.run([])
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
+      orgId: mockOrgId,
+      project: mockProject,
+      workspace: mockWorkspace,
+      certDir: null,
+      serviceProperties: newServiceProperties,
+      credentialType: LibConsoleCLI.JWT_CREDENTIAL
+    })
+  })
+
   test('selects some services for deletion and confirm, oauth s2s', async () => {
     mockConfigProject = fixtureJson('oauths2s/valid.config.json').project
     config.get.mockReturnValue(mockConfigProject)
@@ -152,7 +170,7 @@ describe('Run', () => {
     })
   })
 
-  test('selects some services for deletion and confirm, mixed credentials', async () => {
+  test('selects some services for deletion and confirm, migrate credentials', async () => {
     mockConfigProject = fixtureJson('oauths2s/valid.config.migrate.json').project
     config.get.mockReturnValue(mockConfigProject)
 
@@ -171,6 +189,42 @@ describe('Run', () => {
   })
 
   test('selects some services for deletion and confirm, mixed credentials --use-jwt', async () => {
+    mockConfigProject = fixtureJson('oauths2s/valid.config.mixed.json').project
+    config.get.mockReturnValue(mockConfigProject)
+
+    const newServiceProperties = consoleDataMocks.serviceProperties.slice(1)
+    // returns current service - selected for deletion
+    mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockResolvedValue(newServiceProperties)
+    await TheCommand.run(['--use-jwt'])
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
+      orgId: mockOrgId,
+      project: mockProject,
+      workspace: mockWorkspace,
+      certDir: null,
+      serviceProperties: newServiceProperties,
+      credentialType: LibConsoleCLI.JWT_CREDENTIAL
+    })
+  })
+
+  test('selects some services for deletion and confirm, mixed credentials', async () => {
+    mockConfigProject = fixtureJson('oauths2s/valid.config.mixed.json').project
+    config.get.mockReturnValue(mockConfigProject)
+
+    const newServiceProperties = consoleDataMocks.serviceProperties.slice(1)
+    // returns current service - selected for deletion
+    mockConsoleCLIInstance.promptForRemoveServiceSubscriptions.mockResolvedValue(newServiceProperties)
+    await TheCommand.run([])
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
+      orgId: mockOrgId,
+      project: mockProject,
+      workspace: mockWorkspace,
+      certDir: null,
+      serviceProperties: newServiceProperties,
+      credentialType: LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+    })
+  })
+
+  test('selects some services for deletion and confirm, migration credentials --use-jwt', async () => {
     mockConfigProject = fixtureJson('oauths2s/valid.config.migrate.json').project
     config.get.mockReturnValue(mockConfigProject)
 
