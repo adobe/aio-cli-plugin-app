@@ -148,7 +148,7 @@ describe('Run', () => {
       workspace: mockWorkspace,
       certDir: null,
       serviceProperties: newServiceProperties,
-      credentialType: LibConsoleCLI.JWT_CREDENTIAL
+      credentialType: LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
     })
   })
 

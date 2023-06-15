@@ -731,7 +731,7 @@ const getProjectCredentialType = (projectConfig, flags) => {
   }
 
   // Default to JWT, like the other lib functions
-  return LibConsoleCLI.JWT_CREDENTIAL
+  return LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
 }
 
 module.exports = {
