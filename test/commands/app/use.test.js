@@ -27,8 +27,8 @@ const mockConsoleCLIInstance = {
   getWorkspaces: jest.fn(),
   promptForSelectWorkspace: jest.fn(),
   getEnabledServicesForOrg: jest.fn(),
-  subscribeToServices: jest.fn(),
-  getServicePropertiesFromWorkspace: jest.fn(),
+  subscribeToServicesWithCredentialType: jest.fn(),
+  getServicePropertiesFromWorkspaceWithCredentialType: jest.fn(),
   getWorkspaceConfig: jest.fn(),
   promptForCreateWorkspaceDetails: jest.fn(),
   createWorkspace: jest.fn(),
@@ -56,8 +56,8 @@ function setDefaultMockConsoleCLI () {
   mockConsoleCLIInstance.promptForSelectWorkspace.mockResolvedValue(consoleDataMocks.workspace)
   mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(consoleDataMocks.workspaces)
   mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(consoleDataMocks.enabledServices)
-  mockConsoleCLIInstance.subscribeToServices.mockResolvedValue(consoleDataMocks.subscribeServicesResponse)
-  mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(consoleDataMocks.serviceProperties)
+  mockConsoleCLIInstance.subscribeToServicesWithCredentialType.mockResolvedValue(consoleDataMocks.subscribeServicesResponse)
+  mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValue(consoleDataMocks.serviceProperties)
   mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue({ fake: 'config' })
   mockConsoleCLIInstance.promptForCreateWorkspaceDetails.mockResolvedValue({ name: 'newWorkspace', title: 'title' })
   mockConsoleCLIInstance.createWorkspace.mockResolvedValue(consoleDataMocks.workspace)
@@ -137,9 +137,12 @@ beforeEach(() => {
   jest.clearAllMocks()
   mockGetCli.mockReturnValue({})
   importHelperLib.loadConfigFile.mockReset()
+  importHelperLib.getServiceApiKey.mockReset()
   resetMockConsoleCLI()
   mockConsoleCLIInstance.prompt.promptConfirm.mockReset()
   setDefaultMockConsoleCLI()
+
+  importHelperLib.getServiceApiKey.mockReturnValue('')
 
   fakeCurrentConfig = {
     name: 'projectname',
@@ -233,7 +236,7 @@ describe('run with config file arg', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       'config-file',
       process.cwd(),
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
   })
@@ -243,7 +246,7 @@ describe('run with config file arg', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       'config-file',
       process.cwd(),
-      { merge: true, overwrite: false, interactive: false },
+      { merge: true, overwrite: false, interactive: false, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
   })
@@ -254,7 +257,7 @@ describe('run with config file arg', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       'config-file',
       process.cwd(),
-      { merge: false, overwrite: true, interactive: false },
+      { merge: false, overwrite: true, interactive: false, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
   })
@@ -265,12 +268,13 @@ describe('run with config file arg', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       'config-file',
       process.cwd(),
-      { merge: true, overwrite: false, interactive: false },
+      { merge: true, overwrite: false, interactive: false, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
   })
 
   test('config-file --no-input, config has credentials (SERVICE_API_KEY)', async () => {
+    importHelperLib.getServiceApiKey.mockReturnValue('apikey')
     mockConsoleImportConfig({
       credentials: [
         { oauth: { client_id: 'hola' } },
@@ -281,7 +285,7 @@ describe('run with config file arg', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       'config-file',
       process.cwd(),
-      { merge: true, overwrite: false, interactive: false },
+      { merge: true, overwrite: false, interactive: false, useJwt: false },
       { SERVICE_API_KEY: 'apikey' }
     )
   })
@@ -311,12 +315,12 @@ describe('run with global configuration', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
     // services are same in both workspaces in default mock
-    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledTimes(2)
-    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType).toHaveBeenCalledTimes(2)
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).not.toHaveBeenCalled()
   })
 
   test('-g, global config === current config', async () => {
@@ -335,7 +339,7 @@ describe('run with global configuration', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
   })
@@ -352,12 +356,12 @@ describe('run with global configuration', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: true, overwrite: false, interactive: false },
+      { merge: true, overwrite: false, interactive: false, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
     // no-input sets no-service-sync
-    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).not.toHaveBeenCalled()
-    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).not.toHaveBeenCalled()
   })
 
   test('-g --no-input --confirm-service-sync, same services', async () => {
@@ -372,19 +376,19 @@ describe('run with global configuration', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: true, overwrite: false, interactive: false },
+      { merge: true, overwrite: false, interactive: false, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
-    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledTimes(2)
-    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType).toHaveBeenCalledTimes(2)
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).not.toHaveBeenCalled()
   })
 
   test('-g --no-input --confirm-service-sync, services to be synced', async () => {
     mockConsoleImportConfig()
     const currentServices = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[1]]
     const servicesInTargetWorkspace = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[2]]
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServices)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(servicesInTargetWorkspace)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(currentServices)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(servicesInTargetWorkspace)
 
     await TheCommand.run(['-g', '--no-input', '--confirm-service-sync'])
     expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
@@ -396,18 +400,49 @@ describe('run with global configuration', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: true, overwrite: false, interactive: false },
+      { merge: true, overwrite: false, interactive: false, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
-    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledTimes(2)
+    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType).toHaveBeenCalledTimes(2)
     // sync services from current workspace into globally selected project/workspace
-    expect(mockConsoleCLIInstance.subscribeToServices).toHaveBeenCalledWith(
-      fakeGlobalConfig.org.id,
-      fakeGlobalConfig.project,
-      fakeGlobalConfig.workspace,
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
+      orgId: fakeGlobalConfig.org.id,
+      project: fakeGlobalConfig.project,
+      workspace: fakeGlobalConfig.workspace,
       certDir,
-      currentServices
+      serviceProperties: currentServices
+    })
+  })
+
+  test('-g --no-input --confirm-service-sync, --use-jwt, services to be synced', async () => {
+    mockConsoleImportConfig()
+    const currentServices = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[1]]
+    const servicesInTargetWorkspace = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[2]]
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(currentServices)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(servicesInTargetWorkspace)
+
+    await TheCommand.run(['-g', '--no-input', '--confirm-service-sync', '--use-jwt'])
+    expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
+      fakeGlobalConfig.org.id,
+      fakeGlobalConfig.project.id,
+      fakeGlobalConfig.workspace.id,
+      consoleDataMocks.enabledServices
     )
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
+      expect.any(Buffer),
+      process.cwd(),
+      { merge: true, overwrite: false, interactive: false, useJwt: true },
+      { SERVICE_API_KEY: '' }
+    )
+    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType).toHaveBeenCalledTimes(2)
+    // sync services from current workspace into globally selected project/workspace
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
+      orgId: fakeGlobalConfig.org.id,
+      project: fakeGlobalConfig.project,
+      workspace: fakeGlobalConfig.workspace,
+      certDir,
+      serviceProperties: currentServices
+    })
   })
 
   test('-g, confirm prompt = true, services to be synced', async () => {
@@ -416,8 +451,8 @@ describe('run with global configuration', () => {
     mockConsoleImportConfig()
     const currentServices = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[1]]
     const servicesInTargetWorkspace = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[2]]
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServices)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(servicesInTargetWorkspace)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(currentServices)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(servicesInTargetWorkspace)
 
     await TheCommand.run(['-g'])
     expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
@@ -429,18 +464,18 @@ describe('run with global configuration', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
-    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledTimes(2)
+    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType).toHaveBeenCalledTimes(2)
     // sync services from current workspace into globally selected project/workspace
-    expect(mockConsoleCLIInstance.subscribeToServices).toHaveBeenCalledWith(
-      fakeGlobalConfig.org.id,
-      fakeGlobalConfig.project,
-      fakeGlobalConfig.workspace,
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
+      orgId: fakeGlobalConfig.org.id,
+      project: fakeGlobalConfig.project,
+      workspace: fakeGlobalConfig.workspace,
       certDir,
-      currentServices
-    )
+      serviceProperties: currentServices
+    })
   })
 
   test('-g, confirm prompt = true, services to be synced, incomplete local config', async () => {
@@ -449,8 +484,8 @@ describe('run with global configuration', () => {
     mockConsoleImportConfig()
     const currentServices = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[1]]
     const servicesInTargetWorkspace = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[2]]
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServices)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(servicesInTargetWorkspace)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(currentServices)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(servicesInTargetWorkspace)
 
     delete fakeCurrentConfig.name // project name
     setConfigMock()
@@ -464,13 +499,13 @@ describe('run with global configuration', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
     // when current config is not complete, we can switch to global config but not sync services
-    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType).not.toHaveBeenCalled()
     // sync services from current workspace into globally selected project/workspace
-    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalledWith()
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).not.toHaveBeenCalledWith()
   })
 
   test('-g, confirm prompt = false, services to be synced', async () => {
@@ -479,8 +514,8 @@ describe('run with global configuration', () => {
     mockConsoleImportConfig()
     const currentServices = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[1]]
     const servicesInTargetWorkspace = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[2]]
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServices)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(servicesInTargetWorkspace)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(currentServices)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(servicesInTargetWorkspace)
 
     await TheCommand.run(['-g'])
     expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
@@ -492,12 +527,12 @@ describe('run with global configuration', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
-    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledTimes(2)
+    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType).toHaveBeenCalledTimes(2)
     // make sure there are no service sync when confirmation = false
-    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).not.toHaveBeenCalled()
   })
 
   test('-g, confirm prompt = true, services to be synced, but orgs are not the same', async () => {
@@ -510,8 +545,8 @@ describe('run with global configuration', () => {
     mockConsoleImportConfig()
     const currentServices = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[1]]
     const servicesInTargetWorkspace = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[2]]
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServices)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(servicesInTargetWorkspace)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(currentServices)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(servicesInTargetWorkspace)
 
     await TheCommand.run(['-g'])
     expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
@@ -523,13 +558,13 @@ describe('run with global configuration', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
     // service sync is not supported when orgs are not the same
-    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).not.toHaveBeenCalled()
     // but we still check service properties to display a warning if some are missing
-    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledTimes(2)
+    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType).toHaveBeenCalledTimes(2)
   })
 
   test('incomplete global config missing org', async () => {
@@ -581,12 +616,12 @@ describe('switch to a workspace in the same org', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
     // services are same in both workspaces in default mock
-    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledTimes(2)
-    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType).toHaveBeenCalledTimes(2)
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).not.toHaveBeenCalled()
   })
 
   test('--workspace existing, prompt confirm sync = true, services are different', async () => {
@@ -597,9 +632,9 @@ describe('switch to a workspace in the same org', () => {
 
     const currentServices = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[1]]
     const servicesInTargetWorkspace = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[2]]
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServices)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(currentServices)
     mockConsoleCLIInstance.promptForSelectWorkspace.mockResolvedValueOnce(newWorkspace)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(servicesInTargetWorkspace)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(servicesInTargetWorkspace)
 
     await TheCommand.run(['--workspace', newWorkspace.name])
     expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
@@ -611,18 +646,18 @@ describe('switch to a workspace in the same org', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
 
-    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledTimes(2)
-    expect(mockConsoleCLIInstance.subscribeToServices).toHaveBeenCalledWith(
-      fakeCurrentConfig.org.id,
-      { id: fakeCurrentConfig.id, name: fakeCurrentConfig.name },
-      { id: newWorkspace.id, name: newWorkspace.name },
+    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType).toHaveBeenCalledTimes(2)
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
+      orgId: fakeCurrentConfig.org.id,
+      project: { id: fakeCurrentConfig.id, name: fakeCurrentConfig.name },
+      workspace: { id: newWorkspace.id, name: newWorkspace.name },
       certDir,
-      currentServices
-    )
+      serviceProperties: currentServices
+    })
   })
 
   test('--workspace existing, prompt confirm sync = false, services are different', async () => {
@@ -633,9 +668,9 @@ describe('switch to a workspace in the same org', () => {
 
     const currentServices = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[1]]
     const servicesInTargetWorkspace = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[2]]
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServices)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(currentServices)
     mockConsoleCLIInstance.promptForSelectWorkspace.mockResolvedValueOnce(newWorkspace)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(servicesInTargetWorkspace)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(servicesInTargetWorkspace)
 
     await TheCommand.run(['--workspace', newWorkspace.name])
     expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
@@ -647,12 +682,12 @@ describe('switch to a workspace in the same org', () => {
     expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       expect.any(Buffer),
       process.cwd(),
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
 
-    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledTimes(2)
-    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType).toHaveBeenCalledTimes(2)
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).not.toHaveBeenCalled()
   })
 
   test('--workspace existing, --no-input, services are different', async () => {
@@ -661,8 +696,8 @@ describe('switch to a workspace in the same org', () => {
 
     const currentServices = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[1]]
     const servicesInTargetWorkspace = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[2]]
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServices)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(servicesInTargetWorkspace)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(currentServices)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(servicesInTargetWorkspace)
     mockConsoleCLIInstance.promptForSelectWorkspace.mockResolvedValueOnce(newWorkspace)
 
     await TheCommand.run(['--workspace', newWorkspace.name, '--no-input'])
@@ -676,13 +711,13 @@ describe('switch to a workspace in the same org', () => {
       expect.any(Buffer),
       process.cwd(),
       // --no-input sets --merge to true
-      { merge: true, overwrite: false, interactive: false },
+      { merge: true, overwrite: false, interactive: false, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
 
     // --no-input sets --no-service-sync to true
-    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).not.toHaveBeenCalled()
-    expect(mockConsoleCLIInstance.subscribeToServices).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).not.toHaveBeenCalled()
   })
 
   test('--workspace Production, services are different, confirm sync service', async () => {
@@ -693,9 +728,9 @@ describe('switch to a workspace in the same org', () => {
 
     const currentServices = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[1]]
     const servicesInTargetWorkspace = [consoleDataMocks.serviceProperties[0]]
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(currentServices)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(currentServices)
     mockConsoleCLIInstance.promptForSelectWorkspace.mockResolvedValueOnce(newWorkspace)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValueOnce(servicesInTargetWorkspace)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(servicesInTargetWorkspace)
 
     await TheCommand.run(['--workspace', 'Production'])
     expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
@@ -708,18 +743,18 @@ describe('switch to a workspace in the same org', () => {
       expect.any(Buffer),
       process.cwd(),
       // --no-input sets --merge to true
-      { merge: false, overwrite: false, interactive: true },
+      { merge: false, overwrite: false, interactive: true, useJwt: false },
       { SERVICE_API_KEY: '' }
     )
 
-    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspace).toHaveBeenCalledTimes(2)
-    expect(mockConsoleCLIInstance.subscribeToServices).toHaveBeenCalledWith(
-      fakeCurrentConfig.org.id,
-      { id: fakeCurrentConfig.id, name: fakeCurrentConfig.name },
-      { id: newWorkspace.id, name: newWorkspace.name },
+    expect(mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType).toHaveBeenCalledTimes(2)
+    expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
+      orgId: fakeCurrentConfig.org.id,
+      project: { id: fakeCurrentConfig.id, name: fakeCurrentConfig.name },
+      workspace: { id: newWorkspace.id, name: newWorkspace.name },
       certDir,
-      currentServices
-    )
+      serviceProperties: currentServices
+    })
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(`⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace in Project '${fakeCurrentConfig.name}'`))
   })
 
