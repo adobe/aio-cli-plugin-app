@@ -71,7 +71,7 @@ DESCRIPTION
   Create, run, test, and deploy Adobe I/O Apps
 ```
 
-_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/10.2.2/src/commands/app/index.js)_
+_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/10.3.0/src/commands/app/index.js)_
 
 ## `aio app add`
 
@@ -181,10 +181,12 @@ Subscribe to Services in the current Workspace
 
 ```
 USAGE
-  $ aio app add service [-v] [--version]
+  $ aio app add service [-v] [--version] [--use-jwt]
 
 FLAGS
   -v, --verbose  Verbose output
+  --use-jwt      if the config has both jwt and OAuth Server to Server Credentials (while migrating), prefer the JWT
+                 credentials
   --version      Show version
 
 DESCRIPTION
@@ -372,10 +374,12 @@ Delete Services in the current Workspace
 
 ```
 USAGE
-  $ aio app delete service [-v] [--version]
+  $ aio app delete service [-v] [--version] [--use-jwt]
 
 FLAGS
   -v, --verbose  Verbose output
+  --use-jwt      if the config has both jwt and OAuth Server to Server Credentials (while migrating), prefer the JWT
+                 credentials
   --version      Show version
 
 DESCRIPTION
@@ -488,7 +492,7 @@ Create a new Adobe I/O App
 ```
 USAGE
   $ aio app init [PATH] [-v] [--version] [--install] [-y] [--login] [-e <value> | -t <value>]
-    [--standalone-app | ] [-w <value> | -i <value>] [--confirm-new-workspace]
+    [--standalone-app | ] [-w <value> | -i <value>] [--confirm-new-workspace] [--use-jwt]
 
 ARGUMENTS
   PATH  [default: .] Path to the app directory
@@ -505,6 +509,8 @@ FLAGS
   --[no-]install              [default: true] Run npm installation after files are created
   --[no-]login                Login using your Adobe ID for interacting with Adobe I/O Developer Console
   --standalone-app            Create a stand-alone application
+  --use-jwt                   if the config has both jwt and OAuth Server to Server Credentials (while migrating),
+                              prefer the JWT credentials
   --version                   Show version
 
 DESCRIPTION
@@ -647,7 +653,7 @@ Import an Adobe Developer Console configuration file.
 ```
 USAGE
   $ aio app use [CONFIG_FILE_PATH] [-v] [--version] [--overwrite | --merge] [--confirm-new-workspace] [-w
-    <value> | [-g | -w <value>] | ] [--no-service-sync | --confirm-service-sync] [--no-input]
+    <value> | [-g | -w <value>] | ] [--no-service-sync | --confirm-service-sync] [--no-input] [--use-jwt]
 
 ARGUMENTS
   CONFIG_FILE_PATH  path to an Adobe I/O Developer Console configuration file
@@ -670,6 +676,8 @@ FLAGS
                                 Workspace
   --overwrite                   Overwrite any .aio and .env files during import of the Adobe Developer Console
                                 configuration file
+  --use-jwt                     if the config has both jwt and OAuth Server to Server Credentials (while migrating),
+                                prefer the JWT credentials
   --version                     Show version
 
 DESCRIPTION
