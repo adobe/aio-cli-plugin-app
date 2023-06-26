@@ -1,12 +1,12 @@
 {
   "name": "@adobe/aio-cli-plugin-app",
   "description": "Create, Build and Deploy Adobe I/O Applications",
-  "version": "10.2.1",
+  "version": "10.3.0",
   "author": "Adobe Inc.",
   "bugs": "https://github.com/adobe/aio-cli-plugin-app/issues",
   "dependencies": {
     "@adobe/aio-cli-lib-app-config": "^1.0.1",
-    "@adobe/aio-cli-lib-console": "^4.0.0",
+    "@adobe/aio-cli-lib-console": "^4.1.0",
     "@adobe/aio-lib-core-config": "^3.0.0",
     "@adobe/aio-lib-core-logging": "^2.0.0",
     "@adobe/aio-lib-core-networking": "^4.1.0",

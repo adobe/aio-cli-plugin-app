@@ -10,10 +10,12 @@ governing permissions and limitations under the License.
 */
 
 const { importConsoleConfig, downloadConsoleConfigToBuffer } = require('../../../lib/import')
+const { getProjectCredentialType } = require('../../../lib/import-helper')
 const path = require('path')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:service', { provider: 'debug' })
 const config = require('@adobe/aio-lib-core-config')
 const chalk = require('chalk')
+const { Flags } = require('@oclif/core')
 
 const {
   setOrgServicesConfig,
@@ -44,16 +46,20 @@ class AddServiceCommand extends BaseCommand {
     const project = { name: projectConfig.name, id: projectConfig.id }
     const workspace = { name: projectConfig.workspace.name, id: projectConfig.workspace.id }
 
+    // get project credential type
+    const projectCredentialType = getProjectCredentialType(projectConfig, flags)
+
     // get latest support services
     const supportedServices = await consoleCLI.getEnabledServicesForOrg(orgId)
 
     // get current service properties
-    const currentServiceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
+    const currentServiceProperties = await consoleCLI.getServicePropertiesFromWorkspaceWithCredentialType({
       orgId,
-      project.id,
+      projectId: project.id,
       workspace,
-      supportedServices
-    )
+      supportedServices,
+      credentialType: projectCredentialType
+    })
 
     // update the service config, subscriptions and supported services
     setOrgServicesConfig(supportedServices)
@@ -104,12 +110,14 @@ class AddServiceCommand extends BaseCommand {
         { allowCreate: false }
       )
       // get serviceProperties from source workspace
-      newServiceProperties = await consoleCLI.getServicePropertiesFromWorkspace(
+      newServiceProperties = await consoleCLI.getServicePropertiesFromWorkspaceWithCredentialType({
         orgId,
-        project.id,
-        workspaceFrom,
-        supportedServices
-      )
+        projectId: project.id,
+        workspace: workspaceFrom,
+        supportedServices,
+        credentialType: projectCredentialType
+      })
+
       if (currentServiceNames.length > 0) {
         warnIfOverwriteServicesInProductionWorkspace(project.name, workspace.name)
         if (workspace.name !== 'Production') {
@@ -124,13 +132,14 @@ class AddServiceCommand extends BaseCommand {
     )
     if (confirm) {
       // if confirmed update the services
-      await consoleCLI.subscribeToServices(
+      await consoleCLI.subscribeToServicesWithCredentialType({
         orgId,
         project,
         workspace,
-        path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER),
-        newServiceProperties
-      )
+        certDir: path.join(this.config.dataDir, ENTP_INT_CERTS_FOLDER),
+        serviceProperties: newServiceProperties,
+        credentialType: projectCredentialType
+      })
 
       // update environment
       const config = {
@@ -154,7 +163,11 @@ AddServiceCommand.description = `Subscribe to Services in the current Workspace
 `
 
 AddServiceCommand.flags = {
-  ...BaseCommand.flags
+  ...BaseCommand.flags,
+  'use-jwt': Flags.boolean({
+    description: 'if the config has both jwt and OAuth Server to Server Credentials (while migrating), prefer the JWT credentials',
+    default: false
+  })
 }
 
 AddServiceCommand.aliases = ['app:add:services']
