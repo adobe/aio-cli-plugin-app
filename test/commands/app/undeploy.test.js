@@ -434,10 +434,15 @@ describe('run', () => {
   })
 
   test('outputs error if events hook throws', async () => {
-    const runHook = jest.fn().mockResolvedValueOnce({
-      successes: [],
-      failures: [{ plugin: { name: 'ifailedu' }, error: 'some error' }]
-    })
+    const runHook = jest.fn()
+      .mockResolvedValueOnce({
+        successes: ['ok'],
+        failures: []
+      })
+      .mockResolvedValue({
+        successes: [],
+        failures: [{ plugin: { name: 'ifailedu' }, error: 'some error' }]
+      })
     command.config = { runHook }
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     command.argv = ['--feature-event-hooks']
