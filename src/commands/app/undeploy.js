@@ -120,6 +120,14 @@ class Undeploy extends BaseCommand {
     try {
       this.config.runHook('post-undeploy-event-reg', { appConfig: config })
       await runInProcess(config.hooks['post-app-undeploy'], config)
+      if (flags['feature-event-hooks'] && flags.events) {
+        this.log('feature-event-hooks is enabled, running post-undeploy-event-reg hook')
+        const hookResults = await this.config.runHook('post-undeploy-event-reg', { appConfig: config })
+        if (hookResults?.failures?.length > 0) {
+          // output should be "Error : <plugin-name> : <error-message>\n" for each failure
+          this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
+        }
+      }
     } catch (err) {
       this.log(err)
     }
@@ -149,6 +157,11 @@ Undeploy.flags = {
     default: true,
     allowNo: true
   }),
+  events: Flags.boolean({
+    description: '[default: true] Undeploy (unregister) events if any',
+    default: true,
+    allowNo: true
+  }),
   'web-assets': Flags.boolean({
     description: '[default: true] Undeploy web-assets if any',
     default: true,
@@ -168,6 +181,12 @@ Undeploy.flags = {
     description: 'Force unpublish extension(s) from Exchange, will delete all extension points',
     default: false,
     exclusive: ['unpublish'] // unpublish is excluded
+  }),
+  'feature-event-hooks': Flags.boolean({
+    description: '[default: false] Enable event hooks feature',
+    default: false,
+    allowNo: true,
+    hidden: true
   })
 }
 
