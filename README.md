@@ -71,7 +71,7 @@ DESCRIPTION
   Create, run, test, and deploy Adobe I/O Apps
 ```
 
-_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/10.3.0/src/commands/app/index.js)_
+_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/10.3.1/src/commands/app/index.js)_
 
 ## `aio app add`
 
@@ -631,12 +631,14 @@ Undeploys an Adobe I/O App
 
 ```
 USAGE
-  $ aio app undeploy [-v] [--version] [--actions] [--web-assets] [-e <value>] [--force-unpublish | --unpublish]
+  $ aio app undeploy [-v] [--version] [--actions] [--events] [--web-assets] [-e <value>] [--force-unpublish |
+    --unpublish]
 
 FLAGS
   -e, --extension=<value>...  Undeploy only a specific extension, the flags can be specified multiple times
   -v, --verbose               Verbose output
   --[no-]actions              [default: true] Undeploy actions if any
+  --[no-]events               [default: true] Undeploy (unregister) events if any
   --force-unpublish           Force unpublish extension(s) from Exchange, will delete all extension points
   --[no-]unpublish            [default: true] Unpublish selected extension(s) from Exchange
   --version                   Show version
