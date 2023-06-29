@@ -17,9 +17,10 @@ const DOCKER_REPOS = { // repo-name:kind
   'adobe-action-nodejs-v12': 'nodejs:12',
   'adobe-action-nodejs-v14': 'nodejs:14',
   'adobe-action-nodejs-v16': 'nodejs:16',
+  'adobe-action-nodejs-v18': 'nodejs:18'
 }
 
-const DEFAULT_KIND = 'nodejs:16'
+const DEFAULT_KIND = 'nodejs:18'
 
 async function main() {
     const nodejs = []
