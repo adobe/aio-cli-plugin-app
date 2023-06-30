@@ -31,7 +31,7 @@
     "dotenv": "^16",
     "execa": "^5.0.0",
     "fs-extra": "^11.1.1",
-    "get-port": "^5",
+    "get-port": "^7",
     "hjson": "^3.2.1",
     "http-terminator": "^3",
     "hyperlinker": "^1.0.0",
