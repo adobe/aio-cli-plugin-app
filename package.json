@@ -18,7 +18,7 @@
     "@adobe/generator-aio-app": "^5.1.0",
     "@adobe/generator-app-common-lib": "^0.3.3",
     "@adobe/inquirer-table-checkbox": "^1.2.0",
-    "@oclif/core": "^1.15.0",
+    "@oclif/core": "^2.8.10",
     "@parcel/core": "^2.7.0",
     "@parcel/reporter-cli": "^2.7.0",
     "ajv": "^8",
