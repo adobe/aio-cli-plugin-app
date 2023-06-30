@@ -71,7 +71,7 @@ DESCRIPTION
   Create, run, test, and deploy Adobe I/O Apps
 ```
 
-_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/10.3.1/src/commands/app/index.js)_
+_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/10.4.0/src/commands/app/index.js)_
 
 ## `aio app add`
 
@@ -415,7 +415,7 @@ Build and deploy an Adobe I/O App
 USAGE
   $ aio app deploy [-v] [--version] [--actions | -a <value>] [--web-assets] [--force-build | ] [--content-hash]
     [--web-optimize] [-e <value> | ] [--build] [--open] [--force-deploy] [--force-publish |  | --publish]
-    [--log-forwarding-update]
+    [--force-events ] [--log-forwarding-update]
 
 FLAGS
   -a, --action=<value>...       Deploy only a specific action, the flags can be specified multiple times, this will set
@@ -428,6 +428,7 @@ FLAGS
   --[no-]force-build            [default: true] Force a build even if one already exists
   --force-deploy                [default: false] Force deploy changes, regardless of production Workspace being
                                 published in Exchange.
+  --[no-]force-events           [default: false] Force event registrations and overwrite any previous registrations
   --force-publish               [default: false] Force publish extension(s) to Exchange, delete previously published
                                 extension points
   --[no-]log-forwarding-update  [default: true] Update log forwarding configuration on server
