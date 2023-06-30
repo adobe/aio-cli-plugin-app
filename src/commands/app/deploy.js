@@ -143,7 +143,7 @@ class Deploy extends BuildCommand {
       await runInProcess(config.hooks['pre-app-deploy'], config)
       if (flags['feature-event-hooks']) {
         this.log('feature-event-hooks is enabled, running pre-deploy-event-reg hook')
-        const hookResults = await this.config.runHook('pre-deploy-event-reg', { appConfig: config })
+        const hookResults = await this.config.runHook('pre-deploy-event-reg', { appConfig: config, force: flags['force-events'] })
         if (hookResults?.failures?.length > 0) {
           // output should be "Error : <plugin-name> : <error-message>\n" for each failure
           this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
@@ -251,7 +251,7 @@ class Deploy extends BuildCommand {
       await runInProcess(config.hooks['post-app-deploy'], config)
       if (flags['feature-event-hooks']) {
         this.log('feature-event-hooks is enabled, running post-deploy-event-reg hook')
-        const hookResults = await this.config.runHook('post-deploy-event-reg', { appConfig: config })
+        const hookResults = await this.config.runHook('post-deploy-event-reg', { appConfig: config, force: flags['force-events'] })
         if (hookResults?.failures?.length > 0) {
           // output should be "Error : <plugin-name> : <error-message>\n" for each failure
           this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
@@ -349,6 +349,13 @@ Deploy.flags = {
   'force-publish': Flags.boolean({
     description: '[default: false] Force publish extension(s) to Exchange, delete previously published extension points',
     default: false,
+    exclusive: ['action', 'publish'] // no-publish is excluded
+  }),
+  'force-events': Flags.boolean({
+    description: '[default: false] Force event registrations and overwrite any previous registrations',
+    default: false,
+    allowNo: true,
+    dependsOn: ['feature-event-hooks'],
     exclusive: ['action', 'publish'] // no-publish is excluded
   }),
   'web-optimize': Flags.boolean({
