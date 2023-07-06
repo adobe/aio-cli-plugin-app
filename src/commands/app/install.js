@@ -52,7 +52,7 @@ class InstallCommand extends BaseCommand {
       await this.unzipFile(args.path, outputPath)
       // first coalesce the app config (resolving $include files), then validate it
       await libAppConfig.validate(await libAppConfig.coalesce(USER_CONFIG_FILE))
-      await this.validateConfig(outputPath, DEPLOY_CONFIG_FILE)
+      await this.validateConfig(outputPath, DEPLOY_CONFIG_FILE, { throws: true })
       await this.npmInstall(flags.verbose)
       await this.runTests()
       this.spinner.succeed('Install done.')

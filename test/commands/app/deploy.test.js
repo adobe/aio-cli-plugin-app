@@ -726,7 +726,7 @@ describe('run', () => {
   })
 
   test('deploy (post hooks have errors)', async () => {
-    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     helpers.runInProcess
       .mockResolvedValueOnce('error-pre-app-deploy') // pre-app-deploy
       .mockResolvedValueOnce(undefined) // deploy-actions
