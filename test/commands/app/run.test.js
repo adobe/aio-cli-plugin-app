@@ -84,7 +84,7 @@ const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
 beforeEach(() => {
   jest.clearAllMocks()
   mockRunDev.mockReset()
-  helpers.runScript.mockReset()
+  helpers.runInProcess.mockReset()
 
   mockConfig.get = jest.fn().mockReturnValue({ globalConfig: 'seems-legit' })
 
@@ -662,7 +662,7 @@ describe('run', () => {
   })
 
   test('app:run with missing app hooks', async () => {
-    helpers.runScript
+    helpers.runInProcess
       .mockRejectedValueOnce('error-1')
       .mockRejectedValueOnce('error-2')
 
@@ -716,7 +716,7 @@ describe('run', () => {
     }
 
     const scriptSequence = []
-    helpers.runScript.mockImplementation(script => {
+    helpers.runInProcess.mockImplementation(script => {
       scriptSequence.push(script)
     })
 
@@ -725,7 +725,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
 
-    expect(helpers.runScript).toHaveBeenCalledTimes(2)
+    expect(helpers.runInProcess).toHaveBeenCalledTimes(2)
     expect(scriptSequence.length).toEqual(2)
     expect(scriptSequence[0]).toEqual('pre-app-run')
     expect(scriptSequence[1]).toEqual('post-app-run')

@@ -22,7 +22,7 @@ const coreConfig = require('@adobe/aio-lib-core-config')
 const BaseCommand = require('../../BaseCommand')
 const runDev = require('../../lib/run-dev')
 const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('../../lib/defaults')
-const { runScript } = require('../../lib/app-helper')
+const { runInProcess } = require('../../lib/app-helper')
 
 const DEV_KEYS_DIR = 'dist/dev-keys/'
 const PRIVATE_KEY_PATH = DEV_KEYS_DIR + 'private.key'
@@ -80,7 +80,7 @@ class Run extends BaseCommand {
     }
 
     try {
-      await runScript(config.hooks['pre-app-run'])
+      await runInProcess(config.hooks['pre-app-run'], { config, options: runOptions })
     } catch (err) {
       this.log(err)
     }
@@ -107,7 +107,7 @@ class Run extends BaseCommand {
     const inprocHook = this.config.runHook.bind(this.config)
     const frontendUrl = await runDev(config, this.config.dataDir, runOptions, onProgress, inprocHook)
     try {
-      await runScript(config.hooks['post-app-run'])
+      await runInProcess(config.hooks['post-app-run'], config)
     } catch (err) {
       this.log(err)
     }

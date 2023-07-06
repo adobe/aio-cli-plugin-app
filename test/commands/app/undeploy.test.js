@@ -63,7 +63,7 @@ const mockLibConsoleCLI = {
 
 beforeEach(() => {
   mockRuntimeLib.undeployActions.mockReset()
-  helpers.runScript.mockReset()
+  helpers.runInProcess.mockReset()
   mockFS.existsSync.mockReset()
   helpers.wrapError.mockImplementation(msg => msg)
   jest.clearAllMocks()
@@ -116,7 +116,7 @@ test('flags', async () => {
  * @param {object} post post-undeploy-hook script
  */
 function __setupMockHooks (pre = {}, undeployActions = {}, undeployStatic = {}, post = {}) {
-  helpers.runScript
+  helpers.runInProcess
     .mockResolvedValueOnce(pre) // pre-app-undeploy
     .mockResolvedValueOnce(undeployActions) // undeploy-actions
     .mockResolvedValueOnce(undeployStatic) // undeploy-static
@@ -131,6 +131,7 @@ describe('run', () => {
     command.error = jest.fn()
     command.log = jest.fn()
     command.appConfig = mockConfigData
+    command.config = { runCommand: jest.fn(), runHook: jest.fn() }
     command.getLibConsoleCLI = jest.fn(() => mockLibConsoleCLI)
     command.getAppExtConfigs = jest.fn()
     command.getFullConfig = jest.fn()
@@ -162,7 +163,7 @@ describe('run', () => {
   test('pre post undeploy hook errors --no-actions --no-web-assets', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
 
-    helpers.runScript
+    helpers.runInProcess
       .mockRejectedValueOnce('error-pre-app-undeploy') // pre-app-deploy (logs error)
       .mockRejectedValueOnce('error-post-app-undeploy') // post-app-deploy (logs error)
 
@@ -375,7 +376,7 @@ describe('run', () => {
     }
 
     const scriptSequence = []
-    helpers.runScript.mockImplementation(script => {
+    helpers.runInProcess.mockImplementation(script => {
       scriptSequence.push(script)
     })
 
@@ -385,7 +386,7 @@ describe('run', () => {
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
 
-    expect(helpers.runScript).toHaveBeenCalledTimes(4)
+    expect(helpers.runInProcess).toHaveBeenCalledTimes(4)
     expect(scriptSequence.length).toEqual(4)
     expect(scriptSequence[0]).toEqual('pre-app-undeploy')
     expect(scriptSequence[1]).toEqual('undeploy-actions')
@@ -400,5 +401,53 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledWith(expect.stringMatching(/Nothing to be done/))
+  })
+
+  test('does NOT fire `event` hooks when feature flag is NOT enabled', async () => {
+    const runHook = jest.fn()
+    command.config = { runHook }
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.argv = []
+    await command.run()
+    expect(command.error).not.toHaveBeenCalled()
+    expect(runHook).not.toHaveBeenCalledWith('post-undeploy-event-reg')
+  })
+
+  test('does NOT fire `event` hooks when events flag is false', async () => {
+    const runHook = jest.fn()
+    command.config = { runHook }
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.argv = ['--feature-event-hooks', '--no-events']
+    await command.run()
+    expect(command.error).not.toHaveBeenCalled()
+    expect(runHook).not.toHaveBeenCalledWith('post-undeploy-event-reg')
+  })
+
+  test('DOES fire `event` hooks when feature flag IS enabled', async () => {
+    const runHook = jest.fn()
+    command.config = { runHook }
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.argv = ['--feature-event-hooks']
+    await command.run()
+    expect(command.error).not.toHaveBeenCalled()
+    expect(runHook).toHaveBeenCalledWith('post-undeploy-event-reg', expect.any(Object))
+  })
+
+  test('outputs error if events hook throws', async () => {
+    const runHook = jest.fn()
+      .mockResolvedValueOnce({
+        successes: ['ok'],
+        failures: []
+      })
+      .mockResolvedValue({
+        successes: [],
+        failures: [{ plugin: { name: 'ifailedu' }, error: 'some error' }]
+      })
+    command.config = { runHook }
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    command.argv = ['--feature-event-hooks']
+    await command.run()
+    expect(runHook).toHaveBeenCalledWith('post-undeploy-event-reg', expect.any(Object))
+    expect(command.error).toHaveBeenCalledTimes(1)
   })
 })

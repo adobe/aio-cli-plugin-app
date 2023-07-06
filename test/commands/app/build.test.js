@@ -146,9 +146,8 @@ beforeEach(() => {
   mockWebLib.bundle.mockResolvedValue({ run: mockBundleFunc })
   mockFS.existsSync.mockReset()
   helpers.writeConfig.mockReset()
-  helpers.runScript.mockReset()
+  helpers.runInProcess.mockReset()
   jest.clearAllMocks()
-
   helpers.wrapError.mockImplementation(msg => msg)
 })
 
@@ -406,7 +405,7 @@ describe('run', () => {
     }
 
     const scriptSequence = []
-    helpers.runScript.mockImplementation(script => {
+    helpers.runInProcess.mockImplementation(script => {
       scriptSequence.push(script)
     })
 
@@ -416,7 +415,7 @@ describe('run', () => {
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
 
-    expect(helpers.runScript).toHaveBeenCalledTimes(4)
+    expect(helpers.runInProcess).toHaveBeenCalledTimes(4)
     expect(scriptSequence.length).toEqual(4)
     expect(scriptSequence[0]).toEqual('pre-app-build')
     expect(scriptSequence[1]).toEqual('build-actions')
@@ -498,7 +497,7 @@ describe('run', () => {
 
     const noScriptFound = undefined
     const childProcess = {}
-    helpers.runScript
+    helpers.runInProcess
       .mockResolvedValueOnce(noScriptFound) // pre-app-build
       .mockResolvedValueOnce(childProcess) // build-actions (uses hook)
       .mockResolvedValueOnce(childProcess) // build-static (uses hook)
@@ -513,7 +512,7 @@ describe('run', () => {
   test('build (pre and post hooks have errors, --no-actions and --no-web-assets)', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
-    helpers.runScript
+    helpers.runInProcess
       .mockRejectedValueOnce('error-pre-app-build') // pre-app-build (logs error)
       .mockRejectedValueOnce('error-post-app-build') // post-app-build (logs error)
 
@@ -534,7 +533,7 @@ describe('run', () => {
 
     const errorString = 'error-build-actions'
     const noScriptFound = undefined
-    helpers.runScript
+    helpers.runInProcess
       .mockResolvedValueOnce(noScriptFound) // pre-app-build (no error)
       .mockRejectedValueOnce(errorString) // build-actions (rethrows error)
       .mockResolvedValueOnce(noScriptFound) // build-static (will not reach here)
@@ -548,7 +547,7 @@ describe('run', () => {
 
     const errorString = 'error-build-static'
     const noScriptFound = undefined
-    helpers.runScript
+    helpers.runInProcess
       .mockResolvedValueOnce(noScriptFound) // pre-app-build (no error)
       .mockResolvedValueOnce(noScriptFound) // build-actions (uses inbuilt, no error)
       .mockRejectedValueOnce(errorString) // build-static (rethrows error)

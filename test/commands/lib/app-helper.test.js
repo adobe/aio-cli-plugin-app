@@ -22,11 +22,15 @@ jest.mock('@adobe/aio-lib-core-networking', () => ({
 jest.mock('@adobe/aio-lib-core-config')
 jest.mock('execa')
 jest.mock('process')
+jest.mock('path')
 jest.mock('fs-extra') // do not touch the real fs
 jest.mock('@adobe/aio-lib-env')
 jest.mock('@adobe/aio-lib-ims')
 
+const mockLogger = require('@adobe/aio-lib-core-logging')
+
 const which = require('which')
+const path = require('path')
 const fs = require('fs-extra')
 const execa = require('execa')
 const appHelper = require('../../../src/lib/app-helper')
@@ -43,6 +47,7 @@ beforeEach(() => {
   libEnv.getCliEnv.mockReset()
   libIms.getToken.mockReset()
   mockFetch.mockReset()
+  mockLogger.mockReset()
 })
 
 const getMockConfig = require('../../data-mocks/config-loader')
@@ -283,6 +288,38 @@ test('runPackageScript logs if package.json does not have matching script', asyn
   // coverage: the error is logged, no error thrown
   await expect(appHelper.runPackageScript('is-not-a-script', 'does-not-exist'))
     .resolves.toBeUndefined()
+})
+
+test('runInProcess with script should call runScript', async () => {
+  expect(appHelper.runInProcess).toBeDefined()
+  expect(appHelper.runInProcess).toBeInstanceOf(Function)
+  execa.command.mockReturnValue({ on: () => {} })
+  await appHelper.runInProcess('echo new command who dis?', {})
+  expect(mockLogger.debug).toHaveBeenCalledWith('runInProcess: error running project hook in process, running as package script instead')
+  expect(execa.command).toHaveBeenCalledWith('echo new command who dis?', expect.any(Object))
+})
+
+test('runInProcess with require', async () => {
+  const mockReq = jest.fn()
+  path.resolve.mockReturnValue('does-not-exist')
+  jest.mock('does-not-exist',
+    () => mockReq,
+    { virtual: true }
+  )
+  expect(appHelper.runInProcess).toBeDefined()
+  expect(appHelper.runInProcess).toBeInstanceOf(Function)
+  execa.command.mockReturnValue({ on: () => {} })
+  await appHelper.runInProcess('does-not-exist', {})
+  expect(mockReq).toHaveBeenCalled()
+  expect(mockLogger.debug).toHaveBeenCalledWith('runInProcess: running project hook in process')
+  expect(execa.command).not.toHaveBeenCalled()
+})
+
+test('runInProcess fails with no hook-path', async () => {
+  // execa.command.mockReturnValue({ on: () => {} })
+  await appHelper.runInProcess(undefined, {})
+  expect(execa.command).not.toHaveBeenCalled()
+  expect(mockLogger.debug).toHaveBeenCalledWith('runInProcess: undefined hookPath')
 })
 
 test('runScript with empty command', async () => {
@@ -843,6 +880,7 @@ describe('writeConfig', () => {
     fs.ensureDirSync.mockReset()
   })
   test('write a json to a file', () => {
+    path.dirname.mockReturnValue('the/dir')
     appHelper.writeConfig('the/dir/some.file', { some: 'config' })
     expect(fs.ensureDirSync).toHaveBeenCalledWith('the/dir')
     expect(fs.writeFileSync).toHaveBeenCalledWith('the/dir/some.file', '{"some":"config"}', { encoding: 'utf-8' })

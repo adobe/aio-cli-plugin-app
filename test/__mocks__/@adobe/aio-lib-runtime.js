@@ -29,7 +29,8 @@ const cleanRtLibInstance = {
     get: jest.fn(),
     setAdobeIoRuntime: jest.fn(),
     setAzureLogAnalytics: jest.fn(),
-    setSplunkHec: jest.fn()
+    setSplunkHec: jest.fn(),
+    setNewRelic: jest.fn()
   },
   feeds: {},
   routes: {}

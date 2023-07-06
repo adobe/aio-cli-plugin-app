@@ -71,7 +71,7 @@ DESCRIPTION
   Create, run, test, and deploy Adobe I/O Apps
 ```
 
-_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/10.2.2/src/commands/app/index.js)_
+_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/10.4.0/src/commands/app/index.js)_
 
 ## `aio app add`
 
@@ -181,10 +181,12 @@ Subscribe to Services in the current Workspace
 
 ```
 USAGE
-  $ aio app add service [-v] [--version]
+  $ aio app add service [-v] [--version] [--use-jwt]
 
 FLAGS
   -v, --verbose  Verbose output
+  --use-jwt      if the config has both jwt and OAuth Server to Server Credentials (while migrating), prefer the JWT
+                 credentials
   --version      Show version
 
 DESCRIPTION
@@ -372,10 +374,12 @@ Delete Services in the current Workspace
 
 ```
 USAGE
-  $ aio app delete service [-v] [--version]
+  $ aio app delete service [-v] [--version] [--use-jwt]
 
 FLAGS
   -v, --verbose  Verbose output
+  --use-jwt      if the config has both jwt and OAuth Server to Server Credentials (while migrating), prefer the JWT
+                 credentials
   --version      Show version
 
 DESCRIPTION
@@ -411,7 +415,7 @@ Build and deploy an Adobe I/O App
 USAGE
   $ aio app deploy [-v] [--version] [--actions | -a <value>] [--web-assets] [--force-build | ] [--content-hash]
     [--web-optimize] [-e <value> | ] [--build] [--open] [--force-deploy] [--force-publish |  | --publish]
-    [--log-forwarding-update]
+    [--force-events ] [--log-forwarding-update]
 
 FLAGS
   -a, --action=<value>...       Deploy only a specific action, the flags can be specified multiple times, this will set
@@ -424,6 +428,7 @@ FLAGS
   --[no-]force-build            [default: true] Force a build even if one already exists
   --force-deploy                [default: false] Force deploy changes, regardless of production Workspace being
                                 published in Exchange.
+  --[no-]force-events           [default: false] Force event registrations and overwrite any previous registrations
   --force-publish               [default: false] Force publish extension(s) to Exchange, delete previously published
                                 extension points
   --[no-]log-forwarding-update  [default: true] Update log forwarding configuration on server
@@ -488,7 +493,7 @@ Create a new Adobe I/O App
 ```
 USAGE
   $ aio app init [PATH] [-v] [--version] [--install] [-y] [--login] [-e <value> | -t <value>]
-    [--standalone-app | ] [-w <value> | -i <value>] [--confirm-new-workspace]
+    [--standalone-app | ] [-w <value> | -i <value>] [--confirm-new-workspace] [--use-jwt]
 
 ARGUMENTS
   PATH  [default: .] Path to the app directory
@@ -505,6 +510,8 @@ FLAGS
   --[no-]install              [default: true] Run npm installation after files are created
   --[no-]login                Login using your Adobe ID for interacting with Adobe I/O Developer Console
   --standalone-app            Create a stand-alone application
+  --use-jwt                   if the config has both jwt and OAuth Server to Server Credentials (while migrating),
+                              prefer the JWT credentials
   --version                   Show version
 
 DESCRIPTION
@@ -625,12 +632,14 @@ Undeploys an Adobe I/O App
 
 ```
 USAGE
-  $ aio app undeploy [-v] [--version] [--actions] [--web-assets] [-e <value>] [--force-unpublish | --unpublish]
+  $ aio app undeploy [-v] [--version] [--actions] [--events] [--web-assets] [-e <value>] [--force-unpublish |
+    --unpublish]
 
 FLAGS
   -e, --extension=<value>...  Undeploy only a specific extension, the flags can be specified multiple times
   -v, --verbose               Verbose output
   --[no-]actions              [default: true] Undeploy actions if any
+  --[no-]events               [default: true] Undeploy (unregister) events if any
   --force-unpublish           Force unpublish extension(s) from Exchange, will delete all extension points
   --[no-]unpublish            [default: true] Unpublish selected extension(s) from Exchange
   --version                   Show version
@@ -647,7 +656,7 @@ Import an Adobe Developer Console configuration file.
 ```
 USAGE
   $ aio app use [CONFIG_FILE_PATH] [-v] [--version] [--overwrite | --merge] [--confirm-new-workspace] [-w
-    <value> | [-g | -w <value>] | ] [--no-service-sync | --confirm-service-sync] [--no-input]
+    <value> | [-g | -w <value>] | ] [--no-service-sync | --confirm-service-sync] [--no-input] [--use-jwt]
 
 ARGUMENTS
   CONFIG_FILE_PATH  path to an Adobe I/O Developer Console configuration file
@@ -670,6 +679,8 @@ FLAGS
                                 Workspace
   --overwrite                   Overwrite any .aio and .env files during import of the Adobe Developer Console
                                 configuration file
+  --use-jwt                     if the config has both jwt and OAuth Server to Server Credentials (while migrating),
+                                prefer the JWT credentials
   --version                     Show version
 
 DESCRIPTION
