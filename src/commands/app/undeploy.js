@@ -12,7 +12,6 @@ governing permissions and limitations under the License.
 
 const ora = require('ora')
 const chalk = require('chalk')
-// const path = require('path')
 
 const { Flags } = require('@oclif/core')
 
@@ -190,6 +189,6 @@ Undeploy.flags = {
   })
 }
 
-Undeploy.args = []
+Undeploy.args = {}
 
 module.exports = Undeploy

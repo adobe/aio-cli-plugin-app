@@ -11,7 +11,7 @@ governing permissions and limitations under the License.
 
 const BaseCommand = require('../../../BaseCommand')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:delete:event', { provider: 'debug' })
-const { Flags } = require('@oclif/core')
+const { Flags, Args } = require('@oclif/core')
 const DeleteActionCommand = require('./action')
 const chalk = require('chalk')
 
@@ -54,13 +54,13 @@ DeleteEventCommand.flags = {
   ...BaseCommand.flags
 }
 
-DeleteEventCommand.args = [
+DeleteEventCommand.args =
   {
-    name: 'event-action-name',
-    description: 'Action `pkg/name` to delete, you can specify multiple actions via a comma separated list',
-    required: false
+    'event-action-name': Args.string({
+      description: 'Action `pkg/name` to delete, you can specify multiple actions via a comma separated list',
+      required: false
+    })
   }
-]
 
 DeleteEventCommand.aliases = ['app:delete:events']
 

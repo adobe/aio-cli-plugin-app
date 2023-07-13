@@ -12,7 +12,7 @@ governing permissions and limitations under the License.
 const BaseCommand = require('../../BaseCommand')
 const { CONSOLE_CONFIG_KEY, getProjectCredentialType } = require('../../lib/import-helper')
 const { importConsoleConfig, downloadConsoleConfigToBuffer } = require('../../lib/import')
-const { Flags } = require('@oclif/core')
+const { Flags, Args } = require('@oclif/core')
 const inquirer = require('inquirer')
 const config = require('@adobe/aio-lib-core-config')
 const { EOL } = require('os')
@@ -398,12 +398,12 @@ Use.flags = {
   })
 }
 
-Use.args = [
+Use.args =
   {
-    name: 'config_file_path',
-    description: 'path to an Adobe I/O Developer Console configuration file',
-    required: false
+    config_file_path: Args.string({
+      description: 'path to an Adobe I/O Developer Console configuration file',
+      required: false
+    })
   }
-]
 
 module.exports = Use

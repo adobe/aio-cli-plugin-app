@@ -120,7 +120,7 @@ describe('Command Prototype', () => {
     }
 
     test('unknown', async () => {
-      expectFlagError(['--wtf'], 'Unexpected argument: --wtf\nSee more help with --help')
+      expectFlagError(['--wtf'], 'Nonexistent flag: --wtf\nSee more help with --help')
     })
 
     test('-a,-e should fail if both flags are present', async () => {

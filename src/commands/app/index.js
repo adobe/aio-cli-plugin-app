@@ -22,6 +22,6 @@ class IndexCommand extends BaseCommand {
 
 IndexCommand.description = 'Create, run, test, and deploy Adobe I/O Apps'
 
-IndexCommand.args = []
+IndexCommand.args = {}
 
 module.exports = IndexCommand
