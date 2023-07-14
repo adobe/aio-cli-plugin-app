@@ -18,7 +18,19 @@ const cloneDeep = require('lodash.clonedeep')
 const open = require('open')
 const { ux } = require('@oclif/core')
 
-jest.mock('@oclif/core')
+jest.mock('@oclif/core', () => {
+  return {
+    ...jest.requireActual('@oclif/core'),
+    ux: {
+      action: {
+        start: jest.fn(),
+        stop: jest.fn()
+      },
+      wait: jest.fn()
+    }
+  }
+})
+
 jest.mock('open', () => jest.fn())
 jest.mock('../../../src/lib/run-dev')
 const mockRunDev = require('../../../src/lib/run-dev')

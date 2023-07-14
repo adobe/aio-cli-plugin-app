@@ -38,6 +38,6 @@ AddCICommand.flags = {
   ...BaseCommand.flags
 }
 
-AddCICommand.args = []
+AddCICommand.args = {}
 
 module.exports = AddCICommand

@@ -171,6 +171,6 @@ AddServiceCommand.flags = {
 }
 
 AddServiceCommand.aliases = ['app:add:services']
-AddServiceCommand.args = []
+AddServiceCommand.args = {}
 
 module.exports = AddServiceCommand
