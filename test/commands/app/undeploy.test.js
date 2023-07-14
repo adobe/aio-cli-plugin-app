@@ -410,7 +410,7 @@ describe('run', () => {
     command.argv = []
     await command.run()
     expect(command.error).not.toHaveBeenCalled()
-    expect(runHook).not.toHaveBeenCalledWith('post-undeploy-event-reg')
+    expect(runHook).not.toHaveBeenCalledWith('pre-undeploy-event-reg')
   })
 
   test('does NOT fire `event` hooks when events flag is false', async () => {
@@ -420,7 +420,7 @@ describe('run', () => {
     command.argv = ['--feature-event-hooks', '--no-events']
     await command.run()
     expect(command.error).not.toHaveBeenCalled()
-    expect(runHook).not.toHaveBeenCalledWith('post-undeploy-event-reg')
+    expect(runHook).not.toHaveBeenCalledWith('pre-undeploy-event-reg')
   })
 
   test('DOES fire `event` hooks when feature flag IS enabled', async () => {
