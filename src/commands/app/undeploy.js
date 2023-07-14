@@ -88,7 +88,7 @@ class Undeploy extends BaseCommand {
         }
       }
     } catch (err) {
-      this.error(err)
+      this.log(err)
     }
 
     if (flags.actions) {
