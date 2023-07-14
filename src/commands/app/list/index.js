@@ -21,6 +21,6 @@ class ListCommand extends BaseCommand {
 
 ListCommand.description = 'List components for Adobe I/O App'
 
-ListCommand.args = []
+ListCommand.args = {}
 
 module.exports = ListCommand

@@ -34,7 +34,7 @@ test('exports', async () => {
 
 test('unknown flag', async () => {
   command.argv = ['--wtf']
-  await expect(command.run()).rejects.toThrow('Unexpected argument')
+  await expect(command.run()).rejects.toThrow('Nonexistent flag')
 })
 
 test('no ci dir', async () => {

@@ -12,7 +12,7 @@ governing permissions and limitations under the License.
 const BaseCommand = require('../../../BaseCommand')
 const inquirer = require('inquirer')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:delete:action', { provider: 'debug' })
-const { Flags } = require('@oclif/core')
+const { Flags, Args } = require('@oclif/core')
 const fs = require('fs-extra')
 const path = require('path')
 const chalk = require('chalk')
@@ -153,14 +153,14 @@ DeleteActionCommand.flags = {
   ...BaseCommand.flags
 }
 
-DeleteActionCommand.args = [
+DeleteActionCommand.args =
   {
-    name: 'action-name',
-    description: 'Action `pkg/name` to delete, you can specify multiple actions via a comma separated list',
-    default: '',
-    required: false
+    'action-name': Args.string({
+      description: 'Action `pkg/name` to delete, you can specify multiple actions via a comma separated list',
+      default: '',
+      required: false
+    })
   }
-]
 
 DeleteActionCommand.aliases = ['app:delete:actions']
 

@@ -11,7 +11,7 @@ governing permissions and limitations under the License.
 */
 
 const BaseCommand = require('../../BaseCommand')
-const { Flags } = require('@oclif/core')
+const { Flags, Args } = require('@oclif/core')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:install', { provider: 'debug' })
 const path = require('node:path')
 const fs = require('fs-extra')
@@ -155,12 +155,12 @@ InstallCommand.flags = {
   })
 }
 
-InstallCommand.args = [
+InstallCommand.args =
   {
-    name: 'path',
-    description: 'Path to the app package to install',
-    required: true
+    path: Args.string({
+      description: 'Path to the app package to install',
+      required: true
+    })
   }
-]
 
 module.exports = InstallCommand
