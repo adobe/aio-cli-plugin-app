@@ -38,7 +38,7 @@ test('flags', async () => {
 
 test('args', async () => {
   expect(TheCommand.args).toBeDefined()
-  expect(TheCommand.args).toBeInstanceOf(Array)
+  expect(TheCommand.args).toBeInstanceOf(Object)
 })
 
 describe('instance methods', () => {

@@ -172,8 +172,9 @@ test('exports', async () => {
 })
 
 test('flags/args', async () => {
-  expect(TheCommand.args[0].name).toEqual('config_file_path')
-  expect(TheCommand.args[0].required).not.toEqual(true)
+  const firstArgName = Object.keys(TheCommand.args)[0]
+  expect(firstArgName).toEqual('config_file_path')
+  expect(TheCommand.args[firstArgName].required).not.toEqual(true)
 
   expect(TheCommand.flags.overwrite).toBeDefined()
   expect(TheCommand.flags.overwrite.default).toEqual(false)
@@ -208,7 +209,7 @@ test('flags/args', async () => {
 describe('bad args/flags', () => {
   test('unknown', async () => {
     await expect(TheCommand.run(['.', '--wtf'])).rejects.toThrow(
-      'Unexpected argument: --wtf\nSee more help with --help'
+      'Nonexistent flag: --wtf\nSee more help with --help'
     )
   })
   test('arg=console.json --global', async () => {

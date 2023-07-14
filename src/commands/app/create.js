@@ -11,7 +11,7 @@ governing permissions and limitations under the License.
 
 const BaseCommand = require('../../BaseCommand')
 const InitCommand = require('./init')
-const { Flags } = require('@oclif/core')
+const { Flags, Args } = require('@oclif/core')
 
 class Create extends BaseCommand {
   async run () {
@@ -35,12 +35,12 @@ Create.flags = {
   })
 }
 
-Create.args = [
+Create.args =
   {
-    name: 'path',
-    description: 'Path to the app directory',
-    default: '.'
+    path: Args.string({
+      description: 'Path to the app directory',
+      default: '.'
+    })
   }
-]
 
 module.exports = Create

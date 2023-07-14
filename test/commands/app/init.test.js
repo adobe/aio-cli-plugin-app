@@ -208,18 +208,22 @@ describe('Command Prototype', () => {
   })
 
   test('args', async () => {
-    expect(TheCommand.args).toEqual(expect.arrayContaining([{
-      name: 'path',
-      description: 'Path to the app directory',
-      default: '.'
-    }]))
+    expect(TheCommand.args).toEqual(expect.objectContaining({
+      path: {
+        description: 'Path to the app directory',
+        default: '.',
+        input: [],
+        parse: expect.any(Function),
+        type: 'option'
+      }
+    }))
   })
 })
 
 describe('bad args/flags', () => {
   test('unknown', async () => {
     command.argv = ['--wtf', 'dev'] // TODO: oclif bug: if no arg is set, an invalid flag does not fail
-    await expect(command.run()).rejects.toThrow('Unexpected argument')
+    await expect(command.run()).rejects.toThrow('Nonexistent flag')
   })
   test('--no-login and --workspace', async () => {
     command.argv = ['--no-login', '--workspace', 'dev']
