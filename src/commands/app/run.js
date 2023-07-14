@@ -15,8 +15,9 @@ const chalk = require('chalk')
 const fs = require('fs-extra')
 const https = require('https')
 const getPort = require('get-port')
+const open = require('open')
 
-const { Flags, CliUx: { ux: cli } } = require('@oclif/core')
+const { Flags, ux } = require('@oclif/core')
 const coreConfig = require('@adobe/aio-lib-core-config')
 
 const BaseCommand = require('../../BaseCommand')
@@ -117,7 +118,7 @@ class Run extends BaseCommand {
       const launchUrl = this.getLaunchUrlPrefix() + frontendUrl
       if (flags.open) {
         this.log(chalk.blue(chalk.bold(`Opening your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
-        cli.open(launchUrl)
+        open(launchUrl)
       } else {
         this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
       }
@@ -178,17 +179,17 @@ class Run extends BaseCommand {
     const actualPort = await getPort({ port })
     server.listen(actualPort)
     this.log('A self signed development certificate has been generated, you will need to accept it in your browser in order to use it.')
-    cli.open(`https://localhost:${actualPort}`)
-    cli.action.start('Waiting for the certificate to be accepted.')
+    open(`https://localhost:${actualPort}`)
+    ux.action.start('Waiting for the certificate to be accepted.')
     // eslint-disable-next-line no-unmodified-loop-condition
     while (!certAccepted && Date.now() - startTime < 20000) {
-      await cli.wait()
+      await ux.wait()
     }
     if (certAccepted) {
-      cli.action.stop()
+      ux.action.stop()
       this.log('Great, you accepted the certificate!')
     } else {
-      cli.action.stop('timed out')
+      ux.action.stop('timed out')
     }
     server.close()
 
@@ -197,6 +198,8 @@ class Run extends BaseCommand {
 }
 
 Run.description = 'Run an Adobe I/O App'
+
+Run.args = {}
 
 Run.flags = {
   ...BaseCommand.flags,

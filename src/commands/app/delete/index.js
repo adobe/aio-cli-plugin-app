@@ -21,6 +21,6 @@ class DeleteCommand extends BaseCommand {
 
 DeleteCommand.description = 'Delete a component from an existing Adobe I/O App'
 
-DeleteCommand.args = []
+DeleteCommand.args = {}
 
 module.exports = DeleteCommand

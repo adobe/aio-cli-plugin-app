@@ -79,7 +79,7 @@ describe('Command Prototype', () => {
 
 test('bad flags', async () => {
   command.argv = ['--wtf']
-  await expect(() => command.run()).rejects.toThrow('Unexpected argument: --wtf\nSee more help with --help')
+  await expect(() => command.run()).rejects.toThrow('Nonexistent flag: --wtf\nSee more help with --help')
 })
 
 test('.aio config missing', async () => {

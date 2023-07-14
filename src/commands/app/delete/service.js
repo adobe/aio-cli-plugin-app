@@ -115,6 +115,6 @@ DeleteServiceCommand.flags = {
 }
 
 DeleteServiceCommand.aliases = ['app:delete:services']
-DeleteServiceCommand.args = []
+DeleteServiceCommand.args = {}
 
 module.exports = DeleteServiceCommand

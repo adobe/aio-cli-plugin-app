@@ -15,7 +15,7 @@ const upath = require('upath')
 
 jest.setTimeout(15000)
 
-const fs = jest.requireActual('fs')
+const fs = require('fs')
 const eol = require('eol')
 const path = require('path')
 const hjson = require('hjson')
