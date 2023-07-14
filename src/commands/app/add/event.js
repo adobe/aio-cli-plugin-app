@@ -72,6 +72,6 @@ AddEventCommand.flags = {
 }
 
 AddEventCommand.aliases = ['app:add:events']
-AddEventCommand.args = []
+AddEventCommand.args = {}
 
 module.exports = AddEventCommand

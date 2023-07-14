@@ -33,11 +33,15 @@ describe('Command Prototype', () => {
   })
 
   test('args', async () => {
-    expect(TheCommand.args).toEqual(expect.arrayContaining([{
-      name: 'path',
-      description: 'Path to the app directory',
-      default: '.'
-    }]))
+    expect(TheCommand.args).toEqual(expect.objectContaining({
+      path: {
+        description: 'Path to the app directory',
+        default: '.',
+        input: [],
+        parse: expect.any(Function),
+        type: 'option'
+      }
+    }))
   })
 })
 
@@ -49,7 +53,7 @@ describe('bad flags', () => {
       return result
         .then(() => reject(new Error()))
         .catch(res => {
-          expect(res).toEqual(new Error('Unexpected argument: --wtf\nSee more help with --help'))
+          expect(res).toEqual(new Error('Nonexistent flag: --wtf\nSee more help with --help'))
           resolve()
         })
     })
