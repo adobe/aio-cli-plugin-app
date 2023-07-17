@@ -76,6 +76,6 @@ AddExtensionCommand.flags = {
 }
 
 AddExtensionCommand.aliases = ['app:add:ext', 'app:add:extensions']
-AddExtensionCommand.args = []
+AddExtensionCommand.args = {}
 
 module.exports = AddExtensionCommand

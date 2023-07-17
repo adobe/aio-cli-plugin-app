@@ -93,6 +93,6 @@ ListExtensionCommand.flags = {
 }
 
 ListExtensionCommand.aliases = ['app:list:ext', 'app:list:extensions']
-ListExtensionCommand.args = []
+ListExtensionCommand.args = {}
 
 module.exports = ListExtensionCommand

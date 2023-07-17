@@ -75,6 +75,6 @@ AddWebAssetsCommand.flags = {
   ...TemplatesCommand.flags
 }
 
-AddWebAssetsCommand.args = []
+AddWebAssetsCommand.args = {}
 
 module.exports = AddWebAssetsCommand

@@ -237,7 +237,7 @@ describe('good flags', () => {
   })
 
   test('abort when user declines prompt', async () => {
-    command.args = ['fakeActionName']
+    command.args = { fakeActionName: {} }
     command.prompt = () => {
       return {
         deleteAction: false,

@@ -10,7 +10,7 @@ governing permissions and limitations under the License.
 */
 
 const BaseCommand = require('../../BaseCommand')
-const { Flags } = require('@oclif/core')
+const { Flags, Args } = require('@oclif/core')
 const path = require('node:path')
 const fs = require('fs-extra')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:pack', { provider: 'debug' })
@@ -286,12 +286,12 @@ Pack.flags = {
   })
 }
 
-Pack.args = [
+Pack.args =
   {
-    name: 'path',
-    description: 'Path to the app directory to package',
-    default: '.'
+    path: Args.string({
+      description: 'Path to the app directory to package',
+      default: '.'
+    })
   }
-]
 
 module.exports = Pack

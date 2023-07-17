@@ -98,7 +98,7 @@ test('flags', async () => {
 })
 
 test('unknown flag', async () => {
-  const message = 'Unexpected argument: --wtf\nSee more help with --help'
+  const message = 'Nonexistent flag: --wtf\nSee more help with --help'
   const command = new TheCommand()
   command.argv = ['.', '--wtf'] // have to specify the default arg because an oclif quirk
   await expect(command.run()).rejects.toEqual(expect.objectContaining({ message: expect.stringContaining(message) }))

@@ -122,6 +122,6 @@ DeleteExtensionCommand.flags = {
 }
 
 DeleteExtensionCommand.aliases = ['app:delete:ext', 'app:delete:extensions']
-DeleteExtensionCommand.args = []
+DeleteExtensionCommand.args = {}
 
 module.exports = DeleteExtensionCommand

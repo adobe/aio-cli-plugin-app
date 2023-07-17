@@ -62,7 +62,7 @@ test('flags', async () => {
 })
 
 test('args', async () => {
-  expect(TheCommand.args).toEqual([])
+  expect(TheCommand.args).toEqual({})
 })
 
 test('basecommand defines method', async () => {

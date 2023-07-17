@@ -15,7 +15,7 @@ const path = require('path')
 const fs = require('fs-extra')
 const ora = require('ora')
 const chalk = require('chalk')
-const { Flags } = require('@oclif/core')
+const { Flags, Args } = require('@oclif/core')
 const generators = require('@adobe/generator-aio-app')
 const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
 const inquirer = require('inquirer')
@@ -400,12 +400,12 @@ InitCommand.flags = {
   })
 }
 
-InitCommand.args = [
+InitCommand.args =
   {
-    name: 'path',
-    description: 'Path to the app directory',
-    default: '.'
+    path: Args.string({
+      description: 'Path to the app directory',
+      default: '.'
+    })
   }
-]
 
 module.exports = InitCommand

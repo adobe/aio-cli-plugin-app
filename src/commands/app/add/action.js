@@ -138,6 +138,6 @@ AddActionCommand.flags = {
 }
 
 AddActionCommand.aliases = ['app:add:actions']
-AddActionCommand.args = []
+AddActionCommand.args = {}
 
 module.exports = AddActionCommand

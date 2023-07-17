@@ -79,6 +79,6 @@ Info.flags = {
   })
 }
 
-Info.args = []
+Info.args = {}
 
 module.exports = Info

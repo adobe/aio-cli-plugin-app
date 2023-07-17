@@ -98,6 +98,6 @@ DeleteWebAssetsCommand.flags = {
   ...BaseCommand.flags
 }
 
-DeleteWebAssetsCommand.args = []
+DeleteWebAssetsCommand.args = {}
 
 module.exports = DeleteWebAssetsCommand

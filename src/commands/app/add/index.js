@@ -21,6 +21,6 @@ class AddCommand extends BaseCommand {
 
 AddCommand.description = 'Add a new component to an existing Adobe I/O App'
 
-AddCommand.args = []
+AddCommand.args = {}
 
 module.exports = AddCommand

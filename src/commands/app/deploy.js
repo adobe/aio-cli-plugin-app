@@ -12,11 +12,12 @@ governing permissions and limitations under the License.
 
 const ora = require('ora')
 const chalk = require('chalk')
+const open = require('open')
 
 const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
-const { Flags, CliUx: { ux: cli } } = require('@oclif/core')
+const { Flags } = require('@oclif/core')
 const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
@@ -241,7 +242,7 @@ class Deploy extends BuildCommand {
       const launchUrl = this.getLaunchUrlPrefix() + deployedFrontendUrl
       if (flags.open) {
         this.log(chalk.blue(chalk.bold(`Opening your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
-        cli.open(launchUrl)
+        open(launchUrl)
       } else {
         this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
       }
@@ -375,6 +376,6 @@ Deploy.flags = {
   })
 }
 
-Deploy.args = []
+Deploy.args = {}
 
 module.exports = Deploy

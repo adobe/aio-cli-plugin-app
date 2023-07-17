@@ -15,7 +15,7 @@ const BaseCommand = require('../../../src/BaseCommand')
 const cloneDeep = require('lodash.clonedeep')
 const dataMocks = require('../../data-mocks/config-loader')
 const helpersActual = jest.requireActual('../../../src/lib/app-helper.js')
-
+const open = require('open')
 const mockBundleFunc = jest.fn()
 
 jest.mock('../../../src/lib/app-helper.js')
@@ -37,19 +37,7 @@ const mockConfigData = {
   }
 }
 
-jest.mock('@oclif/core', () => {
-  return {
-    ...jest.requireActual('@oclif/core'),
-    CliUx: {
-      ux: {
-        cli: {
-          open: jest.fn()
-        }
-      }
-    }
-  }
-})
-const { CliUx: { ux: cli } } = require('@oclif/core')
+jest.mock('open', () => jest.fn())
 
 jest.mock('../../../src/lib/log-forwarding', () => {
   const orig = jest.requireActual('../../../src/lib/log-forwarding')
@@ -491,14 +479,14 @@ describe('run', () => {
   })
 
   test('deploy should open ui url with --open', async () => {
-    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
-    cli.open = jest.fn()
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    open.mockReset()
     mockWebLib.deployWeb.mockResolvedValue('https://example.com')
 
     command.argv = ['--open']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(cli.open).toHaveBeenCalledWith(expect.stringContaining('https://example.com'))
+    expect(open).toHaveBeenCalledWith(expect.stringContaining('https://example.com'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('https://example.com'))
   })
 
@@ -518,14 +506,14 @@ describe('run', () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     mockWebLib.deployWeb.mockResolvedValue('https://example.com')
     mockConfig.get.mockReturnValue('http://prefix?fake=')
-    cli.open = jest.fn()
+    open.mockReset()
 
     command.argv = ['--open']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('https://example.com'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://prefix?fake=https://example.com'))
-    expect(cli.open).toHaveBeenCalledWith('http://prefix?fake=https://example.com')
+    expect(open).toHaveBeenCalledWith('http://prefix?fake=https://example.com')
   })
 
   test('deploy should show action urls (web-export: true)', async () => {

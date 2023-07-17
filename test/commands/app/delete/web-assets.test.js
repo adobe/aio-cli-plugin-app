@@ -40,7 +40,7 @@ describe('bad flags', () => {
   })
   test('unknown', async () => {
     command.argv = ['--wtf']
-    await expect(command.run()).rejects.toThrow('Unexpected argument')
+    await expect(command.run()).rejects.toThrow('Nonexistent flag')
   })
 })
 

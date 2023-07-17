@@ -12,7 +12,7 @@ governing permissions and limitations under the License.
 
 const chalk = require('chalk')
 
-const { Flags } = require('@oclif/core')
+const { Flags, Args } = require('@oclif/core')
 
 const BaseCommand = require('../../BaseCommand')
 const { wrapError } = require('../../lib/app-helper')
@@ -116,8 +116,10 @@ GetUrlCommand.flags = {
   })
 }
 
-GetUrlCommand.args = [
-  { name: 'action' }
-]
+GetUrlCommand.args =
+  {
+    action: Args.string({
+    })
+  }
 
 module.exports = GetUrlCommand

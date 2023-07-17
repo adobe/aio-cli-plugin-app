@@ -9,6 +9,10 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
+
+const { AbortController } = require('node-abort-controller')
+global.AbortController = AbortController
+
 const { Command, Flags } = require('@oclif/core')
 const chalk = require('chalk')
 const coreConfig = require('@adobe/aio-lib-core-config')
@@ -176,6 +180,6 @@ BaseCommand.flags = {
   version: Flags.boolean({ description: 'Show version' })
 }
 
-BaseCommand.args = []
+BaseCommand.args = {}
 
 module.exports = BaseCommand
