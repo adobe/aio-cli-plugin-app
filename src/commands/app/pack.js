@@ -242,31 +242,49 @@ class Pack extends BaseCommand {
    * @param {object} appConfig the app's configuration file
    */
   async addCodeDownloadAnnotation (appConfig) {
-    // get the configFiles that have runtime manifests
-    const configFiles = []
-    for (const [, value] of Object.entries(appConfig.includeIndex)) {
-      const { key } = value
-      if (key === 'runtimeManifest' || key === 'application.runtimeManifest') {
-        configFiles.push(value)
-      }
-    }
+    // get each annotation key relative to the file it is defined in
+    const fileToAnnotationKey = {}
+    Object.entries(appConfig.all).forEach(([ext, extConf]) => {
+      if (extConf.manifest?.full?.packages) {
+        Object.entries(extConf.manifest.full.packages).forEach(([pkg, pkgConf]) => {
+          if (pkgConf.actions) {
+            Object.entries(pkgConf.actions).forEach(([action, actionConf]) => {
+              const baseFullKey = ext === 'application'
+                ? `application.runtimeManifest.packages.${pkg}.actions.${action}`
+                : `extensions.${ext}.runtimeManifest.packages.${pkg}.actions.${action}`
 
-    // for each configFile, we modify each action to have the "code-download: false" annotation
-    for (const configFile of configFiles) {
-      const configFilePath = path.join(DEFAULTS.ARTIFACTS_FOLDER, configFile.file)
+              let index
+              if (actionConf.annotations) {
+                index = appConfig.includeIndex[`${baseFullKey}.annotations`]
+              } else {
+                // the annotation object is not defined, take the parent key
+                index = appConfig.includeIndex[baseFullKey]
+              }
+              if (!fileToAnnotationKey[index.file]) {
+                fileToAnnotationKey[index.file] = []
+              }
+              fileToAnnotationKey[index.file].push(index.key) // index.key is relative to the file
+            })
+          }
+        })
+      }
+    })
+
+    // rewrite config files
+    for (const [file, keys] of Object.entries(fileToAnnotationKey)) {
+      const configFilePath = path.join(DEFAULTS.ARTIFACTS_FOLDER, file)
       const { values } = loadConfigFile(configFilePath)
 
-      const runtimeManifest = getObjectValue(values, configFile.key)
-      for (const [, pkgManifest] of Object.entries(runtimeManifest.packages)) {
-        // key is the package name (unused), value is the package manifest. we iterate through each package's "actions"
-        for (const [, actionManifest] of Object.entries(pkgManifest.actions)) {
-          // key is the action name (unused), value is the action manifest. we add the "code-download: false" annotation
-          if (!actionManifest.annotations) {
-            actionManifest.annotations = {}
-          }
-          actionManifest.annotations['code-download'] = false
+      keys.forEach(key => {
+        const object = getObjectValue(values, key)
+        if (key.endsWith('.annotations') || key === 'annotations') {
+          // object is the annotations object
+          object['code-download'] = false
+        } else {
+          // annotation object is not defined, the object is the action object
+          object.annotations = { 'code-download': false }
         }
-      }
+      })
 
       // write back the modified manifest to disk
       await writeFile(configFilePath, yaml.dump(values), { overwrite: true })

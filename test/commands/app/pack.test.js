@@ -262,7 +262,7 @@ test('filesToPack', async () => {
   expect(filesToPack).toEqual(['fileA', 'fileB'])
 })
 
-test('addCodeDownloadAnnotation', async () => {
+test('addCodeDownloadAnnotation: default', async () => {
   const extConfig = fixtureJson('pack/1.all.config.json')
 
   importHelper.loadConfigFile.mockImplementation(() => {
@@ -280,7 +280,7 @@ test('addCodeDownloadAnnotation', async () => {
   )
 })
 
-test('addCodeDownloadAnnotation no annotations defined', async () => {
+test('addCodeDownloadAnnotation: no annotations defined', async () => {
   const extConfig = fixtureJson('pack/1.all.config.json')
   // should not have any annotations set
   delete extConfig.all['dx/excshell/1'].manifest.full.packages['dx-excshell-1'].actions.generic.annotations
@@ -301,6 +301,41 @@ test('addCodeDownloadAnnotation no annotations defined', async () => {
   expect(importHelper.writeFile).toHaveBeenCalledWith(
     path.join('app-package', 'src', 'dx-excshell-1', 'ext.config.yaml'),
     yaml.dump(fixtureExpected),
+    { overwrite: true }
+  )
+})
+
+test('addCodeDownloadAnnotation: complex includes, 1 extension, 1 app, 3 actions', async () => {
+  const extConfig = fixtureJson('pack/5.all.config.json')
+
+  importHelper.loadConfigFile.mockImplementation(file => {
+    const retValues = {
+      'app-package/app.config.yaml': fixtureJson('pack/5.app.config-loaded.json'),
+      'app-package/sub1.config.yaml': fixtureJson('pack/5.sub1.config-loaded.json'),
+      'app-package/src/sub2.config.yaml': fixtureJson('pack/5.sub2.config-loaded.json')
+    }
+    return retValues[file]
+  })
+
+  const command = new TheCommand()
+  command.argv = []
+  await command.addCodeDownloadAnnotation(extConfig)
+
+  expect(importHelper.writeFile).toHaveBeenCalledWith(
+    path.join('app-package', 'app.config.yaml'),
+    yaml.dump(fixtureJson('pack/5.app.annotation-added.config.json')),
+    { overwrite: true }
+  )
+
+  expect(importHelper.writeFile).toHaveBeenCalledWith(
+    path.join('app-package', 'sub1.config.yaml'),
+    yaml.dump(fixtureJson('pack/5.sub1.annotation-added.config.json')),
+    { overwrite: true }
+  )
+
+  expect(importHelper.writeFile).toHaveBeenCalledWith(
+    path.join('app-package', 'src', 'sub2.config.yaml'),
+    yaml.dump(fixtureJson('pack/5.sub2.annotation-added.config.json')),
     { overwrite: true }
   )
 })
