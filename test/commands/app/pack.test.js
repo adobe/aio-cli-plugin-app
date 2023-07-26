@@ -305,14 +305,14 @@ test('addCodeDownloadAnnotation: no annotations defined', async () => {
   )
 })
 
-test('addCodeDownloadAnnotation: complex includes, 1 extension, 1 app, 3 actions', async () => {
+test('addCodeDownloadAnnotation: complex includes, multiple actions and extensions', async () => {
   const extConfig = fixtureJson('pack/5.all.config.json')
 
   importHelper.loadConfigFile.mockImplementation(file => {
     const retValues = {
-      'app-package/app.config.yaml': fixtureJson('pack/5.app.config-loaded.json'),
-      'app-package/sub1.config.yaml': fixtureJson('pack/5.sub1.config-loaded.json'),
-      'app-package/src/sub2.config.yaml': fixtureJson('pack/5.sub2.config-loaded.json')
+      [path.join('app-package', 'app.config.yaml')]: fixtureJson('pack/5.app.config-loaded.json'),
+      [path.join('app-package', 'sub1.config.yaml')]: fixtureJson('pack/5.sub1.config-loaded.json'),
+      [path.join('app-package', 'src', 'sub2.config.yaml')]: fixtureJson('pack/5.sub2.config-loaded.json')
     }
     return retValues[file]
   })
