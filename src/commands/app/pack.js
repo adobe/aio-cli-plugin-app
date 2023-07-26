@@ -261,6 +261,9 @@ class Pack extends BaseCommand {
         // key is the package name (unused), value is the package manifest. we iterate through each package's "actions"
         for (const [, actionManifest] of Object.entries(pkgManifest.actions)) {
           // key is the action name (unused), value is the action manifest. we add the "code-download: false" annotation
+          if (!actionManifest.annotations) {
+            actionManifest.annotations = {}
+          }
           actionManifest.annotations['code-download'] = false
         }
       }

@@ -280,6 +280,31 @@ test('addCodeDownloadAnnotation', async () => {
   )
 })
 
+test('addCodeDownloadAnnotation no annotations defined', async () => {
+  const extConfig = fixtureJson('pack/1.all.config.json')
+  // should not have any annotations set
+  delete extConfig.all['dx/excshell/1'].manifest.full.packages['dx-excshell-1'].actions.generic.annotations
+
+  const fixtureLoaded = fixtureJson('pack/1.ext.config-loaded.json')
+  delete fixtureLoaded.values.runtimeManifest.packages['dx-excshell-1'].actions.generic.annotations
+  const fixtureExpected = fixtureJson('pack/1.annotation-added.config.json')
+  fixtureExpected.runtimeManifest.packages['dx-excshell-1'].actions.generic.annotations = {
+    'code-download': false
+  }
+
+  importHelper.loadConfigFile.mockReturnValue(fixtureLoaded)
+
+  const command = new TheCommand()
+  command.argv = []
+  await command.addCodeDownloadAnnotation(extConfig)
+
+  expect(importHelper.writeFile).toHaveBeenCalledWith(
+    path.join('app-package', 'src', 'dx-excshell-1', 'ext.config.yaml'),
+    yaml.dump(fixtureExpected),
+    { overwrite: true }
+  )
+})
+
 describe('run', () => {
   test('defaults', async () => {
     mockGetFullConfig.mockImplementation(() => fixtureJson('pack/1.all.config.json'))
