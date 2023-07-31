@@ -164,6 +164,58 @@ test('createDeployYamlFile (1 extension)', async () => {
   await expect(importHelper.writeFile.mock.calls[0][2]).toMatchObject({ overwrite: true })
 })
 
+test('createDeployYamlFile (1 extension), no api-mesh', async () => {
+  const extConfig = fixtureJson('pack/2.all.config.json')
+
+  const command = new TheCommand()
+  command.argv = []
+  command.config = {
+    findCommand: jest.fn().mockReturnValue({}),
+    runCommand: jest.fn(),
+    runHook: jest.fn()
+  }
+
+  execa.mockImplementationOnce((cmd, args) => {
+    expect(cmd).toEqual('aio')
+    expect(args).toEqual(['api-mesh', 'get'])
+    // eslint-disable-next-line no-throw-literal
+    throw {
+      stderr: 'Error: Unable to get mesh config. No mesh found for Org'
+    }
+  })
+
+  await command.createDeployYamlFile(extConfig)
+
+  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('app-package', 'deploy.yaml'))
+  await expect(importHelper.writeFile.mock.calls[0][1]).toMatchFixture('pack/2.deploy.no-mesh.yaml')
+  await expect(importHelper.writeFile.mock.calls[0][2]).toMatchObject({ overwrite: true })
+})
+
+test('createDeployYamlFile (1 extension), api-mesh get call throws non 404 error', async () => {
+  const extConfig = fixtureJson('pack/2.all.config.json')
+
+  const command = new TheCommand()
+  command.argv = []
+  command.config = {
+    findCommand: jest.fn().mockReturnValue({}),
+    runCommand: jest.fn(),
+    runHook: jest.fn()
+  }
+
+  execa.mockImplementationOnce((cmd, args) => {
+    expect(cmd).toEqual('aio')
+    expect(args).toEqual(['api-mesh', 'get'])
+    // eslint-disable-next-line no-throw-literal
+    throw {
+      stderr: 'Error: api-mesh service is unavailable'
+    }
+  })
+
+  await expect(command.createDeployYamlFile(extConfig)).rejects.toEqual(expect.objectContaining({
+    stderr: expect.stringContaining('Error: api-mesh service is unavailable')
+  }))
+})
+
 test('createDeployYamlFile (coverage: standalone app, no services)', async () => {
   const extConfig = fixtureJson('pack/4.all.config.json')
 
