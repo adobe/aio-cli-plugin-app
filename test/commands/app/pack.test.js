@@ -285,7 +285,7 @@ test('zipHelper', async () => {
   archiverMock.directory.mockClear()
 
   // lstatsync error (see lstatsync mock 3)
-  await expect(command.zipHelper('my-folder', 'app.zip')).rejects.toThrowError('folder not found')
+  await expect(command.zipHelper('my-folder', 'app.zip')).rejects.toThrow('folder not found')
   expect(archiverMock.destroy).toHaveBeenCalled()
   archiverMock.destroy.mockClear()
 

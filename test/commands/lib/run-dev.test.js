@@ -113,7 +113,7 @@ test('no parameters (exception before processing)', async () => {
   await expect(result).rejects.toThrow()
 })
 
-test('test port to use', async () => {
+test('port to use', async () => {
   const config = cloneDeep(createAppConfig().application)
   runLocalRuntime.mockImplementation(() => ({
     config,

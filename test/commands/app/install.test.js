@@ -147,7 +147,7 @@ describe('validateZipDirectoryStructure', () => {
 
     const command = new TheCommand()
     await expect(command.validateZipDirectoryStructure('app.zip'))
-      .rejects.toThrowError('The app package app.zip is missing these files:')
+      .rejects.toThrow('The app package app.zip is missing these files:')
   })
 
   test('success', async () => {
@@ -162,7 +162,7 @@ describe('validateZipDirectoryStructure', () => {
 
     const command = new TheCommand()
     await expect(command.validateZipDirectoryStructure('app.zip'))
-      .resolves.not.toThrowError()
+      .resolves.not.toThrow()
   })
 })
 
@@ -171,9 +171,9 @@ test('unzipFile', async () => {
   await expect(command.unzipFile('app.zip', 'my-dest-folder'))
     .resolves.toEqual(undefined)
 
-  expect(unzipper.Open.file).toBeCalledTimes(1)
+  expect(unzipper.Open.file).toHaveBeenCalledTimes(1)
   expect(unzipper.Open.file).toHaveBeenCalledWith('app.zip')
-  expect(mockUnzipExtract).toBeCalledTimes(1)
+  expect(mockUnzipExtract).toHaveBeenCalledTimes(1)
   expect(mockUnzipExtract).toHaveBeenCalledWith(expect.objectContaining({ path: 'my-dest-folder' }))
 })
 
@@ -203,7 +203,7 @@ describe('validateConfig', () => {
 
     const command = new TheCommand()
     await expect(command.validateConfig('my-dest-folder', USER_CONFIG_FILE))
-      .rejects.toThrowError(`Missing or invalid keys in ${USER_CONFIG_FILE}:`)
+      .rejects.toThrow(`Missing or invalid keys in ${USER_CONFIG_FILE}:`)
   })
 })
 

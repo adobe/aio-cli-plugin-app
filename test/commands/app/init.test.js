@@ -244,7 +244,7 @@ describe('--no-login', () => {
     command.argv = ['--no-login', '/otherdir']
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
 
@@ -264,7 +264,7 @@ describe('--no-login', () => {
     command.argv = ['--no-login']
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
@@ -280,7 +280,7 @@ describe('--no-login', () => {
     command.argv = ['--no-login', '--standalone-app']
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
@@ -297,7 +297,7 @@ describe('--no-login', () => {
     command.argv = ['--no-login', '--yes', '--no-install']
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
@@ -313,7 +313,7 @@ describe('--no-login', () => {
     command.argv = ['--no-login', '--yes', '--no-install', '--template', '@adobe/my-extension']
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
@@ -329,7 +329,7 @@ describe('--no-login', () => {
     command.argv = ['--no-login', '--yes', '--no-install', '--template', '@adobe/my-extension', '--template', '@adobe/your-extension']
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
@@ -346,7 +346,7 @@ describe('--login', () => {
     command.argv = ['--standalone-app']
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).toHaveBeenCalled()
   })
@@ -361,7 +361,7 @@ describe('--login', () => {
     command.argv = ['--yes', '--no-install', '--template', '@adobe/my-extension', '--template', '@adobe/your-extension']
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).toHaveBeenCalled()
   })
@@ -402,7 +402,7 @@ describe('--login', () => {
     command.argv = ['-w', 'dev']
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).toHaveBeenCalled()
     expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(fakeOrg.id, fakeProject.id, fakeWorkspaces[1].id, fakeSupportedOrgServices)
@@ -484,7 +484,7 @@ describe('--login', () => {
     }
 
     await command.run()
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
   })
 
   test('--extension foo/bar/1 --extension bar/baz/1 (not found)', async () => {
@@ -516,7 +516,7 @@ describe('no args', () => {
     command.argv = []
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).toHaveBeenCalled()
   })
@@ -537,7 +537,7 @@ describe('no args', () => {
     command.argv = []
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).toHaveBeenCalled()
   })
@@ -576,7 +576,7 @@ describe('no args', () => {
       }
     )
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).toHaveBeenCalled()
   })

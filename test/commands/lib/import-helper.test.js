@@ -404,7 +404,7 @@ test('enrich ims jwt credential with project.org.ims_org_id', async () => {
   expect(fs.writeFile).toHaveBeenCalledTimes(2)
 })
 
-test('do not enrich ims.contexts.jwt with ims_org_id if no jwt credentials defined ', async () => {
+test('do not enrich ims.contexts.jwt with ims_org_id if no jwt credentials defined', async () => {
   const workingFolder = 'my-working-folder'
   const aioPath = path.join(workingFolder, '.aio')
   const envPath = path.join(workingFolder, '.env')

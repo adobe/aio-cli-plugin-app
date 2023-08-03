@@ -59,5 +59,5 @@ test('watch error', async () => {
       watch: jest.fn((cb) => cb(new Error()))
     }
   }
-  await expect(bundleServe(createBundler(), {})).rejects.toThrowError()
+  await expect(bundleServe(createBundler(), {})).rejects.toThrow()
 })
