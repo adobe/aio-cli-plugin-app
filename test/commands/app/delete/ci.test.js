@@ -50,7 +50,7 @@ test('--yes flag', async () => {
   await command.run([])
 
   // everything will be deleted
-  expect(fs.removeSync).toBeCalledTimes(3)
+  expect(fs.removeSync).toHaveBeenCalledTimes(3)
 })
 
 describe('no flags', () => {
@@ -60,7 +60,7 @@ describe('no flags', () => {
     await command.run([])
 
     // everything will be deleted
-    expect(fs.removeSync).toBeCalledTimes(3)
+    expect(fs.removeSync).toHaveBeenCalledTimes(3)
   })
 
   test('confirm delete false', async () => {
@@ -69,6 +69,6 @@ describe('no flags', () => {
     await command.run([])
 
     // nothing will be deleted
-    expect(fs.removeSync).not.toBeCalled()
+    expect(fs.removeSync).not.toHaveBeenCalled()
   })
 })

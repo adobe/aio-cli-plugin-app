@@ -200,24 +200,24 @@ async function checkFileConflict (filePath) {
  * Transform a json object to a flattened version. Any nesting is separated by the `separator` string.
  * For example, if you have the `_` separator string, flattening this:
  *
+ * @example
  * {
- *    foo: {
- *      bar: 'a',
- *      baz: {
- *        faz: 'b'
- *      }
- *    }
+ *   foo: {
+ *     bar: 'a',
+ *     baz: {
+ *       faz: 'b'
+ *     }
+ *   }
  * }
  *
  * const result = flattenObjectWithSeparator(json, {}, '', '_)
  * The result would then be:
  * {
- *    'foo_bar': 'a',
- *    'foo_baz_faz': 'b'
+ *   'foo_bar': 'a',
+ *   'foo_baz_faz': 'b'
  * }
  *
  * Any underscores in the object key are escaped with an underscore.
- *
  * @param {object} json the json object to transform
  * @param {object} result the result object to initialize the function with
  * @param {string} prefix the prefix to add to the final key

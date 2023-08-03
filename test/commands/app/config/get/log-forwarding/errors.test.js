@@ -49,7 +49,7 @@ test('app:config:get:log-forwarding:errors command', async () => {
     return command.run()
       .then(() => {
         expect(spinner.succeed)
-          .toBeCalledWith("Log forwarding errors for the last configured destination 'destination':\nerror 1\nerror 2")
+          .toHaveBeenCalledWith("Log forwarding errors for the last configured destination 'destination':\nerror 1\nerror 2")
         resolve()
       })
   })
@@ -66,7 +66,7 @@ test('app:config:get:log-forwarding:errors command - no destination returned fro
 
     return command.run()
       .then(() => {
-        expect(spinner.succeed).toBeCalledWith('Log forwarding errors:\nerror 1\nerror 2')
+        expect(spinner.succeed).toHaveBeenCalledWith('Log forwarding errors:\nerror 1\nerror 2')
         resolve()
       })
   })
@@ -82,7 +82,7 @@ test('app:config:get:log-forwarding:errors command - no errors', async () => {
     return command.run()
       .then(() => {
         expect(spinner.succeed)
-          .toBeCalledWith("No log forwarding errors for the last configured destination 'destination'")
+          .toHaveBeenCalledWith("No log forwarding errors for the last configured destination 'destination'")
         resolve()
       })
   })
@@ -96,7 +96,7 @@ test('app:config:get:log-forwarding:errors command - no errors and no destinatio
 
     return command.run()
       .then(() => {
-        expect(spinner.succeed).toBeCalledWith('No log forwarding errors')
+        expect(spinner.succeed).toHaveBeenCalledWith('No log forwarding errors')
         resolve()
       })
   })
