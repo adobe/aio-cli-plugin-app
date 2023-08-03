@@ -15,6 +15,7 @@ const { deployActions } = require('@adobe/aio-lib-runtime')
 
 /**
  * Deploys actions.
+ *
  * @param {object} config see src/lib/config-loader.js
  * @param {boolean} isLocalDev default false, set to true if it's a local deploy
  * @param {Function} [log] a log function

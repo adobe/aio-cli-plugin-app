@@ -20,6 +20,7 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 
 /**
  * Serves the bundled web source via Parcel.
+ *
  * @param {object} bundler the Parcel bundler object
  * @param {object} [options] the Parcel bundler options
  * @param {Function} [log] the app logger

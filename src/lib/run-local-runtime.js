@@ -53,6 +53,7 @@ const LOCAL_RUNTIME = {
 
 /**
  * Checks the system for pre-requisites to run local Openwhisk, then runs it.
+ *
  * @param {object} config the app config
  * @param {object} dataDir global config folder to store the ow jar
  * @param {Function} [log] function to log application logs
@@ -129,6 +130,7 @@ function loadLocalDevConfig (config, log) {
 
 /**
  * Writes the local debugging .env file
+ *
  * @param {object} appConfig the app config
  * @param {RuntimeCredentials} runtimeCredentials the runtime credentials
  */

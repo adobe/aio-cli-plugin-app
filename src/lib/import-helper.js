@@ -36,6 +36,7 @@ const prompt = inquirer.createPromptModule({ output: process.stderr })
 
 /**
  * Load a config file
+ *
  * @param {string} fileOrBuffer the path to the config file or a Buffer
  * @returns {object} object with properties `value` and `format`
  */
@@ -95,6 +96,7 @@ function loadConfigFile (fileOrBuffer) {
 
 /**
  * Load and validate a config file
+ *
  * @param {string} fileOrBuffer the path to the config file or a Buffer
  * @returns {object} object with properties `value` and `format`
  */
@@ -115,6 +117,7 @@ function loadAndValidateConfigFile (fileOrBuffer) {
 
 /**
  * Writes default app config to .aio file
+ *
  * @param {string} parentDir the parent folder to write the .aio file to
  * @param {object} [flags] flags for file writing
  * @param {boolean} [flags.overwrite=false] set to true to overwrite the existing .env file
@@ -137,6 +140,7 @@ function writeDefaultAppConfig (parentDir, flags) {
 /**
  * Pretty prints the json object as a string.
  * Delimited by 2 spaces.
+ *
  * @param {object} json the json to pretty print
  * @returns {string} the transformed json as a string
  */
@@ -146,6 +150,7 @@ function prettyPrintJson (json) {
 
 /**
  * Confirmation prompt for overwriting, or merging a file if it already exists.
+ *
  * @param {string} filePath the file to ovewrite
  * @returns {object} ovewrite, merge, abort (properties, that are set to true if chosen)
  */
@@ -195,20 +200,21 @@ async function checkFileConflict (filePath) {
  * Transform a json object to a flattened version. Any nesting is separated by the `separator` string.
  * For example, if you have the `_` separator string, flattening this:
  *
+ * @example
  * {
- * foo: {
- * bar: 'a',
- * baz: {
- * faz: 'b'
- * }
- * }
+ *   foo: {
+ *     bar: 'a',
+ *     baz: {
+ *       faz: 'b'
+ *     }
+ *   }
  * }
  *
  * const result = flattenObjectWithSeparator(json, {}, '', '_)
  * The result would then be:
  * {
- * 'foo_bar': 'a',
- * 'foo_baz_faz': 'b'
+ *   'foo_bar': 'a',
+ *   'foo_baz_faz': 'b'
  * }
  *
  * Any underscores in the object key are escaped with an underscore.
@@ -240,6 +246,7 @@ function flattenObjectWithSeparator (json, result = {}, prefix = AIO_ENV_PREFIX,
 
 /**
  * Split line from .env
+ *
  * @param {string} line env line to split
  * @returns {Array} tuple, first item is key, second item is value or null if it's a comment
  */
@@ -267,6 +274,7 @@ function splitEnvLine (line) {
  * Merge .env data
  * (we don't want to go through the .env to json conversion)
  * Note that comments will not be preserved.
+ *
  * @param {string} oldEnv existing env values
  * @param {string} newEnv new env values (takes precedence)
  * @returns {string} the merged env data
@@ -303,6 +311,7 @@ function mergeEnv (oldEnv, newEnv) {
 
 /**
  * Merge json data
+ *
  * @param {string} oldData existing values
  * @param {string} newData new values (takes precedence)
  * @returns {object} the merged json
@@ -322,6 +331,7 @@ function mergeJson (oldData, newData) {
 
 /**
  * Merge .env or json data
+ *
  * @param {string} oldData the data to merge to
  * @param {string} newData the new data to merge from (these contents take precedence)
  * @param {*} fileFormat the file format of the data (env, json)
@@ -341,6 +351,7 @@ function mergeData (oldData, newData, fileFormat) {
 /**
  * Writes the data to file.
  * Checks for conflicts and gives options to overwrite, merge, or abort.
+ *
  * @param {string} destination the file to write to
  * @param {string} data the data to write to disk
  * @param {object} [flags] flags for file writing
@@ -380,6 +391,7 @@ async function writeFile (destination, data, flags = {}) {
 
 /**
  * Writes the json object as AIO_ env vars to the .env file in the specified parent folder.
+ *
  * @param {object} json the json object to transform and write to disk
  * @param {string} parentFolder the parent folder to write the .env file to
  * @param {object} [flags] flags for file writing
@@ -411,6 +423,7 @@ async function writeEnv (json, parentFolder, flags, extraEnvVars) {
 
 /**
  * Writes the org, project, and workspace information to the global console config.
+ *
  * @param {object} json the json object to write to the console config
  */
 async function writeConsoleConfig (json) {
@@ -443,6 +456,7 @@ async function writeConsoleConfig (json) {
 
 /**
  * Writes the json object to the .aio file in the specified parent folder.
+ *
  * @param {object} json the json object to write to disk
  * @param {string} parentFolder the parent folder to write the .aio file to
  * @param {object} [flags] flags for file writing
@@ -616,6 +630,7 @@ function credentialsReferences (credentials) {
 
 /**
  * Import a downloadable config and write to the appropriate .env (credentials) and .aio (non-credentials) files.
+ *
  * @param {string} configFileOrBuffer the path to the config file to import or a buffer
  * @param {string} [destinationFolder=the current working directory] the path to the folder to write the .env and .aio files to
  * @param {object} [flags={}] flags for file writing
@@ -655,6 +670,7 @@ async function importConfigJson (configFileOrBuffer, destinationFolder = process
  *
  * This is different if Jwt or OAuth Server to Server is available, and whether
  * there is a migration going on from Jwt -> OAuth Server to Server.
+ *
  * @param {object} configFileJson the config file json
  * @param {boolean} useJwt prefer the jwt credential, if available.
  * @returns {string} the service api key
@@ -685,6 +701,7 @@ function getServiceApiKey (configFileJson, useJwt) {
 
 /**
  * Gets the service credential type from .aio data
+ *
  * @param {object} projectConfig Project config from .aio
  * @param {object} flags Command flags
  * @returns {string} the credential type

@@ -27,6 +27,7 @@ const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('./defaults')
 
 /**
  * Serves the web source via a http server.
+ *
  * @param {string} webRoot the path to the web root
  * @param {number} uiPort the port number for the http server
  * @param {object} [options] the Parcel bundler options

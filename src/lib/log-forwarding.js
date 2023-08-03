@@ -76,6 +76,7 @@ class LogForwarding {
 
   /**
    * Convert JSON config to Log Forwarding object
+   *
    * @param {object} configJson Config in JSON format
    * @returns {LogForwardingConfig} Config
    */
@@ -192,6 +193,7 @@ class LogForwardingConfig {
 
 /**
  * Init Log Forwarding
+ *
  * @param {object} aioConfig aio Config
  * @returns {Promise<LogForwarding>} Log Forwarding
  */
@@ -202,6 +204,7 @@ async function init (aioConfig) {
 
 /**
  * Get Runtime Log Forwarding
+ *
  * @param {object} rtConfig Runtime config
  * @returns {Promise<LogForwarding>} Log Forwarding
  */
@@ -215,6 +218,7 @@ async function getRTLogForwarding (rtConfig) {
 
 /**
  * Compare to log forwarding configs
+ *
  * @param {LogForwardingConfig} config1 Config
  * @param {LogForwardingConfig} config2 Config
  * @returns {boolean} Are configs equal
@@ -236,6 +240,7 @@ function shallowEqual (config1, config2) {
 
 /**
  * Get secret variable name for the given destination and settings field
+ *
  * @param {string} destination Destination
  * @param {string} fieldName Field name
  * @returns {string} Variable name
@@ -246,6 +251,7 @@ function getSecretVarName (destination, fieldName) {
 
 /**
  * Generate checksum for the config
+ *
  * @param {LogForwardingConfig} config Config
  * @returns {string} Checksum
  */

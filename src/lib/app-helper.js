@@ -111,6 +111,7 @@ async function runInProcess (hookPath, config) {
 
 /**
  * Runs a package script in a child process
+ *
  * @param {string} command to run
  * @param {string} dir to run command in
  * @param {string[]} cmdArgs args to pass to command
@@ -193,6 +194,7 @@ async function getCliInfo () {
 
 /**
  * Joins url path parts
+ *
  * @param {...string} args url parts
  * @returns {string} joined url
  */
@@ -208,6 +210,7 @@ function urlJoin (...args) {
 
 /**
  * Removes the protocol prefix from a URL string
+ *
  * @param {string} url the input url string
  * @returns {string} the url without the protocol prefix
  */
@@ -219,6 +222,7 @@ function removeProtocolFromURL (url) {
 
 /**
  * Tests that a file exists, if not throws an error
+ *
  * @param {string} filePath path to a file
  */
 function checkFile (filePath) {
@@ -230,6 +234,7 @@ function checkFile (filePath) {
 
 /**
  * Writes an object to a file
+ *
  * @param {string} file path
  * @param {object} config object to write
  */
@@ -353,6 +358,7 @@ async function runOpenWhiskJar (jarFile, runtimeConfigFile, apihost, waitInitTim
 /**
  *
  *Converts a service array to an input string that can be consumed by generator-aio-app
+ *
  * @param {Array} services array of services [{ code: 'xxx', name: 'xxx' }, ...]
  * @returns {string} 'code1,code2,code3'
  */
@@ -362,6 +368,7 @@ function servicesToGeneratorInput (services) {
 
 /**
  * Log a warning when overwriting services in the Production Workspace
+ *
  * @param {string} projectName project name, needed for warning message
  * @param {string} workspaceName workspace name
  */
@@ -376,6 +383,7 @@ function warnIfOverwriteServicesInProductionWorkspace (projectName, workspaceNam
 
 /**
  * Set the services attached to the current workspace in the .aio config
+ *
  * @param {Array} serviceProperties service properties obtained via LibConsoleCLI.prototype.getServicePropertiesFromWorkspace
  */
 function setWorkspaceServicesConfig (serviceProperties) {
@@ -389,6 +397,7 @@ function setWorkspaceServicesConfig (serviceProperties) {
 
 /**
  * Set the services supported by the organization in the .aio config
+ *
  * @param {Array} supportedServices org services obtained via LibConsoleCLI.prototype.getEnabledServicesForOrg
  */
 function setOrgServicesConfig (supportedServices) {
@@ -403,6 +412,7 @@ function setOrgServicesConfig (supportedServices) {
 
 /**
  * Gets fresh service list from Console Workspace and builds metadata to be associated with the view operation for dx/excshell/1 extensions
+ *
  * @param {object} libConsoleCLI an instance of LibConsoleCli to get latest services, the user must be logged in
  * @param {object} aioConfig loaded aio config
  * @returns {object} op['view'] metadata OR null
@@ -437,6 +447,7 @@ async function buildExcShellViewExtensionMetadata (libConsoleCLI, aioConfig) {
 
 /**
  * Build extension points payload from configuration all extension configurations
+ *
  * @param {Array} extConfigs array resulting from BaseCommand.getAppExtConfigs
  * @returns {object} extension registry payload
  */
@@ -544,6 +555,7 @@ function getObjectProp (obj, key) {
 
 /**
  * Get a value in an object by dot notation.
+ *
  * @param {object} obj the object to wrap
  * @param {string} key the key
  * @returns {object} the value

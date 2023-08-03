@@ -14,6 +14,7 @@ const ajvAddFormats = require('ajv-formats')
 
 /**
  * Validate the file json with one of our schemas.
+ *
  * @param {object} fileJson the json to validate
  * @param {string} schemaName one of config.json, app.config.yaml, deploy.yaml
  * @returns {object} with keys valid (boolean) and errors (object). errors is null if no errors
