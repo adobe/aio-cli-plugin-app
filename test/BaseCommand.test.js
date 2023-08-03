@@ -199,21 +199,21 @@ describe('getAppExtConfigs', () => {
 })
 
 describe('getLibConsoleCLI', () => {
-  test('test cache', async () => {
+  test('cache', async () => {
     const cmd = new TheCommand()
     const a = await cmd.getLibConsoleCLI()
     const b = await cmd.getLibConsoleCLI()
     expect(a).toBe(b)
     expect(LibConsoleCLI.init).toHaveBeenCalledTimes(1)
   })
-  test('prod env ', async () => {
+  test('prod env', async () => {
     getToken.mockReturnValue('hola')
     libEnv.getCliEnv.mockReturnValue('prod')
     const cmd = new TheCommand()
     await cmd.getLibConsoleCLI()
     expect(LibConsoleCLI.init).toHaveBeenCalledWith({ env: 'prod', accessToken: 'hola', apiKey: expect.any(String) })
   })
-  test('stage env ', async () => {
+  test('stage env', async () => {
     getToken.mockReturnValue('hola')
     libEnv.getCliEnv.mockReturnValue('stage')
     const cmd = new TheCommand()
