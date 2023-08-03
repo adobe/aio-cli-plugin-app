@@ -71,6 +71,7 @@ async function installPackages (dir, options = { spinner: null, verbose: false }
  * @param {string} scriptName  npm script name
  * @param {string} dir directory to run npm script in
  * @param {string[]} cmdArgs args to pass to npm script
+ * @returns {object} the child process
  */
 async function runPackageScript (scriptName, dir, cmdArgs = []) {
   aioLogger.debug(`running npm run-script ${scriptName} in dir: ${dir}`)
@@ -85,7 +86,6 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
 }
 
 /**
- *
  * @param {string} hookPath to be require()'d and run. Should export an async function that takes a config object as its only argument
  * @param {object} config which will be passed to the hook
  * @returns {Promise<*>} whatever the hook returns
@@ -111,7 +111,6 @@ async function runInProcess (hookPath, config) {
 
 /**
  * Runs a package script in a child process
- *
  * @param {string} command to run
  * @param {string} dir to run command in
  * @param {string[]} cmdArgs args to pass to command
@@ -194,7 +193,6 @@ async function getCliInfo () {
 
 /**
  * Joins url path parts
- *
  * @param {...string} args url parts
  * @returns {string} joined url
  */
@@ -210,7 +208,6 @@ function urlJoin (...args) {
 
 /**
  * Removes the protocol prefix from a URL string
- *
  * @param {string} url the input url string
  * @returns {string} the url without the protocol prefix
  */
@@ -222,7 +219,6 @@ function removeProtocolFromURL (url) {
 
 /**
  * Tests that a file exists, if not throws an error
- *
  * @param {string} filePath path to a file
  */
 function checkFile (filePath) {
@@ -234,7 +230,6 @@ function checkFile (filePath) {
 
 /**
  * Writes an object to a file
- *
  * @param {string} file path
  * @param {object} config object to write
  */
@@ -357,8 +352,7 @@ async function runOpenWhiskJar (jarFile, runtimeConfigFile, apihost, waitInitTim
 
 /**
  *
- * Converts a service array to an input string that can be consumed by generator-aio-app
- *
+ *Converts a service array to an input string that can be consumed by generator-aio-app
  * @param {Array} services array of services [{ code: 'xxx', name: 'xxx' }, ...]
  * @returns {string} 'code1,code2,code3'
  */
@@ -368,7 +362,6 @@ function servicesToGeneratorInput (services) {
 
 /**
  * Log a warning when overwriting services in the Production Workspace
- *
  * @param {string} projectName project name, needed for warning message
  * @param {string} workspaceName workspace name
  */
@@ -383,7 +376,6 @@ function warnIfOverwriteServicesInProductionWorkspace (projectName, workspaceNam
 
 /**
  * Set the services attached to the current workspace in the .aio config
- *
  * @param {Array} serviceProperties service properties obtained via LibConsoleCLI.prototype.getServicePropertiesFromWorkspace
  */
 function setWorkspaceServicesConfig (serviceProperties) {
@@ -397,7 +389,6 @@ function setWorkspaceServicesConfig (serviceProperties) {
 
 /**
  * Set the services supported by the organization in the .aio config
- *
  * @param {Array} supportedServices org services obtained via LibConsoleCLI.prototype.getEnabledServicesForOrg
  */
 function setOrgServicesConfig (supportedServices) {
@@ -412,7 +403,6 @@ function setOrgServicesConfig (supportedServices) {
 
 /**
  * Gets fresh service list from Console Workspace and builds metadata to be associated with the view operation for dx/excshell/1 extensions
- *
  * @param {object} libConsoleCLI an instance of LibConsoleCli to get latest services, the user must be logged in
  * @param {object} aioConfig loaded aio config
  * @returns {object} op['view'] metadata OR null
@@ -447,7 +437,6 @@ async function buildExcShellViewExtensionMetadata (libConsoleCLI, aioConfig) {
 
 /**
  * Build extension points payload from configuration all extension configurations
- *
  * @param {Array} extConfigs array resulting from BaseCommand.getAppExtConfigs
  * @returns {object} extension registry payload
  */
@@ -555,7 +544,6 @@ function getObjectProp (obj, key) {
 
 /**
  * Get a value in an object by dot notation.
- *
  * @param {object} obj the object to wrap
  * @param {string} key the key
  * @returns {object} the value

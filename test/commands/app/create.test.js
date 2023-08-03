@@ -47,16 +47,11 @@ describe('Command Prototype', () => {
 
 describe('bad flags', () => {
   test('unknown', async () => {
-    const result = TheCommand.run(['.', '--wtf'])
-    expect(result instanceof Promise).toBeTruthy()
-    return new Promise((resolve, reject) => {
-      return result
-        .then(() => reject(new Error()))
-        .catch(res => {
-          expect(res).toEqual(new Error('Nonexistent flag: --wtf\nSee more help with --help'))
-          resolve()
-        })
-    })
+    const error = await getErrorForCallThatShouldThrowAnError(() => TheCommand.run(['.', '--wtf']))
+
+    // check that the returned error wasn't that no error was thrown
+    expect(error).not.toBeInstanceOf(NoErrorThrownError)
+    expect(error).toEqual(new Error('Nonexistent flag: --wtf\nSee more help with --help'))
   })
 })
 

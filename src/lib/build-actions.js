@@ -15,7 +15,6 @@ const { buildActions } = require('@adobe/aio-lib-runtime')
 
 /**
  * Builds actions.
- *
  * @param {object} config see src/lib/config-loader.js
  * @param {Array<string>} filterActions add filters to deploy only specified OpenWhisk actions
  * @param {boolean} [forceBuild=false] force a build (skip file changed hash check)

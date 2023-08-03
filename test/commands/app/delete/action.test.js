@@ -147,7 +147,7 @@ describe('good flags', () => {
       return { actions: [{ name: 'fakeActionName', path: 'dir/file.js' }], actionsByImpl: { } }
     }
     await command.run()
-    expect(fs.removeSync).lastCalledWith('dir')
+    expect(fs.removeSync).toHaveBeenLastCalledWith('dir')
   })
 
   test('fakeActionName', async () => {
@@ -164,7 +164,7 @@ describe('good flags', () => {
       return { actions: [{ name: 'fakeActionName', path: 'boom.js' }], actionsByImpl: { } }
     }
     await command.run()
-    expect(fs.removeSync).lastCalledWith('mock-dirname')
+    expect(fs.removeSync).toHaveBeenLastCalledWith('mock-dirname')
     dirnameSpy.mockRestore()
   })
 
@@ -184,7 +184,7 @@ describe('good flags', () => {
       return { actions: [{ name: 'fakeActionName', path: 'boom.js' }], actionsByImpl: { } }
     }
     await command.run()
-    expect(fs.removeSync).lastCalledWith('mock-dirname')
+    expect(fs.removeSync).toHaveBeenLastCalledWith('mock-dirname')
     dirnameSpy.mockRestore()
   })
 

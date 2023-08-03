@@ -21,7 +21,6 @@ const terminalSize = require('term-size')
 class TemplatesCommand extends AddCommand {
   /**
    * Gets a list of templates from the Template Registry API using the criteria provided.
-   *
    * @param {object} searchCriteria the Template Registry API search criteria
    * @param {object} orderByCriteria the Template Registry API orderBy criteria
    * @param {object} [templateRegistryConfig={}] the optional Template Registry API config
@@ -45,7 +44,6 @@ class TemplatesCommand extends AddCommand {
 
   /**
    * Select templates from the Template Registry API, via a cli table.
-   *
    * @param {object} searchCriteria the Template Registry API search criteria
    * @param {object} orderByCriteria the Template Registry API orderBy criteria
    * @param {Array<object>} orgSupportedServices Services supported by the org
@@ -133,7 +131,6 @@ class TemplatesCommand extends AddCommand {
 
   /**
    * Install the templates.
-   *
    * @param {object} templateData the template data
    * @param {boolean} [templateData.useDefaultValues=false] use default values when installing the template
    * @param {boolean} [templateData.installConfig=true] process the install.yml of the template
@@ -195,7 +192,6 @@ class TemplatesCommand extends AddCommand {
 
   /**
    * Get templates by extension point ids.
-   *
    * @param {Array<string>} extensionsToInstall an array of extension point ids to install.
    * @param {object} [templateRegistryConfig={}] the optional Template Registry API config
    * @returns {object} returns the result
@@ -231,7 +227,6 @@ class TemplatesCommand extends AddCommand {
 
   /**
    * Install templates by extension point ids.
-   *
    * @param {Array<string>} extensionsToInstall an array of extension point ids to install.
    * @param {Array<string>} extensionsAlreadyImplemented an array of extension point ids that have already been implemented (to filter)
    * @param {boolean} [useDefaultValues=false] use default values when installing the template

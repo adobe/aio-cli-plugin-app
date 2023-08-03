@@ -49,7 +49,7 @@ test('deploy-actions app hook available', async () => {
     }
   })
 
-  expect(rtDeployActions).not.toBeCalled()
+  expect(rtDeployActions).not.toHaveBeenCalled()
   expect(utils.runInProcess).toHaveBeenNthCalledWith(1, undefined, expect.any(Object)) // pre-app-deploy
   expect(utils.runInProcess).toHaveBeenNthCalledWith(2, 'deploy-actions', expect.any(Object))
   expect(utils.runInProcess).toHaveBeenNthCalledWith(3, undefined, expect.any(Object)) // post-app-deploy

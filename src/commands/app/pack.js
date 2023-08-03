@@ -99,7 +99,6 @@ class Pack extends BaseCommand {
 
   /**
    * Creates the deploy.yaml file
-   *
    * @param {object} appConfig the app's configuration file
    */
   async createDeployYamlFile (appConfig) {
@@ -175,7 +174,6 @@ class Pack extends BaseCommand {
 
   /**
    * Copies a list of files to a folder.
-   *
    * @param {string} destinationFolder the destination folder for the files
    * @param {Array<string>} filesList a list of files to copy
    */
@@ -193,7 +191,6 @@ class Pack extends BaseCommand {
 
   /**
    * Zip a file/folder using archiver
-   *
    * @param {string} filePath path of file/folder to zip
    * @param {string} out output path
    * @param {boolean} pathInZip internal path in zip
@@ -230,7 +227,6 @@ class Pack extends BaseCommand {
    * Gets a list of files that are to be packed.
    *
    * This runs `npm pack` to get the list.
-   *
    * @param {Array<string>} filesToExclude a list of files to exclude
    * @param {string} workingDirectory the working directory to run `npm pack` in
    * @returns {Array<string>} a list of files that are to be packed
@@ -248,7 +244,6 @@ class Pack extends BaseCommand {
    * An annotation called code-download will be added to all actions in app.config.yaml
    * (and linked yaml configs for example in extensions). This value will be set to false.
    * The annotation will by default be true if not set.
-   *
    * @param {object} appConfig the app's configuration file
    */
   async addCodeDownloadAnnotation (appConfig) {

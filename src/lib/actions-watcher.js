@@ -31,7 +31,6 @@ const deployActions = require('./deploy-actions')
 
 /**
  * Create a watcher.
- *
  * @param {WatcherOptions} watcherOptions the options for the watcher
  * @returns {WatchReturnObject} the WatchReturnObject
  */
@@ -56,7 +55,6 @@ module.exports = async (watcherOptions) => {
 
 /**
  * Builds and deploy the app.
- *
  * @param {WatcherOptions} watcherOptions the options for the watcher
  * @param {Array<string>} filterActions add filters to deploy only specified OpenWhisk actions
  */
@@ -68,7 +66,6 @@ async function buildAndDeploy (watcherOptions, filterActions) {
 
 /**
  * Create the onchange handler for the watcher.
- *
  * @param {WatcherOptions} watcherOptions the options for the watcher
  * @returns {Function} the onchange handler for the watcher
  */
@@ -113,7 +110,6 @@ function createChangeHandler (watcherOptions) {
 
 /**
  * Util function which returns the actionName from the filePath.
- *
  * @param {string} filePath  path of the file
  * @param {WatcherOptions} watcherOptions the options for the watcher
  * @returns {Array<string>}  All of the actions which match the modified path

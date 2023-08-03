@@ -60,7 +60,6 @@ class EventPoller extends EventEmitter {
 
 /**
  * The function that is run on each poll tick.
- *
  * @param {PollArgs} pollArgs the poll arguments
  */
 async function logListener (pollArgs) {
@@ -81,7 +80,6 @@ async function logListener (pollArgs) {
 
 /**
  *  Run the log poller.
- *
  * @param {object} config the app config (see src/lib/config-loader.js)
  * @param {number} logInterval the number of seconds to poll
  * @returns {LogPollerObject} the LogPoller object
