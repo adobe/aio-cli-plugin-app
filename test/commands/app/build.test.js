@@ -322,8 +322,8 @@ describe('run', () => {
     command.argv = ['--no-web-assets', '-a', 'a', '-a=b', '--action', 'c']
     mockRuntimeLib.buildActions.mockReturnValue(['a', 'b', 'c'])
     await command.run()
-    expect(spinner.start).toBeCalledWith('Building actions for \'application\'')
-    expect(spinner.succeed).toBeCalledWith(expect.stringContaining('Built 3 action(s) for \'application\''))
+    expect(spinner.start).toHaveBeenCalledWith('Building actions for \'application\'')
+    expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Built 3 action(s) for \'application\''))
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledWith(appConfig.application, ['a', 'b', 'c'], true)

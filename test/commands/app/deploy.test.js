@@ -705,7 +705,7 @@ describe('run', () => {
 
     command.error.mockImplementationOnce((msg) => { throw new Error(msg) })
     command.argv = ['--feature-event-hooks']
-    await expect(command.run()).rejects.toThrowError('error-pre-app-deploy')
+    await expect(command.run()).rejects.toThrow('error-pre-app-deploy')
 
     expect(helpers.runInProcess).toHaveBeenCalledTimes(1)
     expect(command.config.runHook).not.toHaveBeenCalled()
@@ -723,7 +723,7 @@ describe('run', () => {
 
     command.error.mockImplementationOnce((msg) => { throw new Error(msg) })
     command.argv = ['--feature-event-hooks']
-    await expect(command.run()).rejects.toThrowError('error-post-app-deploy')
+    await expect(command.run()).rejects.toThrow('error-post-app-deploy')
 
     expect(command.config.runHook).toHaveBeenCalledWith('deploy-actions',
       expect.objectContaining({
@@ -1006,7 +1006,7 @@ describe('run', () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     const expectedConfig = new LogForwarding.LogForwardingConfig('destination', { field: 'value' })
     await command.run()
-    expect(mockLogForwarding.updateServerConfig).toBeCalledWith(expectedConfig)
+    expect(mockLogForwarding.updateServerConfig).toHaveBeenCalledWith(expectedConfig)
   })
 
   test('log forwarding is not updated on server when local config is absent', async () => {
@@ -1014,7 +1014,7 @@ describe('run', () => {
     const config = new LogForwarding.LogForwardingConfig()
     mockLogForwarding.getLocalConfigWithSecrets.mockReturnValue(config)
     await command.run()
-    expect(mockLogForwarding.updateServerConfig).toBeCalledTimes(0)
+    expect(mockLogForwarding.updateServerConfig).toHaveBeenCalledTimes(0)
   })
 
   test('log forwarding is not updated on server when local config is absent --verbose', async () => {
@@ -1023,14 +1023,14 @@ describe('run', () => {
     mockLogForwarding.getLocalConfigWithSecrets.mockReturnValue(config)
     command.argv = ['--verbose']
     await command.run()
-    expect(mockLogForwarding.updateServerConfig).toBeCalledTimes(0)
+    expect(mockLogForwarding.updateServerConfig).toHaveBeenCalledTimes(0)
   })
 
   test('log forwarding is not updated on server when local config not changed', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     mockLogForwarding.isLocalConfigChanged.mockReturnValue(false)
     await command.run()
-    expect(mockLogForwarding.updateServerConfig).toBeCalledTimes(0)
+    expect(mockLogForwarding.updateServerConfig).toHaveBeenCalledTimes(0)
   })
 
   test('does NOT fire `event` hooks when feature flag is NOT enabled', async () => {

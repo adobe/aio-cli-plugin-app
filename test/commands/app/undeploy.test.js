@@ -410,7 +410,7 @@ describe('run', () => {
     command.argv = []
     await command.run()
     expect(command.error).not.toHaveBeenCalled()
-    expect(runHook).not.toHaveBeenCalledWith('post-undeploy-event-reg')
+    expect(runHook).not.toHaveBeenCalledWith('pre-undeploy-event-reg')
   })
 
   test('does NOT fire `event` hooks when events flag is false', async () => {
@@ -420,25 +420,25 @@ describe('run', () => {
     command.argv = ['--feature-event-hooks', '--no-events']
     await command.run()
     expect(command.error).not.toHaveBeenCalled()
-    expect(runHook).not.toHaveBeenCalledWith('post-undeploy-event-reg')
+    expect(runHook).not.toHaveBeenCalledWith('pre-undeploy-event-reg')
   })
 
   test('DOES fire `event` hooks when feature flag IS enabled', async () => {
     const runHook = jest.fn()
+      .mockResolvedValue({
+        successes: ['ok'],
+        failures: []
+      })
     command.config = { runHook }
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     command.argv = ['--feature-event-hooks']
     await command.run()
     expect(command.error).not.toHaveBeenCalled()
-    expect(runHook).toHaveBeenCalledWith('post-undeploy-event-reg', expect.any(Object))
+    expect(runHook).toHaveBeenCalledWith('pre-undeploy-event-reg', expect.any(Object))
   })
 
   test('outputs error if events hook throws', async () => {
     const runHook = jest.fn()
-      .mockResolvedValueOnce({
-        successes: ['ok'],
-        failures: []
-      })
       .mockResolvedValue({
         successes: [],
         failures: [{ plugin: { name: 'ifailedu' }, error: 'some error' }]
@@ -447,7 +447,7 @@ describe('run', () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     command.argv = ['--feature-event-hooks']
     await command.run()
-    expect(runHook).toHaveBeenCalledWith('post-undeploy-event-reg', expect.any(Object))
+    expect(runHook).toHaveBeenCalledWith('pre-undeploy-event-reg', expect.any(Object))
     expect(command.error).toHaveBeenCalledTimes(1)
   })
 })

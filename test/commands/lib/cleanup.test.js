@@ -65,8 +65,8 @@ test('run', async () => {
 
   expect(fn1).toHaveBeenCalled()
   expect(fn2).toHaveBeenCalled()
-  expect(mockLogger.debug).toBeCalledWith('fn1')
-  expect(mockLogger.debug).toBeCalledWith('fn2')
+  expect(mockLogger.debug).toHaveBeenCalledWith('fn1')
+  expect(mockLogger.debug).toHaveBeenCalledWith('fn2')
 })
 
 test('wait (cleanup no errors)', async () => {
@@ -78,15 +78,15 @@ test('wait (cleanup no errors)', async () => {
   })
 
   process.on.mockImplementation(async (eventName, fn) => {
-    if (eventName === 'SIGINT') {
-      // call the fn immediately as if SIGINT was sent
-      await fn()
+    // it shouldn't have any other events anyway during the test
+    expect(eventName === 'SIGINT').toBeTruthy()
+    // call the fn immediately as if SIGINT was sent
+    await fn()
 
-      expect(execa).toHaveBeenCalled()
-      expect(fn1).toHaveBeenCalled()
-      expect(fn2).toHaveBeenCalled()
-      expect(mockKill).toHaveBeenCalled()
-    }
+    expect(execa).toHaveBeenCalled()
+    expect(fn1).toHaveBeenCalled()
+    expect(fn2).toHaveBeenCalled()
+    expect(mockKill).toHaveBeenCalled()
   })
 
   theCleanup.add(fn1, 'fn1')
@@ -105,15 +105,15 @@ test('wait (cleanup has error)', async () => {
   })
 
   process.on.mockImplementation(async (eventName, fn) => {
-    if (eventName === 'SIGINT') {
-      // call the fn immediately as if SIGINT was sent
-      await fn()
+    // it shouldn't have any other events anyway during the test
+    expect(eventName === 'SIGINT').toBeTruthy()
+    // call the fn immediately as if SIGINT was sent
+    await fn()
 
-      expect(execa).toHaveBeenCalled()
-      expect(fn1).toHaveBeenCalled()
-      expect(fn2).toHaveBeenCalled()
-      expect(mockKill).not.toHaveBeenCalled() // never gets here because of the exception
-    }
+    expect(execa).toHaveBeenCalled()
+    expect(fn1).toHaveBeenCalled()
+    expect(fn2).toHaveBeenCalled()
+    expect(mockKill).not.toHaveBeenCalled() // never gets here because of the exception
   })
 
   theCleanup.add(fn1, 'fn1')

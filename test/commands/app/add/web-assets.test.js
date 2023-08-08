@@ -73,7 +73,7 @@ test('--yes', async () => {
   command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
   await command.run()
-  expect(command.installTemplates).toBeCalledWith(installOptions)
+  expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
 })
 
 test('--yes --no-install', async () => {
@@ -88,7 +88,7 @@ test('--yes --no-install', async () => {
   command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
   await command.run()
-  expect(command.installTemplates).toBeCalledWith(installOptions)
+  expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
 })
 
 test('--no-install', async () => {
@@ -103,7 +103,7 @@ test('--no-install', async () => {
   command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
   await command.run()
-  expect(command.installTemplates).toBeCalledWith(installOptions)
+  expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
 })
 
 test('--extension', async () => {
@@ -118,7 +118,7 @@ test('--extension', async () => {
   command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
   await command.run()
-  expect(command.installTemplates).toBeCalledWith(installOptions)
+  expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
 })
 
 test('no flags', async () => {
@@ -133,7 +133,7 @@ test('no flags', async () => {
   command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
   await command.run()
-  expect(command.installTemplates).toBeCalledWith(installOptions)
+  expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
 })
 
 test('no templates selected', async () => {

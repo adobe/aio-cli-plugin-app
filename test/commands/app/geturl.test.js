@@ -96,7 +96,7 @@ describe('run', () => {
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     Object.values(appConfig.all).forEach(config => {
-      expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith(config, true)
+      expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalledWith(config, true)
     })
     expect(urls).toEqual(retVal)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.runtime.action))
@@ -113,7 +113,7 @@ describe('run', () => {
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     Object.values(appConfig.all).forEach(config => {
-      expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith(config, true)
+      expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalledWith(config, true)
     })
     expect(urls).toEqual(retVal)
   })
@@ -128,7 +128,7 @@ describe('run', () => {
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     Object.values(appConfig.all).forEach(config => {
-      expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith(config, true)
+      expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalledWith(config, true)
     })
     expect(urls).toEqual(retVal)
   })
@@ -143,7 +143,7 @@ describe('run', () => {
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     Object.values(appConfig.all).forEach(config => {
-      expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith(config, true)
+      expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalledWith(config, true)
     })
     expect(urls).toEqual(retVal)
   })
@@ -157,7 +157,7 @@ describe('run', () => {
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     Object.values(appConfig.all).forEach(config => {
-      expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith(config, true)
+      expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalledWith(config, true)
     })
     expect(urls).toEqual({ runtime: {} })
   })
@@ -178,7 +178,7 @@ describe('run', () => {
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     Object.values(appConfig.all).forEach(config => {
-      expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith(config, true)
+      expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalledWith(config, true)
     })
     expect(urls).toEqual(retVal)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.runtime.action))
@@ -198,7 +198,7 @@ describe('run', () => {
     const urls = await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     Object.values(appConfig.all).forEach(config => {
-      expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith(config, true)
+      expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalledWith(config, true)
     })
     expect(urls).toEqual(retVal)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.runtime.action))
@@ -234,8 +234,8 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalledTimes(2)
     Object.values(appConfig.all).forEach(config => {
-      expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith(config, true)
-      expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith(config, false)
+      expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalledWith(config, true)
+      expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalledWith(config, false)
     })
 
     expect(urls).toEqual(result)
@@ -289,7 +289,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     Object.values(appConfig.all).forEach(config => {
       const localConfig = loadLocalDevConfig(config)
-      expect(mockRuntimeLib.utils.getActionUrls).toBeCalledWith(localConfig, false, true)
+      expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalledWith(localConfig, false, true)
     })
     expect(urls).toEqual(res)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.runtime.action))
