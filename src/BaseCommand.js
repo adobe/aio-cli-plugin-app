@@ -112,8 +112,24 @@ class BaseCommand extends Command {
     let configData = this.getConfigFileForKey(`${configKey}.runtimeManifest`)
     if (!configData.file) {
       // first action manifest is not defined
-      configData = this.getConfigFileForKey(`${configKey}`)
+      configData = this.getConfigFileForKey(`${configKey}`) // not returning mock as expected
       configData.key = configData.key + '.runtimeManifest'
+    }
+    return configData
+  }
+
+  getEventsConfigFile (implName) {
+    let configKey
+    if (implName === APPLICATION_CONFIG_KEY) {
+      configKey = APPLICATION_CONFIG_KEY
+    } else {
+      configKey = `${EXTENSIONS_CONFIG_KEY}.${implName}`
+    }
+    let configData = this.getConfigFileForKey(`${configKey}.events`)
+    if (!configData.file) {
+      // first action manifest is not defined
+      configData = this.getConfigFileForKey(`${configKey}`)
+      configData.key = configData.key + '.events'
     }
     return configData
   }
@@ -177,7 +193,11 @@ class BaseCommand extends Command {
 
 BaseCommand.flags = {
   verbose: Flags.boolean({ char: 'v', description: 'Verbose output' }),
-  version: Flags.boolean({ description: 'Show version' })
+  version: Flags.boolean({ description: 'Show version' }),
+  allowEventsTemplates: Flags.boolean({
+    description: 'Feature flag to enable events templates',
+    default: false
+  })
 }
 
 BaseCommand.args = {}
