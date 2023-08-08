@@ -243,11 +243,14 @@ class Pack extends BaseCommand {
    */
   async addCodeDownloadAnnotation (appConfig) {
     // get each annotation key relative to the file it is defined in
+    /// iterate only over extensions that have actions defined
     const fileToAnnotationKey = {}
-    Object.entries(appConfig.all).forEach(([ext, extConf]) => {
-      if (extConf.manifest?.full?.packages) {
-        Object.entries(extConf.manifest.full.packages).forEach(([pkg, pkgConf]) => {
-          if (pkgConf.actions) {
+    Object.entries(appConfig.all)
+      .filter(([_, extConf]) => extConf.manifest?.full?.packages)
+      .forEach(([ext, extConf]) => {
+        Object.entries(extConf.manifest.full.packages)
+          .filter(([pkg, pkgConf]) => pkgConf.actions)
+          .forEach(([pkg, pkgConf]) => {
             Object.entries(pkgConf.actions).forEach(([action, actionConf]) => {
               const baseFullKey = ext === 'application'
                 ? `application.runtimeManifest.packages.${pkg}.actions.${action}`
@@ -265,10 +268,8 @@ class Pack extends BaseCommand {
               }
               fileToAnnotationKey[index.file].push(index.key) // index.key is relative to the file
             })
-          }
-        })
-      }
-    })
+          })
+      })
 
     // rewrite config files
     for (const [file, keys] of Object.entries(fileToAnnotationKey)) {
