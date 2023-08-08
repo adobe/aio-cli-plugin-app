@@ -83,9 +83,9 @@ test('set log forwarding destination', async () => {
           choices: [{ name: 'Destination', value: 'destination' }]
         }])
         expect(stdout.output).toMatch(`Log forwarding is set to '${destination}'\nLog forwarding settings are saved to the local configuration`)
-        expect(setCall).toBeCalledTimes(1)
+        expect(setCall).toHaveBeenCalledTimes(1)
         expect(setCall).toHaveBeenCalledWith(new LogForwarding.LogForwardingConfig(destination, input))
-        expect(localSetCall).toBeCalledTimes(1)
+        expect(localSetCall).toHaveBeenCalledTimes(1)
         expect(localSetCall).toHaveBeenCalledWith(new LogForwarding.LogForwardingConfig(destination, fullSanitizedSettings))
         resolve()
       })

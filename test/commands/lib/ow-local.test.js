@@ -126,7 +126,7 @@ describe('owlocal', () => {
       expect(owLocal.getDockerNetworkAddress()).toBe('http://localhost:3233') // fall back to default
       expect(execa.sync).toHaveBeenCalledWith('docker', ['network', 'inspect', 'bridge'])
       expect(owLocal.OW_LOCAL_APIHOST).toEqual('http://localhost:3233')
-      expect(execa.sync).toThrowError(errorMessage)
+      expect(execa.sync).toThrow(errorMessage)
     })
   })
 })

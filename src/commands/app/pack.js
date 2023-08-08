@@ -135,13 +135,23 @@ class Pack extends BaseCommand {
     // TODO: send a PR to their plugin to have a `--json` flag
     const command = await this.config.findCommand('api-mesh:get')
     if (command) {
-      this.spinner.start('Getting api-mesh config...')
-      const { stdout } = await execa('aio', ['api-mesh', 'get'], { cwd: process.cwd() })
-      // until we get the --json flag, we parse the output
-      const idx = stdout.indexOf('{')
-      meshConfig = JSON.parse(stdout.substring(idx))
-      aioLogger.debug(`api-mesh:get - ${JSON.stringify(meshConfig, null, 2)}`)
-      this.spinner.succeed('Got api-mesh config')
+      try {
+        this.spinner.start('Getting api-mesh config...')
+        const { stdout } = await execa('aio', ['api-mesh', 'get'], { cwd: process.cwd() })
+        // until we get the --json flag, we parse the output
+        const idx = stdout.indexOf('{')
+        meshConfig = JSON.parse(stdout.substring(idx))
+        aioLogger.debug(`api-mesh:get - ${JSON.stringify(meshConfig, null, 2)}`)
+        this.spinner.succeed('Got api-mesh config')
+      } catch (err) {
+        // Ignore error if no mesh found, otherwise throw
+        if (err?.stderr.includes('Error: Unable to get mesh config. No mesh found for Org')) {
+          aioLogger.debug('No api-mesh config found')
+        } else {
+          console.error(err)
+          throw err
+        }
+      }
     } else {
       aioLogger.debug('api-mesh:get command was not found, meshConfig is not available for app:pack')
     }
