@@ -44,15 +44,12 @@ class AddEventCommand extends TemplatesCommand {
       'config-path': configData.file,
       'full-key-to-manifest': configData.key
     }
-    const eventsData = this.getEventsConfigFile(configName) // may cause an issue. check.
-    templateOptions['full-key-to-events-manifest'] = eventsData.key
+
     if(flags.allowEventsTemplates) {
-      console.log('Experimental flag is: ', flags.allowEventsTemplates)
-
-
+      const eventsData = this.getEventsConfigFile(configName)
+      templateOptions['full-key-to-events-manifest'] = eventsData.key
       const [searchCriteria, orderByCriteria] = await this.getSearchCriteria()
       const templates = await this.selectTemplates(searchCriteria, orderByCriteria)
-
       if (templates.length === 0) {
         this.error('No events templates were chosen to be installed.')
       } else {

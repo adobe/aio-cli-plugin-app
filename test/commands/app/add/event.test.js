@@ -54,8 +54,7 @@ beforeEach(() => {
       }
     }
   })
-  command.getConfigFileForKey = jest.fn()
-  command.getConfigFileForKey.mockReturnValue({})
+  command.getConfigFileForKey = jest.fn(() => ({}))
   mockInstantiate.mockReset()
   mockRunGenerator.mockReset()
   yeoman.createEnv.mockClear()
