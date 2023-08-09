@@ -45,7 +45,7 @@ class AddEventCommand extends TemplatesCommand {
       'full-key-to-manifest': configData.key
     }
 
-    if(flags.allowEventsTemplates) {
+    if (flags.allowEventsTemplates) {
       const eventsData = this.getEventsConfigFile(configName)
       templateOptions['full-key-to-events-manifest'] = eventsData.key
       const [searchCriteria, orderByCriteria] = await this.getSearchCriteria()
@@ -64,7 +64,7 @@ class AddEventCommand extends TemplatesCommand {
     } else {
       templateOptions.force = true
       const env = yeoman.createEnv()
-      env.options = {skipInstall: true}
+      env.options = { skipInstall: true }
       console.log('Experimental flag is: ', flags.allowEventsTemplates)
       const eventsGen = env.instantiate(generators['add-events'], {
         options: templateOptions
@@ -76,7 +76,6 @@ class AddEventCommand extends TemplatesCommand {
   }
 
   async getSearchCriteria () {
-
     const TEMPLATE_CATEGORIES = ['events', 'helper-template']
     const searchCriteria = {
       [TemplateRegistryAPI.SEARCH_CRITERIA_STATUSES]: TemplateRegistryAPI.TEMPLATE_STATUS_APPROVED,
@@ -89,7 +88,7 @@ class AddEventCommand extends TemplatesCommand {
       [TemplateRegistryAPI.ORDER_BY_CRITERIA_PUBLISH_DATE]: TemplateRegistryAPI.ORDER_BY_CRITERIA_SORT_DESC
     }
 
-    return [ searchCriteria, orderByCriteria ]
+    return [searchCriteria, orderByCriteria]
   }
 }
 
@@ -103,7 +102,7 @@ AddEventCommand.flags = {
     char: 'y'
   }),
   extension: Flags.string({
-    description: 'Add actions to a specific extension',
+    description: 'Add events to a specific extension',
     char: 'e',
     multiple: false,
     parse: str => [str]

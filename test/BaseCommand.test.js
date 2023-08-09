@@ -150,7 +150,7 @@ describe('getRuntimeManifestConfigFile', () => {
 })
 
 describe('getEventsConfigFile', () => {
-  test('no actions', () => {
+  test('no events', () => {
     mockConfigLoader.mockReturnValue(getMockConfig('app-no-actions', {}))
     const cmd = new TheCommand()
     expect(cmd.getEventsConfigFile('application')).toEqual({ file: 'app.config.yaml', key: 'application.events' })
