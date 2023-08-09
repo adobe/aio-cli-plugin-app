@@ -567,7 +567,7 @@ describe('run', () => {
     expect(open).toHaveBeenCalledWith('https://localhost:1111')
     expect(ux.action.start).toHaveBeenCalledWith('Waiting for the certificate to be accepted.')
     expect(ux.action.stop).toHaveBeenCalledWith()
-    expect(command.log).toBeCalledWith('Great, you accepted the certificate!')
+    expect(command.log).toHaveBeenCalledWith('Great, you accepted the certificate!')
   })
 
   test('app:run with UI and no certs, should attempt to run validation server on env port', async () => {
@@ -600,7 +600,7 @@ describe('run', () => {
     expect(getPort).toHaveBeenCalledWith({ port: 9999 })
     expect(mockHttpsServerInstance.listen).toHaveBeenCalledWith(1111)
     expect(open).toHaveBeenCalledWith('https://localhost:1111')
-    expect(command.log).toBeCalledWith('Great, you accepted the certificate!')
+    expect(command.log).toHaveBeenCalledWith('Great, you accepted the certificate!')
   })
 
   test('app:run with UI and no certs, should timeout if user does not validate certificates', async () => {

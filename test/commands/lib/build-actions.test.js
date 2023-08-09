@@ -41,7 +41,7 @@ test('build-actions app hook available', async () => {
 
   await buildActions(extensionConfig)
 
-  expect(rtBuildActions).not.toBeCalled()
+  expect(rtBuildActions).not.toHaveBeenCalled()
   expect(utils.runInProcess).toHaveBeenNthCalledWith(1, 'pre-app-build', expect.any(Object))
   expect(utils.runInProcess).toHaveBeenNthCalledWith(2, 'build-actions', expect.any(Object))
   expect(utils.runInProcess).toHaveBeenNthCalledWith(3, 'post-app-build', expect.any(Object))

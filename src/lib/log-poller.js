@@ -33,6 +33,7 @@ const FETCH_LOG_INTERVAL = 10000
 
 /**
  * Class EventPoller.
+ *
  */
 class EventPoller extends EventEmitter {
   constructor (timeout) {

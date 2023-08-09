@@ -138,7 +138,7 @@ test('serve cleanup', async () => {
   expect(typeof cleanup).toEqual('function')
   await cleanup()
 
-  expect(mockTerminatorInstance.terminate).toBeCalledTimes(1)
+  expect(mockTerminatorInstance.terminate).toHaveBeenCalledTimes(1)
   expect(httpTerminator.createHttpTerminator).toHaveBeenCalledWith({
     server: mockHttpsServerInstance
   })

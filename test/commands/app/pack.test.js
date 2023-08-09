@@ -164,6 +164,58 @@ test('createDeployYamlFile (1 extension)', async () => {
   await expect(importHelper.writeFile.mock.calls[0][2]).toMatchObject({ overwrite: true })
 })
 
+test('createDeployYamlFile (1 extension), no api-mesh', async () => {
+  const extConfig = fixtureJson('pack/2.all.config.json')
+
+  const command = new TheCommand()
+  command.argv = []
+  command.config = {
+    findCommand: jest.fn().mockReturnValue({}),
+    runCommand: jest.fn(),
+    runHook: jest.fn()
+  }
+
+  execa.mockImplementationOnce((cmd, args) => {
+    expect(cmd).toEqual('aio')
+    expect(args).toEqual(['api-mesh', 'get'])
+    // eslint-disable-next-line no-throw-literal
+    throw {
+      stderr: 'Error: Unable to get mesh config. No mesh found for Org'
+    }
+  })
+
+  await command.createDeployYamlFile(extConfig)
+
+  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('app-package', 'deploy.yaml'))
+  await expect(importHelper.writeFile.mock.calls[0][1]).toMatchFixture('pack/2.deploy.no-mesh.yaml')
+  await expect(importHelper.writeFile.mock.calls[0][2]).toMatchObject({ overwrite: true })
+})
+
+test('createDeployYamlFile (1 extension), api-mesh get call throws non 404 error', async () => {
+  const extConfig = fixtureJson('pack/2.all.config.json')
+
+  const command = new TheCommand()
+  command.argv = []
+  command.config = {
+    findCommand: jest.fn().mockReturnValue({}),
+    runCommand: jest.fn(),
+    runHook: jest.fn()
+  }
+
+  execa.mockImplementationOnce((cmd, args) => {
+    expect(cmd).toEqual('aio')
+    expect(args).toEqual(['api-mesh', 'get'])
+    // eslint-disable-next-line no-throw-literal
+    throw {
+      stderr: 'Error: api-mesh service is unavailable'
+    }
+  })
+
+  await expect(command.createDeployYamlFile(extConfig)).rejects.toEqual(expect.objectContaining({
+    stderr: expect.stringContaining('Error: api-mesh service is unavailable')
+  }))
+})
+
 test('createDeployYamlFile (coverage: standalone app, no services)', async () => {
   const extConfig = fixtureJson('pack/4.all.config.json')
 
@@ -233,7 +285,7 @@ test('zipHelper', async () => {
   archiverMock.directory.mockClear()
 
   // lstatsync error (see lstatsync mock 3)
-  await expect(command.zipHelper('my-folder', 'app.zip')).rejects.toThrowError('folder not found')
+  await expect(command.zipHelper('my-folder', 'app.zip')).rejects.toThrow('folder not found')
   expect(archiverMock.destroy).toHaveBeenCalled()
   archiverMock.destroy.mockClear()
 
@@ -262,7 +314,7 @@ test('filesToPack', async () => {
   expect(filesToPack).toEqual(['fileA', 'fileB'])
 })
 
-test('addCodeDownloadAnnotation', async () => {
+test('addCodeDownloadAnnotation: default', async () => {
   const extConfig = fixtureJson('pack/1.all.config.json')
 
   importHelper.loadConfigFile.mockImplementation(() => {
@@ -276,6 +328,66 @@ test('addCodeDownloadAnnotation', async () => {
   expect(importHelper.writeFile).toHaveBeenCalledWith(
     path.join('app-package', 'src', 'dx-excshell-1', 'ext.config.yaml'),
     yaml.dump(fixtureJson('pack/1.annotation-added.config.json')),
+    { overwrite: true }
+  )
+})
+
+test('addCodeDownloadAnnotation: no annotations defined', async () => {
+  const extConfig = fixtureJson('pack/1.all.config.json')
+  // should not have any annotations set
+  delete extConfig.all['dx/excshell/1'].manifest.full.packages['dx-excshell-1'].actions.generic.annotations
+
+  const fixtureLoaded = fixtureJson('pack/1.ext.config-loaded.json')
+  delete fixtureLoaded.values.runtimeManifest.packages['dx-excshell-1'].actions.generic.annotations
+  const fixtureExpected = fixtureJson('pack/1.annotation-added.config.json')
+  fixtureExpected.runtimeManifest.packages['dx-excshell-1'].actions.generic.annotations = {
+    'code-download': false
+  }
+
+  importHelper.loadConfigFile.mockReturnValue(fixtureLoaded)
+
+  const command = new TheCommand()
+  command.argv = []
+  await command.addCodeDownloadAnnotation(extConfig)
+
+  expect(importHelper.writeFile).toHaveBeenCalledWith(
+    path.join('app-package', 'src', 'dx-excshell-1', 'ext.config.yaml'),
+    yaml.dump(fixtureExpected),
+    { overwrite: true }
+  )
+})
+
+test('addCodeDownloadAnnotation: complex includes, multiple actions and extensions', async () => {
+  const extConfig = fixtureJson('pack/5.all.config.json')
+
+  importHelper.loadConfigFile.mockImplementation(file => {
+    const retValues = {
+      [path.join('app-package', 'app.config.yaml')]: fixtureJson('pack/5.app.config-loaded.json'),
+      [path.join('app-package', 'sub1.config.yaml')]: fixtureJson('pack/5.sub1.config-loaded.json'),
+      [path.join('app-package', 'src', 'sub2.config.yaml')]: fixtureJson('pack/5.sub2.config-loaded.json')
+    }
+    return retValues[file]
+  })
+
+  const command = new TheCommand()
+  command.argv = []
+  await command.addCodeDownloadAnnotation(extConfig)
+
+  expect(importHelper.writeFile).toHaveBeenCalledWith(
+    path.join('app-package', 'app.config.yaml'),
+    yaml.dump(fixtureJson('pack/5.app.annotation-added.config.json')),
+    { overwrite: true }
+  )
+
+  expect(importHelper.writeFile).toHaveBeenCalledWith(
+    path.join('app-package', 'sub1.config.yaml'),
+    yaml.dump(fixtureJson('pack/5.sub1.annotation-added.config.json')),
+    { overwrite: true }
+  )
+
+  expect(importHelper.writeFile).toHaveBeenCalledWith(
+    path.join('app-package', 'src', 'sub2.config.yaml'),
+    yaml.dump(fixtureJson('pack/5.sub2.annotation-added.config.json')),
     { overwrite: true }
   )
 })

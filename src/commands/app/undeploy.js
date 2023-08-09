@@ -78,6 +78,14 @@ class Undeploy extends BaseCommand {
     // undeploy
     try {
       await runInProcess(config.hooks['pre-app-undeploy'], config)
+      if (flags['feature-event-hooks'] && flags.events) {
+        this.log('feature-event-hooks is enabled, running pre-undeploy-event-reg hook')
+        const hookResults = await this.config.runHook('pre-undeploy-event-reg', { appConfig: config })
+        if (hookResults?.failures?.length > 0) {
+          // output should be "Error : <plugin-name> : <error-message>\n" for each failure
+          this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
+        }
+      }
     } catch (err) {
       this.log(err)
     }
@@ -85,7 +93,6 @@ class Undeploy extends BaseCommand {
     if (flags.actions) {
       if (config.app.hasBackend) {
         try {
-          this.config.runHook('pre-undeploy-event-reg', { appConfig: config })
           const script = await runInProcess(config.hooks['undeploy-actions'], config)
           if (!script) {
             await rtLib.undeployActions(config)
@@ -117,16 +124,7 @@ class Undeploy extends BaseCommand {
     }
 
     try {
-      this.config.runHook('post-undeploy-event-reg', { appConfig: config })
       await runInProcess(config.hooks['post-app-undeploy'], config)
-      if (flags['feature-event-hooks'] && flags.events) {
-        this.log('feature-event-hooks is enabled, running post-undeploy-event-reg hook')
-        const hookResults = await this.config.runHook('post-undeploy-event-reg', { appConfig: config })
-        if (hookResults?.failures?.length > 0) {
-          // output should be "Error : <plugin-name> : <error-message>\n" for each failure
-          this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
-        }
-      }
     } catch (err) {
       this.log(err)
     }
