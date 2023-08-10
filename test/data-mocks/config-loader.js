@@ -135,14 +135,14 @@ function oneActionRuntimeManifest (pathToActionFolder, pkgName1) {
 /** @private */
 function eventsManifest (pkgName1) {
   const registrations = {}
-    registrations['testRegistration-1'] =
+  registrations['testRegistration-1'] =
     {
       description: 'test-description-1',
       events_of_interest: [
         {
           event_codes: [
-          'event-metadata-1-1',
-          'event-metadata-1-2'
+            'event-metadata-1-1',
+            'event-metadata-1-2'
           ],
           provider_metadata: 'provider-metadata-1'
         }

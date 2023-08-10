@@ -16,7 +16,6 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const { Flags } = require('@oclif/core')
 const ora = require('ora')
 const path = require('path')
-const aioConfigLoader = require('@adobe/aio-lib-core-config')
 const generators = require('@adobe/generator-aio-app')
 const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
 
@@ -39,7 +38,7 @@ class AddEventCommand extends TemplatesCommand {
     const configData = this.getRuntimeManifestConfigFile(configName)
 
     const templateOptions = {
-      'skip-prompt': flags.yes,
+      'skip-prompt': false,
       'action-folder': actionFolder,
       'config-path': configData.file,
       'full-key-to-manifest': configData.key
@@ -62,10 +61,10 @@ class AddEventCommand extends TemplatesCommand {
       }
       // by default yeoman runs the install, we control installation from the app plugin
     } else {
+      templateOptions['skip-prompt'] = flags.yes
       templateOptions.force = true
       const env = yeoman.createEnv()
       env.options = { skipInstall: true }
-      console.log('Experimental flag is: ', flags.allowEventsTemplates)
       const eventsGen = env.instantiate(generators['add-events'], {
         options: templateOptions
       })
