@@ -145,15 +145,15 @@ class InstallCommand extends BaseCommand {
   }
 
   /**
-   * An annotation called code-download will be added to all actions in app.config.yaml
-   * (and linked yaml configs for example in extensions). This value will be set to false.
-   * The annotation will by default be true if not set.
+   * An annotation called disable-download will be added to all actions in app.config.yaml
+   * (and linked yaml configs for example in extensions). This value will be set to true.
+   * The annotation will by default be false if not set.
    *
    * @param {object} outputPath the path to the app package
    * @param {object} appConfig the app's configuration file
    */
   async addCodeDownloadAnnotation (outputPath, appConfig) {
-    this.spinner.start('Adding code-download annotations...')
+    this.spinner.start('Adding disable-download annotations...')
     // get each annotation key relative to the file it is defined in
     /// iterate only over extensions that have actions defined
     const fileToAnnotationKey = {}
@@ -192,17 +192,17 @@ class InstallCommand extends BaseCommand {
         const object = getObjectValue(values, key)
         if (key.endsWith('.annotations') || key === 'annotations') {
           // object is the annotations object
-          object['code-download'] = false
+          object['disable-download'] = true
         } else {
           // annotation object is not defined, the object is the action object
-          object.annotations = { 'code-download': false }
+          object.annotations = { 'disable-download': true }
         }
       })
 
       // write back the modified manifest to disk
       await writeFile(configFilePath, jsYaml.dump(values), { overwrite: true })
     }
-    this.spinner.succeed('Added code-download annotations')
+    this.spinner.succeed('Added disable-download annotations')
   }
 }
 

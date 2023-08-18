@@ -417,7 +417,7 @@ test('addCodeDownloadAnnotation: no annotations defined', async () => {
   delete fixtureLoaded.values.runtimeManifest.packages['dx-excshell-1'].actions.generic.annotations
   const fixtureExpected = fixtureJson('install/1.annotation-added.config.json')
   fixtureExpected.runtimeManifest.packages['dx-excshell-1'].actions.generic.annotations = {
-    'code-download': false
+    'disable-download': true
   }
 
   importHelper.loadConfigFile.mockReturnValue(fixtureLoaded)
