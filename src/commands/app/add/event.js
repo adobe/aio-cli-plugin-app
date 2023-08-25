@@ -44,7 +44,7 @@ class AddEventCommand extends TemplatesCommand {
       'full-key-to-manifest': configData.key
     }
 
-    if (flags.allowEventsTemplates) {
+    if (flags['allow-events-templates']) {
       const eventsData = this.getEventsConfigFile(configName)
       templateOptions['full-key-to-events-manifest'] = eventsData.key
       const [searchCriteria, orderByCriteria] = await this.getSearchCriteria()
@@ -105,6 +105,10 @@ AddEventCommand.flags = {
     char: 'e',
     multiple: false,
     parse: str => [str]
+  }),
+  'allow-events-templates': Flags.boolean({
+    description: 'Feature flag to enable events templates',
+    default: false
   }),
   ...AddCommand.flags
 }

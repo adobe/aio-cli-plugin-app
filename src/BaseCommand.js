@@ -193,11 +193,7 @@ class BaseCommand extends Command {
 
 BaseCommand.flags = {
   verbose: Flags.boolean({ char: 'v', description: 'Verbose output' }),
-  version: Flags.boolean({ description: 'Show version' }),
-  allowEventsTemplates: Flags.boolean({
-    description: 'Feature flag to enable events templates',
-    default: false
-  })
+  version: Flags.boolean({ description: 'Show version' })
 }
 
 BaseCommand.args = {}
