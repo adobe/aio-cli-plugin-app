@@ -106,7 +106,7 @@ describe('good flags', () => {
   })
 
   test('no templates selected', async () => {
-    command.argv = ['--allowEventsTemplates']
+    command.argv = ['--allow-events-templates']
     mockInstantiate.mockReturnValueOnce('eventsGen')
     command.selectTemplates = jest.fn()
     command.selectTemplates.mockResolvedValue([])
