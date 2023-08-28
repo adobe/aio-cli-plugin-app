@@ -106,7 +106,7 @@ describe('good flags', () => {
   })
 
   test('no templates selected', async () => {
-    command.argv = ['--allow-events-templates']
+    command.argv = ['--experimental-allow-events-templates']
     mockInstantiate.mockReturnValueOnce('eventsGen')
     command.selectTemplates = jest.fn()
     command.selectTemplates.mockResolvedValue([])
@@ -127,7 +127,7 @@ describe('good flags', () => {
       templates: ['@adobe/generator-add-events-generic'],
       templateOptions
     }
-    command.argv = ['--allow-events-templates']
+    command.argv = ['--experimental-allow-events-templates']
     mockInstantiate.mockReturnValueOnce('eventsGen')
     command.selectTemplates = jest.fn()
     command.selectTemplates.mockResolvedValue(['@adobe/generator-add-events-generic'])
