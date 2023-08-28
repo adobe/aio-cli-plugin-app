@@ -341,7 +341,7 @@ If the optional configuration file is not set, this command will retrieve the co
 
 To set these global config values, see the help text for 'aio console --help'.
 
-To download the configuration file for your project, select the 'Download' button in the toolbar of your project's page in https://console.adobe.io
+To download the configuration file for your project, select the 'Download' button in the toolbar of your project's page in https://developer.adobe.com/console/
 `
 
 Use.flags = {
