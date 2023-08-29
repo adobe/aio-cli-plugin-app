@@ -112,7 +112,7 @@ class BaseCommand extends Command {
     let configData = this.getConfigFileForKey(`${configKey}.runtimeManifest`)
     if (!configData.file) {
       // first action manifest is not defined
-      configData = this.getConfigFileForKey(`${configKey}`) // not returning mock as expected
+      configData = this.getConfigFileForKey(`${configKey}`)
       configData.key = configData.key + '.runtimeManifest'
     }
     return configData
