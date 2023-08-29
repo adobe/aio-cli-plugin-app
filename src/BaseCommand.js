@@ -127,7 +127,7 @@ class BaseCommand extends Command {
     }
     let configData = this.getConfigFileForKey(`${configKey}.events`)
     if (!configData.file) {
-      // first action manifest is not defined
+      // first events manifest is not defined
       configData = this.getConfigFileForKey(`${configKey}`)
       configData.key = configData.key + '.events'
     }
