@@ -38,7 +38,7 @@ class AddEventCommand extends TemplatesCommand {
     const runtimeManifestData = this.getRuntimeManifestConfigFile(configName)
 
     const templateOptions = {
-      'skip-prompt': false, // NOTE: flags.yes will have no effect if experimental-allow-events-templates flag is set
+      'skip-prompt': false,
       'action-folder': actionFolder,
       'config-path': runtimeManifestData.file,
       'full-key-to-manifest': runtimeManifestData.key
@@ -107,7 +107,7 @@ AddEventCommand.flags = {
     parse: str => [str]
   }),
   'experimental-allow-events-templates': Flags.boolean({
-    description: 'Feature flag to enable events templates',
+    description: 'Feature flag to enable events templates. NOTE: skip-prompt will have no effect if this flag is enabled.',
     default: false
   }),
   ...AddCommand.flags
