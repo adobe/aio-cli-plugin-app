@@ -149,6 +149,22 @@ describe('getRuntimeManifestConfigFile', () => {
   })
 })
 
+describe('getEventsConfigFile', () => {
+  test('no events', () => {
+    mockConfigLoader.mockReturnValue(getMockConfig('app-no-actions', {}))
+    const cmd = new TheCommand()
+    expect(cmd.getEventsConfigFile('application')).toEqual({ file: 'app.config.yaml', key: 'application.events' })
+  })
+  test('multiple implementations', () => {
+    const config = getMockConfig('app-exc-nui', {})
+    mockConfigLoader.mockReturnValue(config)
+    const cmd = new TheCommand()
+    expect(cmd.getEventsConfigFile('application')).toEqual({ file: 'app.config.yaml', key: 'application.events' })
+    expect(cmd.getEventsConfigFile('dx/asset-compute/worker/1')).toEqual({ file: 'src/dx-asset-compute-worker-1/ext.config.yaml', key: 'events' })
+    expect(cmd.getEventsConfigFile('dx/excshell/1')).toEqual({ file: 'src/dx-excshell-1/ext.config.yaml', key: 'events' })
+  })
+})
+
 describe('getAppExtConfigs', () => {
   test('no extension flags', () => {
     const config = getMockConfig('app-exc-nui', {})

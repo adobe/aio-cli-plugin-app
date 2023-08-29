@@ -10,14 +10,16 @@ governing permissions and limitations under the License.
 */
 
 const AddCommand = require('../../../AddCommand')
+const TemplatesCommand = require('../../../TemplatesCommand')
 const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:event', { provider: 'debug' })
 const { Flags } = require('@oclif/core')
 const ora = require('ora')
 const path = require('path')
 const generators = require('@adobe/generator-aio-app')
+const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
 
-class AddEventCommand extends AddCommand {
+class AddEventCommand extends TemplatesCommand {
   async run () {
     const { flags } = await this.parse(AddEventCommand)
 
@@ -29,27 +31,63 @@ class AddEventCommand extends AddCommand {
     if (entries.length > 1) {
       this.error('Please use the \'-e\' flag to specify to which implementation you want to add events to.')
     }
+
     const configName = entries[0][0]
     const config = entries[0][1]
     const actionFolder = path.relative(config.root, config.actions.src)
-    const configData = this.getRuntimeManifestConfigFile(configName)
+    const runtimeManifestData = this.getRuntimeManifestConfigFile(configName)
 
-    const env = yeoman.createEnv()
-    // by default yeoman runs the install, we control installation from the app plugin
-    env.options = { skipInstall: true }
-    const eventsGen = env.instantiate(generators['add-events'], {
-      options: {
-        'skip-prompt': flags.yes,
-        'action-folder': actionFolder,
-        'config-path': configData.file,
-        'full-key-to-manifest': configData.key,
-        // force overwrites, no useless prompts, this is a feature exposed by yeoman itself
-        force: true
+    const templateOptions = {
+      'skip-prompt': false,
+      'action-folder': actionFolder,
+      'config-path': runtimeManifestData.file,
+      'full-key-to-manifest': runtimeManifestData.key
+    }
+
+    if (flags['experimental-allow-events-templates']) {
+      const eventsData = this.getEventsConfigFile(configName)
+      templateOptions['full-key-to-events-manifest'] = eventsData.key
+      const [searchCriteria, orderByCriteria] = await this.getSearchCriteria()
+      const templates = await this.selectTemplates(searchCriteria, orderByCriteria)
+      if (templates.length === 0) {
+        this.error('No events templates were chosen to be installed.')
+      } else {
+        await this.installTemplates({
+          useDefaultValues: flags.yes,
+          installNpm: flags.install,
+          templateOptions,
+          templates
+        })
       }
-    })
-    await env.runGenerator(eventsGen)
+      // by default yeoman runs the install, we control installation from the app plugin
+    } else {
+      templateOptions['skip-prompt'] = flags.yes
+      templateOptions.force = true
+      const env = yeoman.createEnv()
+      env.options = { skipInstall: true }
+      const eventsGen = env.instantiate(generators['add-events'], {
+        options: templateOptions
+      })
+      await env.runGenerator(eventsGen)
 
-    await this.runInstallPackages(flags, spinner)
+      await this.runInstallPackages(flags, spinner)
+    }
+  }
+
+  async getSearchCriteria () {
+    const TEMPLATE_CATEGORIES = ['events', 'helper-template']
+    const searchCriteria = {
+      [TemplateRegistryAPI.SEARCH_CRITERIA_STATUSES]: TemplateRegistryAPI.TEMPLATE_STATUS_APPROVED,
+      [TemplateRegistryAPI.SEARCH_CRITERIA_CATEGORIES]: TEMPLATE_CATEGORIES,
+      [TemplateRegistryAPI.SEARCH_CRITERIA_EXTENSIONS]: TemplateRegistryAPI.SEARCH_CRITERIA_FILTER_NONE
+    }
+
+    // an optional OrderBy Criteria object
+    const orderByCriteria = {
+      [TemplateRegistryAPI.ORDER_BY_CRITERIA_PUBLISH_DATE]: TemplateRegistryAPI.ORDER_BY_CRITERIA_SORT_DESC
+    }
+
+    return [searchCriteria, orderByCriteria]
   }
 }
 
@@ -63,10 +101,14 @@ AddEventCommand.flags = {
     char: 'y'
   }),
   extension: Flags.string({
-    description: 'Add actions to a specific extension',
+    description: 'Add events to a specific extension',
     char: 'e',
     multiple: false,
     parse: str => [str]
+  }),
+  'experimental-allow-events-templates': Flags.boolean({
+    description: 'Feature flag to enable events templates. NOTE: skip-prompt will have no effect if this flag is enabled.',
+    default: false
   }),
   ...AddCommand.flags
 }

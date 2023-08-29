@@ -45,6 +45,7 @@ beforeEach(() => {
   command.getAppExtConfigs = jest.fn()
   command.getAppExtConfigs.mockReturnValue(createAppConfig(command.appConfig))
   command.getFullConfig = jest.fn()
+  command.installTemplates = jest.fn()
   command.getFullConfig.mockReturnValue({
     packagejson: {
       version: '1.0.0',
@@ -54,8 +55,7 @@ beforeEach(() => {
       }
     }
   })
-  command.getConfigFileForKey = jest.fn()
-  command.getConfigFileForKey.mockReturnValue({})
+  command.getConfigFileForKey = jest.fn(() => ({}))
   mockInstantiate.mockReset()
   mockRunGenerator.mockReset()
   yeoman.createEnv.mockClear()
@@ -103,6 +103,36 @@ describe('good flags', () => {
     })
     expect(mockRunGenerator).toHaveBeenCalledWith('eventsGen')
     expect(helpers.installPackages).toHaveBeenCalledTimes(1)
+  })
+
+  test('no templates selected', async () => {
+    command.argv = ['--experimental-allow-events-templates']
+    mockInstantiate.mockReturnValueOnce('eventsGen')
+    command.selectTemplates = jest.fn()
+    command.selectTemplates.mockResolvedValue([])
+    await expect(command.run()).rejects.toThrow('No events templates were chosen to be installed.')
+  })
+
+  test('one events template selected', async () => {
+    const templateOptions = {
+      'skip-prompt': false,
+      'action-folder': 'myactions',
+      'config-path': undefined,
+      'full-key-to-manifest': 'undefined.runtimeManifest',
+      'full-key-to-events-manifest': 'undefined.events'
+    }
+    const installOptions = {
+      useDefaultValues: false,
+      installNpm: true,
+      templates: ['@adobe/generator-add-events-generic'],
+      templateOptions
+    }
+    command.argv = ['--experimental-allow-events-templates']
+    mockInstantiate.mockReturnValueOnce('eventsGen')
+    command.selectTemplates = jest.fn()
+    command.selectTemplates.mockResolvedValue(['@adobe/generator-add-events-generic'])
+    await command.run()
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
   })
 
   test('--yes --no-install', async () => {

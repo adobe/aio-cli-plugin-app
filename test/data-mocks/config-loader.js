@@ -132,6 +132,26 @@ function oneActionRuntimeManifest (pathToActionFolder, pkgName1) {
   }
 }
 
+/** @private */
+function eventsManifest (pkgName1) {
+  const registrations = {}
+  registrations['testRegistration-1'] =
+    {
+      description: 'test-description-1',
+      events_of_interest: [
+        {
+          event_codes: [
+            'event-metadata-1-1',
+            'event-metadata-1-2'
+          ],
+          provider_metadata: 'provider-metadata-1'
+        }
+      ],
+      runtime_action: `${pkgName1}/test-action-1`
+    }
+  return registrations
+}
+
 const excActionsFolder = winCompat(`${root}src/dx-excshell-1/actions`)
 const excSingleConfig = {
   'dx/excshell/1': {
@@ -160,6 +180,9 @@ const excSingleConfig = {
       src: 'manifest.yml',
       full: oneActionRuntimeManifest(excActionsFolder, 'my-exc-package'),
       packagePlaceholder: '__APP_PACKAGE__'
+    },
+    events: {
+      registrations: eventsManifest('my-exc-package')
     },
     actions: {
       src: excActionsFolder,
@@ -215,6 +238,9 @@ const nuiSingleConfig = {
       e2e: winCompat(`${root}/src/dx-asset-compute-worker-1/e2e`),
       unit: winCompat(`${root}/src/dx-asset-compute-worker-1/test`)
     },
+    events: {
+      registrations: eventsManifest('my-nui-package')
+    },
     root: `${root}`,
     name: 'dx/asset-compute/worker/1',
     hooks: {
@@ -265,6 +291,9 @@ const applicationSingleConfig = {
       src: appActionsFolder,
       dist: winCompat(`${root}dist/application/actions`)
     },
+    events: {
+      registrations: eventsManifest('my-app-package')
+    },
     tests: {
       e2e: winCompat(`${root}e2e`),
       unit: winCompat(`${root}test`)
@@ -313,6 +342,7 @@ const applicationNoActionsSingleConfig = {
       distProd: winCompat(`${root}dist/application/web-prod`)
     },
     manifest: {},
+    events: {},
     actions: {
       src: winCompat(`${root}actions`)
     },
