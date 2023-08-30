@@ -8,7 +8,7 @@
               "function": "actions/generic/index.js",
               "runtime": "nodejs:16",
               "annotations": {
-                "disable-download": true
+                "code-download": false
               }
             }
           }
