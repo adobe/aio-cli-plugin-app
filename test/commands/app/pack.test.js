@@ -28,6 +28,8 @@ const path = require('node:path')
 const importHelper = require('../../../src/lib/import-helper')
 const archiver = require('archiver')
 
+const libConfigNext = require('@adobe/aio-cli-lib-app-config-next')
+
 // mocks
 jest.mock('execa')
 jest.mock('fs-extra')
@@ -37,7 +39,7 @@ jest.mock('archiver')
 const mockGetFullConfig = jest.fn()
 
 beforeAll(() => {
-  jest.spyOn(BaseCommand.prototype, 'getFullConfig').mockImplementation(mockGetFullConfig)
+  jest.spyOn(libConfigNext, 'load').mockImplementation(mockGetFullConfig)
 })
 
 // mock cwd
@@ -315,7 +317,7 @@ test('filesToPack', async () => {
 
 describe('run', () => {
   test('defaults', async () => {
-    mockGetFullConfig.mockImplementation(() => fixtureJson('pack/1.all.config.json'))
+    mockGetFullConfig.mockImplementation(async () => fixtureJson('pack/1.all.config.json'))
 
     const command = new TheCommand()
     command.argv = []
@@ -342,7 +344,7 @@ describe('run', () => {
   })
 
   test('subcommand throws error (--verbose)', async () => {
-    mockGetFullConfig.mockImplementation(() => fixtureJson('pack/1.all.config.json'))
+    mockGetFullConfig.mockImplementation(async () => fixtureJson('pack/1.all.config.json'))
 
     const command = new TheCommand()
     command.argv = ['--verbose']
@@ -376,7 +378,7 @@ describe('run', () => {
   })
 
   test('subcommand throws error (not verbose)', async () => {
-    mockGetFullConfig.mockImplementation(() => fixtureJson('pack/1.all.config.json'))
+    mockGetFullConfig.mockImplementation(async () => fixtureJson('pack/1.all.config.json'))
 
     const command = new TheCommand()
     command.argv = []
@@ -410,7 +412,7 @@ describe('run', () => {
   })
 
   test('output flag, path arg', async () => {
-    mockGetFullConfig.mockImplementation(() => fixtureJson('pack/1.all.config.json'))
+    mockGetFullConfig.mockImplementation(async () => fixtureJson('pack/1.all.config.json'))
 
     const command = new TheCommand()
     command.argv = ['new_folder', '--output', 'app-2.zip']
@@ -436,5 +438,22 @@ describe('run', () => {
     }
     expect(runHook).toHaveBeenCalledWith('pre-pack', expectedObj)
     expect(runHook).toHaveBeenCalledWith('post-pack', expectedObj)
+  })
+
+  test('load config throws (on validation)', async () => {
+    mockGetFullConfig.mockImplementation(async () => { throw new Error('invalid fake config error') })
+
+    const command = new TheCommand()
+    command.argv = ['new_folder', '--output', 'app-2.zip']
+
+    // since we already unit test the methods above, we mock it here
+    command.copyPackageFiles = jest.fn()
+    command.filesToPack = jest.fn()
+    command.createDeployYamlFile = jest.fn()
+    command.zipHelper = jest.fn()
+    const runHook = jest.fn()
+    command.config = { runHook }
+
+    await expect(command.run()).rejects.toThrow('invalid fake config error')
   })
 })

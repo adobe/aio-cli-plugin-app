@@ -25,6 +25,9 @@ const { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE } = require('../../lib/defaults')
 const ora = require('ora')
 const chalk = require('chalk')
 
+// eslint-disable-next-line node/no-missing-require
+const libConfigNext = require('@adobe/aio-cli-lib-app-config-next')
+
 class InstallCommand extends BaseCommand {
   async run () {
     const { args, flags } = await this.parse(InstallCommand)
@@ -53,8 +56,8 @@ class InstallCommand extends BaseCommand {
       await this.validateZipDirectoryStructure(args.path)
       await this.unzipFile(args.path, outputPath)
       await this.addCodeDownloadAnnotation(outputPath, appConfig)
-      await this.validateConfig(outputPath, USER_CONFIG_FILE)
-      await this.validateConfig(outputPath, DEPLOY_CONFIG_FILE)
+      await this.validateAppConfig(outputPath, USER_CONFIG_FILE)
+      await this.validateDeployConfig(outputPath, DEPLOY_CONFIG_FILE)
       await this.npmInstall(flags.verbose)
       await this.runTests()
       this.spinner.succeed('Install done.')
@@ -111,7 +114,16 @@ class InstallCommand extends BaseCommand {
       .then(() => this.spinner.succeed(`Extracted app package to ${destFolderPath}`))
   }
 
-  async validateConfig (outputPath, configFileName, configFilePath = path.join(outputPath, configFileName)) {
+  async validateAppConfig (outputPath, configFileName, configFilePath = path.join(outputPath, configFileName)) {
+    this.spinner.start(`Validating ${configFileName}...`)
+    aioLogger.debug(`validateConfig: ${configFileName} at ${configFilePath}`)
+    // first coalesce the app config (resolving $include files), then validate it
+    const config = (await libConfigNext.coalesce(configFilePath)).config
+    await libConfigNext.validate(config, { throws: true }) // throws on error
+    this.spinner.succeed(`Validated ${configFileName}`)
+  }
+
+  async validateDeployConfig (outputPath, configFileName, configFilePath = path.join(outputPath, configFileName)) {
     this.spinner.start(`Validating ${configFileName}...`)
     aioLogger.debug(`validateConfig: ${configFileName} at ${configFilePath}`)
 
