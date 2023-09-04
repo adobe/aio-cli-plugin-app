@@ -233,6 +233,20 @@ test('createDeployYamlFile (coverage: standalone app, no services)', async () =>
   await expect(importHelper.writeFile.mock.calls[0][2]).toMatchObject({ overwrite: true })
 })
 
+test('createDeployYamlFile error on invalid version string', async () => {
+  const extConfig = fixtureJson('pack/6.all.config.json')
+
+  const command = new TheCommand()
+  command.argv = []
+  command.config = {
+    findCommand: jest.fn().mockReturnValue(null),
+    runCommand: jest.fn(),
+    runHook: jest.fn()
+  }
+
+  await expect(command.createDeployYamlFile(extConfig)).rejects.toThrow('Application version format must be "X.Y.Z", where X, Y, and Z are non-negative integers.')
+})
+
 test('zipHelper', async () => {
   let endStream, onError
   fs.createWriteStream.mockImplementation(() => {
