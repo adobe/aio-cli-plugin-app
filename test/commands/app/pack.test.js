@@ -26,6 +26,7 @@ const execa = require('execa')
 const fs = require('fs-extra')
 const path = require('node:path')
 const importHelper = require('../../../src/lib/import-helper')
+const yaml = require('js-yaml')
 const archiver = require('archiver')
 
 // mocks
@@ -313,6 +314,84 @@ test('filesToPack', async () => {
   expect(filesToPack).toEqual(['fileA', 'fileB'])
 })
 
+test('addCodeDownloadAnnotation: default', async () => {
+  const extConfig = fixtureJson('pack/1.all.config.json')
+
+  importHelper.loadConfigFile.mockImplementation(() => {
+    return fixtureJson('pack/1.ext.config-loaded.json')
+  })
+
+  const command = new TheCommand()
+  command.argv = []
+  await command.addCodeDownloadAnnotation(extConfig)
+
+  expect(importHelper.writeFile).toHaveBeenCalledWith(
+    path.join('app-package', 'src', 'dx-excshell-1', 'ext.config.yaml'),
+    yaml.dump(fixtureJson('pack/1.annotation-added.config.json')),
+    { overwrite: true }
+  )
+})
+
+test('addCodeDownloadAnnotation: no annotations defined', async () => {
+  const extConfig = fixtureJson('pack/1.all.config.json')
+  // should not have any annotations set
+  delete extConfig.all['dx/excshell/1'].manifest.full.packages['dx-excshell-1'].actions.generic.annotations
+
+  const fixtureLoaded = fixtureJson('pack/1.ext.config-loaded.json')
+  delete fixtureLoaded.values.runtimeManifest.packages['dx-excshell-1'].actions.generic.annotations
+  const fixtureExpected = fixtureJson('pack/1.annotation-added.config.json')
+  fixtureExpected.runtimeManifest.packages['dx-excshell-1'].actions.generic.annotations = {
+    'code-download': false
+  }
+
+  importHelper.loadConfigFile.mockReturnValue(fixtureLoaded)
+
+  const command = new TheCommand()
+  command.argv = []
+  await command.addCodeDownloadAnnotation(extConfig)
+
+  expect(importHelper.writeFile).toHaveBeenCalledWith(
+    path.join('app-package', 'src', 'dx-excshell-1', 'ext.config.yaml'),
+    yaml.dump(fixtureExpected),
+    { overwrite: true }
+  )
+})
+
+test('addCodeDownloadAnnotation: complex includes, multiple actions and extensions', async () => {
+  const extConfig = fixtureJson('pack/5.all.config.json')
+
+  importHelper.loadConfigFile.mockImplementation(file => {
+    const retValues = {
+      [path.join('app-package', 'app.config.yaml')]: fixtureJson('pack/5.app.config-loaded.json'),
+      [path.join('app-package', 'sub1.config.yaml')]: fixtureJson('pack/5.sub1.config-loaded.json'),
+      [path.join('app-package', 'src', 'sub2.config.yaml')]: fixtureJson('pack/5.sub2.config-loaded.json')
+    }
+    return retValues[file]
+  })
+
+  const command = new TheCommand()
+  command.argv = []
+  await command.addCodeDownloadAnnotation(extConfig)
+
+  expect(importHelper.writeFile).toHaveBeenCalledWith(
+    path.join('app-package', 'app.config.yaml'),
+    yaml.dump(fixtureJson('pack/5.app.annotation-added.config.json')),
+    { overwrite: true }
+  )
+
+  expect(importHelper.writeFile).toHaveBeenCalledWith(
+    path.join('app-package', 'sub1.config.yaml'),
+    yaml.dump(fixtureJson('pack/5.sub1.annotation-added.config.json')),
+    { overwrite: true }
+  )
+
+  expect(importHelper.writeFile).toHaveBeenCalledWith(
+    path.join('app-package', 'src', 'sub2.config.yaml'),
+    yaml.dump(fixtureJson('pack/5.sub2.annotation-added.config.json')),
+    { overwrite: true }
+  )
+})
+
 describe('run', () => {
   test('defaults', async () => {
     mockGetFullConfig.mockImplementation(() => fixtureJson('pack/1.all.config.json'))
@@ -324,6 +403,7 @@ describe('run', () => {
     command.copyPackageFiles = jest.fn()
     command.filesToPack = jest.fn()
     command.createDeployYamlFile = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn()
     const runHook = jest.fn()
     command.config = { runHook }
@@ -332,6 +412,7 @@ describe('run', () => {
     expect(command.copyPackageFiles).toHaveBeenCalledTimes(1)
     expect(command.filesToPack).toHaveBeenCalledTimes(1)
     expect(command.createDeployYamlFile).toHaveBeenCalledTimes(1)
+    expect(command.addCodeDownloadAnnotation).toHaveBeenCalledTimes(1)
     expect(command.zipHelper).toHaveBeenCalledTimes(1)
     const expectedObj = {
       artifactsFolder: 'app-package',
@@ -353,6 +434,7 @@ describe('run', () => {
     command.copyPackageFiles = jest.fn()
     command.filesToPack = jest.fn()
     command.createDeployYamlFile = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn(() => { throw errorObject })
     command.error = jest.fn()
     const runHook = jest.fn()
@@ -363,6 +445,7 @@ describe('run', () => {
     expect(command.copyPackageFiles).toHaveBeenCalledTimes(1)
     expect(command.filesToPack).toHaveBeenCalledTimes(1)
     expect(command.createDeployYamlFile).toHaveBeenCalledTimes(1)
+    expect(command.addCodeDownloadAnnotation).toHaveBeenCalledTimes(1)
     expect(command.zipHelper).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(1)
 
@@ -387,6 +470,7 @@ describe('run', () => {
     command.copyPackageFiles = jest.fn()
     command.filesToPack = jest.fn()
     command.createDeployYamlFile = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn(() => { throw new Error(errorMessage) })
     command.error = jest.fn()
     const runHook = jest.fn()
@@ -397,6 +481,7 @@ describe('run', () => {
     expect(command.copyPackageFiles).toHaveBeenCalledTimes(1)
     expect(command.filesToPack).toHaveBeenCalledTimes(1)
     expect(command.createDeployYamlFile).toHaveBeenCalledTimes(1)
+    expect(command.addCodeDownloadAnnotation).toHaveBeenCalledTimes(1)
     expect(command.zipHelper).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(1)
 
@@ -419,6 +504,7 @@ describe('run', () => {
     command.copyPackageFiles = jest.fn()
     command.filesToPack = jest.fn()
     command.createDeployYamlFile = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn()
     const runHook = jest.fn()
     command.config = { runHook }
@@ -428,6 +514,7 @@ describe('run', () => {
     expect(command.copyPackageFiles).toHaveBeenCalledTimes(1)
     expect(command.filesToPack).toHaveBeenCalledTimes(1)
     expect(command.createDeployYamlFile).toHaveBeenCalledTimes(1)
+    expect(command.addCodeDownloadAnnotation).toHaveBeenCalledTimes(1)
     expect(command.zipHelper).toHaveBeenCalledTimes(1)
 
     const expectedObj = {
