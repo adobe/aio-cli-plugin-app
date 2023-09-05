@@ -140,7 +140,7 @@ class Pack extends BaseCommand {
         const { stdout } = await execa('aio', ['api-mesh', 'get'], { cwd: process.cwd() })
         // until we get the --json flag, we parse the output
         const idx = stdout.indexOf('{')
-        meshConfig = JSON.parse(stdout.substring(idx))
+        meshConfig = JSON.parse(stdout.substring(idx)).meshConfig
         aioLogger.debug(`api-mesh:get - ${JSON.stringify(meshConfig, null, 2)}`)
         this.spinner.succeed('Got api-mesh config')
       } catch (err) {
