@@ -9,14 +9,14 @@
     "annotations": {
       "require-adobe-auth": true,
       "final": true,
-      "disable-download": true
+      "code-download": false
     }
   },
   "generic4": {
     "function": "actions/generic/index.js",
     "runtime": "nodejs:16",
     "annotations": {
-      "disable-download": true
+      "code-download": false
     }
   }
 }

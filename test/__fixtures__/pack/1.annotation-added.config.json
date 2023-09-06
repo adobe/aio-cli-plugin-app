@@ -24,7 +24,7 @@
             "annotations": {
               "require-adobe-auth": true,
               "final": true,
-              "disable-download": true
+              "code-download": false
             }
           }
         }

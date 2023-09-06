@@ -82,7 +82,7 @@
     "packages": {
       "type": "object",
       "patternProperties": {
-        "^[A-Za-z0-9-_\u00C0-\u00D6\u00D8-\u00f6\u00f8-\u00ff]{1,20}$": { 
+        "^([\\w]|[\\w][\\w@ .-]*[\\w@.-]+)$": { 
           "$ref": "#/definitions/package"
         }
       },
@@ -98,7 +98,7 @@
     "actions": {
       "type": "object",
       "patternProperties": {
-        "^[A-Za-z0-9-_\u00C0-\u00D6\u00D8-\u00f6\u00f8-\u00ff]{1,20}$": { 
+        "^([\\w]|[\\w][\\w@ .-]*[\\w@.-]+)$": { 
           "$ref": "#/definitions/action"
         }
       },
