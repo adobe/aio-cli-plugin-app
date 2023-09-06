@@ -25,7 +25,7 @@
                         "oauth2": {
                             "client_id": "XYXYXYXYXYXYXYXYX",
                             "client_secret": "XYXYXYXYZZZZZZ",
-                            "redirect_uri": [ "https://test123" ],
+                            "redirect_uri": [ "https://test123\\\\.com" ],
                             "defaultRedirectUri": "https://test123"
                         }
                     },
@@ -58,7 +58,7 @@
                         "integration_type": "oauthsinglepageapp",
                         "oauth2": {
                             "client_id": "KAKAKAKAKAKAKAKAKAKAKAKA",
-                            "redirect_uri": [ "https://test123" ],
+                            "redirect_uri": [ "https://test123\\\\.com" ],
                             "defaultRedirectUri": "https://test123"
                         }
                     },
@@ -69,7 +69,7 @@
                         "oauth2": {
                             "client_id": "XRXRXRXRXRXRXRXRXR",
                             "client_secret": "XRXRXRXRXRXRXRXRXRX",
-                            "redirect_uri": [ "https://abc123/foo" ],
+                            "redirect_uri": [ "https://abc123\\\\.com/foo" ],
                             "defaultRedirectUri": "https://abc123/foo"
                         }
                     },
@@ -80,7 +80,7 @@
                         "oauth2": {
                             "client_id": "TYTYTYYUTYEWTEWRW",
                             "client_secret": "STWEGSDGEVBEGE",
-                            "redirect_uri": [ "https://abc123/foo2" ],
+                            "redirect_uri": [ "https://abc123\\\\.com/foo2" ],
                             "defaultRedirectUri": "https://abc123/foo2"
                         }
                     },
@@ -91,7 +91,7 @@
                         "oauth2": {
                             "client_id": "XXXTYTYTYYUTYEWTEWRW",
                             "client_secret": "XXXSTWEGSDGEVBEGE",
-                            "redirect_uri": [ "https://abc123/foo3" ],
+                            "redirect_uri": [ "https://abc123\\\\.com/foo3" ],
                             "defaultRedirectUri": "https://abc123/foo3"
                         }
                     },
@@ -102,7 +102,7 @@
                         "oauth2": {
                             "client_id": "YYYYXXXTYTYTYYUTYEWTEWRW",
                             "client_secret": "YYYYXXXSTWEGSDGEVBEGE",
-                            "redirect_uri": [ "https://abc123/foo4" ],
+                            "redirect_uri": [ "https://abc123\\\\.com/foo4" ],
                             "defaultRedirectUri": "https://abc123/foo4"
                         }
                     }
