@@ -19,7 +19,7 @@
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "version": { "type": "string" }
+        "version": { "type": "string", "pattern": "^[0-9]+.[0-9]+.[0-9]+$" }
       },
       "required": ["id", "version"]
     },

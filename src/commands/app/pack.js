@@ -128,6 +128,10 @@ class Pack extends BaseCommand {
       version: appConfig.packagejson.version
     }
 
+    if (!application.version.match(/^[0-9]+.[0-9]+.[0-9]+$/)) {
+      throw new Error('Application version format must be "X.Y.Z", where X, Y, and Z are non-negative integers.')
+    }
+
     let meshConfig
     // ACNA-2041
     // get the mesh config by running the `aio api-mesh:get` command (if available)
