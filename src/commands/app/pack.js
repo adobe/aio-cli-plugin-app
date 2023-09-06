@@ -17,7 +17,8 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const archiver = require('archiver')
 const yaml = require('js-yaml')
 const execa = require('execa')
-const { writeFile } = require('../../lib/import-helper')
+const { loadConfigFile, writeFile } = require('../../lib/import-helper')
+const { getObjectValue } = require('../../lib/app-helper')
 const ora = require('ora')
 const chalk = require('chalk')
 
@@ -68,6 +69,10 @@ class Pack extends BaseCommand {
       this.spinner.start('Creating configuration files...')
       await this.createDeployYamlFile(appConfig)
       this.spinner.succeed('Created configuration files')
+
+      this.spinner.start('Adding code-download annotations...')
+      await this.addCodeDownloadAnnotation(appConfig)
+      this.spinner.succeed('Added code-download annotations')
 
       // doing this before zip so other things can be added to the zip
       await this.config.runHook('post-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER })
@@ -135,7 +140,7 @@ class Pack extends BaseCommand {
         const { stdout } = await execa('aio', ['api-mesh', 'get'], { cwd: process.cwd() })
         // until we get the --json flag, we parse the output
         const idx = stdout.indexOf('{')
-        meshConfig = JSON.parse(stdout.substring(idx))
+        meshConfig = JSON.parse(stdout.substring(idx)).meshConfig
         aioLogger.debug(`api-mesh:get - ${JSON.stringify(meshConfig, null, 2)}`)
         this.spinner.succeed('Got api-mesh config')
       } catch (err) {
@@ -237,6 +242,64 @@ class Pack extends BaseCommand {
     return files
       .map(file => file.path)
       .filter(file => !filesToExclude.includes(file))
+  }
+
+  /**
+   * An annotation called code-download will be added to all actions in app.config.yaml
+   * (and linked yaml configs for example in extensions). This value will be set to false.
+   * The annotation will by default be true if not set.
+   *
+   * @param {object} appConfig the app's configuration file
+   */
+  async addCodeDownloadAnnotation (appConfig) {
+    // get each annotation key relative to the file it is defined in
+    /// iterate only over extensions that have actions defined
+    const fileToAnnotationKey = {}
+    Object.entries(appConfig.all)
+      .filter(([_, extConf]) => extConf.manifest?.full?.packages)
+      .forEach(([ext, extConf]) => {
+        Object.entries(extConf.manifest.full.packages)
+          .filter(([pkg, pkgConf]) => pkgConf.actions)
+          .forEach(([pkg, pkgConf]) => {
+            Object.entries(pkgConf.actions).forEach(([action, actionConf]) => {
+              const baseFullKey = ext === 'application'
+                ? `application.runtimeManifest.packages.${pkg}.actions.${action}`
+                : `extensions.${ext}.runtimeManifest.packages.${pkg}.actions.${action}`
+
+              let index
+              if (actionConf.annotations) {
+                index = appConfig.includeIndex[`${baseFullKey}.annotations`]
+              } else {
+                // the annotation object is not defined, take the parent key
+                index = appConfig.includeIndex[baseFullKey]
+              }
+              if (!fileToAnnotationKey[index.file]) {
+                fileToAnnotationKey[index.file] = []
+              }
+              fileToAnnotationKey[index.file].push(index.key) // index.key is relative to the file
+            })
+          })
+      })
+
+    // rewrite config files
+    for (const [file, keys] of Object.entries(fileToAnnotationKey)) {
+      const configFilePath = path.join(DEFAULTS.ARTIFACTS_FOLDER, file)
+      const { values } = loadConfigFile(configFilePath)
+
+      keys.forEach(key => {
+        const object = getObjectValue(values, key)
+        if (key.endsWith('.annotations') || key === 'annotations') {
+          // object is the annotations object
+          object['code-download'] = false
+        } else {
+          // annotation object is not defined, the object is the action object
+          object.annotations = { 'code-download': false }
+        }
+      })
+
+      // write back the modified manifest to disk
+      await writeFile(configFilePath, yaml.dump(values), { overwrite: true })
+    }
   }
 }
 
