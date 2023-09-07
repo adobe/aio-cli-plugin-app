@@ -212,8 +212,7 @@
                 "redirect_uri": {
                     "type": "array",
                     "items": {
-                        "type": "string",
-                        "format": "uri"
+                        "type": "string"
                     }
                 }
             },
@@ -230,8 +229,7 @@
                 "redirect_uri": {
                     "type": "array",
                     "items": {
-                        "type": "string",
-                        "format": "uri"
+                        "type": "string"
                     }
                 }
             },

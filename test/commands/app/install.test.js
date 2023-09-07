@@ -16,7 +16,6 @@ const fs = require('fs-extra')
 const unzipper = require('unzipper')
 const execa = require('execa')
 const installHelper = require('../../../src/lib/install-helper')
-const importHelper = require('../../../src/lib/import-helper')
 const { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE } = require('../../../src/lib/defaults')
 const path = require('node:path')
 const jsYaml = require('js-yaml')
@@ -26,16 +25,9 @@ const libConfigNext = require('@adobe/aio-cli-lib-app-config-next')
 jest.mock('fs-extra')
 jest.mock('unzipper')
 jest.mock('../../../src/lib/install-helper')
-jest.mock('../../../src/lib/import-helper')
 jest.mock('js-yaml')
 jest.mock('ora')
 jest.mock('execa')
-
-const mockGetFullConfig = jest.fn()
-
-beforeAll(() => {
-  jest.spyOn(BaseCommand.prototype, 'getFullConfig').mockImplementation(mockGetFullConfig)
-})
 
 const mockReadStreamPipe = jest.fn()
 const mockUnzipExtract = jest.fn()
@@ -83,7 +75,6 @@ beforeEach(() => {
   process.cwd = jest.fn().mockImplementation(() => fakeCwd)
   process.chdir.mockClear()
   process.cwd.mockClear()
-  mockGetFullConfig.mockClear()
 
   jest.spyOn(libConfigNext, 'coalesce').mockImplementation(async () => ({ config: {} })).mockClear()
   jest.spyOn(libConfigNext, 'validate').mockImplementation(async () => {}).mockClear()
@@ -422,82 +413,4 @@ describe('run', () => {
     await command.run()
     expect(command.spinner.fail).toHaveBeenCalledWith('fake validation error')
   })
-})
-
-test('addCodeDownloadAnnotation: default', async () => {
-  const extConfig = fixtureJson('install/1.all.config.json')
-
-  importHelper.loadConfigFile.mockImplementation(() => {
-    return fixtureJson('install/1.ext.config-loaded.json')
-  })
-
-  const command = new TheCommand()
-  command.argv = []
-  await command.addCodeDownloadAnnotation('my-dest-folder', extConfig)
-
-  expect(importHelper.writeFile).toHaveBeenCalledWith(
-    path.join('my-dest-folder', 'src', 'dx-excshell-1', 'ext.config.yaml'),
-    jsYaml.dump(fixtureJson('install/1.annotation-added.config.json')),
-    { overwrite: true }
-  )
-})
-
-test('addCodeDownloadAnnotation: no annotations defined', async () => {
-  const extConfig = fixtureJson('install/1.all.config.json')
-  // should not have any annotations set
-  delete extConfig.all['dx/excshell/1'].manifest.full.packages['dx-excshell-1'].actions.generic.annotations
-
-  const fixtureLoaded = fixtureJson('install/1.ext.config-loaded.json')
-  delete fixtureLoaded.values.runtimeManifest.packages['dx-excshell-1'].actions.generic.annotations
-  const fixtureExpected = fixtureJson('install/1.annotation-added.config.json')
-  fixtureExpected.runtimeManifest.packages['dx-excshell-1'].actions.generic.annotations = {
-    'disable-download': true
-  }
-
-  importHelper.loadConfigFile.mockReturnValue(fixtureLoaded)
-
-  const command = new TheCommand()
-  command.argv = []
-  await command.addCodeDownloadAnnotation('my-dest-folder', extConfig)
-
-  expect(importHelper.writeFile).toHaveBeenCalledWith(
-    path.join('my-dest-folder', 'src', 'dx-excshell-1', 'ext.config.yaml'),
-    jsYaml.dump(fixtureExpected),
-    { overwrite: true }
-  )
-})
-
-test('addCodeDownloadAnnotation: complex includes, multiple actions and extensions', async () => {
-  const extConfig = fixtureJson('install/5.all.config.json')
-
-  importHelper.loadConfigFile.mockImplementation(file => {
-    const retValues = {
-      [path.join('my-dest-folder', 'app.config.yaml')]: fixtureJson('install/5.app.config-loaded.json'),
-      [path.join('my-dest-folder', 'sub1.config.yaml')]: fixtureJson('install/5.sub1.config-loaded.json'),
-      [path.join('my-dest-folder', 'src', 'sub2.config.yaml')]: fixtureJson('install/5.sub2.config-loaded.json')
-    }
-    return retValues[file]
-  })
-
-  const command = new TheCommand()
-  command.argv = []
-  await command.addCodeDownloadAnnotation('my-dest-folder', extConfig)
-
-  expect(importHelper.writeFile).toHaveBeenCalledWith(
-    path.join('my-dest-folder', 'app.config.yaml'),
-    jsYaml.dump(fixtureJson('install/5.app.annotation-added.config.json')),
-    { overwrite: true }
-  )
-
-  expect(importHelper.writeFile).toHaveBeenCalledWith(
-    path.join('my-dest-folder', 'sub1.config.yaml'),
-    jsYaml.dump(fixtureJson('install/5.sub1.annotation-added.config.json')),
-    { overwrite: true }
-  )
-
-  expect(importHelper.writeFile).toHaveBeenCalledWith(
-    path.join('my-dest-folder', 'src', 'sub2.config.yaml'),
-    jsYaml.dump(fixtureJson('install/5.sub2.annotation-added.config.json')),
-    { overwrite: true }
-  )
 })
