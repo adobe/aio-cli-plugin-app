@@ -22,6 +22,9 @@ const { getObjectValue } = require('../../lib/app-helper')
 const ora = require('ora')
 const chalk = require('chalk')
 
+// eslint-disable-next-line node/no-missing-require
+const libConfigNext = require('@adobe/aio-cli-lib-app-config-next')
+
 const DEFAULTS = {
   OUTPUT_ZIP_FILE: 'app.zip',
   ARTIFACTS_FOLDER: 'app-package',
@@ -37,7 +40,8 @@ class Pack extends BaseCommand {
     aioLogger.debug(`flags: ${JSON.stringify(flags, null, 2)}`)
     aioLogger.debug(`args: ${JSON.stringify(args, null, 2)}`)
 
-    const appConfig = this.getFullConfig()
+    // this will also validate the app.config.yaml
+    const appConfig = await libConfigNext.load()
 
     // resolve to absolute path before any chdir
     const outputZipFile = path.resolve(flags.output)
