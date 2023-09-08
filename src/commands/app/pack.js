@@ -61,7 +61,13 @@ class Pack extends BaseCommand {
 
       // ACNA-2038
       // not artifacts folder should exist before we fire the event
-      await this.config.runHook('pre-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER })
+      // await this.config.runHook('pre-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER })
+      
+      const hookResults = await this.config.runHook('pre-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER })
+      if (hookResults?.failures?.length > 0) {
+        // output should be "Error : <plugin-name> : <error-message>\n" for each failure
+        this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
+      }
 
       // 2. copy files to package phase
       this.spinner.start('Copying project files...')
