@@ -61,8 +61,7 @@ class Pack extends BaseCommand {
 
       // ACNA-2038
       // not artifacts folder should exist before we fire the event
-      // await this.config.runHook('pre-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER })
-      
+
       const hookResults = await this.config.runHook('pre-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER })
       if (hookResults?.failures?.length > 0) {
         // output should be "Error : <plugin-name> : <error-message>\n" for each failure

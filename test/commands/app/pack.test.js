@@ -541,6 +541,22 @@ describe('run', () => {
     expect(runHook).toHaveBeenCalledWith('post-pack', expectedObj)
   })
 
+  test('outputs error if events hook throws', async () => {
+    const runHook = jest.fn()
+      .mockResolvedValue({
+        successes: [],
+        failures: [{ plugin: { name: 'ifailedu' }, error: { message: 'some error' } }]
+      })
+    const command = new TheCommand()
+    command.config = { runHook }
+    command.error = jest.fn()
+    command.argv = ['new_folder', '--output', 'app-2.zip']
+    await command.run()
+    expect(runHook).toHaveBeenCalledWith('pre-pack', expect.any(Object))
+    expect(command.error).toHaveBeenCalled()
+    expect(command.error).toHaveBeenCalledWith('ifailedu : some error', { exit: 1 })
+  })
+
   test('load config throws (on validation)', async () => {
     mockGetFullConfig.mockImplementation(async () => { throw new Error('invalid fake config error') })
 
