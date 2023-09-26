@@ -87,10 +87,6 @@ AddEventCommand.flags = {
     multiple: false,
     parse: str => [str]
   }),
-  'experimental-allow-events-templates': Flags.boolean({
-    description: 'Feature flag to enable events templates. NOTE: skip-prompt will have no effect if this flag is enabled.',
-    default: false
-  }),
   ...AddCommand.flags
 }
 

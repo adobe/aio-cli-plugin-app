@@ -73,7 +73,6 @@ describe('good flags', () => {
       templates: ['@adobe/generator-add-events-generic'],
       templateOptions
     }
-    command.argv = ['--experimental-allow-events-templates']
     command.selectTemplates = jest.fn()
     command.selectTemplates.mockResolvedValue(['@adobe/generator-add-events-generic'])
     await command.run()
