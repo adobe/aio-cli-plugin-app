@@ -136,7 +136,7 @@ _See code: [src/commands/app/add/ci.ts](https://github.com/adobe/aio-cli-plugin-
 
 ## `aio app add event`
 
-Add a new Adobe I/O Events action
+Add a new Adobe IO Events registration
 
 ```
 USAGE
@@ -146,13 +146,13 @@ FLAGS
   -e, --extension=<value>                Add events to a specific extension
   -v, --verbose                          Verbose output
   -y, --yes                              Skip questions, and use all default values
-  --experimental-allow-events-templates  Feature flag to enable events templates. NOTE: skip-prompt will have no effect
+                                         NOTE: skip-prompt will have no effect
                                          if this flag is enabled.
   --[no-]install                         [default: true] Run npm installation after files are created
   --version                              Show version
 
 DESCRIPTION
-  Add a new Adobe I/O Events action
+  Add a new Adobe IO Events registration
 
 
 ALIASES
@@ -345,32 +345,6 @@ DESCRIPTION
 ```
 
 _See code: [src/commands/app/delete/ci.ts](https://github.com/adobe/aio-cli-plugin-app/blob/10.7.1/src/commands/app/delete/ci.ts)_
-
-## `aio app delete event [EVENT-ACTION-NAME]`
-
-Delete existing Adobe I/O Events actions
-
-```
-USAGE
-  $ aio app delete event [EVENT-ACTION-NAME] [-v] [--version] [-y]
-
-ARGUMENTS
-  EVENT-ACTION-NAME  Action `pkg/name` to delete, you can specify multiple actions via a comma separated list
-
-FLAGS
-  -v, --verbose  Verbose output
-  -y, --yes      Skip questions, and use all default values
-  --version      Show version
-
-DESCRIPTION
-  Delete existing Adobe I/O Events actions
-
-
-ALIASES
-  $ aio app delete events
-```
-
-_See code: [src/commands/app/delete/event.ts](https://github.com/adobe/aio-cli-plugin-app/blob/10.7.1/src/commands/app/delete/event.ts)_
 
 ## `aio app delete extension`
 
