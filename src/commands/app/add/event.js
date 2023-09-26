@@ -11,12 +11,9 @@ governing permissions and limitations under the License.
 
 const AddCommand = require('../../../AddCommand')
 const TemplatesCommand = require('../../../TemplatesCommand')
-const yeoman = require('yeoman-environment')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:event', { provider: 'debug' })
 const { Flags } = require('@oclif/core')
-const ora = require('ora')
 const path = require('path')
-const generators = require('@adobe/generator-aio-app')
 const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
 
 class AddEventCommand extends TemplatesCommand {
@@ -24,7 +21,6 @@ class AddEventCommand extends TemplatesCommand {
     const { flags } = await this.parse(AddEventCommand)
 
     aioLogger.debug(`add events with flags: ${JSON.stringify(flags)}`)
-    const spinner = ora()
 
     // guaranteed to have at least one, otherwise would throw in config load or in matching the ext name
     const entries = Object.entries(this.getAppExtConfigs(flags))
@@ -43,34 +39,19 @@ class AddEventCommand extends TemplatesCommand {
       'config-path': runtimeManifestData.file,
       'full-key-to-manifest': runtimeManifestData.key
     }
-
-    if (flags['experimental-allow-events-templates']) {
-      const eventsData = this.getEventsConfigFile(configName)
-      templateOptions['full-key-to-events-manifest'] = eventsData.key
-      const [searchCriteria, orderByCriteria] = await this.getSearchCriteria()
-      const templates = await this.selectTemplates(searchCriteria, orderByCriteria)
-      if (templates.length === 0) {
-        this.error('No events templates were chosen to be installed.')
-      } else {
-        await this.installTemplates({
-          useDefaultValues: flags.yes,
-          installNpm: flags.install,
-          templateOptions,
-          templates
-        })
-      }
-      // by default yeoman runs the install, we control installation from the app plugin
+    const eventsData = this.getEventsConfigFile(configName)
+    templateOptions['full-key-to-events-manifest'] = eventsData.key
+    const [searchCriteria, orderByCriteria] = await this.getSearchCriteria()
+    const templates = await this.selectTemplates(searchCriteria, orderByCriteria)
+    if (templates.length === 0) {
+      this.error('No events templates were chosen to be installed.')
     } else {
-      templateOptions['skip-prompt'] = flags.yes
-      templateOptions.force = true
-      const env = yeoman.createEnv()
-      env.options = { skipInstall: true }
-      const eventsGen = env.instantiate(generators['add-events'], {
-        options: templateOptions
+      await this.installTemplates({
+        useDefaultValues: flags.yes,
+        installNpm: flags.install,
+        templateOptions,
+        templates
       })
-      await env.runGenerator(eventsGen)
-
-      await this.runInstallPackages(flags, spinner)
     }
   }
 
