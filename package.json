@@ -17,7 +17,7 @@
     "@adobe/aio-lib-templates": "^2.2.0",
     "@adobe/aio-lib-web": "^6.1.0",
     "@adobe/generator-aio-app": "^5.1.0",
-    "@adobe/generator-app-common-lib": "file:../TemplateRegistry/generator-app-common-lib",
+    "@adobe/generator-app-common-lib": "^0.4.5",
     "@adobe/inquirer-table-checkbox": "^1.2.0",
     "@oclif/core": "^2.11.6",
     "@parcel/core": "^2.7.0",
