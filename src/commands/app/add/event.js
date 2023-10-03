@@ -47,6 +47,7 @@ class AddEventCommand extends TemplatesCommand {
     if (flags['experimental-allow-events-templates']) {
       const eventsData = this.getEventsConfigFile(configName)
       templateOptions['full-key-to-events-manifest'] = eventsData.key
+      templateOptions['events-config-path'] = eventsData.file
       const [searchCriteria, orderByCriteria] = await this.getSearchCriteria()
       const templates = await this.selectTemplates(searchCriteria, orderByCriteria)
       if (templates.length === 0) {
