@@ -310,24 +310,71 @@ test('zipHelper', async () => {
   onError()
 })
 
-test('filesToPack', async () => {
-  const jsonOutput = [{
-    files: [
-      { path: 'fileA' },
-      { path: 'fileB' }
-    ]
-  }]
+describe('filesToPack', () => {
+  test('nothing filtered', async () => {
+    const jsonOutput = [{
+      files: [
+        { path: 'fileA' },
+        { path: 'fileB' }
+      ]
+    }]
 
-  execa.mockImplementationOnce((cmd, args) => {
-    expect(cmd).toEqual('npm')
-    expect(args).toEqual(['pack', '--dry-run', '--json'])
-    return { stdout: JSON.stringify(jsonOutput, null, 2) }
+    execa.mockImplementationOnce((cmd, args) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['pack', '--dry-run', '--json'])
+      return { stdout: JSON.stringify(jsonOutput, null, 2) }
+    })
+
+    const command = new TheCommand()
+    command.argv = []
+    const filesToPack = await command.filesToPack()
+    expect(filesToPack).toEqual(['fileA', 'fileB'])
   })
 
-  const command = new TheCommand()
-  command.argv = []
-  const filesToPack = await command.filesToPack()
-  expect(filesToPack).toEqual(['fileA', 'fileB'])
+  test('filter for hidden files', async () => {
+    const jsonOutput = [{
+      files: [
+        { path: '.env' },
+        { path: '.aio' },
+        { path: '.foo' },
+        { path: 'fileA' },
+        { path: 'fileB' }
+      ]
+    }]
+
+    execa.mockImplementationOnce((cmd, args) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['pack', '--dry-run', '--json'])
+      return { stdout: JSON.stringify(jsonOutput, null, 2) }
+    })
+
+    const command = new TheCommand()
+    command.argv = []
+    const filesToPack = await command.filesToPack()
+    expect(filesToPack).toEqual(['fileA', 'fileB'])
+  })
+
+  test('filter for junk files', async () => {
+    const jsonOutput = [{
+      files: [
+        { path: '.DS_Store' },
+        { path: 'Thumbs.db' },
+        { path: 'fileA' },
+        { path: 'fileB' }
+      ]
+    }]
+
+    execa.mockImplementationOnce((cmd, args) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['pack', '--dry-run', '--json'])
+      return { stdout: JSON.stringify(jsonOutput, null, 2) }
+    })
+
+    const command = new TheCommand()
+    command.argv = []
+    const filesToPack = await command.filesToPack()
+    expect(filesToPack).toEqual(['fileA', 'fileB'])
+  })
 })
 
 test('addCodeDownloadAnnotation: default', async () => {
