@@ -21,6 +21,7 @@ const { loadConfigFile, writeFile } = require('../../lib/import-helper')
 const { getObjectValue } = require('../../lib/app-helper')
 const ora = require('ora')
 const chalk = require('chalk')
+const junk = require('junk')
 
 // eslint-disable-next-line node/no-missing-require
 const libConfigNext = require('@adobe/aio-cli-lib-app-config-next')
@@ -250,6 +251,8 @@ class Pack extends BaseCommand {
     return files
       .map(file => file.path)
       .filter(file => !filesToExclude.includes(file))
+      .filter(junk.not) // no junk files like .DS_Store
+      .filter((file) => !/^\..*/.test(file)) // no files that start with a '.'
   }
 
   /**
