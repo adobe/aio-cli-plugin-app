@@ -464,7 +464,7 @@ describe('run', () => {
 
     // since we already unit test the methods above, we mock it here
     command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn()
+    command.filesToPack = jest.fn(() => (['some-file']))
     command.createDeployYamlFile = jest.fn()
     command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn()
@@ -495,7 +495,7 @@ describe('run', () => {
 
     // since we already unit test the methods above, we mock it here
     command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn()
+    command.filesToPack = jest.fn(() => ([]))
     command.createDeployYamlFile = jest.fn()
     command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn(() => { throw errorObject })
@@ -531,7 +531,7 @@ describe('run', () => {
 
     // since we already unit test the methods above, we mock it here
     command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn()
+    command.filesToPack = jest.fn(() => ([]))
     command.createDeployYamlFile = jest.fn()
     command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn(() => { throw new Error(errorMessage) })
@@ -565,7 +565,7 @@ describe('run', () => {
 
     // since we already unit test the methods above, we mock it here
     command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn()
+    command.filesToPack = jest.fn(() => ([]))
     command.createDeployYamlFile = jest.fn()
     command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn()
@@ -596,7 +596,7 @@ describe('run', () => {
 
     // since we already unit test the methods above, we mock it here
     command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn()
+    command.filesToPack = jest.fn(() => ([]))
     command.createDeployYamlFile = jest.fn()
     command.zipHelper = jest.fn()
     const runHook = jest.fn()

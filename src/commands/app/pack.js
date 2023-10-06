@@ -64,9 +64,17 @@ class Pack extends BaseCommand {
       // not artifacts folder should exist before we fire the event
       await this.config.runHook('pre-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER })
 
+      // 1a. Get file list to pack
+      const fileList = await this.filesToPack([flags.output])
+      this.log('=== Files to pack ===')
+      fileList.forEach((file) => {
+        this.log(`  ${file}`)
+      })
+      this.log('=====================')
+
       // 2. copy files to package phase
       this.spinner.start('Copying project files...')
-      const fileList = await this.filesToPack([flags.output])
+
       await this.copyPackageFiles(DEFAULTS.ARTIFACTS_FOLDER, fileList)
       this.spinner.succeed('Copied project files')
 
@@ -247,12 +255,30 @@ class Pack extends BaseCommand {
   async filesToPack (filesToExclude = [], workingDirectory = process.cwd()) {
     const { stdout } = await execa('npm', ['pack', '--dry-run', '--json'], { cwd: workingDirectory })
 
+    const noJunkFiles = (file) => {
+      const isJunkFile = junk.is(file)
+      if (isJunkFile) {
+        aioLogger.debug(`junk file (omitted from pack): ${file}`)
+      }
+
+      return !isJunkFile
+    }
+
+    const noDotFiles = (file) => {
+      const isDotFile = /^\..*/.test(file)
+      if (isDotFile) {
+        aioLogger.debug(`hidden dotfile (omitted from pack): ${file}`)
+      }
+
+      return !isDotFile
+    }
+
     const { files } = JSON.parse(stdout)[0]
     return files
       .map(file => file.path)
       .filter(file => !filesToExclude.includes(file))
-      .filter(junk.not) // no junk files like .DS_Store
-      .filter((file) => !/^\..*/.test(file)) // no files that start with a '.'
+      .filter(noJunkFiles) // no junk files like .DS_Store
+      .filter(noDotFiles) // no files that start with a '.'
   }
 
   /**
