@@ -48,6 +48,7 @@
     "term-size": "^2.2.1",
     "unzipper": "^0.10.11",
     "upath": "^2",
+    "junk": "^3.1.0",
     "which": "^3.0.0",
     "yeoman-environment": "^3.2.0"
   },

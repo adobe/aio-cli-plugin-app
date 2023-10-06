@@ -310,24 +310,71 @@ test('zipHelper', async () => {
   onError()
 })
 
-test('filesToPack', async () => {
-  const jsonOutput = [{
-    files: [
-      { path: 'fileA' },
-      { path: 'fileB' }
-    ]
-  }]
+describe('filesToPack', () => {
+  test('nothing filtered', async () => {
+    const jsonOutput = [{
+      files: [
+        { path: 'fileA' },
+        { path: 'fileB' }
+      ]
+    }]
 
-  execa.mockImplementationOnce((cmd, args) => {
-    expect(cmd).toEqual('npm')
-    expect(args).toEqual(['pack', '--dry-run', '--json'])
-    return { stdout: JSON.stringify(jsonOutput, null, 2) }
+    execa.mockImplementationOnce((cmd, args) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['pack', '--dry-run', '--json'])
+      return { stdout: JSON.stringify(jsonOutput, null, 2) }
+    })
+
+    const command = new TheCommand()
+    command.argv = []
+    const filesToPack = await command.filesToPack()
+    expect(filesToPack).toEqual(['fileA', 'fileB'])
   })
 
-  const command = new TheCommand()
-  command.argv = []
-  const filesToPack = await command.filesToPack()
-  expect(filesToPack).toEqual(['fileA', 'fileB'])
+  test('filter for hidden files', async () => {
+    const jsonOutput = [{
+      files: [
+        { path: '.env' },
+        { path: '.aio' },
+        { path: '.foo' },
+        { path: 'fileA' },
+        { path: 'fileB' }
+      ]
+    }]
+
+    execa.mockImplementationOnce((cmd, args) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['pack', '--dry-run', '--json'])
+      return { stdout: JSON.stringify(jsonOutput, null, 2) }
+    })
+
+    const command = new TheCommand()
+    command.argv = []
+    const filesToPack = await command.filesToPack()
+    expect(filesToPack).toEqual(['fileA', 'fileB'])
+  })
+
+  test('filter for junk files', async () => {
+    const jsonOutput = [{
+      files: [
+        { path: '.DS_Store' },
+        { path: 'Thumbs.db' },
+        { path: 'fileA' },
+        { path: 'fileB' }
+      ]
+    }]
+
+    execa.mockImplementationOnce((cmd, args) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['pack', '--dry-run', '--json'])
+      return { stdout: JSON.stringify(jsonOutput, null, 2) }
+    })
+
+    const command = new TheCommand()
+    command.argv = []
+    const filesToPack = await command.filesToPack()
+    expect(filesToPack).toEqual(['fileA', 'fileB'])
+  })
 })
 
 test('addCodeDownloadAnnotation: default', async () => {
@@ -417,7 +464,7 @@ describe('run', () => {
 
     // since we already unit test the methods above, we mock it here
     command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn()
+    command.filesToPack = jest.fn(() => (['some-file']))
     command.createDeployYamlFile = jest.fn()
     command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn()
@@ -448,7 +495,7 @@ describe('run', () => {
 
     // since we already unit test the methods above, we mock it here
     command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn()
+    command.filesToPack = jest.fn(() => ([]))
     command.createDeployYamlFile = jest.fn()
     command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn(() => { throw errorObject })
@@ -484,7 +531,7 @@ describe('run', () => {
 
     // since we already unit test the methods above, we mock it here
     command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn()
+    command.filesToPack = jest.fn(() => ([]))
     command.createDeployYamlFile = jest.fn()
     command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn(() => { throw new Error(errorMessage) })
@@ -518,7 +565,7 @@ describe('run', () => {
 
     // since we already unit test the methods above, we mock it here
     command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn()
+    command.filesToPack = jest.fn(() => ([]))
     command.createDeployYamlFile = jest.fn()
     command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn()
@@ -549,7 +596,7 @@ describe('run', () => {
 
     // since we already unit test the methods above, we mock it here
     command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn()
+    command.filesToPack = jest.fn(() => ([]))
     command.createDeployYamlFile = jest.fn()
     command.zipHelper = jest.fn()
     const runHook = jest.fn()
