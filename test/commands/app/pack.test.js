@@ -331,6 +331,26 @@ describe('filesToPack', () => {
     expect(filesToPack).toEqual(['fileA', 'fileB'])
   })
 
+  test('exclude specific file', async () => {
+    const jsonOutput = [{
+      files: [
+        { path: 'fileA' },
+        { path: 'fileB' }
+      ]
+    }]
+
+    execa.mockImplementationOnce((cmd, args) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['pack', '--dry-run', '--json'])
+      return { stdout: JSON.stringify(jsonOutput, null, 2) }
+    })
+
+    const command = new TheCommand()
+    command.argv = []
+    const filesToPack = await command.filesToPack({ filesToExclude: ['fileA'] })
+    expect(filesToPack).toEqual(['fileB'])
+  })
+
   test('filter for hidden files', async () => {
     const jsonOutput = [{
       files: [

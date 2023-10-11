@@ -70,7 +70,7 @@ class Pack extends BaseCommand {
       await this.config.runHook('pre-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER_PATH })
 
       // 1a. Get file list to pack
-      const fileList = await this.filesToPack([flags.output, DEFAULTS.DIST_FOLDER, ...distLocations])
+      const fileList = await this.filesToPack({ filesToExclude: [flags.output, DEFAULTS.DIST_FOLDER, ...distLocations] })
       this.log('=== Files to pack ===')
       fileList.forEach((file) => {
         this.log(`  ${file}`)
@@ -258,11 +258,12 @@ class Pack extends BaseCommand {
    *
    * This runs `npm pack` to get the list.
    *
-   * @param {Array<string>} filesToExclude a list of files to exclude
-   * @param {string} workingDirectory the working directory to run `npm pack` in
+   * @param {object} options the options for the method
+   * @param {Array<string>} options.filesToExclude a list of files to exclude
+   * @param {string} options.workingDirectory the working directory to run `npm pack` in
    * @returns {Array<string>} a list of files that are to be packed
    */
-  async filesToPack (filesToExclude = [], workingDirectory = process.cwd()) {
+  async filesToPack ({ filesToExclude = [], workingDirectory = process.cwd() } = {}) {
     const { stdout } = await execa('npm', ['pack', '--dry-run', '--json'], { cwd: workingDirectory })
 
     const noJunkFiles = (file) => {
