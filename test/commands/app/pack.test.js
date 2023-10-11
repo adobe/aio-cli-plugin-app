@@ -96,7 +96,7 @@ test('flags', async () => {
   expect(typeof TheCommand.flags.output).toBe('object')
   expect(typeof TheCommand.flags.output.type).toBe('string')
   expect(typeof TheCommand.flags.output.description).toBe('string')
-  expect(TheCommand.flags.output.default).toBe('app.zip')
+  expect(TheCommand.flags.output.default).toBe(path.join('dist', 'app.zip'))
 })
 
 test('unknown flag', async () => {
@@ -147,7 +147,7 @@ test('createDeployYamlFile (1 extension)', async () => {
 
   await command.createDeployYamlFile(extConfig)
 
-  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('app-package', 'deploy.yaml'))
+  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('dist', 'app-package', 'deploy.yaml'))
   await expect(importHelper.writeFile.mock.calls[0][1]).toMatchFixture('pack/2.deploy.yaml')
   await expect(importHelper.writeFile.mock.calls[0][2]).toMatchObject({ overwrite: true })
 
@@ -161,7 +161,7 @@ test('createDeployYamlFile (1 extension)', async () => {
 
   await command.createDeployYamlFile(extConfig)
 
-  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('app-package', 'deploy.yaml'))
+  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('dist', 'app-package', 'deploy.yaml'))
   await expect(importHelper.writeFile.mock.calls[0][1]).toMatchFixture('pack/2.deploy.no-mesh.yaml')
   await expect(importHelper.writeFile.mock.calls[0][2]).toMatchObject({ overwrite: true })
 })
@@ -188,7 +188,7 @@ test('createDeployYamlFile (1 extension), no api-mesh', async () => {
 
   await command.createDeployYamlFile(extConfig)
 
-  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('app-package', 'deploy.yaml'))
+  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('dist', 'app-package', 'deploy.yaml'))
   await expect(importHelper.writeFile.mock.calls[0][1]).toMatchFixture('pack/2.deploy.no-mesh.yaml')
   await expect(importHelper.writeFile.mock.calls[0][2]).toMatchObject({ overwrite: true })
 })
@@ -231,7 +231,7 @@ test('createDeployYamlFile (coverage: standalone app, no services)', async () =>
 
   await command.createDeployYamlFile(extConfig)
 
-  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('app-package', 'deploy.yaml'))
+  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('dist', 'app-package', 'deploy.yaml'))
   await expect(importHelper.writeFile.mock.calls[0][1]).toMatchFixture('pack/4.deploy.yaml')
   await expect(importHelper.writeFile.mock.calls[0][2]).toMatchObject({ overwrite: true })
 })
@@ -389,7 +389,7 @@ test('addCodeDownloadAnnotation: default', async () => {
   await command.addCodeDownloadAnnotation(extConfig)
 
   expect(importHelper.writeFile).toHaveBeenCalledWith(
-    path.join('app-package', 'src', 'dx-excshell-1', 'ext.config.yaml'),
+    path.join('dist', 'app-package', 'src', 'dx-excshell-1', 'ext.config.yaml'),
     yaml.dump(fixtureJson('pack/1.annotation-added.config.json')),
     { overwrite: true }
   )
@@ -414,7 +414,7 @@ test('addCodeDownloadAnnotation: no annotations defined', async () => {
   await command.addCodeDownloadAnnotation(extConfig)
 
   expect(importHelper.writeFile).toHaveBeenCalledWith(
-    path.join('app-package', 'src', 'dx-excshell-1', 'ext.config.yaml'),
+    path.join('dist', 'app-package', 'src', 'dx-excshell-1', 'ext.config.yaml'),
     yaml.dump(fixtureExpected),
     { overwrite: true }
   )
@@ -425,9 +425,9 @@ test('addCodeDownloadAnnotation: complex includes, multiple actions and extensio
 
   importHelper.loadConfigFile.mockImplementation(file => {
     const retValues = {
-      [path.join('app-package', 'app.config.yaml')]: fixtureJson('pack/5.app.config-loaded.json'),
-      [path.join('app-package', 'sub1.config.yaml')]: fixtureJson('pack/5.sub1.config-loaded.json'),
-      [path.join('app-package', 'src', 'sub2.config.yaml')]: fixtureJson('pack/5.sub2.config-loaded.json')
+      [path.join('dist', 'app-package', 'app.config.yaml')]: fixtureJson('pack/5.app.config-loaded.json'),
+      [path.join('dist', 'app-package', 'sub1.config.yaml')]: fixtureJson('pack/5.sub1.config-loaded.json'),
+      [path.join('dist', 'app-package', 'src', 'sub2.config.yaml')]: fixtureJson('pack/5.sub2.config-loaded.json')
     }
     return retValues[file]
   })
@@ -437,19 +437,19 @@ test('addCodeDownloadAnnotation: complex includes, multiple actions and extensio
   await command.addCodeDownloadAnnotation(extConfig)
 
   expect(importHelper.writeFile).toHaveBeenCalledWith(
-    path.join('app-package', 'app.config.yaml'),
+    path.join('dist', 'app-package', 'app.config.yaml'),
     yaml.dump(fixtureJson('pack/5.app.annotation-added.config.json')),
     { overwrite: true }
   )
 
   expect(importHelper.writeFile).toHaveBeenCalledWith(
-    path.join('app-package', 'sub1.config.yaml'),
+    path.join('dist', 'app-package', 'sub1.config.yaml'),
     yaml.dump(fixtureJson('pack/5.sub1.annotation-added.config.json')),
     { overwrite: true }
   )
 
   expect(importHelper.writeFile).toHaveBeenCalledWith(
-    path.join('app-package', 'src', 'sub2.config.yaml'),
+    path.join('dist', 'app-package', 'src', 'sub2.config.yaml'),
     yaml.dump(fixtureJson('pack/5.sub2.annotation-added.config.json')),
     { overwrite: true }
   )
@@ -478,7 +478,7 @@ describe('run', () => {
     expect(command.addCodeDownloadAnnotation).toHaveBeenCalledTimes(1)
     expect(command.zipHelper).toHaveBeenCalledTimes(1)
     const expectedObj = {
-      artifactsFolder: 'app-package',
+      artifactsFolder: path.join('dist', 'app-package'),
       appConfig: expect.any(Object)
     }
     expect(runHook).toHaveBeenCalledWith('pre-pack', expectedObj)
@@ -513,7 +513,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(1)
 
     const expectedObj = {
-      artifactsFolder: 'app-package',
+      artifactsFolder: path.join('dist', 'app-package'),
       appConfig: expect.any(Object)
     }
     expect(runHook).toHaveBeenCalledWith('pre-pack', expectedObj)
@@ -549,7 +549,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(1)
 
     const expectedObj = {
-      artifactsFolder: 'app-package',
+      artifactsFolder: path.join('dist', 'app-package'),
       appConfig: expect.any(Object)
     }
     expect(runHook).toHaveBeenCalledWith('pre-pack', expectedObj)
@@ -581,7 +581,7 @@ describe('run', () => {
     expect(command.zipHelper).toHaveBeenCalledTimes(1)
 
     const expectedObj = {
-      artifactsFolder: 'app-package',
+      artifactsFolder: path.join('dist', 'app-package'),
       appConfig: expect.any(Object)
     }
     expect(runHook).toHaveBeenCalledWith('pre-pack', expectedObj)
