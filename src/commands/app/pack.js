@@ -26,10 +26,11 @@ const junk = require('junk')
 // eslint-disable-next-line node/no-missing-require
 const libConfigNext = require('@adobe/aio-cli-lib-app-config-next')
 
+const DIST_FOLDER = 'dist'
 const DEFAULTS = {
-  OUTPUT_ZIP_FILE: 'app.zip',
-  ARTIFACTS_FOLDER: 'app-package',
-  DEPLOY_YAML_FILE: 'deploy.yaml'
+  OUTPUT_ZIP_FILE_PATH: path.join(DIST_FOLDER, 'app.zip'),
+  ARTIFACTS_FOLDER_PATH: path.join(DIST_FOLDER, 'app-package'),
+  DEPLOY_YAML_FILE_NAME: 'deploy.yaml'
 }
 
 class Pack extends BaseCommand {
@@ -54,18 +55,22 @@ class Pack extends BaseCommand {
       aioLogger.debug(`changed current working directory to: ${resolvedPath}`)
     }
 
+    // get all 'dist' locations of all extensions (relative to the current working directory)
+    const distLocations = Object.entries(appConfig.all)
+      .map(([, extConfig]) => path.relative(process.cwd(), extConfig.app.dist))
+
     try {
       // 1. create artifacts phase
-      this.spinner.start(`Creating package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER}'...`)
-      await fs.emptyDir(DEFAULTS.ARTIFACTS_FOLDER)
-      this.spinner.succeed(`Created package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER}'`)
+      this.spinner.start(`Creating package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER_PATH}'...`)
+      await fs.emptyDir(DEFAULTS.ARTIFACTS_FOLDER_PATH)
+      this.spinner.succeed(`Created package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER_PATH}'`)
 
       // ACNA-2038
       // not artifacts folder should exist before we fire the event
-      await this.config.runHook('pre-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER })
+      await this.config.runHook('pre-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER_PATH })
 
       // 1a. Get file list to pack
-      const fileList = await this.filesToPack([flags.output])
+      const fileList = await this.filesToPack({ filesToExclude: [flags.output, DEFAULTS.DIST_FOLDER, ...distLocations] })
       this.log('=== Files to pack ===')
       fileList.forEach((file) => {
         this.log(`  ${file}`)
@@ -75,7 +80,7 @@ class Pack extends BaseCommand {
       // 2. copy files to package phase
       this.spinner.start('Copying project files...')
 
-      await this.copyPackageFiles(DEFAULTS.ARTIFACTS_FOLDER, fileList)
+      await this.copyPackageFiles(DEFAULTS.ARTIFACTS_FOLDER_PATH, fileList)
       this.spinner.succeed('Copied project files')
 
       // 3. add/modify artifacts phase
@@ -88,13 +93,18 @@ class Pack extends BaseCommand {
       this.spinner.succeed('Added code-download annotations')
 
       // doing this before zip so other things can be added to the zip
-      await this.config.runHook('post-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER })
+      await this.config.runHook('post-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER_PATH })
 
       // 4. zip package phase
-      this.spinner.start(`Zipping package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER}' to '${outputZipFile}'...`)
+      this.spinner.start(`Zipping package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER_PATH}' to '${outputZipFile}'...`)
       await fs.remove(outputZipFile)
-      await this.zipHelper(DEFAULTS.ARTIFACTS_FOLDER, outputZipFile)
-      this.spinner.succeed(`Zipped package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER}' to '${outputZipFile}'`)
+      await this.zipHelper(DEFAULTS.ARTIFACTS_FOLDER_PATH, outputZipFile)
+      this.spinner.succeed(`Zipped package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER_PATH}' to '${outputZipFile}'`)
+
+      // 5. finally delete the artifacts folder
+      this.spinner.start(`Deleting package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER_PATH}'...`)
+      await fs.remove(DEFAULTS.ARTIFACTS_FOLDER_PATH)
+      this.spinner.succeed(`Deleted package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER_PATH}'`)
     } catch (e) {
       this.spinner.fail(e.message)
       this.error(flags.verbose ? e : e.message)
@@ -185,7 +195,7 @@ class Pack extends BaseCommand {
     }
 
     await writeFile(
-      path.join(DEFAULTS.ARTIFACTS_FOLDER, DEFAULTS.DEPLOY_YAML_FILE),
+      path.join(DEFAULTS.ARTIFACTS_FOLDER_PATH, DEFAULTS.DEPLOY_YAML_FILE_NAME),
       yaml.dump(deployJson),
       { overwrite: true })
   }
@@ -248,11 +258,12 @@ class Pack extends BaseCommand {
    *
    * This runs `npm pack` to get the list.
    *
-   * @param {Array<string>} filesToExclude a list of files to exclude
-   * @param {string} workingDirectory the working directory to run `npm pack` in
+   * @param {object} options the options for the method
+   * @param {Array<string>} options.filesToExclude a list of files to exclude
+   * @param {string} options.workingDirectory the working directory to run `npm pack` in
    * @returns {Array<string>} a list of files that are to be packed
    */
-  async filesToPack (filesToExclude = [], workingDirectory = process.cwd()) {
+  async filesToPack ({ filesToExclude = [], workingDirectory = process.cwd() } = {}) {
     const { stdout } = await execa('npm', ['pack', '--dry-run', '--json'], { cwd: workingDirectory })
 
     const noJunkFiles = (file) => {
@@ -320,7 +331,7 @@ class Pack extends BaseCommand {
 
     // rewrite config files
     for (const [file, keys] of Object.entries(fileToAnnotationKey)) {
-      const configFilePath = path.join(DEFAULTS.ARTIFACTS_FOLDER, file)
+      const configFilePath = path.join(DEFAULTS.ARTIFACTS_FOLDER_PATH, file)
       const { values } = loadConfigFile(configFilePath)
 
       keys.forEach(key => {
@@ -350,7 +361,7 @@ Pack.flags = {
   output: Flags.string({
     description: 'The packaged app output file path',
     char: 'o',
-    default: DEFAULTS.OUTPUT_ZIP_FILE
+    default: DEFAULTS.OUTPUT_ZIP_FILE_PATH
   })
 }
 
