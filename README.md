@@ -146,8 +146,7 @@ FLAGS
   -e, --extension=<value>                Add events to a specific extension
   -v, --verbose                          Verbose output
   -y, --yes                              Skip questions, and use all default values
-                                         NOTE: skip-prompt will have no effect
-                                         if this flag is enabled.
+                                         NOTE: skip-prompt will have no effect on event templates
   --[no-]install                         [default: true] Run npm installation after files are created
   --version                              Show version
 
