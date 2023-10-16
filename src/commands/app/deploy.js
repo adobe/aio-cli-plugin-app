@@ -22,6 +22,9 @@ const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadat
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
 
+const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
+const POST_DEPLOY_EVENT_REG = 'post-deploy-event-reg'
+
 class Deploy extends BuildCommand {
   async run () {
     // cli input
@@ -142,13 +145,10 @@ class Deploy extends BuildCommand {
 
     try {
       await runInProcess(config.hooks['pre-app-deploy'], config)
-      if (flags['feature-event-hooks']) {
-        this.log('feature-event-hooks is enabled, running pre-deploy-event-reg hook')
-        const hookResults = await this.config.runHook('pre-deploy-event-reg', { appConfig: config, force: flags['force-events'] })
-        if (hookResults?.failures?.length > 0) {
-          // output should be "Error : <plugin-name> : <error-message>\n" for each failure
-          this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
-        }
+      const hookResults = await this.config.runHook(PRE_DEPLOY_EVENT_REG, { appConfig: config, force: flags['force-events'] })
+      if (hookResults?.failures?.length > 0) {
+        // output should be "Error : <plugin-name> : <error-message>\n" for each failure
+        this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
       }
     } catch (err) {
       this.error(err)
@@ -250,13 +250,10 @@ class Deploy extends BuildCommand {
 
     try {
       await runInProcess(config.hooks['post-app-deploy'], config)
-      if (flags['feature-event-hooks']) {
-        this.log('feature-event-hooks is enabled, running post-deploy-event-reg hook')
-        const hookResults = await this.config.runHook('post-deploy-event-reg', { appConfig: config, force: flags['force-events'] })
-        if (hookResults?.failures?.length > 0) {
-          // output should be "Error : <plugin-name> : <error-message>\n" for each failure
-          this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
-        }
+      const hookResults = await this.config.runHook(POST_DEPLOY_EVENT_REG, { appConfig: config, force: flags['force-events'] })
+      if (hookResults?.failures?.length > 0) {
+        // output should be "Error : <plugin-name> : <error-message>\n" for each failure
+        this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
       }
     } catch (err) {
       this.error(err)
@@ -353,10 +350,9 @@ Deploy.flags = {
     exclusive: ['action', 'publish'] // no-publish is excluded
   }),
   'force-events': Flags.boolean({
-    description: '[default: false] Force event registrations and overwrite any previous registrations',
+    description: '[default: false] Force event registrations and delete any registrations not part of the config file',
     default: false,
     allowNo: true,
-    dependsOn: ['feature-event-hooks'],
     exclusive: ['action', 'publish'] // no-publish is excluded
   }),
   'web-optimize': Flags.boolean({
@@ -367,12 +363,6 @@ Deploy.flags = {
     description: '[default: true] Update log forwarding configuration on server',
     default: true,
     allowNo: true
-  }),
-  'feature-event-hooks': Flags.boolean({
-    description: '[default: false] Enable event hooks feature',
-    default: false,
-    allowNo: true,
-    hidden: true
   })
 }
 

@@ -417,7 +417,6 @@ describe('run', () => {
     const runHook = jest.fn()
     command.config = { runHook }
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
-    command.argv = ['--feature-event-hooks', '--no-events']
     await command.run()
     expect(command.error).not.toHaveBeenCalled()
     expect(runHook).not.toHaveBeenCalledWith('pre-undeploy-event-reg')
@@ -431,7 +430,6 @@ describe('run', () => {
       })
     command.config = { runHook }
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
-    command.argv = ['--feature-event-hooks']
     await command.run()
     expect(command.error).not.toHaveBeenCalled()
     expect(runHook).toHaveBeenCalledWith('pre-undeploy-event-reg', expect.any(Object))
@@ -445,7 +443,6 @@ describe('run', () => {
       })
     command.config = { runHook }
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
-    command.argv = ['--feature-event-hooks']
     await command.run()
     expect(runHook).toHaveBeenCalledWith('pre-undeploy-event-reg', expect.any(Object))
     expect(command.error).toHaveBeenCalledTimes(1)
