@@ -705,7 +705,6 @@ describe('run', () => {
       .mockRejectedValueOnce('error-pre-app-deploy') // pre-app-deploy
 
     command.error.mockImplementationOnce((msg) => { throw new Error(msg) })
-    command.argv = ['--feature-event-hooks']
     await expect(command.run()).rejects.toThrow('error-pre-app-deploy')
 
     expect(helpers.runInProcess).toHaveBeenCalledTimes(1)
@@ -723,7 +722,6 @@ describe('run', () => {
       .mockRejectedValueOnce('error-post-app-deploy') // post-app-deploy
 
     command.error.mockImplementationOnce((msg) => { throw new Error(msg) })
-    command.argv = ['--feature-event-hooks']
     await expect(command.run()).rejects.toThrow('error-post-app-deploy')
 
     expect(command.config.runHook).toHaveBeenCalledWith('deploy-actions',
@@ -1049,7 +1047,6 @@ describe('run', () => {
     const runHook = jest.fn()
     command.config = { runHook }
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
-    command.argv = ['--feature-event-hooks']
     await command.run()
     expect(command.error).not.toHaveBeenCalled()
     expect(runHook).toHaveBeenCalledWith('pre-deploy-event-reg', expect.any(Object))
@@ -1063,7 +1060,6 @@ describe('run', () => {
     })
     command.config = { runHook }
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
-    command.argv = ['--feature-event-hooks']
     await command.run()
     expect(runHook).toHaveBeenCalledWith('pre-deploy-event-reg', expect.any(Object))
     // technically, I think only the first hook should be called -jm
@@ -1083,7 +1079,6 @@ describe('run', () => {
       })
     command.config = { runHook }
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
-    command.argv = ['--feature-event-hooks']
     await command.run()
     expect(runHook).toHaveBeenCalledWith('pre-deploy-event-reg', expect.any(Object))
     expect(runHook).toHaveBeenCalledWith('post-deploy-event-reg', expect.any(Object))
@@ -1106,7 +1101,6 @@ describe('run', () => {
       })
     command.config = { runHook }
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
-    command.argv = ['--feature-event-hooks']
     await command.run()
     expect(runHook).toHaveBeenCalledWith('pre-deploy-event-reg', expect.any(Object))
     expect(runHook).toHaveBeenCalledWith('post-deploy-event-reg', expect.any(Object))
