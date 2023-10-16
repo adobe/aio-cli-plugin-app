@@ -22,6 +22,9 @@ const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadat
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
 
+const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
+const POST_DEPLOY_EVENT_REG = 'post-deploy-event-reg'
+
 class Deploy extends BuildCommand {
   async run () {
     // cli input
@@ -142,7 +145,7 @@ class Deploy extends BuildCommand {
 
     try {
       await runInProcess(config.hooks['pre-app-deploy'], config)
-      const hookResults = await this.config.runHook('pre-deploy-event-reg', { appConfig: config, force: flags['force-events'] })
+      const hookResults = await this.config.runHook(PRE_DEPLOY_EVENT_REG, { appConfig: config, force: flags['force-events'] })
       if (hookResults?.failures?.length > 0) {
         // output should be "Error : <plugin-name> : <error-message>\n" for each failure
         this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
@@ -247,7 +250,7 @@ class Deploy extends BuildCommand {
 
     try {
       await runInProcess(config.hooks['post-app-deploy'], config)
-      const hookResults = await this.config.runHook('post-deploy-event-reg', { appConfig: config, force: flags['force-events'] })
+      const hookResults = await this.config.runHook(POST_DEPLOY_EVENT_REG, { appConfig: config, force: flags['force-events'] })
       if (hookResults?.failures?.length > 0) {
         // output should be "Error : <plugin-name> : <error-message>\n" for each failure
         this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
