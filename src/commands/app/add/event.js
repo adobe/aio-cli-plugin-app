@@ -32,15 +32,16 @@ class AddEventCommand extends TemplatesCommand {
     const config = entries[0][1]
     const actionFolder = path.relative(config.root, config.actions.src)
     const runtimeManifestData = this.getRuntimeManifestConfigFile(configName)
-
+    const eventsData = this.getEventsConfigFile(configName)
     const templateOptions = {
       'skip-prompt': false,
       'action-folder': actionFolder,
       'config-path': runtimeManifestData.file,
-      'full-key-to-manifest': runtimeManifestData.key
+      'full-key-to-manifest': runtimeManifestData.key,
+      'full-key-to-events-manifest': eventsData.key,
+      'events-config-path': eventsData.file
     }
-    const eventsData = this.getEventsConfigFile(configName)
-    templateOptions['full-key-to-events-manifest'] = eventsData.key
+
     const [searchCriteria, orderByCriteria] = await this.getSearchCriteria()
     const templates = await this.selectTemplates(searchCriteria, orderByCriteria)
     if (templates.length === 0) {
