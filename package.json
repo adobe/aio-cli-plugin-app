@@ -5,7 +5,7 @@
   "author": "Adobe Inc.",
   "bugs": "https://github.com/adobe/aio-cli-plugin-app/issues",
   "dependencies": {
-    "@adobe/aio-cli-lib-app-config": "^1.1.0",
+    "@adobe/aio-cli-lib-app-config": "^3.0.1",
     "@adobe/aio-cli-lib-app-config-next": "npm:@adobe/aio-cli-lib-app-config@^3.0.0",
     "@adobe/aio-cli-lib-console": "^4.1.0",
     "@adobe/aio-lib-core-config": "^4.0.0",
