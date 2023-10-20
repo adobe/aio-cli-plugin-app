@@ -2,6 +2,12 @@
   "runtimes": {
     "nodejs": [
       {
+        "kind": "blackbox",
+        "image": {
+          "name": "blackbox"
+        }
+      },
+      {
         "kind": "nodejs:10",
         "image": {
           "prefix": "adobeapiplatform",
