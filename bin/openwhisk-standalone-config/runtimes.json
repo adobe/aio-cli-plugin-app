@@ -6,7 +6,7 @@
         "image": {
           "prefix": "adobeapiplatform",
           "name": "adobe-action-nodejs-v10",
-          "tag": "3.0.37"
+          "tag": "3.0.39"
         }
       },
       {
@@ -14,7 +14,7 @@
         "image": {
           "prefix": "adobeapiplatform",
           "name": "adobe-action-nodejs-v12",
-          "tag": "3.0.37"
+          "tag": "3.0.39"
         }
       },
       {
@@ -22,7 +22,7 @@
         "image": {
           "prefix": "adobeapiplatform",
           "name": "adobe-action-nodejs-v14",
-          "tag": "3.0.37"
+          "tag": "3.0.39"
         }
       },
       {
@@ -30,7 +30,7 @@
         "image": {
           "prefix": "adobeapiplatform",
           "name": "adobe-action-nodejs-v16",
-          "tag": "3.0.37"
+          "tag": "3.0.39"
         }
       },
       {
@@ -39,7 +39,15 @@
         "image": {
           "prefix": "adobeapiplatform",
           "name": "adobe-action-nodejs-v18",
-          "tag": "3.0.37"
+          "tag": "3.0.39"
+        }
+      },
+      {
+        "kind": "nodejs:20",
+        "image": {
+          "prefix": "adobeapiplatform",
+          "name": "adobe-action-nodejs-v20",
+          "tag": "3.0.39"
         }
       }
     ]
