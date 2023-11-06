@@ -1,0 +1,19 @@
+{
+  "application": {
+    "runtimeManifest": {
+      "packages": {
+        "mypackage": {
+          "actions": {
+            "generic3": {
+              "function": "actions/generic/index.js",
+              "runtime": "nodejs:16",
+              "annotations": {
+                "code-download": false
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

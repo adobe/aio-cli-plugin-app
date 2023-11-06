@@ -15,14 +15,14 @@ const path = require('path')
 const fs = require('fs-extra')
 const ora = require('ora')
 const chalk = require('chalk')
-const { Flags } = require('@oclif/core')
+const { Flags, Args } = require('@oclif/core')
 const generators = require('@adobe/generator-aio-app')
 const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
 const inquirer = require('inquirer')
 const hyperlinker = require('hyperlinker')
 
-const { loadAndValidateConfigFile, importConfigJson } = require('../../lib/import-helper')
-const { SERVICE_API_KEY_ENV } = require('../../lib/defaults')
+const { importConsoleConfig } = require('../../lib/import')
+const { loadAndValidateConfigFile } = require('../../lib/import-helper')
 
 const DEFAULT_WORKSPACE = 'Stage'
 
@@ -123,7 +123,7 @@ class InitCommand extends TemplatesCommand {
 
     // 5. import config - if any
     if (flags.import) {
-      await this.importConsoleConfig(consoleConfig)
+      await this.importConsoleConfig(consoleConfig, flags)
     }
   }
 
@@ -154,7 +154,7 @@ class InitCommand extends TemplatesCommand {
     await this.runCodeGenerators(this.getInitialGenerators(flags), flags.yes, consoleConfig.project.name)
 
     // 8. import config
-    await this.importConsoleConfig(consoleConfig)
+    await this.importConsoleConfig(consoleConfig, flags)
 
     // 9. install templates
     await this.installTemplates({
@@ -337,20 +337,15 @@ class InitCommand extends TemplatesCommand {
   }
 
   // console config is already loaded into object
-  async importConsoleConfig (config) {
-    // get jwt client id
-    const jwtConfig = config.project.workspace.details.credentials && config.project.workspace.details.credentials.find(c => c.jwt)
-    const serviceClientId = (jwtConfig && jwtConfig.jwt.client_id) || ''
-
+  async importConsoleConfig (config, flags) {
     const configBuffer = Buffer.from(JSON.stringify(config))
-    const interactive = false
-    const merge = true
-    await importConfigJson(
-      // NOTE: importConfigJson should support reading json directly
-      configBuffer,
-      process.cwd(),
-      { interactive, merge },
-      { [SERVICE_API_KEY_ENV]: serviceClientId }
+    await importConsoleConfig(configBuffer,
+      {
+        interactive: false,
+        merge: true,
+        'use-jwt': flags['use-jwt'],
+        skipValidation: true
+      }
     )
   }
 }
@@ -398,15 +393,19 @@ InitCommand.flags = {
   'confirm-new-workspace': Flags.boolean({
     description: 'Skip and confirm prompt for creating a new workspace',
     default: false
+  }),
+  'use-jwt': Flags.boolean({
+    description: 'if the config has both jwt and OAuth Server to Server Credentials (while migrating), prefer the JWT credentials',
+    default: false
   })
 }
 
-InitCommand.args = [
+InitCommand.args =
   {
-    name: 'path',
-    description: 'Path to the app directory',
-    default: '.'
+    path: Args.string({
+      description: 'Path to the app directory',
+      default: '.'
+    })
   }
-]
 
 module.exports = InitCommand

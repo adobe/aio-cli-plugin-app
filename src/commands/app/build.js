@@ -15,7 +15,7 @@ const chalk = require('chalk')
 
 const BaseCommand = require('../../BaseCommand')
 const { Flags } = require('@oclif/core')
-const { runScript, writeConfig } = require('../../lib/app-helper')
+const { runInProcess, writeConfig } = require('../../lib/app-helper')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
 const { bundle } = require('@adobe/aio-lib-web')
 const fs = require('fs-extra')
@@ -64,7 +64,7 @@ class Build extends BaseCommand {
 
     const filterActions = flags.action
     try {
-      await runScript(config.hooks['pre-app-build'])
+      await runInProcess(config.hooks['pre-app-build'], config)
     } catch (err) {
       this.log(err)
     }
@@ -73,7 +73,7 @@ class Build extends BaseCommand {
       if (config.app.hasBackend && (flags['force-build'] || !fs.existsSync(config.actions.dist))) {
         try {
           let builtList = []
-          const script = await runScript(config.hooks['build-actions'])
+          const script = await runInProcess(config.hooks['build-actions'], config)
           aioLogger.debug(`run hook for 'build-actions' for actions in '${name}' returned ${script}`)
           spinner.start(`Building actions for '${name}'`)
           if (!script) {
@@ -105,7 +105,7 @@ class Build extends BaseCommand {
         }
         spinner.start('Building web assets')
         try {
-          const script = await runScript(config.hooks['build-static'])
+          const script = await runInProcess(config.hooks['build-static'], config)
           if (script) {
             spinner.fail(chalk.green(`build-static skipped by hook '${name}'`))
           } else {
@@ -129,7 +129,7 @@ class Build extends BaseCommand {
       }
     }
     try {
-      await runScript(config.hooks['post-app-build'])
+      await runInProcess(config.hooks['post-app-build'], config)
     } catch (err) {
       this.log(err)
     }

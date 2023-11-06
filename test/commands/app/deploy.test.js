@@ -15,7 +15,7 @@ const BaseCommand = require('../../../src/BaseCommand')
 const cloneDeep = require('lodash.clonedeep')
 const dataMocks = require('../../data-mocks/config-loader')
 const helpersActual = jest.requireActual('../../../src/lib/app-helper.js')
-
+const open = require('open')
 const mockBundleFunc = jest.fn()
 
 jest.mock('../../../src/lib/app-helper.js')
@@ -37,19 +37,7 @@ const mockConfigData = {
   }
 }
 
-jest.mock('@oclif/core', () => {
-  return {
-    ...jest.requireActual('@oclif/core'),
-    CliUx: {
-      ux: {
-        cli: {
-          open: jest.fn()
-        }
-      }
-    }
-  }
-})
-const { CliUx: { ux: cli } } = require('@oclif/core')
+jest.mock('open', () => jest.fn())
 
 jest.mock('../../../src/lib/log-forwarding', () => {
   const orig = jest.requireActual('../../../src/lib/log-forwarding')
@@ -150,7 +138,7 @@ afterAll(() => {
 
 beforeEach(() => {
   helpers.writeConfig.mockReset()
-  helpers.runScript.mockReset()
+  helpers.runInProcess.mockReset()
   helpers.buildExtensionPointPayloadWoMetadata.mockReset()
   helpers.buildExcShellViewExtensionMetadata.mockReset()
   helpers.createWebExportFilter.mockReset()
@@ -492,13 +480,13 @@ describe('run', () => {
 
   test('deploy should open ui url with --open', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
-    cli.open = jest.fn()
+    open.mockReset()
     mockWebLib.deployWeb.mockResolvedValue('https://example.com')
 
     command.argv = ['--open']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(cli.open).toHaveBeenCalledWith(expect.stringContaining('https://example.com'))
+    expect(open).toHaveBeenCalledWith(expect.stringContaining('https://example.com'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('https://example.com'))
   })
 
@@ -518,14 +506,14 @@ describe('run', () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     mockWebLib.deployWeb.mockResolvedValue('https://example.com')
     mockConfig.get.mockReturnValue('http://prefix?fake=')
-    cli.open = jest.fn()
+    open.mockReset()
 
     command.argv = ['--open']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('https://example.com'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://prefix?fake=https://example.com'))
-    expect(cli.open).toHaveBeenCalledWith('http://prefix?fake=https://example.com')
+    expect(open).toHaveBeenCalledWith('http://prefix?fake=https://example.com')
   })
 
   test('deploy should show action urls (web-export: true)', async () => {
@@ -627,7 +615,7 @@ describe('run', () => {
   test('deploy (--no-actions and --no-web-assets) for application - nothing to be done', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
-    helpers.runScript
+    helpers.runInProcess
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
       .mockResolvedValueOnce(noScriptFound) // post-app-deploy
 
@@ -652,7 +640,7 @@ describe('run', () => {
     })
     mockExtRegExcShellPayload()
     const noScriptFound = undefined
-    helpers.runScript
+    helpers.runInProcess
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
       .mockResolvedValueOnce(noScriptFound) // post-app-deploy
 
@@ -668,7 +656,7 @@ describe('run', () => {
   test('deploy (--no-actions)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
-    helpers.runScript
+    helpers.runInProcess
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
       .mockResolvedValueOnce(noScriptFound) // post-app-deploy
 
@@ -682,7 +670,7 @@ describe('run', () => {
   test('deploy (--no-web-assets)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
-    helpers.runScript
+    helpers.runInProcess
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
       .mockResolvedValueOnce(noScriptFound) // post-app-deploy
 
@@ -697,7 +685,7 @@ describe('run', () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
     const childProcess = {}
-    helpers.runScript
+    helpers.runInProcess
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
       .mockResolvedValueOnce(childProcess) // deploy-actions (uses hook)
       .mockResolvedValueOnce(childProcess) // deploy-static (uses hook)
@@ -711,34 +699,46 @@ describe('run', () => {
   })
 
   test('deploy (pre and post hooks have errors)', async () => {
+    // only the pre error should be handled, and execution should stop
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
-    helpers.runScript
+    helpers.runInProcess
       .mockRejectedValueOnce('error-pre-app-deploy') // pre-app-deploy
+
+    command.error.mockImplementationOnce((msg) => { throw new Error(msg) })
+    await expect(command.run()).rejects.toThrow('error-pre-app-deploy')
+
+    expect(helpers.runInProcess).toHaveBeenCalledTimes(1)
+    expect(command.config.runHook).not.toHaveBeenCalled()
+    expect(mockRuntimeLib.deployActions).not.toHaveBeenCalled()
+    expect(mockWebLib.deployWeb).not.toHaveBeenCalled()
+  })
+
+  test('deploy (post hooks have errors)', async () => {
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    helpers.runInProcess
+      .mockResolvedValueOnce('error-pre-app-deploy') // pre-app-deploy
       .mockResolvedValueOnce(undefined) // deploy-actions
       .mockResolvedValueOnce(undefined) // deploy-static
       .mockRejectedValueOnce('error-post-app-deploy') // post-app-deploy
 
-    command.argv = []
-    await command.run()
-    expect(command.config.runHook).toHaveBeenCalledTimes(1)
+    command.error.mockImplementationOnce((msg) => { throw new Error(msg) })
+    await expect(command.run()).rejects.toThrow('error-post-app-deploy')
+
     expect(command.config.runHook).toHaveBeenCalledWith('deploy-actions',
       expect.objectContaining({
         appConfig: expect.any(Object),
         filterEntities: [],
         isLocalDev: false
       }))
+    expect(command.config.runHook).toHaveBeenCalledTimes(2)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(command.error).toHaveBeenCalledTimes(0)
-
-    expect(command.log).toHaveBeenCalledWith('error-pre-app-deploy')
-    expect(command.log).toHaveBeenCalledWith('error-post-app-deploy')
   })
 
   test('deploy (deploy-actions hook has an error)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
-    helpers.runScript
+    helpers.runInProcess
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy (no error)
       .mockRejectedValueOnce('error-deploy-actions') // deploy-actions (rethrows error)
       .mockResolvedValueOnce(noScriptFound) // deploy-static (will not reach here)
@@ -751,7 +751,7 @@ describe('run', () => {
   test('deploy (deploy-static hook has an error)', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
-    helpers.runScript
+    helpers.runInProcess
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy (no error)
       .mockResolvedValueOnce(noScriptFound) // deploy-actions (uses inbuilt, no error)
       .mockRejectedValueOnce('error-deploy-static') // deploy-static (rethrows error)
@@ -983,7 +983,7 @@ describe('run', () => {
     }
 
     const scriptSequence = []
-    helpers.runScript.mockImplementation(script => {
+    helpers.runInProcess.mockImplementation(script => {
       scriptSequence.push(script)
     })
 
@@ -993,7 +993,7 @@ describe('run', () => {
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
 
-    expect(helpers.runScript).toHaveBeenCalledTimes(4)
+    expect(helpers.runInProcess).toHaveBeenCalledTimes(4)
     expect(scriptSequence.length).toEqual(4)
     expect(scriptSequence[0]).toEqual('pre-app-deploy')
     expect(scriptSequence[1]).toEqual('deploy-actions')
@@ -1005,7 +1005,7 @@ describe('run', () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     const expectedConfig = new LogForwarding.LogForwardingConfig('destination', { field: 'value' })
     await command.run()
-    expect(mockLogForwarding.updateServerConfig).toBeCalledWith(expectedConfig)
+    expect(mockLogForwarding.updateServerConfig).toHaveBeenCalledWith(expectedConfig)
   })
 
   test('log forwarding is not updated on server when local config is absent', async () => {
@@ -1013,7 +1013,7 @@ describe('run', () => {
     const config = new LogForwarding.LogForwardingConfig()
     mockLogForwarding.getLocalConfigWithSecrets.mockReturnValue(config)
     await command.run()
-    expect(mockLogForwarding.updateServerConfig).toBeCalledTimes(0)
+    expect(mockLogForwarding.updateServerConfig).toHaveBeenCalledTimes(0)
   })
 
   test('log forwarding is not updated on server when local config is absent --verbose', async () => {
@@ -1022,14 +1022,14 @@ describe('run', () => {
     mockLogForwarding.getLocalConfigWithSecrets.mockReturnValue(config)
     command.argv = ['--verbose']
     await command.run()
-    expect(mockLogForwarding.updateServerConfig).toBeCalledTimes(0)
+    expect(mockLogForwarding.updateServerConfig).toHaveBeenCalledTimes(0)
   })
 
   test('log forwarding is not updated on server when local config not changed', async () => {
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
     mockLogForwarding.isLocalConfigChanged.mockReturnValue(false)
     await command.run()
-    expect(mockLogForwarding.updateServerConfig).toBeCalledTimes(0)
+    expect(mockLogForwarding.updateServerConfig).toHaveBeenCalledTimes(0)
   })
 
   test('does NOT fire `event` hooks when feature flag is NOT enabled', async () => {
@@ -1047,10 +1047,63 @@ describe('run', () => {
     const runHook = jest.fn()
     command.config = { runHook }
     command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
-    command.argv = ['--feature-event-hooks']
     await command.run()
     expect(command.error).not.toHaveBeenCalled()
     expect(runHook).toHaveBeenCalledWith('pre-deploy-event-reg', expect.any(Object))
     expect(runHook).toHaveBeenCalledWith('post-deploy-event-reg', expect.any(Object))
+  })
+
+  test('handles error and exits when first hook fails', async () => {
+    const runHook = jest.fn().mockResolvedValueOnce({
+      successes: [],
+      failures: [{ plugin: { name: 'ifailedu' }, error: 'some error' }]
+    })
+    command.config = { runHook }
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    await command.run()
+    expect(runHook).toHaveBeenCalledWith('pre-deploy-event-reg', expect.any(Object))
+    // technically, I think only the first hook should be called -jm
+    expect(runHook).toHaveBeenCalledWith('post-deploy-event-reg', expect.any(Object))
+    expect(command.error).toHaveBeenCalledTimes(1)
+  })
+
+  test('handles error and exits when second hook fails', async () => {
+    const runHook = jest.fn()
+      .mockResolvedValueOnce({
+        successes: [{ plugin: { name: 'imsuccess' }, result: 'some string' }],
+        failures: []
+      })
+      .mockResolvedValueOnce({
+        successes: [],
+        failures: [{ plugin: { name: 'ifailedu' }, error: 'some error' }]
+      })
+    command.config = { runHook }
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    await command.run()
+    expect(runHook).toHaveBeenCalledWith('pre-deploy-event-reg', expect.any(Object))
+    expect(runHook).toHaveBeenCalledWith('post-deploy-event-reg', expect.any(Object))
+    expect(command.error).toHaveBeenCalledTimes(1)
+  })
+
+  test('handles error and exits when third hook fails', async () => {
+    const runHook = jest.fn()
+      .mockResolvedValueOnce({
+        successes: [{ plugin: { name: 'imsuccess' }, result: 'some string' }],
+        failures: []
+      })
+      .mockResolvedValueOnce({
+        successes: [{ plugin: { name: 'imsuccess' }, result: 'some string' }],
+        failures: []
+      })
+      .mockResolvedValueOnce({
+        successes: [],
+        failures: [{ plugin: { name: 'ifailedu' }, error: 'some error' }]
+      })
+    command.config = { runHook }
+    command.getAppExtConfigs.mockReturnValueOnce(createAppConfig(command.appConfig))
+    await command.run()
+    expect(runHook).toHaveBeenCalledWith('pre-deploy-event-reg', expect.any(Object))
+    expect(runHook).toHaveBeenCalledWith('post-deploy-event-reg', expect.any(Object))
+    expect(command.error).toHaveBeenCalledTimes(1)
   })
 })

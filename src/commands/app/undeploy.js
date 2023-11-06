@@ -12,13 +12,12 @@ governing permissions and limitations under the License.
 
 const ora = require('ora')
 const chalk = require('chalk')
-// const path = require('path')
 
 const { Flags } = require('@oclif/core')
 
 const BaseCommand = require('../../BaseCommand')
 const webLib = require('@adobe/aio-lib-web')
-const { runScript, buildExtensionPointPayloadWoMetadata } = require('../../lib/app-helper')
+const { runInProcess, buildExtensionPointPayloadWoMetadata } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 
 class Undeploy extends BaseCommand {
@@ -78,7 +77,12 @@ class Undeploy extends BaseCommand {
       }
     // undeploy
     try {
-      await runScript(config.hooks['pre-app-undeploy'])
+      await runInProcess(config.hooks['pre-app-undeploy'], config)
+      const hookResults = await this.config.runHook('pre-undeploy-event-reg', { appConfig: config })
+      if (hookResults?.failures?.length > 0) {
+        // output should be "Error : <plugin-name> : <error-message>\n" for each failure
+        this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
+      }
     } catch (err) {
       this.log(err)
     }
@@ -86,7 +90,7 @@ class Undeploy extends BaseCommand {
     if (flags.actions) {
       if (config.app.hasBackend) {
         try {
-          const script = await runScript(config.hooks['undeploy-actions'])
+          const script = await runInProcess(config.hooks['undeploy-actions'], config)
           if (!script) {
             await rtLib.undeployActions(config)
           }
@@ -102,7 +106,7 @@ class Undeploy extends BaseCommand {
     if (flags['web-assets']) {
       if (config.app.hasFrontend) {
         try {
-          const script = await runScript(config.hooks['undeploy-static'])
+          const script = await runInProcess(config.hooks['undeploy-static'], config)
           if (!script) {
             await webLib.undeployWeb(config, onProgress)
           }
@@ -117,7 +121,7 @@ class Undeploy extends BaseCommand {
     }
 
     try {
-      await runScript(config.hooks['post-app-undeploy'])
+      await runInProcess(config.hooks['post-app-undeploy'], config)
     } catch (err) {
       this.log(err)
     }
@@ -147,6 +151,11 @@ Undeploy.flags = {
     default: true,
     allowNo: true
   }),
+  events: Flags.boolean({
+    description: '[default: true] Undeploy (unregister) events if any',
+    default: true,
+    allowNo: true
+  }),
   'web-assets': Flags.boolean({
     description: '[default: true] Undeploy web-assets if any',
     default: true,
@@ -169,6 +178,6 @@ Undeploy.flags = {
   })
 }
 
-Undeploy.args = []
+Undeploy.args = {}
 
 module.exports = Undeploy

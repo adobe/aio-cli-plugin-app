@@ -79,7 +79,7 @@ describe('Command Prototype', () => {
 
 test('bad flags', async () => {
   command.argv = ['--wtf']
-  await expect(() => command.run()).rejects.toThrow('Unexpected argument: --wtf\nSee more help with --help')
+  await expect(() => command.run()).rejects.toThrow('Nonexistent flag: --wtf\nSee more help with --help')
 })
 
 test('.aio config missing', async () => {
@@ -104,7 +104,7 @@ test('--yes', async () => {
   command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
   await command.run()
-  expect(command.installTemplates).toBeCalledWith(installOptions)
+  expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
 })
 
 test('--yes --no-install', async () => {
@@ -122,7 +122,7 @@ test('--yes --no-install', async () => {
   command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
   await command.run()
-  expect(command.installTemplates).toBeCalledWith(installOptions)
+  expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
 })
 
 test('--no-install', async () => {
@@ -140,7 +140,7 @@ test('--no-install', async () => {
   command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
   await command.run()
-  expect(command.installTemplates).toBeCalledWith(installOptions)
+  expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
 })
 
 test('--extension', async () => {
@@ -158,7 +158,7 @@ test('--extension', async () => {
   command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
   await command.run()
-  expect(command.installTemplates).toBeCalledWith(installOptions)
+  expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
 })
 
 test('no flags (all action templates)', async () => {
@@ -176,7 +176,7 @@ test('no flags (all action templates)', async () => {
   command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
   await command.run()
-  expect(command.installTemplates).toBeCalledWith(installOptions)
+  expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
 })
 
 test('no flags (org action templates)', async () => {
@@ -194,7 +194,7 @@ test('no flags (org action templates)', async () => {
   command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
   mockGetEnabledServicesForOrg.mockResolvedValue([{ code: 'MyServiceCode' }])
   await command.run()
-  expect(command.installTemplates).toBeCalledWith(installOptions)
+  expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
 })
 
 test('no templates selected', async () => {

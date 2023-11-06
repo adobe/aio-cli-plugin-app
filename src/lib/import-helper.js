@@ -17,9 +17,9 @@ const fs = require('fs-extra')
 const inquirer = require('inquirer')
 const yaml = require('js-yaml')
 const hjson = require('hjson')
-const Ajv = require('ajv')
-const ajvAddFormats = require('ajv-formats')
 const { EOL } = require('os')
+const { validateJsonWithSchema } = require('./install-helper')
+const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
 
 const AIO_FILE = '.aio'
 const ENV_FILE = '.env'
@@ -33,22 +33,6 @@ const CONSOLE_CONFIG_KEY = 'console'
 // Note: if this get's turned into a lib make sure to call
 // this into an init/constructor as it might create mocking issues in jest
 const prompt = inquirer.createPromptModule({ output: process.stderr })
-
-/**
- * Validate the config json
- *
- * @param {object} configJson the json to validate
- * @returns {object} with keys valid (boolean) and errors (object). errors is null if no errors
- */
-function validateConfig (configJson) {
-  /* eslint-disable-next-line node/no-unpublished-require */
-  const schema = require('../../schema/config.schema.json')
-  const ajv = new Ajv({ allErrors: true })
-  ajvAddFormats(ajv)
-  const validate = ajv.compile(schema)
-
-  return { valid: validate(configJson), errors: validate.errors }
-}
 
 /**
  * Load a config file
@@ -87,6 +71,30 @@ function loadConfigFile (fileOrBuffer) {
 }
 
 /**
+ * Run any post-validation checks, for checks that can't be captured in JSON Schema.
+ *
+ * @private
+ */
+// It's okay to have jwt and oauth credentials, we just default to oauth unless the user specifies to use jwt - mgoberling
+//
+// function postValidateChecks (configFileJson) {
+//   // OAuth S2S: secondary check that JSON-Schema can't handle (array item check): credentials of `integration_type`
+//   // "service", "oauth_server_to_server", and "oauth_server_to_server_migrate" are mutually exclusive
+//   const project = configFileJson.project
+//   const serviceIntegration = project?.workspace?.details?.credentials?.find(c => c.integration_type === 'service')
+//   const oauthS2SIntegration = project?.workspace?.details?.credentials?.find(c => c.integration_type === 'oauth_server_to_server')
+//   const oauthS2SMigrateIntegration = project?.workspace?.details?.credentials?.find(c => c.integration_type === 'oauth_server_to_server_migrate')
+
+//   if ((serviceIntegration && oauthS2SIntegration) ||
+//       (serviceIntegration && oauthS2SMigrateIntegration) ||
+//       (oauthS2SIntegration && oauthS2SMigrateIntegration)
+//   ) {
+//     const message = 'Mutually exclusive credentials: "integration_type" values: service, oauth_server_to_server, oauth_server_to_server_migrate'
+//     throw new Error(message)
+//   }
+// }
+
+/**
  * Load and validate a config file
  *
  * @param {string} fileOrBuffer the path to the config file or a Buffer
@@ -94,11 +102,16 @@ function loadConfigFile (fileOrBuffer) {
  */
 function loadAndValidateConfigFile (fileOrBuffer) {
   const res = loadConfigFile(fileOrBuffer)
-  const { valid: configIsValid, errors: configErrors } = validateConfig(res.values)
+  const { valid: configIsValid, errors: configErrors } = validateJsonWithSchema(res.values, 'config.json')
   if (!configIsValid) {
     const message = `Missing or invalid keys in config: ${JSON.stringify(configErrors, null, 2)}`
     throw new Error(message)
   }
+
+  // Skip post validate checks for now, it's okay to have both service and oauth
+  // credentials, we just default to oauth unless the user specifies to use jwt - mgoberling
+  // postValidateChecks(res.values)
+
   return res
 }
 
@@ -187,24 +200,24 @@ async function checkFileConflict (filePath) {
  * Transform a json object to a flattened version. Any nesting is separated by the `separator` string.
  * For example, if you have the `_` separator string, flattening this:
  *
+ * @example
  * {
- *    foo: {
- *      bar: 'a',
- *      baz: {
- *        faz: 'b'
- *      }
- *    }
+ *   foo: {
+ *     bar: 'a',
+ *     baz: {
+ *       faz: 'b'
+ *     }
+ *   }
  * }
  *
  * const result = flattenObjectWithSeparator(json, {}, '', '_)
  * The result would then be:
  * {
- *    'foo_bar': 'a',
- *    'foo_baz_faz': 'b'
+ *   'foo_bar': 'a',
+ *   'foo_baz_faz': 'b'
  * }
  *
  * Any underscores in the object key are escaped with an underscore.
- *
  * @param {object} json the json object to transform
  * @param {object} result the result object to initialize the function with
  * @param {string} prefix the prefix to add to the final key
@@ -499,6 +512,46 @@ function transformRuntime (runtime) {
 }
 
 /**
+ * Gets the service credential from the credentials.
+ *
+ * This is different if Jwt or OAuth Server to Server is available, and whether
+ * there is a migration going on from Jwt -> OAuth Server to Server.
+ *
+ * @private
+ * @param {object} credentials all the credentials for the workspace
+ * @param {boolean} useJwt prefer jwt, if available.
+ * @returns {object} the service credential object
+ */
+function getServiceCredential (credentials, imsOrgId, useJwt) {
+  // find jwt / oauth_server_to_server credential
+  const jwtCredential = credentials.find(credential => typeof credential.jwt === 'object')
+  const oauthS2SCredential = credentials.find(credential => typeof credential.oauth_server_to_server === 'object')
+
+  // enrich jwt / oauth_server_to_server credentials with ims org id
+  if (jwtCredential && jwtCredential.jwt && !jwtCredential.jwt.ims_org_id) {
+    aioLogger.debug('adding ims_org_id to ims.jwt config')
+    jwtCredential.jwt.ims_org_id = imsOrgId
+  }
+
+  if (oauthS2SCredential && oauthS2SCredential.oauth_server_to_server && !oauthS2SCredential.oauth_server_to_server.ims_org_id) {
+    aioLogger.debug('adding ims_org_id to ims.oauth_server_to_server config')
+    oauthS2SCredential.oauth_server_to_server.ims_org_id = imsOrgId
+  }
+
+  if (jwtCredential && oauthS2SCredential) {
+    if (useJwt) {
+      return jwtCredential.jwt
+    } else {
+      return oauthS2SCredential.oauth_server_to_server
+    }
+  } else if (oauthS2SCredential) {
+    return oauthS2SCredential.oauth_server_to_server
+  } else if (jwtCredential) {
+    return jwtCredential.jwt
+  }
+}
+
+/**
  * Transforms a credentials array to an object, to what this plugin expects.
  * Enrich with ims_org_id if it is a jwt credential.
  *
@@ -525,22 +578,17 @@ function transformRuntime (runtime) {
  *
  * @param {Array} credentials array from Downloadable File Format
  * @param {string} imsOrgId the ims org id
+ * @param {boolean} useJwt prefer jwt credential (in in OAuth Server to Server migration scenario)
  * @returns {object} the Credentials object
  * @private
  */
-function transformCredentials (credentials, imsOrgId) {
-  // find jwt credential
-  const credential = credentials.find(credential => typeof credential.jwt === 'object')
-
-  // enrich jwt credentials with ims org id
-  if (credential && credential.jwt && !credential.jwt.ims_org_id) {
-    aioLogger.debug('adding ims_org_id to ims.jwt config')
-    credential.jwt.ims_org_id = imsOrgId
-  }
+function transformCredentials (credentials, imsOrgId, useJwt) {
+  // get jwt / oauth_server_to_server credential
+  const serviceCredential = getServiceCredential(credentials, imsOrgId, useJwt)
 
   return credentials.reduce((acc, credential) => {
-    // the json schema enforces for jwt OR oauth2 OR apiKey in a credential
-    const value = credential.oauth2 || credential.jwt || credential.api_key
+    // the json schema enforces for oauth2 OR apiKey OR jwt OR oauth_server_to_server in a credential
+    const value = credential.oauth2 || credential.api_key || serviceCredential
 
     const name = credential.name.replace(/ /gi, '_') // replace any spaces with underscores
     acc[name] = value
@@ -603,7 +651,7 @@ async function importConfigJson (configFileOrBuffer, destinationFolder = process
 
   await writeEnv({
     runtime: transformRuntime(runtime),
-    ims: { contexts: transformCredentials(credentials, config.project.org.ims_org_id) }
+    ims: { contexts: transformCredentials(credentials, config.project.org.ims_org_id, flags.useJwt) }
   }, destinationFolder, flags, extraEnvVars)
 
   // remove the credentials
@@ -617,8 +665,78 @@ async function importConfigJson (configFileOrBuffer, destinationFolder = process
   return writeAio(config, destinationFolder, flags)
 }
 
+/**
+ * Gets the service api key from the config file.
+ *
+ * This is different if Jwt or OAuth Server to Server is available, and whether
+ * there is a migration going on from Jwt -> OAuth Server to Server.
+ *
+ * @param {object} configFileJson the config file json
+ * @param {boolean} useJwt prefer the jwt credential, if available.
+ * @returns {string} the service api key
+ */
+function getServiceApiKey (configFileJson, useJwt) {
+  const project = configFileJson?.project
+
+  const jwtConfig = project?.workspace?.details?.credentials?.find(c => c.jwt)
+  const oauthS2SConfig = project?.workspace?.details?.credentials?.find(c => c.oauth_server_to_server)
+
+  const jwtClientId = jwtConfig?.jwt?.client_id
+  const oauthS2SClientId = oauthS2SConfig?.oauth_server_to_server?.client_id
+
+  if (jwtConfig && oauthS2SConfig) {
+    if (useJwt) {
+      return jwtClientId
+    } else {
+      return oauthS2SClientId
+    }
+  } else if (oauthS2SConfig) {
+    return oauthS2SClientId
+  } else if (jwtConfig) {
+    return jwtClientId
+  }
+
+  return ''
+}
+
+/**
+ * Gets the service credential type from .aio data
+ *
+ * @param {object} projectConfig Project config from .aio
+ * @param {object} flags Command flags
+ * @returns {string} the credential type
+ */
+const getProjectCredentialType = (projectConfig, flags) => {
+  // Note: This only looks at the first credential of each type
+  const jwtConfig = projectConfig?.workspace?.details?.credentials?.find(c => c.integration_type === 'service')
+  const oauthS2SConfig = projectConfig?.workspace?.details?.credentials?.find(c => c.integration_type === 'oauth_server_to_server')
+  const oauthS2SMigrateConfig = projectConfig?.workspace?.details?.credentials?.find(c => c.integration_type === 'oauth_server_to_server_migrate')
+
+  if (jwtConfig && oauthS2SConfig) {
+    if (flags['use-jwt']) {
+      return LibConsoleCLI.JWT_CREDENTIAL
+    } else {
+      return LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+    }
+  } else if (oauthS2SConfig) {
+    return LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+  } else if (oauthS2SMigrateConfig) {
+    if (flags['use-jwt']) {
+      return LibConsoleCLI.JWT_CREDENTIAL
+    } else {
+      return LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+    }
+  } else if (jwtConfig) {
+    return LibConsoleCLI.JWT_CREDENTIAL
+  }
+
+  // Default to JWT, like the other lib functions
+  return LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
+}
+
 module.exports = {
-  validateConfig,
+  getServiceApiKey,
+  writeFile,
   loadConfigFile,
   loadAndValidateConfigFile,
   writeConsoleConfig,
@@ -629,5 +747,6 @@ module.exports = {
   importConfigJson,
   mergeEnv,
   splitEnvLine,
+  getProjectCredentialType,
   CONSOLE_CONFIG_KEY
 }

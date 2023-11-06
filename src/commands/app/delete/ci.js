@@ -60,6 +60,6 @@ DeleteCICommand.flags = {
   ...BaseCommand.flags
 }
 
-DeleteCICommand.args = []
+DeleteCICommand.args = {}
 
 module.exports = DeleteCICommand

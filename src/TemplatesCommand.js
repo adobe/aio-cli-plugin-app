@@ -113,7 +113,7 @@ class TemplatesCommand extends AddCommand {
           type: 'table',
           name: promptName,
           bottomContent: `* = recommended by Adobe; to learn more about the templates, go to ${hyperlinker('https://adobe.ly/templates', 'https://adobe.ly/templates')}`,
-          message: 'Choose the template(s) to install:',
+          message: 'Choose the template(s) to install:\n  Pressing <enter> without selection will skip templates and install a standalone application.\n',
           style: { head: [], border: [] },
           wordWrap: true,
           wrapOnWordBoundary: false,
@@ -152,6 +152,8 @@ class TemplatesCommand extends AddCommand {
 
     if (templates.length <= 0) {
       aioLogger.debug('installTemplates: standalone-app')
+      // technically runHook can quietly fail, but we are choosing to ignore it as these are telemetry events
+      // and not mission critical
       await this.config.runHook('telemetry', { data: 'installTemplates:standalone-app' })
     } else {
       aioLogger.debug(`installTemplates: ${templates}`)
