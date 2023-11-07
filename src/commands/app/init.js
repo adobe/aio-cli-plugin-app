@@ -133,6 +133,11 @@ class InitCommand extends TemplatesCommand {
   }
 
   async initWithLogin (flags) {
+
+    if (flags.repo) {
+      await this.withQuickstart(flags.repo)
+    }
+
     // this will trigger a login
     const consoleCLI = await this.getLibConsoleCLI()
 
@@ -173,10 +178,6 @@ class InitCommand extends TemplatesCommand {
         installNpm: flags.install,
         templates
       })
-    }
-
-    if (flags.repo) {
-      await this.withQuickstart(flags.repo)
     }
 
     this.log(chalk.blue(chalk.bold(`Project initialized for Workspace ${workspace.name}, you can run 'aio app use -w <workspace>' to switch workspace.`)))
@@ -404,7 +405,7 @@ class InitCommand extends TemplatesCommand {
         } else {
           const response = await fetch(fileOrDir.download_url)
           const jsonResponse = await response.text()
-          await fs.promises.writeFile(relative(basePath, fileOrDir.path), jsonResponse)
+          fs.writeFileSync(relative(basePath, fileOrDir.path), jsonResponse)
         }
       }
     }
@@ -474,7 +475,7 @@ InitCommand.flags = {
     default: false
   }),
   repo: Flags.string({
-    description: 'Init from gh quick-start repo',
+    description: 'Init from gh quick-start repo. Expected to be of the form <owner>/<repo>/<path>',
     exclusive: ['template', 'extension', 'standalone-app']
   })
 }
