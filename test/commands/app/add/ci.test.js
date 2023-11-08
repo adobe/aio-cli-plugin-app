@@ -44,7 +44,7 @@ describe('Command Prototype', () => {
 
 describe('bad flags', () => {
   test('unknown', async () => {
-    await expect(TheCommand.run(['--wtf'])).rejects.toThrow('Unexpected argument')
+    await expect(TheCommand.run(['--wtf'])).rejects.toThrow('Nonexistent flag')
   })
 })
 

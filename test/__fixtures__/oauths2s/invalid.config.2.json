@@ -1,0 +1,158 @@
+{
+    "project": {
+        "id": "123",
+        "name": "TestProject123",
+        "title": "Test Title ",
+        "description": "My project description ",
+        "org": {
+            "id": "25591412",
+            "name": "Developers-Developers-Dévêlöpèrš",
+            "ims_org_id": "XOXOXOXOXOXOX@AdobeOrg"
+        },
+        "workspace": {
+            "id": "1356",
+            "name": "TestWörkspacé",
+            "title": "Tést Tïtle ",
+            "description": " My wörkspacè description",
+            "action_url": "https://ABCD-TestProject-TestWorkspace.adobeioruntime.net",
+            "app_url": "https://ABCD-TestProject-TestWorkspace.adobestatic.net",
+            "details": {
+                "credentials": [
+                    {
+                        "id": "17561142",
+                        "name": "Projéct A",
+                        "integration_type": "oauthweb",
+                        "oauth2": {
+                            "client_id": "XYXYXYXYXYXYXYXYX",
+                            "client_secret": "XYXYXYXYZZZZZZ",
+                            "redirect_uri": [ "https://test123" ],
+                            "defaultRedirectUri": "https://test123"
+                        }
+                    },
+                    {
+                        "id": "17606512",
+                        "name": "PröjectB",
+                        "integration_type": "oauth_server_to_server_migrate",
+                        "jwt": {
+                            "client_id": "XUXUXUXUXUXUXUX",
+                            "client_secret": "XPXPXPXPXPXPXPXPX",
+                            "technical_account_email": "XTXTXTXTXTX@techacct.adobe.com",
+                            "technical_account_id": "IDIDIDIDID@techacct.adobe.com",
+                            "meta_scopes": [
+                                "ent_smartcontent_sdk",
+                                "ent_adobeio_sdk"
+                            ]
+                        },
+                        "oauth_server_to_server": {
+                            "client_id": "CXCXCXCXCXCXCXCXC",
+                            "client_secrets": [
+                                "SFSFSFSFSFSFSFSFSFSFSFSFSFS"
+                            ],
+                            "technical_account_email": "RERERERERERERE@techacct.adobe.com",
+                            "technical_account_id": "GDGDGDGDGDGDG@techacct.adobe.com",
+                            "scopes": [
+                                "openid",
+                                "AdobeID"
+                            ]
+                        }
+                    },
+                    {
+                        "id": "17234512",
+                        "name": "ProjectB2",
+                        "integration_type": "service",
+                        "jwt": {
+                            "client_id": "XUXUXUXUXUXUXUX",
+                            "client_secret": "XPXPXPXPXPXPXPXPX",
+                            "technical_account_email": "XTXTXTXTXTX@techacct.adobe.com",
+                            "technical_account_id": "IDIDIDIDID@techacct.adobe.com",
+                            "meta_scopes": [
+                                "ent_smartcontent_sdk",
+                                "ent_adobeio_sdk"
+                            ]
+                        }
+                    },
+                    {
+                        "id": "17656565",
+                        "name": "Project C",
+                        "integration_type": "apikey",
+                        "api_key": {
+                            "client_id": "AKAKAKAKAKAKAKAKAKAKAKAK"
+                        }
+                    },
+                    {
+                        "id": "17656570",
+                        "name": "Project D",
+                        "integration_type": "oauthsinglepageapp",
+                        "oauth2": {
+                            "client_id": "KAKAKAKAKAKAKAKAKAKAKAKA",
+                            "redirect_uri": [ "https://test123" ],
+                            "defaultRedirectUri": "https://test123"
+                        }
+                    },
+                    {
+                        "id": "17950",
+                        "name": "New Test Intégration 8",
+                        "integration_type": "oauthandroid",
+                        "oauth2": {
+                            "client_id": "XRXRXRXRXRXRXRXRXR",
+                            "client_secret": "XRXRXRXRXRXRXRXRXRX",
+                            "redirect_uri": [ "https://abc123/foo" ],
+                            "defaultRedirectUri": "https://abc123/foo"
+                        }
+                    },
+                    {
+                        "id": "17951",
+                        "name": "New Test Intégration 9",
+                        "integration_type": "oauthwebapp",
+                        "oauth2": {
+                            "client_id": "TYTYTYYUTYEWTEWRW",
+                            "client_secret": "STWEGSDGEVBEGE",
+                            "redirect_uri": [ "https://abc123/foo2" ],
+                            "defaultRedirectUri": "https://abc123/foo2"
+                        }
+                    },
+                    {
+                        "id": "17952",
+                        "name": "New Test Intégration 10",
+                        "integration_type": "oauthnativeapp",
+                        "oauth2": {
+                            "client_id": "XXXTYTYTYYUTYEWTEWRW",
+                            "client_secret": "XXXSTWEGSDGEVBEGE",
+                            "redirect_uri": [ "https://abc123/foo3" ],
+                            "defaultRedirectUri": "https://abc123/foo3"
+                        }
+                    },
+                    {
+                        "id": "17953",
+                        "name": "New Test Intégration 11",
+                        "integration_type": "oauthsinglepageapp",
+                        "oauth2": {
+                            "client_id": "YYYYXXXTYTYTYYUTYEWTEWRW",
+                            "client_secret": "YYYYXXXSTWEGSDGEVBEGE",
+                            "redirect_uri": [ "https://abc123/foo4" ],
+                            "defaultRedirectUri": "https://abc123/foo4"
+                        }
+                    }
+                ],
+                "services": [
+                    {
+                        "code": "AdobeIOManagementAPISDK",
+                        "name": "I/O Management API"
+                    },
+                    {
+                        "code": "CC SDK",
+                        "name": "Creative SDK"
+                    }
+                ],
+                "runtime": {
+                    "namespaces": [
+                        {
+                            "name": "Name",
+                            "auth": "Auth"
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}

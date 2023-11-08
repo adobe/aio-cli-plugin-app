@@ -17,36 +17,39 @@ const DOCKER_REPOS = { // repo-name:kind
   'adobe-action-nodejs-v12': 'nodejs:12',
   'adobe-action-nodejs-v14': 'nodejs:14',
   'adobe-action-nodejs-v16': 'nodejs:16',
+  'adobe-action-nodejs-v18': 'nodejs:18',
+  'adobe-action-nodejs-v20': 'nodejs:20'
 }
 
-const DEFAULT_KIND = 'nodejs:16'
+const DEFAULT_KIND = 'nodejs:18'
 
-async function main() {
-    const nodejs = []
+/** @private */
+async function main () {
+  const nodejs = []
 
-    for ([repoName, kind] of Object.entries(DOCKER_REPOS)) {
-      const data = await fetch(`https://registry.hub.docker.com/v2/repositories/${DOCKER_ORG}/${repoName}/tags`)
-      const json = await data.json()
-      const defaultKind = (kind === DEFAULT_KIND)? true : undefined
+  for (const [repoName, kind] of Object.entries(DOCKER_REPOS)) {
+    const data = await fetch(`https://registry.hub.docker.com/v2/repositories/${DOCKER_ORG}/${repoName}/tags`)
+    const json = await data.json()
+    const defaultKind = (kind === DEFAULT_KIND) ? true : undefined
 
-      nodejs.push({
-        kind,
-        default: defaultKind,
-        image: {
-          prefix: DOCKER_ORG,
-          name: repoName,
-          tag: json.results[0].name
-        }
-      })
-    }
-
-    const output = {
-      runtimes: {
-        nodejs
+    nodejs.push({
+      kind,
+      default: defaultKind,
+      image: {
+        prefix: DOCKER_ORG,
+        name: repoName,
+        tag: json.results[0].name
       }
-    }
-    console.log(JSON.stringify(output, null, 2))
+    })
   }
 
-  main()
-  
+  const output = {
+    runtimes: {
+      nodejs
+    }
+  }
+  console.log(JSON.stringify(output, null, 2))
+}
+
+main()
+  .catch(console.error)

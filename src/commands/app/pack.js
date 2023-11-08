@@ -10,7 +10,7 @@ governing permissions and limitations under the License.
 */
 
 const BaseCommand = require('../../BaseCommand')
-const { Flags } = require('@oclif/core')
+const { Flags, Args } = require('@oclif/core')
 const path = require('node:path')
 const fs = require('fs-extra')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:pack', { provider: 'debug' })
@@ -21,11 +21,16 @@ const { loadConfigFile, writeFile } = require('../../lib/import-helper')
 const { getObjectValue } = require('../../lib/app-helper')
 const ora = require('ora')
 const chalk = require('chalk')
+const junk = require('junk')
 
+// eslint-disable-next-line node/no-missing-require
+const libConfigNext = require('@adobe/aio-cli-lib-app-config-next')
+
+const DIST_FOLDER = 'dist'
 const DEFAULTS = {
-  OUTPUT_ZIP_FILE: 'app.zip',
-  ARTIFACTS_FOLDER: 'app-package',
-  DEPLOY_YAML_FILE: 'deploy.yaml'
+  OUTPUT_ZIP_FILE_PATH: path.join(DIST_FOLDER, 'app.zip'),
+  ARTIFACTS_FOLDER_PATH: path.join(DIST_FOLDER, 'app-package'),
+  DEPLOY_YAML_FILE_NAME: 'deploy.yaml'
 }
 
 class Pack extends BaseCommand {
@@ -37,7 +42,8 @@ class Pack extends BaseCommand {
     aioLogger.debug(`flags: ${JSON.stringify(flags, null, 2)}`)
     aioLogger.debug(`args: ${JSON.stringify(args, null, 2)}`)
 
-    const appConfig = this.getFullConfig()
+    // this will also validate the app.config.yaml
+    const appConfig = await libConfigNext.load()
 
     // resolve to absolute path before any chdir
     const outputZipFile = path.resolve(flags.output)
@@ -49,20 +55,37 @@ class Pack extends BaseCommand {
       aioLogger.debug(`changed current working directory to: ${resolvedPath}`)
     }
 
+    // get all 'dist' locations of all extensions (relative to the current working directory)
+    const distLocations = Object.entries(appConfig.all)
+      .map(([, extConfig]) => path.relative(process.cwd(), extConfig.app.dist))
+
     try {
       // 1. create artifacts phase
-      this.spinner.start(`Creating package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER}'...`)
-      await fs.emptyDir(DEFAULTS.ARTIFACTS_FOLDER)
-      this.spinner.succeed(`Created package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER}'`)
+      this.spinner.start(`Creating package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER_PATH}'...`)
+      await fs.emptyDir(DEFAULTS.ARTIFACTS_FOLDER_PATH)
+      this.spinner.succeed(`Created package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER_PATH}'`)
 
       // ACNA-2038
       // not artifacts folder should exist before we fire the event
-      await this.config.runHook('pre-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER })
+
+      const hookResults = await this.config.runHook('pre-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER_PATH })
+      if (hookResults?.failures?.length > 0) {
+        // output should be "Error : <plugin-name> : <error-message>\n" for each failure
+        this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
+      }
+
+      // 1a. Get file list to pack
+      const fileList = await this.filesToPack({ filesToExclude: [flags.output, DEFAULTS.DIST_FOLDER, ...distLocations] })
+      this.log('=== Files to pack ===')
+      fileList.forEach((file) => {
+        this.log(`  ${file}`)
+      })
+      this.log('=====================')
 
       // 2. copy files to package phase
       this.spinner.start('Copying project files...')
-      const fileList = await this.filesToPack([flags.output])
-      await this.copyPackageFiles(DEFAULTS.ARTIFACTS_FOLDER, fileList)
+
+      await this.copyPackageFiles(DEFAULTS.ARTIFACTS_FOLDER_PATH, fileList)
       this.spinner.succeed('Copied project files')
 
       // 3. add/modify artifacts phase
@@ -75,13 +98,18 @@ class Pack extends BaseCommand {
       this.spinner.succeed('Added code-download annotations')
 
       // doing this before zip so other things can be added to the zip
-      await this.config.runHook('post-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER })
+      await this.config.runHook('post-pack', { appConfig, artifactsFolder: DEFAULTS.ARTIFACTS_FOLDER_PATH })
 
       // 4. zip package phase
-      this.spinner.start(`Zipping package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER}' to '${outputZipFile}'...`)
+      this.spinner.start(`Zipping package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER_PATH}' to '${outputZipFile}'...`)
       await fs.remove(outputZipFile)
-      await this.zipHelper(DEFAULTS.ARTIFACTS_FOLDER, outputZipFile)
-      this.spinner.succeed(`Zipped package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER}' to '${outputZipFile}'`)
+      await this.zipHelper(DEFAULTS.ARTIFACTS_FOLDER_PATH, outputZipFile)
+      this.spinner.succeed(`Zipped package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER_PATH}' to '${outputZipFile}'`)
+
+      // 5. finally delete the artifacts folder
+      this.spinner.start(`Deleting package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER_PATH}'...`)
+      await fs.remove(DEFAULTS.ARTIFACTS_FOLDER_PATH)
+      this.spinner.succeed(`Deleted package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER_PATH}'`)
     } catch (e) {
       this.spinner.fail(e.message)
       this.error(flags.verbose ? e : e.message)
@@ -128,6 +156,10 @@ class Pack extends BaseCommand {
       version: appConfig.packagejson.version
     }
 
+    if (!application.version.match(/^[0-9]+.[0-9]+.[0-9]+$/)) {
+      throw new Error('Application version format must be "X.Y.Z", where X, Y, and Z are non-negative integers.')
+    }
+
     let meshConfig
     // ACNA-2041
     // get the mesh config by running the `aio api-mesh:get` command (if available)
@@ -135,13 +167,23 @@ class Pack extends BaseCommand {
     // TODO: send a PR to their plugin to have a `--json` flag
     const command = await this.config.findCommand('api-mesh:get')
     if (command) {
-      this.spinner.start('Getting api-mesh config...')
-      const { stdout } = await execa('aio', ['api-mesh', 'get'], { cwd: process.cwd() })
-      // until we get the --json flag, we parse the output
-      const idx = stdout.indexOf('{')
-      meshConfig = JSON.parse(stdout.substring(idx))
-      aioLogger.debug(`api-mesh:get - ${JSON.stringify(meshConfig, null, 2)}`)
-      this.spinner.succeed('Got api-mesh config')
+      try {
+        this.spinner.start('Getting api-mesh config...')
+        const { stdout } = await execa('aio', ['api-mesh', 'get'], { cwd: process.cwd() })
+        // until we get the --json flag, we parse the output
+        const idx = stdout.indexOf('{')
+        meshConfig = JSON.parse(stdout.substring(idx)).meshConfig
+        aioLogger.debug(`api-mesh:get - ${JSON.stringify(meshConfig, null, 2)}`)
+        this.spinner.succeed('Got api-mesh config')
+      } catch (err) {
+        // Ignore error if no mesh found, otherwise throw
+        if (err?.stderr.includes('Error: Unable to get mesh config. No mesh found for Org')) {
+          aioLogger.debug('No api-mesh config found')
+        } else {
+          console.error(err)
+          throw err
+        }
+      }
     } else {
       aioLogger.debug('api-mesh:get command was not found, meshConfig is not available for app:pack')
     }
@@ -158,7 +200,7 @@ class Pack extends BaseCommand {
     }
 
     await writeFile(
-      path.join(DEFAULTS.ARTIFACTS_FOLDER, DEFAULTS.DEPLOY_YAML_FILE),
+      path.join(DEFAULTS.ARTIFACTS_FOLDER_PATH, DEFAULTS.DEPLOY_YAML_FILE_NAME),
       yaml.dump(deployJson),
       { overwrite: true })
   }
@@ -221,17 +263,38 @@ class Pack extends BaseCommand {
    *
    * This runs `npm pack` to get the list.
    *
-   * @param {Array<string>} filesToExclude a list of files to exclude
-   * @param {string} workingDirectory the working directory to run `npm pack` in
+   * @param {object} options the options for the method
+   * @param {Array<string>} options.filesToExclude a list of files to exclude
+   * @param {string} options.workingDirectory the working directory to run `npm pack` in
    * @returns {Array<string>} a list of files that are to be packed
    */
-  async filesToPack (filesToExclude = [], workingDirectory = process.cwd()) {
+  async filesToPack ({ filesToExclude = [], workingDirectory = process.cwd() } = {}) {
     const { stdout } = await execa('npm', ['pack', '--dry-run', '--json'], { cwd: workingDirectory })
+
+    const noJunkFiles = (file) => {
+      const isJunkFile = junk.is(file)
+      if (isJunkFile) {
+        aioLogger.debug(`junk file (omitted from pack): ${file}`)
+      }
+
+      return !isJunkFile
+    }
+
+    const noDotFiles = (file) => {
+      const isDotFile = /^\..*/.test(file)
+      if (isDotFile) {
+        aioLogger.debug(`hidden dotfile (omitted from pack): ${file}`)
+      }
+
+      return !isDotFile
+    }
 
     const { files } = JSON.parse(stdout)[0]
     return files
       .map(file => file.path)
       .filter(file => !filesToExclude.includes(file))
+      .filter(noJunkFiles) // no junk files like .DS_Store
+      .filter(noDotFiles) // no files that start with a '.'
   }
 
   /**
@@ -242,28 +305,50 @@ class Pack extends BaseCommand {
    * @param {object} appConfig the app's configuration file
    */
   async addCodeDownloadAnnotation (appConfig) {
-    // get the configFiles that have runtime manifests
-    const configFiles = []
-    for (const [, value] of Object.entries(appConfig.includeIndex)) {
-      const { key } = value
-      if (key === 'runtimeManifest' || key === 'application.runtimeManifest') {
-        configFiles.push(value)
-      }
-    }
+    // get each annotation key relative to the file it is defined in
+    /// iterate only over extensions that have actions defined
+    const fileToAnnotationKey = {}
+    Object.entries(appConfig.all)
+      .filter(([_, extConf]) => extConf.manifest?.full?.packages)
+      .forEach(([ext, extConf]) => {
+        Object.entries(extConf.manifest.full.packages)
+          .filter(([pkg, pkgConf]) => pkgConf.actions)
+          .forEach(([pkg, pkgConf]) => {
+            Object.entries(pkgConf.actions).forEach(([action, actionConf]) => {
+              const baseFullKey = ext === 'application'
+                ? `application.runtimeManifest.packages.${pkg}.actions.${action}`
+                : `extensions.${ext}.runtimeManifest.packages.${pkg}.actions.${action}`
 
-    // for each configFile, we modify each action to have the "code-download: false" annotation
-    for (const configFile of configFiles) {
-      const configFilePath = path.join(DEFAULTS.ARTIFACTS_FOLDER, configFile.file)
+              let index
+              if (actionConf.annotations) {
+                index = appConfig.includeIndex[`${baseFullKey}.annotations`]
+              } else {
+                // the annotation object is not defined, take the parent key
+                index = appConfig.includeIndex[baseFullKey]
+              }
+              if (!fileToAnnotationKey[index.file]) {
+                fileToAnnotationKey[index.file] = []
+              }
+              fileToAnnotationKey[index.file].push(index.key) // index.key is relative to the file
+            })
+          })
+      })
+
+    // rewrite config files
+    for (const [file, keys] of Object.entries(fileToAnnotationKey)) {
+      const configFilePath = path.join(DEFAULTS.ARTIFACTS_FOLDER_PATH, file)
       const { values } = loadConfigFile(configFilePath)
 
-      const runtimeManifest = getObjectValue(values, configFile.key)
-      for (const [, pkgManifest] of Object.entries(runtimeManifest.packages)) {
-        // key is the package name (unused), value is the package manifest. we iterate through each package's "actions"
-        for (const [, actionManifest] of Object.entries(pkgManifest.actions)) {
-          // key is the action name (unused), value is the action manifest. we add the "code-download: false" annotation
-          actionManifest.annotations['code-download'] = false
+      keys.forEach(key => {
+        const object = getObjectValue(values, key)
+        if (key.endsWith('.annotations') || key === 'annotations') {
+          // object is the annotations object
+          object['code-download'] = false
+        } else {
+          // annotation object is not defined, the object is the action object
+          object.annotations = { 'code-download': false }
         }
-      }
+      })
 
       // write back the modified manifest to disk
       await writeFile(configFilePath, yaml.dump(values), { overwrite: true })
@@ -281,16 +366,16 @@ Pack.flags = {
   output: Flags.string({
     description: 'The packaged app output file path',
     char: 'o',
-    default: DEFAULTS.OUTPUT_ZIP_FILE
+    default: DEFAULTS.OUTPUT_ZIP_FILE_PATH
   })
 }
 
-Pack.args = [
+Pack.args =
   {
-    name: 'path',
-    description: 'Path to the app directory to package',
-    default: '.'
+    path: Args.string({
+      description: 'Path to the app directory to package',
+      default: '.'
+    })
   }
-]
 
 module.exports = Pack

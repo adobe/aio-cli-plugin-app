@@ -1,6 +1,9 @@
 {
     "extends": "@adobe/eslint-config-aio-lib-config",
     "globals": {
+      "NoErrorThrownError": true,
+      "getErrorForCallThatShouldThrowAnError": true,
+      "fixturePath": true,
       "fixtureFile": true,
       "fixtureJson": true,
       "fixtureHjson": true,
@@ -14,5 +17,15 @@
     },
     "parserOptions": {
         "ecmaVersion": "latest"
-    }
+    },
+    "rules": {
+        "jsdoc/tag-lines": [
+            // The Error level should be `error`, `warn`, or `off` (or 2, 1, or 0)
+            "error",
+            "never",
+            {
+              "startLines": null
+            }
+        ]
+      }
 }

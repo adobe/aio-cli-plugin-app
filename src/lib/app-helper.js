@@ -66,7 +66,13 @@ async function installPackages (dir, options = { spinner: null, verbose: false }
   return ret
 }
 
-/** @private */
+// Is this still used? it is exported, but there are no references to it -jm
+/**
+ * @param {string} scriptName  npm script name
+ * @param {string} dir directory to run npm script in
+ * @param {string[]} cmdArgs args to pass to npm script
+ * @returns {object} the child process
+ */
 async function runPackageScript (scriptName, dir, cmdArgs = []) {
   aioLogger.debug(`running npm run-script ${scriptName} in dir: ${dir}`)
   const pkg = await fs.readJSON(path.join(dir, 'package.json'))
@@ -79,7 +85,38 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
   }
 }
 
-/** @private */
+/**
+ * @param {string} hookPath to be require()'d and run. Should export an async function that takes a config object as its only argument
+ * @param {object} config which will be passed to the hook
+ * @returns {Promise<*>} whatever the hook returns
+ */
+async function runInProcess (hookPath, config) {
+  if (hookPath) {
+    try {
+      const hook = require(path.resolve(hookPath))
+      aioLogger.debug('runInProcess: running project hook in process')
+      return hook(config)
+    } catch (e) {
+      aioLogger.debug('runInProcess: error running project hook in process, running as package script instead')
+      return runScript(hookPath)
+    }
+  } else {
+    aioLogger.debug('runInProcess: undefined hookPath')
+  }
+}
+
+/**
+ * @typedef ChildProcess
+ */
+
+/**
+ * Runs a package script in a child process
+ *
+ * @param {string} command to run
+ * @param {string} dir to run command in
+ * @param {string[]} cmdArgs args to pass to command
+ * @returns {Promise<ChildProcess>} child process
+ */
 async function runScript (command, dir, cmdArgs = []) {
   if (!command) {
     return null
@@ -320,7 +357,7 @@ async function runOpenWhiskJar (jarFile, runtimeConfigFile, apihost, waitInitTim
 
 /**
  *
- * Converts a service array to an input string that can be consumed by generator-aio-app
+ *Converts a service array to an input string that can be consumed by generator-aio-app
  *
  * @param {Array} services array of services [{ code: 'xxx', name: 'xxx' }, ...]
  * @returns {string} 'code1,code2,code3'
@@ -536,6 +573,7 @@ module.exports = {
   isGitInstalled,
   installPackages,
   runScript,
+  runInProcess,
   runPackageScript,
   wrapError,
   getCliInfo,

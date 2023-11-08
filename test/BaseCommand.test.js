@@ -62,7 +62,7 @@ test('flags', async () => {
 })
 
 test('args', async () => {
-  expect(TheCommand.args).toEqual([])
+  expect(TheCommand.args).toEqual({})
 })
 
 test('basecommand defines method', async () => {
@@ -149,6 +149,22 @@ describe('getRuntimeManifestConfigFile', () => {
   })
 })
 
+describe('getEventsConfigFile', () => {
+  test('no events', () => {
+    mockConfigLoader.mockReturnValue(getMockConfig('app-no-actions', {}))
+    const cmd = new TheCommand()
+    expect(cmd.getEventsConfigFile('application')).toEqual({ file: 'app.config.yaml', key: 'application.events' })
+  })
+  test('multiple implementations', () => {
+    const config = getMockConfig('app-exc-nui', {})
+    mockConfigLoader.mockReturnValue(config)
+    const cmd = new TheCommand()
+    expect(cmd.getEventsConfigFile('application')).toEqual({ file: 'app.config.yaml', key: 'application.events' })
+    expect(cmd.getEventsConfigFile('dx/asset-compute/worker/1')).toEqual({ file: 'src/dx-asset-compute-worker-1/ext.config.yaml', key: 'events' })
+    expect(cmd.getEventsConfigFile('dx/excshell/1')).toEqual({ file: 'src/dx-excshell-1/ext.config.yaml', key: 'events' })
+  })
+})
+
 describe('getAppExtConfigs', () => {
   test('no extension flags', () => {
     const config = getMockConfig('app-exc-nui', {})
@@ -199,21 +215,21 @@ describe('getAppExtConfigs', () => {
 })
 
 describe('getLibConsoleCLI', () => {
-  test('test cache', async () => {
+  test('cache', async () => {
     const cmd = new TheCommand()
     const a = await cmd.getLibConsoleCLI()
     const b = await cmd.getLibConsoleCLI()
     expect(a).toBe(b)
     expect(LibConsoleCLI.init).toHaveBeenCalledTimes(1)
   })
-  test('prod env ', async () => {
+  test('prod env', async () => {
     getToken.mockReturnValue('hola')
     libEnv.getCliEnv.mockReturnValue('prod')
     const cmd = new TheCommand()
     await cmd.getLibConsoleCLI()
     expect(LibConsoleCLI.init).toHaveBeenCalledWith({ env: 'prod', accessToken: 'hola', apiKey: expect.any(String) })
   })
-  test('stage env ', async () => {
+  test('stage env', async () => {
     getToken.mockReturnValue('hola')
     libEnv.getCliEnv.mockReturnValue('stage')
     const cmd = new TheCommand()

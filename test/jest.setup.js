@@ -15,7 +15,7 @@ const upath = require('upath')
 
 jest.setTimeout(15000)
 
-const fs = jest.requireActual('fs')
+const fs = require('fs')
 const eol = require('eol')
 const path = require('path')
 const hjson = require('hjson')
@@ -46,6 +46,28 @@ jest.mock('which')
 jest.mock('execa')
 
 jest.mock('@adobe/aio-lib-env')
+
+/*
+  jest/no-conditional-expect
+  See:
+    https://github.com/jest-community/eslint-plugin-jest/blob/main/docs/rules/no-conditional-expect.md
+*/
+
+class NoErrorThrownError extends Error {}
+global.NoErrorThrownError = NoErrorThrownError
+
+// A call is expected to throw an error
+// If no error is thrown, we throw a NoErrorThrownError
+// This is so we can test whether the right error is thrown, and it doesn't silently fail
+global.getErrorForCallThatShouldThrowAnError = async (callThatShouldThrowAnError) => {
+  try {
+    await callThatShouldThrowAnError()
+    // it should not have succeeded, if it did, we throw a known error, for tests
+    return new NoErrorThrownError()
+  } catch (err) {
+    return err
+  }
+}
 
 /* global fixtureFile, fixtureJson */
 

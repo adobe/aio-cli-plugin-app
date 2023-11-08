@@ -63,7 +63,7 @@ describe('Command Prototype', () => {
 
 test('bad flags', async () => {
   command.argv = ['--wtf']
-  await expect(() => command.run()).rejects.toThrow('Unexpected argument: --wtf\nSee more help with --help')
+  await expect(() => command.run()).rejects.toThrow('Nonexistent flag: --wtf\nSee more help with --help')
 })
 
 test('--yes (no extension)', async () => {
@@ -83,7 +83,7 @@ test('--yes (with extension)', async () => {
   ])
 
   await command.run()
-  expect(command.installTemplatesByExtensionPointIds).toBeCalled()
+  expect(command.installTemplatesByExtensionPointIds).toHaveBeenCalled()
 })
 
 test('--yes --no-install (with extension)', async () => {
@@ -98,7 +98,7 @@ test('--yes --no-install (with extension)', async () => {
   ])
 
   await command.run()
-  expect(command.installTemplatesByExtensionPointIds).toBeCalled()
+  expect(command.installTemplatesByExtensionPointIds).toHaveBeenCalled()
 })
 
 test('--no-install', async () => {
@@ -112,7 +112,7 @@ test('--no-install', async () => {
   command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
   await command.run()
-  expect(command.installTemplates).toBeCalledWith(installOptions)
+  expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
 })
 
 test('no flags', async () => {
@@ -126,7 +126,7 @@ test('no flags', async () => {
   command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
   await command.run()
-  expect(command.installTemplates).toBeCalledWith(installOptions)
+  expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
 })
 
 test('no templates selected', async () => {

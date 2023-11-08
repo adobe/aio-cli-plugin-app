@@ -25,7 +25,7 @@ const extensionConfig = {
   }
 }
 beforeEach(() => {
-  utils.runScript.mockReset()
+  utils.runInProcess.mockReset()
 })
 
 test('exports', () => {
@@ -33,7 +33,7 @@ test('exports', () => {
 })
 
 test('build-actions app hook available', async () => {
-  utils.runScript.mockImplementation((script) => {
+  utils.runInProcess.mockImplementation((script) => {
     if (script === 'build-actions') {
       return {}
     }
@@ -41,19 +41,19 @@ test('build-actions app hook available', async () => {
 
   await buildActions(extensionConfig)
 
-  expect(rtBuildActions).not.toBeCalled()
-  expect(utils.runScript).toHaveBeenNthCalledWith(1, 'pre-app-build')
-  expect(utils.runScript).toHaveBeenNthCalledWith(2, 'build-actions')
-  expect(utils.runScript).toHaveBeenNthCalledWith(3, 'post-app-build')
+  expect(rtBuildActions).not.toHaveBeenCalled()
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(1, 'pre-app-build', expect.any(Object))
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(2, 'build-actions', expect.any(Object))
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(3, 'post-app-build', expect.any(Object))
 })
 
 test('no build-actions app hook available (use inbuilt)', async () => {
   await buildActions(extensionConfig)
 
   expect(rtBuildActions).toHaveBeenCalled()
-  expect(utils.runScript).toHaveBeenNthCalledWith(1, 'pre-app-build')
-  expect(utils.runScript).toHaveBeenNthCalledWith(2, 'build-actions')
-  expect(utils.runScript).toHaveBeenNthCalledWith(3, 'post-app-build')
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(1, 'pre-app-build', expect.any(Object))
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(2, 'build-actions', expect.any(Object))
+  expect(utils.runInProcess).toHaveBeenNthCalledWith(3, 'post-app-build', expect.any(Object))
 })
 
 test('forceBuild false (default)', async () => {

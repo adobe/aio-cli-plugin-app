@@ -28,54 +28,6 @@ describe('config.json', () => {
   })
 })
 
-describe('app.config.yaml', () => {
-  const schemaName = 'app.config.yaml'
-
-  describe('extensions', () => {
-    test('validate success', () => {
-      const { valid, errors } = validateJsonWithSchema(
-        fixtureYaml('app.config.yaml/1.extensions.valid.yaml'),
-        schemaName
-      )
-
-      expect(errors).toEqual(null)
-      expect(valid).toBeTruthy()
-    })
-
-    test('validate failure', () => {
-      const { valid, errors } = validateJsonWithSchema(
-        fixtureYaml('app.config.yaml/1.extensions.invalid.yaml'),
-        schemaName
-      )
-
-      expect(errors.length).toEqual(3)
-      expect(valid).toBeFalsy()
-    })
-  })
-
-  describe('application', () => {
-    test('validate success', () => {
-      const { valid, errors } = validateJsonWithSchema(
-        fixtureYaml('app.config.yaml/2.application.valid.yaml'),
-        schemaName
-      )
-
-      expect(errors).toEqual(null)
-      expect(valid).toBeTruthy()
-    })
-
-    test('validate failure', () => {
-      const { valid, errors } = validateJsonWithSchema(
-        fixtureYaml('app.config.yaml/2.application.invalid.yaml'),
-        schemaName
-      )
-
-      expect(errors.length).toEqual(3)
-      expect(valid).toBeFalsy()
-    })
-  })
-})
-
 describe('deploy.yaml', () => {
   const schemaName = 'deploy.yaml'
 
