@@ -471,7 +471,7 @@ InitCommand.flags = {
   repo: Flags.string({
     description: 'Init from gh quick-start repo. Expected to be of the form <owner>/<repo>/<path>',
     exclusive: ['template', 'extension', 'standalone-app']
-  })
+  }),
   'use-jwt': Flags.boolean({
     description: 'if the config has both jwt and OAuth Server to Server Credentials (while migrating), prefer the JWT credentials',
     default: false
