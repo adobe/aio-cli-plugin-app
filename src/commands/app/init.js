@@ -374,44 +374,42 @@ class InitCommand extends TemplatesCommand {
     })
 
     /** @private */
-    function relative (basePath, filePath) {
-      filePath = filePath.replace(/^\/+/, '') // remove fist slash
-      basePath = basePath.replace(/\/+$/, '') // remove last slash
-      if (!filePath.startsWith(basePath + '/')) {
-        return filePath
-      }
-      return filePath.slice(`${basePath}/`.length)
-    }
-
-    /** @private */
     async function downloadRepoDirRecursive (owner, repo, filePath, basePath = '') {
+
       const { data } = await octokit.repos.getContent({ owner, repo, path: filePath })
 
       for (const fileOrDir of data) {
         if (fileOrDir.type === 'dir') {
-          const destDir = relative(basePath, fileOrDir.path)
-
-          if (!fs.existsSync(destDir)) {
-            fs.mkdirSync(destDir, { recursive: true })
-          }
-
+          const destDir = path.relative(basePath, fileOrDir.path)
+          fs.ensureDirSync(destDir)
           await downloadRepoDirRecursive(owner, repo, fileOrDir.path, basePath)
         } else {
+          // todo: use a spinner
+          console.log(`Downloading ${fileOrDir.path}`)
           const response = await fetch(fileOrDir.download_url)
           const jsonResponse = await response.text()
-          fs.writeFileSync(relative(basePath, fileOrDir.path), jsonResponse)
+          fs.writeFileSync(path.relative(basePath, fileOrDir.path), jsonResponse)
         }
       }
     }
-
-    const [owner, repo, basePath] = fullRepo.split('/')
+    // todo: this fails past the first level deep, <owner>/<repo>/<path>/<path>
+    const [owner, repo, ...restOfPath] = fullRepo.split('/')
+    const basePath = restOfPath.join('/')
     try {
-      await octokit.repos.getContent({ owner, repo, path: `${basePath}/app.config.yaml` })
+      const result = await octokit.repos.getContent({ owner, repo, path: `${basePath}/apple.config.yaml` })
+      // console.log('result : ', result)
+      await downloadRepoDirRecursive(owner, repo, basePath, basePath)
     } catch (e) {
-      this.error('--repo does not point to a valid Adobe App Builder app')
+      if( e.status === 404) {
+        this.error('--repo does not point to a valid Adobe App Builder app')
+      } else if (e.status === 403) {
+        // todo: remove this, it is feature creep, helpful for debugging
+        // github rate limit is 60 requests per hour for unauthenticated users
+        // const resetTime = new Date(e.response.headers['x-ratelimit-reset'] * 1000)
+        // console.log('resetTime : ', resetTime.toLocaleTimeString())
+        this.error('too many requests, please try again later')
+      }
     }
-
-    await downloadRepoDirRecursive(owner, repo, basePath, basePath)
   }
 }
 
