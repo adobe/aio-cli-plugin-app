@@ -372,12 +372,10 @@ class InitCommand extends TemplatesCommand {
     const octokit = new Octokit({
       auth: ''
     })
-
     /** @private */
     async function downloadRepoDirRecursive (owner, repo, filePath, basePath = '') {
 
       const { data } = await octokit.repos.getContent({ owner, repo, path: filePath })
-
       for (const fileOrDir of data) {
         if (fileOrDir.type === 'dir') {
           const destDir = path.relative(basePath, fileOrDir.path)
@@ -397,18 +395,18 @@ class InitCommand extends TemplatesCommand {
     const basePath = restOfPath.join('/')
     try {
       const result = await octokit.repos.getContent({ owner, repo, path: `${basePath}/apple.config.yaml` })
-      // console.log('result : ', result)
       await downloadRepoDirRecursive(owner, repo, basePath, basePath)
     } catch (e) {
       if( e.status === 404) {
         this.error('--repo does not point to a valid Adobe App Builder app')
       } else if (e.status === 403) {
-        // todo: remove this, it is feature creep, helpful for debugging
+        // todo: remove this, it is feature creep, but helpful for debugging
         // github rate limit is 60 requests per hour for unauthenticated users
         // const resetTime = new Date(e.response.headers['x-ratelimit-reset'] * 1000)
         // console.log('resetTime : ', resetTime.toLocaleTimeString())
         this.error('too many requests, please try again later')
       }
+      this.error(e)
     }
   }
 }

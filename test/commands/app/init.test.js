@@ -17,6 +17,7 @@ const importHelperLib = require('../../../src/lib/import-helper')
 const inquirer = require('inquirer')
 const savedDataDir = process.env.XDG_DATA_HOME
 const yeoman = require('yeoman-environment')
+const { Octokit } = require('@octokit/rest')
 
 jest.mock('@adobe/aio-lib-core-config')
 jest.mock('fs-extra')
@@ -71,6 +72,8 @@ yeoman.createEnv.mockReturnValue({
   instantiate: jest.fn(),
   runGenerator: jest.fn()
 })
+
+jest.mock('@octokit/rest')
 
 // FAKE DATA ///////////////////////
 
@@ -166,6 +169,8 @@ beforeEach(() => {
   importHelperLib.importConfigJson.mockReset()
 
   importHelperLib.loadConfigFile.mockReturnValue({ values: fakeConfig })
+
+  Octokit.mockReset()
 })
 
 afterAll(() => {
@@ -281,6 +286,83 @@ describe('--no-login', () => {
     await command.run()
 
     expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
+  })
+
+  test('--repo --no-login', async () => {
+    const getContent = () => new Promise((resolve, reject) => {
+      resolve({ status: 302, data: [] });
+    })
+    Octokit.mockImplementation(() => ({ repos: { getContent } }))
+
+    command.argv = ['--no-login', '--repo=adobe/appbuilder-quickstarts/qr-code']
+    await command.run()
+
+    expect(command.installTemplates).not.toHaveBeenCalled()
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
+  })
+
+  test('--repo --login', async () => {
+    const getContent = ({owner, repo, path}) => new Promise((resolve, reject) => {
+      // console.log('args = ', owner, repo, path)
+      if (path == 'src') {
+        resolve({ data: []})
+      }
+      else resolve({
+        data:[{
+          type: 'file',
+          path: '.gitignore',
+          download_url: 'https://raw.githubusercontent.com/adobe/appbuilder-quickstarts/master/qr-code/.gitignore'
+        },{
+          type: 'dir',
+          path: 'src'
+        }]
+      })
+    })
+    Octokit.mockImplementation(() => ({ repos: { getContent } }))
+
+    command.argv = ['--login', '--repo=adobe/appbuilder-quickstarts/qr-code']
+    await command.run()
+
+    expect(command.installTemplates).not.toHaveBeenCalled()
+    expect(LibConsoleCLI.init).toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).toHaveBeenCalled()
+  })
+
+  test('--repo not valid 404', async () => {
+    const getContent = () => new Promise((resolve, reject) => {
+      console.log('rejecting with 404')
+      reject({ status: 404, data: [] });
+    })
+    Octokit.mockImplementation(() => ({ repos: { getContent } }))
+
+    command.error = jest.fn()
+    command.argv = ['--no-login', '--repo=adobe/appbuilder-quickstarts/dne']
+
+    await command.run()
+
+    expect(command.error).toHaveBeenCalledWith('--repo does not point to a valid Adobe App Builder app')
+    expect(command.installTemplates).not.toHaveBeenCalled()
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
+  })
+
+  test('--repo not reachable 403', async () => {
+    const getContent = () => new Promise((resolve, reject) => {
+      console.log('rejecting with 403')
+      reject({ status: 403, data: [] });
+    })
+    Octokit.mockImplementation(() => ({ repos: { getContent } }))
+
+    command.error = jest.fn()
+    command.argv = ['--no-login', '--repo=adobe/appbuilder-quickstarts/dne']
+
+    await command.run()
+
+    expect(command.error).toHaveBeenCalledWith('too many requests, please try again later')
+    expect(command.installTemplates).not.toHaveBeenCalled()
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
