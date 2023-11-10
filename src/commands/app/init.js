@@ -132,11 +132,9 @@ class InitCommand extends TemplatesCommand {
   }
 
   async initWithLogin (flags) {
-
     if (flags.repo) {
       await this.withQuickstart(flags.repo)
     }
-
     // this will trigger a login
     const consoleCLI = await this.getLibConsoleCLI()
 
@@ -373,8 +371,7 @@ class InitCommand extends TemplatesCommand {
       auth: ''
     })
     /** @private */
-    async function downloadRepoDirRecursive (owner, repo, filePath, basePath = '') {
-
+    async function downloadRepoDirRecursive (owner, repo, filePath, basePath) {
       const { data } = await octokit.repos.getContent({ owner, repo, path: filePath })
       for (const fileOrDir of data) {
         if (fileOrDir.type === 'dir') {
@@ -394,19 +391,21 @@ class InitCommand extends TemplatesCommand {
     const [owner, repo, ...restOfPath] = fullRepo.split('/')
     const basePath = restOfPath.join('/')
     try {
-      const result = await octokit.repos.getContent({ owner, repo, path: `${basePath}/apple.config.yaml` })
+      await octokit.repos.getContent({ owner, repo, path: `${basePath}/app.config.yaml` })
       await downloadRepoDirRecursive(owner, repo, basePath, basePath)
     } catch (e) {
-      if( e.status === 404) {
+      if (e.status === 404) {
         this.error('--repo does not point to a valid Adobe App Builder app')
-      } else if (e.status === 403) {
+      }
+      if (e.status === 403) {
         // todo: remove this, it is feature creep, but helpful for debugging
         // github rate limit is 60 requests per hour for unauthenticated users
         // const resetTime = new Date(e.response.headers['x-ratelimit-reset'] * 1000)
         // console.log('resetTime : ', resetTime.toLocaleTimeString())
         this.error('too many requests, please try again later')
+      } else {
+        this.error(e)
       }
-      this.error(e)
     }
   }
 }

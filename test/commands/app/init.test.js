@@ -236,6 +236,17 @@ describe('bad args/flags', () => {
   })
 })
 
+describe('--project', () => {
+  test('no value', async () => {
+    command.argv = ['--project']
+    await expect(command.run()).rejects.toThrow('Flag --project expects a value')
+  })
+  test('non-existent', async () => {
+    command.argv = ['--project=non-existent']
+    await expect(command.run()).rejects.toThrow('--project non-existent not found')
+  })
+})
+
 describe('--no-login', () => {
   test('select excshell, arg: /otherdir', async () => {
     const installOptions = {
@@ -292,7 +303,7 @@ describe('--no-login', () => {
 
   test('--repo --no-login', async () => {
     const getContent = () => new Promise((resolve, reject) => {
-      resolve({ status: 302, data: [] });
+      resolve({ status: 302, data: [] })
     })
     Octokit.mockImplementation(() => ({ repos: { getContent } }))
 
@@ -305,21 +316,22 @@ describe('--no-login', () => {
   })
 
   test('--repo --login', async () => {
-    const getContent = ({owner, repo, path}) => new Promise((resolve, reject) => {
+    const getContent = ({ owner, repo, path }) => new Promise((resolve, reject) => {
       // console.log('args = ', owner, repo, path)
-      if (path == 'src') {
-        resolve({ data: []})
+      if (path === 'src') {
+        resolve({ data: [] })
+      } else {
+        resolve({
+          data: [{
+            type: 'file',
+            path: '.gitignore',
+            download_url: 'https://raw.githubusercontent.com/adobe/appbuilder-quickstarts/master/qr-code/.gitignore'
+          }, {
+            type: 'dir',
+            path: 'src'
+          }]
+        })
       }
-      else resolve({
-        data:[{
-          type: 'file',
-          path: '.gitignore',
-          download_url: 'https://raw.githubusercontent.com/adobe/appbuilder-quickstarts/master/qr-code/.gitignore'
-        },{
-          type: 'dir',
-          path: 'src'
-        }]
-      })
     })
     Octokit.mockImplementation(() => ({ repos: { getContent } }))
 
@@ -333,8 +345,10 @@ describe('--no-login', () => {
 
   test('--repo not valid 404', async () => {
     const getContent = () => new Promise((resolve, reject) => {
-      console.log('rejecting with 404')
-      reject({ status: 404, data: [] });
+      // console.log('rejecting with 404')
+      const error = new Error('the error message is not checked, just the status code')
+      error.status = 404
+      reject(error)
     })
     Octokit.mockImplementation(() => ({ repos: { getContent } }))
 
@@ -351,8 +365,10 @@ describe('--no-login', () => {
 
   test('--repo not reachable 403', async () => {
     const getContent = () => new Promise((resolve, reject) => {
-      console.log('rejecting with 403')
-      reject({ status: 403, data: [] });
+      // console.log('rejecting with 403')
+      const error = new Error('the error message is not checked, just the status code')
+      error.status = 403
+      reject(error)
     })
     Octokit.mockImplementation(() => ({ repos: { getContent } }))
 
