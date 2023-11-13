@@ -23,6 +23,7 @@ const hyperlinker = require('hyperlinker')
 const { importConsoleConfig } = require('../../lib/import')
 const { loadAndValidateConfigFile } = require('../../lib/import-helper')
 const { Octokit } = require('@octokit/rest')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 
 const DEFAULT_WORKSPACE = 'Stage'
 
@@ -370,6 +371,7 @@ class InitCommand extends TemplatesCommand {
     const octokit = new Octokit({
       auth: ''
     })
+    const spinner = ora('Downloading quickstart repo').start()
     /** @private */
     async function downloadRepoDirRecursive (owner, repo, filePath, basePath) {
       const { data } = await octokit.repos.getContent({ owner, repo, path: filePath })
@@ -380,28 +382,32 @@ class InitCommand extends TemplatesCommand {
           await downloadRepoDirRecursive(owner, repo, fileOrDir.path, basePath)
         } else {
           // todo: use a spinner
-          console.log(`Downloading ${fileOrDir.path}`)
+          spinner.text = `Downloading ${fileOrDir.path}`
           const response = await fetch(fileOrDir.download_url)
           const jsonResponse = await response.text()
           fs.writeFileSync(path.relative(basePath, fileOrDir.path), jsonResponse)
         }
       }
     }
-    // todo: this fails past the first level deep, <owner>/<repo>/<path>/<path>
+    // we need to handle n-deep paths, <owner>/<repo>/<path>/<path>
     const [owner, repo, ...restOfPath] = fullRepo.split('/')
     const basePath = restOfPath.join('/')
     try {
-      await octokit.repos.getContent({ owner, repo, path: `${basePath}/app.config.yaml` })
+      const response = await octokit.repos.getContent({ owner, repo, path: `${basePath}/app.config.yaml` })
+      aioLogger.debug(`github headers: ${JSON.stringify(response.headers, 0, 2)}`)
       await downloadRepoDirRecursive(owner, repo, basePath, basePath)
+      spinner.succeed('Downloaded quickstart repo')
     } catch (e) {
       if (e.status === 404) {
+        spinner.fail('Quickstart repo not found')
         this.error('--repo does not point to a valid Adobe App Builder app')
       }
       if (e.status === 403) {
-        // todo: remove this, it is feature creep, but helpful for debugging
+        // This is helpful for debugging, but by default we don't show it
         // github rate limit is 60 requests per hour for unauthenticated users
-        // const resetTime = new Date(e.response.headers['x-ratelimit-reset'] * 1000)
-        // console.log('resetTime : ', resetTime.toLocaleTimeString())
+        const resetTime = new Date(e.response.headers['x-ratelimit-reset'] * 1000)
+        aioLogger.debug(`too many requests, resetTime : ${resetTime.toLocaleTimeString()}`)
+        spinner.fail()
         this.error('too many requests, please try again later')
       } else {
         this.error(e)

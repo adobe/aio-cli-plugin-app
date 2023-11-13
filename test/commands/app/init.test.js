@@ -28,6 +28,22 @@ jest.mock('inquirer', () => ({
   createPromptModule: jest.fn()
 }))
 
+// mock ora
+jest.mock('ora', () => {
+  const mockOra = {
+    start: jest.fn(() => mockOra),
+    stop: jest.fn(() => mockOra),
+    succeed: jest.fn(() => mockOra),
+    fail: jest.fn(() => mockOra),
+    info: jest.fn(() => mockOra),
+    warn: jest.fn(() => mockOra),
+    stopAndPersist: jest.fn(() => mockOra),
+    clear: jest.fn(() => mockOra),
+    promise: jest.fn(() => Promise.resolve(mockOra))
+  }
+  return jest.fn(() => mockOra)
+})
+
 // mock login
 jest.mock('@adobe/aio-lib-ims')
 
@@ -303,7 +319,7 @@ describe('--no-login', () => {
 
   test('--repo --no-login', async () => {
     const getContent = () => new Promise((resolve, reject) => {
-      resolve({ status: 302, data: [] })
+      resolve({ headers: [], status: 302, data: [] })
     })
     Octokit.mockImplementation(() => ({ repos: { getContent } }))
 
@@ -367,6 +383,7 @@ describe('--no-login', () => {
     const getContent = () => new Promise((resolve, reject) => {
       // console.log('rejecting with 403')
       const error = new Error('the error message is not checked, just the status code')
+      error.response = { headers: { 'x-ratelimit-reset': 99999999999 } }
       error.status = 403
       reject(error)
     })
