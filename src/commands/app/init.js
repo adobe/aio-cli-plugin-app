@@ -447,10 +447,12 @@ InitCommand.flags = {
   }),
   org: Flags.string({
     description: 'Specify the Adobe Developer Console Org to init from',
+    hidden: true,
     exclusive: ['import'] // also no-login
   }),
   project: Flags.string({
     description: 'Specify the Adobe Developer Console Project to init from',
+    hidden: true,
     exclusive: ['import'] // also no-login
   }),
   workspace: Flags.string({
