@@ -370,7 +370,7 @@ class InitCommand extends TemplatesCommand {
   async withQuickstart (fullRepo, githubPat) {
     const octokit = new Octokit({
       auth: githubPat ?? '',
-      userAgent: 'ADP App Builder v1',
+      userAgent: 'ADP App Builder v1'
     })
     const spinner = ora('Downloading quickstart repo').start()
     /** @private */
@@ -482,8 +482,8 @@ InitCommand.flags = {
   }),
   'github-pat': Flags.string({
     description: 'github personal access token to use for downloading private quickstart repos',
-    hidden: false
-  }),
+    dependsOn: ['repo']
+  })
 }
 
 InitCommand.args =
