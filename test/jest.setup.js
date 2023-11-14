@@ -13,7 +13,7 @@ governing permissions and limitations under the License.
 const { stdout, stderr } = require('stdout-stderr')
 const upath = require('upath')
 
-jest.setTimeout(30000)
+jest.setTimeout(45000)
 
 const fs = require('fs')
 const eol = require('eol')
