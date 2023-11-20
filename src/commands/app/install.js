@@ -55,7 +55,9 @@ class InstallCommand extends BaseCommand {
       await this.validateAppConfig(outputPath, USER_CONFIG_FILE)
       await this.validateDeployConfig(outputPath, DEPLOY_CONFIG_FILE)
       await this.npmInstall(flags.verbose)
-      await this.runTests()
+      if (flags.tests) {
+        await this.runTests()
+      }
       this.spinner.succeed('Install done.')
     } catch (e) {
       this.spinner.fail(e.message)
@@ -164,6 +166,11 @@ InstallCommand.flags = {
     description: 'The packaged app output folder path',
     char: 'o',
     default: '.'
+  }),
+  tests: Flags.boolean({
+    description: 'Run packaged app unit tests (e.g. aio app:test)',
+    default: true,
+    allowNo: true
   })
 }
 
