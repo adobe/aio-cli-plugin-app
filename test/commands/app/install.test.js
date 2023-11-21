@@ -20,7 +20,7 @@ const { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE } = require('../../../src/lib/defau
 const path = require('node:path')
 const jsYaml = require('js-yaml')
 
-const libConfigNext = require('@adobe/aio-cli-lib-app-config-next')
+const libConfig = require('@adobe/aio-cli-lib-app-config')
 
 jest.mock('fs-extra')
 jest.mock('unzipper')
@@ -76,8 +76,8 @@ beforeEach(() => {
   process.chdir.mockClear()
   process.cwd.mockClear()
 
-  jest.spyOn(libConfigNext, 'coalesce').mockImplementation(async () => ({ config: {} })).mockClear()
-  jest.spyOn(libConfigNext, 'validate').mockImplementation(async () => {}).mockClear()
+  jest.spyOn(libConfig, 'coalesce').mockImplementation(async () => ({ config: {} })).mockClear()
+  jest.spyOn(libConfig, 'validate').mockImplementation(async () => {}).mockClear()
 })
 
 test('exports', () => {
@@ -299,8 +299,8 @@ describe('run', () => {
 
     expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
     expect(command.unzipFile).toHaveBeenCalledTimes(1)
-    expect(libConfigNext.coalesce).toHaveBeenCalledTimes(1)
-    expect(libConfigNext.validate).toHaveBeenCalledTimes(1)
+    expect(libConfig.coalesce).toHaveBeenCalledTimes(1)
+    expect(libConfig.validate).toHaveBeenCalledTimes(1)
     expect(command.validateDeployConfig).toHaveBeenCalledTimes(1)
     expect(command.runTests).toHaveBeenCalledTimes(1)
     expect(command.npmInstall).toHaveBeenCalledTimes(1)
@@ -327,8 +327,8 @@ describe('run', () => {
 
     expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
     expect(command.unzipFile).toHaveBeenCalledTimes(1)
-    expect(libConfigNext.coalesce).toHaveBeenCalledTimes(1)
-    expect(libConfigNext.validate).toHaveBeenCalledTimes(1)
+    expect(libConfig.coalesce).toHaveBeenCalledTimes(1)
+    expect(libConfig.validate).toHaveBeenCalledTimes(1)
     expect(command.validateDeployConfig).toHaveBeenCalledTimes(1)
     expect(command.runTests).toHaveBeenCalledTimes(1)
     expect(command.npmInstall).toHaveBeenCalledTimes(1)
@@ -357,8 +357,8 @@ describe('run', () => {
 
     expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
     expect(command.unzipFile).toHaveBeenCalledTimes(1)
-    expect(libConfigNext.coalesce).toHaveBeenCalledTimes(1)
-    expect(libConfigNext.validate).toHaveBeenCalledTimes(1)
+    expect(libConfig.coalesce).toHaveBeenCalledTimes(1)
+    expect(libConfig.validate).toHaveBeenCalledTimes(1)
     expect(command.validateDeployConfig).toHaveBeenCalledTimes(1)
     expect(command.runTests).toHaveBeenCalledTimes(1)
     expect(command.npmInstall).toHaveBeenCalledTimes(1)
@@ -384,8 +384,8 @@ describe('run', () => {
 
     expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
     expect(command.unzipFile).toHaveBeenCalledTimes(1)
-    expect(libConfigNext.coalesce).toHaveBeenCalledTimes(1)
-    expect(libConfigNext.validate).toHaveBeenCalledTimes(1)
+    expect(libConfig.coalesce).toHaveBeenCalledTimes(1)
+    expect(libConfig.validate).toHaveBeenCalledTimes(1)
     expect(command.validateDeployConfig).toHaveBeenCalledTimes(1)
     expect(command.runTests).toHaveBeenCalledTimes(1)
     expect(command.npmInstall).toHaveBeenCalledTimes(1)
@@ -407,7 +407,7 @@ describe('run', () => {
     command.error = jest.fn()
 
     const err = new Error('fake validation error')
-    libConfigNext.validate.mockImplementation(async () => { throw err })
+    libConfig.validate.mockImplementation(async () => { throw err })
     command.spinner.fail = jest.fn()
 
     await command.run()

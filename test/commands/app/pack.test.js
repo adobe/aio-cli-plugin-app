@@ -29,7 +29,7 @@ const importHelper = require('../../../src/lib/import-helper')
 const yaml = require('js-yaml')
 const archiver = require('archiver')
 
-const libConfigNext = require('@adobe/aio-cli-lib-app-config-next')
+const libConfig = require('@adobe/aio-cli-lib-app-config')
 
 // mocks
 jest.mock('execa')
@@ -40,7 +40,7 @@ jest.mock('archiver')
 const mockGetFullConfig = jest.fn()
 
 beforeAll(() => {
-  jest.spyOn(libConfigNext, 'load').mockImplementation(mockGetFullConfig)
+  jest.spyOn(libConfig, 'load').mockImplementation(mockGetFullConfig)
 })
 
 // mock cwd

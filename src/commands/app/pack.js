@@ -24,7 +24,7 @@ const chalk = require('chalk')
 const junk = require('junk')
 
 // eslint-disable-next-line node/no-missing-require
-const libConfigNext = require('@adobe/aio-cli-lib-app-config-next')
+const libConfigNext = require('@adobe/aio-cli-lib-app-config')
 
 const DIST_FOLDER = 'dist'
 const DEFAULTS = {

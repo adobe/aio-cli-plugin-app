@@ -24,7 +24,7 @@ const ora = require('ora')
 const chalk = require('chalk')
 
 // eslint-disable-next-line node/no-missing-require
-const libConfigNext = require('@adobe/aio-cli-lib-app-config-next')
+const libConfigNext = require('@adobe/aio-cli-lib-app-config')
 
 class InstallCommand extends BaseCommand {
   async run () {
