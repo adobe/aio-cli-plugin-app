@@ -24,7 +24,7 @@ class AddActionCommand extends TemplatesCommand {
     aioLogger.debug(`add actions with flags: ${JSON.stringify(flags)}`)
 
     // guaranteed to have at least one, otherwise would throw in config load or in matching the ext name
-    const entries = Object.entries(this.getAppExtConfigs(flags))
+    const entries = Object.entries(await this.getAppExtConfigs(flags))
     if (entries.length > 1) {
       this.error('Please use the \'-e\' flag to specify to which implementation you want to add actions to.')
     }
@@ -32,7 +32,7 @@ class AddActionCommand extends TemplatesCommand {
     const config = entries[0][1]
 
     const actionFolder = path.relative(config.root, config.actions.src)
-    const configData = this.getRuntimeManifestConfigFile(configName)
+    const configData = await this.getRuntimeManifestConfigFile(configName)
 
     const projectOrgId = aioConfigLoader.get('project.org.id')
     if (!projectOrgId) {

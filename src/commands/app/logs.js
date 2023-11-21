@@ -36,7 +36,7 @@ class Logs extends BaseCommand {
 
   async run () {
     const { flags } = await this.parse(Logs)
-    const fullConfig = this.getFullConfig()
+    const fullConfig = await this.getFullConfig()
 
     // has any backend
     const hasAnyBackend = Object.values(fullConfig.all).reduce((hasBackend, config) => hasBackend && config.app.hasBackend, true)

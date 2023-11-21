@@ -66,7 +66,7 @@ describe('run', () => {
   })
 
   test('get all extension points', async () => {
-    command.getAppExtConfigs.mockReturnValue(createAppConfig(command.appConfig, 'app-exc-nui'))
+    command.getAppExtConfigs.mockResolvedValue(createAppConfig(command.appConfig, 'app-exc-nui'))
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -80,7 +80,7 @@ describe('run', () => {
   })
 
   test('get all extension points --json', async () => {
-    command.getAppExtConfigs.mockReturnValue(createAppConfig(command.appConfig, 'app-exc-nui'))
+    command.getAppExtConfigs.mockResolvedValue(createAppConfig(command.appConfig, 'app-exc-nui'))
     command.argv = ['--json']
 
     await command.run()
@@ -89,7 +89,7 @@ describe('run', () => {
   })
 
   test('get all extension points --yml', async () => {
-    command.getAppExtConfigs.mockReturnValue(createAppConfig(command.appConfig, 'app-exc-nui'))
+    command.getAppExtConfigs.mockResolvedValue(createAppConfig(command.appConfig, 'app-exc-nui'))
     command.argv = ['--yml']
     command.error = jest.fn()
     command.log = jest.fn()

@@ -19,9 +19,9 @@ class AddWebAssetsCommand extends TemplatesCommand {
     const { flags } = await this.parse(AddWebAssetsCommand)
     aioLogger.debug(`add web-assets with flags: ${JSON.stringify(flags)}`)
 
-    const projectName = this.getFullConfig().packagejson.name
+    const projectName = (await this.getFullConfig()).packagejson.name
     // guaranteed to have at least one, otherwise would throw in config load or in matching the ext name
-    const entries = Object.entries(this.getAppExtConfigs(flags))
+    const entries = Object.entries(await this.getAppExtConfigs(flags))
     if (entries.length > 1) {
       this.error('Please use the \'-e\' flag to specify to which implementation you want to add web-assets to.')
     }
