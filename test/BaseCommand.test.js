@@ -131,6 +131,7 @@ describe('getConfigFileForKey', () => {
     mockConfigLoader.load.mockResolvedValue(getMockConfig('exc', {}))
     const cmd = new TheCommand()
     expect(await cmd.getConfigFileForKey('notexist.key.abc')).toEqual({})
+    expect(mockConfigLoader.load).toHaveBeenCalledWith({ validateAppConfig: false })
   })
   test('returns file and key if found', async () => {
     const config = getMockConfig('exc', {})
@@ -145,6 +146,7 @@ describe('getRuntimeManifestConfigFile', () => {
     mockConfigLoader.load.mockResolvedValue(getMockConfig('app-no-actions', {}))
     const cmd = new TheCommand()
     expect(await cmd.getRuntimeManifestConfigFile('application')).toEqual({ file: 'app.config.yaml', key: 'application.runtimeManifest' })
+    expect(mockConfigLoader.load).toHaveBeenCalledWith({ validateAppConfig: false })
   })
   test('multiple implementations', async () => {
     const config = getMockConfig('app-exc-nui', {})
@@ -161,6 +163,7 @@ describe('getEventsConfigFile', () => {
     mockConfigLoader.load.mockResolvedValue(getMockConfig('app-no-actions', {}))
     const cmd = new TheCommand()
     expect(await cmd.getEventsConfigFile('application')).toEqual({ file: 'app.config.yaml', key: 'application.events' })
+    expect(mockConfigLoader.load).toHaveBeenCalledWith({ validateAppConfig: false })
   })
   test('multiple implementations', async () => {
     const config = getMockConfig('app-exc-nui', {})
@@ -178,6 +181,7 @@ describe('getAppExtConfigs', () => {
     mockConfigLoader.load.mockResolvedValue(config)
     const cmd = new TheCommand()
     expect(await cmd.getAppExtConfigs({})).toEqual(config.all)
+    expect(mockConfigLoader.load).toHaveBeenCalledWith({ validateAppConfig: false })
   })
   test('with options', async () => {
     const config = getMockConfig('app-exc-nui', {})
@@ -202,6 +206,15 @@ describe('getAppExtConfigs', () => {
     const cmd = new TheCommand()
     expect(await cmd.getAppExtConfigs({ extension: ['application'] }))
       .toEqual({ application: config.all.application })
+  })
+
+  test('-e application, { validateAppConfig: true }', async () => {
+    const config = getMockConfig('app-exc-nui', {})
+    mockConfigLoader.load.mockResolvedValue(config)
+    const cmd = new TheCommand()
+    expect(await cmd.getAppExtConfigs({ extension: ['application'] }, { validateAppConfig: true }))
+      .toEqual({ application: config.all.application })
+    expect(mockConfigLoader.load).toHaveBeenCalledWith({ validateAppConfig: true })
   })
 
   test('-e exc -e notexists', async () => {
