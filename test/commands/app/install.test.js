@@ -413,4 +413,56 @@ describe('run', () => {
     await command.run()
     expect(command.spinner.fail).toHaveBeenCalledWith('fake validation error')
   })
+
+  test('flag --tests', async () => {
+    const command = new TheCommand()
+    command.argv = ['my-app.zip', '--output', 'my-dest-folder', '--tests']
+
+    // since we already unit test the methods above, we mock it here
+    command.validateZipDirectoryStructure = jest.fn()
+    command.unzipFile = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
+    command.validateDeployConfig = jest.fn()
+    command.runTests = jest.fn()
+    command.npmInstall = jest.fn()
+    command.error = jest.fn()
+
+    await command.run()
+
+    expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
+    expect(command.unzipFile).toHaveBeenCalledTimes(1)
+    expect(libConfigNext.coalesce).toHaveBeenCalledTimes(1)
+    expect(libConfigNext.validate).toHaveBeenCalledTimes(1)
+    expect(command.validateDeployConfig).toHaveBeenCalledTimes(1)
+    expect(command.runTests).toHaveBeenCalledTimes(1)
+    expect(command.npmInstall).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(fakeCwd).toEqual(path.resolve('my-dest-folder'))
+  })
+
+  test('flag --no-tests', async () => {
+    const command = new TheCommand()
+    command.argv = ['my-app.zip', '--output', 'my-dest-folder', '--no-tests']
+
+    // since we already unit test the methods above, we mock it here
+    command.validateZipDirectoryStructure = jest.fn()
+    command.unzipFile = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
+    command.validateDeployConfig = jest.fn()
+    command.runTests = jest.fn()
+    command.npmInstall = jest.fn()
+    command.error = jest.fn()
+
+    await command.run()
+
+    expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
+    expect(command.unzipFile).toHaveBeenCalledTimes(1)
+    expect(libConfigNext.coalesce).toHaveBeenCalledTimes(1)
+    expect(libConfigNext.validate).toHaveBeenCalledTimes(1)
+    expect(command.validateDeployConfig).toHaveBeenCalledTimes(1)
+    expect(command.runTests).toHaveBeenCalledTimes(0)
+    expect(command.npmInstall).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(fakeCwd).toEqual(path.resolve('my-dest-folder'))
+  })
 })
