@@ -431,8 +431,8 @@ describe('run', () => {
 
     expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
     expect(command.unzipFile).toHaveBeenCalledTimes(1)
-    expect(libConfigNext.coalesce).toHaveBeenCalledTimes(1)
-    expect(libConfigNext.validate).toHaveBeenCalledTimes(1)
+    expect(libConfig.coalesce).toHaveBeenCalledTimes(1)
+    expect(libConfig.validate).toHaveBeenCalledTimes(1)
     expect(command.validateDeployConfig).toHaveBeenCalledTimes(1)
     expect(command.runTests).toHaveBeenCalledTimes(1)
     expect(command.npmInstall).toHaveBeenCalledTimes(1)
@@ -457,8 +457,8 @@ describe('run', () => {
 
     expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
     expect(command.unzipFile).toHaveBeenCalledTimes(1)
-    expect(libConfigNext.coalesce).toHaveBeenCalledTimes(1)
-    expect(libConfigNext.validate).toHaveBeenCalledTimes(1)
+    expect(libConfig.coalesce).toHaveBeenCalledTimes(1)
+    expect(libConfig.validate).toHaveBeenCalledTimes(1)
     expect(command.validateDeployConfig).toHaveBeenCalledTimes(1)
     expect(command.runTests).toHaveBeenCalledTimes(0)
     expect(command.npmInstall).toHaveBeenCalledTimes(1)
