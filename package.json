@@ -1,7 +1,7 @@
 {
   "name": "@adobe/aio-cli-plugin-app",
   "description": "Create, Build and Deploy Adobe I/O Applications",
-  "version": "11.0.0",
+  "version": "11.1.0",
   "author": "Adobe Inc.",
   "bugs": "https://github.com/adobe/aio-cli-plugin-app/issues",
   "dependencies": {
@@ -20,6 +20,7 @@
     "@adobe/generator-aio-app": "^6.0.0",
     "@adobe/generator-app-common-lib": "^1.0.0",
     "@adobe/inquirer-table-checkbox": "^1.2.0",
+    "@octokit/rest": "^19.0.11",
     "@oclif/core": "^2.11.6",
     "@parcel/core": "^2.7.0",
     "@parcel/reporter-cli": "^2.7.0",
@@ -75,7 +76,7 @@
     "typescript": "^5.1.6"
   },
   "engines": {
-    "node": "^14.18 || ^16.13 || >=18"
+    "node": ">=18"
   },
   "files": [
     "bin/run",
