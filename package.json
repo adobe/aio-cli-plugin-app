@@ -75,7 +75,7 @@
     "typescript": "^5.1.6"
   },
   "engines": {
-    "node": "^14.18 || ^16.13 || >=18"
+    "node": ">=18"
   },
   "files": [
     "bin/run",
