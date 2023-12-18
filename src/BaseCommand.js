@@ -9,6 +9,10 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
+
+const { AbortController } = require('node-abort-controller')
+global.AbortController = AbortController
+
 const { Command, Flags } = require('@oclif/core')
 const chalk = require('chalk')
 const coreConfig = require('@adobe/aio-lib-core-config')
@@ -114,6 +118,22 @@ class BaseCommand extends Command {
     return configData
   }
 
+  getEventsConfigFile (implName) {
+    let configKey
+    if (implName === APPLICATION_CONFIG_KEY) {
+      configKey = APPLICATION_CONFIG_KEY
+    } else {
+      configKey = `${EXTENSIONS_CONFIG_KEY}.${implName}`
+    }
+    let configData = this.getConfigFileForKey(`${configKey}.events`)
+    if (!configData.file) {
+      // first events manifest is not defined
+      configData = this.getConfigFileForKey(`${configKey}`)
+      configData.key = configData.key + '.events'
+    }
+    return configData
+  }
+
   getConfigFileForKey (fullKey) {
     // NOTE: the index returns undefined if the key is loaded from a legacy configuration file
     const fullConfig = this.getFullConfig()
@@ -165,6 +185,10 @@ class BaseCommand extends Command {
   get appVersion () {
     return this.pjson.version
   }
+
+  preRelease () {
+    this.log(chalk.yellow('Pre-release warning: This command is in pre-release, and not suitable for production.'))
+  }
 }
 
 BaseCommand.flags = {
@@ -172,6 +196,6 @@ BaseCommand.flags = {
   version: Flags.boolean({ description: 'Show version' })
 }
 
-BaseCommand.args = []
+BaseCommand.args = {}
 
 module.exports = BaseCommand

@@ -19,6 +19,50 @@ const appIncludeIndex = {
     file: 'app.config.yaml',
     key: 'application'
   },
+  'application.events': {
+    file: 'app.config.yaml',
+    key: 'application.events'
+  },
+  'application.events.registrations': {
+    file: 'app.config.yaml',
+    key: 'application.events.registrations'
+  },
+  'application.events.registrations.testRegistration-1': {
+    file: 'app.config.yaml',
+    key: 'application.events.registrations.testRegistration-1'
+  },
+  'application.events.registrations.testRegistration-1.runtime_action': {
+    file: 'app.config.yaml',
+    key: 'application.events.registrations.testRegistration-1.runtime_action'
+  },
+  'application.events.registrations.testRegistration-1.events_of_interest': {
+    file: 'app.config.yaml',
+    key: 'application.events.registrations.testRegistration-1.events_of_interest'
+  },
+  'application.events.registrations.testRegistration-1.events_of_interest.0': {
+    file: 'app.config.yaml',
+    key: 'application.events.registrations.testRegistration-1.events_of_interest.0'
+  },
+  'application.events.registrations.testRegistration-1.events_of_interest.0.event_codes': {
+    file: 'app.config.yaml',
+    key: 'application.events.registrations.testRegistration-1.events_of_interest.0.event_codes'
+  },
+  'application.events.registrations.testRegistration-1.events_of_interest.0.event_codes.1': {
+    file: 'app.config.yaml',
+    key: 'application.events.registrations.testRegistration-1.events_of_interest.0.event_codes.1'
+  },
+  'application.events.registrations.testRegistration-1.events_of_interest.0.event_codes.0': {
+    file: 'app.config.yaml',
+    key: 'application.events.registrations.testRegistration-1.events_of_interest.0.event_codes.0'
+  },
+  'application.events.registrations.testRegistration-1.events_of_interest.0.provider_metadata': {
+    file: 'app.config.yaml',
+    key: 'application.events.registrations.testRegistration-1.events_of_interest.0.provider_metadata'
+  },
+  'application.events.registrations.testRegistration-1.description': {
+    file: 'app.config.yaml',
+    key: 'application.events.registrations.testRegistration-1.description'
+  },
   'application.runtimeManifest': {
     file: 'app.config.yaml',
     key: 'application.runtimeManifest'
@@ -222,6 +266,50 @@ const excIncludeIndex = {
     file: 'app.config.yaml',
     key: 'extensions.dx/excshell/1.$include'
   },
+  'extensions.dx/excshell/1.events': {
+    file: 'src/dx-excshell-1/ext.config.yaml',
+    key: 'events'
+  },
+  'extensions.dx/excshell/1.events.registrations': {
+    file: 'src/dx-excshell-1/ext.config.yaml',
+    key: 'events.registrations'
+  },
+  'extensions.dx/excshell/1.events.registrations.testRegistration-1': {
+    file: 'src/dx-excshell-1/ext.config.yaml',
+    key: 'events.registrations.testRegistration-1'
+  },
+  'extensions.dx/excshell/1.events.registrations.testRegistration-1.runtime_action': {
+    file: 'src/dx-excshell-1/ext.config.yaml',
+    key: 'events.registrations.testRegistration-1.runtime_action'
+  },
+  'extensions.dx/excshell/1.events.registrations.testRegistration-1.events_of_interest': {
+    file: 'src/dx-excshell-1/ext.config.yaml',
+    key: 'events.registrations.testRegistration-1.events_of_interest'
+  },
+  'extensions.dx/excshell/1.events.registrations.testRegistration-1.events_of_interest.0': {
+    file: 'src/dx-excshell-1/ext.config.yaml',
+    key: 'events.registrations.testRegistration-1.events_of_interest.0'
+  },
+  'extensions.dx/excshell/1.events.registrations.testRegistration-1.events_of_interest.0.event_codes': {
+    file: 'src/dx-excshell-1/ext.config.yaml',
+    key: 'events.registrations.testRegistration-1.events_of_interest.0.event_codes'
+  },
+  'extensions.dx/excshell/1.events.registrations.testRegistration-1.events_of_interest.0.event_codes.1': {
+    file: 'src/dx-excshell-1/ext.config.yaml',
+    key: 'events.registrations.testRegistration-1.events_of_interest.0.event_codes.1'
+  },
+  'extensions.dx/excshell/1.events.registrations.testRegistration-1.events_of_interest.0.event_codes.0': {
+    file: 'src/dx-excshell-1/ext.config.yaml',
+    key: 'events.registrations.testRegistration-1.events_of_interest.0.event_codes.0'
+  },
+  'extensions.dx/excshell/1.events.registrations.testRegistration-1.events_of_interest.0.provider_metadata': {
+    file: 'src/dx-excshell-1/ext.config.yaml',
+    key: 'events.registrations.testRegistration-1.events_of_interest.0.provider_metadata'
+  },
+  'extensions.dx/excshell/1.events.registrations.testRegistration-1.description': {
+    file: 'src/dx-excshell-1/ext.config.yaml',
+    key: 'events.registrations.testRegistration-1.description'
+  },
   'extensions.dx/excshell/1.runtimeManifest': {
     file: 'src/dx-excshell-1/ext.config.yaml',
     key: 'runtimeManifest'
@@ -342,6 +430,50 @@ const appExcNuiIncludeIndex = {
   'extensions.dx/asset-compute/worker/1.$include': {
     file: 'app.config.yaml',
     key: 'extensions.dx/asset-compute/worker/1.$include'
+  },
+  'extensions.dx/asset-compute/worker/1.events': {
+    file: 'src/dx-asset-compute-worker-1/ext.config.yaml',
+    key: 'events'
+  },
+  'extensions.dx/asset-compute/worker/1.events.registrations': {
+    file: 'src/dx-asset-compute-worker-1/ext.config.yaml',
+    key: 'events.registrations'
+  },
+  'extensions.dx/asset-compute/worker/1.events.registrations.testRegistration-1': {
+    file: 'src/dx-asset-compute-worker-1/ext.config.yaml',
+    key: 'events.registrations.testRegistration-1'
+  },
+  'extensions.dx/asset-compute/worker/1.events.registrations.testRegistration-1.runtime_action': {
+    file: 'src/dx-asset-compute-worker-1/ext.config.yaml',
+    key: 'events.registrations.testRegistration-1.runtime_action'
+  },
+  'extensions.dx/asset-compute/worker/1.events.registrations.testRegistration-1.events_of_interest': {
+    file: 'src/dx-asset-compute-worker-1/ext.config.yaml',
+    key: 'events.registrations.testRegistration-1.events_of_interest'
+  },
+  'extensions.dx/asset-compute/worker/1.events.registrations.testRegistration-1.events_of_interest.0': {
+    file: 'src/dx-asset-compute-worker-1/ext.config.yaml',
+    key: 'events.registrations.testRegistration-1.events_of_interest.0'
+  },
+  'extensions.dx/asset-compute/worker/1.events.registrations.testRegistration-1.events_of_interest.0.event_codes': {
+    file: 'src/dx-asset-compute-worker-1/ext.config.yaml',
+    key: 'events.registrations.testRegistration-1.events_of_interest.0.event_codes'
+  },
+  'extensions.dx/asset-compute/worker/1.events.registrations.testRegistration-1.events_of_interest.0.event_codes.1': {
+    file: 'src/dx-asset-compute-worker-1/ext.config.yaml',
+    key: 'events.registrations.testRegistration-1.events_of_interest.0.event_codes.1'
+  },
+  'extensions.dx/asset-compute/worker/1.events.registrations.testRegistration-1.events_of_interest.0.event_codes.0': {
+    file: 'src/dx-asset-compute-worker-1/ext.config.yaml',
+    key: 'events.registrations.testRegistration-1.events_of_interest.0.event_codes.0'
+  },
+  'extensions.dx/asset-compute/worker/1.events.registrations.testRegistration-1.events_of_interest.0.provider_metadata': {
+    file: 'src/dx-asset-compute-worker-1/ext.config.yaml',
+    key: 'events.registrations.testRegistration-1.events_of_interest.0.provider_metadata'
+  },
+  'extensions.dx/asset-compute/worker/1.events.registrations.testRegistration-1.description': {
+    file: 'src/dx-asset-compute-worker-1/ext.config.yaml',
+    key: 'events.registrations.testRegistration-1.description'
   },
   'extensions.dx/asset-compute/worker/1.runtimeManifest': {
     file: 'src/dx-asset-compute-worker-1/ext.config.yaml',

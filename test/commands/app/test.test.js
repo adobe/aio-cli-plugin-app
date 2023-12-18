@@ -26,7 +26,6 @@ const appHelper = require('../../../src/lib/app-helper')
 
 // mocks
 jest.mock('../../../src/lib/app-helper')
-jest.mock('fs')
 
 const mockGetAppExtConfigs = jest.fn()
 
@@ -35,7 +34,7 @@ beforeAll(() => {
 })
 
 afterAll(() => {
-  jest.restoreAllMocks()
+  jest.clearAllMocks()
 })
 
 /** @private */
@@ -121,7 +120,7 @@ describe('Command Prototype', () => {
     }
 
     test('unknown', async () => {
-      expectFlagError(['--wtf'], 'Unexpected argument: --wtf\nSee more help with --help')
+      expectFlagError(['--wtf'], 'Nonexistent flag: --wtf\nSee more help with --help')
     })
 
     test('-a,-e should fail if both flags are present', async () => {

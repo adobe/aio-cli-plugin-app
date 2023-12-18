@@ -13,10 +13,11 @@ const fs = require('fs-extra')
 const path = require('path')
 const TheCommand = require('../../../src/commands/app/init')
 const BaseCommand = require('../../../src/BaseCommand')
-const importLib = require('../../../src/lib/import-helper')
+const importHelperLib = require('../../../src/lib/import-helper')
 const inquirer = require('inquirer')
 const savedDataDir = process.env.XDG_DATA_HOME
 const yeoman = require('yeoman-environment')
+const { Octokit } = require('@octokit/rest')
 
 jest.mock('@adobe/aio-lib-core-config')
 jest.mock('fs-extra')
@@ -26,6 +27,22 @@ jest.mock('inquirer', () => ({
   prompt: jest.fn(),
   createPromptModule: jest.fn()
 }))
+
+// mock ora
+jest.mock('ora', () => {
+  const mockOra = {
+    start: jest.fn(() => mockOra),
+    stop: jest.fn(() => mockOra),
+    succeed: jest.fn(() => mockOra),
+    fail: jest.fn(() => mockOra),
+    info: jest.fn(() => mockOra),
+    warn: jest.fn(() => mockOra),
+    stopAndPersist: jest.fn(() => mockOra),
+    clear: jest.fn(() => mockOra),
+    promise: jest.fn(() => Promise.resolve(mockOra))
+  }
+  return jest.fn(() => mockOra)
+})
 
 // mock login
 jest.mock('@adobe/aio-lib-ims')
@@ -71,6 +88,8 @@ yeoman.createEnv.mockReturnValue({
   instantiate: jest.fn(),
   runGenerator: jest.fn()
 })
+
+jest.mock('@octokit/rest')
 
 // FAKE DATA ///////////////////////
 
@@ -160,8 +179,14 @@ beforeEach(() => {
   process.env.XDG_DATA_HOME = 'data-dir'
 
   // default
-  importLib.importConfigJson.mockReset()
-  importLib.loadAndValidateConfigFile.mockReset()
+  importHelperLib.loadAndValidateConfigFile.mockReset()
+  importHelperLib.loadConfigFile.mockReset()
+  importHelperLib.getServiceApiKey.mockReset()
+  importHelperLib.importConfigJson.mockReset()
+
+  importHelperLib.loadConfigFile.mockReturnValue({ values: fakeConfig })
+
+  Octokit.mockReset()
 })
 
 afterAll(() => {
@@ -204,22 +229,37 @@ describe('Command Prototype', () => {
   })
 
   test('args', async () => {
-    expect(TheCommand.args).toEqual(expect.arrayContaining([{
-      name: 'path',
-      description: 'Path to the app directory',
-      default: '.'
-    }]))
+    expect(TheCommand.args).toEqual(expect.objectContaining({
+      path: {
+        description: 'Path to the app directory',
+        default: '.',
+        input: [],
+        parse: expect.any(Function),
+        type: 'option'
+      }
+    }))
   })
 })
 
 describe('bad args/flags', () => {
   test('unknown', async () => {
     command.argv = ['--wtf', 'dev'] // TODO: oclif bug: if no arg is set, an invalid flag does not fail
-    await expect(command.run()).rejects.toThrow('Unexpected argument')
+    await expect(command.run()).rejects.toThrow('Nonexistent flag')
   })
   test('--no-login and --workspace', async () => {
     command.argv = ['--no-login', '--workspace', 'dev']
     await expect(command.run()).rejects.toThrow('--no-login and --workspace flags cannot be used together.')
+  })
+})
+
+describe('--project', () => {
+  test('no value', async () => {
+    command.argv = ['--project']
+    await expect(command.run()).rejects.toThrow('Flag --project expects a value')
+  })
+  test('non-existent', async () => {
+    command.argv = ['--project=non-existent']
+    await expect(command.run()).rejects.toThrow('--project non-existent not found')
   })
 })
 
@@ -236,9 +276,9 @@ describe('--no-login', () => {
     command.argv = ['--no-login', '/otherdir']
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(importLib.importConfigJson).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
 
     expect(fs.ensureDirSync).toHaveBeenCalledWith(path.resolve('/otherdir'))
     expect(process.chdir).toHaveBeenCalledWith(path.resolve('/otherdir'))
@@ -256,9 +296,9 @@ describe('--no-login', () => {
     command.argv = ['--no-login']
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(importLib.importConfigJson).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
 
   test('--standalone-app', async () => {
@@ -272,9 +312,92 @@ describe('--no-login', () => {
     command.argv = ['--no-login', '--standalone-app']
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(importLib.importConfigJson).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
+  })
+
+  test('--repo --no-login', async () => {
+    const getContent = () => new Promise((resolve, reject) => {
+      resolve({ headers: [], status: 302, data: [] })
+    })
+    Octokit.mockImplementation(() => ({ repos: { getContent } }))
+
+    command.argv = ['--no-login', '--repo=adobe/appbuilder-quickstarts/qr-code']
+    await command.run()
+
+    expect(command.installTemplates).not.toHaveBeenCalled()
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
+  })
+
+  test('--repo --login', async () => {
+    const getContent = ({ owner, repo, path }) => new Promise((resolve, reject) => {
+      // console.log('args = ', owner, repo, path)
+      if (path === 'src') {
+        resolve({ data: [] })
+      } else {
+        resolve({
+          data: [{
+            type: 'file',
+            path: '.gitignore',
+            download_url: 'https://raw.githubusercontent.com/adobe/appbuilder-quickstarts/master/qr-code/.gitignore'
+          }, {
+            type: 'dir',
+            path: 'src'
+          }]
+        })
+      }
+    })
+    Octokit.mockImplementation(() => ({ repos: { getContent } }))
+
+    command.argv = ['--login', '--repo=adobe/appbuilder-quickstarts/qr-code']
+    await command.run()
+
+    expect(command.installTemplates).not.toHaveBeenCalled()
+    expect(LibConsoleCLI.init).toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).toHaveBeenCalled()
+  })
+
+  test('--repo not valid 404', async () => {
+    const getContent = () => new Promise((resolve, reject) => {
+      // console.log('rejecting with 404')
+      const error = new Error('the error message is not checked, just the status code')
+      error.status = 404
+      reject(error)
+    })
+    Octokit.mockImplementation(() => ({ repos: { getContent } }))
+
+    command.error = jest.fn()
+    command.argv = ['--no-login', '--repo=adobe/appbuilder-quickstarts/dne']
+
+    await command.run()
+
+    expect(command.error).toHaveBeenCalledWith('--repo does not point to a valid Adobe App Builder app')
+    expect(command.installTemplates).not.toHaveBeenCalled()
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
+  })
+
+  test('--repo not reachable 403', async () => {
+    const getContent = () => new Promise((resolve, reject) => {
+      // console.log('rejecting with 403')
+      const error = new Error('the error message is not checked, just the status code')
+      error.response = { headers: { 'x-ratelimit-reset': 99999999999 } }
+      error.status = 403
+      reject(error)
+    })
+    Octokit.mockImplementation(() => ({ repos: { getContent } }))
+
+    command.error = jest.fn()
+    command.argv = ['--no-login', '--repo=adobe/appbuilder-quickstarts/dne']
+
+    await command.run()
+
+    expect(command.error).toHaveBeenCalledWith('too many requests, please try again later')
+    expect(command.installTemplates).not.toHaveBeenCalled()
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
 
   test('--yes --no-install, select excshell', async () => {
@@ -289,9 +412,9 @@ describe('--no-login', () => {
     command.argv = ['--no-login', '--yes', '--no-install']
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(importLib.importConfigJson).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
 
   test('--yes --no-install, --template @adobe/my-extension', async () => {
@@ -305,9 +428,9 @@ describe('--no-login', () => {
     command.argv = ['--no-login', '--yes', '--no-install', '--template', '@adobe/my-extension']
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(importLib.importConfigJson).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
 
   test('--yes --no-install, --template @adobe/my-extension --template @adobe/your-extension', async () => {
@@ -321,9 +444,9 @@ describe('--no-login', () => {
     command.argv = ['--no-login', '--yes', '--no-install', '--template', '@adobe/my-extension', '--template', '@adobe/your-extension']
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(importLib.importConfigJson).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
 })
 
@@ -338,9 +461,9 @@ describe('--login', () => {
     command.argv = ['--standalone-app']
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).toHaveBeenCalled()
-    expect(importLib.importConfigJson).toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).toHaveBeenCalled()
   })
 
   test('--yes --no-install, --template @adobe/my-extension --template @adobe/your-extension', async () => {
@@ -353,22 +476,23 @@ describe('--login', () => {
     command.argv = ['--yes', '--no-install', '--template', '@adobe/my-extension', '--template', '@adobe/your-extension']
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).toHaveBeenCalled()
-    expect(importLib.importConfigJson).toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).toHaveBeenCalled()
   })
 
   test('--import fakeconfig.json', async () => {
-    importLib.loadAndValidateConfigFile.mockReturnValue({ values: fakeConfig })
+    importHelperLib.loadAndValidateConfigFile.mockReturnValue({ values: fakeConfig })
+    importHelperLib.getServiceApiKey.mockReturnValue('fakeclientid')
 
     command.argv = ['--import', 'fakeconfig.json']
     await command.run()
 
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
-    expect(importLib.importConfigJson).toHaveBeenCalledWith(
+    expect(importHelperLib.importConfigJson).toHaveBeenCalledWith(
       Buffer.from(JSON.stringify(fakeConfig)),
       'cwd',
-      { interactive: false, merge: true },
+      { interactive: false, merge: true, overwrite: undefined, useJwt: false },
       { SERVICE_API_KEY: 'fakeclientid' }
     )
   })
@@ -393,9 +517,9 @@ describe('--login', () => {
     command.argv = ['-w', 'dev']
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).toHaveBeenCalled()
-    expect(importLib.importConfigJson).toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).toHaveBeenCalled()
     expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(fakeOrg.id, fakeProject.id, fakeWorkspaces[1].id, fakeSupportedOrgServices)
     expect(mockConsoleCLIInstance.createProject).not.toHaveBeenCalled()
   })
@@ -475,7 +599,7 @@ describe('--login', () => {
     }
 
     await command.run()
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
   })
 
   test('--extension foo/bar/1 --extension bar/baz/1 (not found)', async () => {
@@ -507,9 +631,9 @@ describe('no args', () => {
     command.argv = []
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).toHaveBeenCalled()
-    expect(importLib.importConfigJson).toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).toHaveBeenCalled()
   })
 
   test('select a template (all extensions)', async () => {
@@ -528,9 +652,9 @@ describe('no args', () => {
     command.argv = []
     await command.run()
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).toHaveBeenCalled()
-    expect(importLib.importConfigJson).toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).toHaveBeenCalled()
   })
 
   test('select a template (org templates)', async () => {
@@ -567,9 +691,9 @@ describe('no args', () => {
       }
     )
 
-    expect(command.installTemplates).toBeCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).toHaveBeenCalled()
-    expect(importLib.importConfigJson).toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).toHaveBeenCalled()
   })
 
   test('templates plugin is not installed', async () => {

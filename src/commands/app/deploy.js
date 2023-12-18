@@ -12,14 +12,18 @@ governing permissions and limitations under the License.
 
 const ora = require('ora')
 const chalk = require('chalk')
+const open = require('open')
 
 const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
-const { Flags, CliUx: { ux: cli } } = require('@oclif/core')
-const { createWebExportFilter, runScript, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata } = require('../../lib/app-helper')
+const { Flags } = require('@oclif/core')
+const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
+
+const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
+const POST_DEPLOY_EVENT_REG = 'post-deploy-event-reg'
 
 class Deploy extends BuildCommand {
   async run () {
@@ -37,7 +41,7 @@ class Deploy extends BuildCommand {
 
     // if there are no extensions, then set publish to false
     flags.publish = flags.publish && !isStandaloneApp
-    let libConsoleCLI
+    let libConsoleCLI // <= this can be undefined later on, and it was not checked
     if (flags.publish) {
       // force login at beginning (if required)
       libConsoleCLI = await this.getLibConsoleCLI()
@@ -55,9 +59,7 @@ class Deploy extends BuildCommand {
 
       // 1. update log forwarding configuration
       // note: it is possible that .aio file does not exist, which means there is no local lg config
-      if (aioConfig &&
-          aioConfig.project &&
-          aioConfig.project.workspace &&
+      if (aioConfig?.project?.workspace &&
           flags['log-forwarding-update'] &&
           flags.actions) {
         spinner.start('Updating log forwarding configuration')
@@ -142,9 +144,14 @@ class Deploy extends BuildCommand {
     const filterActions = flags.action
 
     try {
-      await runScript(config.hooks['pre-app-deploy'])
+      await runInProcess(config.hooks['pre-app-deploy'], config)
+      const hookResults = await this.config.runHook(PRE_DEPLOY_EVENT_REG, { appConfig: config, force: flags['force-events'] })
+      if (hookResults?.failures?.length > 0) {
+        // output should be "Error : <plugin-name> : <error-message>\n" for each failure
+        this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
+      }
     } catch (err) {
-      this.log(err)
+      this.error(err)
     }
 
     if (flags.actions) {
@@ -156,8 +163,17 @@ class Deploy extends BuildCommand {
         const message = `Deploying actions for '${name}'`
         spinner.start(message)
         try {
-          const script = await runScript(config.hooks['deploy-actions'])
+          const script = await runInProcess(config.hooks['deploy-actions'], config)
           if (!script) {
+            const hookResults = await this.config.runHook('deploy-actions', {
+              appConfig: config,
+              filterEntities: filterActions || [],
+              isLocalDev: false
+            })
+            if (hookResults?.failures?.length > 0) {
+              // output should be "Error : <plugin-name> : <error-message>\n" for each failure
+              this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
+            }
             deployedRuntimeEntities = await rtLib.deployActions(config, { filterEntities }, onProgress)
           }
 
@@ -184,7 +200,7 @@ class Deploy extends BuildCommand {
         const message = `Deploying web assets for '${name}'`
         spinner.start(message)
         try {
-          const script = await runScript(config.hooks['deploy-static'])
+          const script = await runInProcess(config.hooks['deploy-static'], config)
           if (script) {
             spinner.fail(chalk.green(`deploy-static skipped by hook '${name}'`))
           } else {
@@ -226,16 +242,21 @@ class Deploy extends BuildCommand {
       const launchUrl = this.getLaunchUrlPrefix() + deployedFrontendUrl
       if (flags.open) {
         this.log(chalk.blue(chalk.bold(`Opening your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
-        cli.open(launchUrl)
+        open(launchUrl)
       } else {
         this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
       }
     }
 
     try {
-      await runScript(config.hooks['post-app-deploy'])
+      await runInProcess(config.hooks['post-app-deploy'], config)
+      const hookResults = await this.config.runHook(POST_DEPLOY_EVENT_REG, { appConfig: config, force: flags['force-events'] })
+      if (hookResults?.failures?.length > 0) {
+        // output should be "Error : <plugin-name> : <error-message>\n" for each failure
+        this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
+      }
     } catch (err) {
-      this.log(err)
+      this.error(err)
     }
   }
 
@@ -328,6 +349,12 @@ Deploy.flags = {
     default: false,
     exclusive: ['action', 'publish'] // no-publish is excluded
   }),
+  'force-events': Flags.boolean({
+    description: '[default: false] Force event registrations and delete any registrations not part of the config file',
+    default: false,
+    allowNo: true,
+    exclusive: ['action', 'publish'] // no-publish is excluded
+  }),
   'web-optimize': Flags.boolean({
     description: '[default: false] Enable optimization (minification) of web js/css/html',
     default: false
@@ -339,6 +366,6 @@ Deploy.flags = {
   })
 }
 
-Deploy.args = []
+Deploy.args = {}
 
 module.exports = Deploy

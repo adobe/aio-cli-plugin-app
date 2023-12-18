@@ -15,7 +15,23 @@ const BaseCommand = require('../../../src/BaseCommand')
 const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('../../../src/lib/defaults')
 const dataMocks = require('../../data-mocks/config-loader')
 const cloneDeep = require('lodash.clonedeep')
+const open = require('open')
+const { ux } = require('@oclif/core')
 
+jest.mock('@oclif/core', () => {
+  return {
+    ...jest.requireActual('@oclif/core'),
+    ux: {
+      action: {
+        start: jest.fn(),
+        stop: jest.fn()
+      },
+      wait: jest.fn()
+    }
+  }
+})
+
+jest.mock('open', () => jest.fn())
 jest.mock('../../../src/lib/run-dev')
 const mockRunDev = require('../../../src/lib/run-dev')
 
@@ -41,20 +57,6 @@ jest.mock('fs-extra')
 
 jest.mock('@adobe/aio-lib-core-config')
 const mockConfig = require('@adobe/aio-lib-core-config')
-
-jest.mock('@oclif/core', () => {
-  return {
-    ...jest.requireActual('@oclif/core'),
-    CliUx: {
-      ux: {
-        cli: {
-          open: jest.fn()
-        }
-      }
-    }
-  }
-})
-const { CliUx: { ux: cli } } = require('@oclif/core')
 
 jest.mock('https')
 const https = require('https')
@@ -82,9 +84,9 @@ const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
 }
 
 beforeEach(() => {
-  jest.restoreAllMocks()
+  jest.clearAllMocks()
   mockRunDev.mockReset()
-  helpers.runScript.mockReset()
+  helpers.runInProcess.mockReset()
 
   mockConfig.get = jest.fn().mockReturnValue({ globalConfig: 'seems-legit' })
 
@@ -94,12 +96,12 @@ beforeEach(() => {
   mockFS.readFile.mockReset()
   mockFS.ensureDir.mockReset()
 
-  cli.action = {
+  ux.action = {
     stop: jest.fn(),
     start: jest.fn()
   }
-  cli.open = jest.fn()
-  cli.wait = jest.fn() // .mockImplementation((ms = 1000) => { return new Promise(resolve => setTimeout(resolve, ms)) })
+  open.mockReset()
+  ux.wait = jest.fn() // .mockImplementation((ms = 1000) => { return new Promise(resolve => setTimeout(resolve, ms)) })
 
   mockFindCommandLoad.mockClear()
   mockFindCommandRun.mockReset()
@@ -108,6 +110,7 @@ beforeEach(() => {
   command.error = jest.fn()
   command.log = jest.fn()
   command.config = {
+    runHook: jest.fn(),
     findCommand: jest.fn().mockReturnValue({
       load: mockFindCommandLoad
     }),
@@ -280,7 +283,7 @@ describe('run', () => {
         logLevel: 'warn'
       }),
       isLocal: undefined
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
   })
 
   test('app:run check if fetchLogs flag is set when calling scripts', async () => {
@@ -292,7 +295,7 @@ describe('run', () => {
     await command.run()
     expect(mockRunDev).toHaveBeenCalledWith(appConfig.application, expect.any(String), expect.objectContaining({
       fetchLogs: true
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
   })
 
   test('app:run with --verbose', async () => {
@@ -309,7 +312,7 @@ describe('run', () => {
         logLevel: 'verbose'
       }),
       isLocal: undefined
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
   })
 
   test('app:run with --local', async () => {
@@ -339,7 +342,7 @@ describe('run', () => {
         logLevel: 'verbose'
       }),
       isLocal: true
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
   })
 
   test('app:run where scripts.runDev throws', async () => {
@@ -374,7 +377,7 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://localhost:1111'))
-    expect(cli.open).toHaveBeenCalledWith(expect.stringContaining('http://localhost:1111'))
+    expect(open).toHaveBeenCalledWith(expect.stringContaining('http://localhost:1111'))
   })
 
   test('run should show ui and exc url if AIO_LAUNCH_PREFIX_URL is set', async () => {
@@ -401,7 +404,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://localhost:1111'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://prefix?fake=http://localhost:1111'))
-    expect(cli.open).toHaveBeenCalledWith('http://prefix?fake=http://localhost:1111')
+    expect(open).toHaveBeenCalledWith('http://prefix?fake=http://localhost:1111')
   })
 
   test('app:run with UI and existing cert files', async () => {
@@ -423,7 +426,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
   })
 
   test('app:run with UI and no cert files but has cert config', async () => {
@@ -446,7 +449,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
     expect(mockFS.ensureDir).toHaveBeenCalledWith(DEV_KEYS_DIR)
     expect(mockFS.writeFile).toHaveBeenCalledTimes(2)
     expect(mockFS.writeFile).toHaveBeenCalledWith(PUB_CERT_PATH, 'pub cert')
@@ -477,7 +480,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
     expect(mockFS.ensureDir).toHaveBeenCalledWith(DEV_KEYS_DIR)
     expect(command.config.findCommand).toHaveBeenCalledWith('certificate:generate')
     expect(mockFindCommandRun).toHaveBeenCalledWith([`--keyout=${PRIVATE_KEY_PATH}`, `--out=${PUB_CERT_PATH}`, '-n=DeveloperSelfSigned.cert'])
@@ -515,7 +518,7 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
     expect(mockConfig.set).toHaveBeenCalledTimes(2)
     expect(mockConfig.set).toHaveBeenCalledWith(CONFIG_KEY + '.privateKey', 'private key')
     expect(mockConfig.set).toHaveBeenCalledWith(CONFIG_KEY + '.publicCert', 'public cert')
@@ -555,16 +558,16 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
     expect(https.createServer).toHaveBeenCalledWith({ key: 'private key', cert: 'public cert' }, expect.any(Function))
     expect(getPort).toHaveBeenCalledWith({ port: SERVER_DEFAULT_PORT })
     expect(mockHttpsServerInstance.listen).toHaveBeenCalledWith(1111)
     expect(mockHttpsServerInstance.close).toHaveBeenCalledTimes(1)
     expect(mockWriteHead).toHaveBeenCalledWith(200)
-    expect(cli.open).toHaveBeenCalledWith('https://localhost:1111')
-    expect(cli.action.start).toHaveBeenCalledWith('Waiting for the certificate to be accepted.')
-    expect(cli.action.stop).toHaveBeenCalledWith()
-    expect(command.log).toBeCalledWith('Great, you accepted the certificate!')
+    expect(open).toHaveBeenCalledWith('https://localhost:1111')
+    expect(ux.action.start).toHaveBeenCalledWith('Waiting for the certificate to be accepted.')
+    expect(ux.action.stop).toHaveBeenCalledWith()
+    expect(command.log).toHaveBeenCalledWith('Great, you accepted the certificate!')
   })
 
   test('app:run with UI and no certs, should attempt to run validation server on env port', async () => {
@@ -593,11 +596,11 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
     expect(getPort).toHaveBeenCalledWith({ port: 9999 })
     expect(mockHttpsServerInstance.listen).toHaveBeenCalledWith(1111)
-    expect(cli.open).toHaveBeenCalledWith('https://localhost:1111')
-    expect(command.log).toBeCalledWith('Great, you accepted the certificate!')
+    expect(open).toHaveBeenCalledWith('https://localhost:1111')
+    expect(command.log).toHaveBeenCalledWith('Great, you accepted the certificate!')
   })
 
   test('app:run with UI and no certs, should timeout if user does not validate certificates', async () => {
@@ -632,13 +635,13 @@ describe('run', () => {
           key: PRIVATE_KEY_PATH
         }
       }
-    }), expect.any(Function))
+    }), expect.any(Function), expect.any(Function))
     expect(mockHttpsServerInstance.listen).toHaveBeenCalledWith(1111)
     expect(mockHttpsServerInstance.close).toHaveBeenCalledTimes(1)
-    expect(cli.open).toHaveBeenCalledWith('https://localhost:1111')
-    expect(cli.action.start).toHaveBeenCalledWith('Waiting for the certificate to be accepted.')
-    expect(cli.action.stop).toHaveBeenCalledWith('timed out')
-    expect(cli.wait).toHaveBeenCalledTimes(3) // number of iterations in the loop
+    expect(open).toHaveBeenCalledWith('https://localhost:1111')
+    expect(ux.action.start).toHaveBeenCalledWith('Waiting for the certificate to be accepted.')
+    expect(ux.action.stop).toHaveBeenCalledWith('timed out')
+    expect(ux.wait).toHaveBeenCalledTimes(3) // number of iterations in the loop
 
     // restore datenow
     Date.now = datenow
@@ -661,7 +664,7 @@ describe('run', () => {
   })
 
   test('app:run with missing app hooks', async () => {
-    helpers.runScript
+    helpers.runInProcess
       .mockRejectedValueOnce('error-1')
       .mockRejectedValueOnce('error-2')
 
@@ -715,7 +718,7 @@ describe('run', () => {
     }
 
     const scriptSequence = []
-    helpers.runScript.mockImplementation(script => {
+    helpers.runInProcess.mockImplementation(script => {
       scriptSequence.push(script)
     })
 
@@ -724,7 +727,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
 
-    expect(helpers.runScript).toHaveBeenCalledTimes(2)
+    expect(helpers.runInProcess).toHaveBeenCalledTimes(2)
     expect(scriptSequence.length).toEqual(2)
     expect(scriptSequence[0]).toEqual('pre-app-run')
     expect(scriptSequence[1]).toEqual('post-app-run')

@@ -13,57 +13,13 @@ governing permissions and limitations under the License.
 const { stdout, stderr } = require('stdout-stderr')
 const upath = require('upath')
 
-jest.setTimeout(15000)
+jest.setTimeout(45000)
 
-const fs = jest.requireActual('fs')
+const fs = require('fs')
 const eol = require('eol')
 const path = require('path')
 const hjson = require('hjson')
-
-const fileSystem = require('jest-plugin-fs').default
-
-// dont touch the real fs
-global.mockFs = () => {
-  jest.unmock('fs-extra')
-  jest.mock('fs', () => require('jest-plugin-fs/mock'))
-
-  // set the fake filesystem
-  global.fakeFileSystem = {
-    addJson: (json) => {
-      // add to existing
-      fileSystem.mock(json)
-    },
-    removeKeys: (arr) => {
-      // remove from existing
-      const files = fileSystem.files()
-      for (const prop in files) {
-        if (arr.includes(prop)) {
-          delete files[prop]
-        }
-      }
-      fileSystem.restore()
-      fileSystem.mock(files)
-    },
-    clear: () => {
-      // reset to empty
-      fileSystem.restore()
-    },
-    reset: () => {
-      // reset file system
-      // TODO: add any defaults
-      fileSystem.restore()
-    },
-    files: () => {
-      return fileSystem.files()
-    }
-  }
-  // seed the fake filesystem
-  global.fakeFileSystem.reset()
-}
-
-global.unmockFs = () => {
-
-}
+const jsYaml = require('js-yaml')
 
 // trap console log
 beforeEach(() => {
@@ -91,6 +47,28 @@ jest.mock('execa')
 
 jest.mock('@adobe/aio-lib-env')
 
+/*
+  jest/no-conditional-expect
+  See:
+    https://github.com/jest-community/eslint-plugin-jest/blob/main/docs/rules/no-conditional-expect.md
+*/
+
+class NoErrorThrownError extends Error {}
+global.NoErrorThrownError = NoErrorThrownError
+
+// A call is expected to throw an error
+// If no error is thrown, we throw a NoErrorThrownError
+// This is so we can test whether the right error is thrown, and it doesn't silently fail
+global.getErrorForCallThatShouldThrowAnError = async (callThatShouldThrowAnError) => {
+  try {
+    await callThatShouldThrowAnError()
+    // it should not have succeeded, if it did, we throw a known error, for tests
+    return new NoErrorThrownError()
+  } catch (err) {
+    return err
+  }
+}
+
 /* global fixtureFile, fixtureJson */
 
 const fixturesFolder = path.join(__dirname, '__fixtures__')
@@ -111,6 +89,11 @@ global.fixtureJson = (output) => {
 // helper for fixtures
 global.fixtureHjson = (output) => {
   return hjson.parse(fs.readFileSync(global.fixturePath(output)).toString())
+}
+
+// helper for fixtures
+global.fixtureYaml = (output) => {
+  return jsYaml.load(fs.readFileSync(global.fixturePath(output)).toString())
 }
 
 // fixture matcher

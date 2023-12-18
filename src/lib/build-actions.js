@@ -10,7 +10,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const utils = require('./app-helper')
+const { runInProcess } = require('./app-helper')
 const { buildActions } = require('@adobe/aio-lib-runtime')
 
 /**
@@ -21,10 +21,10 @@ const { buildActions } = require('@adobe/aio-lib-runtime')
  * @param {boolean} [forceBuild=false] force a build (skip file changed hash check)
  */
 module.exports = async (config, filterActions, forceBuild = false) => {
-  utils.runScript(config.hooks['pre-app-build'])
-  const script = await utils.runScript(config.hooks['build-actions'])
+  await runInProcess(config.hooks['pre-app-build'], config)
+  const script = await runInProcess(config.hooks['build-actions'], { config, options: { filterActions, forceBuild } })
   if (!script) {
     await buildActions(config, filterActions, forceBuild)
   }
-  utils.runScript(config.hooks['post-app-build'])
+  await runInProcess(config.hooks['post-app-build'], config)
 }

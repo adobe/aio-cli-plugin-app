@@ -15,14 +15,15 @@ const chalk = require('chalk')
 const fs = require('fs-extra')
 const https = require('https')
 const getPort = require('get-port')
+const open = require('open')
 
-const { Flags, CliUx: { ux: cli } } = require('@oclif/core')
+const { Flags, ux } = require('@oclif/core')
 const coreConfig = require('@adobe/aio-lib-core-config')
 
 const BaseCommand = require('../../BaseCommand')
 const runDev = require('../../lib/run-dev')
 const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('../../lib/defaults')
-const { runScript } = require('../../lib/app-helper')
+const { runInProcess } = require('../../lib/app-helper')
 
 const DEV_KEYS_DIR = 'dist/dev-keys/'
 const PRIVATE_KEY_PATH = DEV_KEYS_DIR + 'private.key'
@@ -80,7 +81,7 @@ class Run extends BaseCommand {
     }
 
     try {
-      await runScript(config.hooks['pre-app-run'])
+      await runInProcess(config.hooks['pre-app-run'], { config, options: runOptions })
     } catch (err) {
       this.log(err)
     }
@@ -104,10 +105,10 @@ class Run extends BaseCommand {
         spinner.info(chalk.dim(`${info}`))
         spinner.start()
       }
-
-    const frontendUrl = await runDev(config, this.config.dataDir, runOptions, onProgress)
+    const inprocHook = this.config.runHook.bind(this.config)
+    const frontendUrl = await runDev(config, this.config.dataDir, runOptions, onProgress, inprocHook)
     try {
-      await runScript(config.hooks['post-app-run'])
+      await runInProcess(config.hooks['post-app-run'], config)
     } catch (err) {
       this.log(err)
     }
@@ -117,7 +118,7 @@ class Run extends BaseCommand {
       const launchUrl = this.getLaunchUrlPrefix() + frontendUrl
       if (flags.open) {
         this.log(chalk.blue(chalk.bold(`Opening your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
-        cli.open(launchUrl)
+        open(launchUrl)
       } else {
         this.log(chalk.blue(chalk.bold(`To view your deployed application in the Experience Cloud shell:\n  -> ${launchUrl}`)))
       }
@@ -178,17 +179,17 @@ class Run extends BaseCommand {
     const actualPort = await getPort({ port })
     server.listen(actualPort)
     this.log('A self signed development certificate has been generated, you will need to accept it in your browser in order to use it.')
-    cli.open(`https://localhost:${actualPort}`)
-    cli.action.start('Waiting for the certificate to be accepted.')
+    open(`https://localhost:${actualPort}`)
+    ux.action.start('Waiting for the certificate to be accepted.')
     // eslint-disable-next-line no-unmodified-loop-condition
     while (!certAccepted && Date.now() - startTime < 20000) {
-      await cli.wait()
+      await ux.wait()
     }
     if (certAccepted) {
-      cli.action.stop()
+      ux.action.stop()
       this.log('Great, you accepted the certificate!')
     } else {
-      cli.action.stop('timed out')
+      ux.action.stop('timed out')
     }
     server.close()
 
@@ -197,6 +198,8 @@ class Run extends BaseCommand {
 }
 
 Run.description = 'Run an Adobe I/O App'
+
+Run.args = {}
 
 Run.flags = {
   ...BaseCommand.flags,

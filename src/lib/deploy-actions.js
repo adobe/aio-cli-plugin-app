@@ -10,7 +10,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const utils = require('./app-helper')
+const { runInProcess, createWebExportFilter } = require('./app-helper')
 const { deployActions } = require('@adobe/aio-lib-runtime')
 
 /**
@@ -22,9 +22,9 @@ const { deployActions } = require('@adobe/aio-lib-runtime')
  * @param {boolean} filter true if a filter by built actions is desired.
  */
 /** @private */
-module.exports = async (config, isLocalDev = false, log = () => {}, filter = false) => {
-  utils.runScript(config.hooks['pre-app-deploy'])
-  const script = await utils.runScript(config.hooks['deploy-actions'])
+module.exports = async (config, isLocalDev = false, log = () => {}, filter = false, inprocHook) => {
+  await runInProcess(config.hooks['pre-app-deploy'], config)
+  const script = await runInProcess(config.hooks['deploy-actions'], { config, options: { isLocalDev, filter } })
   if (!script) {
     const deployConfig = {
       isLocalDev,
@@ -32,10 +32,23 @@ module.exports = async (config, isLocalDev = false, log = () => {}, filter = fal
         byBuiltActions: filter
       }
     }
+    if (inprocHook) {
+      const hookFilterEntities = Array.isArray(filter) ? filter : []
+      const hookResults = await inprocHook('deploy-actions', {
+        appConfig: config,
+        filterEntities: hookFilterEntities,
+        isLocalDev
+      })
+      if (hookResults?.failures?.length > 0) {
+        // output should be "Error : <plugin-name> : <error-message>\n" for each failure
+        log('Error: ' + hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '))
+        throw new Error(`Hook 'deploy-actions' failed with ${hookResults.failures[0].error}`)
+      }
+    }
     const entities = await deployActions(config, deployConfig, log)
     if (entities.actions) {
-      const web = entities.actions.filter(utils.createWebExportFilter(true))
-      const nonWeb = entities.actions.filter(utils.createWebExportFilter(false))
+      const web = entities.actions.filter(createWebExportFilter(true))
+      const nonWeb = entities.actions.filter(createWebExportFilter(false))
 
       if (web.length > 0) {
         log('web actions:')
@@ -52,5 +65,5 @@ module.exports = async (config, isLocalDev = false, log = () => {}, filter = fal
       }
     }
   }
-  utils.runScript(config.hooks['post-app-deploy'])
+  await runInProcess(config.hooks['post-app-deploy'], config)
 }

@@ -29,49 +29,25 @@ $ aio app --help
 * [`aio app`](#aio-app)
 * [`aio app add`](#aio-app-add)
 * [`aio app add action`](#aio-app-add-action)
-* [`aio app add actions`](#aio-app-add-actions)
 * [`aio app add ci`](#aio-app-add-ci)
 * [`aio app add event`](#aio-app-add-event)
-* [`aio app add events`](#aio-app-add-events)
-* [`aio app add ext`](#aio-app-add-ext)
 * [`aio app add extension`](#aio-app-add-extension)
-* [`aio app add extensions`](#aio-app-add-extensions)
 * [`aio app add service`](#aio-app-add-service)
-* [`aio app add services`](#aio-app-add-services)
 * [`aio app add web-assets`](#aio-app-add-web-assets)
 * [`aio app build`](#aio-app-build)
-* [`aio app config`](#aio-app-config)
-* [`aio app config get`](#aio-app-config-get)
-* [`aio app config get lf`](#aio-app-config-get-lf)
-* [`aio app config get lf errors`](#aio-app-config-get-lf-errors)
-* [`aio app config get log-forwarding`](#aio-app-config-get-log-forwarding)
-* [`aio app config get log-forwarding errors`](#aio-app-config-get-log-forwarding-errors)
-* [`aio app config set`](#aio-app-config-set)
-* [`aio app config set lf`](#aio-app-config-set-lf)
-* [`aio app config set log-forwarding`](#aio-app-config-set-log-forwarding)
 * [`aio app create [PATH]`](#aio-app-create-path)
 * [`aio app delete`](#aio-app-delete)
 * [`aio app delete action [ACTION-NAME]`](#aio-app-delete-action-action-name)
-* [`aio app delete actions [ACTION-NAME]`](#aio-app-delete-actions-action-name)
 * [`aio app delete ci`](#aio-app-delete-ci)
-* [`aio app delete event [EVENT-ACTION-NAME]`](#aio-app-delete-event-event-action-name)
-* [`aio app delete events [EVENT-ACTION-NAME]`](#aio-app-delete-events-event-action-name)
-* [`aio app delete ext`](#aio-app-delete-ext)
 * [`aio app delete extension`](#aio-app-delete-extension)
-* [`aio app delete extensions`](#aio-app-delete-extensions)
 * [`aio app delete service`](#aio-app-delete-service)
-* [`aio app delete services`](#aio-app-delete-services)
 * [`aio app delete web-assets`](#aio-app-delete-web-assets)
 * [`aio app deploy`](#aio-app-deploy)
 * [`aio app get-url [ACTION]`](#aio-app-get-url-action)
 * [`aio app info`](#aio-app-info)
 * [`aio app init [PATH]`](#aio-app-init-path)
 * [`aio app list`](#aio-app-list)
-* [`aio app list ext`](#aio-app-list-ext)
-* [`aio app list ext-points`](#aio-app-list-ext-points)
 * [`aio app list extension`](#aio-app-list-extension)
-* [`aio app list extension-points`](#aio-app-list-extension-points)
-* [`aio app list extensions`](#aio-app-list-extensions)
 * [`aio app logs`](#aio-app-logs)
 * [`aio app run`](#aio-app-run)
 * [`aio app test`](#aio-app-test)
@@ -94,7 +70,7 @@ DESCRIPTION
   Create, run, test, and deploy Adobe I/O Apps
 ```
 
-_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/10.0.4/src/commands/app/index.js)_
+_See code: [src/commands/app/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/index.ts)_
 
 ## `aio app add`
 
@@ -111,6 +87,8 @@ FLAGS
 DESCRIPTION
   Add a new component to an existing Adobe I/O App
 ```
+
+_See code: [src/commands/app/add/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/add/index.ts)_
 
 ## `aio app add action`
 
@@ -135,28 +113,7 @@ ALIASES
   $ aio app add actions
 ```
 
-## `aio app add actions`
-
-Add new actions
-
-```
-USAGE
-  $ aio app add actions [-v] [--version] [--install] [-y] [-e <value>]
-
-FLAGS
-  -e, --extension=<value>  Add actions to a specific extension
-  -v, --verbose            Verbose output
-  -y, --yes                Skip questions, and use all default values
-  --[no-]install           [default: true] Run npm installation after files are created
-  --version                Show version
-
-DESCRIPTION
-  Add new actions
-
-
-ALIASES
-  $ aio app add actions
-```
+_See code: [src/commands/app/add/action.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/add/action.ts)_
 
 ## `aio app add ci`
 
@@ -174,6 +131,8 @@ DESCRIPTION
   Add CI files
 ```
 
+_See code: [src/commands/app/add/ci.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/add/ci.ts)_
+
 ## `aio app add event`
 
 Add a new Adobe I/O Events action
@@ -183,7 +142,7 @@ USAGE
   $ aio app add event [-v] [--version] [--install] [-y] [-e <value>]
 
 FLAGS
-  -e, --extension=<value>  Add actions to a specific extension
+  -e, --extension=<value>  Add events to a specific extension
   -v, --verbose            Verbose output
   -y, --yes                Skip questions, and use all default values
   --[no-]install           [default: true] Run npm installation after files are created
@@ -197,52 +156,7 @@ ALIASES
   $ aio app add events
 ```
 
-## `aio app add events`
-
-Add a new Adobe I/O Events action
-
-```
-USAGE
-  $ aio app add events [-v] [--version] [--install] [-y] [-e <value>]
-
-FLAGS
-  -e, --extension=<value>  Add actions to a specific extension
-  -v, --verbose            Verbose output
-  -y, --yes                Skip questions, and use all default values
-  --[no-]install           [default: true] Run npm installation after files are created
-  --version                Show version
-
-DESCRIPTION
-  Add a new Adobe I/O Events action
-
-
-ALIASES
-  $ aio app add events
-```
-
-## `aio app add ext`
-
-Add new extensions to the project
-
-```
-USAGE
-  $ aio app add ext [-v] [--version] [--install] [-y] [-e <value>]
-
-FLAGS
-  -e, --extension=<value>...  Specify extensions to add, skips selection prompt
-  -v, --verbose               Verbose output
-  -y, --yes                   Skip questions, and use all default values
-  --[no-]install              [default: true] Run npm installation after files are created
-  --version                   Show version
-
-DESCRIPTION
-  Add new extensions to the project
-
-
-ALIASES
-  $ aio app add ext
-  $ aio app add extensions
-```
+_See code: [src/commands/app/add/event.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/add/event.ts)_
 
 ## `aio app add extension`
 
@@ -268,29 +182,7 @@ ALIASES
   $ aio app add extensions
 ```
 
-## `aio app add extensions`
-
-Add new extensions to the project
-
-```
-USAGE
-  $ aio app add extensions [-v] [--version] [--install] [-y] [-e <value>]
-
-FLAGS
-  -e, --extension=<value>...  Specify extensions to add, skips selection prompt
-  -v, --verbose               Verbose output
-  -y, --yes                   Skip questions, and use all default values
-  --[no-]install              [default: true] Run npm installation after files are created
-  --version                   Show version
-
-DESCRIPTION
-  Add new extensions to the project
-
-
-ALIASES
-  $ aio app add ext
-  $ aio app add extensions
-```
+_See code: [src/commands/app/add/extension.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/add/extension.ts)_
 
 ## `aio app add service`
 
@@ -298,10 +190,12 @@ Subscribe to Services in the current Workspace
 
 ```
 USAGE
-  $ aio app add service [-v] [--version]
+  $ aio app add service [-v] [--version] [--use-jwt]
 
 FLAGS
   -v, --verbose  Verbose output
+  --use-jwt      if the config has both jwt and OAuth Server to Server Credentials (while migrating), prefer the JWT
+                 credentials
   --version      Show version
 
 DESCRIPTION
@@ -312,25 +206,7 @@ ALIASES
   $ aio app add services
 ```
 
-## `aio app add services`
-
-Subscribe to Services in the current Workspace
-
-```
-USAGE
-  $ aio app add services [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Subscribe to Services in the current Workspace
-
-
-ALIASES
-  $ aio app add services
-```
+_See code: [src/commands/app/add/service.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/add/service.ts)_
 
 ## `aio app add web-assets`
 
@@ -350,6 +226,8 @@ FLAGS
 DESCRIPTION
   Add web assets support
 ```
+
+_See code: [src/commands/app/add/web-assets.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/add/web-assets.ts)_
 
 ## `aio app build`
 
@@ -378,183 +256,7 @@ DESCRIPTION
   This will always force a rebuild unless --no-force-build is set.
 ```
 
-## `aio app config`
-
-Manage app config
-
-```
-USAGE
-  $ aio app config [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Manage app config
-
-ALIASES
-  $ aio app config
-  $ aio app config
-```
-
-## `aio app config get`
-
-Get app config
-
-```
-USAGE
-  $ aio app config get [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Get app config
-
-ALIASES
-  $ aio app config get
-```
-
-## `aio app config get lf`
-
-Get log forwarding destination configuration
-
-```
-USAGE
-  $ aio app config get lf [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Get log forwarding destination configuration
-
-ALIASES
-  $ aio app config get log-forwarding
-  $ aio app config get lf
-```
-
-## `aio app config get lf errors`
-
-Get log forwarding errors
-
-```
-USAGE
-  $ aio app config get lf errors [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Get log forwarding errors
-
-ALIASES
-  $ aio app config get log-forwarding errors
-  $ aio app config get lf errors
-```
-
-## `aio app config get log-forwarding`
-
-Get log forwarding destination configuration
-
-```
-USAGE
-  $ aio app config get log-forwarding [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Get log forwarding destination configuration
-
-ALIASES
-  $ aio app config get log-forwarding
-  $ aio app config get lf
-```
-
-## `aio app config get log-forwarding errors`
-
-Get log forwarding errors
-
-```
-USAGE
-  $ aio app config get log-forwarding errors [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Get log forwarding errors
-
-ALIASES
-  $ aio app config get log-forwarding errors
-  $ aio app config get lf errors
-```
-
-## `aio app config set`
-
-Set app config
-
-```
-USAGE
-  $ aio app config set [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Set app config
-
-ALIASES
-  $ aio app config set
-```
-
-## `aio app config set lf`
-
-Set log forwarding destination configuration
-
-```
-USAGE
-  $ aio app config set lf [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Set log forwarding destination configuration
-
-ALIASES
-  $ aio app config set log-forwarding
-  $ aio app config set lf
-```
-
-## `aio app config set log-forwarding`
-
-Set log forwarding destination configuration
-
-```
-USAGE
-  $ aio app config set log-forwarding [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Set log forwarding destination configuration
-
-ALIASES
-  $ aio app config set log-forwarding
-  $ aio app config set lf
-```
+_See code: [src/commands/app/build.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/build.ts)_
 
 ## `aio app create [PATH]`
 
@@ -576,6 +278,8 @@ DESCRIPTION
   Create a new Adobe I/O App with default parameters
 ```
 
+_See code: [src/commands/app/create.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/create.ts)_
+
 ## `aio app delete`
 
 Delete a component from an existing Adobe I/O App
@@ -591,6 +295,8 @@ FLAGS
 DESCRIPTION
   Delete a component from an existing Adobe I/O App
 ```
+
+_See code: [src/commands/app/delete/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/delete/index.ts)_
 
 ## `aio app delete action [ACTION-NAME]`
 
@@ -616,29 +322,7 @@ ALIASES
   $ aio app delete actions
 ```
 
-## `aio app delete actions [ACTION-NAME]`
-
-Delete existing actions
-
-```
-USAGE
-  $ aio app delete actions [ACTION-NAME] [-v] [--version] [-y]
-
-ARGUMENTS
-  ACTION-NAME  Action `pkg/name` to delete, you can specify multiple actions via a comma separated list
-
-FLAGS
-  -v, --verbose  Verbose output
-  -y, --yes      Skip questions, and use all default values
-  --version      Show version
-
-DESCRIPTION
-  Delete existing actions
-
-
-ALIASES
-  $ aio app delete actions
-```
+_See code: [src/commands/app/delete/action.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/delete/action.ts)_
 
 ## `aio app delete ci`
 
@@ -657,77 +341,7 @@ DESCRIPTION
   Delete existing CI files
 ```
 
-## `aio app delete event [EVENT-ACTION-NAME]`
-
-Delete existing Adobe I/O Events actions
-
-```
-USAGE
-  $ aio app delete event [EVENT-ACTION-NAME] [-v] [--version] [-y]
-
-ARGUMENTS
-  EVENT-ACTION-NAME  Action `pkg/name` to delete, you can specify multiple actions via a comma separated list
-
-FLAGS
-  -v, --verbose  Verbose output
-  -y, --yes      Skip questions, and use all default values
-  --version      Show version
-
-DESCRIPTION
-  Delete existing Adobe I/O Events actions
-
-
-ALIASES
-  $ aio app delete events
-```
-
-## `aio app delete events [EVENT-ACTION-NAME]`
-
-Delete existing Adobe I/O Events actions
-
-```
-USAGE
-  $ aio app delete events [EVENT-ACTION-NAME] [-v] [--version] [-y]
-
-ARGUMENTS
-  EVENT-ACTION-NAME  Action `pkg/name` to delete, you can specify multiple actions via a comma separated list
-
-FLAGS
-  -v, --verbose  Verbose output
-  -y, --yes      Skip questions, and use all default values
-  --version      Show version
-
-DESCRIPTION
-  Delete existing Adobe I/O Events actions
-
-
-ALIASES
-  $ aio app delete events
-```
-
-## `aio app delete ext`
-
-Delete existing extensions
-
-```
-USAGE
-  $ aio app delete ext [-v] [--version] [-y] [--install] [-e <value>]
-
-FLAGS
-  -e, --extension=<value>...  Specify extensions to delete, skips selection prompt
-  -v, --verbose               Verbose output
-  -y, --yes                   Skip questions, and use all default values
-  --[no-]install              [default: true] Run npm installation after files are created
-  --version                   Show version
-
-DESCRIPTION
-  Delete existing extensions
-
-
-ALIASES
-  $ aio app delete ext
-  $ aio app delete extensions
-```
+_See code: [src/commands/app/delete/ci.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/delete/ci.ts)_
 
 ## `aio app delete extension`
 
@@ -753,29 +367,7 @@ ALIASES
   $ aio app delete extensions
 ```
 
-## `aio app delete extensions`
-
-Delete existing extensions
-
-```
-USAGE
-  $ aio app delete extensions [-v] [--version] [-y] [--install] [-e <value>]
-
-FLAGS
-  -e, --extension=<value>...  Specify extensions to delete, skips selection prompt
-  -v, --verbose               Verbose output
-  -y, --yes                   Skip questions, and use all default values
-  --[no-]install              [default: true] Run npm installation after files are created
-  --version                   Show version
-
-DESCRIPTION
-  Delete existing extensions
-
-
-ALIASES
-  $ aio app delete ext
-  $ aio app delete extensions
-```
+_See code: [src/commands/app/delete/extension.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/delete/extension.ts)_
 
 ## `aio app delete service`
 
@@ -783,10 +375,12 @@ Delete Services in the current Workspace
 
 ```
 USAGE
-  $ aio app delete service [-v] [--version]
+  $ aio app delete service [-v] [--version] [--use-jwt]
 
 FLAGS
   -v, --verbose  Verbose output
+  --use-jwt      if the config has both jwt and OAuth Server to Server Credentials (while migrating), prefer the JWT
+                 credentials
   --version      Show version
 
 DESCRIPTION
@@ -797,25 +391,7 @@ ALIASES
   $ aio app delete services
 ```
 
-## `aio app delete services`
-
-Delete Services in the current Workspace
-
-```
-USAGE
-  $ aio app delete services [-v] [--version]
-
-FLAGS
-  -v, --verbose  Verbose output
-  --version      Show version
-
-DESCRIPTION
-  Delete Services in the current Workspace
-
-
-ALIASES
-  $ aio app delete services
-```
+_See code: [src/commands/app/delete/service.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/delete/service.ts)_
 
 ## `aio app delete web-assets`
 
@@ -834,6 +410,8 @@ DESCRIPTION
   Delete existing web assets
 ```
 
+_See code: [src/commands/app/delete/web-assets.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/delete/web-assets.ts)_
+
 ## `aio app deploy`
 
 Build and deploy an Adobe I/O App
@@ -842,7 +420,7 @@ Build and deploy an Adobe I/O App
 USAGE
   $ aio app deploy [-v] [--version] [--actions | -a <value>] [--web-assets] [--force-build | ] [--content-hash]
     [--web-optimize] [-e <value> | ] [--build] [--open] [--force-deploy] [--force-publish |  | --publish]
-    [--log-forwarding-update]
+    [--force-events |  | ] [--log-forwarding-update]
 
 FLAGS
   -a, --action=<value>...       Deploy only a specific action, the flags can be specified multiple times, this will set
@@ -855,6 +433,8 @@ FLAGS
   --[no-]force-build            [default: true] Force a build even if one already exists
   --force-deploy                [default: false] Force deploy changes, regardless of production Workspace being
                                 published in Exchange.
+  --[no-]force-events           [default: false] Force event registrations and delete any registrations not part of the
+                                config file
   --force-publish               [default: false] Force publish extension(s) to Exchange, delete previously published
                                 extension points
   --[no-]log-forwarding-update  [default: true] Update log forwarding configuration on server
@@ -870,6 +450,8 @@ DESCRIPTION
 
   This will always force a rebuild unless --no-force-build is set.
 ```
+
+_See code: [src/commands/app/deploy.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/deploy.ts)_
 
 ## `aio app get-url [ACTION]`
 
@@ -892,6 +474,8 @@ DESCRIPTION
   Get action URLs
 ```
 
+_See code: [src/commands/app/get-url.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/get-url.ts)_
+
 ## `aio app info`
 
 Display settings/configuration in use by an Adobe I/O App
@@ -912,14 +496,16 @@ DESCRIPTION
   Display settings/configuration in use by an Adobe I/O App
 ```
 
+_See code: [src/commands/app/info.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/info.ts)_
+
 ## `aio app init [PATH]`
 
 Create a new Adobe I/O App
 
 ```
 USAGE
-  $ aio app init [PATH] [-v] [--version] [--install] [-y] [--login] [-e <value> | -t <value>]
-    [--standalone-app | ] [-w <value> | -i <value>] [--confirm-new-workspace]
+  $ aio app init [PATH] [-v] [--version] [--install] [-y] [--login] [-e <value> | -t <value> | --repo <value>]
+    [--standalone-app |  | ] [-w <value> | -i <value>] [--confirm-new-workspace] [--use-jwt]
 
 ARGUMENTS
   PATH  [default: .] Path to the app directory
@@ -935,12 +521,17 @@ FLAGS
   --confirm-new-workspace     Skip and confirm prompt for creating a new workspace
   --[no-]install              [default: true] Run npm installation after files are created
   --[no-]login                Login using your Adobe ID for interacting with Adobe I/O Developer Console
+  --repo=<value>              Init from gh quick-start repo. Expected to be of the form <owner>/<repo>/<path>
   --standalone-app            Create a stand-alone application
+  --use-jwt                   if the config has both jwt and OAuth Server to Server Credentials (while migrating),
+                              prefer the JWT credentials
   --version                   Show version
 
 DESCRIPTION
   Create a new Adobe I/O App
 ```
+
+_See code: [src/commands/app/init.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/init.ts)_
 
 ## `aio app list`
 
@@ -958,51 +549,7 @@ DESCRIPTION
   List components for Adobe I/O App
 ```
 
-## `aio app list ext`
-
-List implemented extensions
-
-```
-USAGE
-  $ aio app list ext [-v] [--version] [-j] [-y]
-
-FLAGS
-  -j, --json     Output json
-  -v, --verbose  Verbose output
-  -y, --yml      Output yml
-  --version      Show version
-
-DESCRIPTION
-  List implemented extensions
-
-
-ALIASES
-  $ aio app list ext
-  $ aio app list extensions
-```
-
-## `aio app list ext-points`
-
-List all extension points for the selected org
-
-```
-USAGE
-  $ aio app list ext-points [-v] [--version] [-j] [-y]
-
-FLAGS
-  -j, --json     Output json
-  -v, --verbose  Verbose output
-  -y, --yml      Output yml
-  --version      Show version
-
-DESCRIPTION
-  List all extension points for the selected org
-
-
-ALIASES
-  $ aio app list ext-points
-  $ aio app list extension-points
-```
+_See code: [src/commands/app/list/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/list/index.ts)_
 
 ## `aio app list extension`
 
@@ -1027,51 +574,7 @@ ALIASES
   $ aio app list extensions
 ```
 
-## `aio app list extension-points`
-
-List all extension points for the selected org
-
-```
-USAGE
-  $ aio app list extension-points [-v] [--version] [-j] [-y]
-
-FLAGS
-  -j, --json     Output json
-  -v, --verbose  Verbose output
-  -y, --yml      Output yml
-  --version      Show version
-
-DESCRIPTION
-  List all extension points for the selected org
-
-
-ALIASES
-  $ aio app list ext-points
-  $ aio app list extension-points
-```
-
-## `aio app list extensions`
-
-List implemented extensions
-
-```
-USAGE
-  $ aio app list extensions [-v] [--version] [-j] [-y]
-
-FLAGS
-  -j, --json     Output json
-  -v, --verbose  Verbose output
-  -y, --yml      Output yml
-  --version      Show version
-
-DESCRIPTION
-  List implemented extensions
-
-
-ALIASES
-  $ aio app list ext
-  $ aio app list extensions
-```
+_See code: [src/commands/app/list/extension.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/list/extension.ts)_
 
 ## `aio app logs`
 
@@ -1095,6 +598,8 @@ DESCRIPTION
   Fetch logs for an Adobe I/O App
 ```
 
+_See code: [src/commands/app/logs.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/logs.ts)_
+
 ## `aio app run`
 
 Run an Adobe I/O App
@@ -1115,6 +620,8 @@ FLAGS
 DESCRIPTION
   Run an Adobe I/O App
 ```
+
+_See code: [src/commands/app/run.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/run.ts)_
 
 ## `aio app test`
 
@@ -1142,18 +649,22 @@ DESCRIPTION
   If the extension has a hook called 'test' in its 'ext.config.yaml', the script specified will be run instead.
 ```
 
+_See code: [src/commands/app/test.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/test.ts)_
+
 ## `aio app undeploy`
 
 Undeploys an Adobe I/O App
 
 ```
 USAGE
-  $ aio app undeploy [-v] [--version] [--actions] [--web-assets] [-e <value>] [--force-unpublish | --unpublish]
+  $ aio app undeploy [-v] [--version] [--actions] [--events] [--web-assets] [-e <value>] [--force-unpublish |
+    --unpublish]
 
 FLAGS
   -e, --extension=<value>...  Undeploy only a specific extension, the flags can be specified multiple times
   -v, --verbose               Verbose output
   --[no-]actions              [default: true] Undeploy actions if any
+  --[no-]events               [default: true] Undeploy (unregister) events if any
   --force-unpublish           Force unpublish extension(s) from Exchange, will delete all extension points
   --[no-]unpublish            [default: true] Unpublish selected extension(s) from Exchange
   --version                   Show version
@@ -1163,6 +674,8 @@ DESCRIPTION
   Undeploys an Adobe I/O App
 ```
 
+_See code: [src/commands/app/undeploy.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/undeploy.ts)_
+
 ## `aio app use [CONFIG_FILE_PATH]`
 
 Import an Adobe Developer Console configuration file.
@@ -1170,7 +683,7 @@ Import an Adobe Developer Console configuration file.
 ```
 USAGE
   $ aio app use [CONFIG_FILE_PATH] [-v] [--version] [--overwrite | --merge] [--confirm-new-workspace] [-w
-    <value> | [-g | -w <value>] | ] [--no-service-sync | --confirm-service-sync] [--no-input]
+    <value> | [-g | -w <value>] | ] [--no-service-sync | --confirm-service-sync] [--no-input] [--use-jwt]
 
 ARGUMENTS
   CONFIG_FILE_PATH  path to an Adobe I/O Developer Console configuration file
@@ -1193,6 +706,8 @@ FLAGS
                                 Workspace
   --overwrite                   Overwrite any .aio and .env files during import of the Adobe Developer Console
                                 configuration file
+  --use-jwt                     if the config has both jwt and OAuth Server to Server Credentials (while migrating),
+                                prefer the JWT credentials
   --version                     Show version
 
 DESCRIPTION
@@ -1204,6 +719,8 @@ DESCRIPTION
   To set these global config values, see the help text for 'aio console --help'.
 
   To download the configuration file for your project, select the 'Download' button in the toolbar of your project's
-  page in https://console.adobe.io
+  page in https://developer.adobe.com/console/
 ```
+
+_See code: [src/commands/app/use.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/use.ts)_
 <!-- commandsstop -->
