@@ -48,48 +48,83 @@ beforeEach(async () => {
   LogForwarding.init.mockResolvedValue(lf)
 })
 
-test('set log forwarding destination', async () => {
-  return new Promise(resolve => {
-    const destination = 'destination'
-    const input = {
-      field_one: 'val_one',
-      field_two: 'val_two',
-      secret: 'val_secret'
-    }
-    command.prompt.mockResolvedValueOnce({ type: destination })
-    command.prompt.mockResolvedValueOnce(input)
-    const serverSanitizedSettings = {
-      field_one: 'val_one',
-      field_two: 'val_two sanitized'
-    }
-    const fullSanitizedSettings = {
-      field_one: 'val_one',
-      field_two: 'val_two sanitized',
-      secret: 'val_secret'
-    }
-    const setCall = jest.fn().mockResolvedValue({
-      destination: serverSanitizedSettings
-    })
-    const localSetCall = jest.fn()
-    lf.updateServerConfig = setCall
-    lf.updateLocalConfig = localSetCall
-    lf.getConfigFromJson.mockReturnValue(new LogForwarding.LogForwardingConfig(destination, serverSanitizedSettings))
-    return command.run()
-      .then(() => {
-        expect(command.prompt).toHaveBeenNthCalledWith(1, [{
-          name: 'type',
-          message: 'select log forwarding destination',
-          type: 'list',
-          choices: [{ name: 'Destination', value: 'destination' }]
-        }])
-        expect(stdout.output).toMatch(`Log forwarding is set to '${destination}'\nLog forwarding settings are saved to the local configuration`)
-        expect(setCall).toHaveBeenCalledTimes(1)
-        expect(setCall).toHaveBeenCalledWith(new LogForwarding.LogForwardingConfig(destination, input))
-        expect(localSetCall).toHaveBeenCalledTimes(1)
-        expect(localSetCall).toHaveBeenCalledWith(new LogForwarding.LogForwardingConfig(destination, fullSanitizedSettings))
-        resolve()
-      })
+test('set log forwarding destination and save local', async () => {
+  const destination = 'destination'
+  const input = {
+    field_one: 'val_one',
+    field_two: 'val_two',
+    secret: 'val_secret'
+  }
+  command.prompt.mockResolvedValueOnce({ type: destination })
+  command.prompt.mockResolvedValueOnce(input)
+  const serverSanitizedSettings = {
+    field_one: 'val_one',
+    field_two: 'val_two sanitized'
+  }
+  const fullSanitizedSettings = {
+    field_one: 'val_one',
+    field_two: 'val_two sanitized',
+    secret: 'val_secret'
+  }
+  const setCall = jest.fn().mockResolvedValue({
+    destination: serverSanitizedSettings
   })
+  const localSetCall = jest.fn()
+  lf.updateServerConfig = setCall
+  lf.updateLocalConfig = localSetCall.mockResolvedValue()
+  lf.getConfigFromJson.mockReturnValue(new LogForwarding.LogForwardingConfig(destination, serverSanitizedSettings))
+
+  await expect(command.run()).resolves.not.toThrow()
+  expect(command.prompt).toHaveBeenNthCalledWith(1, [{
+    name: 'type',
+    message: 'select log forwarding destination',
+    type: 'list',
+    choices: [{ name: 'Destination', value: 'destination' }]
+  }])
+  expect(stdout.output).toMatch(`Log forwarding is set to '${destination}'\nLog forwarding settings are saved to the local configuration`)
+  expect(setCall).toHaveBeenCalledTimes(1)
+  expect(setCall).toHaveBeenCalledWith(new LogForwarding.LogForwardingConfig(destination, input))
+  expect(localSetCall).toHaveBeenCalledTimes(1)
+  expect(localSetCall).toHaveBeenCalledWith(new LogForwarding.LogForwardingConfig(destination, fullSanitizedSettings))
+})
+
+test('set log forwarding destination and fail save local', async () => {
+  const destination = 'destination'
+  const input = {
+    field_one: 'val_one',
+    field_two: 'val_two',
+    secret: 'val_secret'
+  }
+  command.prompt.mockResolvedValueOnce({ type: destination })
+  command.prompt.mockResolvedValueOnce(input)
+  const serverSanitizedSettings = {
+    field_one: 'val_one',
+    field_two: 'val_two sanitized'
+  }
+  const fullSanitizedSettings = {
+    field_one: 'val_one',
+    field_two: 'val_two sanitized',
+    secret: 'val_secret'
+  }
+  const setCall = jest.fn().mockResolvedValue({
+    destination: serverSanitizedSettings
+  })
+  const localSetCall = jest.fn()
+  lf.updateServerConfig = setCall
+  lf.updateLocalConfig = localSetCall.mockRejectedValue(Error('mocked error'))
+  lf.getConfigFromJson.mockReturnValue(new LogForwarding.LogForwardingConfig(destination, serverSanitizedSettings))
+  await expect(command.run()).resolves.not.toThrow('mocked error')
+  expect(command.prompt).toHaveBeenNthCalledWith(1, [{
+    name: 'type',
+    message: 'select log forwarding destination',
+    type: 'list',
+    choices: [{ name: 'Destination', value: 'destination' }]
+  }])
+  expect(stdout.output).toMatch(`Log forwarding is set to '${destination}'\n`)
+  expect(setCall).toHaveBeenCalledTimes(1)
+  expect(setCall).toHaveBeenCalledWith(new LogForwarding.LogForwardingConfig(destination, input))
+  expect(localSetCall).toHaveBeenCalledTimes(1)
+  expect(localSetCall).toHaveBeenCalledWith(new LogForwarding.LogForwardingConfig(destination, fullSanitizedSettings))
 })
 
 test('failed to set log forwarding settings', async () => {

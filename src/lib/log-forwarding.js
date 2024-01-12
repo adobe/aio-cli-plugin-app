@@ -129,10 +129,9 @@ class LogForwarding {
     projectConfig.project.workspace.log_forwarding = {
       [destination]: nonSecretSettings
     }
-    const interactive = false
-    const merge = true
-    await writeAio(projectConfig, '', { interactive, merge })
-    await writeEnv({}, '', { interactive, merge }, secretSettings)
+    const writeOptions = { interactive: false, merge: true }
+    await writeAio(projectConfig, '', writeOptions)
+    await writeEnv({}, '', writeOptions, secretSettings)
   }
 
   isLocalConfigChanged () {
