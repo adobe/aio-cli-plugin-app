@@ -469,8 +469,9 @@ InitCommand.flags = {
     exclusive: ['import'] // also no-login
   }),
   'confirm-new-workspace': Flags.boolean({
-    description: 'Skip and confirm prompt for creating a new workspace',
-    default: false
+    description: 'Prompt to confirm before creating a new workspace',
+    default: true,
+    allowNo: true
   }),
   repo: Flags.string({
     description: 'Init from gh quick-start repo. Expected to be of the form <owner>/<repo>/<path>',

@@ -838,19 +838,38 @@ describe('switch to a workspace in the same org', () => {
       .toHaveBeenCalledWith(fakeCurrentConfig.org.id, fakeCurrentConfig.id, { name: workspaceFlag })
   })
 
-  test('-w newworkspace --confirm-new-workspace = false, error if canceled', async () => {
+  test('-w newworkspace --confirm-new-workspace=false, error if canceled', async () => {
     mockConsoleImportConfig()
     mockConsoleCLIInstance.promptForSelectWorkspace.mockReturnValueOnce(null)
     mockConsoleCLIInstance.prompt.promptConfirm.mockReturnValueOnce(false)
-
-    await expect(TheCommand.run(['-w new-workspace'])).rejects.toThrow()
-  })
-  test('-w newworkspace --confirm-new-workspace = true, create workspace', async () => {
-    mockConsoleImportConfig()
-    mockConsoleCLIInstance.promptForSelectWorkspace.mockReturnValueOnce(null)
-    mockConsoleCLIInstance.prompt.promptConfirm.mockReturnValueOnce(false)
-
-    await TheCommand.run(['-w newWorkspace', '--confirm-new-workspace'])
+    TheCommand.argv = ['-w', 'new-workspace', '--confirm-new-workspace==false']
+    await expect(TheCommand.run()).rejects.toThrow()
     expect(mockConsoleCLIInstance.prompt.promptConfirm).not.toHaveBeenCalled()
+  })
+
+  test('-w newworkspace --no-confirm-new-workspace, error if cancelled', async () => {
+    mockConsoleImportConfig()
+    mockConsoleCLIInstance.promptForSelectWorkspace.mockReturnValueOnce(null)
+    mockConsoleCLIInstance.prompt.promptConfirm.mockReturnValueOnce(false)
+    TheCommand.argv = ['-w', 'new-workspace', '--no-confirm-new-workspace']
+    await expect(TheCommand.run()).rejects.toThrow()
+    expect(mockConsoleCLIInstance.prompt.promptConfirm).not.toHaveBeenCalled()
+  })
+
+  test('-w newworkspace --confirm-new-workspace, coverage', async () => {
+    mockConsoleImportConfig()
+    mockConsoleCLIInstance.promptForSelectWorkspace.mockReturnValueOnce(null)
+    mockConsoleCLIInstance.prompt.promptConfirm.mockReturnValueOnce(false)
+    await expect(TheCommand.run(['-w', 'new-workspace', '--confirm-new-workspace'])).rejects.toThrow('Workspace creation aborted')
+    expect(mockConsoleCLIInstance.prompt.promptConfirm).toHaveBeenCalled()
+  })
+
+  test('-w newworkspace --no-confirm-new-workspace, coverage', async () => {
+    mockConsoleImportConfig()
+    mockConsoleCLIInstance.promptForSelectWorkspace.mockReturnValueOnce(null)
+    mockConsoleCLIInstance.prompt.promptConfirm.mockReturnValueOnce(false)
+    await expect(TheCommand.run(['-w', 'new-workspace', '--no-confirm-new-workspace'])).resolves.not.toThrow()
+    expect(mockConsoleCLIInstance.prompt.promptConfirm).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.createWorkspace).toHaveBeenCalled()
   })
 })
