@@ -70,7 +70,7 @@ DESCRIPTION
   Create, run, test, and deploy Adobe I/O Apps
 ```
 
-_See code: [src/commands/app/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/index.ts)_
+_See code: [src/commands/app/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/index.ts)_
 
 ## `aio app add`
 
@@ -88,7 +88,7 @@ DESCRIPTION
   Add a new component to an existing Adobe I/O App
 ```
 
-_See code: [src/commands/app/add/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/add/index.ts)_
+_See code: [src/commands/app/add/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/add/index.ts)_
 
 ## `aio app add action`
 
@@ -113,7 +113,7 @@ ALIASES
   $ aio app add actions
 ```
 
-_See code: [src/commands/app/add/action.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/add/action.ts)_
+_See code: [src/commands/app/add/action.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/add/action.ts)_
 
 ## `aio app add ci`
 
@@ -131,7 +131,7 @@ DESCRIPTION
   Add CI files
 ```
 
-_See code: [src/commands/app/add/ci.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/add/ci.ts)_
+_See code: [src/commands/app/add/ci.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/add/ci.ts)_
 
 ## `aio app add event`
 
@@ -156,7 +156,7 @@ ALIASES
   $ aio app add events
 ```
 
-_See code: [src/commands/app/add/event.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/add/event.ts)_
+_See code: [src/commands/app/add/event.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/add/event.ts)_
 
 ## `aio app add extension`
 
@@ -182,7 +182,7 @@ ALIASES
   $ aio app add extensions
 ```
 
-_See code: [src/commands/app/add/extension.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/add/extension.ts)_
+_See code: [src/commands/app/add/extension.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/add/extension.ts)_
 
 ## `aio app add service`
 
@@ -206,7 +206,7 @@ ALIASES
   $ aio app add services
 ```
 
-_See code: [src/commands/app/add/service.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/add/service.ts)_
+_See code: [src/commands/app/add/service.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/add/service.ts)_
 
 ## `aio app add web-assets`
 
@@ -227,7 +227,7 @@ DESCRIPTION
   Add web assets support
 ```
 
-_See code: [src/commands/app/add/web-assets.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/add/web-assets.ts)_
+_See code: [src/commands/app/add/web-assets.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/add/web-assets.ts)_
 
 ## `aio app build`
 
@@ -256,7 +256,7 @@ DESCRIPTION
   This will always force a rebuild unless --no-force-build is set.
 ```
 
-_See code: [src/commands/app/build.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/build.ts)_
+_See code: [src/commands/app/build.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/build.ts)_
 
 ## `aio app create [PATH]`
 
@@ -278,7 +278,7 @@ DESCRIPTION
   Create a new Adobe I/O App with default parameters
 ```
 
-_See code: [src/commands/app/create.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/create.ts)_
+_See code: [src/commands/app/create.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/create.ts)_
 
 ## `aio app delete`
 
@@ -296,7 +296,7 @@ DESCRIPTION
   Delete a component from an existing Adobe I/O App
 ```
 
-_See code: [src/commands/app/delete/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/delete/index.ts)_
+_See code: [src/commands/app/delete/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/delete/index.ts)_
 
 ## `aio app delete action [ACTION-NAME]`
 
@@ -322,7 +322,7 @@ ALIASES
   $ aio app delete actions
 ```
 
-_See code: [src/commands/app/delete/action.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/delete/action.ts)_
+_See code: [src/commands/app/delete/action.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/delete/action.ts)_
 
 ## `aio app delete ci`
 
@@ -341,7 +341,7 @@ DESCRIPTION
   Delete existing CI files
 ```
 
-_See code: [src/commands/app/delete/ci.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/delete/ci.ts)_
+_See code: [src/commands/app/delete/ci.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/delete/ci.ts)_
 
 ## `aio app delete extension`
 
@@ -367,7 +367,7 @@ ALIASES
   $ aio app delete extensions
 ```
 
-_See code: [src/commands/app/delete/extension.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/delete/extension.ts)_
+_See code: [src/commands/app/delete/extension.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/delete/extension.ts)_
 
 ## `aio app delete service`
 
@@ -391,7 +391,7 @@ ALIASES
   $ aio app delete services
 ```
 
-_See code: [src/commands/app/delete/service.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/delete/service.ts)_
+_See code: [src/commands/app/delete/service.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/delete/service.ts)_
 
 ## `aio app delete web-assets`
 
@@ -410,7 +410,7 @@ DESCRIPTION
   Delete existing web assets
 ```
 
-_See code: [src/commands/app/delete/web-assets.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/delete/web-assets.ts)_
+_See code: [src/commands/app/delete/web-assets.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/delete/web-assets.ts)_
 
 ## `aio app deploy`
 
@@ -451,7 +451,7 @@ DESCRIPTION
   This will always force a rebuild unless --no-force-build is set.
 ```
 
-_See code: [src/commands/app/deploy.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/deploy.ts)_
+_See code: [src/commands/app/deploy.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/deploy.ts)_
 
 ## `aio app get-url [ACTION]`
 
@@ -474,7 +474,7 @@ DESCRIPTION
   Get action URLs
 ```
 
-_See code: [src/commands/app/get-url.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/get-url.ts)_
+_See code: [src/commands/app/get-url.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/get-url.ts)_
 
 ## `aio app info`
 
@@ -496,7 +496,7 @@ DESCRIPTION
   Display settings/configuration in use by an Adobe I/O App
 ```
 
-_See code: [src/commands/app/info.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/info.ts)_
+_See code: [src/commands/app/info.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/info.ts)_
 
 ## `aio app init [PATH]`
 
@@ -505,33 +505,34 @@ Create a new Adobe I/O App
 ```
 USAGE
   $ aio app init [PATH] [-v] [--version] [--install] [-y] [--login] [-e <value> | -t <value> | --repo <value>]
-    [--standalone-app |  | ] [-w <value> | -i <value>] [--confirm-new-workspace] [--use-jwt]
+    [--standalone-app |  | ] [-w <value> | -i <value>] [--confirm-new-workspace] [--use-jwt] [--github-pat <value> ]
 
 ARGUMENTS
   PATH  [default: .] Path to the app directory
 
 FLAGS
-  -e, --extension=<value>...  Extension point(s) to implement
-  -i, --import=<value>        Import an Adobe I/O Developer Console configuration file
-  -t, --template=<value>...   Specify a link to a template that will be installed
-  -v, --verbose               Verbose output
-  -w, --workspace=<value>     [default: Stage] Specify the Adobe Developer Console Workspace to init from, defaults to
-                              Stage
-  -y, --yes                   Skip questions, and use all default values
-  --confirm-new-workspace     Skip and confirm prompt for creating a new workspace
-  --[no-]install              [default: true] Run npm installation after files are created
-  --[no-]login                Login using your Adobe ID for interacting with Adobe I/O Developer Console
-  --repo=<value>              Init from gh quick-start repo. Expected to be of the form <owner>/<repo>/<path>
-  --standalone-app            Create a stand-alone application
-  --use-jwt                   if the config has both jwt and OAuth Server to Server Credentials (while migrating),
-                              prefer the JWT credentials
-  --version                   Show version
+  -e, --extension=<value>...    Extension point(s) to implement
+  -i, --import=<value>          Import an Adobe I/O Developer Console configuration file
+  -t, --template=<value>...     Specify a link to a template that will be installed
+  -v, --verbose                 Verbose output
+  -w, --workspace=<value>       [default: Stage] Specify the Adobe Developer Console Workspace to init from, defaults to
+                                Stage
+  -y, --yes                     Skip questions, and use all default values
+  --[no-]confirm-new-workspace  Prompt to confirm before creating a new workspace
+  --github-pat=<value>          github personal access token to use for downloading private quickstart repos
+  --[no-]install                [default: true] Run npm installation after files are created
+  --[no-]login                  Login using your Adobe ID for interacting with Adobe I/O Developer Console
+  --repo=<value>                Init from gh quick-start repo. Expected to be of the form <owner>/<repo>/<path>
+  --standalone-app              Create a stand-alone application
+  --use-jwt                     if the config has both jwt and OAuth Server to Server Credentials (while migrating),
+                                prefer the JWT credentials
+  --version                     Show version
 
 DESCRIPTION
   Create a new Adobe I/O App
 ```
 
-_See code: [src/commands/app/init.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/init.ts)_
+_See code: [src/commands/app/init.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/init.ts)_
 
 ## `aio app list`
 
@@ -549,7 +550,7 @@ DESCRIPTION
   List components for Adobe I/O App
 ```
 
-_See code: [src/commands/app/list/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/list/index.ts)_
+_See code: [src/commands/app/list/index.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/list/index.ts)_
 
 ## `aio app list extension`
 
@@ -574,7 +575,7 @@ ALIASES
   $ aio app list extensions
 ```
 
-_See code: [src/commands/app/list/extension.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/list/extension.ts)_
+_See code: [src/commands/app/list/extension.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/list/extension.ts)_
 
 ## `aio app logs`
 
@@ -598,7 +599,7 @@ DESCRIPTION
   Fetch logs for an Adobe I/O App
 ```
 
-_See code: [src/commands/app/logs.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/logs.ts)_
+_See code: [src/commands/app/logs.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/logs.ts)_
 
 ## `aio app run`
 
@@ -621,7 +622,7 @@ DESCRIPTION
   Run an Adobe I/O App
 ```
 
-_See code: [src/commands/app/run.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/run.ts)_
+_See code: [src/commands/app/run.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/run.ts)_
 
 ## `aio app test`
 
@@ -649,7 +650,7 @@ DESCRIPTION
   If the extension has a hook called 'test' in its 'ext.config.yaml', the script specified will be run instead.
 ```
 
-_See code: [src/commands/app/test.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/test.ts)_
+_See code: [src/commands/app/test.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/test.ts)_
 
 ## `aio app undeploy`
 
@@ -674,7 +675,7 @@ DESCRIPTION
   Undeploys an Adobe I/O App
 ```
 
-_See code: [src/commands/app/undeploy.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/undeploy.ts)_
+_See code: [src/commands/app/undeploy.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/undeploy.ts)_
 
 ## `aio app use [CONFIG_FILE_PATH]`
 
@@ -682,8 +683,8 @@ Import an Adobe Developer Console configuration file.
 
 ```
 USAGE
-  $ aio app use [CONFIG_FILE_PATH] [-v] [--version] [--overwrite | --merge] [--confirm-new-workspace] [-w
-    <value> | [-g | -w <value>] | ] [--no-service-sync | --confirm-service-sync] [--no-input] [--use-jwt]
+  $ aio app use [CONFIG_FILE_PATH] [-v] [--version] [--overwrite | --merge] [-g | -w <value>]
+    [--confirm-new-workspace] [--no-service-sync | --confirm-service-sync] [--no-input] [--use-jwt]
 
 ARGUMENTS
   CONFIG_FILE_PATH  path to an Adobe I/O Developer Console configuration file
@@ -694,8 +695,7 @@ FLAGS
   -v, --verbose                 Verbose output
   -w, --workspace=<value>       Specify the Adobe Developer Console Workspace name or Workspace id to import the
                                 configuration from
-  -w, --workspace-name=<value>  [DEPRECATED]: please use --workspace instead
-  --confirm-new-workspace       Skip and confirm prompt for creating a new workspace
+  --[no-]confirm-new-workspace  Prompt to confirm before creating a new workspace
   --confirm-service-sync        Skip the Service sync prompt and overwrite Service subscriptions in the new Workspace
                                 with current subscriptions
   --merge                       Merge any .aio and .env files during import of the Adobe Developer Console configuration
@@ -722,5 +722,5 @@ DESCRIPTION
   page in https://developer.adobe.com/console/
 ```
 
-_See code: [src/commands/app/use.ts](https://github.com/adobe/aio-cli-plugin-app/blob/11.1.0/src/commands/app/use.ts)_
+_See code: [src/commands/app/use.ts](https://github.com/adobe/aio-cli-plugin-app/blob/12.0.0/src/commands/app/use.ts)_
 <!-- commandsstop -->
