@@ -30,8 +30,8 @@ class DeleteActionCommand extends BaseCommand {
       this.error('<action-name> must also be provided when using --yes')
     }
 
-    const fullConfig = this.getFullConfig()
-    const { actions, actionsByImpl } = this.getAllActions(fullConfig)
+    const fullConfig = await this.getFullConfig()
+    const { actions, actionsByImpl } = await this.getAllActions(fullConfig)
     if (actions.length <= 0) {
       this.error('There are no actions in this project!')
     }
@@ -108,17 +108,20 @@ class DeleteActionCommand extends BaseCommand {
     )))
   }
 
-  getAllActions (config) {
+  async getAllActions (config) {
     const actions = []
     const actionsByImpl = {}
-    Object.entries(config.all).forEach(([implName, implConfig]) => {
+    const allConfigEntries = Object.entries(config.all)
+    for (const [implName, implConfig] of allConfigEntries) {
       if (implConfig.app.hasBackend) {
         actionsByImpl[implName] = []
-        Object.entries(implConfig.manifest.full.packages).forEach(([pkgName, pkg]) => {
-          Object.entries(pkg.actions).forEach(([actionName, action]) => {
+        const allPackagesEntries = Object.entries(implConfig.manifest.full.packages)
+        for (const [pkgName, pkg] of allPackagesEntries) {
+          const actionEntries = Object.entries(pkg.actions)
+          for (const [actionName, action] of actionEntries) {
             const fullActionName = `${pkgName}/${actionName}`
             const startKey = implName === 'application' ? 'application' : `extensions.${implName}`
-            const configData = this.getConfigFileForKey(`${startKey}.runtimeManifest.packages.${pkgName}.actions.${actionName}`)
+            const configData = await this.getConfigFileForKey(`${startKey}.runtimeManifest.packages.${pkgName}.actions.${actionName}`)
             const actionObj = {
               // assumes path is not relative
               path: action.function,
@@ -131,12 +134,12 @@ class DeleteActionCommand extends BaseCommand {
             }
             actions.push(actionObj)
             actionsByImpl[implName].push(actionObj)
-          })
-        })
+          }
+        }
       } else {
         aioLogger.debug(`'${implName}' .app.hasBackend is not true`)
       }
-    })
+    }
     return { actions, actionsByImpl }
   }
 }

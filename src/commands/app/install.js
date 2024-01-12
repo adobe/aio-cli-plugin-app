@@ -24,7 +24,7 @@ const ora = require('ora')
 const chalk = require('chalk')
 
 // eslint-disable-next-line node/no-missing-require
-const libConfigNext = require('@adobe/aio-cli-lib-app-config-next')
+const libConfig = require('@adobe/aio-cli-lib-app-config')
 
 class InstallCommand extends BaseCommand {
   async run () {
@@ -116,8 +116,8 @@ class InstallCommand extends BaseCommand {
     this.spinner.start(`Validating ${configFileName}...`)
     aioLogger.debug(`validateConfig: ${configFileName} at ${configFilePath}`)
     // first coalesce the app config (resolving $include files), then validate it
-    const config = (await libConfigNext.coalesce(configFilePath)).config
-    await libConfigNext.validate(config, { throws: true }) // throws on error
+    const config = (await libConfig.coalesce(configFilePath)).config
+    await libConfig.validate(config, { throws: true }) // throws on error
     this.spinner.succeed(`Validated ${configFileName}`)
   }
 

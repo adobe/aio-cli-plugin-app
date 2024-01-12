@@ -22,7 +22,7 @@ class ListExtensionPointsCommand extends BaseCommand {
     const { flags } = await this.parse(ListExtensionPointsCommand)
     aioLogger.debug(`list all extensions points with flags: ${JSON.stringify(flags)}`)
 
-    const extConfig = this.getAppExtConfigs(flags)
+    const extConfig = await this.getAppExtConfigs(flags)
     const extPointList = {}
 
     Object.keys(extConfig).forEach(name => {

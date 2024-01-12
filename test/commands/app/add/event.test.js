@@ -23,10 +23,10 @@ let command
 beforeEach(() => {
   command = new TheCommand([])
   command.getAppExtConfigs = jest.fn()
-  command.getAppExtConfigs.mockReturnValue(createAppConfig(command.appConfig))
+  command.getAppExtConfigs.mockResolvedValue(createAppConfig(command.appConfig))
   command.getFullConfig = jest.fn()
   command.installTemplates = jest.fn()
-  command.getFullConfig.mockReturnValue({
+  command.getFullConfig.mockResolvedValue({
     packagejson: {
       version: '1.0.0',
       name: 'legacy-app',
@@ -35,7 +35,7 @@ beforeEach(() => {
       }
     }
   })
-  command.getConfigFileForKey = jest.fn(() => ({}))
+  command.getConfigFileForKey = jest.fn(async () => ({}))
 })
 
 describe('Command Prototype', () => {
@@ -98,11 +98,11 @@ describe('good flags', () => {
     command.selectTemplates.mockResolvedValue(['@adobe/generator-add-events-generic'])
     await command.run()
     expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
-    expect(command.getConfigFileForKey).toHaveBeenCalledWith('application.events')
+    expect(await command.getConfigFileForKey).toHaveBeenCalledWith('application.events')
   })
 
   test('multiple ext configs', async () => {
-    command.getAppExtConfigs.mockReturnValue({ application: 'value', excshell: 'value' })
+    command.getAppExtConfigs.mockResolvedValue({ application: 'value', excshell: 'value' })
     await expect(command.run()).rejects.toThrow('Please use the \'-e\' flag to specify to which implementation you want to add events to.')
   })
 })

@@ -24,7 +24,7 @@ const chalk = require('chalk')
 const junk = require('junk')
 
 // eslint-disable-next-line node/no-missing-require
-const libConfigNext = require('@adobe/aio-cli-lib-app-config-next')
+const libConfig = require('@adobe/aio-cli-lib-app-config')
 
 const DIST_FOLDER = 'dist'
 const DEFAULTS = {
@@ -43,7 +43,7 @@ class Pack extends BaseCommand {
     aioLogger.debug(`args: ${JSON.stringify(args, null, 2)}`)
 
     // this will also validate the app.config.yaml
-    const appConfig = await libConfigNext.load()
+    const appConfig = await libConfig.load({ validateAppConfig: true })
 
     // resolve to absolute path before any chdir
     const outputZipFile = path.resolve(flags.output)

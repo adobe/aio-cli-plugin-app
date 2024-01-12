@@ -15,7 +15,7 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 
 class LogForwardingCommand extends BaseCommand {
   async run () {
-    const lf = await LogForwarding.init(this.getFullConfig().aio)
+    const lf = await LogForwarding.init((await this.getFullConfig()).aio)
 
     const destination = await this.promptDestination(lf.getSupportedDestinations())
     const destinationSettingsConfig = lf.getSettingsConfig(destination)

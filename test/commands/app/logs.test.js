@@ -74,7 +74,7 @@ describe('run', () => {
     command.log = jest.fn()
     mockedLogger = jest.spyOn(command.log, 'bind')
     command.getFullConfig = jest.fn()
-    command.getFullConfig.mockReturnValue(command.appConfig)
+    command.getFullConfig.mockResolvedValue(command.appConfig)
     logForwarding = {
       getServerConfig: jest.fn()
         .mockResolvedValue(new LogForwarding.LogForwardingConfig('adobe_io_runtime', {}))
@@ -200,7 +200,7 @@ describe('run', () => {
     helpers.wrapError.mockReturnValue('wrapped error')
 
     command.appConfig.all.application.app.hasBackend = false
-    command.getFullConfig.mockReturnValue(command.appConfig)
+    command.getFullConfig.mockResolvedValue(command.appConfig)
 
     await expect(command.run()).rejects.toEqual(new Error('There are no backend implementations for this project folder.'))
   })
