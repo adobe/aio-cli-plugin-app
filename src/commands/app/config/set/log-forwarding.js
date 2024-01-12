@@ -11,6 +11,7 @@ governing permissions and limitations under the License.
 
 const BaseCommand = require('../../../../BaseCommand')
 const LogForwarding = require('../../../../lib/log-forwarding')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:lf:set', { provider: 'debug' })
 
 class LogForwardingCommand extends BaseCommand {
   async run () {
@@ -25,8 +26,12 @@ class LogForwardingCommand extends BaseCommand {
     this.log(`Log forwarding is set to '${destination}'`)
 
     const fullSanitizedConfig = lfConfig.getMergedConfig(lf.getConfigFromJson(res))
-    await lf.updateLocalConfig(fullSanitizedConfig)
-    this.log('Log forwarding settings are saved to the local configuration')
+    lf.updateLocalConfig(fullSanitizedConfig).then(() => {
+      this.log('Log forwarding settings are saved to the local configuration')
+    }).catch(e => {
+      this.warn('Log forwarding settings could not be saved to the local configuration.')
+      aioLogger.error(e.message)
+    })
   }
 
   async promptDestination (supportedDestinations) {

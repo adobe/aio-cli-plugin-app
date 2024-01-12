@@ -28,8 +28,6 @@ class Use extends BaseCommand {
   async run () {
     const { flags, args } = await this.parse(Use)
 
-    flags.workspace = flags.workspace || flags['workspace-name'] || ''
-
     aioLogger.debug(`args: ${JSON.stringify(args, null, 2)}, flags: ${JSON.stringify(flags, null, 2)}`)
 
     // some additional checks and updates of flags and args on top of what oclif provides
@@ -196,15 +194,23 @@ class Use extends BaseCommand {
     let workspace
     let workspaceData = { name: workspaceNameOrId }
     // does not prompt if workspaceNameOrId is defined via the flag
-    workspace = await consoleCLI.promptForSelectWorkspace(workspaces, { workspaceId: workspaceNameOrId, workspaceName: workspaceNameOrId }, { allowCreate: true })
+    workspace = await consoleCLI.promptForSelectWorkspace(workspaces, {
+      workspaceId: workspaceNameOrId,
+      workspaceName: workspaceNameOrId
+    }, {
+      allowCreate: true
+    })
+
     if (!workspace) {
       aioLogger.debug(`--workspace=${workspaceNameOrId} was not found in the current Project ${project.name}`)
       if (workspaceNameOrId) {
-        if (!flags['confirm-new-workspace']) {
+        if (flags['confirm-new-workspace']) {
           const shouldNewWorkspace = await consoleCLI.prompt.promptConfirm(`Workspace '${workspaceNameOrId}' does not exist \n > Do you wish to create a new workspace?`)
           if (!shouldNewWorkspace) {
             this.error('Workspace creation aborted')
           }
+        } else {
+          // this is not an error, if we end up here we just use `workspaceData` later
         }
       } else {
         workspaceData = await consoleCLI.promptForCreateWorkspaceDetails()
@@ -369,15 +375,26 @@ Use.flags = {
     exclusive: ['global', 'workspace-name']
   }),
   'confirm-new-workspace': Flags.boolean({
-    description: 'Skip and confirm prompt for creating a new workspace',
-    default: false
+    description: 'Prompt to confirm before creating a new workspace',
+    default: true,
+    allowNo: true,
+    relationships: [
+      // if prompt is false, then the workspace flag MUST be specified
+      {
+        type: 'all',
+        flags: [{
+          name: 'workspace',
+          when: async (flags) => flags['confirm-new-workspace'] === false
+        }]
+      }
+    ]
   }),
-  'workspace-name': Flags.string({
-    description: '[DEPRECATED]: please use --workspace instead',
-    default: '',
-    char: 'w',
-    exclusive: ['global', 'workspace']
-  }),
+  // 'workspace-name': Flags.string({
+  //   description: '[DEPRECATED]: please use --workspace instead',
+  //   default: '',
+  //   char: 'w',
+  //   exclusive: ['global', 'workspace']
+  // }),
   'no-service-sync': Flags.boolean({
     description: 'Skip the Service sync prompt and do not attach current Service subscriptions to the new Workspace',
     default: false,
