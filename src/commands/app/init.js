@@ -104,7 +104,7 @@ class InitCommand extends TemplatesCommand {
     }
 
     if (flags.repo) {
-      await this.withQuickstart(flags.repo)
+      await this.withQuickstart(flags.repo, flags['github-pat'])
     } else {
       // 2. prompt for templates to be installed
       const templates = await this.getTemplatesForFlags(flags)
@@ -134,7 +134,7 @@ class InitCommand extends TemplatesCommand {
 
   async initWithLogin (flags) {
     if (flags.repo) {
-      await this.withQuickstart(flags.repo)
+      await this.withQuickstart(flags.repo, flags['github-pat'])
     }
     // this will trigger a login
     const consoleCLI = await this.getLibConsoleCLI()
@@ -367,9 +367,10 @@ class InitCommand extends TemplatesCommand {
     )
   }
 
-  async withQuickstart (fullRepo) {
+  async withQuickstart (fullRepo, githubPat) {
     const octokit = new Octokit({
-      auth: ''
+      auth: githubPat ?? '',
+      userAgent: 'ADP App Builder v1'
     })
     const spinner = ora('Downloading quickstart repo').start()
     /** @private */
@@ -468,8 +469,9 @@ InitCommand.flags = {
     exclusive: ['import'] // also no-login
   }),
   'confirm-new-workspace': Flags.boolean({
-    description: 'Skip and confirm prompt for creating a new workspace',
-    default: false
+    description: 'Prompt to confirm before creating a new workspace',
+    default: true,
+    allowNo: true
   }),
   repo: Flags.string({
     description: 'Init from gh quick-start repo. Expected to be of the form <owner>/<repo>/<path>',
@@ -478,6 +480,10 @@ InitCommand.flags = {
   'use-jwt': Flags.boolean({
     description: 'if the config has both jwt and OAuth Server to Server Credentials (while migrating), prefer the JWT credentials',
     default: false
+  }),
+  'github-pat': Flags.string({
+    description: 'github personal access token to use for downloading private quickstart repos',
+    dependsOn: ['repo']
   })
 }
 

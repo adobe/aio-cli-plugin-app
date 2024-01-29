@@ -28,7 +28,7 @@ class Build extends BaseCommand {
     // flags
     flags['web-assets'] = flags['web-assets'] && !flags.action
 
-    const buildConfigs = this.getAppExtConfigs(flags)
+    const buildConfigs = await this.getAppExtConfigs(flags)
 
     // 1. build actions and web assets for each extension
     const keys = Object.keys(buildConfigs)
@@ -116,6 +116,8 @@ class Build extends BaseCommand {
               shouldOptimize: flags['web-optimize'],
               logLevel: flags.verbose ? 'verbose' : 'warn'
             }
+            // empty the dist folder to prevent an S3 explosion
+            fs.emptyDirSync(config.web.distProd)
             const bundler = await bundle(entries, config.web.distProd, bundleOptions, onProgress)
             await bundler.run()
             spinner.succeed(chalk.green(`Building web assets for '${name}'`))

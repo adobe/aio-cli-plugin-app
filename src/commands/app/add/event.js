@@ -23,7 +23,7 @@ class AddEventCommand extends TemplatesCommand {
     aioLogger.debug(`add events with flags: ${JSON.stringify(flags)}`)
 
     // guaranteed to have at least one, otherwise would throw in config load or in matching the ext name
-    const entries = Object.entries(this.getAppExtConfigs(flags))
+    const entries = Object.entries(await this.getAppExtConfigs(flags))
     if (entries.length > 1) {
       this.error('Please use the \'-e\' flag to specify to which implementation you want to add events to.')
     }
@@ -31,8 +31,8 @@ class AddEventCommand extends TemplatesCommand {
     const configName = entries[0][0]
     const config = entries[0][1]
     const actionFolder = path.relative(config.root, config.actions.src)
-    const runtimeManifestData = this.getRuntimeManifestConfigFile(configName)
-    const eventsData = this.getEventsConfigFile(configName)
+    const runtimeManifestData = await this.getRuntimeManifestConfigFile(configName)
+    const eventsData = await this.getEventsConfigFile(configName)
     const templateOptions = {
       'skip-prompt': false,
       'action-folder': actionFolder,

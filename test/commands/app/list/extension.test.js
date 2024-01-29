@@ -61,7 +61,7 @@ describe('run', () => {
   })
 
   test('list all extensions', async () => {
-    command.getAppExtConfigs.mockReturnValue(createAppConfig(command.appConfig, 'app-exc-nui'))
+    command.getAppExtConfigs.mockResolvedValue(createAppConfig(command.appConfig, 'app-exc-nui'))
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('Extensions'))
@@ -76,7 +76,7 @@ describe('run', () => {
     command.error = jest.fn()
     command.log = jest.fn()
     command.getAppExtConfigs = jest.fn()
-    command.getAppExtConfigs.mockReturnValue(createAppConfig(command.appConfig, 'exc'))
+    command.getAppExtConfigs.mockResolvedValue(createAppConfig(command.appConfig, 'exc'))
     const expectedResult = {
       'dx/excshell/1':
       {
@@ -94,7 +94,7 @@ describe('run', () => {
     command.error = jest.fn()
     command.log = jest.fn()
     command.getAppExtConfigs = jest.fn()
-    command.getAppExtConfigs.mockReturnValue(createAppConfig(command.appConfig, 'exc'))
+    command.getAppExtConfigs.mockResolvedValue(createAppConfig(command.appConfig, 'exc'))
     const expectedResult = {
       'dx/excshell/1':
       {
@@ -112,7 +112,7 @@ describe('run', () => {
     command.error = jest.fn()
     command.log = jest.fn()
     command.getAppExtConfigs = jest.fn()
-    command.getAppExtConfigs.mockReturnValue(createAppConfig(command.appConfig))
+    command.getAppExtConfigs.mockResolvedValue(createAppConfig(command.appConfig))
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('No extensions found'))

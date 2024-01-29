@@ -29,7 +29,7 @@ const importHelper = require('../../../src/lib/import-helper')
 const yaml = require('js-yaml')
 const archiver = require('archiver')
 
-const libConfigNext = require('@adobe/aio-cli-lib-app-config-next')
+const libConfig = require('@adobe/aio-cli-lib-app-config')
 
 // mocks
 jest.mock('execa')
@@ -40,7 +40,7 @@ jest.mock('archiver')
 const mockGetFullConfig = jest.fn()
 
 beforeAll(() => {
-  jest.spyOn(libConfigNext, 'load').mockImplementation(mockGetFullConfig)
+  jest.spyOn(libConfig, 'load').mockImplementation(mockGetFullConfig)
 })
 
 // mock cwd
@@ -67,7 +67,7 @@ beforeEach(() => {
   process.chdir.mockClear()
   process.cwd.mockClear()
 
-  mockGetFullConfig.mockClear()
+  mockGetFullConfig.mockReset()
 
   fs.pathExists.mockClear()
   fs.copy.mockClear()
@@ -609,6 +609,7 @@ describe('run', () => {
   })
 
   test('outputs error if events hook throws', async () => {
+    mockGetFullConfig.mockImplementation(async () => fixtureJson('pack/1.all.config.json'))
     const runHook = jest.fn()
       .mockResolvedValue({
         successes: [],
@@ -639,5 +640,6 @@ describe('run', () => {
     command.config = { runHook }
 
     await expect(command.run()).rejects.toThrow('invalid fake config error')
+    expect(mockGetFullConfig).toHaveBeenCalledWith({ validateAppConfig: true })
   })
 })

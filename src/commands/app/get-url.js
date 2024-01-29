@@ -31,7 +31,7 @@ class GetUrlCommand extends BaseCommand {
       options.cdn = flags.cdn
 
       const urls = {}
-      const fullConfig = this.getFullConfig()
+      const fullConfig = await this.getFullConfig()
       if (options.action) {
         let action
         // search for action

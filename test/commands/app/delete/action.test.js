@@ -272,8 +272,8 @@ describe('getAllActions', () => {
     dirnameSpy.mockRestore()
   })
 
-  test('getAllActions - no app.hasBackend', () => {
-    const result = command.getAllActions({
+  test('getAllActions - no app.hasBackend', async () => {
+    const result = await command.getAllActions({
       all: {
         appName: {
           app: {
@@ -288,8 +288,8 @@ describe('getAllActions', () => {
     expect(result.actionsByImpl).toStrictEqual(expect.objectContaining({}))
   })
 
-  test('getAllActions - coverage', () => {
-    const result = command.getAllActions({
+  test('getAllActions - coverage', async () => {
+    const result = await command.getAllActions({
       all: {
         appName: {
           app: {

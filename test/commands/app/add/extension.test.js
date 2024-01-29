@@ -36,11 +36,11 @@ let command
 beforeEach(() => {
   command = new TheCommand([])
   command.getAppExtConfigs = jest.fn()
-  command.getAppExtConfigs.mockReturnValue(createAppConfig(command.appConfig))
+  command.getAppExtConfigs.mockResolvedValue(createAppConfig(command.appConfig))
   command.getFullConfig = jest.fn()
-  command.getFullConfig.mockReturnValue(createFullConfig({}))
+  command.getFullConfig.mockResolvedValue(createFullConfig({}))
   command.getConfigFileForKey = jest.fn()
-  command.getConfigFileForKey.mockReturnValue({})
+  command.getConfigFileForKey.mockResolvedValue({})
   command.config = {
     runCommand: jest.fn()
   }

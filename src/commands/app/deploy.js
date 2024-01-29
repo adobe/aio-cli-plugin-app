@@ -34,7 +34,7 @@ class Deploy extends BuildCommand {
     flags['web-assets'] = flags['web-assets'] && !flags.action
     flags.publish = flags.publish && !flags.action
 
-    const deployConfigs = this.getAppExtConfigs(flags)
+    const deployConfigs = await this.getAppExtConfigs(flags)
     const keys = Object.keys(deployConfigs)
     const values = Object.values(deployConfigs)
     const isStandaloneApp = (keys.length === 1 && keys[0] === 'application')
@@ -55,7 +55,7 @@ class Deploy extends BuildCommand {
     const spinner = ora()
 
     try {
-      const aioConfig = this.getFullConfig().aio
+      const aioConfig = (await this.getFullConfig()).aio
 
       // 1. update log forwarding configuration
       // note: it is possible that .aio file does not exist, which means there is no local lg config
