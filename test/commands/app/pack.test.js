@@ -29,6 +29,8 @@ const importHelper = require('../../../src/lib/import-helper')
 const yaml = require('js-yaml')
 const archiver = require('archiver')
 
+const libConfig = require('@adobe/aio-cli-lib-app-config')
+
 // mocks
 jest.mock('execa')
 jest.mock('fs-extra')
@@ -38,7 +40,7 @@ jest.mock('archiver')
 const mockGetFullConfig = jest.fn()
 
 beforeAll(() => {
-  jest.spyOn(BaseCommand.prototype, 'getFullConfig').mockImplementation(mockGetFullConfig)
+  jest.spyOn(libConfig, 'load').mockImplementation(mockGetFullConfig)
 })
 
 // mock cwd
@@ -65,7 +67,7 @@ beforeEach(() => {
   process.chdir.mockClear()
   process.cwd.mockClear()
 
-  mockGetFullConfig.mockClear()
+  mockGetFullConfig.mockReset()
 
   fs.pathExists.mockClear()
   fs.copy.mockClear()
@@ -94,7 +96,7 @@ test('flags', async () => {
   expect(typeof TheCommand.flags.output).toBe('object')
   expect(typeof TheCommand.flags.output.type).toBe('string')
   expect(typeof TheCommand.flags.output.description).toBe('string')
-  expect(TheCommand.flags.output.default).toBe('app.zip')
+  expect(TheCommand.flags.output.default).toBe(path.join('dist', 'app.zip'))
 })
 
 test('unknown flag', async () => {
@@ -145,7 +147,7 @@ test('createDeployYamlFile (1 extension)', async () => {
 
   await command.createDeployYamlFile(extConfig)
 
-  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('app-package', 'deploy.yaml'))
+  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('dist', 'app-package', 'deploy.yaml'))
   await expect(importHelper.writeFile.mock.calls[0][1]).toMatchFixture('pack/2.deploy.yaml')
   await expect(importHelper.writeFile.mock.calls[0][2]).toMatchObject({ overwrite: true })
 
@@ -159,7 +161,7 @@ test('createDeployYamlFile (1 extension)', async () => {
 
   await command.createDeployYamlFile(extConfig)
 
-  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('app-package', 'deploy.yaml'))
+  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('dist', 'app-package', 'deploy.yaml'))
   await expect(importHelper.writeFile.mock.calls[0][1]).toMatchFixture('pack/2.deploy.no-mesh.yaml')
   await expect(importHelper.writeFile.mock.calls[0][2]).toMatchObject({ overwrite: true })
 })
@@ -186,7 +188,7 @@ test('createDeployYamlFile (1 extension), no api-mesh', async () => {
 
   await command.createDeployYamlFile(extConfig)
 
-  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('app-package', 'deploy.yaml'))
+  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('dist', 'app-package', 'deploy.yaml'))
   await expect(importHelper.writeFile.mock.calls[0][1]).toMatchFixture('pack/2.deploy.no-mesh.yaml')
   await expect(importHelper.writeFile.mock.calls[0][2]).toMatchObject({ overwrite: true })
 })
@@ -229,9 +231,23 @@ test('createDeployYamlFile (coverage: standalone app, no services)', async () =>
 
   await command.createDeployYamlFile(extConfig)
 
-  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('app-package', 'deploy.yaml'))
+  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('dist', 'app-package', 'deploy.yaml'))
   await expect(importHelper.writeFile.mock.calls[0][1]).toMatchFixture('pack/4.deploy.yaml')
   await expect(importHelper.writeFile.mock.calls[0][2]).toMatchObject({ overwrite: true })
+})
+
+test('createDeployYamlFile error on invalid version string', async () => {
+  const extConfig = fixtureJson('pack/6.all.config.json')
+
+  const command = new TheCommand()
+  command.argv = []
+  command.config = {
+    findCommand: jest.fn().mockReturnValue(null),
+    runCommand: jest.fn(),
+    runHook: jest.fn()
+  }
+
+  await expect(command.createDeployYamlFile(extConfig)).rejects.toThrow('Application version format must be "X.Y.Z", where X, Y, and Z are non-negative integers.')
 })
 
 test('zipHelper', async () => {
@@ -294,24 +310,91 @@ test('zipHelper', async () => {
   onError()
 })
 
-test('filesToPack', async () => {
-  const jsonOutput = [{
-    files: [
-      { path: 'fileA' },
-      { path: 'fileB' }
-    ]
-  }]
+describe('filesToPack', () => {
+  test('nothing filtered', async () => {
+    const jsonOutput = [{
+      files: [
+        { path: 'fileA' },
+        { path: 'fileB' }
+      ]
+    }]
 
-  execa.mockImplementationOnce((cmd, args) => {
-    expect(cmd).toEqual('npm')
-    expect(args).toEqual(['pack', '--dry-run', '--json'])
-    return { stdout: JSON.stringify(jsonOutput, null, 2) }
+    execa.mockImplementationOnce((cmd, args) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['pack', '--dry-run', '--json'])
+      return { stdout: JSON.stringify(jsonOutput, null, 2) }
+    })
+
+    const command = new TheCommand()
+    command.argv = []
+    const filesToPack = await command.filesToPack()
+    expect(filesToPack).toEqual(['fileA', 'fileB'])
   })
 
-  const command = new TheCommand()
-  command.argv = []
-  const filesToPack = await command.filesToPack()
-  expect(filesToPack).toEqual(['fileA', 'fileB'])
+  test('exclude specific file', async () => {
+    const jsonOutput = [{
+      files: [
+        { path: 'fileA' },
+        { path: 'fileB' }
+      ]
+    }]
+
+    execa.mockImplementationOnce((cmd, args) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['pack', '--dry-run', '--json'])
+      return { stdout: JSON.stringify(jsonOutput, null, 2) }
+    })
+
+    const command = new TheCommand()
+    command.argv = []
+    const filesToPack = await command.filesToPack({ filesToExclude: ['fileA'] })
+    expect(filesToPack).toEqual(['fileB'])
+  })
+
+  test('filter for hidden files', async () => {
+    const jsonOutput = [{
+      files: [
+        { path: '.env' },
+        { path: '.aio' },
+        { path: '.foo' },
+        { path: 'fileA' },
+        { path: 'fileB' }
+      ]
+    }]
+
+    execa.mockImplementationOnce((cmd, args) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['pack', '--dry-run', '--json'])
+      return { stdout: JSON.stringify(jsonOutput, null, 2) }
+    })
+
+    const command = new TheCommand()
+    command.argv = []
+    const filesToPack = await command.filesToPack()
+    expect(filesToPack).toEqual(['fileA', 'fileB'])
+  })
+
+  test('filter for junk files', async () => {
+    const jsonOutput = [{
+      files: [
+        { path: '.DS_Store' },
+        { path: 'Thumbs.db' },
+        { path: 'fileA' },
+        { path: 'fileB' }
+      ]
+    }]
+
+    execa.mockImplementationOnce((cmd, args) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['pack', '--dry-run', '--json'])
+      return { stdout: JSON.stringify(jsonOutput, null, 2) }
+    })
+
+    const command = new TheCommand()
+    command.argv = []
+    const filesToPack = await command.filesToPack()
+    expect(filesToPack).toEqual(['fileA', 'fileB'])
+  })
 })
 
 test('addCodeDownloadAnnotation: default', async () => {
@@ -326,7 +409,7 @@ test('addCodeDownloadAnnotation: default', async () => {
   await command.addCodeDownloadAnnotation(extConfig)
 
   expect(importHelper.writeFile).toHaveBeenCalledWith(
-    path.join('app-package', 'src', 'dx-excshell-1', 'ext.config.yaml'),
+    path.join('dist', 'app-package', 'src', 'dx-excshell-1', 'ext.config.yaml'),
     yaml.dump(fixtureJson('pack/1.annotation-added.config.json')),
     { overwrite: true }
   )
@@ -351,7 +434,7 @@ test('addCodeDownloadAnnotation: no annotations defined', async () => {
   await command.addCodeDownloadAnnotation(extConfig)
 
   expect(importHelper.writeFile).toHaveBeenCalledWith(
-    path.join('app-package', 'src', 'dx-excshell-1', 'ext.config.yaml'),
+    path.join('dist', 'app-package', 'src', 'dx-excshell-1', 'ext.config.yaml'),
     yaml.dump(fixtureExpected),
     { overwrite: true }
   )
@@ -362,9 +445,9 @@ test('addCodeDownloadAnnotation: complex includes, multiple actions and extensio
 
   importHelper.loadConfigFile.mockImplementation(file => {
     const retValues = {
-      [path.join('app-package', 'app.config.yaml')]: fixtureJson('pack/5.app.config-loaded.json'),
-      [path.join('app-package', 'sub1.config.yaml')]: fixtureJson('pack/5.sub1.config-loaded.json'),
-      [path.join('app-package', 'src', 'sub2.config.yaml')]: fixtureJson('pack/5.sub2.config-loaded.json')
+      [path.join('dist', 'app-package', 'app.config.yaml')]: fixtureJson('pack/5.app.config-loaded.json'),
+      [path.join('dist', 'app-package', 'sub1.config.yaml')]: fixtureJson('pack/5.sub1.config-loaded.json'),
+      [path.join('dist', 'app-package', 'src', 'sub2.config.yaml')]: fixtureJson('pack/5.sub2.config-loaded.json')
     }
     return retValues[file]
   })
@@ -374,19 +457,19 @@ test('addCodeDownloadAnnotation: complex includes, multiple actions and extensio
   await command.addCodeDownloadAnnotation(extConfig)
 
   expect(importHelper.writeFile).toHaveBeenCalledWith(
-    path.join('app-package', 'app.config.yaml'),
+    path.join('dist', 'app-package', 'app.config.yaml'),
     yaml.dump(fixtureJson('pack/5.app.annotation-added.config.json')),
     { overwrite: true }
   )
 
   expect(importHelper.writeFile).toHaveBeenCalledWith(
-    path.join('app-package', 'sub1.config.yaml'),
+    path.join('dist', 'app-package', 'sub1.config.yaml'),
     yaml.dump(fixtureJson('pack/5.sub1.annotation-added.config.json')),
     { overwrite: true }
   )
 
   expect(importHelper.writeFile).toHaveBeenCalledWith(
-    path.join('app-package', 'src', 'sub2.config.yaml'),
+    path.join('dist', 'app-package', 'src', 'sub2.config.yaml'),
     yaml.dump(fixtureJson('pack/5.sub2.annotation-added.config.json')),
     { overwrite: true }
   )
@@ -394,14 +477,14 @@ test('addCodeDownloadAnnotation: complex includes, multiple actions and extensio
 
 describe('run', () => {
   test('defaults', async () => {
-    mockGetFullConfig.mockImplementation(() => fixtureJson('pack/1.all.config.json'))
+    mockGetFullConfig.mockImplementation(async () => fixtureJson('pack/1.all.config.json'))
 
     const command = new TheCommand()
     command.argv = []
 
     // since we already unit test the methods above, we mock it here
     command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn()
+    command.filesToPack = jest.fn(() => (['some-file']))
     command.createDeployYamlFile = jest.fn()
     command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn()
@@ -415,7 +498,7 @@ describe('run', () => {
     expect(command.addCodeDownloadAnnotation).toHaveBeenCalledTimes(1)
     expect(command.zipHelper).toHaveBeenCalledTimes(1)
     const expectedObj = {
-      artifactsFolder: 'app-package',
+      artifactsFolder: path.join('dist', 'app-package'),
       appConfig: expect.any(Object)
     }
     expect(runHook).toHaveBeenCalledWith('pre-pack', expectedObj)
@@ -423,7 +506,7 @@ describe('run', () => {
   })
 
   test('subcommand throws error (--verbose)', async () => {
-    mockGetFullConfig.mockImplementation(() => fixtureJson('pack/1.all.config.json'))
+    mockGetFullConfig.mockImplementation(async () => fixtureJson('pack/1.all.config.json'))
 
     const command = new TheCommand()
     command.argv = ['--verbose']
@@ -432,7 +515,7 @@ describe('run', () => {
 
     // since we already unit test the methods above, we mock it here
     command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn()
+    command.filesToPack = jest.fn(() => ([]))
     command.createDeployYamlFile = jest.fn()
     command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn(() => { throw errorObject })
@@ -450,7 +533,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(1)
 
     const expectedObj = {
-      artifactsFolder: 'app-package',
+      artifactsFolder: path.join('dist', 'app-package'),
       appConfig: expect.any(Object)
     }
     expect(runHook).toHaveBeenCalledWith('pre-pack', expectedObj)
@@ -459,7 +542,7 @@ describe('run', () => {
   })
 
   test('subcommand throws error (not verbose)', async () => {
-    mockGetFullConfig.mockImplementation(() => fixtureJson('pack/1.all.config.json'))
+    mockGetFullConfig.mockImplementation(async () => fixtureJson('pack/1.all.config.json'))
 
     const command = new TheCommand()
     command.argv = []
@@ -468,7 +551,7 @@ describe('run', () => {
 
     // since we already unit test the methods above, we mock it here
     command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn()
+    command.filesToPack = jest.fn(() => ([]))
     command.createDeployYamlFile = jest.fn()
     command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn(() => { throw new Error(errorMessage) })
@@ -486,7 +569,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(1)
 
     const expectedObj = {
-      artifactsFolder: 'app-package',
+      artifactsFolder: path.join('dist', 'app-package'),
       appConfig: expect.any(Object)
     }
     expect(runHook).toHaveBeenCalledWith('pre-pack', expectedObj)
@@ -495,14 +578,14 @@ describe('run', () => {
   })
 
   test('output flag, path arg', async () => {
-    mockGetFullConfig.mockImplementation(() => fixtureJson('pack/1.all.config.json'))
+    mockGetFullConfig.mockImplementation(async () => fixtureJson('pack/1.all.config.json'))
 
     const command = new TheCommand()
     command.argv = ['new_folder', '--output', 'app-2.zip']
 
     // since we already unit test the methods above, we mock it here
     command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn()
+    command.filesToPack = jest.fn(() => ([]))
     command.createDeployYamlFile = jest.fn()
     command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn()
@@ -518,10 +601,45 @@ describe('run', () => {
     expect(command.zipHelper).toHaveBeenCalledTimes(1)
 
     const expectedObj = {
-      artifactsFolder: 'app-package',
+      artifactsFolder: path.join('dist', 'app-package'),
       appConfig: expect.any(Object)
     }
     expect(runHook).toHaveBeenCalledWith('pre-pack', expectedObj)
     expect(runHook).toHaveBeenCalledWith('post-pack', expectedObj)
+  })
+
+  test('outputs error if events hook throws', async () => {
+    mockGetFullConfig.mockImplementation(async () => fixtureJson('pack/1.all.config.json'))
+    const runHook = jest.fn()
+      .mockResolvedValue({
+        successes: [],
+        failures: [{ plugin: { name: 'ifailedu' }, error: { message: 'some error' } }]
+      })
+    const command = new TheCommand()
+    command.config = { runHook }
+    command.error = jest.fn()
+    command.argv = ['new_folder', '--output', 'app-2.zip']
+    await command.run()
+    expect(runHook).toHaveBeenCalledWith('pre-pack', expect.any(Object))
+    expect(command.error).toHaveBeenCalled()
+    expect(command.error).toHaveBeenCalledWith('ifailedu : some error', { exit: 1 })
+  })
+
+  test('load config throws (on validation)', async () => {
+    mockGetFullConfig.mockImplementation(async () => { throw new Error('invalid fake config error') })
+
+    const command = new TheCommand()
+    command.argv = ['new_folder', '--output', 'app-2.zip']
+
+    // since we already unit test the methods above, we mock it here
+    command.copyPackageFiles = jest.fn()
+    command.filesToPack = jest.fn(() => ([]))
+    command.createDeployYamlFile = jest.fn()
+    command.zipHelper = jest.fn()
+    const runHook = jest.fn()
+    command.config = { runHook }
+
+    await expect(command.run()).rejects.toThrow('invalid fake config error')
+    expect(mockGetFullConfig).toHaveBeenCalledWith({ validateAppConfig: true })
   })
 })

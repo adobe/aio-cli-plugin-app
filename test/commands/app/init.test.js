@@ -17,6 +17,7 @@ const importHelperLib = require('../../../src/lib/import-helper')
 const inquirer = require('inquirer')
 const savedDataDir = process.env.XDG_DATA_HOME
 const yeoman = require('yeoman-environment')
+const { Octokit } = require('@octokit/rest')
 
 jest.mock('@adobe/aio-lib-core-config')
 jest.mock('fs-extra')
@@ -26,6 +27,22 @@ jest.mock('inquirer', () => ({
   prompt: jest.fn(),
   createPromptModule: jest.fn()
 }))
+
+// mock ora
+jest.mock('ora', () => {
+  const mockOra = {
+    start: jest.fn(() => mockOra),
+    stop: jest.fn(() => mockOra),
+    succeed: jest.fn(() => mockOra),
+    fail: jest.fn(() => mockOra),
+    info: jest.fn(() => mockOra),
+    warn: jest.fn(() => mockOra),
+    stopAndPersist: jest.fn(() => mockOra),
+    clear: jest.fn(() => mockOra),
+    promise: jest.fn(() => Promise.resolve(mockOra))
+  }
+  return jest.fn(() => mockOra)
+})
 
 // mock login
 jest.mock('@adobe/aio-lib-ims')
@@ -71,6 +88,8 @@ yeoman.createEnv.mockReturnValue({
   instantiate: jest.fn(),
   runGenerator: jest.fn()
 })
+
+jest.mock('@octokit/rest')
 
 // FAKE DATA ///////////////////////
 
@@ -166,6 +185,8 @@ beforeEach(() => {
   importHelperLib.importConfigJson.mockReset()
 
   importHelperLib.loadConfigFile.mockReturnValue({ values: fakeConfig })
+
+  Octokit.mockReset()
 })
 
 afterAll(() => {
@@ -204,7 +225,7 @@ describe('Command Prototype', () => {
     expect(TheCommand.flags.workspace.exclusive).toEqual(['import'])
 
     expect(TheCommand.flags['confirm-new-workspace'].type).toBe('boolean')
-    expect(TheCommand.flags['confirm-new-workspace'].default).toBe(false)
+    expect(TheCommand.flags['confirm-new-workspace'].default).toBe(true)
   })
 
   test('args', async () => {
@@ -228,6 +249,17 @@ describe('bad args/flags', () => {
   test('--no-login and --workspace', async () => {
     command.argv = ['--no-login', '--workspace', 'dev']
     await expect(command.run()).rejects.toThrow('--no-login and --workspace flags cannot be used together.')
+  })
+})
+
+describe('--project', () => {
+  test('no value', async () => {
+    command.argv = ['--project']
+    await expect(command.run()).rejects.toThrow('Flag --project expects a value')
+  })
+  test('non-existent', async () => {
+    command.argv = ['--project=non-existent']
+    await expect(command.run()).rejects.toThrow('--project non-existent not found')
   })
 })
 
@@ -281,6 +313,89 @@ describe('--no-login', () => {
     await command.run()
 
     expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
+  })
+
+  test('--repo --no-login', async () => {
+    const getContent = () => new Promise((resolve, reject) => {
+      resolve({ headers: [], status: 302, data: [] })
+    })
+    Octokit.mockImplementation(() => ({ repos: { getContent } }))
+
+    command.argv = ['--no-login', '--repo=adobe/appbuilder-quickstarts/qr-code']
+    await command.run()
+
+    expect(command.installTemplates).not.toHaveBeenCalled()
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
+  })
+
+  test('--repo --login', async () => {
+    const getContent = ({ owner, repo, path }) => new Promise((resolve, reject) => {
+      // console.log('args = ', owner, repo, path)
+      if (path === 'src') {
+        resolve({ data: [] })
+      } else {
+        resolve({
+          data: [{
+            type: 'file',
+            path: '.gitignore',
+            download_url: 'https://raw.githubusercontent.com/adobe/appbuilder-quickstarts/master/qr-code/.gitignore'
+          }, {
+            type: 'dir',
+            path: 'src'
+          }]
+        })
+      }
+    })
+    Octokit.mockImplementation(() => ({ repos: { getContent } }))
+
+    command.argv = ['--login', '--repo=adobe/appbuilder-quickstarts/qr-code']
+    await command.run()
+
+    expect(command.installTemplates).not.toHaveBeenCalled()
+    expect(LibConsoleCLI.init).toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).toHaveBeenCalled()
+  })
+
+  test('--repo not valid 404', async () => {
+    const getContent = () => new Promise((resolve, reject) => {
+      // console.log('rejecting with 404')
+      const error = new Error('the error message is not checked, just the status code')
+      error.status = 404
+      reject(error)
+    })
+    Octokit.mockImplementation(() => ({ repos: { getContent } }))
+
+    command.error = jest.fn()
+    command.argv = ['--no-login', '--repo=adobe/appbuilder-quickstarts/dne']
+
+    await command.run()
+
+    expect(command.error).toHaveBeenCalledWith('--repo does not point to a valid Adobe App Builder app')
+    expect(command.installTemplates).not.toHaveBeenCalled()
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
+  })
+
+  test('--repo not reachable 403', async () => {
+    const getContent = () => new Promise((resolve, reject) => {
+      // console.log('rejecting with 403')
+      const error = new Error('the error message is not checked, just the status code')
+      error.response = { headers: { 'x-ratelimit-reset': 99999999999 } }
+      error.status = 403
+      reject(error)
+    })
+    Octokit.mockImplementation(() => ({ repos: { getContent } }))
+
+    command.error = jest.fn()
+    command.argv = ['--no-login', '--repo=adobe/appbuilder-quickstarts/dne']
+
+    await command.run()
+
+    expect(command.error).toHaveBeenCalledWith('too many requests, please try again later')
+    expect(command.installTemplates).not.toHaveBeenCalled()
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
@@ -441,8 +556,25 @@ describe('--login', () => {
 
     command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
-    command.argv = ['-w', workspaceName]
+    command.argv = ['-w', workspaceName, '--no-confirm-new-workspace']
     await expect(command.run()).rejects.toThrow(`Workspace '${workspaceName}' does not exist and creation aborted`)
+  })
+
+  test('select template, -w notexists, promptConfirm false, should throw coverage', async () => {
+    const workspaceName = 'notexists'
+    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
+    mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValue(true)
+    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
+    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
+    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
+    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
+    mockConsoleCLIInstance.createWorkspace.mockResolvedValue(fakeWorkspaces[0])
+    command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
+
+    command.argv = ['-w', workspaceName, '--no-confirm-new-workspace']
+    await expect(command.run()).resolves.not.toThrow()
   })
 
   test('select template, -w notexists, --confirm-new-workspace', async () => {

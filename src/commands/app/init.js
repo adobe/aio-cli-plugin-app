@@ -20,9 +20,10 @@ const generators = require('@adobe/generator-aio-app')
 const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
 const inquirer = require('inquirer')
 const hyperlinker = require('hyperlinker')
-
 const { importConsoleConfig } = require('../../lib/import')
 const { loadAndValidateConfigFile } = require('../../lib/import-helper')
+const { Octokit } = require('@octokit/rest')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 
 const DEFAULT_WORKSPACE = 'Stage'
 
@@ -102,24 +103,28 @@ class InitCommand extends TemplatesCommand {
       this.log(chalk.green(`Loaded Adobe Developer Console configuration file for the Project '${consoleConfig.project.title}' in the Organization '${consoleConfig.project.org.name}'`))
     }
 
-    // 2. prompt for templates to be installed
-    const templates = await this.getTemplatesForFlags(flags)
-    // If no templates selected, init a standalone app
-    if (templates.length <= 0) {
-      flags['standalone-app'] = true
+    if (flags.repo) {
+      await this.withQuickstart(flags.repo, flags['github-pat'])
+    } else {
+      // 2. prompt for templates to be installed
+      const templates = await this.getTemplatesForFlags(flags)
+      // If no templates selected, init a standalone app
+      if (templates.length <= 0) {
+        flags['standalone-app'] = true
+      }
+
+      // 3. run base code generators
+      const projectName = (consoleConfig && consoleConfig.project.name) || path.basename(process.cwd())
+      await this.runCodeGenerators(this.getInitialGenerators(flags), flags.yes, projectName)
+
+      // 4. install templates
+      await this.installTemplates({
+        useDefaultValues: flags.yes,
+        installNpm: flags.install,
+        installConfig: flags.login,
+        templates
+      })
     }
-
-    // 3. run base code generators
-    const projectName = (consoleConfig && consoleConfig.project.name) || path.basename(process.cwd())
-    await this.runCodeGenerators(this.getInitialGenerators(flags), flags.yes, projectName)
-
-    // 4. install templates
-    await this.installTemplates({
-      useDefaultValues: flags.yes,
-      installNpm: flags.install,
-      installConfig: flags.login,
-      templates
-    })
 
     // 5. import config - if any
     if (flags.import) {
@@ -128,40 +133,50 @@ class InitCommand extends TemplatesCommand {
   }
 
   async initWithLogin (flags) {
+    if (flags.repo) {
+      await this.withQuickstart(flags.repo, flags['github-pat'])
+    }
     // this will trigger a login
     const consoleCLI = await this.getLibConsoleCLI()
 
     // 1. select org
-    const org = await this.selectConsoleOrg(consoleCLI)
+    const org = await this.selectConsoleOrg(consoleCLI, flags)
     // 2. get supported services
     const orgSupportedServices = await consoleCLI.getEnabledServicesForOrg(org.id)
     // 3. select or create project
-    const project = await this.selectOrCreateConsoleProject(consoleCLI, org)
+    const project = await this.selectOrCreateConsoleProject(consoleCLI, org, flags)
     // 4. retrieve workspace details, defaults to Stage
     const workspace = await this.retrieveWorkspaceFromName(consoleCLI, org, project, flags)
 
-    // 5. get list of templates to install
-    const templates = await this.getTemplatesForFlags(flags, orgSupportedServices)
-    // If no templates selected, init a standalone app
-    if (templates.length <= 0) {
-      flags['standalone-app'] = true
+    let templates
+    if (!flags.repo) {
+      // 5. get list of templates to install
+      templates = await this.getTemplatesForFlags(flags, orgSupportedServices)
+      // If no templates selected, init a standalone app
+      if (templates.length <= 0) {
+        flags['standalone-app'] = true
+      }
     }
 
     // 6. download workspace config
     const consoleConfig = await consoleCLI.getWorkspaceConfig(org.id, project.id, workspace.id, orgSupportedServices)
 
     // 7. run base code generators
-    await this.runCodeGenerators(this.getInitialGenerators(flags), flags.yes, consoleConfig.project.name)
+    if (!flags.repo) {
+      await this.runCodeGenerators(this.getInitialGenerators(flags), flags.yes, consoleConfig.project.name)
+    }
 
     // 8. import config
     await this.importConsoleConfig(consoleConfig, flags)
 
     // 9. install templates
-    await this.installTemplates({
-      useDefaultValues: flags.yes,
-      installNpm: flags.install,
-      templates
-    })
+    if (!flags.repo) {
+      await this.installTemplates({
+        useDefaultValues: flags.yes,
+        installNpm: flags.install,
+        templates
+      })
+    }
 
     this.log(chalk.blue(chalk.bold(`Project initialized for Workspace ${workspace.name}, you can run 'aio app use -w <workspace>' to switch workspace.`)))
   }
@@ -275,21 +290,24 @@ class InitCommand extends TemplatesCommand {
     return [searchCriteria, orderByCriteria, selection, selectionLabel]
   }
 
-  async selectConsoleOrg (consoleCLI) {
+  async selectConsoleOrg (consoleCLI, flags) {
     const organizations = await consoleCLI.getOrganizations()
-    const selectedOrg = await consoleCLI.promptForSelectOrganization(organizations)
+    const selectedOrg = await consoleCLI.promptForSelectOrganization(organizations, { orgId: flags.org, orgCode: flags.org })
     await this.ensureDevTermAccepted(consoleCLI, selectedOrg.id)
     return selectedOrg
   }
 
-  async selectOrCreateConsoleProject (consoleCLI, org) {
+  async selectOrCreateConsoleProject (consoleCLI, org, flags) {
     const projects = await consoleCLI.getProjects(org.id)
     let project = await consoleCLI.promptForSelectProject(
       projects,
-      {},
+      { projectId: flags.project, projectName: flags.project },
       { allowCreate: true }
     )
     if (!project) {
+      if (flags.project) {
+        this.error(`--project ${flags.project} not found`)
+      }
       // user has escaped project selection prompt, let's create a new one
       const projectDetails = await consoleCLI.promptForCreateProjectDetails()
       project = await consoleCLI.createProject(org.id, projectDetails)
@@ -348,7 +366,57 @@ class InitCommand extends TemplatesCommand {
       }
     )
   }
+
+  async withQuickstart (fullRepo, githubPat) {
+    const octokit = new Octokit({
+      auth: githubPat ?? '',
+      userAgent: 'ADP App Builder v1'
+    })
+    const spinner = ora('Downloading quickstart repo').start()
+    /** @private */
+    async function downloadRepoDirRecursive (owner, repo, filePath, basePath) {
+      const { data } = await octokit.repos.getContent({ owner, repo, path: filePath })
+      for (const fileOrDir of data) {
+        if (fileOrDir.type === 'dir') {
+          const destDir = path.relative(basePath, fileOrDir.path)
+          fs.ensureDirSync(destDir)
+          await downloadRepoDirRecursive(owner, repo, fileOrDir.path, basePath)
+        } else {
+          // todo: use a spinner
+          spinner.text = `Downloading ${fileOrDir.path}`
+          const response = await fetch(fileOrDir.download_url)
+          const jsonResponse = await response.text()
+          fs.writeFileSync(path.relative(basePath, fileOrDir.path), jsonResponse)
+        }
+      }
+    }
+    // we need to handle n-deep paths, <owner>/<repo>/<path>/<path>
+    const [owner, repo, ...restOfPath] = fullRepo.split('/')
+    const basePath = restOfPath.join('/')
+    try {
+      const response = await octokit.repos.getContent({ owner, repo, path: `${basePath}/app.config.yaml` })
+      aioLogger.debug(`github headers: ${JSON.stringify(response.headers, 0, 2)}`)
+      await downloadRepoDirRecursive(owner, repo, basePath, basePath)
+      spinner.succeed('Downloaded quickstart repo')
+    } catch (e) {
+      if (e.status === 404) {
+        spinner.fail('Quickstart repo not found')
+        this.error('--repo does not point to a valid Adobe App Builder app')
+      }
+      if (e.status === 403) {
+        // This is helpful for debugging, but by default we don't show it
+        // github rate limit is 60 requests per hour for unauthenticated users
+        const resetTime = new Date(e.response.headers['x-ratelimit-reset'] * 1000)
+        aioLogger.debug(`too many requests, resetTime : ${resetTime.toLocaleTimeString()}`)
+        spinner.fail()
+        this.error('too many requests, please try again later')
+      } else {
+        this.error(e)
+      }
+    }
+  }
 }
+
 InitCommand.description = `Create a new Adobe I/O App
 `
 
@@ -372,17 +440,27 @@ InitCommand.flags = {
     description: 'Extension point(s) to implement',
     char: 'e',
     multiple: true,
-    exclusive: ['template']
+    exclusive: ['template', 'repo']
   }),
   'standalone-app': Flags.boolean({
     description: 'Create a stand-alone application',
     default: false,
-    exclusive: ['template']
+    exclusive: ['template', 'repo']
   }),
   template: Flags.string({
     description: 'Specify a link to a template that will be installed',
     char: 't',
     multiple: true
+  }),
+  org: Flags.string({
+    description: 'Specify the Adobe Developer Console Org to init from',
+    hidden: true,
+    exclusive: ['import'] // also no-login
+  }),
+  project: Flags.string({
+    description: 'Specify the Adobe Developer Console Project to init from',
+    hidden: true,
+    exclusive: ['import'] // also no-login
   }),
   workspace: Flags.string({
     description: 'Specify the Adobe Developer Console Workspace to init from, defaults to Stage',
@@ -391,12 +469,21 @@ InitCommand.flags = {
     exclusive: ['import'] // also no-login
   }),
   'confirm-new-workspace': Flags.boolean({
-    description: 'Skip and confirm prompt for creating a new workspace',
-    default: false
+    description: 'Prompt to confirm before creating a new workspace',
+    default: true,
+    allowNo: true
+  }),
+  repo: Flags.string({
+    description: 'Init from gh quick-start repo. Expected to be of the form <owner>/<repo>/<path>',
+    exclusive: ['template', 'extension', 'standalone-app']
   }),
   'use-jwt': Flags.boolean({
     description: 'if the config has both jwt and OAuth Server to Server Credentials (while migrating), prefer the JWT credentials',
     default: false
+  }),
+  'github-pat': Flags.string({
+    description: 'github personal access token to use for downloading private quickstart repos',
+    dependsOn: ['repo']
   })
 }
 

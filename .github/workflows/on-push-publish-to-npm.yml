@@ -1,10 +1,12 @@
 name: on-push-publish-to-npm
+
 on:
   push:
     branches:
       - master # Change this if not your default branch
     paths:
-      - 'package.json'
+      - "package.json"
+
 jobs:
   publish:
     if: github.repository == 'adobe/aio-cli-plugin-app'
@@ -13,7 +15,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
-          node-version: 16
+          node-version: 18
       - run: npm install
       - run: npm test
       - uses: JS-DevTools/npm-publish@v1

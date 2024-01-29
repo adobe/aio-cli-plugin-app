@@ -144,7 +144,7 @@ describe('run', () => {
   })
 
   const expectNoErrors = async (argv, runScriptCalledTimes = 1) => {
-    mockGetAppExtConfigs.mockReturnValue(
+    mockGetAppExtConfigs.mockResolvedValue(
       {
         application: createMockExtension({
           name: 'application',
@@ -178,7 +178,7 @@ describe('run', () => {
   test('--all fails', () => expectErrors(['--all']))
 
   test('empty config', async () => {
-    mockGetAppExtConfigs.mockReturnValue({})
+    mockGetAppExtConfigs.mockResolvedValue({})
 
     command.argv = []
     await command.run()
@@ -186,7 +186,7 @@ describe('run', () => {
   })
 
   test('action filter match 1 --all', async () => {
-    mockGetAppExtConfigs.mockReturnValue(
+    mockGetAppExtConfigs.mockResolvedValue(
       {
         application: createMockExtension({
           name: 'application',
@@ -202,7 +202,7 @@ describe('run', () => {
   })
 
   test('action filter match 1 --unit', async () => {
-    mockGetAppExtConfigs.mockReturnValue(
+    mockGetAppExtConfigs.mockResolvedValue(
       {
         application: createMockExtension({
           name: 'application',
@@ -217,7 +217,7 @@ describe('run', () => {
   })
 
   test('action filter match 1 --e2e', async () => {
-    mockGetAppExtConfigs.mockReturnValue(
+    mockGetAppExtConfigs.mockResolvedValue(
       {
         application: createMockExtension({
           name: 'application',
@@ -232,7 +232,7 @@ describe('run', () => {
   })
 
   test('action filter match none', async () => {
-    mockGetAppExtConfigs.mockReturnValue(
+    mockGetAppExtConfigs.mockResolvedValue(
       {
         application: createMockExtension({
           name: 'application',
@@ -248,7 +248,7 @@ describe('run', () => {
   })
 
   test('hooks.test found for a config', async () => {
-    mockGetAppExtConfigs.mockReturnValue(
+    mockGetAppExtConfigs.mockResolvedValue(
       {
         application: createMockExtension({
           name: 'application',

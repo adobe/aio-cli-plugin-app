@@ -20,6 +20,8 @@ const { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE } = require('../../../src/lib/defau
 const path = require('node:path')
 const jsYaml = require('js-yaml')
 
+const libConfig = require('@adobe/aio-cli-lib-app-config')
+
 jest.mock('fs-extra')
 jest.mock('unzipper')
 jest.mock('../../../src/lib/install-helper')
@@ -73,6 +75,9 @@ beforeEach(() => {
   process.cwd = jest.fn().mockImplementation(() => fakeCwd)
   process.chdir.mockClear()
   process.cwd.mockClear()
+
+  jest.spyOn(libConfig, 'coalesce').mockImplementation(async () => ({ config: {} })).mockClear()
+  jest.spyOn(libConfig, 'validate').mockImplementation(async () => {}).mockClear()
 })
 
 test('exports', () => {
@@ -177,7 +182,7 @@ test('unzipFile', async () => {
   expect(mockUnzipExtract).toHaveBeenCalledWith(expect.objectContaining({ path: 'my-dest-folder' }))
 })
 
-describe('validateConfig', () => {
+describe('validateDeployConfig', () => {
   test('success', async () => {
     installHelper.validateJsonWithSchema.mockReturnValue({
       valid: true,
@@ -187,11 +192,11 @@ describe('validateConfig', () => {
     jsYaml.load.mockReturnValue({})
 
     const command = new TheCommand()
-    await expect(command.validateConfig('my-dest-folder', USER_CONFIG_FILE))
+    await expect(command.validateDeployConfig('my-dest-folder', DEPLOY_CONFIG_FILE))
       .resolves.toEqual(undefined)
     expect(installHelper.validateJsonWithSchema).toHaveBeenCalledWith(
       expect.any(Object),
-      USER_CONFIG_FILE
+      DEPLOY_CONFIG_FILE
     )
   })
 
@@ -202,8 +207,8 @@ describe('validateConfig', () => {
     })
 
     const command = new TheCommand()
-    await expect(command.validateConfig('my-dest-folder', USER_CONFIG_FILE))
-      .rejects.toThrow(`Missing or invalid keys in ${USER_CONFIG_FILE}:`)
+    await expect(command.validateDeployConfig('my-dest-folder', DEPLOY_CONFIG_FILE))
+      .rejects.toThrow(`Missing or invalid keys in ${DEPLOY_CONFIG_FILE}:`)
   })
 })
 
@@ -285,7 +290,8 @@ describe('run', () => {
     // since we already unit test the methods above, we mock it here
     command.validateZipDirectoryStructure = jest.fn()
     command.unzipFile = jest.fn()
-    command.validateConfig = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
+    command.validateDeployConfig = jest.fn()
     command.runTests = jest.fn()
     command.npmInstall = jest.fn()
     command.error = jest.fn()
@@ -293,7 +299,9 @@ describe('run', () => {
 
     expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
     expect(command.unzipFile).toHaveBeenCalledTimes(1)
-    expect(command.validateConfig).toHaveBeenCalledTimes(2)
+    expect(libConfig.coalesce).toHaveBeenCalledTimes(1)
+    expect(libConfig.validate).toHaveBeenCalledTimes(1)
+    expect(command.validateDeployConfig).toHaveBeenCalledTimes(1)
     expect(command.runTests).toHaveBeenCalledTimes(1)
     expect(command.npmInstall).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -309,7 +317,8 @@ describe('run', () => {
     // we only reject one call, to simulate a subcommand failure
     command.validateZipDirectoryStructure = jest.fn()
     command.unzipFile = jest.fn()
-    command.validateConfig = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
+    command.validateDeployConfig = jest.fn()
     command.npmInstall = jest.fn()
     command.error = jest.fn()
     command.runTests = jest.fn(() => { throw errorObject })
@@ -318,7 +327,9 @@ describe('run', () => {
 
     expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
     expect(command.unzipFile).toHaveBeenCalledTimes(1)
-    expect(command.validateConfig).toHaveBeenCalledTimes(2)
+    expect(libConfig.coalesce).toHaveBeenCalledTimes(1)
+    expect(libConfig.validate).toHaveBeenCalledTimes(1)
+    expect(command.validateDeployConfig).toHaveBeenCalledTimes(1)
     expect(command.runTests).toHaveBeenCalledTimes(1)
     expect(command.npmInstall).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(1)
@@ -336,7 +347,8 @@ describe('run', () => {
     // we only reject one call, to simulate a subcommand failure
     command.validateZipDirectoryStructure = jest.fn()
     command.unzipFile = jest.fn()
-    command.validateConfig = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
+    command.validateDeployConfig = jest.fn()
     command.npmInstall = jest.fn()
     command.error = jest.fn()
     command.runTests = jest.fn(() => { throw new Error(errorMessage) })
@@ -345,7 +357,9 @@ describe('run', () => {
 
     expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
     expect(command.unzipFile).toHaveBeenCalledTimes(1)
-    expect(command.validateConfig).toHaveBeenCalledTimes(2)
+    expect(libConfig.coalesce).toHaveBeenCalledTimes(1)
+    expect(libConfig.validate).toHaveBeenCalledTimes(1)
+    expect(command.validateDeployConfig).toHaveBeenCalledTimes(1)
     expect(command.runTests).toHaveBeenCalledTimes(1)
     expect(command.npmInstall).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(1)
@@ -360,7 +374,8 @@ describe('run', () => {
     // since we already unit test the methods above, we mock it here
     command.validateZipDirectoryStructure = jest.fn()
     command.unzipFile = jest.fn()
-    command.validateConfig = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
+    command.validateDeployConfig = jest.fn()
     command.runTests = jest.fn()
     command.npmInstall = jest.fn()
     command.error = jest.fn()
@@ -369,8 +384,83 @@ describe('run', () => {
 
     expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
     expect(command.unzipFile).toHaveBeenCalledTimes(1)
-    expect(command.validateConfig).toHaveBeenCalledTimes(2)
+    expect(libConfig.coalesce).toHaveBeenCalledTimes(1)
+    expect(libConfig.validate).toHaveBeenCalledTimes(1)
+    expect(command.validateDeployConfig).toHaveBeenCalledTimes(1)
     expect(command.runTests).toHaveBeenCalledTimes(1)
+    expect(command.npmInstall).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(fakeCwd).toEqual(path.resolve('my-dest-folder'))
+  })
+
+  test('app config validation error', async () => {
+    const command = new TheCommand()
+    command.argv = ['my-app.zip']
+
+    // since we already unit test the methods above, we mock it here
+    command.validateZipDirectoryStructure = jest.fn()
+    command.unzipFile = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
+    command.validateDeployConfig = jest.fn()
+    command.runTests = jest.fn()
+    command.npmInstall = jest.fn()
+    command.error = jest.fn()
+
+    const err = new Error('fake validation error')
+    libConfig.validate.mockImplementation(async () => { throw err })
+    command.spinner.fail = jest.fn()
+
+    await command.run()
+    expect(command.spinner.fail).toHaveBeenCalledWith('fake validation error')
+  })
+
+  test('flag --tests', async () => {
+    const command = new TheCommand()
+    command.argv = ['my-app.zip', '--output', 'my-dest-folder', '--tests']
+
+    // since we already unit test the methods above, we mock it here
+    command.validateZipDirectoryStructure = jest.fn()
+    command.unzipFile = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
+    command.validateDeployConfig = jest.fn()
+    command.runTests = jest.fn()
+    command.npmInstall = jest.fn()
+    command.error = jest.fn()
+
+    await command.run()
+
+    expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
+    expect(command.unzipFile).toHaveBeenCalledTimes(1)
+    expect(libConfig.coalesce).toHaveBeenCalledTimes(1)
+    expect(libConfig.validate).toHaveBeenCalledTimes(1)
+    expect(command.validateDeployConfig).toHaveBeenCalledTimes(1)
+    expect(command.runTests).toHaveBeenCalledTimes(1)
+    expect(command.npmInstall).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(fakeCwd).toEqual(path.resolve('my-dest-folder'))
+  })
+
+  test('flag --no-tests', async () => {
+    const command = new TheCommand()
+    command.argv = ['my-app.zip', '--output', 'my-dest-folder', '--no-tests']
+
+    // since we already unit test the methods above, we mock it here
+    command.validateZipDirectoryStructure = jest.fn()
+    command.unzipFile = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
+    command.validateDeployConfig = jest.fn()
+    command.runTests = jest.fn()
+    command.npmInstall = jest.fn()
+    command.error = jest.fn()
+
+    await command.run()
+
+    expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
+    expect(command.unzipFile).toHaveBeenCalledTimes(1)
+    expect(libConfig.coalesce).toHaveBeenCalledTimes(1)
+    expect(libConfig.validate).toHaveBeenCalledTimes(1)
+    expect(command.validateDeployConfig).toHaveBeenCalledTimes(1)
+    expect(command.runTests).toHaveBeenCalledTimes(0)
     expect(command.npmInstall).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(fakeCwd).toEqual(path.resolve('my-dest-folder'))

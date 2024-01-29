@@ -30,7 +30,7 @@ class ErrorsCommand extends BaseCommand {
   }
 
   async getLogForwarding () {
-    const runtimeConfig = this.getFullConfig().aio.runtime
+    const runtimeConfig = (await this.getFullConfig()).aio.runtime
     rtLib.utils.checkOpenWhiskCredentials({ ow: runtimeConfig })
     const rt = await rtLib.init({
       ...runtimeConfig,

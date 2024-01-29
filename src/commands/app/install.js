@@ -23,6 +23,9 @@ const { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE } = require('../../lib/defaults')
 const ora = require('ora')
 const chalk = require('chalk')
 
+// eslint-disable-next-line node/no-missing-require
+const libConfig = require('@adobe/aio-cli-lib-app-config')
+
 class InstallCommand extends BaseCommand {
   async run () {
     const { args, flags } = await this.parse(InstallCommand)
@@ -49,10 +52,12 @@ class InstallCommand extends BaseCommand {
     try {
       await this.validateZipDirectoryStructure(args.path)
       await this.unzipFile(args.path, outputPath)
-      await this.validateConfig(outputPath, USER_CONFIG_FILE)
-      await this.validateConfig(outputPath, DEPLOY_CONFIG_FILE)
+      await this.validateAppConfig(outputPath, USER_CONFIG_FILE)
+      await this.validateDeployConfig(outputPath, DEPLOY_CONFIG_FILE)
       await this.npmInstall(flags.verbose)
-      await this.runTests()
+      if (flags.tests) {
+        await this.runTests()
+      }
       this.spinner.succeed('Install done.')
     } catch (e) {
       this.spinner.fail(e.message)
@@ -107,7 +112,16 @@ class InstallCommand extends BaseCommand {
       .then(() => this.spinner.succeed(`Extracted app package to ${destFolderPath}`))
   }
 
-  async validateConfig (outputPath, configFileName, configFilePath = path.join(outputPath, configFileName)) {
+  async validateAppConfig (outputPath, configFileName, configFilePath = path.join(outputPath, configFileName)) {
+    this.spinner.start(`Validating ${configFileName}...`)
+    aioLogger.debug(`validateConfig: ${configFileName} at ${configFilePath}`)
+    // first coalesce the app config (resolving $include files), then validate it
+    const config = (await libConfig.coalesce(configFilePath)).config
+    await libConfig.validate(config, { throws: true }) // throws on error
+    this.spinner.succeed(`Validated ${configFileName}`)
+  }
+
+  async validateDeployConfig (outputPath, configFileName, configFilePath = path.join(outputPath, configFileName)) {
     this.spinner.start(`Validating ${configFileName}...`)
     aioLogger.debug(`validateConfig: ${configFileName} at ${configFilePath}`)
 
@@ -152,6 +166,11 @@ InstallCommand.flags = {
     description: 'The packaged app output folder path',
     char: 'o',
     default: '.'
+  }),
+  tests: Flags.boolean({
+    description: 'Run packaged app unit tests (e.g. aio app:test)',
+    default: true,
+    allowNo: true
   })
 }
 

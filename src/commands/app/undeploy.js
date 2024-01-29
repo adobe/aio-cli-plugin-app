@@ -25,7 +25,7 @@ class Undeploy extends BaseCommand {
     // cli input
     const { flags } = await this.parse(Undeploy)
 
-    const undeployConfigs = this.getAppExtConfigs(flags)
+    const undeployConfigs = await this.getAppExtConfigs(flags)
     let libConsoleCLI
     if (flags.unpublish) {
       // force login at beginning (if required)
@@ -51,7 +51,7 @@ class Undeploy extends BaseCommand {
       }
       // 2. unpublish extension manifest
       if (flags.unpublish && !(keys.length === 1 && keys[0] === 'application')) {
-        const aioConfig = this.getFullConfig().aio
+        const aioConfig = (await this.getFullConfig()).aio
         const payload = await this.unpublishExtensionPoints(libConsoleCLI, undeployConfigs, aioConfig, flags['force-unpublish'])
         this.log(chalk.blue(chalk.bold(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': '${Object.keys(payload.endpoints)}'`)))
       } else {
@@ -78,13 +78,10 @@ class Undeploy extends BaseCommand {
     // undeploy
     try {
       await runInProcess(config.hooks['pre-app-undeploy'], config)
-      if (flags['feature-event-hooks'] && flags.events) {
-        this.log('feature-event-hooks is enabled, running pre-undeploy-event-reg hook')
-        const hookResults = await this.config.runHook('pre-undeploy-event-reg', { appConfig: config })
-        if (hookResults?.failures?.length > 0) {
-          // output should be "Error : <plugin-name> : <error-message>\n" for each failure
-          this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
-        }
+      const hookResults = await this.config.runHook('pre-undeploy-event-reg', { appConfig: config })
+      if (hookResults?.failures?.length > 0) {
+        // output should be "Error : <plugin-name> : <error-message>\n" for each failure
+        this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
       }
     } catch (err) {
       this.log(err)
@@ -178,12 +175,6 @@ Undeploy.flags = {
     description: 'Force unpublish extension(s) from Exchange, will delete all extension points',
     default: false,
     exclusive: ['unpublish'] // unpublish is excluded
-  }),
-  'feature-event-hooks': Flags.boolean({
-    description: '[default: false] Enable event hooks feature',
-    default: false,
-    allowNo: true,
-    hidden: true
   })
 }
 

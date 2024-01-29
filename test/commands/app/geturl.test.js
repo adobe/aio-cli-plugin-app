@@ -86,7 +86,7 @@ describe('run', () => {
 
   test('get all action urls', async () => {
     const appConfig = createFullConfig(command.appConfig)
-    command.getFullConfig.mockReturnValueOnce(appConfig)
+    command.getFullConfig.mockResolvedValueOnce(appConfig)
 
     const retVal = {
       runtime: {
@@ -104,7 +104,7 @@ describe('run', () => {
 
   test('get empty action urls', async () => {
     const appConfig = createFullConfig(command.appConfig)
-    command.getFullConfig.mockReturnValueOnce(appConfig)
+    command.getFullConfig.mockResolvedValueOnce(appConfig)
 
     const retVal = {
       runtime: {}
@@ -120,7 +120,7 @@ describe('run', () => {
 
   test('get empty action urls -j', async () => {
     const appConfig = createFullConfig(command.appConfig)
-    command.getFullConfig.mockReturnValueOnce(appConfig)
+    command.getFullConfig.mockResolvedValueOnce(appConfig)
     command.argv = ['--json']
 
     const retVal = { runtime: {} }
@@ -135,7 +135,7 @@ describe('run', () => {
 
   test('get empty action urls -y', async () => {
     const appConfig = createFullConfig(command.appConfig)
-    command.getFullConfig.mockReturnValueOnce(appConfig)
+    command.getFullConfig.mockResolvedValueOnce(appConfig)
     command.argv = ['--yml']
 
     const retVal = { runtime: {} }
@@ -150,7 +150,7 @@ describe('run', () => {
 
   test('get empty action urls -h', async () => {
     const appConfig = createFullConfig(command.appConfig)
-    command.getFullConfig.mockReturnValueOnce(appConfig)
+    command.getFullConfig.mockResolvedValueOnce(appConfig)
     command.argv = ['--hson']
 
     mockRuntimeLib.utils.getActionUrls.mockResolvedValue({})
@@ -164,7 +164,7 @@ describe('run', () => {
 
   test('get all action urls with cdn flag', async () => {
     const appConfig = createFullConfig(command.appConfig)
-    command.getFullConfig.mockReturnValueOnce(appConfig)
+    command.getFullConfig.mockResolvedValueOnce(appConfig)
     command.argv = ['--cdn']
 
     const retVal = {
@@ -187,7 +187,7 @@ describe('run', () => {
 
   test('get single action url', async () => {
     const appConfig = createFullConfig(command.appConfig)
-    command.getFullConfig.mockReturnValueOnce(appConfig)
+    command.getFullConfig.mockResolvedValueOnce(appConfig)
     command.args = { action: 'action' }
 
     const retVal = {
@@ -218,7 +218,7 @@ describe('run', () => {
       }
     }
     const appConfig = { ...createFullConfig(command.appConfig), ...appConfigParam }
-    command.getFullConfig.mockReturnValueOnce(appConfig)
+    command.getFullConfig.mockResolvedValueOnce(appConfig)
     command.argv = ['action', '--cdn']
     // To check that only one action is sent to getActionUrls()
     delete appConfigParam.manifest.package.actions.action2
@@ -252,7 +252,7 @@ describe('run', () => {
         }
       }
     }
-    command.getFullConfig.mockReturnValueOnce(createFullConfig(command.appConfig))
+    command.getFullConfig.mockResolvedValueOnce(createFullConfig(command.appConfig))
     command.argv = ['invalid']
 
     await command.run()
@@ -268,7 +268,7 @@ describe('run', () => {
         }
       }
     }
-    command.getFullConfig.mockReturnValueOnce(createFullConfig(command.appConfig))
+    command.getFullConfig.mockResolvedValueOnce(createFullConfig(command.appConfig))
     command.argv = ['invalid']
 
     await command.run()
@@ -277,7 +277,7 @@ describe('run', () => {
 
   test('get local actions, --local', async () => {
     const appConfig = createFullConfig(command.appConfig)
-    command.getFullConfig.mockReturnValueOnce(appConfig)
+    command.getFullConfig.mockResolvedValueOnce(appConfig)
 
     const res = {
       runtime: {
