@@ -82,6 +82,7 @@ test('exports', async () => {
   expect(TheCommand.prototype instanceof BaseCommand).toBeTruthy()
   expect(typeof TheCommand.flags).toBe('object')
   expect(TheCommand.description).toBeDefined()
+  expect(TheCommand.hidden).toBeFalsy()
 })
 
 test('description', async () => {

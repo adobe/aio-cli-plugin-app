@@ -21,7 +21,6 @@ const { validateJsonWithSchema } = require('../../lib/install-helper')
 const jsYaml = require('js-yaml')
 const { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE } = require('../../lib/defaults')
 const ora = require('ora')
-const chalk = require('chalk')
 
 // eslint-disable-next-line node/no-missing-require
 const libConfig = require('@adobe/aio-cli-lib-app-config')
@@ -29,8 +28,6 @@ const libConfig = require('@adobe/aio-cli-lib-app-config')
 class InstallCommand extends BaseCommand {
   async run () {
     const { args, flags } = await this.parse(InstallCommand)
-
-    this.preRelease()
 
     aioLogger.debug(`flags: ${JSON.stringify(flags, null, 2)}`)
     aioLogger.debug(`args: ${JSON.stringify(args, null, 2)}`)
@@ -155,10 +152,8 @@ class InstallCommand extends BaseCommand {
   }
 }
 
-InstallCommand.hidden = true // hide from help for pre-release
-
-InstallCommand.description = chalk.yellow(`(Pre-release) This command will support installing apps packaged by '<%= config.bin %> app pack'.
-`)
+InstallCommand.description = `This command will support installing apps packaged by '<%= config.bin %> app pack'.
+`
 
 InstallCommand.flags = {
   ...BaseCommand.flags,
