@@ -67,12 +67,19 @@ test('args', async () => {
 
 test('basecommand defines method', async () => {
   const cmd = new TheCommand()
+
   expect(cmd.getLaunchUrlPrefix).toBeDefined()
   expect(typeof cmd.getLaunchUrlPrefix).toBe('function')
-  mockAioConfig.get.mockReturnValue('http://prefix?fake=')
-  expect(cmd.getLaunchUrlPrefix()).toBe('http://prefix?fake=')
-  mockAioConfig.get.mockReturnValue(null)
-  expect(cmd.getLaunchUrlPrefix()).toEqual(expect.stringContaining('https://'))
+  expect(cmd.preRelease).toBeDefined()
+  expect(typeof cmd.preRelease).toBe('function')
+})
+
+test('preRelease() outputs to log', async () => {
+  const cmd = new TheCommand()
+  cmd.log = jest.fn()
+
+  cmd.preRelease()
+  expect(cmd.log).toHaveBeenCalledWith(expect.stringMatching('Pre-release warning: This command is in pre-release, and not suitable for production.'))
 })
 
 test('getLaunchUrlPrefix() warns on older url', async () => {
