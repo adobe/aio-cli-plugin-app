@@ -84,13 +84,16 @@ class Deploy extends BuildCommand {
         }
       }
 
-      // 2. Bail if workspace is production and application status is PUBLISHED, honor force-deploy
-      if (!isStandaloneApp && aioConfig?.project?.workspace?.name === 'Production' && !flags['force-deploy']) {
+      // 2. If workspace is prod and has extensions, check if the app is published
+      if (!isStandaloneApp && aioConfig?.project?.workspace?.name === 'Production') {
         const extension = await this.getApplicationExtension(libConsoleCLI, aioConfig)
-        spinner.info(chalk.dim(JSON.stringify(extension)))
         if (extension && extension.status === 'PUBLISHED') {
-          spinner.info(chalk.red('This application is published and the current workspace is Production, deployment will be skipped. You must first retract this application in Adobe Exchange to deploy updates.'))
-          return
+          flags.publish = false // if the app is production and published, then skip publish later on
+          // if the app is published and no force-deploy flag is set, then skip deployment
+          if (!flags['force-deploy']) {
+            spinner.info(chalk.red('This application is published and the current workspace is Production, deployment will be skipped. You must first retract this application in Adobe Exchange to deploy updates.'))
+            return
+          }
         }
       }
 
@@ -342,7 +345,8 @@ Deploy.flags = {
   }),
   'force-deploy': Flags.boolean({
     description: '[default: false] Force deploy changes, regardless of production Workspace being published in Exchange.',
-    default: false
+    default: false,
+    exclusive: ['publish', 'force-publish'] // publish is skipped if force-deploy is set and prod app is published
   }),
   'force-publish': Flags.boolean({
     description: '[default: false] Force publish extension(s) to Exchange, delete previously published extension points',

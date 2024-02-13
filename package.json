@@ -98,6 +98,7 @@
   "scripts": {
     "postpack": "rm -f oclif.manifest.json",
     "lint": "eslint src test",
+    "lint-fix": "npm run lint -- --fix",
     "prepack": "oclif manifest && oclif readme --no-aliases",
     "test": "npm run unit-tests && npm run lint",
     "unit-tests": "jest -c jest.config.js",
