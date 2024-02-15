@@ -302,6 +302,7 @@ describe('--no-login', () => {
   })
 
   test('--standalone-app', async () => {
+    command.runCodeGenerators = jest.fn()
     const installOptions = {
       useDefaultValues: false,
       installNpm: true,
@@ -313,6 +314,7 @@ describe('--no-login', () => {
     await command.run()
 
     expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
+    expect(command.runCodeGenerators).toHaveBeenCalledWith(['base-app', 'add-ci', 'application'], false, 'cwd', 'basic')
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
@@ -447,6 +449,48 @@ describe('--no-login', () => {
     expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
+  })
+
+  test('--yes --no-login --linter=none', async () => {
+    command.runCodeGenerators = jest.fn()
+    const installOptions = {
+      useDefaultValues: true,
+      installNpm: true,
+      installConfig: false,
+      templates: []
+    }
+
+    command.argv = ['--yes', '--no-login', '--linter=none']
+    await command.run()
+
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
+    expect(command.runCodeGenerators).toHaveBeenCalledWith(['base-app', 'add-ci', 'application'], true, 'cwd', 'none')
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
+  })
+
+  test('--yes --no-login --linter=adobe-recommended', async () => {
+    command.runCodeGenerators = jest.fn()
+    const installOptions = {
+      useDefaultValues: true,
+      installNpm: true,
+      installConfig: false,
+      templates: []
+    }
+
+    command.argv = ['--yes', '--no-login', '--linter=adobe-recommended']
+    await command.run()
+
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
+    expect(command.runCodeGenerators).toHaveBeenCalledWith(['base-app', 'add-ci', 'application'], true, 'cwd', 'adobe-recommended')
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
+  })
+
+  test('--yes --no-login --linter=invalid', async () => {
+    command.runCodeGenerators = jest.fn()
+    command.argv = ['--yes', '--no-login', '--linter=invalid']
+    await expect(command.run()).rejects.toThrow('Expected --linter=invalid to be one of: none, basic, adobe-recommended\nSee more help with --help')
   })
 })
 
