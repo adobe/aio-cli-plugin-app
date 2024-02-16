@@ -76,6 +76,20 @@ const mockExtRegExcShellPayload = () => {
   mockLibConsoleCLI.updateExtensionPoints.mockReturnValueOnce(payload)
 }
 
+const mockExtRegExcShellPayloadFailure = () => {
+  const payload = {
+    endpoints: {
+      'dx/excshell/1': {
+        view: [
+          { metadata: {} }
+        ]
+      }
+    }
+  }
+  helpers.buildExtensionPointPayloadWoMetadata.mockReturnValueOnce(payload)
+  mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites.mockRejectedValueOnce(new Error('mock error'))
+}
+
 const mockExtRegExcShellAndNuiPayload = () => {
   const payload = {
     endpoints: {
@@ -100,7 +114,7 @@ const mockGetExtensionPointsRetractedApp = () => {
     status: 'RETRACTED',
     appId: '1234'
   }]
-  mockLibConsoleCLI.getApplicationExtensions.mockReturnValueOnce(payload)
+  mockLibConsoleCLI.getApplicationExtensions.mockReturnValue(payload)
 }
 
 const mockGetExtensionPointsPublishedApp = () => {
@@ -108,14 +122,14 @@ const mockGetExtensionPointsPublishedApp = () => {
     status: 'PUBLISHED',
     appId: '1234'
   }]
-  mockLibConsoleCLI.getApplicationExtensions.mockReturnValueOnce(payload)
+  mockLibConsoleCLI.getApplicationExtensions.mockReturnValue(payload)
 }
 
 const mockGetProject = () => {
   const payload = {
     appId: '1234'
   }
-  mockLibConsoleCLI.getProject.mockReturnValueOnce(payload)
+  mockLibConsoleCLI.getProject.mockReturnValue(payload)
 }
 
 const mockLibConsoleCLI = {
@@ -614,6 +628,18 @@ describe('run', () => {
 
   test('deploy (--no-actions and --no-web-assets) for application - nothing to be done', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+    command.getFullConfig.mockResolvedValue({
+      aio: {
+        project: {
+          workspace: {
+            name: 'Production'
+          },
+          org: {
+            id: '1111'
+          }
+        }
+      }
+    })
     const noScriptFound = undefined
     helpers.runInProcess
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
@@ -628,12 +654,17 @@ describe('run', () => {
   })
 
   test('deploy (--no-actions and --no-web-assets) for extension - publish', async () => {
+    mockGetProject()
+    mockGetExtensionPointsRetractedApp()
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'exc'))
     command.getFullConfig.mockResolvedValue({
       aio: {
         project: {
           workspace: {
             name: 'foo'
+          },
+          org: {
+            id: '1111'
           }
         }
       }
@@ -837,12 +868,40 @@ describe('run', () => {
     command.argv = ['--force-deploy']
     await command.run()
 
-    expect(mockLibConsoleCLI.getProject).toHaveBeenCalledTimes(0)
-    expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.getProject).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
-    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(0)
+  })
+
+  test('deploy for PUBLISHED Production extension - force deploy, fails to publish', async () => {
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'exc'))
+    mockGetExtensionPointsPublishedApp()
+    mockGetProject()
+    command.getFullConfig.mockResolvedValue({
+      aio: {
+        project: {
+          workspace: {
+            name: 'Production'
+          },
+          org: {
+            id: '1111'
+          }
+        }
+      }
+    })
+    mockExtRegExcShellPayloadFailure()
+    command.argv = ['--force-deploy']
+    await command.run()
+
+    expect(mockLibConsoleCLI.getProject).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
+    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(0)
   })
 
   test('deploy for Production legacy app', async () => {
@@ -871,11 +930,9 @@ describe('run', () => {
   })
 
   test('deploy for RETRACTED Production extension - publish', async () => {
-    mockLibConsoleCLI.getApplicationExtensions.mockReset()
-
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'exc'))
-    mockGetExtensionPointsRetractedApp()
     mockGetProject()
+    mockGetExtensionPointsRetractedApp()
     command.getFullConfig.mockResolvedValue({
       aio: {
         project: {
@@ -900,12 +957,17 @@ describe('run', () => {
   })
 
   test('publish phase (no force, exc+nui payload)', async () => {
+    mockGetProject()
+    mockGetExtensionPointsRetractedApp()
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'app-exc-nui'))
     command.getFullConfig.mockResolvedValue({
       aio: {
         project: {
           workspace: {
             name: 'foo'
+          },
+          org: {
+            id: '1111'
           }
         }
       }
@@ -920,12 +982,17 @@ describe('run', () => {
   })
 
   test('publish phase (no force, nui payload + no view operation)', async () => {
+    mockGetProject()
+    mockGetExtensionPointsRetractedApp()
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'app-exc-nui'))
     command.getFullConfig.mockResolvedValue({
       aio: {
         project: {
           workspace: {
             name: 'foo'
+          },
+          org: {
+            id: '1111'
           }
         }
       }
@@ -950,12 +1017,17 @@ describe('run', () => {
   })
 
   test('publish phase (--force-publish, exc+nui payload)', async () => {
+    mockGetProject()
+    mockGetExtensionPointsRetractedApp()
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'exc'))
     command.getFullConfig.mockResolvedValue({
       aio: {
         project: {
           workspace: {
             name: 'foo'
+          },
+          org: {
+            id: '1111'
           }
         }
       }
