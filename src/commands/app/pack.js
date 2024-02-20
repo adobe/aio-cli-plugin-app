@@ -166,15 +166,18 @@ class Pack extends BaseCommand {
     if (command) {
       try {
         this.spinner.start('Getting api-mesh config...')
-        const { stdout } = await execa('aio', ['api-mesh', 'get'], { cwd: process.cwd() })
-        // until we get the --json flag, we parse the output
-        const idx = stdout.indexOf('{')
-        meshConfig = JSON.parse(stdout.substring(idx)).meshConfig
+        const { stdout, stderr } = await execa('aio', ['api-mesh', 'get', '--json'], { cwd: process.cwd() })
+
+        if (stderr) {
+          throw new Error(stderr)
+        }
+
+        meshConfig = JSON.parse(stdout).meshConfig
         aioLogger.debug(`api-mesh:get - ${JSON.stringify(meshConfig, null, 2)}`)
         this.spinner.succeed('Got api-mesh config')
       } catch (err) {
         // Ignore error if no mesh found, otherwise throw
-        if (err?.stderr.includes('Error: Unable to get mesh config. No mesh found for Org')) {
+        if (err?.message.includes('Error: Unable to get mesh config. No mesh found for Org')) {
           aioLogger.debug('No api-mesh config found')
         } else {
           console.error(err)
