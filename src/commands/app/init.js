@@ -115,7 +115,7 @@ class InitCommand extends TemplatesCommand {
 
       // 3. run base code generators
       const projectName = (consoleConfig && consoleConfig.project.name) || path.basename(process.cwd())
-      await this.runCodeGenerators(this.getInitialGenerators(flags), flags.yes, projectName)
+      await this.runCodeGenerators(this.getInitialGenerators(flags), flags.yes, projectName, flags.linter)
 
       // 4. install templates
       await this.installTemplates({
@@ -163,7 +163,7 @@ class InitCommand extends TemplatesCommand {
 
     // 7. run base code generators
     if (!flags.repo) {
-      await this.runCodeGenerators(this.getInitialGenerators(flags), flags.yes, consoleConfig.project.name)
+      await this.runCodeGenerators(this.getInitialGenerators(flags), flags.yes, consoleConfig.project.name, flags.linter)
     }
 
     // 8. import config
@@ -337,7 +337,7 @@ class InitCommand extends TemplatesCommand {
     return workspace
   }
 
-  async runCodeGenerators (generatorNames, skipPrompt, projectName) {
+  async runCodeGenerators (generatorNames, skipPrompt, projectName, linter) {
     const env = yeoman.createEnv()
     env.options = { skipInstall: true }
 
@@ -347,7 +347,8 @@ class InitCommand extends TemplatesCommand {
         options: {
           'skip-prompt': skipPrompt,
           'project-name': projectName,
-          force: true
+          force: true,
+          linter
         }
       })
       await env.runGenerator(appGen)
@@ -484,6 +485,11 @@ InitCommand.flags = {
   'github-pat': Flags.string({
     description: 'github personal access token to use for downloading private quickstart repos',
     dependsOn: ['repo']
+  }),
+  linter: Flags.string({
+    description: 'Specify the linter to use for the project',
+    options: ['none', 'basic', 'adobe-recommended'],
+    default: 'basic'
   })
 }
 
