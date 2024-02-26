@@ -19,7 +19,7 @@
     "@adobe/generator-app-common-lib": "^2",
     "@adobe/inquirer-table-checkbox": "^2",
     "@oclif/core": "^2.11.6",
-    "@octokit/rest": "^19.0.11",
+    "@octokit/rest": "^20.0.2",
     "@parcel/core": "^2.7.0",
     "@parcel/reporter-cli": "^2.7.0",
     "ajv": "^8",
