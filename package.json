@@ -50,7 +50,7 @@
     "unzipper": "^0.10.11",
     "upath": "^2",
     "which": "^4.0.0",
-    "yeoman-environment": "^3.2.0"
+    "yeoman-environment": "^4.4.0"
   },
   "devDependencies": {
     "@adobe/aio-lib-test-proxy": "^2",
