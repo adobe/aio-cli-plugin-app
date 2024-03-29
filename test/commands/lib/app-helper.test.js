@@ -531,13 +531,14 @@ test('waitForOpenWhiskReadiness timeout', async () => {
   const period = 5000
   const timeout = 5000
   const endTime = Date.now() - 1000 // ends now
+  const status = 'FAIL'
 
   const waitFunc = jest.fn((_period) => {
     expect(_period).toEqual(period)
   })
-  const result = appHelper.waitForOpenWhiskReadiness(host, endTime, period, timeout, waitFunc)
+  const result = appHelper.waitForOpenWhiskReadiness(host, endTime, period, timeout, status, waitFunc)
 
-  await expect(result).rejects.toEqual(new Error(`local openwhisk stack startup timed out: ${timeout}ms`))
+  await expect(result).rejects.toEqual(new Error(`local openwhisk stack startup timed out after ${timeout}ms due to ${status}`))
   expect(mockFetch).toHaveBeenCalledTimes(0)
   expect(waitFunc).toHaveBeenCalledTimes(0)
 })
@@ -547,6 +548,7 @@ test('waitForOpenWhiskReadiness (fail, retry, then success)', async () => {
   const period = 5000
   const timeout = 5000
   const endTime = Date.now() + 5000
+  const status = null
 
   const waitFunc = jest.fn((_period) => {
     expect(_period).toEqual(period)
@@ -555,7 +557,7 @@ test('waitForOpenWhiskReadiness (fail, retry, then success)', async () => {
     .mockRejectedValueOnce(new Error('some error')) // first fail (fetch exception)
     .mockRejectedValueOnce({ ok: false }) // second fail (response not ok)
     .mockResolvedValue({ ok: true }) // finally success
-  const result = appHelper.waitForOpenWhiskReadiness(host, endTime, period, timeout, waitFunc)
+  const result = appHelper.waitForOpenWhiskReadiness(host, endTime, period, timeout, status, waitFunc)
 
   await expect(result).resolves.not.toBeDefined()
   expect(mockFetch).toHaveBeenCalledTimes(3)

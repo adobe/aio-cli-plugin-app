@@ -314,24 +314,26 @@ async function downloadOWJar (url, outFile) {
 }
 
 /** @private */
-async function waitForOpenWhiskReadiness (host, endTime, period, timeout, waitFunc) {
+async function waitForOpenWhiskReadiness (host, endTime, period, timeout, lastStatus, waitFunc) {
   if (Date.now() > endTime) {
-    throw new Error(`local openwhisk stack startup timed out: ${timeout}ms`)
+    throw new Error(`local openwhisk stack startup timed out after ${timeout}ms due to ${lastStatus}`)
   }
 
-  let ok
+  let ok, status
 
   try {
     const fetch = createFetch()
     const response = await fetch(host + '/api/v1')
     ok = response.ok
+    status = response.statusText
   } catch (e) {
     ok = false
+    status = e.toString()
   }
 
   if (!ok) {
     await waitFunc(period)
-    return waitForOpenWhiskReadiness(host, endTime, period, timeout, waitFunc)
+    return waitForOpenWhiskReadiness(host, endTime, period, timeout, status, waitFunc)
   }
 }
 
@@ -349,7 +351,7 @@ async function runOpenWhiskJar (jarFile, runtimeConfigFile, apihost, waitInitTim
 
   const endTime = Date.now() + timeout
   await waitFor(waitInitTime)
-  await waitForOpenWhiskReadiness(apihost, endTime, waitPeriodTime, timeout, waitFor)
+  await waitForOpenWhiskReadiness(apihost, endTime, waitPeriodTime, timeout, null, waitFor)
 
   // must wrap in an object as execa return value is awaitable
   return { proc }
