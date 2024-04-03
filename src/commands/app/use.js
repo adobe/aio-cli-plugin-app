@@ -360,6 +360,7 @@ Use.flags = {
   merge: Flags.boolean({
     description: 'Merge any .aio and .env files during import of the Adobe Developer Console configuration file',
     default: false,
+    char: 'm',
     exclusive: ['overwrite']
   }),
   global: Flags.boolean({
