@@ -61,6 +61,9 @@ const mockConfig = require('@adobe/aio-lib-core-config')
 jest.mock('https')
 const https = require('https')
 
+jest.mock('node:os')
+const os = require('node:os')
+
 jest.mock('get-port')
 const getPort = require('get-port')
 
@@ -102,6 +105,8 @@ beforeEach(() => {
   }
   open.mockReset()
   ux.wait = jest.fn() // .mockImplementation((ms = 1000) => { return new Promise(resolve => setTimeout(resolve, ms)) })
+
+  os.cpus.mockImplementation(() => [{ model: 'Intel Pentium MMX' }])
 
   mockFindCommandLoad.mockClear()
   mockFindCommandRun.mockReset()
@@ -315,11 +320,12 @@ describe('run', () => {
     }), expect.any(Function), expect.any(Function))
   })
 
-  test('app:run with --local', async () => {
+  test('app:run with --local NOT Apple Silicon', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     mockRunDev.mockImplementation((config, dataDir, options, logFunc) => {
       expect(options.isLocal).toBe(true)
     })
+
     command.argv = ['--local']
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
@@ -328,11 +334,29 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledTimes(1)
   })
 
+  test('app:run with --local with Apple Silicon', async () => {
+    mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
+    mockRunDev.mockImplementation((config, dataDir, options, logFunc) => {
+      expect(options.isLocal).toBe(true)
+    })
+
+    os.cpus.mockImplementation(() => [{ model: 'Apple processor' }])
+    command.argv = ['--local']
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+
+    await command.run()
+    // this should be more like the following ...
+    // await expect(command.run().rejects.toThrow('The --local flag is not supported on Apple Silicon Macs.'))
+    expect(command.error).toHaveBeenCalledWith('The --local flag is not supported on Apple Silicon Macs.')
+  })
+
   test('app:run with --local --verbose', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     command.argv = ['--local', '--verbose']
     const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
+    // apple silicon would block this test
+    os.cpus.mockImplementation(() => [{ model: 'Intel Pentium MMX' }])
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -684,6 +708,7 @@ describe('run', () => {
 
     command.argv = []
     await command.run()
+    // await expect(command.run()).rejects.toThrow('Your app implements multiple extensions.')
 
     expect(command.error).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledWith(expect.stringContaining('\'-e\' flag'))
