@@ -16,6 +16,7 @@ const fs = require('fs-extra')
 const https = require('https')
 const getPort = require('get-port')
 const open = require('open')
+const os = require('node:os')
 
 const { Flags, ux } = require('@oclif/core')
 const coreConfig = require('@adobe/aio-lib-core-config')
@@ -34,6 +35,16 @@ class Run extends BaseCommand {
   async run () {
     // cli input
     const { flags } = await this.parse(Run)
+
+    if (flags.local) {
+      const [firstCpu] = os.cpus()
+      // note: the earliest versions of M1 macs return 'Apple processor' under model.
+      if (firstCpu?.model?.startsWith('Apple')) {
+        this.error('The --local flag is not supported on Apple Silicon Macs.')
+      } else {
+        this.warn('The --local flag is deprecated and will be removed in the next major release.')
+      }
+    }
 
     const spinner = ora()
 
@@ -204,7 +215,7 @@ Run.args = {}
 Run.flags = {
   ...BaseCommand.flags,
   local: Flags.boolean({
-    description: 'Run/debug actions locally (requires Docker running)',
+    description: '[deprecated] Run/debug actions locally (requires Docker running, not available on Apple Silicon Macs)',
     exclusive: ['no-actions']
   }),
   serve: Flags.boolean({
