@@ -586,7 +586,7 @@ describe('--login', () => {
     expect(mockConsoleCLIInstance.createWorkspace).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({ name: 'notexists', title: '' }))
   })
 
-  test('select template, -w notexists, promptConfirm false, should throw', async () => {
+  test('select template, -w notexists, --no-confirm-new-workspace (no confirm, create workspace)', async () => {
     const workspaceName = 'notexists'
     mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
     mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValue(false)
@@ -601,10 +601,32 @@ describe('--login', () => {
     command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
     command.argv = ['-w', workspaceName, '--no-confirm-new-workspace']
-    await expect(command.run()).rejects.toThrow(`Workspace '${workspaceName}' does not exist and creation aborted`)
+    await expect(command.run()).resolves.not.toThrow()
+    expect(mockConsoleCLIInstance.prompt.promptConfirm).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.createWorkspace).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({ name: workspaceName, title: '' }))
   })
 
-  test('select template, -w notexists, promptConfirm false, should throw coverage', async () => {
+  test('select template, -w notexists, --confirm-new-workspace (confirm result: false, throws error)', async () => {
+    const workspaceName = 'notexists'
+    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
+    mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValue(false)
+    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
+    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
+    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
+    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
+    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
+    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
+    mockConsoleCLIInstance.createWorkspace.mockResolvedValue(fakeWorkspaces[0])
+
+    command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
+
+    command.argv = ['-w', workspaceName, '--confirm-new-workspace']
+    await expect(command.run()).rejects.toThrow(`Workspace '${workspaceName}' does not exist and creation aborted`)
+    expect(mockConsoleCLIInstance.prompt.promptConfirm).toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.createWorkspace).not.toHaveBeenCalled()
+  })
+
+  test('select template, -w notexists, --confirm-new-workspace (confirm result: true, create workspace)', async () => {
     const workspaceName = 'notexists'
     mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
     mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValue(true)
@@ -615,30 +637,13 @@ describe('--login', () => {
     mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
     mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
     mockConsoleCLIInstance.createWorkspace.mockResolvedValue(fakeWorkspaces[0])
+
     command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
 
-    command.argv = ['-w', workspaceName, '--no-confirm-new-workspace']
+    command.argv = ['-w', workspaceName, '--confirm-new-workspace']
     await expect(command.run()).resolves.not.toThrow()
-  })
-
-  test('select template, -w notexists, --confirm-new-workspace', async () => {
-    const notexistsWorkspace = 'notexists'
-    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
-    mockConsoleCLIInstance.prompt.promptConfirm.mockResolvedValue(true)
-    mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue(fakeOrg)
-    mockConsoleCLIInstance.promptForSelectProject.mockResolvedValue(fakeProject)
-    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue(fakeWorkspaces)
-    mockConsoleCLIInstance.getServicePropertiesFromWorkspace.mockResolvedValue(fakeServicePropertiesNoAssetCompute)
-    mockConsoleCLIInstance.getEnabledServicesForOrg.mockResolvedValue(fakeSupportedOrgServices)
-    mockConsoleCLIInstance.getWorkspaceConfig.mockResolvedValue(fakeConfig)
-    mockConsoleCLIInstance.createWorkspace.mockResolvedValue(fakeWorkspaces[0])
-
-    command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
-
-    command.argv = ['-w', notexistsWorkspace, '--confirm-new-workspace']
-    await command.run()
-    expect(mockConsoleCLIInstance.prompt.promptConfirm).not.toHaveBeenCalled()
-    expect(mockConsoleCLIInstance.createWorkspace).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({ name: 'notexists', title: '' }))
+    expect(mockConsoleCLIInstance.prompt.promptConfirm).toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.createWorkspace).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({ name: workspaceName, title: '' }))
   })
 
   test('--extension dx/excshell/1 --extension dx/something/1 (found)', async () => {
