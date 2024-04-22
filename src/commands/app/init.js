@@ -322,7 +322,7 @@ class InitCommand extends TemplatesCommand {
     const workspaces = await consoleCLI.getWorkspaces(org.id, project.id)
     let workspace = workspaces.find(w => w.name.toLowerCase() === workspaceName.toLowerCase())
     if (!workspace) {
-      if (!flags['confirm-new-workspace']) {
+      if (flags['confirm-new-workspace']) {
         const shouldNewWorkspace = await consoleCLI.prompt.promptConfirm(`Workspace '${workspaceName}' does not exist \n > Do you wish to create a new workspace?`)
         if (!shouldNewWorkspace) {
           this.error(`Workspace '${workspaceName}' does not exist and creation aborted`)
