@@ -314,7 +314,7 @@ describe('--no-login', () => {
     await command.run()
 
     expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
-    expect(command.runCodeGenerators).toHaveBeenCalledWith(['base-app', 'add-ci', 'add-vscode-config', 'application'], false, 'cwd', 'basic')
+    expect(command.runCodeGenerators).toHaveBeenCalledWith(['base-app', 'add-ci', 'application'], false, 'cwd', 'basic')
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
@@ -464,7 +464,7 @@ describe('--no-login', () => {
     await command.run()
 
     expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
-    expect(command.runCodeGenerators).toHaveBeenCalledWith(['base-app', 'add-ci', 'add-vscode-config', 'application'], true, 'cwd', 'none')
+    expect(command.runCodeGenerators).toHaveBeenCalledWith(['base-app', 'add-ci', 'application'], true, 'cwd', 'none')
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
@@ -482,7 +482,7 @@ describe('--no-login', () => {
     await command.run()
 
     expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
-    expect(command.runCodeGenerators).toHaveBeenCalledWith(['base-app', 'add-ci', 'add-vscode-config', 'application'], true, 'cwd', 'adobe-recommended')
+    expect(command.runCodeGenerators).toHaveBeenCalledWith(['base-app', 'add-ci', 'application'], true, 'cwd', 'adobe-recommended')
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })

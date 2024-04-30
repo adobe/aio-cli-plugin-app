@@ -75,7 +75,7 @@ class InitCommand extends TemplatesCommand {
 
   getInitialGenerators (flags) {
     // TODO read from config to override
-    const initialGenerators = ['base-app', 'add-ci', 'add-vscode-config']
+    const initialGenerators = ['base-app', 'add-ci']
 
     if (flags['standalone-app']) {
       initialGenerators.push('application')
