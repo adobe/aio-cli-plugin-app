@@ -44,6 +44,18 @@ beforeEach(async () => {
   LogForwarding.init.mockResolvedValue(lf)
 })
 
+test('get log forwarding settings (expect init to be passed a config)', async () => {
+
+  const localConfig = new LogForwarding.LogForwardingConfig()
+  const serverConfig = new LogForwarding.LogForwardingConfig()
+
+  lf.getLocalConfig.mockReturnValue(localConfig)
+  lf.getServerConfig.mockResolvedValue(serverConfig)
+
+  await command.run()
+  expect(LogForwarding.init).toHaveBeenCalledWith(command.appConfig.aio)
+})
+
 test('get log forwarding settings (local and server are the same)', async () => {
   return new Promise(resolve => {
     const localConfig = new LogForwarding.LogForwardingConfig(
