@@ -45,7 +45,6 @@ beforeEach(async () => {
 })
 
 test('get log forwarding settings (expect init to be passed a config)', async () => {
-
   const localConfig = new LogForwarding.LogForwardingConfig()
   const serverConfig = new LogForwarding.LogForwardingConfig()
 
