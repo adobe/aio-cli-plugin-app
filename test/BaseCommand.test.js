@@ -302,6 +302,26 @@ test('will change error message when aio app outside of the application root (--
   expect(cmd.error).toHaveBeenCalledWith(expect.stringContaining(errorList.join('\n')))
 })
 
+test('will handle errors without stack traces when using --verbose flag', async () => {
+  const cmd = new TheCommand(['--verbose'])
+  cmd.error = jest.fn()
+  const errorWithoutStack = new Error('fake error')
+  delete errorWithoutStack.stack
+  await cmd.catch(errorWithoutStack)
+
+  expect(cmd.error).toHaveBeenCalledWith(expect.stringContaining('fake error'))
+})
+
+test('will handle errors without stack traces when not using --verbose flag', async () => {
+  const cmd = new TheCommand([])
+  cmd.error = jest.fn()
+  const errorWithoutStack = new Error('fake error')
+  delete errorWithoutStack.stack
+  await cmd.catch(errorWithoutStack)
+
+  expect(cmd.error).toHaveBeenCalledWith(expect.stringContaining('fake error'))
+})
+
 test('pjson', async () => {
   const cmd = new TheCommand([])
   cmd.config = { pjson: { name: 'fake', version: '0' } }
