@@ -15,7 +15,7 @@ const OPERATIONS = {
 }
 
 const AUDIT_SERVICE_ENPOINTS = {
-  stage: 'https://52381-683fuchsiaminnow-stage.adobeioruntime.net/api/v1/web/audit-log-api/event-post',
+  stage: '',
   prod: ''
 }
 
