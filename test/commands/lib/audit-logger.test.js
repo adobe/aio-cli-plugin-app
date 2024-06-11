@@ -30,6 +30,17 @@ const mockResponse = Promise.resolve({
     return {}
   }
 })
+const mockErrorResponse = Promise.resolve({
+  ok: false,
+  status: 400,
+  text: () => {
+    return {}
+  }
+})
+
+beforeEach(() => {
+  fetch.mockReset()
+})
 
 test('check valid operations', async () => {
   expect(auditLogger.OPERATIONS).toBeDefined()
@@ -47,6 +58,36 @@ test('sendAuditLogs with valid params', async () => {
     body: JSON.stringify({ event: mockLogEvent })
   }
   await auditLogger.sendAuditLogs(mockToken, mockLogEvent, mockEnv)
+  expect(fetch).toHaveBeenCalledTimes(1)
+  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENPOINTS[mockEnv], options)
+})
+
+test('sendAuditLogs with default params', async () => {
+  fetch.mockReturnValue(mockResponse)
+  const options = {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer ' + mockToken,
+      'Content-type': 'application/json'
+    },
+    body: JSON.stringify({ event: mockLogEvent })
+  }
+  await auditLogger.sendAuditLogs(mockToken, mockLogEvent)
+  expect(fetch).toHaveBeenCalledTimes(1)
+  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENPOINTS.prod, options)
+})
+
+test('sendAuditLogs error response', async () => {
+  fetch.mockReturnValue(mockErrorResponse)
+  const options = {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer ' + mockToken,
+      'Content-type': 'application/json'
+    },
+    body: JSON.stringify({ event: mockLogEvent })
+  }
+  await expect(auditLogger.sendAuditLogs(mockToken, mockLogEvent, mockEnv)).rejects.toThrow('Failed to send audit log - 400')
   expect(fetch).toHaveBeenCalledTimes(1)
   expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENPOINTS[mockEnv], options)
 })

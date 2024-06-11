@@ -15,8 +15,8 @@ const OPERATIONS = {
 }
 
 const AUDIT_SERVICE_ENPOINTS = {
-  stage: '',
-  prod: ''
+  stage: 'https://adp-auditlog-service-stage.adobeioruntime.net/api/v1/web/audit-log-api/event-post',
+  prod: 'https://adp-auditlog-service-prod.adobeioruntime.net/api/v1/web/audit-log-api/event-post'
 }
 
 /**
