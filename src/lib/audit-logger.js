@@ -11,7 +11,7 @@ governing permissions and limitations under the License.
 const fetch = require('node-fetch')
 
 const OPERATIONS = {
-  APP_DEPLOY: 'cli_app_deploy1'
+  APP_DEPLOY: 'ab_app_deploy'
 }
 
 const AUDIT_SERVICE_ENPOINTS = {
@@ -19,7 +19,13 @@ const AUDIT_SERVICE_ENPOINTS = {
   prod: ''
 }
 
-async function sendAuditLogs(accessToken, logEvent, env = 'prod') {
+/**
+ * Send audit log events to audit service
+ * @param {string} accessToken valid access token
+ * @param {object} logEvent logEvent details
+ * @param {string} env valid env stage|prod
+ */
+async function sendAuditLogs (accessToken, logEvent, env = 'prod') {
   const url = AUDIT_SERVICE_ENPOINTS[env]
   const payload = {
     event: logEvent
@@ -33,7 +39,7 @@ async function sendAuditLogs(accessToken, logEvent, env = 'prod') {
     body: JSON.stringify(payload)
   }
   const response = await fetch(url, options)
-  if(response.status !== 200){
+  if (response.status !== 200) {
     const err = await response.text()
     throw new Error('Failed to send audit log - ' + response.status + ' ' + err)
   }
@@ -41,5 +47,6 @@ async function sendAuditLogs(accessToken, logEvent, env = 'prod') {
 
 module.exports = {
   sendAuditLogs,
-  OPERATIONS
+  OPERATIONS,
+  AUDIT_SERVICE_ENPOINTS
 }
