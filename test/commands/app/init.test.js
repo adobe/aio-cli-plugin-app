@@ -142,7 +142,8 @@ beforeEach(() => {
 
   command = new TheCommand([])
   command.config = {
-    findCommand: jest.fn(() => ({}))
+    findCommand: jest.fn(() => ({})),
+    runHook: jest.fn()
   }
 
   command.selectTemplates = jest.fn()
@@ -313,6 +314,7 @@ describe('--no-login', () => {
     command.argv = ['--no-login', '--standalone-app']
     await command.run()
 
+    expect(command.config.runHook).not.toHaveBeenCalled()
     expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(command.runCodeGenerators).toHaveBeenCalledWith(['base-app', 'add-ci', 'add-vscode-config', 'application'], false, 'cwd', 'basic')
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
@@ -328,6 +330,7 @@ describe('--no-login', () => {
     command.argv = ['--no-login', '--repo=adobe/appbuilder-quickstarts/qr-code']
     await command.run()
 
+    expect(command.config.runHook).toHaveBeenCalled()
     expect(command.installTemplates).not.toHaveBeenCalled()
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
@@ -356,6 +359,7 @@ describe('--no-login', () => {
     command.argv = ['--login', '--repo=adobe/appbuilder-quickstarts/qr-code']
     await command.run()
 
+    expect(command.config.runHook).toHaveBeenCalled()
     expect(command.installTemplates).not.toHaveBeenCalled()
     expect(LibConsoleCLI.init).toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).toHaveBeenCalled()
@@ -375,6 +379,7 @@ describe('--no-login', () => {
 
     await command.run()
 
+    expect(command.config.runHook).toHaveBeenCalled()
     expect(command.error).toHaveBeenCalledWith('--repo does not point to a valid Adobe App Builder app')
     expect(command.installTemplates).not.toHaveBeenCalled()
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()

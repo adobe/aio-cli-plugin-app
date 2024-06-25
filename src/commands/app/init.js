@@ -369,6 +369,9 @@ class InitCommand extends TemplatesCommand {
   }
 
   async withQuickstart (fullRepo, githubPat) {
+    // telemetry hook for quickstart installs
+    await this.config.runHook('telemetry', { data: `installQuickstart:${fullRepo}` })
+
     const octokit = new Octokit({
       auth: githubPat ?? '',
       userAgent: 'ADP App Builder v1'
