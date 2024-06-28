@@ -18,9 +18,10 @@ const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { Flags } = require('@oclif/core')
-const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata } = require('../../lib/app-helper')
+const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getCliInfo } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
+const { sendAuditLogs, OPERATIONS } = require('../../lib/audit-logger')
 
 const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
 const POST_DEPLOY_EVENT_REG = 'post-deploy-event-reg'
@@ -114,6 +115,20 @@ class Deploy extends BuildCommand {
       } else {
         this.log('skipping publish phase...')
       }
+
+      // send audit log event for successful deploy
+      try {
+        const cliDetails = await getCliInfo()
+        const logEvent = this.getAuditLogEvent(flags, aioConfig.project)
+        if (logEvent) {
+          await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
+        } else {
+          this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
+        }
+      } catch (error) {
+        // log any error
+        this.log(chalk.red(chalk.bold('Warning: failed to send audit log event for deployment - ' + error.message)))
+      }
     } catch (error) {
       spinner.stop()
       // delegate to top handler
@@ -123,6 +138,24 @@ class Deploy extends BuildCommand {
     // final message
     // TODO better output depending on which ext points/app and flags
     this.log(chalk.green(chalk.bold('Successful deployment 🏄')))
+  }
+
+  getAuditLogEvent (flags, project) {
+    let logEvent
+    if (project && project.org && project.workspace) {
+      logEvent = {
+        orgId: project.org.id,
+        projectId: project.id,
+        workspaceId: project.workspace.id,
+        workspaceName: project.workspace.name,
+        operation: OPERATIONS.APP_DEPLOY,
+        timestamp: new Date().valueOf(),
+        data: {
+          cliCommandFlags: flags
+        }
+      }
+    }
+    return logEvent
   }
 
   async deploySingleConfig (name, config, flags, spinner) {
