@@ -41,11 +41,6 @@ class Deploy extends BuildCommand {
 
     // if there are no extensions, then set publish to false
     flags.publish = flags.publish && !isStandaloneApp
-    let libConsoleCLI // <= this can be undefined later on, and it was not checked
-    if (flags.publish) {
-      // force login at beginning (if required)
-      libConsoleCLI = await this.getLibConsoleCLI()
-    }
 
     if (
       (!flags.publish && !flags['web-assets'] && !flags.actions)
@@ -86,7 +81,7 @@ class Deploy extends BuildCommand {
 
       // 2. If workspace is prod and has extensions, check if the app is published
       if (!isStandaloneApp && aioConfig?.project?.workspace?.name === 'Production') {
-        const extension = await this.getApplicationExtension(libConsoleCLI, aioConfig)
+        const extension = await this.getApplicationExtension(aioConfig)
         if (extension && extension.status === 'PUBLISHED') {
           flags.publish = false // if the app is production and published, then skip publish later on
           // if the app is published and no force-deploy flag is set, then skip deployment
@@ -109,7 +104,7 @@ class Deploy extends BuildCommand {
 
       // 4. deploy extension manifest
       if (flags.publish) {
-        const payload = await this.publishExtensionPoints(libConsoleCLI, deployConfigs, aioConfig, flags['force-publish'])
+        const payload = await this.publishExtensionPoints(deployConfigs, aioConfig, flags['force-publish'])
         this.log(chalk.blue(chalk.bold(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': '${Object.keys(payload.endpoints)}'`)))
       } else {
         this.log('skipping publish phase...')
@@ -263,7 +258,9 @@ class Deploy extends BuildCommand {
     }
   }
 
-  async publishExtensionPoints (libConsoleCLI, deployConfigs, aioConfig, force) {
+  async publishExtensionPoints (deployConfigs, aioConfig, force) {
+    const libConsoleCLI = await this.getLibConsoleCLI()
+
     const payload = buildExtensionPointPayloadWoMetadata(deployConfigs)
     // build metadata
     if (payload.endpoints['dx/excshell/1'] && payload.endpoints['dx/excshell/1'].view) {
@@ -281,7 +278,9 @@ class Deploy extends BuildCommand {
     return newPayload
   }
 
-  async getApplicationExtension (libConsoleCLI, aioConfig) {
+  async getApplicationExtension (aioConfig) {
+    const libConsoleCLI = await this.getLibConsoleCLI()
+
     const { appId } = await libConsoleCLI.getProject(aioConfig.project.org.id, aioConfig.project.id)
     const applicationExtensions = await libConsoleCLI.getApplicationExtensions(aioConfig.project.org.id, appId)
     return applicationExtensions.find(extension => extension.appId === appId)

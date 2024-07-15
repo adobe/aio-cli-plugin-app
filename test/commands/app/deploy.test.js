@@ -239,18 +239,6 @@ test('flags', async () => {
 
 describe('run', () => {
   let command
-  /** @private */
-  function createFullConfig ({ workspaceName }) {
-    return {
-      aio: {
-        project: {
-          workspace: {
-            name: workspaceName
-          }
-        }
-      }
-    }
-  }
 
   beforeEach(() => {
     command = new TheCommand([])
@@ -263,7 +251,15 @@ describe('run', () => {
     command.buildOneExt = jest.fn()
     command.getAppExtConfigs = jest.fn()
     command.getLibConsoleCLI = jest.fn(() => mockLibConsoleCLI)
-    command.getFullConfig = jest.fn().mockReturnValue(createFullConfig({ workspaceName: 'foo' }))
+    command.getFullConfig = jest.fn().mockReturnValue({
+      aio: {
+        project: {
+          workspace: {
+            name: 'foo'
+          }
+        }
+      }
+    })
 
     mockRuntimeLib.deployActions.mockResolvedValue({ actions: [] })
     mockWebLib.bundle.mockResolvedValue({ run: mockBundleFunc })
@@ -313,26 +309,30 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, 'web-assets': false }), expect.anything())
   })
 
-  test('build & deploy only some actions using --action (workspace: Production, standalone-app: false)', async () => {
-    // set the workspace name in the config to Production
-    command.getFullConfig.mockReturnValue(createFullConfig({ workspaceName: 'Production' }))
+  test('build & deploy only one action using --action (workspace: Production)', async () => {
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'exc'))
+    mockGetExtensionPointsRetractedApp() // not published
+    mockGetProject()
+    command.getFullConfig.mockResolvedValue({
+      aio: {
+        project: {
+          workspace: {
+            name: 'Production'
+          },
+          org: {
+            id: '1111'
+          }
+        }
+      }
+    })
 
-    // make it not a standalone-app
-    const appConfig = createAppConfig(command.appConfig, 'app-exc-nui')
-    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
-
-    command.argv = ['--action', 'c']
+    command.argv = ['--no-web-assets', '--action', 'c']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
-    expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(0)
-
-    expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(appConfig.application, {
-      filterEntities: { actions: ['c'] }
-    },
-    expect.any(Function))
+    expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(1)
   })
 
   test('build & deploy only some actions using --action', async () => {
