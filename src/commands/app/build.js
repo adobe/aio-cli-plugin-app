@@ -70,14 +70,16 @@ class Build extends BaseCommand {
     }
 
     if (flags.actions) {
-      if (config.app.hasBackend && (flags['force-build'] || !fs.existsSync(config.actions.dist))) {
+      // removed flags['force-build'] || as it is always forced at this point, we need to check to decide what to build
+      // if no backend, we skip the build
+      if (config.app.hasBackend) { //  && (flags['force-build'] || !fs.existsSync(config.actions.dist))) {
         try {
           let builtList = []
           const script = await runInProcess(config.hooks['build-actions'], config)
           aioLogger.debug(`run hook for 'build-actions' for actions in '${name}' returned ${script}`)
           spinner.start(`Building actions for '${name}'`)
           if (!script) {
-            builtList = await RuntimeLib.buildActions(config, filterActions, true)
+            builtList = await RuntimeLib.buildActions(config, filterActions, flags['force-build']) // skipCheck is false
           }
           if (builtList.length > 0) {
             spinner.succeed(chalk.green(`Built ${builtList.length} action(s) for '${name}'`))
@@ -85,7 +87,7 @@ class Build extends BaseCommand {
             if (script) {
               spinner.fail(chalk.green(`build-action skipped by hook '${name}'`))
             } else {
-              spinner.fail(chalk.green(`No actions built for '${name}'`))
+              spinner.info(chalk.green(`No actions built for '${name}'`))
             }
           }
           aioLogger.debug(`RuntimeLib.buildActions returned ${builtList}`)
@@ -127,6 +129,7 @@ class Build extends BaseCommand {
           throw err
         }
       } else {
+        // TODO: specify which ... keep this useful
         spinner.info(`no frontend or a build already exists, skipping frontend build for '${name}'`)
       }
     }
@@ -163,8 +166,8 @@ Build.flags = {
     allowNo: true
   }),
   'force-build': Flags.boolean({
-    description: '[default: true] Force a build even if one already exists',
-    default: true,
+    description: '[default: false] Force a build even if one already exists',
+    default: false,
     allowNo: true
   }),
   'content-hash': Flags.boolean({

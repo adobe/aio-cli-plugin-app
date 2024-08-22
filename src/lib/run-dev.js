@@ -82,7 +82,7 @@ async function runDev (config, dataDir, options = {}, log = () => {}, inprocHook
 
       // build and deploy actions
       log('building actions..')
-      await buildActions(devConfig, null, true /* force build */)
+      await buildActions(devConfig, null, false /* force build */)
 
       const { cleanup: watcherCleanup } = await actionsWatcher({ config: devConfig, isLocal, log, inprocHook })
       cleanup.add(() => watcherCleanup(), 'stopping action watcher...')
