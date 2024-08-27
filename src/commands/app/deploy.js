@@ -26,6 +26,8 @@ const { sendAuditLogs, OPERATIONS } = require('../../lib/audit-logger')
 const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
 const POST_DEPLOY_EVENT_REG = 'post-deploy-event-reg'
 
+const deployLogMessage = (workspaceName) => `Starting deployment for the App Builder application in workspace ${workspaceName}`;
+
 class Deploy extends BuildCommand {
   async run () {
     // cli input
@@ -151,7 +153,8 @@ class Deploy extends BuildCommand {
         operation: OPERATIONS.APP_DEPLOY,
         timestamp: new Date().valueOf(),
         data: {
-          cliCommandFlags: flags
+          cliCommandFlags: flags,
+          opDetailsStr: deployLogMessage(project.workspace.name)
         }
       }
     }

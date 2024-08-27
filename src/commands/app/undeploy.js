@@ -17,8 +17,11 @@ const { Flags } = require('@oclif/core')
 
 const BaseCommand = require('../../BaseCommand')
 const webLib = require('@adobe/aio-lib-web')
-const { runInProcess, buildExtensionPointPayloadWoMetadata } = require('../../lib/app-helper')
+const { runInProcess, buildExtensionPointPayloadWoMetadata, getCliInfo } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
+const { sendAuditLogs, OPERATIONS } = require('../../lib/audit-logger')
+
+const undeployLogMessage = (workspaceName) => `Starting undeployment for the App Builder application in workspace ${workspaceName}`;
 
 class Undeploy extends BaseCommand {
   async run () {
@@ -57,6 +60,21 @@ class Undeploy extends BaseCommand {
       } else {
         this.log('skipping unpublish phase...')
       }
+
+      // 3. send audit log event for successful undeploy
+      try {
+        const cliDetails = await getCliInfo()
+        const logEvent = this.getAuditLogEvent(flags, aioConfig.project)
+        if (logEvent) {
+          await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
+        } else {
+          this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
+        }
+      } catch (error) {
+        // log any error
+        this.log(chalk.red(chalk.bold('Warning: failed to send audit log event for deployment - ' + error.message)))
+      }
+
     } catch (error) {
       spinner.stop()
       // delegate to top handler
@@ -64,6 +82,25 @@ class Undeploy extends BaseCommand {
     }
     // final message
     this.log(chalk.green(chalk.bold('Undeploy done !')))
+  }
+
+  getAuditLogEvent (flags, project) {
+    let logEvent
+    if (project && project.org && project.workspace) {
+      logEvent = {
+        orgId: project.org.id,
+        projectId: project.id,
+        workspaceId: project.workspace.id,
+        workspaceName: project.workspace.name,
+        operation: OPERATIONS.APP_UNDEPLOY,
+        timestamp: new Date().valueOf(),
+        data: {
+          cliCommandFlags: flags,
+          opDetailsStr: undeployLogMessage(project.workspace.name)
+        }
+      }
+    }
+    return logEvent
   }
 
   async undeployOneExt (extName, config, flags, spinner) {
