@@ -12,7 +12,8 @@ const fetch = require('node-fetch')
 
 const OPERATIONS = {
   APP_DEPLOY: 'ab_app_deploy',
-  APP_UNDEPLOY: 'ab_app_undeploy'
+  APP_UNDEPLOY: 'ab_app_undeploy',
+  APP_TEST: 'ab_app_test' // todo : remove after testing
 }
 
 const AUDIT_SERVICE_ENPOINTS = {
