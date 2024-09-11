@@ -47,6 +47,8 @@ class Undeploy extends BaseCommand {
 
     const spinner = ora()
     try {
+      const aioConfig = (await this.getFullConfig()).aio
+
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
         const v = values[i]
@@ -54,7 +56,6 @@ class Undeploy extends BaseCommand {
       }
       // 2. unpublish extension manifest
       if (flags.unpublish && !(keys.length === 1 && keys[0] === 'application')) {
-        const aioConfig = (await this.getFullConfig()).aio
         const payload = await this.unpublishExtensionPoints(libConsoleCLI, undeployConfigs, aioConfig, flags['force-unpublish'])
         this.log(chalk.blue(chalk.bold(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': '${Object.keys(payload.endpoints)}'`)))
       } else {

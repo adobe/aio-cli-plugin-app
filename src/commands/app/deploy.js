@@ -145,6 +145,8 @@ class Deploy extends BuildCommand {
   getAuditLogEvent (flags, project) {
     let logEvent
     if (project && project.org && project.workspace) {
+
+      const deployLogMessageStr = deployLogMessage(project.workspace.name);
       logEvent = {
         orgId: project.org.id,
         projectId: project.id,
@@ -154,7 +156,7 @@ class Deploy extends BuildCommand {
         timestamp: new Date().valueOf(),
         data: {
           cliCommandFlags: flags,
-          opDetailsStr: deployLogMessage(project.workspace.name)
+          opDetailsStr: deployLogMessageStr
         }
       }
     }
