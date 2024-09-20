@@ -72,7 +72,7 @@ class Build extends BaseCommand {
     if (flags.actions) {
       // removed flags['force-build'] || as it is always forced at this point, we need to check to decide what to build
       // if no backend, we skip the build
-      if (config.app.hasBackend) { //  && (flags['force-build'] || !fs.existsSync(config.actions.dist))) {
+      if (config.app.hasBackend) {
         try {
           let builtList = []
           const script = await runInProcess(config.hooks['build-actions'], config)
@@ -96,7 +96,7 @@ class Build extends BaseCommand {
           throw err
         }
       } else {
-        spinner.info(`no backend or a build already exists, skipping action build for '${name}'`)
+        spinner.info(`no backend, skipping action build for '${name}'`)
       }
     }
     if (flags['web-assets']) {
@@ -130,7 +130,7 @@ class Build extends BaseCommand {
         }
       } else {
         // TODO: specify which ... keep this useful
-        spinner.info(`no frontend or a build already exists, skipping frontend build for '${name}'`)
+        spinner.info(chalk.green(`No frontend or a build already exists, skipping frontend build for '${name}'`))
       }
     }
     try {
