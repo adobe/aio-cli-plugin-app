@@ -13,6 +13,8 @@ governing permissions and limitations under the License.
 const ora = require('ora')
 const chalk = require('chalk')
 const open = require('open')
+const fs = require('fs');
+const path = require('path');
 
 const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
@@ -100,6 +102,8 @@ class Deploy extends BuildCommand {
         }
       }
 
+      let opItems;
+
       // 3. deploy actions and web assets for each extension
       // Possible improvements:
       // - parallelize
@@ -107,7 +111,7 @@ class Deploy extends BuildCommand {
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
         const v = values[i]
-        await this.deploySingleConfig(k, v, flags, spinner)
+        opItems = await this.deploySingleConfig(k, v, flags, spinner)
       }
 
       // 4. deploy extension manifest
@@ -123,7 +127,14 @@ class Deploy extends BuildCommand {
         const cliDetails = await getCliInfo()
         const logEvent = this.getAuditLogEvent(flags, aioConfig.project)
         if (logEvent) {
-          await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
+          if (Array.isArray(opItems) && opItems.length > 0) {
+            logEvent.data.opItems = opItems;
+            logEvent.operation = OPERATIONS.APP_ASSETS_DEPLOYED;
+            await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env);
+          }
+          delete logEvent?.data?.opItems;
+          logEvent.operation = OPERATIONS.APP_DEPLOY;
+          await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env);
         } else {
           this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
         }
@@ -161,6 +172,47 @@ class Deploy extends BuildCommand {
       }
     }
     return logEvent
+  }
+
+  countFilesByType(directory) {
+    if (!fs.existsSync(directory)) {
+      return "Directory does not exist.";
+    }
+  
+    const files = fs.readdirSync(directory);
+    
+    if (files.length === 0) {
+      return "No files for deploy.";
+    }
+  
+    const fileTypeCounts = {};
+  
+    files.forEach(file => {
+      const ext = path.extname(file).toLowerCase() || 'no extension';
+      if (fileTypeCounts[ext]) {
+        fileTypeCounts[ext]++;
+      } else {
+        fileTypeCounts[ext] = 1;
+      }
+    });
+  
+    let log = []; // `Files deployed -\n`
+  
+    Object.keys(fileTypeCounts).forEach(ext => {
+      const count = fileTypeCounts[ext];
+      let description;
+  
+      if (ext === '.js') description = 'Javascript file(s)';
+      else if (ext === '.css') description = 'CSS file(s)';
+      else if (ext === '.html') description = 'HTML page(s)';
+      else if (['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'].includes(ext)) description = 'image(s)';
+      else if (ext === 'no extension') description = 'file(s) without extension';
+      else description = `${ext} file(s)`;
+  
+      log.push(`${count} ${description}\n`);
+    });
+  
+    return log;
   }
 
   async deploySingleConfig (name, config, flags, spinner) {
@@ -245,8 +297,13 @@ class Deploy extends BuildCommand {
           if (script) {
             spinner.fail(chalk.green(`deploy-static skipped by hook '${name}'`))
           } else {
-            deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
+            deployedFrontendUrl = await webLib.deployWeb(config, onProgress)            
             spinner.succeed(chalk.green(message))
+            const filesLogCount = this.countFilesByType(config.web.distProd);
+            const opItems = filesLogCount;
+            const filesDeployedMessage = `All static assets for the App Builder application in workspace: ${name} were successfully deployed to the CDN. Files deployed : ${opItems.join('\n')}`;
+            spinner.succeed(chalk.green(filesDeployedMessage))
+            return opItems;
           }
         } catch (err) {
           spinner.fail(chalk.green(message))

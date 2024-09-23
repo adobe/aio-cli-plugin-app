@@ -24,7 +24,8 @@ const { sendAuditLogs, OPERATIONS } = require('../../lib/audit-logger')
 const undeployLogMessage = (workspaceName) => `Starting undeployment for the App Builder application in workspace ${workspaceName}`;
 
 class Undeploy extends BaseCommand {
-  async run () {
+
+  async run() {
     // cli input
     const { flags } = await this.parse(Undeploy)
 
@@ -48,11 +49,19 @@ class Undeploy extends BaseCommand {
     const spinner = ora()
     try {
       const aioConfig = (await this.getFullConfig()).aio
+      const cliDetails = await getCliInfo()
+      const logEvent = this.getAuditLogEvent(flags, aioConfig.project)
 
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
         const v = values[i]
-        await this.undeployOneExt(k, v, flags, spinner)
+        const logData = {
+          workspaceName: aioConfig.project.workspace.name,
+          logEvent,
+          accessToken: cliDetails.accessToken,
+          env: cliDetails.env,
+        };
+        await this.undeployOneExt(k, v, flags, spinner, logData)
       }
       // 2. unpublish extension manifest
       if (flags.unpublish && !(keys.length === 1 && keys[0] === 'application')) {
@@ -64,9 +73,8 @@ class Undeploy extends BaseCommand {
 
       // 3. send audit log event for successful undeploy
       try {
-        const cliDetails = await getCliInfo()
-        const logEvent = this.getAuditLogEvent(flags, aioConfig.project)
         if (logEvent) {
+          logEvent.operation = OPERATIONS.APP_UNDEPLOY;
           await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
         } else {
           this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
@@ -85,7 +93,7 @@ class Undeploy extends BaseCommand {
     this.log(chalk.green(chalk.bold('Undeploy done !')))
   }
 
-  getAuditLogEvent (flags, project) {
+  getAuditLogEvent(flags, project) {
     let logEvent
     if (project && project.org && project.workspace) {
       logEvent = {
@@ -104,7 +112,7 @@ class Undeploy extends BaseCommand {
     return logEvent
   }
 
-  async undeployOneExt (extName, config, flags, spinner) {
+  async undeployOneExt(extName, config, flags, spinner, logData = {}) {
     const onProgress = !flags.verbose
       ? info => {
         spinner.text = info
@@ -148,6 +156,14 @@ class Undeploy extends BaseCommand {
           if (!script) {
             await webLib.undeployWeb(config, onProgress)
           }
+
+          const logEvent = logData?.logEvent;
+
+          if (logData?.accessToken && logEvent && logData?.env) {
+            logEvent.operation = OPERATIONS.APP_ASSETS_UNDEPLOYED;
+            logEvent.data.opDetailsStr = `All static assets for the App Builder application in workspace: ${logData?.workspaceName} were successfully undeployed from the CDN`;
+            await sendAuditLogs(logData.accessToken, logEvent, logData.env)
+          }
           spinner.succeed(chalk.green(`Un-Deploying web assets for ${extName}`))
         } catch (err) {
           spinner.fail(chalk.green(`Un-Deploying web assets for ${extName}`))
@@ -165,7 +181,7 @@ class Undeploy extends BaseCommand {
     }
   }
 
-  async unpublishExtensionPoints (libConsoleCLI, deployConfigs, aioConfig, force) {
+  async unpublishExtensionPoints(libConsoleCLI, deployConfigs, aioConfig, force) {
     const payload = buildExtensionPointPayloadWoMetadata(deployConfigs)
     let res
     if (force) {
