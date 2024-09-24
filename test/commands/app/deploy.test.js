@@ -245,6 +245,7 @@ test('flags', async () => {
 
 describe('run', () => {
   let command
+
   beforeEach(() => {
     command = new TheCommand([])
     command.error = jest.fn()
@@ -314,6 +315,32 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, 'web-assets': false }), expect.anything())
   })
 
+  test('build & deploy only one action using --action (workspace: Production)', async () => {
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'exc'))
+    mockGetExtensionPointsRetractedApp() // not published
+    mockGetProject()
+    command.getFullConfig.mockResolvedValue({
+      aio: {
+        project: {
+          workspace: {
+            name: 'Production'
+          },
+          org: {
+            id: '1111'
+          }
+        }
+      }
+    })
+
+    command.argv = ['--no-web-assets', '--action', 'c']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
+    expect(command.buildOneExt).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(1)
+  })
+
   test('build & deploy only some actions using --action', async () => {
     const appConfig = createAppConfig(command.appConfig)
     command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
@@ -324,6 +351,7 @@ describe('run', () => {
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(0)
 
     expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, 'web-assets': false, action: ['a', 'b', 'c'] }), expect.anything())
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(appConfig.application, {
