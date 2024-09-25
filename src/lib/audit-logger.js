@@ -49,23 +49,20 @@ async function sendAuditLogs (accessToken, logEvent, env = 'prod') {
   }
 }
 
-const _getDeployLogMessage = (workspaceName) => `Starting deployment for the App Builder application in workspace ${workspaceName}`
-const _getUndeployLogMessage = (workspaceName) => `Starting undeployment for the App Builder application in workspace ${workspaceName}`
-
 /**
  *
- * @param flags {object} cli flags
- * @param project {object} project details
- * @param event {string} log event name
+ * @param {object} flags cli flags
+ * @param {object} project details
+ * @param {string} event log name
  * @returns {object} logEvent
  */
 function getAuditLogEvent (flags, project, event) {
   let logEvent, logStrMsg
   if (project && project.org && project.workspace) {
     if (event === 'AB_APP_DEPLOY') {
-      logStrMsg = _getDeployLogMessage(project.workspace.name)
+      logStrMsg = `Starting deployment for the App Builder application in workspace ${project.workspace.name}`
     } else if (event === 'AB_APP_UNDEPLOY') {
-      logStrMsg = _getUndeployLogMessage(project.workspace.name)
+      logStrMsg = `Starting undeployment for the App Builder application in workspace ${project.workspace.name}`
     } else if (event === 'AB_APP_ASSETS_UNDEPLOYED') {
       logStrMsg = `All static assets for the App Builder application in workspace: ${project.workspace.name} were successfully undeployed from the CDN`
     } else if (event === 'AB_APP_ASSETS_DEPLOYED') {
@@ -77,7 +74,7 @@ function getAuditLogEvent (flags, project, event) {
       projectId: project.id,
       workspaceId: project.workspace.id,
       workspaceName: project.workspace.name,
-      operation: event in OPERATIONS ? OPERATIONS[event] : OPERATIONS.APP_TEST,
+      operation: event in OPERATIONS ? OPERATIONS[event] : OPERATIONS.AB_APP_TEST,
       timestamp: new Date().valueOf(),
       data: {
         cliCommandFlags: flags,

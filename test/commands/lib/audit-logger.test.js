@@ -14,14 +14,12 @@ const fetch = require('node-fetch')
 jest.mock('node-fetch', () => jest.fn())
 const auditLogger = require('../../../src/lib/audit-logger')
 const OPERATIONS = {
-  AB_APP_DEPLOY: 'app_deploy',
-  AB_APP_UNDEPLOY: 'app_undeploy',
-  AB_APP_ASSETS_UNDEPLOYED: 'assets_undeployed',
-  AB_APP_ASSETS_DEPLOYED: 'assets_deployed',
-  APP_TEST: 'app_test'
+  AB_APP_DEPLOY: 'ab_app_deploy',
+  AB_APP_UNDEPLOY: 'ab_app_undeploy',
+  AB_APP_ASSETS_UNDEPLOYED: 'ab_app_assets_undeployed',
+  AB_APP_ASSETS_DEPLOYED: 'ab_app_assets_deployed',
+  AB_APP_TEST: 'ab_app_test'
 }
-
-const AB_PP_DEPLOY = 'ab_app_deploy'
 
 const mockToken = 'mocktoken'
 const mockEnv = 'stage'
@@ -45,18 +43,8 @@ const mockErrorResponse = Promise.resolve({
   }
 })
 
-jest.mock('../../../src/lib/audit-logger', () => ({
-  _getDeployLogMessage: jest.fn(),
-  _getUndeployLogMessage: jest.fn()
-}))
-
 beforeEach(() => {
   fetch.mockReset()
-})
-
-test('check valid operations', async () => {
-  expect(auditLogger.OPERATIONS).toBeDefined()
-  expect(auditLogger.OPERATIONS.APP_DEPLOY).toBe(AB_PP_DEPLOY)
 })
 
 test('sendAuditLogs with valid params', async () => {
@@ -112,13 +100,8 @@ describe('getAuditLogEvent', () => {
     workspace: { id: 'ws789', name: 'testWorkspace' }
   }
 
-  const mockDeployMessage = 'Deployment log message'
-  const mockUndeployMessage = 'Undeployment log message'
-
-  beforeEach(() => {
-    require('../../../src/lib/audit-logger')._getDeployLogMessage.mockReturnValue(mockDeployMessage)
-    require('../../../src/lib/audit-logger')._getUndeployLogMessage.mockReturnValue(mockUndeployMessage)
-  })
+  const mockDeployMessage = 'Starting deployment for the App Builder application in workspace testWorkspace'
+  const mockUndeployMessage = 'Starting undeployment for the App Builder application in workspace testWorkspace'
 
   test('should return correct log event for AB_APP_DEPLOY event', () => {
     const event = 'AB_APP_DEPLOY'
@@ -136,7 +119,6 @@ describe('getAuditLogEvent', () => {
         opDetailsStr: mockDeployMessage
       }
     })
-    expect(require('../../../src/lib/audit-logger')._getDeployLogMessage).toHaveBeenCalledWith('testWorkspace')
   })
 
   test('should return correct log event for AB_APP_UNDEPLOY event', () => {
@@ -155,7 +137,6 @@ describe('getAuditLogEvent', () => {
         opDetailsStr: mockUndeployMessage
       }
     })
-    expect(require('../../../src/lib/audit-logger')._getUndeployLogMessage).toHaveBeenCalledWith('testWorkspace')
   })
 
   test('should return correct log event for AB_APP_ASSETS_UNDEPLOYED event', () => {
@@ -210,7 +191,7 @@ describe('getAuditLogEvent', () => {
       projectId: 'proj456',
       workspaceId: 'ws789',
       workspaceName: 'testWorkspace',
-      operation: OPERATIONS.APP_TEST,
+      operation: OPERATIONS.AB_APP_TEST,
       timestamp: expect.any(Number),
       data: {
         cliCommandFlags: flags,
