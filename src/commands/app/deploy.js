@@ -23,15 +23,13 @@ const { Flags } = require('@oclif/core')
 const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getCliInfo } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
-const { sendAuditLogs, OPERATIONS } = require('../../lib/audit-logger')
+const { sendAuditLogs, getAuditLogEvent } = require('../../lib/audit-logger')
 
 const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
 const POST_DEPLOY_EVENT_REG = 'post-deploy-event-reg'
 
-const deployLogMessage = (workspaceName) => `Starting deployment for the App Builder application in workspace ${workspaceName}`;
-
 class Deploy extends BuildCommand {
-  async run () {
+  async run() {
     // cli input
     const { flags } = await this.parse(Deploy)
 
@@ -56,12 +54,11 @@ class Deploy extends BuildCommand {
 
     try {
       const aioConfig = (await this.getFullConfig()).aio
+      const cliDetails = await getCliInfo()
 
       // 1. update log forwarding configuration
       // note: it is possible that .aio file does not exist, which means there is no local lg config
-      if (aioConfig?.project?.workspace &&
-          flags['log-forwarding-update'] &&
-          flags.actions) {
+      if (aioConfig?.project?.workspace && flags['log-forwarding-update'] && flags.actions) {
         spinner.start('Updating log forwarding configuration')
         try {
           const lf = await LogForwarding.init(aioConfig)
@@ -97,16 +94,30 @@ class Deploy extends BuildCommand {
         }
       }
 
-      let opItems;
+      // 3. send deploy log event
+      const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_DEPLOY');
+      if (logEvent) {
+        await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env);
+      } else {
+        this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
+      }
 
-      // 3. deploy actions and web assets for each extension
+      // 4. deploy actions and web assets for each extension
       // Possible improvements:
       // - parallelize
       // - break into smaller pieces deploy, allowing to first deploy all actions then all web assets
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
         const v = values[i]
-        opItems = await this.deploySingleConfig(k, v, flags, spinner)
+        await this.deploySingleConfig(k, v, flags, spinner)
+        if (v.app.hasFrontend && flags['web-assets']) {
+          const opItems = this.getFilesCountWithExtension(v.web.distProd);
+          if (Array.isArray(opItems) && opItems.length) {
+            const assetDeployedLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_DEPLOYED');
+            assetDeployedLogEvent.data.opItems = opItems;
+            await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env);
+          }
+        }
       }
 
       // 4. deploy extension manifest
@@ -117,26 +128,6 @@ class Deploy extends BuildCommand {
         this.log('skipping publish phase...')
       }
 
-      // send audit log event for successful deploy
-      try {
-        const cliDetails = await getCliInfo()
-        const logEvent = this.getAuditLogEvent(flags, aioConfig.project)
-        if (logEvent) {
-          if (Array.isArray(opItems) && opItems.length > 0) {
-            logEvent.data.opItems = opItems;
-            logEvent.operation = OPERATIONS.APP_ASSETS_DEPLOYED;
-            await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env);
-          }
-          delete logEvent?.data?.opItems;
-          logEvent.operation = OPERATIONS.APP_DEPLOY;
-          await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env);
-        } else {
-          this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
-        }
-      } catch (error) {
-        // log any error
-        this.log(chalk.red(chalk.bold('Warning: failed to send audit log event for deployment - ' + error.message)))
-      }
     } catch (error) {
       spinner.stop()
       // delegate to top handler
@@ -148,40 +139,24 @@ class Deploy extends BuildCommand {
     this.log(chalk.green(chalk.bold('Successful deployment 🏄')))
   }
 
-  getAuditLogEvent (flags, project) {
-    let logEvent
-    if (project && project.org && project.workspace) {
+  getFilesCountWithExtension(directory) {
 
-      const deployLogMessageStr = deployLogMessage(project.workspace.name);
-      logEvent = {
-        orgId: project.org.id,
-        projectId: project.id,
-        workspaceId: project.workspace.id,
-        workspaceName: project.workspace.name,
-        operation: OPERATIONS.APP_DEPLOY,
-        timestamp: new Date().valueOf(),
-        data: {
-          cliCommandFlags: flags,
-          opDetailsStr: deployLogMessageStr
-        }
-      }
-    }
-    return logEvent
-  }
+    const log = [];
 
-  countFilesByType(directory) {
     if (!fs.existsSync(directory)) {
-      return "Directory does not exist.";
+      this.log(chalk.red(chalk.bold(`Error: Directory ${directory} does not exist.`)));
+      return log;
     }
-  
+
     const files = fs.readdirSync(directory);
-    
+
     if (files.length === 0) {
-      return "No files for deploy.";
+      this.log(chalk.red(chalk.bold(`Error: No files found in directory ${directory}.`)));
+      return log;
     }
-  
+
     const fileTypeCounts = {};
-  
+
     files.forEach(file => {
       const ext = path.extname(file).toLowerCase() || 'no extension';
       if (fileTypeCounts[ext]) {
@@ -190,27 +165,25 @@ class Deploy extends BuildCommand {
         fileTypeCounts[ext] = 1;
       }
     });
-  
-    let log = []; // `Files deployed -\n`
-  
+
     Object.keys(fileTypeCounts).forEach(ext => {
       const count = fileTypeCounts[ext];
       let description;
-  
+
       if (ext === '.js') description = 'Javascript file(s)';
       else if (ext === '.css') description = 'CSS file(s)';
       else if (ext === '.html') description = 'HTML page(s)';
       else if (['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'].includes(ext)) description = 'image(s)';
       else if (ext === 'no extension') description = 'file(s) without extension';
       else description = `${ext} file(s)`;
-  
+
       log.push(`${count} ${description}\n`);
     });
-  
+
     return log;
   }
 
-  async deploySingleConfig (name, config, flags, spinner) {
+  async deploySingleConfig(name, config, flags, spinner) {
     const onProgress = !flags.verbose
       ? info => {
         spinner.text = info
@@ -292,13 +265,13 @@ class Deploy extends BuildCommand {
           if (script) {
             spinner.fail(chalk.green(`deploy-static skipped by hook '${name}'`))
           } else {
-            deployedFrontendUrl = await webLib.deployWeb(config, onProgress)            
+            deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
             spinner.succeed(chalk.green(message))
-            const filesLogCount = this.countFilesByType(config.web.distProd);
-            const opItems = filesLogCount;
-            const filesDeployedMessage = `All static assets for the App Builder application in workspace: ${name} were successfully deployed to the CDN. Files deployed : ${opItems.join('\n')}`;
-            spinner.succeed(chalk.green(filesDeployedMessage))
-            return opItems;
+            const filesLogCount = this.getFilesCountWithExtension(config.web.distProd);
+            const filesDeployedMessage = `All static assets for the App Builder application in workspace: ${name} were successfully deployed to the CDN. Files deployed :`;
+            const filesLogFormatted = filesLogCount.map(file => `  • ${file}`).join('');
+            const finalMessage = chalk.green(`${filesDeployedMessage}\n${filesLogFormatted}`);
+            spinner.succeed(chalk.green(finalMessage))
           }
         } catch (err) {
           spinner.fail(chalk.green(message))
@@ -353,7 +326,7 @@ class Deploy extends BuildCommand {
     }
   }
 
-  async publishExtensionPoints (deployConfigs, aioConfig, force) {
+  async publishExtensionPoints(deployConfigs, aioConfig, force) {
     const libConsoleCLI = await this.getLibConsoleCLI()
 
     const payload = buildExtensionPointPayloadWoMetadata(deployConfigs)
@@ -373,7 +346,7 @@ class Deploy extends BuildCommand {
     return newPayload
   }
 
-  async getApplicationExtension (aioConfig) {
+  async getApplicationExtension(aioConfig) {
     const libConsoleCLI = await this.getLibConsoleCLI()
 
     const { appId } = await libConsoleCLI.getProject(aioConfig.project.org.id, aioConfig.project.id)

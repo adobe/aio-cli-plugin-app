@@ -19,9 +19,7 @@ const BaseCommand = require('../../BaseCommand')
 const webLib = require('@adobe/aio-lib-web')
 const { runInProcess, buildExtensionPointPayloadWoMetadata, getCliInfo } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
-const { sendAuditLogs, OPERATIONS } = require('../../lib/audit-logger')
-
-const undeployLogMessage = (workspaceName) => `Starting undeployment for the App Builder application in workspace ${workspaceName}`;
+const { sendAuditLogs, getAuditLogEvent } = require('../../lib/audit-logger')
 
 class Undeploy extends BaseCommand {
 
@@ -50,38 +48,31 @@ class Undeploy extends BaseCommand {
     try {
       const aioConfig = (await this.getFullConfig()).aio
       const cliDetails = await getCliInfo()
-      const logEvent = this.getAuditLogEvent(flags, aioConfig.project)
+      const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_UNDEPLOY')
+
+      // 1.1. send audit log event for successful undeploy
+      if (logEvent) {
+        await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
+      } else {
+        this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
+      }
 
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
         const v = values[i]
-        const logData = {
-          workspaceName: aioConfig.project.workspace.name,
-          logEvent,
-          accessToken: cliDetails.accessToken,
-          env: cliDetails.env,
-        };
-        await this.undeployOneExt(k, v, flags, spinner, logData)
+        await this.undeployOneExt(k, v, flags, spinner)
+        const assetUndeployLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_UNDEPLOYED')
+        if (assetUndeployLogEvent) {
+          await sendAuditLogs(cliDetails.accessToken, assetUndeployLogEvent, cliDetails.env)
+        }
       }
-      // 2. unpublish extension manifest
+      
+      // 1.2. unpublish extension manifest
       if (flags.unpublish && !(keys.length === 1 && keys[0] === 'application')) {
         const payload = await this.unpublishExtensionPoints(libConsoleCLI, undeployConfigs, aioConfig, flags['force-unpublish'])
         this.log(chalk.blue(chalk.bold(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': '${Object.keys(payload.endpoints)}'`)))
       } else {
         this.log('skipping unpublish phase...')
-      }
-
-      // 3. send audit log event for successful undeploy
-      try {
-        if (logEvent) {
-          logEvent.operation = OPERATIONS.APP_UNDEPLOY;
-          await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
-        } else {
-          this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
-        }
-      } catch (error) {
-        // log any error
-        this.log(chalk.red(chalk.bold('Warning: failed to send audit log event for deployment - ' + error.message)))
       }
 
     } catch (error) {
@@ -93,26 +84,7 @@ class Undeploy extends BaseCommand {
     this.log(chalk.green(chalk.bold('Undeploy done !')))
   }
 
-  getAuditLogEvent(flags, project) {
-    let logEvent
-    if (project && project.org && project.workspace) {
-      logEvent = {
-        orgId: project.org.id,
-        projectId: project.id,
-        workspaceId: project.workspace.id,
-        workspaceName: project.workspace.name,
-        operation: OPERATIONS.APP_UNDEPLOY,
-        timestamp: new Date().valueOf(),
-        data: {
-          cliCommandFlags: flags,
-          opDetailsStr: undeployLogMessage(project.workspace.name)
-        }
-      }
-    }
-    return logEvent
-  }
-
-  async undeployOneExt(extName, config, flags, spinner, logData = {}) {
+  async undeployOneExt(extName, config, flags, spinner) {
     const onProgress = !flags.verbose
       ? info => {
         spinner.text = info
@@ -157,13 +129,6 @@ class Undeploy extends BaseCommand {
             await webLib.undeployWeb(config, onProgress)
           }
 
-          const logEvent = logData?.logEvent;
-
-          if (logData?.accessToken && logEvent && logData?.env) {
-            logEvent.operation = OPERATIONS.APP_ASSETS_UNDEPLOYED;
-            logEvent.data.opDetailsStr = `All static assets for the App Builder application in workspace: ${logData?.workspaceName} were successfully undeployed from the CDN`;
-            await sendAuditLogs(logData.accessToken, logEvent, logData.env)
-          }
           spinner.succeed(chalk.green(`Un-Deploying web assets for ${extName}`))
         } catch (err) {
           spinner.fail(chalk.green(`Un-Deploying web assets for ${extName}`))
