@@ -172,7 +172,7 @@ class Deploy extends BuildCommand {
               // output should be "Error : <plugin-name> : <error-message>\n" for each failure
               this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
             }
-            deployedRuntimeEntities = await rtLib.deployActions(config, { filterEntities }, onProgress)
+            deployedRuntimeEntities = await rtLib.deployActions(config, { filterEntities, useForce: flags['force-deploy'] }, onProgress)
           }
 
           if (deployedRuntimeEntities.actions && deployedRuntimeEntities.actions.length > 0) {
@@ -181,7 +181,7 @@ class Deploy extends BuildCommand {
             if (script) {
               spinner.fail(chalk.green(`deploy-actions skipped by hook '${name}'`))
             } else {
-              spinner.fail(chalk.green(`No actions deployed for '${name}'`))
+              spinner.info(chalk.green(`No actions deployed for '${name}'`))
             }
           }
         } catch (err) {

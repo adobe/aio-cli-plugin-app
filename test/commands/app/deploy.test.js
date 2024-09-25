@@ -358,7 +358,8 @@ describe('run', () => {
       expect.objectContaining({ 'force-build': false, 'web-assets': false, action: ['a', 'b', 'c'] }),
       expect.anything())
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(appConfig.application, {
-      filterEntities: { actions: ['a', 'b', 'c'] }
+      filterEntities: { actions: ['a', 'b', 'c'] },
+      useForce: false
     },
     expect.any(Function))
   })
@@ -379,7 +380,8 @@ describe('run', () => {
       expect.objectContaining({ 'force-build': false, 'web-assets': false, action: ['c'] }),
       expect.anything())
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(appConfig.application, {
-      filterEntities: { actions: ['c'] }
+      filterEntities: { actions: ['c'] },
+      useForce: false
     },
     expect.any(Function))
   })
@@ -924,6 +926,7 @@ describe('run', () => {
     expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(expect.any(Object), expect.objectContaining({ useForce: true }), expect.any(Function))
     expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
     expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(0)
   })
@@ -952,6 +955,7 @@ describe('run', () => {
     expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(expect.any(Object), expect.objectContaining({ useForce: true }), expect.any(Function))
     expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
     expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(0)
   })
