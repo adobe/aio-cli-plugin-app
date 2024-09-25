@@ -13,6 +13,13 @@ governing permissions and limitations under the License.
 const fetch = require('node-fetch')
 jest.mock('node-fetch', () => jest.fn())
 const auditLogger = require('../../../src/lib/audit-logger')
+const OPERATIONS = {
+  AB_APP_DEPLOY: 'app_deploy',
+  AB_APP_UNDEPLOY: 'app_undeploy',
+  AB_APP_ASSETS_UNDEPLOYED: 'assets_undeployed',
+  AB_APP_ASSETS_DEPLOYED: 'assets_deployed',
+  APP_TEST: 'app_test'
+};
 
 const AB_PP_DEPLOY = 'ab_app_deploy'
 
@@ -37,6 +44,11 @@ const mockErrorResponse = Promise.resolve({
     return {}
   }
 })
+
+jest.mock('../../../src/lib/audit-logger', () => ({
+  _getDeployLogMessage: jest.fn(),
+  _getUndeployLogMessage: jest.fn(),
+}));
 
 beforeEach(() => {
   fetch.mockReset()
@@ -91,3 +103,119 @@ test('sendAuditLogs error response', async () => {
   expect(fetch).toHaveBeenCalledTimes(1)
   expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENPOINTS[mockEnv], options)
 })
+
+describe('getAuditLogEvent', () => {
+  const flags = { flag1: 'value1' };
+  const project = {
+    org: { id: 'org123' },
+    id: 'proj456',
+    workspace: { id: 'ws789', name: 'testWorkspace' }
+  };
+
+  const mockDeployMessage = 'Deployment log message';
+  const mockUndeployMessage = 'Undeployment log message';
+
+  beforeEach(() => {
+    require('./path-to-your-file')._getDeployLogMessage.mockReturnValue(mockDeployMessage);
+    require('./path-to-your-file')._getUndeployLogMessage.mockReturnValue(mockUndeployMessage);
+  });
+
+  test('should return correct log event for AB_APP_DEPLOY event', () => {
+    const event = 'AB_APP_DEPLOY';
+    const result = getAuditLogEvent(flags, project, event);
+    
+    expect(result).toEqual({
+      orgId: 'org123',
+      projectId: 'proj456',
+      workspaceId: 'ws789',
+      workspaceName: 'testWorkspace',
+      operation: OPERATIONS.AB_APP_DEPLOY,
+      timestamp: expect.any(Number),
+      data: {
+        cliCommandFlags: flags,
+        opDetailsStr: mockDeployMessage,
+      }
+    });
+    expect(require('./path-to-your-file')._getDeployLogMessage).toHaveBeenCalledWith('testWorkspace');
+  });
+
+  test('should return correct log event for AB_APP_UNDEPLOY event', () => {
+    const event = 'AB_APP_UNDEPLOY';
+    const result = getAuditLogEvent(flags, project, event);
+
+    expect(result).toEqual({
+      orgId: 'org123',
+      projectId: 'proj456',
+      workspaceId: 'ws789',
+      workspaceName: 'testWorkspace',
+      operation: OPERATIONS.AB_APP_UNDEPLOY,
+      timestamp: expect.any(Number),
+      data: {
+        cliCommandFlags: flags,
+        opDetailsStr: mockUndeployMessage,
+      }
+    });
+    expect(require('./path-to-your-file')._getUndeployLogMessage).toHaveBeenCalledWith('testWorkspace');
+  });
+
+  test('should return correct log event for AB_APP_ASSETS_UNDEPLOYED event', () => {
+    const event = 'AB_APP_ASSETS_UNDEPLOYED';
+    const result = getAuditLogEvent(flags, project, event);
+
+    expect(result).toEqual({
+      orgId: 'org123',
+      projectId: 'proj456',
+      workspaceId: 'ws789',
+      workspaceName: 'testWorkspace',
+      operation: OPERATIONS.AB_APP_ASSETS_UNDEPLOYED,
+      timestamp: expect.any(Number),
+      data: {
+        cliCommandFlags: flags,
+        opDetailsStr: 'All static assets for the App Builder application in workspace: testWorkspace were successfully undeployed from the CDN',
+      }
+    });
+  });
+
+  test('should return correct log event for AB_APP_ASSETS_DEPLOYED event', () => {
+    const event = 'AB_APP_ASSETS_DEPLOYED';
+    const result = getAuditLogEvent(flags, project, event);
+
+    expect(result).toEqual({
+      orgId: 'org123',
+      projectId: 'proj456',
+      workspaceId: 'ws789',
+      workspaceName: 'testWorkspace',
+      operation: OPERATIONS.AB_APP_ASSETS_DEPLOYED,
+      timestamp: expect.any(Number),
+      data: {
+        cliCommandFlags: flags,
+        opDetailsStr: 'All static assets for the App Builder application in workspace: testWorkspace were successfully deployed to the CDN.\n Files deployed - ',
+      }
+    });
+  });
+
+  test('should return undefined if project or workspace is missing', () => {
+    const event = 'AB_APP_DEPLOY';
+    const result = getAuditLogEvent(flags, {}, event);
+
+    expect(result).toBeUndefined();
+  });
+
+  test('should default operation to APP_TEST if event is not found in OPERATIONS', () => {
+    const event = 'UNKNOWN_EVENT';
+    const result = getAuditLogEvent(flags, project, event);
+
+    expect(result).toEqual({
+      orgId: 'org123',
+      projectId: 'proj456',
+      workspaceId: 'ws789',
+      workspaceName: 'testWorkspace',
+      operation: OPERATIONS.APP_TEST,
+      timestamp: expect.any(Number),
+      data: {
+        cliCommandFlags: flags,
+        opDetailsStr: undefined,
+      }
+    });
+  });
+});
