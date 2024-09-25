@@ -29,7 +29,7 @@ const AUDIT_SERVICE_ENPOINTS = {
  * @param {object} logEvent logEvent details
  * @param {string} env valid env stage|prod
  */
-async function sendAuditLogs(accessToken, logEvent, env = 'prod') {
+async function sendAuditLogs (accessToken, logEvent, env = 'prod') {
   const url = AUDIT_SERVICE_ENPOINTS[env]
   const payload = {
     event: logEvent
@@ -49,21 +49,27 @@ async function sendAuditLogs(accessToken, logEvent, env = 'prod') {
   }
 }
 
-const _getDeployLogMessage = (workspaceName) => `Starting deployment for the App Builder application in workspace ${workspaceName}`;
-const _getUndeployLogMessage = (workspaceName) => `Starting undeployment for the App Builder application in workspace ${workspaceName}`;
+const _getDeployLogMessage = (workspaceName) => `Starting deployment for the App Builder application in workspace ${workspaceName}`
+const _getUndeployLogMessage = (workspaceName) => `Starting undeployment for the App Builder application in workspace ${workspaceName}`
 
-function getAuditLogEvent(flags, project, event) {
-  let logEvent, logStrMsg;
+/**
+ *
+ * @param flags {object} cli flags
+ * @param project {object} project details
+ * @param event {string} log event name
+ * @returns {object} logEvent
+ */
+function getAuditLogEvent (flags, project, event) {
+  let logEvent, logStrMsg
   if (project && project.org && project.workspace) {
-
     if (event === 'AB_APP_DEPLOY') {
-      logStrMsg = _getDeployLogMessage(project.workspace.name);
+      logStrMsg = _getDeployLogMessage(project.workspace.name)
     } else if (event === 'AB_APP_UNDEPLOY') {
-      logStrMsg = _getUndeployLogMessage(project.workspace.name);
+      logStrMsg = _getUndeployLogMessage(project.workspace.name)
     } else if (event === 'AB_APP_ASSETS_UNDEPLOYED') {
-      logStrMsg = `All static assets for the App Builder application in workspace: ${project.workspace.name} were successfully undeployed from the CDN`;
+      logStrMsg = `All static assets for the App Builder application in workspace: ${project.workspace.name} were successfully undeployed from the CDN`
     } else if (event === 'AB_APP_ASSETS_DEPLOYED') {
-      logStrMsg = `All static assets for the App Builder application in workspace: ${project.workspace.name} were successfully deployed to the CDN.\n Files deployed - `;
+      logStrMsg = `All static assets for the App Builder application in workspace: ${project.workspace.name} were successfully deployed to the CDN.\n Files deployed - `
     }
 
     logEvent = {
@@ -75,7 +81,7 @@ function getAuditLogEvent(flags, project, event) {
       timestamp: new Date().valueOf(),
       data: {
         cliCommandFlags: flags,
-        opDetailsStr: logStrMsg,
+        opDetailsStr: logStrMsg
       }
     }
   }

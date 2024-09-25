@@ -13,8 +13,8 @@ governing permissions and limitations under the License.
 const ora = require('ora')
 const chalk = require('chalk')
 const open = require('open')
-const fs = require('fs');
-const path = require('path');
+const fs = require('fs')
+const path = require('path')
 
 const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
@@ -29,7 +29,7 @@ const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
 const POST_DEPLOY_EVENT_REG = 'post-deploy-event-reg'
 
 class Deploy extends BuildCommand {
-  async run() {
+  async run () {
     // cli input
     const { flags } = await this.parse(Deploy)
 
@@ -95,9 +95,9 @@ class Deploy extends BuildCommand {
       }
 
       // 3. send deploy log event
-      const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_DEPLOY');
+      const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_DEPLOY')
       if (logEvent) {
-        await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env);
+        await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
       } else {
         this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
       }
@@ -111,11 +111,11 @@ class Deploy extends BuildCommand {
         const v = values[i]
         await this.deploySingleConfig(k, v, flags, spinner)
         if (v.app.hasFrontend && flags['web-assets']) {
-          const opItems = this.getFilesCountWithExtension(v.web.distProd);
+          const opItems = this.getFilesCountWithExtension(v.web.distProd)
           if (Array.isArray(opItems) && opItems.length) {
-            const assetDeployedLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_DEPLOYED');
-            assetDeployedLogEvent.data.opItems = opItems;
-            await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env);
+            const assetDeployedLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_DEPLOYED')
+            assetDeployedLogEvent.data.opItems = opItems
+            await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env)
           }
         }
       }
@@ -127,7 +127,6 @@ class Deploy extends BuildCommand {
       } else {
         this.log('skipping publish phase...')
       }
-
     } catch (error) {
       spinner.stop()
       // delegate to top handler
@@ -139,51 +138,50 @@ class Deploy extends BuildCommand {
     this.log(chalk.green(chalk.bold('Successful deployment 🏄')))
   }
 
-  getFilesCountWithExtension(directory) {
-
-    const log = [];
+  getFilesCountWithExtension (directory) {
+    const log = []
 
     if (!fs.existsSync(directory)) {
-      this.log(chalk.red(chalk.bold(`Error: Directory ${directory} does not exist.`)));
-      return log;
+      this.log(chalk.red(chalk.bold(`Error: Directory ${directory} does not exist.`)))
+      return log
     }
 
-    const files = fs.readdirSync(directory);
+    const files = fs.readdirSync(directory)
 
     if (files.length === 0) {
-      this.log(chalk.red(chalk.bold(`Error: No files found in directory ${directory}.`)));
-      return log;
+      this.log(chalk.red(chalk.bold(`Error: No files found in directory ${directory}.`)))
+      return log
     }
 
-    const fileTypeCounts = {};
+    const fileTypeCounts = {}
 
     files.forEach(file => {
-      const ext = path.extname(file).toLowerCase() || 'no extension';
+      const ext = path.extname(file).toLowerCase() || 'no extension'
       if (fileTypeCounts[ext]) {
-        fileTypeCounts[ext]++;
+        fileTypeCounts[ext]++
       } else {
-        fileTypeCounts[ext] = 1;
+        fileTypeCounts[ext] = 1
       }
-    });
+    })
 
     Object.keys(fileTypeCounts).forEach(ext => {
-      const count = fileTypeCounts[ext];
-      let description;
+      const count = fileTypeCounts[ext]
+      let description
 
-      if (ext === '.js') description = 'Javascript file(s)';
-      else if (ext === '.css') description = 'CSS file(s)';
-      else if (ext === '.html') description = 'HTML page(s)';
-      else if (['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'].includes(ext)) description = 'image(s)';
-      else if (ext === 'no extension') description = 'file(s) without extension';
-      else description = `${ext} file(s)`;
+      if (ext === '.js') description = 'Javascript file(s)'
+      else if (ext === '.css') description = 'CSS file(s)'
+      else if (ext === '.html') description = 'HTML page(s)'
+      else if (['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'].includes(ext)) description = 'image(s)'
+      else if (ext === 'no extension') description = 'file(s) without extension'
+      else description = `${ext} file(s)`
 
-      log.push(`${count} ${description}\n`);
-    });
+      log.push(`${count} ${description}\n`)
+    })
 
-    return log;
+    return log
   }
 
-  async deploySingleConfig(name, config, flags, spinner) {
+  async deploySingleConfig (name, config, flags, spinner) {
     const onProgress = !flags.verbose
       ? info => {
         spinner.text = info
@@ -267,10 +265,10 @@ class Deploy extends BuildCommand {
           } else {
             deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
             spinner.succeed(chalk.green(message))
-            const filesLogCount = this.getFilesCountWithExtension(config.web.distProd);
-            const filesDeployedMessage = `All static assets for the App Builder application in workspace: ${name} were successfully deployed to the CDN. Files deployed :`;
-            const filesLogFormatted = filesLogCount.map(file => `  • ${file}`).join('');
-            const finalMessage = chalk.green(`${filesDeployedMessage}\n${filesLogFormatted}`);
+            const filesLogCount = this.getFilesCountWithExtension(config.web.distProd)
+            const filesDeployedMessage = `All static assets for the App Builder application in workspace: ${name} were successfully deployed to the CDN. Files deployed :`
+            const filesLogFormatted = filesLogCount.map(file => `  • ${file}`).join('')
+            const finalMessage = chalk.green(`${filesDeployedMessage}\n${filesLogFormatted}`)
             spinner.succeed(chalk.green(finalMessage))
           }
         } catch (err) {
@@ -326,7 +324,7 @@ class Deploy extends BuildCommand {
     }
   }
 
-  async publishExtensionPoints(deployConfigs, aioConfig, force) {
+  async publishExtensionPoints (deployConfigs, aioConfig, force) {
     const libConsoleCLI = await this.getLibConsoleCLI()
 
     const payload = buildExtensionPointPayloadWoMetadata(deployConfigs)
@@ -346,7 +344,7 @@ class Deploy extends BuildCommand {
     return newPayload
   }
 
-  async getApplicationExtension(aioConfig) {
+  async getApplicationExtension (aioConfig) {
     const libConsoleCLI = await this.getLibConsoleCLI()
 
     const { appId } = await libConsoleCLI.getProject(aioConfig.project.org.id, aioConfig.project.id)

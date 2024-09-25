@@ -22,8 +22,7 @@ const rtLib = require('@adobe/aio-lib-runtime')
 const { sendAuditLogs, getAuditLogEvent } = require('../../lib/audit-logger')
 
 class Undeploy extends BaseCommand {
-
-  async run() {
+  async run () {
     // cli input
     const { flags } = await this.parse(Undeploy)
 
@@ -66,7 +65,7 @@ class Undeploy extends BaseCommand {
           await sendAuditLogs(cliDetails.accessToken, assetUndeployLogEvent, cliDetails.env)
         }
       }
-      
+
       // 1.2. unpublish extension manifest
       if (flags.unpublish && !(keys.length === 1 && keys[0] === 'application')) {
         const payload = await this.unpublishExtensionPoints(libConsoleCLI, undeployConfigs, aioConfig, flags['force-unpublish'])
@@ -74,7 +73,6 @@ class Undeploy extends BaseCommand {
       } else {
         this.log('skipping unpublish phase...')
       }
-
     } catch (error) {
       spinner.stop()
       // delegate to top handler
@@ -84,7 +82,7 @@ class Undeploy extends BaseCommand {
     this.log(chalk.green(chalk.bold('Undeploy done !')))
   }
 
-  async undeployOneExt(extName, config, flags, spinner) {
+  async undeployOneExt (extName, config, flags, spinner) {
     const onProgress = !flags.verbose
       ? info => {
         spinner.text = info
@@ -146,7 +144,7 @@ class Undeploy extends BaseCommand {
     }
   }
 
-  async unpublishExtensionPoints(libConsoleCLI, deployConfigs, aioConfig, force) {
+  async unpublishExtensionPoints (libConsoleCLI, deployConfigs, aioConfig, force) {
     const payload = buildExtensionPointPayloadWoMetadata(deployConfigs)
     let res
     if (force) {

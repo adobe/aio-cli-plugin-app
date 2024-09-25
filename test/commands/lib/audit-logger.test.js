@@ -19,7 +19,7 @@ const OPERATIONS = {
   AB_APP_ASSETS_UNDEPLOYED: 'assets_undeployed',
   AB_APP_ASSETS_DEPLOYED: 'assets_deployed',
   APP_TEST: 'app_test'
-};
+}
 
 const AB_PP_DEPLOY = 'ab_app_deploy'
 
@@ -47,8 +47,8 @@ const mockErrorResponse = Promise.resolve({
 
 jest.mock('../../../src/lib/audit-logger', () => ({
   _getDeployLogMessage: jest.fn(),
-  _getUndeployLogMessage: jest.fn(),
-}));
+  _getUndeployLogMessage: jest.fn()
+}))
 
 beforeEach(() => {
   fetch.mockReset()
@@ -105,25 +105,25 @@ test('sendAuditLogs error response', async () => {
 })
 
 describe('getAuditLogEvent', () => {
-  const flags = { flag1: 'value1' };
+  const flags = { flag1: 'value1' }
   const project = {
     org: { id: 'org123' },
     id: 'proj456',
     workspace: { id: 'ws789', name: 'testWorkspace' }
-  };
+  }
 
-  const mockDeployMessage = 'Deployment log message';
-  const mockUndeployMessage = 'Undeployment log message';
+  const mockDeployMessage = 'Deployment log message'
+  const mockUndeployMessage = 'Undeployment log message'
 
   beforeEach(() => {
-    require('./path-to-your-file')._getDeployLogMessage.mockReturnValue(mockDeployMessage);
-    require('./path-to-your-file')._getUndeployLogMessage.mockReturnValue(mockUndeployMessage);
-  });
+    require('../../../src/lib/audit-logger')._getDeployLogMessage.mockReturnValue(mockDeployMessage)
+    require('../../../src/lib/audit-logger')._getUndeployLogMessage.mockReturnValue(mockUndeployMessage)
+  })
 
   test('should return correct log event for AB_APP_DEPLOY event', () => {
-    const event = 'AB_APP_DEPLOY';
-    const result = getAuditLogEvent(flags, project, event);
-    
+    const event = 'AB_APP_DEPLOY'
+    const result = auditLogger.getAuditLogEvent(flags, project, event)
+
     expect(result).toEqual({
       orgId: 'org123',
       projectId: 'proj456',
@@ -133,15 +133,15 @@ describe('getAuditLogEvent', () => {
       timestamp: expect.any(Number),
       data: {
         cliCommandFlags: flags,
-        opDetailsStr: mockDeployMessage,
+        opDetailsStr: mockDeployMessage
       }
-    });
-    expect(require('./path-to-your-file')._getDeployLogMessage).toHaveBeenCalledWith('testWorkspace');
-  });
+    })
+    expect(require('../../../src/lib/audit-logger')._getDeployLogMessage).toHaveBeenCalledWith('testWorkspace')
+  })
 
   test('should return correct log event for AB_APP_UNDEPLOY event', () => {
-    const event = 'AB_APP_UNDEPLOY';
-    const result = getAuditLogEvent(flags, project, event);
+    const event = 'AB_APP_UNDEPLOY'
+    const result = auditLogger.getAuditLogEvent(flags, project, event)
 
     expect(result).toEqual({
       orgId: 'org123',
@@ -152,15 +152,15 @@ describe('getAuditLogEvent', () => {
       timestamp: expect.any(Number),
       data: {
         cliCommandFlags: flags,
-        opDetailsStr: mockUndeployMessage,
+        opDetailsStr: mockUndeployMessage
       }
-    });
-    expect(require('./path-to-your-file')._getUndeployLogMessage).toHaveBeenCalledWith('testWorkspace');
-  });
+    })
+    expect(require('../../../src/lib/audit-logger')._getUndeployLogMessage).toHaveBeenCalledWith('testWorkspace')
+  })
 
   test('should return correct log event for AB_APP_ASSETS_UNDEPLOYED event', () => {
-    const event = 'AB_APP_ASSETS_UNDEPLOYED';
-    const result = getAuditLogEvent(flags, project, event);
+    const event = 'AB_APP_ASSETS_UNDEPLOYED'
+    const result = auditLogger.getAuditLogEvent(flags, project, event)
 
     expect(result).toEqual({
       orgId: 'org123',
@@ -171,14 +171,14 @@ describe('getAuditLogEvent', () => {
       timestamp: expect.any(Number),
       data: {
         cliCommandFlags: flags,
-        opDetailsStr: 'All static assets for the App Builder application in workspace: testWorkspace were successfully undeployed from the CDN',
+        opDetailsStr: 'All static assets for the App Builder application in workspace: testWorkspace were successfully undeployed from the CDN'
       }
-    });
-  });
+    })
+  })
 
   test('should return correct log event for AB_APP_ASSETS_DEPLOYED event', () => {
-    const event = 'AB_APP_ASSETS_DEPLOYED';
-    const result = getAuditLogEvent(flags, project, event);
+    const event = 'AB_APP_ASSETS_DEPLOYED'
+    const result = auditLogger.getAuditLogEvent(flags, project, event)
 
     expect(result).toEqual({
       orgId: 'org123',
@@ -189,21 +189,21 @@ describe('getAuditLogEvent', () => {
       timestamp: expect.any(Number),
       data: {
         cliCommandFlags: flags,
-        opDetailsStr: 'All static assets for the App Builder application in workspace: testWorkspace were successfully deployed to the CDN.\n Files deployed - ',
+        opDetailsStr: 'All static assets for the App Builder application in workspace: testWorkspace were successfully deployed to the CDN.\n Files deployed - '
       }
-    });
-  });
+    })
+  })
 
   test('should return undefined if project or workspace is missing', () => {
-    const event = 'AB_APP_DEPLOY';
-    const result = getAuditLogEvent(flags, {}, event);
+    const event = 'AB_APP_DEPLOY'
+    const result = auditLogger.getAuditLogEvent(flags, {}, event)
 
-    expect(result).toBeUndefined();
-  });
+    expect(result).toBeUndefined()
+  })
 
   test('should default operation to APP_TEST if event is not found in OPERATIONS', () => {
-    const event = 'UNKNOWN_EVENT';
-    const result = getAuditLogEvent(flags, project, event);
+    const event = 'UNKNOWN_EVENT'
+    const result = auditLogger.getAuditLogEvent(flags, project, event)
 
     expect(result).toEqual({
       orgId: 'org123',
@@ -214,8 +214,8 @@ describe('getAuditLogEvent', () => {
       timestamp: expect.any(Number),
       data: {
         cliCommandFlags: flags,
-        opDetailsStr: undefined,
+        opDetailsStr: undefined
       }
-    });
-  });
-});
+    })
+  })
+})
