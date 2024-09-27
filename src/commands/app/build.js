@@ -143,7 +143,8 @@ class Build extends BaseCommand {
 
 Build.description = `Build an Adobe I/O App
 
-This will always force a rebuild unless --no-force-build is set.
+Build the actions and web assets for an Adobe I/O App. Build is optimized to only build what is necessary.
+Use the --force-build flag to force a build even if one already exists.
 `
 
 Build.flags = {

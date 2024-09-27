@@ -287,9 +287,13 @@ class Deploy extends BuildCommand {
   }
 }
 
-Deploy.description = `Build and deploy an Adobe I/O App
+Deploy.description = `Deploy an Adobe I/O App
 
-This will always force a rebuild unless --no-force-build is set.
+Deploys the actions and web assets for an Adobe I/O App.
+This will also build any changed actions or web assets before deploying.
+Use the --force-build flag to force a build even if one already exists.
+Deploy is optimized to only deploy what is necessary. Be aware that deploying actions will overwrite any previous deployments.
+Use the --force-deploy flag to force deploy changes, regardless of production Workspace being published in Exchange.
 `
 
 Deploy.flags = {
