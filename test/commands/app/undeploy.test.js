@@ -17,6 +17,9 @@ const dataMocks = require('../../data-mocks/config-loader')
 jest.mock('../../../src/lib/app-helper.js')
 const helpers = require('../../../src/lib/app-helper.js')
 
+jest.mock('../../../src/lib/audit-logger.js')
+const auditLogger = require('../../../src/lib/audit-logger.js')
+
 const mockFS = require('fs-extra')
 jest.mock('fs-extra')
 
@@ -66,6 +69,15 @@ beforeEach(() => {
   helpers.runInProcess.mockReset()
   mockFS.existsSync.mockReset()
   helpers.wrapError.mockImplementation(msg => msg)
+  auditLogger.getAuditLogEvent.mockImplementation((flags, project, event) => {
+    return { "orgId": "mockorg", "projectId": "mockproject", "workspaceId": "mockworkspaceid", "workspaceName": "mockworkspacename" }
+  })
+  helpers.getCliInfo.mockImplementation(() => {
+    return {
+      "accessToken": "mocktoken",
+      "env": "stage"
+    }
+  })
   jest.clearAllMocks()
 })
 
@@ -134,7 +146,15 @@ describe('run', () => {
     command.config = { runCommand: jest.fn(), runHook: jest.fn() }
     command.getLibConsoleCLI = jest.fn(() => mockLibConsoleCLI)
     command.getAppExtConfigs = jest.fn()
-    command.getFullConfig = jest.fn()
+    command.getFullConfig = jest.fn().mockReturnValue({
+      aio: {
+        project: {
+          workspace: {
+            name: 'foo'
+          }
+        }
+      }
+    })
   })
 
   afterEach(() => {
@@ -446,5 +466,69 @@ describe('run', () => {
     await command.run()
     expect(runHook).toHaveBeenCalledWith('pre-undeploy-event-reg', expect.any(Object))
     expect(command.error).toHaveBeenCalledTimes(1)
+  })
+
+  test('Send audit logs for successful app undeploy', async () => {
+    const mockToken = 'mocktoken'
+    const mockEnv = 'stage'
+    const mockOrg = 'mockorg'
+    const mockProject = 'mockproject'
+    const mockWorkspaceId = 'mockworkspaceid'
+    const mockWorkspaceName = 'mockworkspacename'
+
+    command.getFullConfig = jest.fn().mockReturnValue({
+      aio: {
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      }
+    })
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
+    expect(auditLogger.sendAuditLogs.mock.calls.length).toBeGreaterThan(1);
+    expect(auditLogger.sendAuditLogs).toHaveBeenCalledWith(mockToken, expect.objectContaining({ orgId: mockOrg, projectId: mockProject, workspaceId: mockWorkspaceId, workspaceName: mockWorkspaceName }), mockEnv)
+  })
+
+  test('Do not Send audit logs for successful app undeploy', async () => {
+    const mockOrg = 'mockorg'
+    const mockProject = 'mockproject'
+    const mockWorkspaceId = 'mockworkspaceid'
+    const mockWorkspaceName = 'mockworkspacename'
+
+    command.getFullConfig = jest.fn().mockReturnValue({
+      aio: {
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      }
+    })
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+
+    auditLogger.getAuditLogEvent.mockImplementation((flags, project, event) => null)
+
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
+    expect(auditLogger.sendAuditLogs.mock.calls.length).toBe(0);
+    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Warning: No valid config data found to send audit log event for deployment/))
   })
 })

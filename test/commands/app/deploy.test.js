@@ -168,7 +168,27 @@ beforeEach(() => {
 
   helpers.wrapError.mockImplementation(msg => msg)
   helpers.createWebExportFilter.mockImplementation(filterValue => helpersActual.createWebExportFilter(filterValue))
-
+  auditLogger.getAuditLogEvent.mockImplementation((flags, project, event) => {
+    return {
+      "orgId": "mockorg",
+      "projectId": "mockproject",
+      "workspaceId": "mockworkspaceid",
+      "workspaceName": "mockworkspacename",
+      "operation": "AB_APP_ASSETS_DEPLOYED".toLowerCase(),
+      "timestamp": new Date().valueOf(),
+      "data": {
+        "cliCommandFlags": flags,
+        "opDetailsStr": "logStrMsg",
+        "opItems": []
+      }
+    }
+  })
+  helpers.getCliInfo.mockImplementation(() => {
+    return {
+      "accessToken": "mocktoken",
+      "env": "stage"
+    }
+  })
   LogForwarding.init.mockResolvedValue(mockLogForwarding)
 })
 
@@ -1243,6 +1263,89 @@ describe('run', () => {
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(auditLogger.sendAuditLogs.mock.calls.length).toBeLessThanOrEqual(2)
+    expect(auditLogger.sendAuditLogs).toHaveBeenCalledWith(mockToken, expect.objectContaining({ orgId: mockOrg, projectId: mockProject, workspaceId: mockWorkspaceId, workspaceName: mockWorkspaceName }), mockEnv)
+  })
+  
+  test('Do not send audit logs for successful app deploy', async () => {
+    const mockToken = 'mocktoken'
+    const mockEnv = 'stage'
+    const mockOrg = 'mockorg'
+    const mockProject = 'mockproject'
+    const mockWorkspaceId = 'mockworkspaceid'
+    const mockWorkspaceName = 'mockworkspacename'
+    helpers.getCliInfo.mockResolvedValueOnce({
+      accessToken: mockToken,
+      env: mockEnv
+    })
+    command.getFullConfig = jest.fn().mockReturnValue({
+      aio: {
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      }
+    })
+
+    auditLogger.getAuditLogEvent.mockImplementation((flags, project, event) => null)
+
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+  })
+
+  test('Send audit logs for successful app deploy + web assets', async () => {
+
+    const mockToken = 'mocktoken'
+    const mockEnv = 'stage'
+    const mockOrg = 'mockorg'
+    const mockProject = 'mockproject'
+    const mockWorkspaceId = 'mockworkspaceid'
+    const mockWorkspaceName = 'mockworkspacename'
+
+    command.argv = ['--web-assets']
+
+    helpers.getCliInfo.mockResolvedValueOnce({
+      accessToken: mockToken,
+      env: mockEnv
+    })
+
+    command.getFullConfig = jest.fn().mockReturnValue({
+      aio: {
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      }
+    })
+
+    command.getFilesCountWithExtension = jest.fn().mockReturnValue([
+      "3 Javascript file(s)",
+      "2 CSS file(s)",
+      "5 image(s)",
+      "1 HTML page(s)"
+    ])
+
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(auditLogger.sendAuditLogs).toHaveBeenCalledWith(mockToken, expect.objectContaining({ orgId: mockOrg, projectId: mockProject, workspaceId: mockWorkspaceId, workspaceName: mockWorkspaceName }), mockEnv)
   })
 })
