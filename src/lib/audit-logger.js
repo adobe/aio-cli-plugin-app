@@ -9,6 +9,9 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 const fetch = require('node-fetch')
+const fs = require('fs')
+const path = require('path')
+const chalk = require('chalk')
 
 const OPERATIONS = {
   AB_APP_DEPLOY: 'ab_app_deploy',
@@ -85,8 +88,57 @@ function getAuditLogEvent (flags, project, event) {
   return logEvent
 }
 
+/**
+ *
+ * @param {string} directory | path to assets directory
+ * @returns {Array} log | array of log messages
+ */
+function getFilesCountWithExtension (directory) {
+  const log = []
+
+  if (!fs.existsSync(directory)) {
+    this.log(chalk.red(chalk.bold(`Error: Directory ${directory} does not exist.`)))
+    return log
+  }
+
+  const files = fs.readdirSync(directory)
+
+  if (files.length === 0) {
+    this.log(chalk.red(chalk.bold(`Error: No files found in directory ${directory}.`)))
+    return log
+  }
+
+  const fileTypeCounts = {}
+
+  files.forEach(file => {
+    const ext = path.extname(file).toLowerCase() || 'no extension'
+    if (fileTypeCounts[ext]) {
+      fileTypeCounts[ext]++
+    } else {
+      fileTypeCounts[ext] = 1
+    }
+  })
+
+  Object.keys(fileTypeCounts).forEach(ext => {
+    const count = fileTypeCounts[ext]
+    let description
+
+    if (ext === '.js') description = 'Javascript file(s)'
+    else if (ext === '.css') description = 'CSS file(s)'
+    else if (ext === '.html') description = 'HTML page(s)'
+    else if (['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'].includes(ext)) description = 'image(s)'
+    else if (ext === 'no extension') description = 'file(s) without extension'
+    else description = `${ext} file(s)`
+
+    log.push(`${count} ${description}\n`)
+  })
+
+  return log
+}
+
 module.exports = {
   sendAuditLogs,
   getAuditLogEvent,
-  AUDIT_SERVICE_ENPOINTS
+  AUDIT_SERVICE_ENPOINTS,
+  getFilesCountWithExtension
 }

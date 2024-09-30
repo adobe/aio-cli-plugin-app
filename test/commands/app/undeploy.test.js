@@ -70,12 +70,12 @@ beforeEach(() => {
   mockFS.existsSync.mockReset()
   helpers.wrapError.mockImplementation(msg => msg)
   auditLogger.getAuditLogEvent.mockImplementation((flags, project, event) => {
-    return { "orgId": "mockorg", "projectId": "mockproject", "workspaceId": "mockworkspaceid", "workspaceName": "mockworkspacename" }
+    return { orgId: 'mockorg', projectId: 'mockproject', workspaceId: 'mockworkspaceid', workspaceName: 'mockworkspacename' }
   })
   helpers.getCliInfo.mockImplementation(() => {
     return {
-      "accessToken": "mocktoken",
-      "env": "stage"
+      accessToken: 'mocktoken',
+      env: 'stage'
     }
   })
   jest.clearAllMocks()
@@ -496,7 +496,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAuditLogs.mock.calls.length).toBeGreaterThan(1);
+    expect(auditLogger.sendAuditLogs.mock.calls.length).toBeGreaterThan(1)
     expect(auditLogger.sendAuditLogs).toHaveBeenCalledWith(mockToken, expect.objectContaining({ orgId: mockOrg, projectId: mockProject, workspaceId: mockWorkspaceId, workspaceName: mockWorkspaceName }), mockEnv)
   })
 
@@ -528,7 +528,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAuditLogs.mock.calls.length).toBe(0);
+    expect(auditLogger.sendAuditLogs.mock.calls.length).toBe(0)
     expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Warning: No valid config data found to send audit log event for deployment/))
   })
 })

@@ -10,9 +10,21 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
+const fs = require('fs')
+/* eslint-disable no-unused-vars */
+const path = require('path')
+/* eslint-disable no-unused-vars */
+const chalk = require('chalk')
 const fetch = require('node-fetch')
 jest.mock('node-fetch', () => jest.fn())
 const auditLogger = require('../../../src/lib/audit-logger')
+
+jest.mock('fs')
+jest.mock('chalk', () => ({
+  red: jest.fn((text) => text),
+  bold: jest.fn((text) => text)
+}))
+
 const OPERATIONS = {
   AB_APP_DEPLOY: 'ab_app_deploy',
   AB_APP_UNDEPLOY: 'ab_app_undeploy',
@@ -35,6 +47,7 @@ const mockResponse = Promise.resolve({
     return {}
   }
 })
+
 const mockErrorResponse = Promise.resolve({
   ok: false,
   status: 400,
@@ -198,5 +211,86 @@ describe('getAuditLogEvent', () => {
         opDetailsStr: undefined
       }
     })
+  })
+})
+
+describe('getFilesCountWithExtension', () => {
+  const directory = '__fixtures__/app/web-src'
+
+  // Mock 'this.log'
+  const mockLog = jest.fn()
+
+  beforeEach(() => {
+    mockLog.mockClear() // Clear mock between tests
+  })
+
+  it('should return an error message when directory does not exist', () => {
+    fs.existsSync.mockReturnValue(false)
+
+    const result = auditLogger.getFilesCountWithExtension.call({ log: mockLog }, directory)
+
+    expect(fs.existsSync).toHaveBeenCalledWith(directory)
+    expect(mockLog).toHaveBeenCalledWith(
+      'Error: Directory __fixtures__/app/web-src does not exist.'
+    )
+    expect(result).toEqual([])
+  })
+
+  it('should return an error message when directory is empty', () => {
+    fs.existsSync.mockReturnValue(true)
+    fs.readdirSync.mockReturnValue([])
+
+    const result = auditLogger.getFilesCountWithExtension.call({ log: mockLog }, directory)
+
+    expect(fs.readdirSync).toHaveBeenCalledWith(directory)
+    expect(mockLog).toHaveBeenCalledWith(
+      'Error: No files found in directory __fixtures__/app/web-src.'
+    )
+    expect(result).toEqual([])
+  })
+
+  it('should return a count of different file types', () => {
+    fs.existsSync.mockReturnValue(true)
+    fs.readdirSync.mockReturnValue(['index.html', 'script.js', 'styles.css', 'image.png', 'readme'])
+
+    const result = auditLogger.getFilesCountWithExtension.call({ log: mockLog }, directory)
+
+    expect(result).toEqual([
+      '1 HTML page(s)\n',
+      '1 Javascript file(s)\n',
+      '1 CSS file(s)\n',
+      '1 image(s)\n',
+      '1 file(s) without extension\n'
+    ])
+  })
+
+  it('should handle directories with files of the same type', () => {
+    fs.existsSync.mockReturnValue(true)
+    fs.readdirSync.mockReturnValue(['script1.js', 'script2.js', 'script3.js'])
+
+    const result = auditLogger.getFilesCountWithExtension.call({ log: mockLog }, directory)
+
+    expect(result).toEqual(['3 Javascript file(s)\n'])
+  })
+
+  it('should handle files with no extension', () => {
+    fs.existsSync.mockReturnValue(true)
+    fs.readdirSync.mockReturnValue(['readme', 'LICENSE'])
+
+    const result = auditLogger.getFilesCountWithExtension.call({ log: mockLog }, directory)
+
+    expect(result).toEqual(['2 file(s) without extension\n'])
+  })
+
+  it('should handle files with other extensions', () => {
+    fs.existsSync.mockReturnValue(true)
+    fs.readdirSync.mockReturnValue(['data.json', 'document.pdf'])
+
+    const result = auditLogger.getFilesCountWithExtension.call({ log: mockLog }, directory)
+
+    expect(result).toEqual([
+      '1 .json file(s)\n',
+      '1 .pdf file(s)\n'
+    ])
   })
 })

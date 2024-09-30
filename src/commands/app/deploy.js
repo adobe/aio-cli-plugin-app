@@ -13,8 +13,6 @@ governing permissions and limitations under the License.
 const ora = require('ora')
 const chalk = require('chalk')
 const open = require('open')
-const fs = require('fs')
-const path = require('path')
 
 const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
@@ -23,7 +21,7 @@ const { Flags } = require('@oclif/core')
 const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getCliInfo } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
-const { sendAuditLogs, getAuditLogEvent } = require('../../lib/audit-logger')
+const { sendAuditLogs, getAuditLogEvent, getFilesCountWithExtension } = require('../../lib/audit-logger')
 
 const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
 const POST_DEPLOY_EVENT_REG = 'post-deploy-event-reg'
@@ -111,9 +109,9 @@ class Deploy extends BuildCommand {
         const v = values[i]
         await this.deploySingleConfig(k, v, flags, spinner)
         if (v.app.hasFrontend && flags['web-assets']) {
-          const opItems = this.getFilesCountWithExtension(v.web.distProd)
-          if (Array.isArray(opItems) && opItems.length) {
-            const assetDeployedLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_DEPLOYED')
+          const opItems = getFilesCountWithExtension(v.web.distProd)
+          const assetDeployedLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_DEPLOYED')
+          if (assetDeployedLogEvent) {
             assetDeployedLogEvent.data.opItems = opItems
             await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env)
           }
@@ -136,49 +134,6 @@ class Deploy extends BuildCommand {
     // final message
     // TODO better output depending on which ext points/app and flags
     this.log(chalk.green(chalk.bold('Successful deployment 🏄')))
-  }
-
-  getFilesCountWithExtension (directory) {
-    const log = []
-
-    if (!fs.existsSync(directory)) {
-      this.log(chalk.red(chalk.bold(`Error: Directory ${directory} does not exist.`)))
-      return log
-    }
-
-    const files = fs.readdirSync(directory)
-
-    if (files.length === 0) {
-      this.log(chalk.red(chalk.bold(`Error: No files found in directory ${directory}.`)))
-      return log
-    }
-
-    const fileTypeCounts = {}
-
-    files.forEach(file => {
-      const ext = path.extname(file).toLowerCase() || 'no extension'
-      if (fileTypeCounts[ext]) {
-        fileTypeCounts[ext]++
-      } else {
-        fileTypeCounts[ext] = 1
-      }
-    })
-
-    Object.keys(fileTypeCounts).forEach(ext => {
-      const count = fileTypeCounts[ext]
-      let description
-
-      if (ext === '.js') description = 'Javascript file(s)'
-      else if (ext === '.css') description = 'CSS file(s)'
-      else if (ext === '.html') description = 'HTML page(s)'
-      else if (['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'].includes(ext)) description = 'image(s)'
-      else if (ext === 'no extension') description = 'file(s) without extension'
-      else description = `${ext} file(s)`
-
-      log.push(`${count} ${description}\n`)
-    })
-
-    return log
   }
 
   async deploySingleConfig (name, config, flags, spinner) {
@@ -265,9 +220,9 @@ class Deploy extends BuildCommand {
           } else {
             deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
             spinner.succeed(chalk.green(message))
-            const filesLogCount = this.getFilesCountWithExtension(config.web.distProd)
+            const filesLogCount = getFilesCountWithExtension(config.web.distProd)
             const filesDeployedMessage = `All static assets for the App Builder application in workspace: ${name} were successfully deployed to the CDN. Files deployed :`
-            const filesLogFormatted = filesLogCount.map(file => `  • ${file}`).join('')
+            const filesLogFormatted = filesLogCount?.map(file => `  • ${file}`).join('')
             const finalMessage = chalk.green(`${filesDeployedMessage}\n${filesLogFormatted}`)
             spinner.succeed(chalk.green(finalMessage))
           }
