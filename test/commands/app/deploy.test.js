@@ -194,7 +194,7 @@ test('flags', async () => {
 
   expect(typeof TheCommand.flags['force-build']).toBe('object')
   expect(typeof TheCommand.flags['force-build'].description).toBe('string')
-  expect(TheCommand.flags['force-build'].default).toEqual(true)
+  expect(TheCommand.flags['force-build'].default).toEqual(false)
   expect(TheCommand.flags['force-build'].allowNo).toEqual(true)
 
   expect(typeof TheCommand.flags['content-hash']).toBe('object')
@@ -293,7 +293,10 @@ describe('run', () => {
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
-    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, verbose: true }), expect.anything())
+    expect(command.buildOneExt).toHaveBeenCalledWith('application',
+      appConfig.application,
+      expect.objectContaining({ 'force-build': false, verbose: true }),
+      expect.anything())
   })
 
   test('build & deploy --no-web-assets', async () => {
@@ -306,7 +309,10 @@ describe('run', () => {
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
-    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, 'web-assets': false }), expect.anything())
+    expect(command.buildOneExt).toHaveBeenCalledWith('application',
+      appConfig.application,
+      expect.objectContaining({ 'force-build': false, 'web-assets': false }),
+      expect.anything())
   })
 
   test('build & deploy only one action using --action (workspace: Production)', async () => {
@@ -347,9 +353,13 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(0)
 
-    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, 'web-assets': false, action: ['a', 'b', 'c'] }), expect.anything())
+    expect(command.buildOneExt).toHaveBeenCalledWith('application',
+      appConfig.application,
+      expect.objectContaining({ 'force-build': false, 'web-assets': false, action: ['a', 'b', 'c'] }),
+      expect.anything())
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(appConfig.application, {
-      filterEntities: { actions: ['a', 'b', 'c'] }
+      filterEntities: { actions: ['a', 'b', 'c'] },
+      useForce: false
     },
     expect.any(Function))
   })
@@ -365,9 +375,13 @@ describe('run', () => {
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
 
-    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, 'web-assets': false, action: ['c'] }), expect.anything())
+    expect(command.buildOneExt).toHaveBeenCalledWith('application',
+      appConfig.application,
+      expect.objectContaining({ 'force-build': false, 'web-assets': false, action: ['c'] }),
+      expect.anything())
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(appConfig.application, {
-      filterEntities: { actions: ['c'] }
+      filterEntities: { actions: ['c'] },
+      useForce: false
     },
     expect.any(Function))
   })
@@ -384,7 +398,10 @@ describe('run', () => {
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
-    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, 'web-assets': false }), expect.anything())
+    expect(command.buildOneExt).toHaveBeenCalledWith('application',
+      appConfig.application,
+      expect.objectContaining({ 'force-build': false, 'web-assets': false }),
+      expect.anything())
   })
 
   test('build & deploy actions with no actions folder but with a manifest', async () => {
@@ -408,7 +425,10 @@ describe('run', () => {
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
-    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, actions: false }), expect.anything())
+    expect(command.buildOneExt).toHaveBeenCalledWith('application',
+      appConfig.application,
+      expect.objectContaining({ 'force-build': false, actions: false }),
+      expect.anything())
   })
 
   test('build & deploy with --no-actions with no static folder', async () => {
@@ -423,7 +443,10 @@ describe('run', () => {
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
-    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true, actions: false }), expect.anything())
+    expect(command.buildOneExt).toHaveBeenCalledWith('application',
+      appConfig.application,
+      expect.objectContaining({ 'force-build': false, actions: false }),
+      expect.anything())
   })
 
   test('build & deploy with no manifest.yml', async () => {
@@ -437,7 +460,10 @@ describe('run', () => {
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
-    expect(command.buildOneExt).toHaveBeenCalledWith('application', appConfig.application, expect.objectContaining({ 'force-build': true }), expect.anything())
+    expect(command.buildOneExt).toHaveBeenCalledWith('application',
+      appConfig.application,
+      expect.objectContaining({ 'force-build': false }),
+      expect.anything())
   })
 
   test('--no-build', async () => {
@@ -900,6 +926,7 @@ describe('run', () => {
     expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(expect.any(Object), expect.objectContaining({ useForce: true }), expect.any(Function))
     expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
     expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(0)
   })
@@ -928,6 +955,7 @@ describe('run', () => {
     expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(expect.any(Object), expect.objectContaining({ useForce: true }), expect.any(Function))
     expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
     expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(0)
   })

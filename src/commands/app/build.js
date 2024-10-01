@@ -70,14 +70,16 @@ class Build extends BaseCommand {
     }
 
     if (flags.actions) {
-      if (config.app.hasBackend && (flags['force-build'] || !fs.existsSync(config.actions.dist))) {
+      // removed flags['force-build'] || as it is always forced at this point, we need to check to decide what to build
+      // if no backend, we skip the build
+      if (config.app.hasBackend) {
         try {
           let builtList = []
           const script = await runInProcess(config.hooks['build-actions'], config)
           aioLogger.debug(`run hook for 'build-actions' for actions in '${name}' returned ${script}`)
           spinner.start(`Building actions for '${name}'`)
           if (!script) {
-            builtList = await RuntimeLib.buildActions(config, filterActions, true)
+            builtList = await RuntimeLib.buildActions(config, filterActions, flags['force-build']) // skipCheck is false
           }
           if (builtList.length > 0) {
             spinner.succeed(chalk.green(`Built ${builtList.length} action(s) for '${name}'`))
@@ -85,7 +87,7 @@ class Build extends BaseCommand {
             if (script) {
               spinner.fail(chalk.green(`build-action skipped by hook '${name}'`))
             } else {
-              spinner.fail(chalk.green(`No actions built for '${name}'`))
+              spinner.info(chalk.green(`No actions built for '${name}'`))
             }
           }
           aioLogger.debug(`RuntimeLib.buildActions returned ${builtList}`)
@@ -94,7 +96,7 @@ class Build extends BaseCommand {
           throw err
         }
       } else {
-        spinner.info(`no backend or a build already exists, skipping action build for '${name}'`)
+        spinner.info(`no backend, skipping action build for '${name}'`)
       }
     }
     if (flags['web-assets']) {
@@ -127,7 +129,8 @@ class Build extends BaseCommand {
           throw err
         }
       } else {
-        spinner.info(`no frontend or a build already exists, skipping frontend build for '${name}'`)
+        // TODO: specify which ... keep this useful
+        spinner.info(chalk.green(`No frontend or a build already exists, skipping frontend build for '${name}'`))
       }
     }
     try {
@@ -140,7 +143,8 @@ class Build extends BaseCommand {
 
 Build.description = `Build an Adobe I/O App
 
-This will always force a rebuild unless --no-force-build is set.
+Build the actions and web assets for an Adobe I/O App. Build is optimized to only build what is necessary.
+Use the --force-build flag to force a build even if one already exists.
 `
 
 Build.flags = {
@@ -163,8 +167,8 @@ Build.flags = {
     allowNo: true
   }),
   'force-build': Flags.boolean({
-    description: '[default: true] Force a build even if one already exists',
-    default: true,
+    description: '[default: false] Force a build even if one already exists',
+    default: false,
     allowNo: true
   }),
   'content-hash': Flags.boolean({

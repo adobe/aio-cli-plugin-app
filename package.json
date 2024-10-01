@@ -12,7 +12,7 @@
     "@adobe/aio-lib-core-networking": "^5",
     "@adobe/aio-lib-env": "^3",
     "@adobe/aio-lib-ims": "^7",
-    "@adobe/aio-lib-runtime": "^6",
+    "@adobe/aio-lib-runtime": "^7.0.0",
     "@adobe/aio-lib-templates": "^3",
     "@adobe/aio-lib-web": "^7",
     "@adobe/generator-aio-app": "^7",
