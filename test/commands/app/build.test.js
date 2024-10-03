@@ -182,7 +182,7 @@ test('flags', async () => {
 
   expect(typeof TheCommand.flags['force-build']).toBe('object')
   expect(typeof TheCommand.flags['force-build'].description).toBe('string')
-  expect(TheCommand.flags['force-build'].default).toEqual(true)
+  expect(TheCommand.flags['force-build'].default).toEqual(false)
   expect(TheCommand.flags['force-build'].allowNo).toEqual(true)
 
   expect(typeof TheCommand.flags['content-hash']).toBe('object')
@@ -285,6 +285,7 @@ describe('run', () => {
   })
 
   test('build & deploy an App with no force-build but build exists', async () => {
+    // build actions is now called so it can verify if the src has changed since the last build
     command.appConfig.actions.dist = 'actions'
     command.appConfig.web.distProd = 'dist'
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
@@ -293,7 +294,7 @@ describe('run', () => {
     mockFS.existsSync.mockReturnValue(true)
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(0)
   })
 
@@ -326,7 +327,7 @@ describe('run', () => {
     expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Built 3 action(s) for \'application\''))
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
-    expect(mockRuntimeLib.buildActions).toHaveBeenCalledWith(appConfig.application, ['a', 'b', 'c'], true)
+    expect(mockRuntimeLib.buildActions).toHaveBeenCalledWith(appConfig.application, ['a', 'b', 'c'], false)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(0)
   })
 
@@ -344,9 +345,9 @@ describe('run', () => {
 
   test('build & deploy with --no-actions', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
-
-    command.argv = ['--no-actions']
+    command.argv = ['--no-actions', '--force-build']
     mockFS.existsSync.mockReturnValue(true)
+
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockWebLib.bundle).toHaveBeenCalledTimes(1)
