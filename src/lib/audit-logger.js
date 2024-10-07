@@ -33,7 +33,7 @@ const AUDIT_SERVICE_ENPOINTS = {
  * @param {string} env valid env stage|prod
  */
 async function sendAuditLogs (accessToken, logEvent, env = 'prod') {
-  const url = AUDIT_SERVICE_ENPOINTS[env]
+  const url = AUDIT_SERVICE_ENPOINTS[env] ?? AUDIT_SERVICE_ENPOINTS.prod
   const payload = {
     event: logEvent
   }

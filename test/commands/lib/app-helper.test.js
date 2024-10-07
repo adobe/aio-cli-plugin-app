@@ -37,6 +37,8 @@ const appHelper = require('../../../src/lib/app-helper')
 const aioConfig = require('@adobe/aio-lib-core-config')
 const libEnv = require('@adobe/aio-lib-env')
 const libIms = require('@adobe/aio-lib-ims')
+const util = require('util');
+
 
 beforeEach(() => {
   Object.defineProperty(process, 'platform', { value: 'linux' })
@@ -293,7 +295,7 @@ test('runPackageScript logs if package.json does not have matching script', asyn
 test('runInProcess with script should call runScript', async () => {
   expect(appHelper.runInProcess).toBeDefined()
   expect(appHelper.runInProcess).toBeInstanceOf(Function)
-  execa.command.mockReturnValue({ on: () => {} })
+  execa.command.mockReturnValue({ on: () => { } })
   await appHelper.runInProcess('echo new command who dis?', {})
   expect(mockLogger.debug).toHaveBeenCalledWith('runInProcess: error running project hook in process, running as package script instead')
   expect(execa.command).toHaveBeenCalledWith('echo new command who dis?', expect.any(Object))
@@ -308,7 +310,7 @@ test('runInProcess with require', async () => {
   )
   expect(appHelper.runInProcess).toBeDefined()
   expect(appHelper.runInProcess).toBeInstanceOf(Function)
-  execa.command.mockReturnValue({ on: () => {} })
+  execa.command.mockReturnValue({ on: () => { } })
   await appHelper.runInProcess('does-not-exist', {})
   expect(mockReq).toHaveBeenCalled()
   expect(mockLogger.debug).toHaveBeenCalledWith('runInProcess: running project hook in process')
@@ -328,13 +330,13 @@ test('runScript with empty command', async () => {
 })
 
 test('runScript with defined dir', async () => {
-  execa.command.mockReturnValue({ on: () => {} })
+  execa.command.mockReturnValue({ on: () => { } })
   await appHelper.runScript('somecommand', 'somedir')
   expect(execa.command).toHaveBeenCalledWith('somecommand', expect.objectContaining({ cwd: 'somedir' }))
 })
 
 test('runScript with empty dir => process.cwd', async () => {
-  execa.command.mockReturnValue({ on: () => {} })
+  execa.command.mockReturnValue({ on: () => { } })
   await appHelper.runScript('somecommand', undefined)
   expect(execa.command).toHaveBeenCalledWith('somecommand', expect.objectContaining({ cwd: process.cwd() }))
 })
@@ -589,9 +591,9 @@ test('setWorkspaceServicesConfig', () => {
   appHelper.setWorkspaceServicesConfig(fakeServiceProps)
   expect(aioConfig.set).toHaveBeenCalledWith(
     'project.workspace.details.services', [
-      { name: 'first', code: 'firsts' },
-      { name: 'sec', code: 'secs' }
-    ],
+    { name: 'first', code: 'firsts' },
+    { name: 'sec', code: 'secs' }
+  ],
     true
   )
 })
@@ -605,10 +607,10 @@ test('setOrgServicesConfig', () => {
   appHelper.setOrgServicesConfig(fakeOrgServices)
   expect(aioConfig.set).toHaveBeenCalledWith(
     'project.org.details.services', [
-      { name: 'first', code: 'firsts', type: 'entp' },
-      { name: 'sec', code: 'secs', type: 'entp' },
-      { name: 'third', code: 'thirds', type: 'entp' }
-    ],
+    { name: 'first', code: 'firsts', type: 'entp' },
+    { name: 'sec', code: 'secs', type: 'entp' },
+    { name: 'third', code: 'thirds', type: 'entp' }
+  ],
     true
   )
 })
@@ -870,8 +872,8 @@ describe('serviceToGeneratorInput', () => {
   test('list with empty codes', () => {
     expect(appHelper.servicesToGeneratorInput(
       [{ name: 'hello', code: 'hellocode' },
-        { name: 'bonjour', code: 'bonjourcode' },
-        { name: 'nocode' }]
+      { name: 'bonjour', code: 'bonjourcode' },
+      { name: 'nocode' }]
     )).toEqual('hellocode,bonjourcode')
   })
 })
@@ -988,3 +990,57 @@ describe('object values', () => {
     expect(appHelper.getObjectValue(obj)).toEqual(obj)
   })
 })
+
+describe.only('checkifAccessTokenExists', () => {
+  // let mockExec;
+
+  // beforeEach(() => {
+  //   // Step 1: Create a mock for exec
+  //   mockExec = jest.fn((command, callback) => {
+  //     // Step 2: Call the callback with null error and desired stdout
+  //     callback(null, { stdout: 'someAccessToken', stderr: '' });
+  //   });
+
+  //   // Step 3: Replace the exec function in child_process with the mock
+  //   jest.spyOn(require('child_process'), 'exec').mockImplementation(mockExec);
+
+  //   // Step 4: Mock util.promisify to return the mocked exec
+  //   util.promisify = jest.fn().mockReturnValue(mockExec);
+  // });
+
+  // afterEach(() => {
+  //   jest.restoreAllMocks(); // Restore all mocks after each test
+  // });
+
+  // test('should return true when token is found', async () => {
+  //   // Step 5: Call the function
+  //   const result = await appHelper.checkifAccessTokenExists();
+
+  //   // Assert that exec was called with the correct command
+  //   expect(mockExec).toHaveBeenCalledWith('aio config get ims.contexts.cli.access_token.token', expect.any(Function));
+
+  //   // Assert the result is true (token was found)
+  //   expect(result).toBe(true);
+
+  //   // Assert that the log was called with the expected message
+  //   expect(console.log).toHaveBeenCalledWith('Access token found: someAccessToken');
+  // });
+  jest.mock('util', () => ({
+    promisify: jest.fn(() => jest.fn()),
+  }));
+  
+  const { execAsync } = jest.mock('util');
+
+  beforeEach(() => {
+    execAsync.mockClear(); // Clear mock calls before each test
+  });
+
+  test('returns true when access token is found', async () => {
+    const mockStdout = 'some_access_token';
+    execAsync.mockResolvedValueOnce({ stdout: mockStdout, stderr: '' });
+    const result = await appHelper.checkifAccessTokenExists();
+    expect(result).toBe(true);
+    expect(execAsync).toHaveBeenCalledTimes(1);
+    expect(execAsync).toHaveBeenCalledWith('aio config get ims.contexts.cli.access_token.token');
+  });
+});

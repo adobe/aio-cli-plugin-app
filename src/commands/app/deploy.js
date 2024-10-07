@@ -18,7 +18,7 @@ const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { Flags } = require('@oclif/core')
-const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getCliInfo } = require('../../lib/app-helper')
+const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getCliInfo, checkifAccessTokenExists } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
 const { sendAuditLogs, getAuditLogEvent, getFilesCountWithExtension } = require('../../lib/audit-logger')
@@ -34,6 +34,8 @@ class Deploy extends BuildCommand {
     // flags
     flags['web-assets'] = flags['web-assets'] && !flags.action
     flags.publish = flags.publish && !flags.action
+
+    const doesTokenExists = await checkifAccessTokenExists()
 
     const deployConfigs = await this.getAppExtConfigs(flags)
     const keys = Object.keys(deployConfigs)
@@ -52,7 +54,7 @@ class Deploy extends BuildCommand {
 
     try {
       const aioConfig = (await this.getFullConfig()).aio
-      const cliDetails = await getCliInfo()
+      const cliDetails = doesTokenExists ? await getCliInfo() : null
 
       // 1. update log forwarding configuration
       // note: it is possible that .aio file does not exist, which means there is no local lg config
@@ -64,7 +66,7 @@ class Deploy extends BuildCommand {
             const lfConfig = lf.getLocalConfigWithSecrets()
             if (lfConfig.isDefined()) {
               await lf.updateServerConfig(lfConfig)
-              spinner.succeed(chalk.green(`Log forwarding is set to '${lfConfig.getDestination()}'`))
+              spinner.succeed(chalk.green(`\nLog forwarding is set to '${lfConfig.getDestination()}'`))
             } else {
               if (flags.verbose) {
                 spinner.info(chalk.dim('Log forwarding is not updated: no configuration is provided'))
@@ -94,7 +96,7 @@ class Deploy extends BuildCommand {
 
       // 3. send deploy log event
       const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_DEPLOY')
-      if (logEvent) {
+      if (logEvent && cliDetails) {
         await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
       } else {
         this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
@@ -111,7 +113,7 @@ class Deploy extends BuildCommand {
         if (v.app.hasFrontend && flags['web-assets']) {
           const opItems = getFilesCountWithExtension(v.web.distProd)
           const assetDeployedLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_DEPLOYED')
-          if (assetDeployedLogEvent) {
+          if (assetDeployedLogEvent && cliDetails) {
             assetDeployedLogEvent.data.opItems = opItems
             await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env)
           }
