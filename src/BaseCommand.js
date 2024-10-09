@@ -31,6 +31,7 @@ const {
 } = require('@adobe/aio-lib-env')
 
 class BaseCommand extends Command {
+
   // default error handler for app commands
   async catch (error) {
     const { flags } = await this.parse(this.prototype)
@@ -42,6 +43,7 @@ class BaseCommand extends Command {
     await super.init()
     // setup a prompt that outputs to stderr
     this.prompt = inquirer.createPromptModule({ output: process.stderr })
+    process.env.__OW_USER_AGENT = 'aio-cli-plugin-app@' + require('../package.json').version
   }
 
   async getLibConsoleCLI () {

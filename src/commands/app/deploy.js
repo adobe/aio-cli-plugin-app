@@ -31,7 +31,6 @@ class Deploy extends BuildCommand {
     // cli input
     const { flags } = await this.parse(Deploy)
 
-    process.env.__OW_USER_AGENT = 'aio-cli-plugin-app@' + require('../../../package.json').version
     // flags
     flags['web-assets'] = flags['web-assets'] && !flags.action
     flags.publish = flags.publish && !flags.action

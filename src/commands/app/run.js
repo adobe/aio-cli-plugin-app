@@ -36,7 +36,6 @@ class Run extends BaseCommand {
     // cli input
     const { flags } = await this.parse(Run)
 
-    process.env.__OW_USER_AGENT = 'aio-cli-plugin-app@' + require('../../../package.json').version
     if (flags.local) {
       const [firstCpu] = os.cpus()
       // note: the earliest versions of M1 macs return 'Apple processor' under model.
