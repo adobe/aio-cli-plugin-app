@@ -31,7 +31,6 @@ const {
 } = require('@adobe/aio-lib-env')
 
 class BaseCommand extends Command {
-
   // default error handler for app commands
   async catch (error) {
     const { flags } = await this.parse(this.prototype)
