@@ -42,6 +42,7 @@ class BaseCommand extends Command {
     await super.init()
     // setup a prompt that outputs to stderr
     this.prompt = inquirer.createPromptModule({ output: process.stderr })
+    process.env.__OW_USER_AGENT = 'aio-cli-plugin-app@' + require('../package.json').version
   }
 
   async getLibConsoleCLI () {
