@@ -16,7 +16,7 @@ const chalk = require('chalk')
 const OPERATIONS = {
   AB_APP_DEPLOY: 'ab_app_deploy',
   AB_APP_UNDEPLOY: 'ab_app_undeploy',
-  AB_APP_TEST: 'ab_app_test', // todo : remove after testing
+  AB_APP_TEST: 'ab_app_test',
   AB_APP_ASSETS_DEPLOYED: 'ab_app_assets_deployed',
   AB_APP_ASSETS_UNDEPLOYED: 'ab_app_assets_undeployed'
 }
@@ -33,7 +33,7 @@ const AUDIT_SERVICE_ENPOINTS = {
  * @param {string} env valid env stage|prod
  */
 async function sendAuditLogs (accessToken, logEvent, env = 'prod') {
-  const url = AUDIT_SERVICE_ENPOINTS[env]
+  const url = AUDIT_SERVICE_ENPOINTS[env] ?? AUDIT_SERVICE_ENPOINTS.prod
   const payload = {
     event: logEvent
   }

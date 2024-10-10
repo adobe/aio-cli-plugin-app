@@ -90,6 +90,21 @@ test('sendAuditLogs with default params', async () => {
   expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENPOINTS.prod, options)
 })
 
+test('should take prod endpoint if calling sendAuditLogs with non-exisiting env', async () => {
+  fetch.mockReturnValue(mockResponse)
+  const options = {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer ' + mockToken,
+      'Content-type': 'application/json'
+    },
+    body: JSON.stringify({ event: mockLogEvent })
+  }
+  await auditLogger.sendAuditLogs(mockToken, mockLogEvent, 'dev')
+  expect(fetch).toHaveBeenCalledTimes(1)
+  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENPOINTS.prod, options)
+})
+
 test('sendAuditLogs error response', async () => {
   fetch.mockReturnValue(mockErrorResponse)
   const options = {

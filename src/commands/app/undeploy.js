@@ -17,7 +17,7 @@ const { Flags } = require('@oclif/core')
 
 const BaseCommand = require('../../BaseCommand')
 const webLib = require('@adobe/aio-lib-web')
-const { runInProcess, buildExtensionPointPayloadWoMetadata, getCliInfo } = require('../../lib/app-helper')
+const { runInProcess, buildExtensionPointPayloadWoMetadata, getCliInfo, checkifAccessTokenExists } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const { sendAuditLogs, getAuditLogEvent } = require('../../lib/audit-logger')
 
@@ -25,6 +25,7 @@ class Undeploy extends BaseCommand {
   async run () {
     // cli input
     const { flags } = await this.parse(Undeploy)
+    const doesTokenExists = await checkifAccessTokenExists()
 
     const undeployConfigs = await this.getAppExtConfigs(flags)
     let libConsoleCLI
@@ -46,12 +47,16 @@ class Undeploy extends BaseCommand {
     const spinner = ora()
     try {
       const aioConfig = (await this.getFullConfig()).aio
-      const cliDetails = await getCliInfo()
+      const cliDetails = doesTokenExists ? await getCliInfo() : null
       const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_UNDEPLOY')
 
       // 1.1. send audit log event for successful undeploy
-      if (logEvent) {
-        await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
+      if (logEvent && cliDetails) {
+        try {
+          await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
+        } catch (error) {
+          this.log(chalk.red(chalk.bold('Error: Audit Log Service Error: Failed to send audit log event for deployment.')))
+        }
       } else {
         this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
       }
@@ -61,8 +66,12 @@ class Undeploy extends BaseCommand {
         const v = values[i]
         await this.undeployOneExt(k, v, flags, spinner)
         const assetUndeployLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_UNDEPLOYED')
-        if (assetUndeployLogEvent) {
-          await sendAuditLogs(cliDetails.accessToken, assetUndeployLogEvent, cliDetails.env)
+        if (assetUndeployLogEvent && cliDetails) {
+          try {
+            await sendAuditLogs(cliDetails.accessToken, assetUndeployLogEvent, cliDetails.env)
+          } catch (error) {
+            this.log(chalk.red(chalk.bold('Error: Audit Log Service Error: Failed to send audit log event for deployment.')))
+          }
         }
       }
 
