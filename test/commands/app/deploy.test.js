@@ -1303,7 +1303,7 @@ describe('run', () => {
     expect(auditLogger.sendAuditLogs).toHaveBeenCalledWith(mockToken, expect.objectContaining({ orgId: mockOrg, projectId: mockProject, workspaceId: mockWorkspaceId, workspaceName: mockWorkspaceName }), mockEnv)
   })
 
-  test('Do not send audit logs for successful app deploy', async () => {
+  test('Do not send audit logs for successful app deploy, if no logevent is present', async () => {
     const mockToken = 'mocktoken'
     const mockEnv = 'stage'
     const mockOrg = 'mockorg'
@@ -1350,7 +1350,7 @@ describe('run', () => {
       accessToken: mockToken,
       env: mockEnv
     })
-    helpers.checkifAccessTokenExists.mockResolvedValueOnce(false);
+    helpers.checkifAccessTokenExists.mockResolvedValueOnce(false)
     command.getFullConfig = jest.fn().mockReturnValue({
       aio: {
         project: {
@@ -1414,5 +1414,52 @@ describe('run', () => {
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(auditLogger.getFilesCountWithExtension).toHaveBeenCalledTimes(2)
     expect(auditLogger.sendAuditLogs).toHaveBeenCalledWith(mockToken, expect.objectContaining({ orgId: mockOrg, projectId: mockProject, workspaceId: mockWorkspaceId, workspaceName: mockWorkspaceName }), mockEnv)
+  })
+
+  test('Should deploy successfully even if Audit log service is unavailable', async () => {
+    const mockToken = 'mocktoken'
+    const mockEnv = 'stage'
+    const mockOrg = 'mockorg'
+    const mockProject = 'mockproject'
+    const mockWorkspaceId = 'mockworkspaceid'
+    const mockWorkspaceName = 'mockworkspacename'
+    helpers.getCliInfo.mockResolvedValueOnce({
+      accessToken: mockToken,
+      env: mockEnv
+    })
+    command.getFullConfig = jest.fn().mockReturnValue({
+      aio: {
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      }
+    })
+
+    auditLogger.sendAuditLogs.mockRejectedValue({
+      message: 'Internal Server Error',
+      status: 500
+    })
+
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+
+    await command.run()
+    expect(command.log).toHaveBeenCalledWith(
+      expect.stringContaining('skipping publish phase...')
+    )
+
+    expect(command.log).toHaveBeenCalledWith(
+      expect.stringContaining('Successful deployment 🏄')
+    )
+    expect(auditLogger.sendAuditLogs).toHaveBeenCalledTimes(2)
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
   })
 })

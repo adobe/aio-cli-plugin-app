@@ -37,8 +37,11 @@ const appHelper = require('../../../src/lib/app-helper')
 const aioConfig = require('@adobe/aio-lib-core-config')
 const libEnv = require('@adobe/aio-lib-env')
 const libIms = require('@adobe/aio-lib-ims')
-const util = require('util');
+const { exec } = require('child_process')
 
+jest.mock('child_process', () => ({
+  exec: jest.fn()
+}))
 
 beforeEach(() => {
   Object.defineProperty(process, 'platform', { value: 'linux' })
@@ -591,9 +594,9 @@ test('setWorkspaceServicesConfig', () => {
   appHelper.setWorkspaceServicesConfig(fakeServiceProps)
   expect(aioConfig.set).toHaveBeenCalledWith(
     'project.workspace.details.services', [
-    { name: 'first', code: 'firsts' },
-    { name: 'sec', code: 'secs' }
-  ],
+      { name: 'first', code: 'firsts' },
+      { name: 'sec', code: 'secs' }
+    ],
     true
   )
 })
@@ -607,10 +610,10 @@ test('setOrgServicesConfig', () => {
   appHelper.setOrgServicesConfig(fakeOrgServices)
   expect(aioConfig.set).toHaveBeenCalledWith(
     'project.org.details.services', [
-    { name: 'first', code: 'firsts', type: 'entp' },
-    { name: 'sec', code: 'secs', type: 'entp' },
-    { name: 'third', code: 'thirds', type: 'entp' }
-  ],
+      { name: 'first', code: 'firsts', type: 'entp' },
+      { name: 'sec', code: 'secs', type: 'entp' },
+      { name: 'third', code: 'thirds', type: 'entp' }
+    ],
     true
   )
 })
@@ -872,8 +875,8 @@ describe('serviceToGeneratorInput', () => {
   test('list with empty codes', () => {
     expect(appHelper.servicesToGeneratorInput(
       [{ name: 'hello', code: 'hellocode' },
-      { name: 'bonjour', code: 'bonjourcode' },
-      { name: 'nocode' }]
+        { name: 'bonjour', code: 'bonjourcode' },
+        { name: 'nocode' }]
     )).toEqual('hellocode,bonjourcode')
   })
 })
@@ -991,56 +994,61 @@ describe('object values', () => {
   })
 })
 
-describe.only('checkifAccessTokenExists', () => {
-  // let mockExec;
-
-  // beforeEach(() => {
-  //   // Step 1: Create a mock for exec
-  //   mockExec = jest.fn((command, callback) => {
-  //     // Step 2: Call the callback with null error and desired stdout
-  //     callback(null, { stdout: 'someAccessToken', stderr: '' });
-  //   });
-
-  //   // Step 3: Replace the exec function in child_process with the mock
-  //   jest.spyOn(require('child_process'), 'exec').mockImplementation(mockExec);
-
-  //   // Step 4: Mock util.promisify to return the mocked exec
-  //   util.promisify = jest.fn().mockReturnValue(mockExec);
-  // });
-
-  // afterEach(() => {
-  //   jest.restoreAllMocks(); // Restore all mocks after each test
-  // });
-
-  // test('should return true when token is found', async () => {
-  //   // Step 5: Call the function
-  //   const result = await appHelper.checkifAccessTokenExists();
-
-  //   // Assert that exec was called with the correct command
-  //   expect(mockExec).toHaveBeenCalledWith('aio config get ims.contexts.cli.access_token.token', expect.any(Function));
-
-  //   // Assert the result is true (token was found)
-  //   expect(result).toBe(true);
-
-  //   // Assert that the log was called with the expected message
-  //   expect(console.log).toHaveBeenCalledWith('Access token found: someAccessToken');
-  // });
-  jest.mock('util', () => ({
-    promisify: jest.fn(() => jest.fn()),
-  }));
-  
-  const { execAsync } = jest.mock('util');
+describe('checkifAccessTokenExists', () => {
+  let consoleLogSpy, consoleWarnSpy, consoleInfoSpy, consoleErrorSpy
 
   beforeEach(() => {
-    execAsync.mockClear(); // Clear mock calls before each test
-  });
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => { })
+    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => { })
+    consoleInfoSpy = jest.spyOn(console, 'info').mockImplementation(() => { })
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { })
+  })
 
-  test('returns true when access token is found', async () => {
-    const mockStdout = 'some_access_token';
-    execAsync.mockResolvedValueOnce({ stdout: mockStdout, stderr: '' });
-    const result = await appHelper.checkifAccessTokenExists();
-    expect(result).toBe(true);
-    expect(execAsync).toHaveBeenCalledTimes(1);
-    expect(execAsync).toHaveBeenCalledWith('aio config get ims.contexts.cli.access_token.token');
-  });
-});
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  test('should return true when access token is found', async () => {
+    exec.mockImplementation((command, callback) => {
+      callback(null, { stdout: 'mock_access_token', stderr: '' })
+    })
+
+    const result = await appHelper.checkifAccessTokenExists()
+
+    expect(result).toBe(true)
+    expect(consoleLogSpy).toHaveBeenCalledWith('Access token found: mock_access_token')
+  })
+
+  test('should return false when access token is not found', async () => {
+    exec.mockImplementation((command, callback) => {
+      callback(null, { stdout: '', stderr: '' })
+    })
+
+    const result = await appHelper.checkifAccessTokenExists()
+
+    expect(result).toBe(false)
+    expect(consoleInfoSpy).toHaveBeenCalledWith('No token found')
+  })
+
+  test('should return false and warn when there is an stderr', async () => {
+    exec.mockImplementation((command, callback) => {
+      callback(null, { stdout: 'mock_access_token', stderr: 'Some error occurred' })
+    })
+
+    const result = await appHelper.checkifAccessTokenExists()
+
+    expect(result).toBe(false)
+    expect(consoleWarnSpy).toHaveBeenCalledWith('Warning: Some error occurred')
+  })
+
+  test('should return false when an error occurs', async () => {
+    exec.mockImplementation((command, callback) => {
+      callback(new Error('Failed to execute command'))
+    })
+
+    const result = await appHelper.checkifAccessTokenExists()
+
+    expect(result).toBe(false)
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Error retrieving token: Failed to execute command')
+  })
+})

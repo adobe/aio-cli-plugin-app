@@ -97,7 +97,11 @@ class Deploy extends BuildCommand {
       // 3. send deploy log event
       const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_DEPLOY')
       if (logEvent && cliDetails) {
-        await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
+        try {
+          await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
+        } catch (error) {
+          this.log(chalk.red(chalk.bold('Error: Audit Log Service Error: Failed to send audit log event for deployment.')))
+        }
       } else {
         this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
       }
@@ -115,7 +119,11 @@ class Deploy extends BuildCommand {
           const assetDeployedLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_DEPLOYED')
           if (assetDeployedLogEvent && cliDetails) {
             assetDeployedLogEvent.data.opItems = opItems
-            await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env)
+            try {
+              await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
+            } catch (error) {
+              this.log(chalk.red(chalk.bold('Error: Audit Log Service Error: Failed to send audit log event for deployment.')))
+            }
           }
         }
       }

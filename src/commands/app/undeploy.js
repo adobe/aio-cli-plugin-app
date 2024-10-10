@@ -52,7 +52,11 @@ class Undeploy extends BaseCommand {
 
       // 1.1. send audit log event for successful undeploy
       if (logEvent && cliDetails) {
-        await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
+        try {
+          await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
+        } catch (error) {
+          this.log(chalk.red(chalk.bold('Error: Audit Log Service Error: Failed to send audit log event for deployment.')))
+        }
       } else {
         this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
       }
@@ -63,7 +67,11 @@ class Undeploy extends BaseCommand {
         await this.undeployOneExt(k, v, flags, spinner)
         const assetUndeployLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_UNDEPLOYED')
         if (assetUndeployLogEvent && cliDetails) {
-          await sendAuditLogs(cliDetails.accessToken, assetUndeployLogEvent, cliDetails.env)
+          try {
+            await sendAuditLogs(cliDetails.accessToken, assetUndeployLogEvent, cliDetails.env)
+          } catch (error) {
+            this.log(chalk.red(chalk.bold('Error: Audit Log Service Error: Failed to send audit log event for deployment.')))
+          }
         }
       }
 
