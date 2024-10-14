@@ -35,7 +35,13 @@ class Deploy extends BuildCommand {
     flags['web-assets'] = flags['web-assets'] && !flags.action
     flags.publish = flags.publish && !flags.action
 
-    const doesTokenExists = await checkifAccessTokenExists()
+    const isValidCommand = this.config.findCommand('config:get')
+
+    if (!isValidCommand) {
+      this.error('The config:get command is not available. Please update the aio-cli to the latest version.')
+    }
+
+    const doesTokenExists = isValidCommand ? await checkifAccessTokenExists() : false
 
     const deployConfigs = await this.getAppExtConfigs(flags)
     const keys = Object.keys(deployConfigs)
@@ -54,7 +60,7 @@ class Deploy extends BuildCommand {
 
     try {
       const aioConfig = (await this.getFullConfig()).aio
-      const cliDetails = doesTokenExists ? await getCliInfo() : null
+      const loginCredentials = doesTokenExists ? await getCliInfo() : null
 
       // 1. update log forwarding configuration
       // note: it is possible that .aio file does not exist, which means there is no local lg config
@@ -96,9 +102,9 @@ class Deploy extends BuildCommand {
 
       // 3. send deploy log event
       const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_DEPLOY')
-      if (logEvent && cliDetails) {
+      if (logEvent && loginCredentials) {
         try {
-          await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
+          await sendAuditLogs(loginCredentials.accessToken, logEvent, loginCredentials.env)
         } catch (error) {
           this.log(chalk.red(chalk.bold('Error: Audit Log Service Error: Failed to send audit log event for deployment.')))
         }
@@ -117,10 +123,10 @@ class Deploy extends BuildCommand {
         if (v.app.hasFrontend && flags['web-assets']) {
           const opItems = getFilesCountWithExtension(v.web.distProd)
           const assetDeployedLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_DEPLOYED')
-          if (assetDeployedLogEvent && cliDetails) {
+          if (assetDeployedLogEvent && loginCredentials) {
             assetDeployedLogEvent.data.opItems = opItems
             try {
-              await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
+              await sendAuditLogs(loginCredentials.accessToken, logEvent, loginCredentials.env)
             } catch (error) {
               this.log(chalk.red(chalk.bold('Error: Audit Log Service Error: Failed to send audit log event for deployment.')))
             }

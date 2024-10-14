@@ -72,7 +72,7 @@ test('sendAuditLogs with valid params', async () => {
   }
   await auditLogger.sendAuditLogs(mockToken, mockLogEvent, mockEnv)
   expect(fetch).toHaveBeenCalledTimes(1)
-  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENPOINTS[mockEnv], options)
+  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENDPOINTS[mockEnv], options)
 })
 
 test('sendAuditLogs with default params', async () => {
@@ -87,7 +87,7 @@ test('sendAuditLogs with default params', async () => {
   }
   await auditLogger.sendAuditLogs(mockToken, mockLogEvent)
   expect(fetch).toHaveBeenCalledTimes(1)
-  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENPOINTS.prod, options)
+  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENDPOINTS.prod, options)
 })
 
 test('should take prod endpoint if calling sendAuditLogs with non-exisiting env', async () => {
@@ -102,7 +102,7 @@ test('should take prod endpoint if calling sendAuditLogs with non-exisiting env'
   }
   await auditLogger.sendAuditLogs(mockToken, mockLogEvent, 'dev')
   expect(fetch).toHaveBeenCalledTimes(1)
-  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENPOINTS.prod, options)
+  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENDPOINTS.prod, options)
 })
 
 test('sendAuditLogs error response', async () => {
@@ -117,7 +117,7 @@ test('sendAuditLogs error response', async () => {
   }
   await expect(auditLogger.sendAuditLogs(mockToken, mockLogEvent, mockEnv)).rejects.toThrow('Failed to send audit log - 400')
   expect(fetch).toHaveBeenCalledTimes(1)
-  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENPOINTS[mockEnv], options)
+  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENDPOINTS[mockEnv], options)
 })
 
 describe('getAuditLogEvent', () => {

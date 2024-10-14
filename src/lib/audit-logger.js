@@ -21,7 +21,7 @@ const OPERATIONS = {
   AB_APP_ASSETS_UNDEPLOYED: 'ab_app_assets_undeployed'
 }
 
-const AUDIT_SERVICE_ENPOINTS = {
+const AUDIT_SERVICE_ENDPOINTS = {
   stage: 'https://adp-auditlog-service-stage.adobeioruntime.net/api/v1/web/audit-log-api/event-post',
   prod: 'https://adp-auditlog-service-prod.adobeioruntime.net/api/v1/web/audit-log-api/event-post'
 }
@@ -33,7 +33,7 @@ const AUDIT_SERVICE_ENPOINTS = {
  * @param {string} env valid env stage|prod
  */
 async function sendAuditLogs (accessToken, logEvent, env = 'prod') {
-  const url = AUDIT_SERVICE_ENPOINTS[env] ?? AUDIT_SERVICE_ENPOINTS.prod
+  const url = AUDIT_SERVICE_ENDPOINTS[env] ?? AUDIT_SERVICE_ENDPOINTS.prod
   const payload = {
     event: logEvent
   }
@@ -139,6 +139,6 @@ function getFilesCountWithExtension (directory) {
 module.exports = {
   sendAuditLogs,
   getAuditLogEvent,
-  AUDIT_SERVICE_ENPOINTS,
+  AUDIT_SERVICE_ENDPOINTS,
   getFilesCountWithExtension
 }

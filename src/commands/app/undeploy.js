@@ -25,7 +25,14 @@ class Undeploy extends BaseCommand {
   async run () {
     // cli input
     const { flags } = await this.parse(Undeploy)
-    const doesTokenExists = await checkifAccessTokenExists()
+
+    const isValidCommand = this.config.findCommand('config:get')
+
+    if (!isValidCommand) {
+      this.error('The config:get command is not available. Please update the aio-cli to the latest version.')
+    }
+
+    const doesTokenExists = isValidCommand ? await checkifAccessTokenExists() : false
 
     const undeployConfigs = await this.getAppExtConfigs(flags)
     let libConsoleCLI
@@ -47,18 +54,18 @@ class Undeploy extends BaseCommand {
     const spinner = ora()
     try {
       const aioConfig = (await this.getFullConfig()).aio
-      const cliDetails = doesTokenExists ? await getCliInfo() : null
+      const loginCredentials = doesTokenExists ? await getCliInfo() : null
       const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_UNDEPLOY')
 
       // 1.1. send audit log event for successful undeploy
-      if (logEvent && cliDetails) {
+      if (logEvent && loginCredentials) {
         try {
-          await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
+          await sendAuditLogs(loginCredentials.accessToken, logEvent, loginCredentials.env)
         } catch (error) {
-          this.log(chalk.red(chalk.bold('Error: Audit Log Service Error: Failed to send audit log event for deployment.')))
+          this.warn('Warning: Audit Log Service Error: Failed to send audit log event for un-deployment.')
         }
       } else {
-        this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
+        this.warn('Warning: No valid config data found to send audit log event for un-deployment.')
       }
 
       for (let i = 0; i < keys.length; ++i) {
@@ -66,11 +73,11 @@ class Undeploy extends BaseCommand {
         const v = values[i]
         await this.undeployOneExt(k, v, flags, spinner)
         const assetUndeployLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_UNDEPLOYED')
-        if (assetUndeployLogEvent && cliDetails) {
+        if (assetUndeployLogEvent && loginCredentials) {
           try {
-            await sendAuditLogs(cliDetails.accessToken, assetUndeployLogEvent, cliDetails.env)
+            await sendAuditLogs(loginCredentials.accessToken, assetUndeployLogEvent, loginCredentials.env)
           } catch (error) {
-            this.log(chalk.red(chalk.bold('Error: Audit Log Service Error: Failed to send audit log event for deployment.')))
+            this.warn('Warning: Audit Log Service Error: Failed to send audit log event for un-deployment.')
           }
         }
       }

@@ -24,9 +24,6 @@ const { EOL } = require('os')
 const { getCliEnv } = require('@adobe/aio-lib-env')
 const yaml = require('js-yaml')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
-const { exec } = require('child_process')
-const util = require('util')
-const execAsync = util.promisify(exec)
 
 /** @private */
 function isNpmInstalled () {
@@ -577,7 +574,7 @@ function getObjectValue (obj, key) {
  */
 const checkifAccessTokenExists = async () => {
   try {
-    const { stdout, stderr } = await execAsync('aio config get ims.contexts.cli.access_token.token')
+    const { stdout, stderr } = await execa('aio', ['config', 'get', 'ims.contexts.cli.access_token.token'])
     if (stderr) {
       console.warn(`Warning: ${stderr}`)
       return false
@@ -586,7 +583,6 @@ const checkifAccessTokenExists = async () => {
       console.info('No token found')
       return false
     }
-    console.log(`Access token found: ${stdout}`)
     return true
   } catch (error) {
     console.error(`Error retrieving token: ${error.message}`)

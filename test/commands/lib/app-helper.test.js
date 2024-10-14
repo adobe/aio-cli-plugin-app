@@ -37,7 +37,6 @@ const appHelper = require('../../../src/lib/app-helper')
 const aioConfig = require('@adobe/aio-lib-core-config')
 const libEnv = require('@adobe/aio-lib-env')
 const libIms = require('@adobe/aio-lib-ims')
-const { exec } = require('child_process')
 
 jest.mock('child_process', () => ({
   exec: jest.fn()
@@ -995,60 +994,72 @@ describe('object values', () => {
 })
 
 describe('checkifAccessTokenExists', () => {
-  let consoleLogSpy, consoleWarnSpy, consoleInfoSpy, consoleErrorSpy
-
-  beforeEach(() => {
-    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => { })
-    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => { })
-    consoleInfoSpy = jest.spyOn(console, 'info').mockImplementation(() => { })
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { })
-  })
-
   afterEach(() => {
     jest.restoreAllMocks()
   })
 
   test('should return true when access token is found', async () => {
-    exec.mockImplementation((command, callback) => {
-      callback(null, { stdout: 'mock_access_token', stderr: '' })
+    execa.mockImplementationOnce((cmd, args, options) => {
+      expect(cmd).toEqual('aio')
+      expect(args).toEqual(['config', 'get', 'ims.contexts.cli.access_token.token'])
+      return Promise.resolve({
+        stdout: 'mock_access_token'
+      })
     })
 
     const result = await appHelper.checkifAccessTokenExists()
-
     expect(result).toBe(true)
-    expect(consoleLogSpy).toHaveBeenCalledWith('Access token found: mock_access_token')
   })
 
   test('should return false when access token is not found', async () => {
-    exec.mockImplementation((command, callback) => {
-      callback(null, { stdout: '', stderr: '' })
+    execa.mockImplementationOnce((cmd, args, options) => {
+      expect(cmd).toEqual('aio')
+      expect(args).toEqual(['config', 'get', 'ims.contexts.cli.access_token.token'])
+      return Promise.resolve({
+        stdout: ''
+      })
     })
 
     const result = await appHelper.checkifAccessTokenExists()
 
     expect(result).toBe(false)
-    expect(consoleInfoSpy).toHaveBeenCalledWith('No token found')
+  })
+
+  test('should return false when stdout is null', async () => {
+    execa.mockImplementationOnce((cmd, args, options) => {
+      expect(cmd).toEqual('aio')
+      expect(args).toEqual(['config', 'get', 'ims.contexts.cli.access_token.token'])
+      return Promise.resolve({
+        stdout: null
+      })
+    })
+
+    const result = await appHelper.checkifAccessTokenExists()
+
+    expect(result).toBe(false)
   })
 
   test('should return false and warn when there is an stderr', async () => {
-    exec.mockImplementation((command, callback) => {
-      callback(null, { stdout: 'mock_access_token', stderr: 'Some error occurred' })
+    execa.mockImplementationOnce((cmd, args, options) => {
+      expect(cmd).toEqual('aio')
+      expect(args).toEqual(['config', 'get', 'ims.contexts.cli.access_token.token'])
+      return Promise.resolve({
+        stderr: 'error_got_null'
+      })
     })
 
     const result = await appHelper.checkifAccessTokenExists()
 
     expect(result).toBe(false)
-    expect(consoleWarnSpy).toHaveBeenCalledWith('Warning: Some error occurred')
   })
 
   test('should return false when an error occurs', async () => {
-    exec.mockImplementation((command, callback) => {
-      callback(new Error('Failed to execute command'))
+    execa.mockImplementationOnce((cmd, args, options) => {
+      expect(cmd).toEqual('aio')
+      expect(args).toEqual(['config', 'get', 'ims.contexts.cli.access_token.token'])
+      return Promise.reject(new Error('error_got_null'))
     })
-
     const result = await appHelper.checkifAccessTokenExists()
-
     expect(result).toBe(false)
-    expect(consoleErrorSpy).toHaveBeenCalledWith('Error retrieving token: Failed to execute command')
   })
 })
