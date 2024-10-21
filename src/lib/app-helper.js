@@ -574,16 +574,11 @@ function getObjectValue (obj, key) {
  */
 const checkifAccessTokenExists = async () => {
   try {
-    const { stdout, stderr } = await execa('aio', ['config', 'get', 'ims.contexts.cli.access_token.token'])
-    if (stderr) {
-      console.warn(`Warning: ${stderr}`)
-      return false
+    const token = aioConfig.get('ims.contexts.cli.access_token.token')
+    if (token) {
+      return true
     }
-    if (!stdout || stdout === '') {
-      console.info('No token found')
-      return false
-    }
-    return true
+    return false
   } catch (error) {
     console.error(`Error retrieving token: ${error.message}`)
     return false

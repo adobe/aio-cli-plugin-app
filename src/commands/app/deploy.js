@@ -35,14 +35,7 @@ class Deploy extends BuildCommand {
     flags['web-assets'] = flags['web-assets'] && !flags.action
     flags.publish = flags.publish && !flags.action
 
-    const isValidCommand = this.config.findCommand('config:get')
-
-    if (!isValidCommand) {
-      this.error('The config:get command is not available. Please update the aio-cli to the latest version.')
-    }
-
-    const doesTokenExists = isValidCommand ? await checkifAccessTokenExists() : false
-
+    const doesTokenExists = await checkifAccessTokenExists()
     const deployConfigs = await this.getAppExtConfigs(flags)
     const keys = Object.keys(deployConfigs)
     const values = Object.values(deployConfigs)

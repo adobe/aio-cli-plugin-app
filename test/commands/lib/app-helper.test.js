@@ -999,54 +999,13 @@ describe('checkifAccessTokenExists', () => {
   })
 
   test('should return true when access token is found', async () => {
-    execa.mockImplementationOnce((cmd, args, options) => {
-      expect(cmd).toEqual('aio')
-      expect(args).toEqual(['config', 'get', 'ims.contexts.cli.access_token.token'])
-      return Promise.resolve({
-        stdout: 'mock_access_token'
-      })
-    })
-
+    aioConfig.get.mockReturnValueOnce('dummytesttoken')
     const result = await appHelper.checkifAccessTokenExists()
     expect(result).toBe(true)
   })
 
   test('should return false when access token is not found', async () => {
-    execa.mockImplementationOnce((cmd, args, options) => {
-      expect(cmd).toEqual('aio')
-      expect(args).toEqual(['config', 'get', 'ims.contexts.cli.access_token.token'])
-      return Promise.resolve({
-        stdout: ''
-      })
-    })
-
-    const result = await appHelper.checkifAccessTokenExists()
-
-    expect(result).toBe(false)
-  })
-
-  test('should return false when stdout is null', async () => {
-    execa.mockImplementationOnce((cmd, args, options) => {
-      expect(cmd).toEqual('aio')
-      expect(args).toEqual(['config', 'get', 'ims.contexts.cli.access_token.token'])
-      return Promise.resolve({
-        stdout: null
-      })
-    })
-
-    const result = await appHelper.checkifAccessTokenExists()
-
-    expect(result).toBe(false)
-  })
-
-  test('should return false and warn when there is an stderr', async () => {
-    execa.mockImplementationOnce((cmd, args, options) => {
-      expect(cmd).toEqual('aio')
-      expect(args).toEqual(['config', 'get', 'ims.contexts.cli.access_token.token'])
-      return Promise.resolve({
-        stderr: 'error_got_null'
-      })
-    })
+    aioConfig.get.mockReturnValueOnce(null)
 
     const result = await appHelper.checkifAccessTokenExists()
 
@@ -1054,10 +1013,8 @@ describe('checkifAccessTokenExists', () => {
   })
 
   test('should return false when an error occurs', async () => {
-    execa.mockImplementationOnce((cmd, args, options) => {
-      expect(cmd).toEqual('aio')
-      expect(args).toEqual(['config', 'get', 'ims.contexts.cli.access_token.token'])
-      return Promise.reject(new Error('error_got_null'))
+    aioConfig.get.mockImplementationOnce(() => {
+      throw new Error('some error')
     })
     const result = await appHelper.checkifAccessTokenExists()
     expect(result).toBe(false)

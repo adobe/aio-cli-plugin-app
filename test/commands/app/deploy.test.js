@@ -280,7 +280,7 @@ describe('run', () => {
     command.appConfig = cloneDeep(mockConfigData)
     command.appConfig.actions = { dist: 'actions' }
     command.appConfig.web.distProd = 'dist'
-    command.config = { runCommand: jest.fn(), runHook: jest.fn(), findCommand: jest.fn().mockReturnValue({}) }
+    command.config = { runCommand: jest.fn(), runHook: jest.fn() }
     command.buildOneExt = jest.fn()
     command.getAppExtConfigs = jest.fn()
     command.getLibConsoleCLI = jest.fn(() => mockLibConsoleCLI)
@@ -1195,8 +1195,7 @@ describe('run', () => {
 
   test('does NOT fire `event` hooks when feature flag is NOT enabled', async () => {
     const runHook = jest.fn()
-    const findCommand = jest.fn().mockReturnValueOnce({ enabled: false })
-    command.config = { runHook, findCommand }
+    command.config = { runHook }
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     command.argv = []
     await command.run()
@@ -1207,8 +1206,7 @@ describe('run', () => {
 
   test('DOES fire `event` hooks when feature flag IS enabled', async () => {
     const runHook = jest.fn()
-    const findCommand = jest.fn().mockReturnValueOnce({ enabled: true })
-    command.config = { runHook, findCommand }
+    command.config = { runHook }
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     await command.run()
     expect(command.error).not.toHaveBeenCalled()
@@ -1221,8 +1219,7 @@ describe('run', () => {
       successes: [],
       failures: [{ plugin: { name: 'ifailedu' }, error: 'some error' }]
     })
-    const findCommand = jest.fn().mockReturnValueOnce({ enabled: true })
-    command.config = { runHook, findCommand }
+    command.config = { runHook }
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     await command.run()
     expect(runHook).toHaveBeenCalledWith('pre-deploy-event-reg', expect.any(Object))
@@ -1241,8 +1238,7 @@ describe('run', () => {
         successes: [],
         failures: [{ plugin: { name: 'ifailedu' }, error: 'some error' }]
       })
-    const findCommand = jest.fn().mockReturnValueOnce({ enabled: true })
-    command.config = { runHook, findCommand }
+    command.config = { runHook }
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     await command.run()
     expect(runHook).toHaveBeenCalledWith('pre-deploy-event-reg', expect.any(Object))
@@ -1264,8 +1260,7 @@ describe('run', () => {
         successes: [],
         failures: [{ plugin: { name: 'ifailedu' }, error: 'some error' }]
       })
-    const findCommand = jest.fn().mockReturnValueOnce({ enabled: true })
-    command.config = { runHook, findCommand }
+    command.config = { runHook }
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     await command.run()
     expect(runHook).toHaveBeenCalledWith('pre-deploy-event-reg', expect.any(Object))
@@ -1466,41 +1461,5 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-  })
-
-  test('Should not send audit logs, if findComand does not exist in app deploy', async () => {
-    const mockToken = 'mocktoken'
-    const mockEnv = 'stage'
-    const mockOrg = 'mockorg'
-    const mockProject = 'mockproject'
-    const mockWorkspaceId = 'mockworkspaceid'
-    const mockWorkspaceName = 'mockworkspacename'
-    helpers.getCliInfo.mockResolvedValueOnce({
-      accessToken: mockToken,
-      env: mockEnv
-    })
-    command.getFullConfig = jest.fn().mockReturnValue({
-      aio: {
-        project: {
-          id: mockProject,
-          org: {
-            id: mockOrg
-          },
-          workspace: {
-            id: mockWorkspaceId,
-            name: mockWorkspaceName
-          }
-        }
-      }
-    })
-    command.config = { runCommand: jest.fn(), runHook: jest.fn(), findCommand: jest.fn().mockReturnValue(null) }
-    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
-
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(1)
-    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAuditLogs.mock.calls.length).toBeLessThanOrEqual(0)
-    expect(auditLogger.sendAuditLogs).not.toHaveBeenCalledWith()
   })
 })
