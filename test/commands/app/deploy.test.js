@@ -1299,7 +1299,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAuditLogs.mock.calls.length).toBeLessThanOrEqual(2)
+    expect(auditLogger.sendAuditLogs).toHaveBeenCalledTimes(1)
     expect(auditLogger.sendAuditLogs).toHaveBeenCalledWith(mockToken, expect.objectContaining({ orgId: mockOrg, projectId: mockProject, workspaceId: mockWorkspaceId, workspaceName: mockWorkspaceName }), mockEnv)
   })
 
@@ -1337,6 +1337,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(auditLogger.sendAuditLogs).toHaveBeenCalledTimes(0)
   })
 
   test('Do not send audit logs for successful app deploy, if no-login case', async () => {
@@ -1374,6 +1375,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(auditLogger.sendAuditLogs).toHaveBeenCalledTimes(0)
   })
 
   test('Send audit logs for successful app deploy + web assets', async () => {
@@ -1457,7 +1459,7 @@ describe('run', () => {
     expect(command.log).toHaveBeenCalledWith(
       expect.stringContaining('Successful deployment 🏄')
     )
-    expect(auditLogger.sendAuditLogs).toHaveBeenCalledTimes(2)
+    expect(auditLogger.sendAuditLogs).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)

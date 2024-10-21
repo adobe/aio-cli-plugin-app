@@ -501,7 +501,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAuditLogs.mock.calls.length).toBeGreaterThan(1)
+    expect(auditLogger.sendAuditLogs.mock.calls.length).toBe(1)
     expect(auditLogger.sendAuditLogs).toHaveBeenCalledWith(mockToken, expect.objectContaining({ orgId: mockOrg, projectId: mockProject, workspaceId: mockWorkspaceId, workspaceName: mockWorkspaceName }), mockEnv)
   })
 
@@ -599,6 +599,6 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAuditLogs).toHaveBeenCalledTimes(2)
+    expect(auditLogger.sendAuditLogs).toHaveBeenCalledTimes(1)
   })
 })
