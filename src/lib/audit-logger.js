@@ -33,6 +33,11 @@ const AUDIT_SERVICE_ENPOINTS = {
  * @param {string} env valid env stage|prod
  */
 async function sendAuditLogs (accessToken, logEvent, env = 'prod') {
+  // TODO: this is blocked by the audit service only being available in stage
+  // remove this check once the service is available in prod
+  if (env !== 'stage') {
+    return
+  }
   const url = AUDIT_SERVICE_ENPOINTS[env]
   const payload = {
     event: logEvent

@@ -75,6 +75,7 @@ test('sendAuditLogs with valid params', async () => {
   expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENPOINTS[mockEnv], options)
 })
 
+// NOTE: this test is blocked until the audit service is available in prod
 test('sendAuditLogs with default params', async () => {
   fetch.mockReturnValue(mockResponse)
   const options = {
@@ -86,8 +87,8 @@ test('sendAuditLogs with default params', async () => {
     body: JSON.stringify({ event: mockLogEvent })
   }
   await auditLogger.sendAuditLogs(mockToken, mockLogEvent)
-  expect(fetch).toHaveBeenCalledTimes(1)
-  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENPOINTS.prod, options)
+  expect(fetch).toHaveBeenCalledTimes(0)
+  // expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENPOINTS.prod, options)
 })
 
 test('sendAuditLogs error response', async () => {
