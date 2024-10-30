@@ -17,8 +17,9 @@ const { Flags } = require('@oclif/core')
 
 const BaseCommand = require('../../BaseCommand')
 const webLib = require('@adobe/aio-lib-web')
-const { runInProcess, buildExtensionPointPayloadWoMetadata } = require('../../lib/app-helper')
+const { runInProcess, buildExtensionPointPayloadWoMetadata, getCliInfo } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
+const { sendAuditLogs, getAuditLogEvent } = require('../../lib/audit-logger')
 
 class Undeploy extends BaseCommand {
   async run () {
@@ -44,14 +45,29 @@ class Undeploy extends BaseCommand {
 
     const spinner = ora()
     try {
+      const aioConfig = (await this.getFullConfig()).aio
+      const cliDetails = await getCliInfo()
+      const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_UNDEPLOY')
+
+      // 1.1. send audit log event for successful undeploy
+      if (logEvent) {
+        await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
+      } else {
+        this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
+      }
+
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
         const v = values[i]
         await this.undeployOneExt(k, v, flags, spinner)
+        const assetUndeployLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_UNDEPLOYED')
+        if (assetUndeployLogEvent) {
+          await sendAuditLogs(cliDetails.accessToken, assetUndeployLogEvent, cliDetails.env)
+        }
       }
-      // 2. unpublish extension manifest
+
+      // 1.2. unpublish extension manifest
       if (flags.unpublish && !(keys.length === 1 && keys[0] === 'application')) {
-        const aioConfig = (await this.getFullConfig()).aio
         const payload = await this.unpublishExtensionPoints(libConsoleCLI, undeployConfigs, aioConfig, flags['force-unpublish'])
         this.log(chalk.blue(chalk.bold(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': '${Object.keys(payload.endpoints)}'`)))
       } else {
@@ -110,6 +126,7 @@ class Undeploy extends BaseCommand {
           if (!script) {
             await webLib.undeployWeb(config, onProgress)
           }
+
           spinner.succeed(chalk.green(`Un-Deploying web assets for ${extName}`))
         } catch (err) {
           spinner.fail(chalk.green(`Un-Deploying web assets for ${extName}`))

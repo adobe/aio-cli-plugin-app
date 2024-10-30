@@ -18,9 +18,10 @@ const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { Flags } = require('@oclif/core')
-const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata } = require('../../lib/app-helper')
+const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getCliInfo } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
+const { sendAuditLogs, getAuditLogEvent, getFilesCountWithExtension } = require('../../lib/audit-logger')
 
 const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
 const POST_DEPLOY_EVENT_REG = 'post-deploy-event-reg'
@@ -52,12 +53,11 @@ class Deploy extends BuildCommand {
 
     try {
       const aioConfig = (await this.getFullConfig()).aio
+      const cliDetails = await getCliInfo()
 
       // 1. update log forwarding configuration
       // note: it is possible that .aio file does not exist, which means there is no local lg config
-      if (aioConfig?.project?.workspace &&
-          flags['log-forwarding-update'] &&
-          flags.actions) {
+      if (aioConfig?.project?.workspace && flags['log-forwarding-update'] && flags.actions) {
         spinner.start('Updating log forwarding configuration')
         try {
           const lf = await LogForwarding.init(aioConfig)
@@ -94,7 +94,15 @@ class Deploy extends BuildCommand {
         }
       }
 
-      // 3. deploy actions and web assets for each extension
+      // 3. send deploy log event
+      const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_DEPLOY')
+      if (logEvent) {
+        await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
+      } else {
+        this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
+      }
+
+      // 4. deploy actions and web assets for each extension
       // Possible improvements:
       // - parallelize
       // - break into smaller pieces deploy, allowing to first deploy all actions then all web assets
@@ -102,6 +110,14 @@ class Deploy extends BuildCommand {
         const k = keys[i]
         const v = values[i]
         await this.deploySingleConfig(k, v, flags, spinner)
+        if (v.app.hasFrontend && flags['web-assets']) {
+          const opItems = getFilesCountWithExtension(v.web.distProd)
+          const assetDeployedLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_DEPLOYED')
+          if (assetDeployedLogEvent) {
+            assetDeployedLogEvent.data.opItems = opItems
+            await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env)
+          }
+        }
       }
 
       // 4. deploy extension manifest
@@ -206,6 +222,11 @@ class Deploy extends BuildCommand {
           } else {
             deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
             spinner.succeed(chalk.green(message))
+            const filesLogCount = getFilesCountWithExtension(config.web.distProd)
+            const filesDeployedMessage = `All static assets for the App Builder application in workspace: ${name} were successfully deployed to the CDN. Files deployed :`
+            const filesLogFormatted = filesLogCount?.map(file => `  • ${file}`).join('')
+            const finalMessage = chalk.green(`${filesDeployedMessage}\n${filesLogFormatted}`)
+            spinner.succeed(chalk.green(finalMessage))
           }
         } catch (err) {
           spinner.fail(chalk.green(message))
