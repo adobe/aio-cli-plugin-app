@@ -12,6 +12,7 @@ const fetch = require('node-fetch')
 const fs = require('fs')
 const path = require('path')
 const chalk = require('chalk')
+const { getCliEnv, PROD_ENV } = require('@adobe/aio-lib-env')
 
 const OPERATIONS = {
   AB_APP_DEPLOY: 'ab_app_deploy',
@@ -65,6 +66,11 @@ async function sendAuditLogs (accessToken, logEvent, env = 'prod') {
  * @returns {object} logEvent
  */
 function getAuditLogEvent (flags, project, event) {
+  if (getCliEnv() === PROD_ENV) {
+    console.log('Audit logging is currently disabled in production environment')
+    return
+  }
+
   let logEvent, logStrMsg
   if (project && project.org && project.workspace) {
     if (event === 'AB_APP_DEPLOY') {
