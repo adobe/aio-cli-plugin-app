@@ -32,6 +32,7 @@ class Deploy extends BuildCommand {
 
     // flags
     flags['web-assets'] = flags['web-assets'] && !flags.action
+    // Deploy only a specific action, the flags can be specified multiple times, this will set --no-publish
     flags.publish = flags.publish && !flags.action
 
     const deployConfigs = await this.getAppExtConfigs(flags)
@@ -80,7 +81,8 @@ class Deploy extends BuildCommand {
       }
 
       // 2. If workspace is prod and has extensions, check if the app is published
-      if (!isStandaloneApp && aioConfig?.project?.workspace?.name === 'Production') {
+      // if --no-publish, we skip this check
+      if (flags.publish && aioConfig?.project?.workspace?.name === 'Production') {
         const extension = await this.getApplicationExtension(aioConfig)
         if (extension && extension.status === 'PUBLISHED') {
           flags.publish = false // if the app is production and published, then skip publish later on
