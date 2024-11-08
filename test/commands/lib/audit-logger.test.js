@@ -18,6 +18,7 @@ const chalk = require('chalk')
 const fetch = require('node-fetch')
 jest.mock('node-fetch', () => jest.fn())
 const auditLogger = require('../../../src/lib/audit-logger')
+const { getCliEnv } = require('@adobe/aio-lib-env')
 
 jest.mock('fs')
 jest.mock('chalk', () => ({
@@ -193,7 +194,14 @@ describe('getAuditLogEvent', () => {
     const event = 'AB_APP_DEPLOY'
     const result = auditLogger.getAuditLogEvent(flags, {}, event)
 
-    expect(result).toBeUndefined()
+    expect(result).toBeFalsy()
+  })
+
+  test('should return undefined in PROD (for now)', () => {
+    getCliEnv.mockReturnValueOnce('prod')
+    const event = 'AB_APP_DEPLOY'
+    const result = auditLogger.getAuditLogEvent(flags, project, event)
+    expect(result).toBeFalsy()
   })
 
   test('should default operation to APP_TEST if event is not found in OPERATIONS', () => {
