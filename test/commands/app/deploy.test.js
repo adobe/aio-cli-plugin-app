@@ -370,7 +370,33 @@ describe('run', () => {
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
-    expect(mockLibConsoleCLI.getApplicationExtensions).toHaveBeenCalledTimes(1)
+    // action flag sets --no-publish, which means no getApplicationExtensions
+    expect(mockLibConsoleCLI.getApplicationExtensions).not.toHaveBeenCalled()
+  })
+
+  test('deploy does not require logged in user with --no-publish (workspace: Production)', async () => {
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'exc'))
+    mockGetExtensionPointsRetractedApp() // not published
+    command.getFullConfig.mockResolvedValue({
+      aio: {
+        project: {
+          workspace: {
+            name: 'Production'
+          },
+          org: {
+            id: '1111'
+          }
+        }
+      }
+    })
+
+    command.argv = ['--no-publish']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(command.buildOneExt).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.getApplicationExtensions).not.toHaveBeenCalled()
   })
 
   test('build & deploy only some actions using --action', async () => {
