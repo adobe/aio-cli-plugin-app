@@ -12,6 +12,8 @@ const fetch = require('node-fetch')
 const fs = require('fs')
 const path = require('path')
 const chalk = require('chalk')
+const { getCliEnv, PROD_ENV } = require('@adobe/aio-lib-env')
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:lib-audit-logger', { provider: 'debug' })
 
 const OPERATIONS = {
   AB_APP_DEPLOY: 'ab_app_deploy',
@@ -33,6 +35,11 @@ const AUDIT_SERVICE_ENPOINTS = {
  * @param {string} env valid env stage|prod
  */
 async function sendAuditLogs (accessToken, logEvent, env = 'prod') {
+  // TODO: this is blocked by the audit service only being available in stage
+  // remove this check once the service is available in prod
+  if (env !== 'stage') {
+    return
+  }
   const url = AUDIT_SERVICE_ENPOINTS[env]
   const payload = {
     event: logEvent
@@ -60,6 +67,11 @@ async function sendAuditLogs (accessToken, logEvent, env = 'prod') {
  * @returns {object} logEvent
  */
 function getAuditLogEvent (flags, project, event) {
+  if (getCliEnv() === PROD_ENV) {
+    aioLogger.debug('Audit logging is currently disabled in production environment')
+    return null
+  }
+
   let logEvent, logStrMsg
   if (project && project.org && project.workspace) {
     if (event === 'AB_APP_DEPLOY') {
