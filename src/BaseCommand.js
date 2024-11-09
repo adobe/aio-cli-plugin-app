@@ -42,7 +42,13 @@ class BaseCommand extends Command {
     await super.init()
     // setup a prompt that outputs to stderr
     this.prompt = inquirer.createPromptModule({ output: process.stderr })
-    process.env.__OW_USER_AGENT = 'aio-cli-plugin-app@' + require('../package.json').version
+
+    // set User-Agent for runtime calls
+    // ex. aio-cli-plugin-app/@adobe/aio-cli/10.3.1 (darwin-arm64; node-v18.20.4; zsh)
+    const vs = this.config.versionDetails
+    // some tests might not have this set, so we use ? nullish coalescing
+    process.env.__OW_USER_AGENT =
+      `aio-cli-plugin-app/${vs?.cliVersion} (${vs?.architecture}; ${vs?.nodeVersion}; ${vs?.shell})`
   }
 
   async getLibConsoleCLI () {
