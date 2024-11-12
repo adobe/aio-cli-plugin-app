@@ -60,7 +60,6 @@ async function sendAuditLogs (accessToken, logEvent, env = 'prod') {
  * @returns {object} logEvent
  */
 function getAuditLogEvent (flags, project, event) {
-
   let logEvent, logStrMsg
   if (project && project.org && project.workspace) {
     if (event === 'AB_APP_DEPLOY') {
