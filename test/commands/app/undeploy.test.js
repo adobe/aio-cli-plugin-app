@@ -143,7 +143,10 @@ describe('run', () => {
     command.error = jest.fn()
     command.log = jest.fn()
     command.appConfig = mockConfigData
-    command.config = { runCommand: jest.fn(), runHook: jest.fn() }
+    command.config = {
+      runCommand: jest.fn(),
+      runHook: jest.fn()
+    }
     command.getLibConsoleCLI = jest.fn(() => mockLibConsoleCLI)
     command.getAppExtConfigs = jest.fn()
     command.getFullConfig = jest.fn().mockReturnValue({
@@ -476,6 +479,8 @@ describe('run', () => {
     const mockWorkspaceId = 'mockworkspaceid'
     const mockWorkspaceName = 'mockworkspacename'
 
+    helpers.checkifAccessTokenExists.mockResolvedValue(true)
+
     command.getFullConfig = jest.fn().mockReturnValue({
       aio: {
         project: {
@@ -496,11 +501,42 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAuditLogs.mock.calls.length).toBeGreaterThan(1)
+    expect(auditLogger.sendAuditLogs.mock.calls.length).toBe(1)
     expect(auditLogger.sendAuditLogs).toHaveBeenCalledWith(mockToken, expect.objectContaining({ orgId: mockOrg, projectId: mockProject, workspaceId: mockWorkspaceId, workspaceName: mockWorkspaceName }), mockEnv)
   })
 
-  test('Do not Send audit logs for successful app undeploy', async () => {
+  test('Do not Send audit logs for successful app undeploy if no-login case', async () => {
+    const mockOrg = 'mockorg'
+    const mockProject = 'mockproject'
+    const mockWorkspaceId = 'mockworkspaceid'
+    const mockWorkspaceName = 'mockworkspacename'
+
+    helpers.checkifAccessTokenExists.mockResolvedValueOnce(false)
+
+    command.getFullConfig = jest.fn().mockReturnValue({
+      aio: {
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      }
+    })
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
+    expect(auditLogger.sendAuditLogs.mock.calls.length).toBe(0)
+  })
+
+  test('Do not Send audit logs for successful app undeploy, if no logevent is present', async () => {
     const mockOrg = 'mockorg'
     const mockProject = 'mockproject'
     const mockWorkspaceId = 'mockworkspaceid'
@@ -529,6 +565,40 @@ describe('run', () => {
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
     expect(auditLogger.sendAuditLogs.mock.calls.length).toBe(0)
-    expect(command.log).toHaveBeenCalledWith(expect.stringMatching(/Warning: No valid config data found to send audit log event for deployment/))
+  })
+
+  test('Should app undeploy successfully even if Audit Log Service is not available', async () => {
+    const mockOrg = 'mockorg'
+    const mockProject = 'mockproject'
+    const mockWorkspaceId = 'mockworkspaceid'
+    const mockWorkspaceName = 'mockworkspacename'
+
+    command.getFullConfig = jest.fn().mockReturnValue({
+      aio: {
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      }
+    })
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+    helpers.checkifAccessTokenExists.mockResolvedValue(true)
+
+    auditLogger.sendAuditLogs.mockRejectedValue({
+      message: 'Internal Server Error',
+      status: 500
+    })
+
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
+    expect(auditLogger.sendAuditLogs).toHaveBeenCalledTimes(1)
   })
 })
