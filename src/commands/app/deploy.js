@@ -43,7 +43,6 @@ class Deploy extends BuildCommand {
 
     // if there are no extensions, then set publish to false
     flags.publish = flags.publish && !isStandaloneApp
-
     if (
       (!flags.publish && !flags['web-assets'] && !flags.actions)
     ) {
@@ -53,7 +52,7 @@ class Deploy extends BuildCommand {
 
     try {
       const aioConfig = (await this.getFullConfig()).aio
-      const cliDetails = await getCliInfo()
+      const cliDetails = await getCliInfo(flags.publish)
 
       // 1. update log forwarding configuration
       // note: it is possible that .aio file does not exist, which means there is no local lg config

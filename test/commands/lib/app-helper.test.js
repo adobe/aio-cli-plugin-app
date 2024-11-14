@@ -906,6 +906,13 @@ describe('getCliInfo', () => {
       { accessToken: 'stoken', env: 'stage' }
     )
   })
+  test('useForceFalse', async () => {
+    libEnv.getCliEnv.mockReturnValue('prod')
+    libIms.getToken.mockResolvedValue('asdasd')
+    const res = await appHelper.getCliInfo(false)
+    expect(res).toEqual({ accessToken: undefined, env: 'prod' })
+    expect(libIms.getToken).toHaveBeenCalledTimes(0)
+  })
 })
 
 describe('createWebExportFilter', () => {
