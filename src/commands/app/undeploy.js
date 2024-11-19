@@ -22,7 +22,7 @@ const rtLib = require('@adobe/aio-lib-runtime')
 const { sendAuditLogs, getAuditLogEvent } = require('../../lib/audit-logger')
 
 class Undeploy extends BaseCommand {
-  async run () {
+  async run() {
     // cli input
     const { flags } = await this.parse(Undeploy)
 
@@ -46,23 +46,37 @@ class Undeploy extends BaseCommand {
     const spinner = ora()
     try {
       const aioConfig = (await this.getFullConfig()).aio
-      const cliDetails = await getCliInfo()
-      const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_UNDEPLOY')
+      const cliDetails = await getCliInfo(flags.unpublish)
 
-      // 1.1. send audit log event for successful undeploy
-      if (logEvent) {
-        await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
-      } else {
-        this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
-      }
+      // TODO: We will need this code running when Once Runtime events start showing up,
+      // we'll decide on the fate of the 'Starting deployment/undeplpyment' messages.
+      // JIRA: https://jira.corp.adobe.com/browse/ACNA-3240
+
+      // const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_UNDEPLOY')
+
+      // // 1.1. send audit log event for successful undeploy
+      // if (logEvent && cliDetails) {
+      //   try {
+      //     await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
+      //   } catch (error) {
+      //     this.warn('Warning: Audit Log Service Error: Failed to send audit log event for un-deployment.')
+      //   }
+      // } else {
+      //   this.warn('Warning: No valid config data found to send audit log event for un-deployment.')
+      // }
 
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
         const v = values[i]
         await this.undeployOneExt(k, v, flags, spinner)
         const assetUndeployLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_UNDEPLOYED')
-        if (assetUndeployLogEvent) {
-          await sendAuditLogs(cliDetails.accessToken, assetUndeployLogEvent, cliDetails.env)
+        // send logs for case of web-assets undeployment
+        if (assetUndeployLogEvent && cliDetails) {
+          try {
+            await sendAuditLogs(cliDetails.accessToken, assetUndeployLogEvent, cliDetails.env)
+          } catch (error) {
+            this.warn('Warning: Audit Log Service Error: Failed to send audit log event for un-deployment.')
+          }
         }
       }
 
@@ -82,7 +96,7 @@ class Undeploy extends BaseCommand {
     this.log(chalk.green(chalk.bold('Undeploy done !')))
   }
 
-  async undeployOneExt (extName, config, flags, spinner) {
+  async undeployOneExt(extName, config, flags, spinner) {
     const onProgress = !flags.verbose
       ? info => {
         spinner.text = info
@@ -144,7 +158,7 @@ class Undeploy extends BaseCommand {
     }
   }
 
-  async unpublishExtensionPoints (libConsoleCLI, deployConfigs, aioConfig, force) {
+  async unpublishExtensionPoints(libConsoleCLI, deployConfigs, aioConfig, force) {
     const payload = buildExtensionPointPayloadWoMetadata(deployConfigs)
     let res
     if (force) {

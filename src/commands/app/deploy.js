@@ -18,7 +18,7 @@ const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { Flags } = require('@oclif/core')
-const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getCliInfo } = require('../../lib/app-helper')
+const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getCliInfo, checkifAccessTokenExists } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
 const { sendAuditLogs, getAuditLogEvent, getFilesCountWithExtension } = require('../../lib/audit-logger')
@@ -36,6 +36,7 @@ class Deploy extends BuildCommand {
     // Deploy only a specific action, the flags can be specified multiple times, this will set --no-publish
     flags.publish = flags.publish && !flags.action
 
+    const doesTokenExists = await checkifAccessTokenExists()
     const deployConfigs = await this.getAppExtConfigs(flags)
     const keys = Object.keys(deployConfigs)
     const values = Object.values(deployConfigs)
@@ -64,7 +65,7 @@ class Deploy extends BuildCommand {
             const lfConfig = lf.getLocalConfigWithSecrets()
             if (lfConfig.isDefined()) {
               await lf.updateServerConfig(lfConfig)
-              spinner.succeed(chalk.green(`Log forwarding is set to '${lfConfig.getDestination()}'`))
+              spinner.succeed(chalk.green(`\nLog forwarding is set to '${lfConfig.getDestination()}'`))
             } else {
               if (flags.verbose) {
                 spinner.info(chalk.dim('Log forwarding is not updated: no configuration is provided'))
@@ -94,12 +95,21 @@ class Deploy extends BuildCommand {
       }
 
       // 3. send deploy log event
-      const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_DEPLOY')
-      if (logEvent) {
-        await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
-      } else {
-        this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
-      }
+
+      // TODO: We will need this code running when Once Runtime events start showing up,
+      // we'll decide on the fate of the 'Starting deployment/undeplpyment' messages.
+      // JIRA: https://jira.corp.adobe.com/browse/ACNA-3240
+
+      // const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_DEPLOY')
+      // if (logEvent && cliDetails) {
+      //   try {
+      //     await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
+      //   } catch (error) {
+      //     this.log(chalk.red(chalk.bold('Error: Audit Log Service Error: Failed to send audit log event for deployment.')))
+      //   }
+      // } else {
+      //   this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
+      // }
 
       // 4. deploy actions and web assets for each extension
       // Possible improvements:
@@ -112,9 +122,14 @@ class Deploy extends BuildCommand {
         if (v.app.hasFrontend && flags['web-assets']) {
           const opItems = getFilesCountWithExtension(v.web.distProd)
           const assetDeployedLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_DEPLOYED')
-          if (assetDeployedLogEvent) {
+          if (assetDeployedLogEvent && cliDetails) {
             assetDeployedLogEvent.data.opItems = opItems
-            await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env)
+            try {
+              // only send logs in case of web-assets deployment
+              await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env)
+            } catch (error) {
+              this.log(chalk.red(chalk.bold('Error: Audit Log Service Error: Failed to send audit log event for deployment.')))
+            }
           }
         }
       }
