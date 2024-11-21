@@ -198,7 +198,6 @@ beforeEach(() => {
     }
   })
   LogForwarding.init.mockResolvedValue(mockLogForwarding)
-  helpers.checkifAccessTokenExists.mockResolvedValue(true)
 })
 
 test('exports', async () => {
@@ -1366,18 +1365,19 @@ describe('run', () => {
     expect(auditLogger.sendAuditLogs).toHaveBeenCalledTimes(0)
   })
 
-  test('Do not send audit logs for successful app deploy, if no-login case', async () => {
-    const mockToken = 'mocktoken'
+  test('Do not send audit logs for successful app deploy, if case of no token', async () => {
+    const mockToken = null
     const mockEnv = 'stage'
     const mockOrg = 'mockorg'
     const mockProject = 'mockproject'
     const mockWorkspaceId = 'mockworkspaceid'
     const mockWorkspaceName = 'mockworkspacename'
+
     helpers.getCliInfo.mockResolvedValueOnce({
       accessToken: mockToken,
       env: mockEnv
     })
-    helpers.checkifAccessTokenExists.mockResolvedValueOnce(false)
+
     command.getFullConfig = jest.fn().mockReturnValue({
       aio: {
         project: {
@@ -1392,9 +1392,6 @@ describe('run', () => {
         }
       }
     })
-
-    auditLogger.getAuditLogEvent.mockImplementation((flags, project, event) => null)
-
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()

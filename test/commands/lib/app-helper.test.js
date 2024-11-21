@@ -999,31 +999,3 @@ describe('object values', () => {
     expect(appHelper.getObjectValue(obj)).toEqual(obj)
   })
 })
-
-describe('checkifAccessTokenExists', () => {
-  afterEach(() => {
-    jest.restoreAllMocks()
-  })
-
-  test('should return true when access token is found', async () => {
-    aioConfig.get.mockReturnValueOnce('dummytesttoken')
-    const result = await appHelper.checkifAccessTokenExists()
-    expect(result).toBe(true)
-  })
-
-  test('should return false when access token is not found', async () => {
-    aioConfig.get.mockReturnValueOnce(null)
-
-    const result = await appHelper.checkifAccessTokenExists()
-
-    expect(result).toBe(false)
-  })
-
-  test('should return false when an error occurs', async () => {
-    aioConfig.get.mockImplementationOnce(() => {
-      throw new Error('some error')
-    })
-    const result = await appHelper.checkifAccessTokenExists()
-    expect(result).toBe(false)
-  })
-})

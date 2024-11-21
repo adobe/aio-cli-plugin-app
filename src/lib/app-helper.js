@@ -582,24 +582,6 @@ function getObjectValue (obj, key) {
   return keys.filter(o => o.trim()).reduce((o, i) => o && getObjectProp(o, i), obj)
 }
 
-/**
- * Function to run `aio config get ims.contexts.cli.access_token.token` command and retrieve the token
- * This function is used to check if the access token exists in the CLI context or not
- * @returns {Promise<boolean>} Resolves to the access token if it exists, else false
- */
-const checkifAccessTokenExists = async () => {
-  try {
-    const token = aioConfig.get('ims.contexts.cli.access_token.token')
-    if (token) {
-      return true
-    }
-    return false
-  } catch (error) {
-    console.error(`Error retrieving token: ${error.message}`)
-    return false
-  }
-}
-
 module.exports = {
   getObjectValue,
   getObjectProp,
@@ -629,6 +611,5 @@ module.exports = {
   buildExtensionPointPayloadWoMetadata,
   buildExcShellViewExtensionMetadata,
   atLeastOne,
-  deleteUserConfig,
-  checkifAccessTokenExists
+  deleteUserConfig
 }

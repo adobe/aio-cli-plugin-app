@@ -22,20 +22,26 @@ const rtLib = require('@adobe/aio-lib-runtime')
 const { sendAuditLogs, getAuditLogEvent } = require('../../lib/audit-logger')
 
 class Undeploy extends BaseCommand {
-  async run() {
+  async run () {
     // cli input
     const { flags } = await this.parse(Undeploy)
 
     const undeployConfigs = await this.getAppExtConfigs(flags)
+
+    // 1. undeploy actions and web assets for each extension
+    const keys = Object.keys(undeployConfigs)
+    const values = Object.values(undeployConfigs)
+
+    // if it is standalone app, unpublish it without token
+    const isStandaloneApp = (keys.length === 1 && keys[0] === 'application')
+    flags.unpublish = flags.unpublish && !isStandaloneApp
+
     let libConsoleCLI
     if (flags.unpublish) {
       // force login at beginning (if required)
       libConsoleCLI = await this.getLibConsoleCLI()
     }
 
-    // 1. undeploy actions and web assets for each extension
-    const keys = Object.keys(undeployConfigs)
-    const values = Object.values(undeployConfigs)
 
     if (
       (!flags.unpublish && !flags['web-assets'] && !flags.actions)
@@ -81,7 +87,7 @@ class Undeploy extends BaseCommand {
       }
 
       // 1.2. unpublish extension manifest
-      if (flags.unpublish && !(keys.length === 1 && keys[0] === 'application')) {
+      if (flags.unpublish) {
         const payload = await this.unpublishExtensionPoints(libConsoleCLI, undeployConfigs, aioConfig, flags['force-unpublish'])
         this.log(chalk.blue(chalk.bold(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': '${Object.keys(payload.endpoints)}'`)))
       } else {
@@ -96,7 +102,7 @@ class Undeploy extends BaseCommand {
     this.log(chalk.green(chalk.bold('Undeploy done !')))
   }
 
-  async undeployOneExt(extName, config, flags, spinner) {
+  async undeployOneExt (extName, config, flags, spinner) {
     const onProgress = !flags.verbose
       ? info => {
         spinner.text = info
@@ -158,7 +164,7 @@ class Undeploy extends BaseCommand {
     }
   }
 
-  async unpublishExtensionPoints(libConsoleCLI, deployConfigs, aioConfig, force) {
+  async unpublishExtensionPoints (libConsoleCLI, deployConfigs, aioConfig, force) {
     const payload = buildExtensionPointPayloadWoMetadata(deployConfigs)
     let res
     if (force) {

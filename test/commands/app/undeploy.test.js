@@ -192,7 +192,8 @@ describe('run', () => {
 
     command.argv = ['--no-actions', '--no-web-assets']
     await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.error).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledWith('Nothing to be done 🚫')
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(0)
 
@@ -479,8 +480,6 @@ describe('run', () => {
     const mockWorkspaceId = 'mockworkspaceid'
     const mockWorkspaceName = 'mockworkspacename'
 
-    helpers.checkifAccessTokenExists.mockResolvedValue(true)
-
     command.getFullConfig = jest.fn().mockReturnValue({
       aio: {
         project: {
@@ -505,13 +504,11 @@ describe('run', () => {
     expect(auditLogger.sendAuditLogs).toHaveBeenCalledWith(mockToken, expect.objectContaining({ orgId: mockOrg, projectId: mockProject, workspaceId: mockWorkspaceId, workspaceName: mockWorkspaceName }), mockEnv)
   })
 
-  test('Do not Send audit logs for successful app undeploy if no-login case', async () => {
+  test('Do not Send audit logs for successful app undeploy if case of no-token', async () => {
     const mockOrg = 'mockorg'
     const mockProject = 'mockproject'
     const mockWorkspaceId = 'mockworkspaceid'
     const mockWorkspaceName = 'mockworkspacename'
-
-    helpers.checkifAccessTokenExists.mockResolvedValueOnce(false)
 
     command.getFullConfig = jest.fn().mockReturnValue({
       aio: {
@@ -528,6 +525,7 @@ describe('run', () => {
       }
     })
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+    helpers.getCliInfo.mockImplementationOnce(() => null)
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -588,7 +586,6 @@ describe('run', () => {
       }
     })
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
-    helpers.checkifAccessTokenExists.mockResolvedValue(true)
 
     auditLogger.sendAuditLogs.mockRejectedValue({
       message: 'Internal Server Error',
