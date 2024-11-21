@@ -42,7 +42,6 @@ class Undeploy extends BaseCommand {
       libConsoleCLI = await this.getLibConsoleCLI()
     }
 
-
     if (
       (!flags.unpublish && !flags['web-assets'] && !flags.actions)
     ) {
