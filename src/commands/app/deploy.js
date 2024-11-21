@@ -18,7 +18,7 @@ const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { Flags } = require('@oclif/core')
-const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getCliInfo, checkifAccessTokenExists } = require('../../lib/app-helper')
+const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getCliInfo } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
 const { sendAuditLogs, getAuditLogEvent, getFilesCountWithExtension } = require('../../lib/audit-logger')
@@ -36,7 +36,6 @@ class Deploy extends BuildCommand {
     // Deploy only a specific action, the flags can be specified multiple times, this will set --no-publish
     flags.publish = flags.publish && !flags.action
 
-    const doesTokenExists = await checkifAccessTokenExists()
     const deployConfigs = await this.getAppExtConfigs(flags)
     const keys = Object.keys(deployConfigs)
     const values = Object.values(deployConfigs)
@@ -101,7 +100,7 @@ class Deploy extends BuildCommand {
       // JIRA: https://jira.corp.adobe.com/browse/ACNA-3240
 
       // const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_DEPLOY')
-      // if (logEvent && cliDetails) {
+      // if (logEvent && cliDetails?.accessToken) {
       //   try {
       //     await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
       //   } catch (error) {
@@ -122,7 +121,7 @@ class Deploy extends BuildCommand {
         if (v.app.hasFrontend && flags['web-assets']) {
           const opItems = getFilesCountWithExtension(v.web.distProd)
           const assetDeployedLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_DEPLOYED')
-          if (assetDeployedLogEvent && cliDetails) {
+          if (assetDeployedLogEvent && cliDetails?.accessToken) {
             assetDeployedLogEvent.data.opItems = opItems
             try {
               // only send logs in case of web-assets deployment

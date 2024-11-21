@@ -55,7 +55,7 @@ class Undeploy extends BaseCommand {
       // const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_UNDEPLOY')
 
       // // 1.1. send audit log event for successful undeploy
-      // if (logEvent && cliDetails) {
+      // if (logEvent && cliDetails.accessToken) {
       //   try {
       //     await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
       //   } catch (error) {
@@ -71,7 +71,7 @@ class Undeploy extends BaseCommand {
         await this.undeployOneExt(k, v, flags, spinner)
         const assetUndeployLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_UNDEPLOYED')
         // send logs for case of web-assets undeployment
-        if (assetUndeployLogEvent && cliDetails) {
+        if (assetUndeployLogEvent && cliDetails?.accessToken) {
           try {
             await sendAuditLogs(cliDetails.accessToken, assetUndeployLogEvent, cliDetails.env)
           } catch (error) {
