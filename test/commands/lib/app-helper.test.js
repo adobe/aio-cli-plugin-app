@@ -38,10 +38,6 @@ const aioConfig = require('@adobe/aio-lib-core-config')
 const libEnv = require('@adobe/aio-lib-env')
 const libIms = require('@adobe/aio-lib-ims')
 
-jest.mock('child_process', () => ({
-  exec: jest.fn()
-}))
-
 beforeEach(() => {
   Object.defineProperty(process, 'platform', { value: 'linux' })
   execa.mockReset()
