@@ -409,11 +409,13 @@ test('isLocal false, build-static hook set, serve-static hook not set)', async (
   expect(actionsWatcher).toHaveBeenCalled()
 })
 
-test('runDev always force builds', async () => {
+test('runDev does not always force builds', async () => {
   const config = cloneDeep(createAppConfig().application)
 
   await runDev(config, DATA_DIR, { isLocal: false })
 
   expect(buildActions).toHaveBeenCalled()
-  expect(buildActions).toHaveBeenCalledWith(expect.any(Object) /* config */, null /* filterActions */, true /* forceBuild */)
+  expect(buildActions).toHaveBeenCalledWith(expect.any(Object) /* config */,
+    null /* filterActions */,
+    false /* forceBuild */)
 })

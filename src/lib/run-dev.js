@@ -82,8 +82,7 @@ async function runDev (config, dataDir, options = {}, log = () => {}, inprocHook
 
       // build and deploy actions
       log('building actions..')
-      await buildActions(devConfig, null, true /* force build */)
-
+      await buildActions(devConfig, null, false /* force build */)
       const { cleanup: watcherCleanup } = await actionsWatcher({ config: devConfig, isLocal, log, inprocHook })
       cleanup.add(() => watcherCleanup(), 'stopping action watcher...')
     }
@@ -152,10 +151,16 @@ async function runDev (config, dataDir, options = {}, log = () => {}, inprocHook
       devConfig.app.hasFrontend = false
     }
 
-    log('setting up vscode debug configuration files...')
-    const vscodeConfig = vscode(devConfig)
-    await vscodeConfig.update({ frontEndUrl })
-    cleanup.add(() => vscodeConfig.cleanup(), 'cleaning up vscode debug configuration files...')
+    // todo: remove vscode config swapping, dev command uses a persistent file so we don't need this.
+    // also there was a latent issue with projects that defined an action src as a folder with an index.js file.
+    // it looks explicitly for package.json and fails if it does not find it.
+    // regarless, we don't need it, and when we actually remove --local we can be rid of this.
+    if (isLocal) {
+      log('setting up vscode debug configuration files...')
+      const vscodeConfig = vscode(devConfig)
+      await vscodeConfig.update({ frontEndUrl })
+      cleanup.add(() => vscodeConfig.cleanup(), 'cleaning up vscode debug configuration files...')
+    }
 
     // automatically fetch logs if there are actions
     if (config.app.hasBackend && fetchLogs) {

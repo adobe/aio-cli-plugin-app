@@ -108,6 +108,9 @@ class Run extends BaseCommand {
     }
 
     const verboseOutput = flags.verbose || flags.local || headlessApp
+    // we should evaluate this, a lot of output just disappears in the spinner text and
+    // using verbose dumps ALL of parcel's output, so this become unreadable
+    // we need a middle ground. -jm
     const onProgress = !verboseOutput
       ? info => {
         spinner.text = info

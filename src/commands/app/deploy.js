@@ -18,9 +18,10 @@ const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { Flags } = require('@oclif/core')
-const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata } = require('../../lib/app-helper')
+const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getCliInfo } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
+const { sendAuditLogs, getAuditLogEvent, getFilesCountWithExtension } = require('../../lib/audit-logger')
 
 const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
 const POST_DEPLOY_EVENT_REG = 'post-deploy-event-reg'
@@ -32,6 +33,7 @@ class Deploy extends BuildCommand {
 
     // flags
     flags['web-assets'] = flags['web-assets'] && !flags.action
+    // Deploy only a specific action, the flags can be specified multiple times, this will set --no-publish
     flags.publish = flags.publish && !flags.action
 
     const deployConfigs = await this.getAppExtConfigs(flags)
@@ -41,7 +43,6 @@ class Deploy extends BuildCommand {
 
     // if there are no extensions, then set publish to false
     flags.publish = flags.publish && !isStandaloneApp
-
     if (
       (!flags.publish && !flags['web-assets'] && !flags.actions)
     ) {
@@ -51,12 +52,11 @@ class Deploy extends BuildCommand {
 
     try {
       const aioConfig = (await this.getFullConfig()).aio
+      const cliDetails = await getCliInfo(flags.publish)
 
       // 1. update log forwarding configuration
       // note: it is possible that .aio file does not exist, which means there is no local lg config
-      if (aioConfig?.project?.workspace &&
-          flags['log-forwarding-update'] &&
-          flags.actions) {
+      if (aioConfig?.project?.workspace && flags['log-forwarding-update'] && flags.actions) {
         spinner.start('Updating log forwarding configuration')
         try {
           const lf = await LogForwarding.init(aioConfig)
@@ -80,7 +80,8 @@ class Deploy extends BuildCommand {
       }
 
       // 2. If workspace is prod and has extensions, check if the app is published
-      if (!isStandaloneApp && aioConfig?.project?.workspace?.name === 'Production') {
+      // if --no-publish, we skip this check
+      if (flags.publish && aioConfig?.project?.workspace?.name === 'Production') {
         const extension = await this.getApplicationExtension(aioConfig)
         if (extension && extension.status === 'PUBLISHED') {
           flags.publish = false // if the app is production and published, then skip publish later on
@@ -92,7 +93,15 @@ class Deploy extends BuildCommand {
         }
       }
 
-      // 3. deploy actions and web assets for each extension
+      // 3. send deploy log event
+      const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_DEPLOY')
+      if (logEvent) {
+        await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
+      } else {
+        this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
+      }
+
+      // 4. deploy actions and web assets for each extension
       // Possible improvements:
       // - parallelize
       // - break into smaller pieces deploy, allowing to first deploy all actions then all web assets
@@ -100,6 +109,14 @@ class Deploy extends BuildCommand {
         const k = keys[i]
         const v = values[i]
         await this.deploySingleConfig(k, v, flags, spinner)
+        if (v.app.hasFrontend && flags['web-assets']) {
+          const opItems = getFilesCountWithExtension(v.web.distProd)
+          const assetDeployedLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_DEPLOYED')
+          if (assetDeployedLogEvent) {
+            assetDeployedLogEvent.data.opItems = opItems
+            await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env)
+          }
+        }
       }
 
       // 4. deploy extension manifest
@@ -172,7 +189,7 @@ class Deploy extends BuildCommand {
               // output should be "Error : <plugin-name> : <error-message>\n" for each failure
               this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
             }
-            deployedRuntimeEntities = await rtLib.deployActions(config, { filterEntities }, onProgress)
+            deployedRuntimeEntities = await rtLib.deployActions(config, { filterEntities, useForce: flags['force-deploy'] }, onProgress)
           }
 
           if (deployedRuntimeEntities.actions && deployedRuntimeEntities.actions.length > 0) {
@@ -181,7 +198,7 @@ class Deploy extends BuildCommand {
             if (script) {
               spinner.fail(chalk.green(`deploy-actions skipped by hook '${name}'`))
             } else {
-              spinner.fail(chalk.green(`No actions deployed for '${name}'`))
+              spinner.info(chalk.green(`No actions deployed for '${name}'`))
             }
           }
         } catch (err) {
@@ -204,6 +221,11 @@ class Deploy extends BuildCommand {
           } else {
             deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
             spinner.succeed(chalk.green(message))
+            const filesLogCount = getFilesCountWithExtension(config.web.distProd)
+            const filesDeployedMessage = `All static assets for the App Builder application in workspace: ${name} were successfully deployed to the CDN. Files deployed :`
+            const filesLogFormatted = filesLogCount?.map(file => `  • ${file}`).join('')
+            const finalMessage = chalk.green(`${filesDeployedMessage}\n${filesLogFormatted}`)
+            spinner.succeed(chalk.green(finalMessage))
           }
         } catch (err) {
           spinner.fail(chalk.green(message))
@@ -287,9 +309,13 @@ class Deploy extends BuildCommand {
   }
 }
 
-Deploy.description = `Build and deploy an Adobe I/O App
+Deploy.description = `Deploy an Adobe I/O App
 
-This will always force a rebuild unless --no-force-build is set.
+Deploys the actions and web assets for an Adobe I/O App.
+This will also build any changed actions or web assets before deploying.
+Use the --force-build flag to force a build even if one already exists.
+Deploy is optimized to only deploy what is necessary. Be aware that deploying actions will overwrite any previous deployments.
+Use the --force-deploy flag to force deploy changes, regardless of production Workspace being published in Exchange.
 `
 
 Deploy.flags = {
@@ -319,7 +345,7 @@ Deploy.flags = {
   'force-build': Flags.boolean({
     description: '[default: true] Force a build even if one already exists',
     exclusive: ['no-build'], // no-build
-    default: true,
+    default: false,
     allowNo: true
   }),
   'content-hash': Flags.boolean({
