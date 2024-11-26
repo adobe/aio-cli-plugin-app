@@ -93,23 +93,6 @@ class Deploy extends BuildCommand {
         }
       }
 
-      // 3. send deploy log event
-
-      // TODO: We will need this code running when Once Runtime events start showing up,
-      // we'll decide on the fate of the 'Starting deployment/undeplpyment' messages.
-      // JIRA: https://jira.corp.adobe.com/browse/ACNA-3240
-
-      // const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_DEPLOY')
-      // if (logEvent && cliDetails?.accessToken) {
-      //   try {
-      //     await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
-      //   } catch (error) {
-      //     this.log(chalk.red(chalk.bold('Error: Audit Log Service Error: Failed to send audit log event for deployment.')))
-      //   }
-      // } else {
-      //   this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
-      // }
-
       // 4. deploy actions and web assets for each extension
       // Possible improvements:
       // - parallelize
