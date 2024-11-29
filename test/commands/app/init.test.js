@@ -407,6 +407,28 @@ describe('--no-login', () => {
     expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
 
+  test('--repo --github-pat', async () => {
+    Octokit.mockImplementation(() => ({ repos: { getContent: () => Promise.resolve({ data: [] }) } }))
+
+    const pat = 'mytoken'
+    command.argv = ['--repo=adobe/appbuilder-quickstarts/dne', '--github-pat', pat]
+
+    await command.run()
+
+    expect(Octokit).toHaveBeenCalledWith(expect.objectContaining({ auth: pat }))
+  })
+
+  test('--repo --base-url', async () => {
+    Octokit.mockImplementation(() => ({ repos: { getContent: () => Promise.resolve({ data: [] }) } }))
+
+    const baseUrl = 'https://github.acme-inc.com/api/v3'
+    command.argv = ['--repo=org/repo', '--base-url', baseUrl]
+
+    await command.run()
+
+    expect(Octokit).toHaveBeenCalledWith(expect.objectContaining({ baseUrl }))
+  })
+
   test('--yes --no-install, select excshell', async () => {
     const installOptions = {
       useDefaultValues: true,
