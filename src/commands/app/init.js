@@ -104,7 +104,7 @@ class InitCommand extends TemplatesCommand {
     }
 
     if (flags.repo) {
-      await this.withQuickstart(flags.repo, flags['github-pat'], flags['base-url'])
+      await this.withQuickstart(flags.repo, flags['github-pat'], flags['repo-base-url'])
     } else {
       // 2. prompt for templates to be installed
       const templates = await this.getTemplatesForFlags(flags)
@@ -134,7 +134,7 @@ class InitCommand extends TemplatesCommand {
 
   async initWithLogin (flags) {
     if (flags.repo) {
-      await this.withQuickstart(flags.repo, flags['github-pat'], flags['base-url'])
+      await this.withQuickstart(flags.repo, flags['github-pat'], flags['repo-base-url'])
     }
     // this will trigger a login
     const consoleCLI = await this.getLibConsoleCLI()
@@ -490,7 +490,7 @@ InitCommand.flags = {
     description: 'github personal access token to use for downloading private quickstart repos',
     dependsOn: ['repo']
   }),
-  'base-url': Flags.string({
+  'repo-base-url': Flags.string({
     description: 'When using with GitHub Enterprise Server, set to the root URL of the API. For example, if your GitHub Enterprise Server\'s hostname is `github.acme-inc.com`, then set `base-url` to `https://github.acme-inc.com/api/v3`',
     dependsOn: ['repo']
   }),

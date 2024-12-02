@@ -514,7 +514,7 @@ Create a new Adobe I/O App
 USAGE
   $ aio app init [PATH] [-v] [--version] [--install] [-y] [--login] [-e <value> | -t <value> | --repo <value>]
     [--standalone-app |  | ] [-w <value> | -i <value>] [--confirm-new-workspace] [--use-jwt] [--github-pat <value> ]
-    [--base-url <value> ] [--linter none|basic|adobe-recommended]
+    [--repo-base-url <value> ] [--linter none|basic|adobe-recommended]
 
 ARGUMENTS
   PATH  [default: .] Path to the app directory
@@ -527,9 +527,6 @@ FLAGS
   -w, --workspace=<value>       [default: Stage] Specify the Adobe Developer Console Workspace to init from, defaults to
                                 Stage
   -y, --yes                     Skip questions, and use all default values
-  --base-url=<value>            When using with GitHub Enterprise Server, set to the root URL of the API. For example,
-                                if your GitHub Enterprise Server's hostname is `github.acme-inc.com`, then set
-                                `base-url` to `https://github.acme-inc.com/api/v3`
   --[no-]confirm-new-workspace  Prompt to confirm before creating a new workspace
   --github-pat=<value>          github personal access token to use for downloading private quickstart repos
   --[no-]install                [default: true] Run npm installation after files are created
@@ -537,6 +534,9 @@ FLAGS
                                 <options: none|basic|adobe-recommended>
   --[no-]login                  Login using your Adobe ID for interacting with Adobe I/O Developer Console
   --repo=<value>                Init from gh quick-start repo. Expected to be of the form <owner>/<repo>/<path>
+  --repo-base-url=<value>       When using with GitHub Enterprise Server, set to the root URL of the API. For example,
+                                if your GitHub Enterprise Server's hostname is `github.acme-inc.com`, then set
+                                `base-url` to `https://github.acme-inc.com/api/v3`
   --standalone-app              Create a stand-alone application
   --use-jwt                     if the config has both jwt and OAuth Server to Server Credentials (while migrating),
                                 prefer the JWT credentials

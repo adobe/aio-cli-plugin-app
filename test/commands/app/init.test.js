@@ -418,11 +418,11 @@ describe('--no-login', () => {
     expect(Octokit).toHaveBeenCalledWith(expect.objectContaining({ auth: pat }))
   })
 
-  test('--repo --base-url', async () => {
+  test('--repo --repo-base-url', async () => {
     Octokit.mockImplementation(() => ({ repos: { getContent: () => Promise.resolve({ data: [] }) } }))
 
     const baseUrl = 'https://github.acme-inc.com/api/v3'
-    command.argv = ['--repo=org/repo', '--base-url', baseUrl]
+    command.argv = ['--repo=org/repo', '--repo-base-url', baseUrl]
 
     await command.run()
 
