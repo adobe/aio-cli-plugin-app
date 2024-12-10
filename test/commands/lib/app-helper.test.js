@@ -919,9 +919,25 @@ describe('createWebExportFilter', () => {
   const webFilter = appHelper.createWebExportFilter(true)
   const nonWebFilter = appHelper.createWebExportFilter(false)
 
+  test('null action', () => {
+    const action = null
+
+    expect(webFilter(action)).toEqual(false)
+    expect(nonWebFilter(action)).toEqual(false)
+  })
+
+  test('no annotations', () => {
+    const action = {
+      name: 'abcde', url: 'https://fake.site'
+    }
+
+    expect(webFilter(action)).toEqual(false)
+    expect(nonWebFilter(action)).toEqual(true)
+  })
+
   test('no web-export annotation', () => {
     const action = {
-      name: 'abcde', url: 'https://fake.site', annotations: []
+      name: 'abcde', url: 'https://fake.site', annotations: {}
     }
 
     expect(webFilter(action)).toEqual(false)
@@ -966,6 +982,17 @@ describe('createWebExportFilter', () => {
 
     expect(webFilter(action2)).toEqual(false)
     expect(nonWebFilter(action2)).toEqual(true)
+  })
+
+  test('web-export: raw annotation', () => {
+    const action1 = {
+      name: 'abcde',
+      url: 'https://fake.site',
+      annotations: { 'web-export': 'raw' }
+    }
+
+    expect(webFilter(action1)).toEqual(true)
+    expect(nonWebFilter(action1)).toEqual(false)
   })
 })
 

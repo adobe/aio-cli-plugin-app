@@ -110,9 +110,9 @@ class Undeploy extends BaseCommand {
           if (!script) {
             await rtLib.undeployActions(config)
           }
-          spinner.succeed(chalk.green(`Un-Deploying actions for ${extName}`))
+          spinner.succeed(chalk.green(`Un-deploying actions for ${extName}`))
         } catch (err) {
-          spinner.fail(chalk.green(`Un-Deploying actions for ${extName}`))
+          spinner.fail(chalk.green(`Un-deploying actions for ${extName}`))
           throw err
         }
       } else {
