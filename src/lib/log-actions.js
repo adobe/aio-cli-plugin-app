@@ -18,7 +18,7 @@ const { createWebExportFilter } = require('./app-helper')
  * @private
  * @param {object} options
  * @param {object} options.entities runtime entities that have been deployed
- * @param {object} [options.deployConfig] see @adobe/aio-lib-runtime URL HERE TODO:
+ * @param {object} [options.deployConfig] see https://github.com/adobe/aio-lib-runtime?tab=readme-ov-file#typedefs
  * @param {Function} [options.log] a log function
  */
 module.exports = async ({
