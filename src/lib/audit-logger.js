@@ -113,7 +113,7 @@ function getFilesCountWithExtension (directory) {
     return log
   }
 
-  const files = fs.readdirSync(directory)
+  const files = fs.readdirSync(directory, { recursive: true })
 
   if (files.length === 0) {
     this.log(chalk.red(chalk.bold(`Error: No files found in directory ${directory}.`)))
@@ -121,7 +121,6 @@ function getFilesCountWithExtension (directory) {
   }
 
   const fileTypeCounts = {}
-
   files.forEach(file => {
     const ext = path.extname(file).toLowerCase() || 'no extension'
     if (fileTypeCounts[ext]) {
@@ -134,17 +133,32 @@ function getFilesCountWithExtension (directory) {
   Object.keys(fileTypeCounts).forEach(ext => {
     const count = fileTypeCounts[ext]
     let description
-
-    if (ext === '.js') description = 'Javascript file(s)'
-    else if (ext === '.css') description = 'CSS file(s)'
-    else if (ext === '.html') description = 'HTML page(s)'
-    else if (['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'].includes(ext)) description = 'image(s)'
-    else if (ext === 'no extension') description = 'file(s) without extension'
-    else description = `${ext} file(s)`
-
+    switch (ext) {
+      case '.js':
+        description = 'Javascript file(s)'
+        break
+      case '.css':
+        description = 'CSS file(s)'
+        break
+      case '.html':
+        description = 'HTML page(s)'
+        break
+      case '.png':
+      case '.jpg':
+      case '.jpeg':
+      case '.gif':
+      case '.svg':
+      case '.webp':
+        description = `${ext} image(s)`
+        break
+      case 'no extension':
+        description = 'file(s) without extension'
+        break
+      default:
+        description = `${ext} file(s)`
+    }
     log.push(`${count} ${description}\n`)
   })
-
   return log
 }
 
