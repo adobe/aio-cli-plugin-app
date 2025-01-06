@@ -64,7 +64,7 @@ class Deploy extends BuildCommand {
             const lfConfig = lf.getLocalConfigWithSecrets()
             if (lfConfig.isDefined()) {
               await lf.updateServerConfig(lfConfig)
-              spinner.succeed(chalk.green(`Log forwarding is set to '${lfConfig.getDestination()}'`))
+              spinner.succeed(chalk.green(`\nLog forwarding is set to '${lfConfig.getDestination()}'`))
             } else {
               if (flags.verbose) {
                 spinner.info(chalk.dim('Log forwarding is not updated: no configuration is provided'))
@@ -93,14 +93,6 @@ class Deploy extends BuildCommand {
         }
       }
 
-      // 3. send deploy log event
-      const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_DEPLOY')
-      if (logEvent) {
-        await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
-      } else {
-        this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
-      }
-
       // 4. deploy actions and web assets for each extension
       // Possible improvements:
       // - parallelize
@@ -112,9 +104,14 @@ class Deploy extends BuildCommand {
         if (v.app.hasFrontend && flags['web-assets']) {
           const opItems = getFilesCountWithExtension(v.web.distProd)
           const assetDeployedLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_DEPLOYED')
-          if (assetDeployedLogEvent) {
+          if (assetDeployedLogEvent && cliDetails?.accessToken) {
             assetDeployedLogEvent.data.opItems = opItems
-            await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env)
+            try {
+              // only send logs in case of web-assets deployment
+              await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env)
+            } catch (error) {
+              this.warn('Error: Audit Log Service Error: Failed to send audit log event for deployment.')
+            }
           }
         }
       }
