@@ -293,7 +293,7 @@ test('runPackageScript logs if package.json does not have matching script', asyn
 test('runInProcess with script should call runScript', async () => {
   expect(appHelper.runInProcess).toBeDefined()
   expect(appHelper.runInProcess).toBeInstanceOf(Function)
-  execa.command.mockReturnValue({ on: () => {} })
+  execa.command.mockReturnValue({ on: () => { } })
   await appHelper.runInProcess('echo new command who dis?', {})
   expect(mockLogger.debug).toHaveBeenCalledWith('runInProcess: error running project hook in process, running as package script instead')
   expect(execa.command).toHaveBeenCalledWith('echo new command who dis?', expect.any(Object))
@@ -308,7 +308,7 @@ test('runInProcess with require', async () => {
   )
   expect(appHelper.runInProcess).toBeDefined()
   expect(appHelper.runInProcess).toBeInstanceOf(Function)
-  execa.command.mockReturnValue({ on: () => {} })
+  execa.command.mockReturnValue({ on: () => { } })
   await appHelper.runInProcess('does-not-exist', {})
   expect(mockReq).toHaveBeenCalled()
   expect(mockLogger.debug).toHaveBeenCalledWith('runInProcess: running project hook in process')
@@ -328,13 +328,13 @@ test('runScript with empty command', async () => {
 })
 
 test('runScript with defined dir', async () => {
-  execa.command.mockReturnValue({ on: () => {} })
+  execa.command.mockReturnValue({ on: () => { } })
   await appHelper.runScript('somecommand', 'somedir')
   expect(execa.command).toHaveBeenCalledWith('somecommand', expect.objectContaining({ cwd: 'somedir' }))
 })
 
 test('runScript with empty dir => process.cwd', async () => {
-  execa.command.mockReturnValue({ on: () => {} })
+  execa.command.mockReturnValue({ on: () => { } })
   await appHelper.runScript('somecommand', undefined)
   expect(execa.command).toHaveBeenCalledWith('somecommand', expect.objectContaining({ cwd: process.cwd() }))
 })

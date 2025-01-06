@@ -12,18 +12,16 @@ const fetch = require('node-fetch')
 const fs = require('fs')
 const path = require('path')
 const chalk = require('chalk')
-const { getCliEnv, PROD_ENV } = require('@adobe/aio-lib-env')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:lib-audit-logger', { provider: 'debug' })
 
 const OPERATIONS = {
   AB_APP_DEPLOY: 'ab_app_deploy',
   AB_APP_UNDEPLOY: 'ab_app_undeploy',
-  AB_APP_TEST: 'ab_app_test', // todo : remove after testing
+  AB_APP_TEST: 'ab_app_test',
   AB_APP_ASSETS_DEPLOYED: 'ab_app_assets_deployed',
   AB_APP_ASSETS_UNDEPLOYED: 'ab_app_assets_undeployed'
 }
 
-const AUDIT_SERVICE_ENPOINTS = {
+const AUDIT_SERVICE_ENDPOINTS = {
   stage: 'https://adp-auditlog-service-stage.adobeioruntime.net/api/v1/web/audit-log-api/event-post',
   prod: 'https://adp-auditlog-service-prod.adobeioruntime.net/api/v1/web/audit-log-api/event-post'
 }
@@ -35,12 +33,7 @@ const AUDIT_SERVICE_ENPOINTS = {
  * @param {string} env valid env stage|prod
  */
 async function sendAuditLogs (accessToken, logEvent, env = 'prod') {
-  // TODO: this is blocked by the audit service only being available in stage
-  // remove this check once the service is available in prod
-  if (env !== 'stage') {
-    return
-  }
-  const url = AUDIT_SERVICE_ENPOINTS[env]
+  const url = AUDIT_SERVICE_ENDPOINTS[env] ?? AUDIT_SERVICE_ENDPOINTS.prod
   const payload = {
     event: logEvent
   }
@@ -67,11 +60,6 @@ async function sendAuditLogs (accessToken, logEvent, env = 'prod') {
  * @returns {object} logEvent
  */
 function getAuditLogEvent (flags, project, event) {
-  if (getCliEnv() === PROD_ENV) {
-    aioLogger.debug('Audit logging is currently disabled in production environment')
-    return null
-  }
-
   let logEvent, logStrMsg
   if (project && project.org && project.workspace) {
     if (event === 'AB_APP_DEPLOY') {
@@ -165,6 +153,6 @@ function getFilesCountWithExtension (directory) {
 module.exports = {
   sendAuditLogs,
   getAuditLogEvent,
-  AUDIT_SERVICE_ENPOINTS,
+  AUDIT_SERVICE_ENDPOINTS,
   getFilesCountWithExtension
 }

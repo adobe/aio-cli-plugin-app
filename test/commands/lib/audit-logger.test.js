@@ -73,7 +73,7 @@ test('sendAuditLogs with valid params', async () => {
   }
   await auditLogger.sendAuditLogs(mockToken, mockLogEvent, mockEnv)
   expect(fetch).toHaveBeenCalledTimes(1)
-  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENPOINTS[mockEnv], options)
+  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENDPOINTS[mockEnv], options)
 })
 
 // NOTE: this test is blocked until the audit service is available in prod
@@ -88,8 +88,23 @@ test('sendAuditLogs with default params', async () => {
     body: JSON.stringify({ event: mockLogEvent })
   }
   await auditLogger.sendAuditLogs(mockToken, mockLogEvent)
-  expect(fetch).toHaveBeenCalledTimes(0)
-  // expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENPOINTS.prod, options)
+  expect(fetch).toHaveBeenCalledTimes(1)
+  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENDPOINTS.prod, options)
+})
+
+test('should take prod endpoint if calling sendAuditLogs with non-exisiting env', async () => {
+  fetch.mockReturnValue(mockResponse)
+  const options = {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer ' + mockToken,
+      'Content-type': 'application/json'
+    },
+    body: JSON.stringify({ event: mockLogEvent })
+  }
+  await auditLogger.sendAuditLogs(mockToken, mockLogEvent, 'dev')
+  expect(fetch).toHaveBeenCalledTimes(1)
+  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENDPOINTS.prod, options)
 })
 
 test('sendAuditLogs error response', async () => {
@@ -104,7 +119,7 @@ test('sendAuditLogs error response', async () => {
   }
   await expect(auditLogger.sendAuditLogs(mockToken, mockLogEvent, mockEnv)).rejects.toThrow('Failed to send audit log - 400')
   expect(fetch).toHaveBeenCalledTimes(1)
-  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENPOINTS[mockEnv], options)
+  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENDPOINTS[mockEnv], options)
 })
 
 describe('getAuditLogEvent', () => {
@@ -194,13 +209,6 @@ describe('getAuditLogEvent', () => {
     const event = 'AB_APP_DEPLOY'
     const result = auditLogger.getAuditLogEvent(flags, {}, event)
 
-    expect(result).toBeFalsy()
-  })
-
-  test('should return undefined in PROD (for now)', () => {
-    getCliEnv.mockReturnValueOnce('prod')
-    const event = 'AB_APP_DEPLOY'
-    const result = auditLogger.getAuditLogEvent(flags, project, event)
     expect(result).toBeFalsy()
   })
 

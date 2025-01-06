@@ -155,7 +155,7 @@ async function runScript (command, dir, cmdArgs = []) {
             aioLogger.debug(`Killing ${command} event hook long-running process (pid: ${pid})`)
             process.kill(pid, 'SIGTERM')
           } catch (_) {
-          // do nothing if pid not found
+            // do nothing if pid not found
           }
         })
       }
