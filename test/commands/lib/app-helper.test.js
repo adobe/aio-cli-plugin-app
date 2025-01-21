@@ -21,7 +21,6 @@ jest.mock('@adobe/aio-lib-core-networking', () => ({
 
 jest.mock('@adobe/aio-lib-core-config')
 jest.mock('execa')
-jest.mock('process')
 jest.mock('path')
 jest.mock('fs-extra') // do not touch the real fs
 jest.mock('@adobe/aio-lib-env')
