@@ -11,8 +11,8 @@ governing permissions and limitations under the License.
 */
 
 const deployActions = require('../../../src/lib/deploy-actions')
-const utils = require('../../../src/lib/app-helper')
 const { deployActions: rtDeployActions } = require('@adobe/aio-lib-runtime')
+const utils = require('../../../src/lib/app-helper')
 const appHelperActual = jest.requireActual('../../../src/lib/app-helper')
 
 jest.mock('../../../src/lib/app-helper')
@@ -23,7 +23,6 @@ const createWebExportAnnotation = (value) => ({
 
 beforeEach(() => {
   utils.runInProcess.mockReset()
-  // utils.runScript.mockReset()
   utils.createWebExportFilter.mockReset()
 
   rtDeployActions.mockReset()
@@ -43,11 +42,12 @@ test('deploy-actions app hook available', async () => {
     }
   })
 
-  await deployActions({
+  const config = {
     hooks: {
       'deploy-actions': 'deploy-actions'
     }
-  })
+  }
+  await deployActions({ config })
 
   expect(rtDeployActions).not.toHaveBeenCalled()
   expect(utils.runInProcess).toHaveBeenNthCalledWith(1, undefined, expect.any(Object)) // pre-app-deploy
@@ -58,26 +58,35 @@ test('deploy-actions app hook available', async () => {
 test('it should deploy actions with filter param, (coverage)', async () => {
   utils.runInProcess.mockImplementation(() => false)
 
-  await deployActions({
+  const config = {
     hooks: {
       'deploy-actions': 'deploy-actions'
-    },
-    filterByBuiltActions: true
-  })
+    }
+  }
+  const deployConfig = {
+    filterEntities: {
+      byBuiltActions: true
+    }
+  }
+  await deployActions({ config, deployConfig })
 
   expect(rtDeployActions).toHaveBeenCalled()
   expect(rtDeployActions).toHaveBeenCalledWith(
     expect.objectContaining({
-      hooks: { 'deploy-actions': 'deploy-actions' },
-      filterByBuiltActions: true
+      hooks: { 'deploy-actions': 'deploy-actions' }
     }),
-    expect.any(Object),
+    expect.objectContaining({
+      filterEntities: {
+        byBuiltActions: true
+      }
+    }),
     expect.any(Function)
   )
 })
 
 test('no deploy-actions app hook available (use inbuilt)', async () => {
-  await deployActions({ hooks: {} })
+  const config = { hooks: {} }
+  await deployActions({ config })
   expect(rtDeployActions).toHaveBeenCalled()
   expect(utils.runInProcess).toHaveBeenNthCalledWith(1, undefined, expect.any(Object)) // pre-app-deploy
   expect(utils.runInProcess).toHaveBeenNthCalledWith(2, undefined, expect.any(Object)) // deploy-actions
@@ -86,7 +95,12 @@ test('no deploy-actions app hook available (use inbuilt)', async () => {
 
 test('call inprocHook no filter', async () => {
   const mockHook = jest.fn()
-  await deployActions({ hooks: {} }, false, null, false, mockHook)
+  const config = { hooks: {} }
+  const deployConfig = {
+    isLocalDev: false,
+    filterEntities: {}
+  }
+  await deployActions({ config, deployConfig, log: null, inprocHook: mockHook })
   expect(mockHook).toHaveBeenCalledWith('deploy-actions', expect.objectContaining({
     appConfig: { hooks: {} },
     filterEntities: [],
@@ -100,7 +114,14 @@ test('call inprocHook no filter', async () => {
 
 test('call inprocHook with filter : isLocalDev false', async () => {
   const mockHook = jest.fn()
-  await deployActions({ hooks: {} }, false, null, ['boomer'], mockHook)
+  const config = { hooks: {} }
+  const deployConfig = {
+    isLocalDev: false,
+    filterEntities: {
+      actions: ['boomer']
+    }
+  }
+  await deployActions({ config, deployConfig, log: null, inprocHook: mockHook })
   expect(mockHook).toHaveBeenCalledWith('deploy-actions', expect.objectContaining({
     appConfig: { hooks: {} },
     filterEntities: ['boomer'],
@@ -114,7 +135,14 @@ test('call inprocHook with filter : isLocalDev false', async () => {
 
 test('call inprocHook with filter : isLocalDev true', async () => {
   const mockHook = jest.fn()
-  await deployActions({ hooks: {} }, true, null, ['action-1', 'action-2'], mockHook)
+  const config = { hooks: {} }
+  const deployConfig = {
+    isLocalDev: true,
+    filterEntities: {
+      actions: ['action-1', 'action-2']
+    }
+  }
+  await deployActions({ config, deployConfig, log: null, inprocHook: mockHook })
   expect(mockHook).toHaveBeenCalledWith('deploy-actions', expect.objectContaining({
     appConfig: { hooks: {} },
     filterEntities: ['action-1', 'action-2'],
@@ -132,7 +160,15 @@ test('throws if hook returns failures', async () => {
     failures: [{ plugin: { name: 'ifailedu' }, error: 'some error' }]
   })
   const mockLog = jest.fn()
-  await expect(deployActions({ hooks: {} }, true, mockLog, ['action-1', 'action-2'], mockHook)).rejects.toThrow('Hook \'deploy-actions\' failed with some error')
+  const config = { hooks: {} }
+  const deployConfig = {
+    isLocalDev: true,
+    filterEntities: {
+      actions: ['action-1', 'action-2']
+    }
+  }
+  await expect(deployActions({ config, deployConfig, log: mockLog, inprocHook: mockHook }))
+    .rejects.toThrow('Hook \'deploy-actions\' failed with some error')
   expect(mockHook).toHaveBeenCalledWith('deploy-actions', expect.objectContaining({
     appConfig: { hooks: {} },
     filterEntities: ['action-1', 'action-2'],
@@ -151,7 +187,8 @@ test('use default parameters (coverage)', async () => {
     ]
   })
 
-  await deployActions({ hooks: {} })
+  const config = { hooks: {} }
+  await deployActions({ config })
 
   expect(rtDeployActions).toHaveBeenCalled()
   expect(utils.runInProcess).toHaveBeenNthCalledWith(1, undefined, expect.any(Object)) // pre-app-deploy
@@ -167,7 +204,12 @@ test('should log actions url or name when actions are deployed (web-export: true
     ]
   })
   const log = jest.fn()
-  await deployActions({ hooks: {} }, false, log)
+  const config = { hooks: {} }
+  const deployConfig = {
+    isLocalDev: false,
+    filterEntities: {}
+  }
+  await deployActions({ config, deployConfig, log })
 
   expect(log).toHaveBeenCalledWith(expect.stringContaining('web actions:'))
   expect(log).toHaveBeenCalledWith(expect.stringContaining('https://fake.com/action'))
@@ -181,16 +223,29 @@ test('should log actions url or name when actions are deployed (web-export: fals
       { name: 'pkg/actionNoUrl', ...createWebExportAnnotation(false) }
     ]
   })
-  const log = jest.fn()
-  await deployActions({ hooks: {} }, false, log)
+  {
+    const log = jest.fn()
+    const config = { hooks: {} }
+    const deployConfig = {
+      isLocalDev: false,
+      filterEntities: {}
+    }
+    await deployActions({ config, deployConfig, log })
 
-  expect(log).toHaveBeenCalledWith(expect.stringContaining('non-web actions:'))
-  expect(log).toHaveBeenCalledWith(expect.stringContaining('https://fake.com/action'))
-  expect(log).toHaveBeenCalledWith(expect.stringContaining('pkg/actionNoUrl'))
-
-  log.mockReset()
-  await deployActions({ hooks: {} }, false) // empty logger
-  expect(log).not.toHaveBeenCalledWith(expect.stringContaining('non-web actions:'))
-  expect(log).not.toHaveBeenCalledWith(expect.stringContaining('https://fake.com/action'))
-  expect(log).not.toHaveBeenCalledWith(expect.stringContaining('pkg/actionNoUrl'))
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('non-web actions:'))
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('https://fake.com/action'))
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('pkg/actionNoUrl'))
+  }
+  {
+    const log = jest.fn()
+    const config = { hooks: {} }
+    const deployConfig = {
+      isLocalDev: false,
+      filterEntities: {}
+    }
+    await deployActions({ config, deployConfig }) // empty logger
+    expect(log).not.toHaveBeenCalledWith(expect.stringContaining('non-web actions:'))
+    expect(log).not.toHaveBeenCalledWith(expect.stringContaining('https://fake.com/action'))
+    expect(log).not.toHaveBeenCalledWith(expect.stringContaining('pkg/actionNoUrl'))
+  }
 })

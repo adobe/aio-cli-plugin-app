@@ -18,10 +18,11 @@ const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { Flags } = require('@oclif/core')
-const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getCliInfo } = require('../../lib/app-helper')
+const { runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getCliInfo } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
 const { sendAuditLogs, getAuditLogEvent, getFilesCountWithExtension } = require('../../lib/audit-logger')
+const logActions = require('../../lib/log-actions')
 
 const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
 const POST_DEPLOY_EVENT_REG = 'post-deploy-event-reg'
@@ -235,24 +236,9 @@ class Deploy extends BuildCommand {
 
     // log deployed resources
     if (deployedRuntimeEntities.actions && deployedRuntimeEntities.actions.length > 0) {
-      this.log(chalk.blue(chalk.bold('Your deployed actions:')))
-      const web = deployedRuntimeEntities.actions.filter(createWebExportFilter(true))
-      const nonWeb = deployedRuntimeEntities.actions.filter(createWebExportFilter(false))
-
-      if (web.length > 0) {
-        this.log('web actions:')
-        web.forEach(a => {
-          this.log(chalk.blue(chalk.bold(`  -> ${a.url || a.name} `)))
-        })
-      }
-
-      if (nonWeb.length > 0) {
-        this.log('non-web actions:')
-        nonWeb.forEach(a => {
-          this.log(chalk.blue(chalk.bold(`  -> ${a.url || a.name} `)))
-        })
-      }
+      await logActions({ entities: deployedRuntimeEntities, log: (...rest) => this.log(chalk.bold(chalk.blue(...rest))) })
     }
+
     // TODO urls should depend on extension point, exc shell only for exc shell extension point - use a post-app-deploy hook ?
     if (deployedFrontendUrl) {
       this.log(chalk.blue(chalk.bold(`To view your deployed application:\n  -> ${deployedFrontendUrl}`)))
