@@ -22,6 +22,7 @@ const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadat
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
 const { sendAuditLogs, getAuditLogEvent, getFilesCountWithExtension } = require('../../lib/audit-logger')
+const { bearerAuthHandler } = require('../../lib/auth-helper')
 
 const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
 const POST_DEPLOY_EVENT_REG = 'post-deploy-event-reg'
@@ -107,13 +108,17 @@ class Deploy extends BuildCommand {
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
         const v = values[i]
+
+        v.ow.apihost = 'http://localhost:3000/runtime'
+        v.ow.auth_handler = bearerAuthHandler
+
         await this.deploySingleConfig(k, v, flags, spinner)
         if (v.app.hasFrontend && flags['web-assets']) {
           const opItems = getFilesCountWithExtension(v.web.distProd)
           const assetDeployedLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_DEPLOYED')
           if (assetDeployedLogEvent) {
             assetDeployedLogEvent.data.opItems = opItems
-            await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env)
+            // await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env)
           }
         }
       }

@@ -12,10 +12,14 @@ governing permissions and limitations under the License.
 const BaseCommand = require('../../../../BaseCommand')
 const LogForwarding = require('../../../../lib/log-forwarding')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:lf:set', { provider: 'debug' })
+const { bearerAuthHandler } = require('../../../../lib/auth-helper')
 
 class LogForwardingCommand extends BaseCommand {
   async run () {
-    const lf = await LogForwarding.init((await this.getFullConfig()).aio)
+    const aioConfig = (await this.getFullConfig()).aio
+    aioConfig.runtime.apihost = 'http://localhost:3000/runtime'
+    aioConfig.runtime.auth_handler = bearerAuthHandler
+    const lf = await LogForwarding.init(aioConfig)
 
     const destination = await this.promptDestination(lf.getSupportedDestinations())
     const destinationSettingsConfig = lf.getSettingsConfig(destination)
