@@ -122,7 +122,18 @@ async function runDev (config, dataDir, options = {}, log = () => {}, inprocHook
     // Deploy Phase - deploy actions
     if (withBackend) {
       log('redeploying actions..')
-      await deployActions(devConfig, isLocal, log, true, inprocHook)
+      const deployConfig = {
+        isLocalDev: isLocal,
+        filterEntities: {
+          byBuiltActions: true
+        }
+      }
+      await deployActions({
+        config: devConfig,
+        deployConfig,
+        log,
+        inprocHook
+      })
     }
 
     // Deploy Phase - serve the web UI

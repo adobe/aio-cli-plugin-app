@@ -63,7 +63,13 @@ module.exports = async (watcherOptions) => {
 async function buildAndDeploy (watcherOptions, filterActions) {
   const { config, isLocal, log, inprocHook } = watcherOptions
   await buildActions(config, filterActions)
-  await deployActions(config, isLocal, log, filterActions, inprocHook)
+  const deployConfig = {
+    isLocalDev: isLocal,
+    filterEntities: {
+      actions: filterActions
+    }
+  }
+  await deployActions({ config, deployConfig, log, inprocHook })
 }
 
 /**
