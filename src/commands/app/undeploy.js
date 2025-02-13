@@ -27,15 +27,20 @@ class Undeploy extends BaseCommand {
     const { flags } = await this.parse(Undeploy)
 
     const undeployConfigs = await this.getAppExtConfigs(flags)
+
+    // 1. undeploy actions and web assets for each extension
+    const keys = Object.keys(undeployConfigs)
+    const values = Object.values(undeployConfigs)
+
+    // if it is standalone app, unpublish it without token
+    const isStandaloneApp = (keys.length === 1 && keys[0] === 'application')
+    flags.unpublish = flags.unpublish && !isStandaloneApp
+
     let libConsoleCLI
     if (flags.unpublish) {
       // force login at beginning (if required)
       libConsoleCLI = await this.getLibConsoleCLI()
     }
-
-    // 1. undeploy actions and web assets for each extension
-    const keys = Object.keys(undeployConfigs)
-    const values = Object.values(undeployConfigs)
 
     if (
       (!flags.unpublish && !flags['web-assets'] && !flags.actions)
@@ -46,28 +51,25 @@ class Undeploy extends BaseCommand {
     const spinner = ora()
     try {
       const aioConfig = (await this.getFullConfig()).aio
-      const cliDetails = await getCliInfo()
-      const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_UNDEPLOY')
-
-      // 1.1. send audit log event for successful undeploy
-      if (logEvent) {
-        await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
-      } else {
-        this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
-      }
+      const cliDetails = await getCliInfo(flags.unpublish)
 
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
         const v = values[i]
         await this.undeployOneExt(k, v, flags, spinner)
         const assetUndeployLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_UNDEPLOYED')
-        if (assetUndeployLogEvent) {
-          await sendAuditLogs(cliDetails.accessToken, assetUndeployLogEvent, cliDetails.env)
+        // send logs for case of web-assets undeployment
+        if (assetUndeployLogEvent && cliDetails?.accessToken) {
+          try {
+            await sendAuditLogs(cliDetails.accessToken, assetUndeployLogEvent, cliDetails.env)
+          } catch (error) {
+            this.warn('Warning: Audit Log Service Error: Failed to send audit log event for un-deployment.')
+          }
         }
       }
 
       // 1.2. unpublish extension manifest
-      if (flags.unpublish && !(keys.length === 1 && keys[0] === 'application')) {
+      if (flags.unpublish) {
         const payload = await this.unpublishExtensionPoints(libConsoleCLI, undeployConfigs, aioConfig, flags['force-unpublish'])
         this.log(chalk.blue(chalk.bold(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': '${Object.keys(payload.endpoints)}'`)))
       } else {
@@ -110,9 +112,9 @@ class Undeploy extends BaseCommand {
           if (!script) {
             await rtLib.undeployActions(config)
           }
-          spinner.succeed(chalk.green(`Un-Deploying actions for ${extName}`))
+          spinner.succeed(chalk.green(`Un-deploying actions for ${extName}`))
         } catch (err) {
-          spinner.fail(chalk.green(`Un-Deploying actions for ${extName}`))
+          spinner.fail(chalk.green(`Un-deploying actions for ${extName}`))
           throw err
         }
       } else {

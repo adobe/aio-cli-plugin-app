@@ -66,13 +66,13 @@ USAGE
 
 FLAGS
   -v, --verbose  Verbose output
-  --version      Show version
+      --version  Show version
 
 DESCRIPTION
   Create, run, test, and deploy Adobe I/O Apps
 ```
 
-_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/index.js)_
+_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/index.js)_
 
 ## `aio app add`
 
@@ -84,13 +84,13 @@ USAGE
 
 FLAGS
   -v, --verbose  Verbose output
-  --version      Show version
+      --version  Show version
 
 DESCRIPTION
   Add a new component to an existing Adobe I/O App
 ```
 
-_See code: [src/commands/app/add/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/add/index.js)_
+_See code: [src/commands/app/add/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/add/index.js)_
 
 ## `aio app add action`
 
@@ -104,8 +104,8 @@ FLAGS
   -e, --extension=<value>  Add actions to a specific extension
   -v, --verbose            Verbose output
   -y, --yes                Skip questions, and use all default values
-  --[no-]install           [default: true] Run npm installation after files are created
-  --version                Show version
+      --[no-]install       [default: true] Run npm installation after files are created
+      --version            Show version
 
 DESCRIPTION
   Add new actions
@@ -115,7 +115,7 @@ ALIASES
   $ aio app add actions
 ```
 
-_See code: [src/commands/app/add/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/add/action.js)_
+_See code: [src/commands/app/add/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/add/action.js)_
 
 ## `aio app add ci`
 
@@ -127,13 +127,13 @@ USAGE
 
 FLAGS
   -v, --verbose  Verbose output
-  --version      Show version
+      --version  Show version
 
 DESCRIPTION
   Add CI files
 ```
 
-_See code: [src/commands/app/add/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/add/ci.js)_
+_See code: [src/commands/app/add/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/add/ci.js)_
 
 ## `aio app add event`
 
@@ -147,8 +147,8 @@ FLAGS
   -e, --extension=<value>  Add events to a specific extension
   -v, --verbose            Verbose output
   -y, --yes                Skip questions, and use all default values
-  --[no-]install           [default: true] Run npm installation after files are created
-  --version                Show version
+      --[no-]install       [default: true] Run npm installation after files are created
+      --version            Show version
 
 DESCRIPTION
   Add a new Adobe I/O Events action
@@ -158,7 +158,7 @@ ALIASES
   $ aio app add events
 ```
 
-_See code: [src/commands/app/add/event.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/add/event.js)_
+_See code: [src/commands/app/add/event.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/add/event.js)_
 
 ## `aio app add extension`
 
@@ -166,14 +166,14 @@ Add new extensions to the project
 
 ```
 USAGE
-  $ aio app add extension [-v] [--version] [--install] [-y] [-e <value>]
+  $ aio app add extension [-v] [--version] [--install] [-y] [-e <value>...]
 
 FLAGS
   -e, --extension=<value>...  Specify extensions to add, skips selection prompt
   -v, --verbose               Verbose output
   -y, --yes                   Skip questions, and use all default values
-  --[no-]install              [default: true] Run npm installation after files are created
-  --version                   Show version
+      --[no-]install          [default: true] Run npm installation after files are created
+      --version               Show version
 
 DESCRIPTION
   Add new extensions to the project
@@ -184,7 +184,7 @@ ALIASES
   $ aio app add extensions
 ```
 
-_See code: [src/commands/app/add/extension.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/add/extension.js)_
+_See code: [src/commands/app/add/extension.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/add/extension.js)_
 
 ## `aio app add service`
 
@@ -196,9 +196,9 @@ USAGE
 
 FLAGS
   -v, --verbose  Verbose output
-  --use-jwt      if the config has both jwt and OAuth Server to Server Credentials (while migrating), prefer the JWT
+      --use-jwt  if the config has both jwt and OAuth Server to Server Credentials (while migrating), prefer the JWT
                  credentials
-  --version      Show version
+      --version  Show version
 
 DESCRIPTION
   Subscribe to Services in the current Workspace
@@ -208,7 +208,7 @@ ALIASES
   $ aio app add services
 ```
 
-_See code: [src/commands/app/add/service.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/add/service.js)_
+_See code: [src/commands/app/add/service.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/add/service.js)_
 
 ## `aio app add web-assets`
 
@@ -222,14 +222,14 @@ FLAGS
   -e, --extension=<value>  Add web-assets to a specific extension
   -v, --verbose            Verbose output
   -y, --yes                Skip questions, and use all default values
-  --[no-]install           [default: true] Run npm installation after files are created
-  --version                Show version
+      --[no-]install       [default: true] Run npm installation after files are created
+      --version            Show version
 
 DESCRIPTION
   Add web assets support
 ```
 
-_See code: [src/commands/app/add/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/add/web-assets.js)_
+_See code: [src/commands/app/add/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/add/web-assets.js)_
 
 ## `aio app build`
 
@@ -237,20 +237,20 @@ Build an Adobe I/O App
 
 ```
 USAGE
-  $ aio app build [-v] [--version] [--actions | -a <value>] [--web-assets] [--force-build] [--content-hash]
-    [--web-optimize] [-e <value> | ]
+  $ aio app build [-v] [--version] [--actions | -a <value>...] [--web-assets] [--force-build] [--content-hash]
+    [--web-optimize] [-e <value>... | ]
 
 FLAGS
   -a, --action=<value>...     Build only a specific action, the flags can be specified multiple times, this will set
                               --no-publish
   -e, --extension=<value>...  Build only a specific extension point, the flags can be specified multiple times
   -v, --verbose               Verbose output
-  --[no-]actions              [default: true] Build actions if any
-  --[no-]content-hash         [default: true] Enable content hashing in browser code
-  --[no-]force-build          [default: false] Force a build even if one already exists
-  --version                   Show version
-  --[no-]web-assets           [default: true] Build web-assets if any
-  --web-optimize              [default: false] Enable optimization (minification) of js/css/html
+      --[no-]actions          [default: true] Build actions if any
+      --[no-]content-hash     [default: true] Enable content hashing in browser code
+      --[no-]force-build      [default: false] Force a build even if one already exists
+      --version               Show version
+      --[no-]web-assets       [default: true] Build web-assets if any
+      --web-optimize          [default: false] Enable optimization (minification) of js/css/html
 
 DESCRIPTION
   Build an Adobe I/O App
@@ -259,7 +259,7 @@ DESCRIPTION
   Use the --force-build flag to force a build even if one already exists.
 ```
 
-_See code: [src/commands/app/build.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/build.js)_
+_See code: [src/commands/app/build.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/build.js)_
 
 ## `aio app create [PATH]`
 
@@ -275,13 +275,13 @@ ARGUMENTS
 FLAGS
   -i, --import=<value>  Import an Adobe I/O Developer Console configuration file
   -v, --verbose         Verbose output
-  --version             Show version
+      --version         Show version
 
 DESCRIPTION
   Create a new Adobe I/O App with default parameters
 ```
 
-_See code: [src/commands/app/create.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/create.js)_
+_See code: [src/commands/app/create.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/create.js)_
 
 ## `aio app delete`
 
@@ -293,13 +293,13 @@ USAGE
 
 FLAGS
   -v, --verbose  Verbose output
-  --version      Show version
+      --version  Show version
 
 DESCRIPTION
   Delete a component from an existing Adobe I/O App
 ```
 
-_See code: [src/commands/app/delete/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/delete/index.js)_
+_See code: [src/commands/app/delete/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/delete/index.js)_
 
 ## `aio app delete action [ACTION-NAME]`
 
@@ -315,7 +315,7 @@ ARGUMENTS
 FLAGS
   -v, --verbose  Verbose output
   -y, --yes      Skip questions, and use all default values
-  --version      Show version
+      --version  Show version
 
 DESCRIPTION
   Delete existing actions
@@ -325,7 +325,7 @@ ALIASES
   $ aio app delete actions
 ```
 
-_See code: [src/commands/app/delete/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/delete/action.js)_
+_See code: [src/commands/app/delete/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/delete/action.js)_
 
 ## `aio app delete ci`
 
@@ -338,13 +338,13 @@ USAGE
 FLAGS
   -v, --verbose  Verbose output
   -y, --yes      Skip questions, and use all default values
-  --version      Show version
+      --version  Show version
 
 DESCRIPTION
   Delete existing CI files
 ```
 
-_See code: [src/commands/app/delete/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/delete/ci.js)_
+_See code: [src/commands/app/delete/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/delete/ci.js)_
 
 ## `aio app delete extension`
 
@@ -352,14 +352,14 @@ Delete existing extensions
 
 ```
 USAGE
-  $ aio app delete extension [-v] [--version] [-y] [--install] [-e <value>]
+  $ aio app delete extension [-v] [--version] [-y] [--install] [-e <value>...]
 
 FLAGS
   -e, --extension=<value>...  Specify extensions to delete, skips selection prompt
   -v, --verbose               Verbose output
   -y, --yes                   Skip questions, and use all default values
-  --[no-]install              [default: true] Run npm installation after files are created
-  --version                   Show version
+      --[no-]install          [default: true] Run npm installation after files are created
+      --version               Show version
 
 DESCRIPTION
   Delete existing extensions
@@ -370,7 +370,7 @@ ALIASES
   $ aio app delete extensions
 ```
 
-_See code: [src/commands/app/delete/extension.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/delete/extension.js)_
+_See code: [src/commands/app/delete/extension.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/delete/extension.js)_
 
 ## `aio app delete service`
 
@@ -382,9 +382,9 @@ USAGE
 
 FLAGS
   -v, --verbose  Verbose output
-  --use-jwt      if the config has both jwt and OAuth Server to Server Credentials (while migrating), prefer the JWT
+      --use-jwt  if the config has both jwt and OAuth Server to Server Credentials (while migrating), prefer the JWT
                  credentials
-  --version      Show version
+      --version  Show version
 
 DESCRIPTION
   Delete Services in the current Workspace
@@ -394,7 +394,7 @@ ALIASES
   $ aio app delete services
 ```
 
-_See code: [src/commands/app/delete/service.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/delete/service.js)_
+_See code: [src/commands/app/delete/service.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/delete/service.js)_
 
 ## `aio app delete web-assets`
 
@@ -407,13 +407,13 @@ USAGE
 FLAGS
   -v, --verbose  Verbose output
   -y, --yes      Skip questions, and use all default values
-  --version      Show version
+      --version  Show version
 
 DESCRIPTION
   Delete existing web assets
 ```
 
-_See code: [src/commands/app/delete/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/delete/web-assets.js)_
+_See code: [src/commands/app/delete/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/delete/web-assets.js)_
 
 ## `aio app deploy`
 
@@ -421,32 +421,32 @@ Deploy an Adobe I/O App
 
 ```
 USAGE
-  $ aio app deploy [-v] [--version] [--actions | -a <value>] [--web-assets] [--force-build | ] [--content-hash]
-    [--web-optimize] [-e <value> | ] [--build] [--open] [--force-deploy | --publish | --force-publish] [--force-events |
-    | ] [--log-forwarding-update]
+  $ aio app deploy [-v] [--version] [--actions | -a <value>...] [--web-assets] [--force-build | ]
+    [--content-hash] [--web-optimize] [-e <value>... | ] [--build] [--open] [--force-deploy | --publish |
+    --force-publish] [--force-events |  | ] [--log-forwarding-update]
 
 FLAGS
-  -a, --action=<value>...       Deploy only a specific action, the flags can be specified multiple times, this will set
-                                --no-publish
-  -e, --extension=<value>...    Deploy only a specific extension, the flags can be specified multiple times
-  -v, --verbose                 Verbose output
-  --[no-]actions                [default: true] Deploy actions if any
-  --[no-]build                  [default: true] Run the build phase before deployment
-  --[no-]content-hash           [default: true] Enable content hashing in browser code
-  --[no-]force-build            [default: true] Force a build even if one already exists
-  --force-deploy                [default: false] Force deploy changes, regardless of production Workspace being
-                                published in Exchange.
-  --[no-]force-events           [default: false] Force event registrations and delete any registrations not part of the
-                                config file
-  --force-publish               [default: false] Force publish extension(s) to Exchange, delete previously published
-                                extension points
-  --[no-]log-forwarding-update  [default: true] Update log forwarding configuration on server
-  --open                        Open the default web browser after a successful deploy, only valid if your app has a
-                                front-end
-  --[no-]publish                [default: true] Publish extension(s) to Exchange
-  --version                     Show version
-  --[no-]web-assets             [default: true] Deploy web-assets if any
-  --web-optimize                [default: false] Enable optimization (minification) of web js/css/html
+  -a, --action=<value>...           Deploy only a specific action, the flags can be specified multiple times, this will
+                                    set --no-publish
+  -e, --extension=<value>...        Deploy only a specific extension, the flags can be specified multiple times
+  -v, --verbose                     Verbose output
+      --[no-]actions                [default: true] Deploy actions if any
+      --[no-]build                  [default: true] Run the build phase before deployment
+      --[no-]content-hash           [default: true] Enable content hashing in browser code
+      --[no-]force-build            [default: true] Force a build even if one already exists
+      --force-deploy                [default: false] Force deploy changes, regardless of production Workspace being
+                                    published in Exchange.
+      --[no-]force-events           [default: false] Force event registrations and delete any registrations not part of
+                                    the config file
+      --force-publish               [default: false] Force publish extension(s) to Exchange, delete previously published
+                                    extension points
+      --[no-]log-forwarding-update  [default: true] Update log forwarding configuration on server
+      --open                        Open the default web browser after a successful deploy, only valid if your app has a
+                                    front-end
+      --[no-]publish                [default: true] Publish extension(s) to Exchange
+      --version                     Show version
+      --[no-]web-assets             [default: true] Deploy web-assets if any
+      --web-optimize                [default: false] Enable optimization (minification) of web js/css/html
 
 DESCRIPTION
   Deploy an Adobe I/O App
@@ -459,7 +459,7 @@ DESCRIPTION
   Use the --force-deploy flag to force deploy changes, regardless of production Workspace being published in Exchange.
 ```
 
-_See code: [src/commands/app/deploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/deploy.js)_
+_See code: [src/commands/app/deploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/deploy.js)_
 
 ## `aio app get-url [ACTION]`
 
@@ -474,15 +474,15 @@ FLAGS
   -j, --json     Output json
   -v, --verbose  Verbose output
   -y, --yml      Output yml
-  --cdn          Display CDN based action URLs
-  --local        Display locally based action URLs
-  --version      Show version
+      --cdn      Display CDN based action URLs
+      --local    Display locally based action URLs
+      --version  Show version
 
 DESCRIPTION
   Get action URLs
 ```
 
-_See code: [src/commands/app/get-url.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/get-url.js)_
+_See code: [src/commands/app/get-url.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/get-url.js)_
 
 ## `aio app info`
 
@@ -493,18 +493,18 @@ USAGE
   $ aio app info [-v] [--version] [-j | -h | -y] [--mask]
 
 FLAGS
-  -h, --hson     Output human readable json
-  -j, --json     Output json
-  -v, --verbose  Verbose output
-  -y, --yml      Output yml
-  --[no-]mask    Hide known private info
-  --version      Show version
+  -h, --hson       Output human readable json
+  -j, --json       Output json
+  -v, --verbose    Verbose output
+  -y, --yml        Output yml
+      --[no-]mask  Hide known private info
+      --version    Show version
 
 DESCRIPTION
   Display settings/configuration in use by an Adobe I/O App
 ```
 
-_See code: [src/commands/app/info.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/info.js)_
+_See code: [src/commands/app/info.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/info.js)_
 
 ## `aio app init [PATH]`
 
@@ -512,38 +512,38 @@ Create a new Adobe I/O App
 
 ```
 USAGE
-  $ aio app init [PATH] [-v] [--version] [--install] [-y] [--login] [-e <value> | -t <value> | --repo <value>]
-    [--standalone-app |  | ] [-w <value> | -i <value>] [--confirm-new-workspace] [--use-jwt] [--github-pat <value> ]
-    [--linter none|basic|adobe-recommended]
+  $ aio app init [PATH] [-v] [--version] [--install] [-y] [--login] [-e <value>... | -t <value>... | --repo
+    <value>] [--standalone-app |  | ] [-w <value> | -i <value>] [--confirm-new-workspace] [--use-jwt] [--github-pat
+    <value> ] [--linter none|basic|adobe-recommended]
 
 ARGUMENTS
   PATH  [default: .] Path to the app directory
 
 FLAGS
-  -e, --extension=<value>...    Extension point(s) to implement
-  -i, --import=<value>          Import an Adobe I/O Developer Console configuration file
-  -t, --template=<value>...     Specify a link to a template that will be installed
-  -v, --verbose                 Verbose output
-  -w, --workspace=<value>       [default: Stage] Specify the Adobe Developer Console Workspace to init from, defaults to
-                                Stage
-  -y, --yes                     Skip questions, and use all default values
-  --[no-]confirm-new-workspace  Prompt to confirm before creating a new workspace
-  --github-pat=<value>          github personal access token to use for downloading private quickstart repos
-  --[no-]install                [default: true] Run npm installation after files are created
-  --linter=<option>             [default: basic] Specify the linter to use for the project
-                                <options: none|basic|adobe-recommended>
-  --[no-]login                  Login using your Adobe ID for interacting with Adobe I/O Developer Console
-  --repo=<value>                Init from gh quick-start repo. Expected to be of the form <owner>/<repo>/<path>
-  --standalone-app              Create a stand-alone application
-  --use-jwt                     if the config has both jwt and OAuth Server to Server Credentials (while migrating),
-                                prefer the JWT credentials
-  --version                     Show version
+  -e, --extension=<value>...        Extension point(s) to implement
+  -i, --import=<value>              Import an Adobe I/O Developer Console configuration file
+  -t, --template=<value>...         Specify a link to a template that will be installed
+  -v, --verbose                     Verbose output
+  -w, --workspace=<value>           [default: Stage] Specify the Adobe Developer Console Workspace to init from,
+                                    defaults to Stage
+  -y, --yes                         Skip questions, and use all default values
+      --[no-]confirm-new-workspace  Prompt to confirm before creating a new workspace
+      --github-pat=<value>          github personal access token to use for downloading private quickstart repos
+      --[no-]install                [default: true] Run npm installation after files are created
+      --linter=<option>             [default: basic] Specify the linter to use for the project
+                                    <options: none|basic|adobe-recommended>
+      --[no-]login                  Login using your Adobe ID for interacting with Adobe I/O Developer Console
+      --repo=<value>                Init from gh quick-start repo. Expected to be of the form <owner>/<repo>/<path>
+      --standalone-app              Create a stand-alone application
+      --use-jwt                     if the config has both jwt and OAuth Server to Server Credentials (while migrating),
+                                    prefer the JWT credentials
+      --version                     Show version
 
 DESCRIPTION
   Create a new Adobe I/O App
 ```
 
-_See code: [src/commands/app/init.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/init.js)_
+_See code: [src/commands/app/init.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/init.js)_
 
 ## `aio app install PATH`
 
@@ -559,14 +559,14 @@ ARGUMENTS
 FLAGS
   -o, --output=<value>  [default: .] The packaged app output folder path
   -v, --verbose         Verbose output
-  --[no-]tests          Run packaged app unit tests (e.g. aio app:test)
-  --version             Show version
+      --[no-]tests      Run packaged app unit tests (e.g. aio app:test)
+      --version         Show version
 
 DESCRIPTION
   This command will support installing apps packaged by 'aio app pack'.
 ```
 
-_See code: [src/commands/app/install.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/install.js)_
+_See code: [src/commands/app/install.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/install.js)_
 
 ## `aio app list`
 
@@ -578,13 +578,13 @@ USAGE
 
 FLAGS
   -v, --verbose  Verbose output
-  --version      Show version
+      --version  Show version
 
 DESCRIPTION
   List components for Adobe I/O App
 ```
 
-_See code: [src/commands/app/list/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/list/index.js)_
+_See code: [src/commands/app/list/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/list/index.js)_
 
 ## `aio app list extension`
 
@@ -598,7 +598,7 @@ FLAGS
   -j, --json     Output json
   -v, --verbose  Verbose output
   -y, --yml      Output yml
-  --version      Show version
+      --version  Show version
 
 DESCRIPTION
   List implemented extensions
@@ -609,7 +609,7 @@ ALIASES
   $ aio app list extensions
 ```
 
-_See code: [src/commands/app/list/extension.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/list/extension.js)_
+_See code: [src/commands/app/list/extension.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/list/extension.js)_
 
 ## `aio app logs`
 
@@ -617,7 +617,7 @@ Fetch logs for an Adobe I/O App
 
 ```
 USAGE
-  $ aio app logs [-v] [--version] [-l <value>] [-a <value>] [-r] [-t | -w | -o]
+  $ aio app logs [-v] [--version] [-l <value>] [-a <value>...] [-r] [-t | -w | -o]
 
 FLAGS
   -a, --action=<value>...  Fetch logs for a specific action
@@ -627,13 +627,13 @@ FLAGS
   -t, --tail               Fetch logs continuously
   -v, --verbose            Verbose output
   -w, --watch              Fetch logs continuously
-  --version                Show version
+      --version            Show version
 
 DESCRIPTION
   Fetch logs for an Adobe I/O App
 ```
 
-_See code: [src/commands/app/logs.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/logs.js)_
+_See code: [src/commands/app/logs.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/logs.js)_
 
 ## `aio app pack [PATH]`
 
@@ -649,13 +649,13 @@ ARGUMENTS
 FLAGS
   -o, --output=<value>  [default: dist/app.zip] The packaged app output file path
   -v, --verbose         Verbose output
-  --version             Show version
+      --version         Show version
 
 DESCRIPTION
   This command will support packaging apps for redistribution.
 ```
 
-_See code: [src/commands/app/pack.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/pack.js)_
+_See code: [src/commands/app/pack.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/pack.js)_
 
 ## `aio app run`
 
@@ -668,18 +668,18 @@ USAGE
 FLAGS
   -e, --extension=<value>  Run only a specific extension, this flag can only be specified once
   -v, --verbose            Verbose output
-  --[no-]actions           [default: true] Run actions, defaults to true, to skip actions use --no-actions
-  --local                  [deprecated] Run/debug actions locally (requires Docker running, not available on Apple
+      --[no-]actions       [default: true] Run actions, defaults to true, to skip actions use --no-actions
+      --local              [deprecated] Run/debug actions locally (requires Docker running, not available on Apple
                            Silicon Macs)
-  --open                   Open the default web browser after a successful run, only valid if your app has a front-end
-  --[no-]serve             [default: true] Start frontend server (experimental)
-  --version                Show version
+      --open               Open the default web browser after a successful run, only valid if your app has a front-end
+      --[no-]serve         [default: true] Start frontend server (experimental)
+      --version            Show version
 
 DESCRIPTION
   Run an Adobe I/O App
 ```
 
-_See code: [src/commands/app/run.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/run.js)_
+_See code: [src/commands/app/run.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/run.js)_
 
 ## `aio app test`
 
@@ -687,16 +687,16 @@ Run tests for an Adobe I/O App
 
 ```
 USAGE
-  $ aio app test [-v] [--version] [-e <value> | -a <value>] [--all] [--e2e] [--unit]
+  $ aio app test [-v] [--version] [-e <value>... | -a <value>...] [--all] [--e2e] [--unit]
 
 FLAGS
   -a, --action=<value>...     the action(s) to test
   -e, --extension=<value>...  the extension(s) to test
   -v, --verbose               Verbose output
-  --all                       run both unit and e2e tests
-  --e2e                       run e2e tests
-  --unit                      run unit tests
-  --version                   Show version
+      --all                   run both unit and e2e tests
+      --e2e                   run e2e tests
+      --unit                  run unit tests
+      --version               Show version
 
 DESCRIPTION
   Run tests for an Adobe I/O App
@@ -707,7 +707,7 @@ DESCRIPTION
   If the extension has a hook called 'test' in its 'ext.config.yaml', the script specified will be run instead.
 ```
 
-_See code: [src/commands/app/test.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/test.js)_
+_See code: [src/commands/app/test.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/test.js)_
 
 ## `aio app undeploy`
 
@@ -715,24 +715,24 @@ Undeploys an Adobe I/O App
 
 ```
 USAGE
-  $ aio app undeploy [-v] [--version] [--actions] [--events] [--web-assets] [-e <value>] [--force-unpublish |
+  $ aio app undeploy [-v] [--version] [--actions] [--events] [--web-assets] [-e <value>...] [--force-unpublish |
     --unpublish]
 
 FLAGS
   -e, --extension=<value>...  Undeploy only a specific extension, the flags can be specified multiple times
   -v, --verbose               Verbose output
-  --[no-]actions              [default: true] Undeploy actions if any
-  --[no-]events               [default: true] Undeploy (unregister) events if any
-  --force-unpublish           Force unpublish extension(s) from Exchange, will delete all extension points
-  --[no-]unpublish            [default: true] Unpublish selected extension(s) from Exchange
-  --version                   Show version
-  --[no-]web-assets           [default: true] Undeploy web-assets if any
+      --[no-]actions          [default: true] Undeploy actions if any
+      --[no-]events           [default: true] Undeploy (unregister) events if any
+      --force-unpublish       Force unpublish extension(s) from Exchange, will delete all extension points
+      --[no-]unpublish        [default: true] Unpublish selected extension(s) from Exchange
+      --version               Show version
+      --[no-]web-assets       [default: true] Undeploy web-assets if any
 
 DESCRIPTION
   Undeploys an Adobe I/O App
 ```
 
-_See code: [src/commands/app/undeploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/undeploy.js)_
+_See code: [src/commands/app/undeploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/undeploy.js)_
 
 ## `aio app use [CONFIG_FILE_PATH]`
 
@@ -747,25 +747,25 @@ ARGUMENTS
   CONFIG_FILE_PATH  path to an Adobe I/O Developer Console configuration file
 
 FLAGS
-  -g, --global                  Use the global Adobe Developer Console Org / Project / Workspace configuration, which
-                                can be set via `aio console` commands
-  -m, --merge                   Merge any .aio and .env files during import of the Adobe Developer Console configuration
-                                file
-  -v, --verbose                 Verbose output
-  -w, --workspace=<value>       Specify the Adobe Developer Console Workspace name or Workspace id to import the
-                                configuration from
-  --[no-]confirm-new-workspace  Prompt to confirm before creating a new workspace
-  --confirm-service-sync        Skip the Service sync prompt and overwrite Service subscriptions in the new Workspace
-                                with current subscriptions
-  --no-input                    Skip user prompts by setting --no-service-sync and --merge. Requires one of
-                                config_file_path or --global or --workspace
-  --no-service-sync             Skip the Service sync prompt and do not attach current Service subscriptions to the new
-                                Workspace
-  --overwrite                   Overwrite any .aio and .env files during import of the Adobe Developer Console
-                                configuration file
-  --use-jwt                     if the config has both jwt and OAuth Server to Server Credentials (while migrating),
-                                prefer the JWT credentials
-  --version                     Show version
+  -g, --global                      Use the global Adobe Developer Console Org / Project / Workspace configuration,
+                                    which can be set via `aio console` commands
+  -m, --merge                       Merge any .aio and .env files during import of the Adobe Developer Console
+                                    configuration file
+  -v, --verbose                     Verbose output
+  -w, --workspace=<value>           Specify the Adobe Developer Console Workspace name or Workspace id to import the
+                                    configuration from
+      --[no-]confirm-new-workspace  Prompt to confirm before creating a new workspace
+      --confirm-service-sync        Skip the Service sync prompt and overwrite Service subscriptions in the new
+                                    Workspace with current subscriptions
+      --no-input                    Skip user prompts by setting --no-service-sync and --merge. Requires one of
+                                    config_file_path or --global or --workspace
+      --no-service-sync             Skip the Service sync prompt and do not attach current Service subscriptions to the
+                                    new Workspace
+      --overwrite                   Overwrite any .aio and .env files during import of the Adobe Developer Console
+                                    configuration file
+      --use-jwt                     if the config has both jwt and OAuth Server to Server Credentials (while migrating),
+                                    prefer the JWT credentials
+      --version                     Show version
 
 DESCRIPTION
   Import an Adobe Developer Console configuration file.
@@ -779,5 +779,5 @@ DESCRIPTION
   page in https://developer.adobe.com/console/
 ```
 
-_See code: [src/commands/app/use.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.1/src/commands/app/use.js)_
+_See code: [src/commands/app/use.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.1.3/src/commands/app/use.js)_
 <!-- commandsstop -->
