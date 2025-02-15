@@ -226,7 +226,7 @@ test('flags', async () => {
 
   expect(typeof TheCommand.flags['force-build']).toBe('object')
   expect(typeof TheCommand.flags['force-build'].description).toBe('string')
-  expect(TheCommand.flags['force-build'].default).toEqual(false)
+  expect(TheCommand.flags['force-build'].default).toEqual(true)
   expect(TheCommand.flags['force-build'].allowNo).toEqual(true)
 
   expect(typeof TheCommand.flags['content-hash']).toBe('object')
@@ -327,7 +327,7 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false, verbose: true }),
+      expect.objectContaining({ verbose: true }),
       expect.anything())
   })
 
@@ -343,7 +343,7 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false, 'web-assets': false }),
+      expect.objectContaining({ 'web-assets': false }),
       expect.anything())
   })
 
@@ -413,7 +413,7 @@ describe('run', () => {
 
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false, 'web-assets': false, action: ['a', 'b', 'c'] }),
+      expect.objectContaining({ 'web-assets': false, action: ['a', 'b', 'c'] }),
       expect.anything())
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(appConfig.application, {
       filterEntities: { actions: ['a', 'b', 'c'] },
@@ -435,7 +435,7 @@ describe('run', () => {
 
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false, 'web-assets': false, action: ['c'] }),
+      expect.objectContaining({ 'web-assets': false, action: ['c'] }),
       expect.anything())
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(appConfig.application, {
       filterEntities: { actions: ['c'] },
@@ -458,7 +458,7 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false, 'web-assets': false }),
+      expect.objectContaining({ 'web-assets': false }),
       expect.anything())
   })
 
@@ -485,7 +485,7 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false, actions: false }),
+      expect.objectContaining({ actions: false }),
       expect.anything())
   })
 
@@ -503,7 +503,7 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false, actions: false }),
+      expect.objectContaining({ actions: false }),
       expect.anything())
   })
 
@@ -520,7 +520,7 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false }),
+      expect.objectContaining({ 'force-build': true }),
       expect.anything())
   })
 
