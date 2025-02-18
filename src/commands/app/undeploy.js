@@ -20,7 +20,7 @@ const webLib = require('@adobe/aio-lib-web')
 const { runInProcess, buildExtensionPointPayloadWoMetadata, getCliInfo } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const { sendAuditLogs, getAuditLogEvent } = require('../../lib/audit-logger')
-const { bearerAuthHandler } = require('../../lib/auth-helper')
+const { setRuntimeApiHostAndAuthhandler } = require('../../lib/auth-helper')
 
 class Undeploy extends BaseCommand {
   async run () {
@@ -56,9 +56,9 @@ class Undeploy extends BaseCommand {
 
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
-        const config = values[i]
-        config.ow.apihost = process.env.APIHOST ?? 'http://localhost:3000/runtime'
-        config.ow.auth_handler = bearerAuthHandler
+        let config = values[i]
+
+        config = setRuntimeApiHostAndAuthhandler(config)
 
         await this.undeployOneExt(k, config, flags, spinner)
         const assetUndeployLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_UNDEPLOYED')
