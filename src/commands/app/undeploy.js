@@ -60,7 +60,7 @@ class Undeploy extends BaseCommand {
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
         const config = values[i]
-        config.ow.apihost = 'http://localhost:3000/runtime'
+        config.ow.apihost = process.env.APIHOST ?? 'http://localhost:3000/runtime'
         config.ow.auth_handler = bearerAuthHandler
 
         await this.undeployOneExt(k, config, flags, spinner)

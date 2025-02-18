@@ -109,7 +109,7 @@ class Deploy extends BuildCommand {
         const k = keys[i]
         const v = values[i]
 
-        v.ow.apihost = 'http://localhost:3000/runtime'
+        v.ow.apihost = process.env.APIHOST ?? 'http://localhost:3000/runtime'
         v.ow.auth_handler = bearerAuthHandler
 
         await this.deploySingleConfig(k, v, flags, spinner)
@@ -118,7 +118,7 @@ class Deploy extends BuildCommand {
           const assetDeployedLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_DEPLOYED')
           if (assetDeployedLogEvent) {
             assetDeployedLogEvent.data.opItems = opItems
-            // await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env)
+            await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env)
           }
         }
       }
