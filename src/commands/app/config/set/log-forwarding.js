@@ -17,7 +17,7 @@ const { bearerAuthHandler } = require('../../../../lib/auth-helper')
 class LogForwardingCommand extends BaseCommand {
   async run () {
     const aioConfig = (await this.getFullConfig()).aio
-    aioConfig.runtime.apihost = 'http://localhost:3000/runtime'
+    aioConfig.runtime.apihost = process.env.APIHOST ?? 'http://localhost:3000/runtime'
     aioConfig.runtime.auth_handler = bearerAuthHandler
     const lf = await LogForwarding.init(aioConfig)
 
