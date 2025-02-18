@@ -155,7 +155,7 @@ async function runScript (command, dir, cmdArgs = []) {
             aioLogger.debug(`Killing ${command} event hook long-running process (pid: ${pid})`)
             process.kill(pid, 'SIGTERM')
           } catch (_) {
-          // do nothing if pid not found
+            // do nothing if pid not found
           }
         })
       }
@@ -180,15 +180,30 @@ function wrapError (err) {
   return new Error(message)
 }
 
-/** @private */
-async function getCliInfo () {
-  await context.setCli({ 'cli.bare-output': true }, false) // set this globally
-
+/**
+ * getCliInfo
+ *
+ * @private
+ *
+ * @param {boolean} useForce - if true, user will be forced to login if not already logged in
+ * @returns {Promise<{accessToken: string, env: string}>} accessToken and env
+*/
+async function getCliInfo (useForce = true) {
   const env = getCliEnv()
-
-  aioLogger.debug(`Retrieving CLI Token using env=${env}`)
-  const accessToken = await getToken(CLI)
-
+  let accessToken
+  await context.setCli({ 'cli.bare-output': true }, false) // set this globally
+  if (useForce) {
+    aioLogger.debug('Retrieving CLI Token using force=true')
+    accessToken = await getToken(CLI)
+  } else {
+    aioLogger.debug('Retrieving CLI Token using force=false')
+    // in this case, the user might be logged in, but we don't want to force them
+    // we just check the config for the token ( we still use the cli context so we don't need to know
+    // the inner workings of ims-lib and where it stores access tokens)
+    // todo: this is a workaround, we should have a better way to check if the user is logged in (in ims-lib)
+    const contextConfig = await context.getCli()
+    accessToken = contextConfig?.access_token?.token
+  }
   return { accessToken, env }
 }
 
@@ -536,11 +551,13 @@ function deleteUserConfig (configData) {
 /** @private */
 const createWebExportFilter = (filterValue) => {
   return (action) => {
-    if (!action || !action.annotations) {
+    if (!action) {
       return false
     }
 
-    return String(!!action.annotations['web-export']) === String(filterValue)
+    // if no annotations, its as if web-export = false
+    const webExportValue = action.annotations?.['web-export'] ?? false
+    return String(!!webExportValue) === String(filterValue)
   }
 }
 

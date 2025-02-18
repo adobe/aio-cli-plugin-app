@@ -21,7 +21,6 @@ jest.mock('@adobe/aio-lib-core-networking', () => ({
 
 jest.mock('@adobe/aio-lib-core-config')
 jest.mock('execa')
-jest.mock('process')
 jest.mock('path')
 jest.mock('fs-extra') // do not touch the real fs
 jest.mock('@adobe/aio-lib-env')
@@ -293,7 +292,7 @@ test('runPackageScript logs if package.json does not have matching script', asyn
 test('runInProcess with script should call runScript', async () => {
   expect(appHelper.runInProcess).toBeDefined()
   expect(appHelper.runInProcess).toBeInstanceOf(Function)
-  execa.command.mockReturnValue({ on: () => {} })
+  execa.command.mockReturnValue({ on: () => { } })
   await appHelper.runInProcess('echo new command who dis?', {})
   expect(mockLogger.debug).toHaveBeenCalledWith('runInProcess: error running project hook in process, running as package script instead')
   expect(execa.command).toHaveBeenCalledWith('echo new command who dis?', expect.any(Object))
@@ -308,7 +307,7 @@ test('runInProcess with require', async () => {
   )
   expect(appHelper.runInProcess).toBeDefined()
   expect(appHelper.runInProcess).toBeInstanceOf(Function)
-  execa.command.mockReturnValue({ on: () => {} })
+  execa.command.mockReturnValue({ on: () => { } })
   await appHelper.runInProcess('does-not-exist', {})
   expect(mockReq).toHaveBeenCalled()
   expect(mockLogger.debug).toHaveBeenCalledWith('runInProcess: running project hook in process')
@@ -328,13 +327,13 @@ test('runScript with empty command', async () => {
 })
 
 test('runScript with defined dir', async () => {
-  execa.command.mockReturnValue({ on: () => {} })
+  execa.command.mockReturnValue({ on: () => { } })
   await appHelper.runScript('somecommand', 'somedir')
   expect(execa.command).toHaveBeenCalledWith('somecommand', expect.objectContaining({ cwd: 'somedir' }))
 })
 
 test('runScript with empty dir => process.cwd', async () => {
-  execa.command.mockReturnValue({ on: () => {} })
+  execa.command.mockReturnValue({ on: () => { } })
   await appHelper.runScript('somecommand', undefined)
   expect(execa.command).toHaveBeenCalledWith('somecommand', expect.objectContaining({ cwd: process.cwd() }))
 })
@@ -906,15 +905,38 @@ describe('getCliInfo', () => {
       { accessToken: 'stoken', env: 'stage' }
     )
   })
+  test('useForceFalse', async () => {
+    libEnv.getCliEnv.mockReturnValue('prod')
+    libIms.getToken.mockResolvedValue('asdasd')
+    const res = await appHelper.getCliInfo(false)
+    expect(res).toEqual({ accessToken: undefined, env: 'prod' })
+    expect(libIms.getToken).toHaveBeenCalledTimes(0)
+  })
 })
 
 describe('createWebExportFilter', () => {
   const webFilter = appHelper.createWebExportFilter(true)
   const nonWebFilter = appHelper.createWebExportFilter(false)
 
+  test('null action', () => {
+    const action = null
+
+    expect(webFilter(action)).toEqual(false)
+    expect(nonWebFilter(action)).toEqual(false)
+  })
+
+  test('no annotations', () => {
+    const action = {
+      name: 'abcde', url: 'https://fake.site'
+    }
+
+    expect(webFilter(action)).toEqual(false)
+    expect(nonWebFilter(action)).toEqual(true)
+  })
+
   test('no web-export annotation', () => {
     const action = {
-      name: 'abcde', url: 'https://fake.site', annotations: []
+      name: 'abcde', url: 'https://fake.site', annotations: {}
     }
 
     expect(webFilter(action)).toEqual(false)
@@ -959,6 +981,17 @@ describe('createWebExportFilter', () => {
 
     expect(webFilter(action2)).toEqual(false)
     expect(nonWebFilter(action2)).toEqual(true)
+  })
+
+  test('web-export: raw annotation', () => {
+    const action1 = {
+      name: 'abcde',
+      url: 'https://fake.site',
+      annotations: { 'web-export': 'raw' }
+    }
+
+    expect(webFilter(action1)).toEqual(true)
+    expect(nonWebFilter(action1)).toEqual(false)
   })
 })
 

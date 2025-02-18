@@ -18,11 +18,12 @@ const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { Flags } = require('@oclif/core')
-const { createWebExportFilter, runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getCliInfo } = require('../../lib/app-helper')
+const { runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getCliInfo } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
 const { sendAuditLogs, getAuditLogEvent, getFilesCountWithExtension } = require('../../lib/audit-logger')
 const { bearerAuthHandler } = require('../../lib/auth-helper')
+const logActions = require('../../lib/log-actions')
 
 const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
 const POST_DEPLOY_EVENT_REG = 'post-deploy-event-reg'
@@ -34,6 +35,7 @@ class Deploy extends BuildCommand {
 
     // flags
     flags['web-assets'] = flags['web-assets'] && !flags.action
+    // Deploy only a specific action, the flags can be specified multiple times, this will set --no-publish
     flags.publish = flags.publish && !flags.action
 
     const deployConfigs = await this.getAppExtConfigs(flags)
@@ -43,7 +45,6 @@ class Deploy extends BuildCommand {
 
     // if there are no extensions, then set publish to false
     flags.publish = flags.publish && !isStandaloneApp
-
     if (
       (!flags.publish && !flags['web-assets'] && !flags.actions)
     ) {
@@ -53,7 +54,7 @@ class Deploy extends BuildCommand {
 
     try {
       const aioConfig = (await this.getFullConfig()).aio
-      const cliDetails = await getCliInfo()
+      const cliDetails = await getCliInfo(flags.publish)
 
       // 1. update log forwarding configuration
       // note: it is possible that .aio file does not exist, which means there is no local lg config
@@ -65,7 +66,7 @@ class Deploy extends BuildCommand {
             const lfConfig = lf.getLocalConfigWithSecrets()
             if (lfConfig.isDefined()) {
               await lf.updateServerConfig(lfConfig)
-              spinner.succeed(chalk.green(`Log forwarding is set to '${lfConfig.getDestination()}'`))
+              spinner.succeed(chalk.green(`\nLog forwarding is set to '${lfConfig.getDestination()}'`))
             } else {
               if (flags.verbose) {
                 spinner.info(chalk.dim('Log forwarding is not updated: no configuration is provided'))
@@ -81,7 +82,8 @@ class Deploy extends BuildCommand {
       }
 
       // 2. If workspace is prod and has extensions, check if the app is published
-      if (!isStandaloneApp && aioConfig?.project?.workspace?.name === 'Production') {
+      // if --no-publish, we skip this check
+      if (flags.publish && aioConfig?.project?.workspace?.name === 'Production') {
         const extension = await this.getApplicationExtension(aioConfig)
         if (extension && extension.status === 'PUBLISHED') {
           flags.publish = false // if the app is production and published, then skip publish later on
@@ -91,14 +93,6 @@ class Deploy extends BuildCommand {
             return
           }
         }
-      }
-
-      // 3. send deploy log event
-      const logEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_DEPLOY')
-      if (logEvent) {
-        await sendAuditLogs(cliDetails.accessToken, logEvent, cliDetails.env)
-      } else {
-        this.log(chalk.red(chalk.bold('Warning: No valid config data found to send audit log event for deployment.')))
       }
 
       // 4. deploy actions and web assets for each extension
@@ -116,9 +110,14 @@ class Deploy extends BuildCommand {
         if (v.app.hasFrontend && flags['web-assets']) {
           const opItems = getFilesCountWithExtension(v.web.distProd)
           const assetDeployedLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_DEPLOYED')
-          if (assetDeployedLogEvent) {
+          if (assetDeployedLogEvent && cliDetails?.accessToken) {
             assetDeployedLogEvent.data.opItems = opItems
-            await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env)
+            try {
+              // only send logs in case of web-assets deployment
+              await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env)
+            } catch (error) {
+              this.warn('Error: Audit Log Service Error: Failed to send audit log event for deployment.')
+            }
           }
         }
       }
@@ -242,24 +241,9 @@ class Deploy extends BuildCommand {
 
     // log deployed resources
     if (deployedRuntimeEntities.actions && deployedRuntimeEntities.actions.length > 0) {
-      this.log(chalk.blue(chalk.bold('Your deployed actions:')))
-      const web = deployedRuntimeEntities.actions.filter(createWebExportFilter(true))
-      const nonWeb = deployedRuntimeEntities.actions.filter(createWebExportFilter(false))
-
-      if (web.length > 0) {
-        this.log('web actions:')
-        web.forEach(a => {
-          this.log(chalk.blue(chalk.bold(`  -> ${a.url || a.name} `)))
-        })
-      }
-
-      if (nonWeb.length > 0) {
-        this.log('non-web actions:')
-        nonWeb.forEach(a => {
-          this.log(chalk.blue(chalk.bold(`  -> ${a.url || a.name} `)))
-        })
-      }
+      await logActions({ entities: deployedRuntimeEntities, log: (...rest) => this.log(chalk.bold(chalk.blue(...rest))) })
     }
+
     // TODO urls should depend on extension point, exc shell only for exc shell extension point - use a post-app-deploy hook ?
     if (deployedFrontendUrl) {
       this.log(chalk.blue(chalk.bold(`To view your deployed application:\n  -> ${deployedFrontendUrl}`)))

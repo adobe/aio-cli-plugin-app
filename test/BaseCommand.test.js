@@ -104,6 +104,7 @@ test('getLaunchUrlPrefix() warns on older url', async () => {
 test('getLaunchUrlPrefix() uses stage launch prefix', async () => {
   const cmd = new TheCommand()
   libEnv.getCliEnv.mockReturnValue('stage')
+  mockAioConfig.get.mockReturnValue(0)
   expect(cmd.getLaunchUrlPrefix()).toBe('https://experience-stage.adobe.com/?devMode=true#/custom-apps/?localDevUrl=')
 })
 
