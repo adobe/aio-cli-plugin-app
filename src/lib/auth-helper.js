@@ -18,18 +18,18 @@ const { getCliEnv } = require('@adobe/aio-lib-env')
  * auth to the openwhisk service. Set this to the auth_handler option when initializing
  */
 const bearerAuthHandler = {
-    getAuthHeader: async () => {
-        await context.setCli({ 'cli.bare-output': true }, false) // set this globally
+  getAuthHeader: async () => {
+    await context.setCli({ 'cli.bare-output': true }, false) // set this globally
 
-        const env = getCliEnv()
+    const env = getCliEnv()
 
-        console.debug(`Retrieving CLI Token using env=${env}`)
-        const accessToken = await getToken(CLI)
+    console.debug(`Retrieving CLI Token using env=${env}`)
+    const accessToken = await getToken(CLI)
 
-        return `Bearer ${accessToken}`
-    }
+    return `Bearer ${accessToken}`
+  }
 }
 
 module.exports = {
-    bearerAuthHandler
+  bearerAuthHandler
 }
