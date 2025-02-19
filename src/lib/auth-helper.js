@@ -31,7 +31,7 @@ const bearerAuthHandler = {
   }
 }
 
-const setRuntimeApiHostAndAuthhandler = (config) => {
+const setRuntimeApiHostAndAuthHandler = (config) => {
   const aioConfig = (config && 'runtime' in config) ? config : null
 
   if (aioConfig) {
@@ -53,5 +53,5 @@ const setRuntimeApiHostAndAuthhandler = (config) => {
 
 module.exports = {
   bearerAuthHandler,
-  setRuntimeApiHostAndAuthhandler
+  setRuntimeApiHostAndAuthHandler
 }
