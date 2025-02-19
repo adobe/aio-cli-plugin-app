@@ -167,8 +167,8 @@ Build.flags = {
     allowNo: true
   }),
   'force-build': Flags.boolean({
-    description: '[default: false] Force a build even if one already exists',
-    default: false,
+    description: '[default: true] Force a build even if one already exists',
+    default: true,
     allowNo: true
   }),
   'content-hash': Flags.boolean({
