@@ -56,9 +56,9 @@ class Undeploy extends BaseCommand {
 
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
-        const config = setRuntimeApiHostAndAuthHandler(values[i])
+        const v = setRuntimeApiHostAndAuthHandler(values[i])
 
-        await this.undeployOneExt(k, config, flags, spinner)
+        await this.undeployOneExt(k, v, flags, spinner)
         const assetUndeployLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_UNDEPLOYED')
         // send logs for case of web-assets undeployment
         if (assetUndeployLogEvent && cliDetails?.accessToken) {
