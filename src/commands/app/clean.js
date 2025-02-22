@@ -14,20 +14,17 @@ const ora = require('ora')
 const chalk = require('chalk')
 
 const BaseCommand = require('../../BaseCommand')
-const { Flags } = require('@oclif/core')
 const fs = require('fs-extra')
 const path = require('node:path')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:clean', { provider: 'debug' })
 
 const cleanDir = async (dir) => {
-  const spinner = ora('Cleaning directory').start()
-  try {
+  if (dir) {
+    const spinner = ora('Cleaning directory')
+    spinner.start()
+    aioLogger.debug(`Cleaning directory: ${dir}`)
     await fs.remove(dir)
-    // spinner.succeed(`${path.relative(process.cwd(), dir)}`)
     spinner.succeed(`${dir}`)
-  } catch (err) {
-    spinner.fail(`${chalk.red(dir)}: ${err.message}`)
-    throw err
   }
 }
 
@@ -35,18 +32,18 @@ class Clean extends BaseCommand {
   async run () {
     // cli input
     const { flags } = await this.parse(Clean)
-
     const buildConfigs = await this.getAppExtConfigs(flags)
     // use Object.entries to iterate over the buildConfigs
-    for (const [key, buildConfig] of Object.entries(buildConfigs)) {
+
+    for (const [/*key*/, buildConfig] of Object.entries(buildConfigs)) {
       // clean actions.dist
-      await cleanDir(buildConfig.actions.dist)
+      await cleanDir(buildConfig?.actions?.dist)
       // clean web.dist(s)
-      await cleanDir(buildConfig.web.distDev)
-      await cleanDir(buildConfig.web.distProd)
+      await cleanDir(buildConfig?.web?.distDev)
+      await cleanDir(buildConfig?.web?.distProd)
       // clean last-built-actions.json and last-deployed-actions.json
-      await cleanDir(path.join(buildConfig.root, 'last-built-actions.json'))
-      await cleanDir(path.join(buildConfig.root, 'last-deployed-actions.json'))
+      await cleanDir(path.join(buildConfig?.root, 'dist', 'last-built-actions.json'))
+      await cleanDir(path.join(buildConfig?.root, 'dist', 'last-deployed-actions.json'))
     }
   }
 }
