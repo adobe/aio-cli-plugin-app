@@ -112,6 +112,9 @@ class Deploy extends BuildCommand {
               await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env)
             } catch (error) {
               this.warn('Error: Audit Log Service Error: Failed to send audit log event for deployment.')
+              if (flags.verbose) {
+                this.warn(error.message)
+              }
             }
           }
         }
