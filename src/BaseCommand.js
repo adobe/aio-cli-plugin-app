@@ -173,15 +173,15 @@ class BaseCommand extends Command {
   }
 
   get pjson () {
-    return this.config.pjson
+    return this.config?.pjson
   }
 
   get appName () {
-    return this.pjson.name
+    return this.pjson?.name
   }
 
   get appVersion () {
-    return this.pjson.version
+    return this.pjson?.version
   }
 
   preRelease () {

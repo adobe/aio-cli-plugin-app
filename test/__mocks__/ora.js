@@ -18,7 +18,7 @@ const spinner = {
     console.error(value)
   }),
   start: jest.fn((value) => {
-    console.error(value)
+    console.log(value)
   }),
   warn: jest.fn((value) => {
     console.error(value)
@@ -29,7 +29,7 @@ const spinner = {
   error: jest.fn(),
   fail: jest.fn(),
   succeed: jest.fn((value) => {
-    console.error(value)
+    console.log(value)
   })
 }
 
