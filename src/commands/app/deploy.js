@@ -330,7 +330,7 @@ Deploy.flags = {
   'force-build': Flags.boolean({
     description: '[default: true] Force a build even if one already exists',
     exclusive: ['no-build'], // no-build
-    default: false,
+    default: true,
     allowNo: true
   }),
   'content-hash': Flags.boolean({
