@@ -870,8 +870,7 @@ describe('run', () => {
     expect(command.config.runHook).toHaveBeenCalledWith('deploy-actions',
       expect.objectContaining({
         appConfig: expect.any(Object),
-        filterEntities: [],
-        isLocalDev: false
+        filterEntities: []
       }))
     expect(command.config.runHook).toHaveBeenCalledTimes(2)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)

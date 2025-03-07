@@ -16,7 +16,6 @@ const fs = require('fs-extra')
 const https = require('https')
 const getPort = require('get-port')
 const open = require('open')
-const os = require('node:os')
 
 const { Flags, ux } = require('@oclif/core')
 const coreConfig = require('@adobe/aio-lib-core-config')
@@ -35,16 +34,6 @@ class Run extends BaseCommand {
   async run () {
     // cli input
     const { flags } = await this.parse(Run)
-
-    if (flags.local) {
-      const [firstCpu] = os.cpus()
-      // note: the earliest versions of M1 macs return 'Apple processor' under model.
-      if (firstCpu?.model?.startsWith('Apple')) {
-        this.error('The --local flag is not supported on Apple Silicon Macs.')
-      } else {
-        this.warn('The --local flag is deprecated and will be removed in the next major release.')
-      }
-    }
 
     const spinner = ora()
 
@@ -87,7 +76,6 @@ class Run extends BaseCommand {
         shouldContentHash: false
       },
       fetchLogs: true,
-      isLocal: flags.local,
       verbose: flags.verbose
     }
 
@@ -107,7 +95,7 @@ class Run extends BaseCommand {
       }
     }
 
-    const verboseOutput = flags.verbose || flags.local || headlessApp
+    const verboseOutput = flags.verbose || headlessApp
     // we should evaluate this, a lot of output just disappears in the spinner text and
     // using verbose dumps ALL of parcel's output, so this become unreadable
     // we need a middle ground. -jm
@@ -217,10 +205,6 @@ Run.args = {}
 
 Run.flags = {
   ...BaseCommand.flags,
-  local: Flags.boolean({
-    description: '[deprecated] Run/debug actions locally (requires Docker running, not available on Apple Silicon Macs)',
-    exclusive: ['no-actions']
-  }),
   serve: Flags.boolean({
     description: '[default: true] Start frontend server (experimental)',
     default: true,
