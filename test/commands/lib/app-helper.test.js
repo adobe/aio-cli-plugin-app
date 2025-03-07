@@ -14,10 +14,6 @@ governing permissions and limitations under the License.
 jest.unmock('@adobe/aio-lib-runtime')
 
 const mockFetch = jest.fn()
-jest.mock('@adobe/aio-lib-core-networking', () => ({
-  createFetch: jest.fn(() => mockFetch),
-  HttpExponentialBackoff: jest.fn()
-}))
 
 jest.mock('@adobe/aio-lib-core-config')
 jest.mock('execa')
@@ -50,78 +46,6 @@ beforeEach(() => {
 })
 
 const getMockConfig = require('../../data-mocks/config-loader')
-
-test('isDockerRunning', async () => {
-  let result
-
-  expect(appHelper.isDockerRunning).toBeDefined()
-  expect(appHelper.isDockerRunning).toBeInstanceOf(Function)
-
-  execa.mockImplementation(() => {
-    return { stdout: jest.fn() }
-  })
-
-  result = await appHelper.isDockerRunning()
-  expect(result).toBeTruthy()
-
-  execa.mockImplementation((cmd, args) => {
-    if (cmd === 'docker' && args.includes('info')) {
-      throw new Error('fake error')
-    }
-    return { stdout: jest.fn() }
-  })
-
-  result = await appHelper.isDockerRunning()
-  expect(result).toBeFalsy()
-})
-
-test('hasDockerCLI', async () => {
-  let result
-
-  expect(appHelper.hasDockerCLI).toBeDefined()
-  expect(appHelper.hasDockerCLI).toBeInstanceOf(Function)
-
-  execa.mockImplementation(() => {
-    return { stdout: jest.fn() }
-  })
-
-  result = await appHelper.hasDockerCLI()
-  expect(result).toBeTruthy()
-
-  execa.mockImplementation((cmd, args) => {
-    if (cmd === 'docker' && args.includes('-v')) {
-      throw new Error('fake error')
-    }
-    return { stdout: jest.fn() }
-  })
-
-  result = await appHelper.hasDockerCLI()
-  expect(result).toBeFalsy()
-})
-
-test('hasJavaCLI', async () => {
-  let result
-
-  expect(appHelper.hasJavaCLI).toBeDefined()
-  expect(appHelper.hasJavaCLI).toBeInstanceOf(Function)
-
-  execa.mockImplementation(() => {
-    return { stdout: jest.fn() }
-  })
-
-  result = await appHelper.hasJavaCLI()
-  expect(result).toBeTruthy()
-
-  execa.mockImplementation((cmd) => {
-    if (cmd === 'java') {
-      throw new Error('fake error')
-    }
-    return { stdout: jest.fn() }
-  })
-
-  result = await appHelper.hasJavaCLI()
-  expect(result).toBeFalsy()
-})
 
 test('isNpmInstalled', () => {
   expect(appHelper.isNpmInstalled).toBeDefined()

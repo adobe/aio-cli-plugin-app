@@ -261,45 +261,6 @@ function writeConfig (file, config) {
   )
 }
 
-/** @private */
-async function isDockerRunning () {
-  // todo more checks
-  const args = ['info']
-  try {
-    await execa('docker', args)
-    return true
-  } catch (error) {
-    aioLogger.debug('Error spawning docker info: ' + error)
-  }
-  return false
-}
-
-/** @private */
-async function hasDockerCLI () {
-  // todo check min version
-  try {
-    const result = await execa('docker', ['-v'])
-    aioLogger.debug('docker version : ' + result.stdout)
-    return true
-  } catch (error) {
-    aioLogger.debug('Error spawning docker info: ' + error)
-  }
-  return false
-}
-
-/** @private */
-async function hasJavaCLI () {
-  // todo check min version
-  try {
-    const result = await execa('java', ['-version'])
-    // stderr is where the version is printed out for
-    aioLogger.debug('java version : ' + result.stderr)
-    return true
-  } catch (error) {
-    aioLogger.debug('Error spawning java info: ' + error)
-  }
-  return false
-}
 
 /**
  *
@@ -528,9 +489,6 @@ module.exports = {
   removeProtocolFromURL,
   urlJoin,
   checkFile,
-  hasDockerCLI,
-  hasJavaCLI,
-  isDockerRunning,
   writeConfig,
   servicesToGeneratorInput,
   warnIfOverwriteServicesInProductionWorkspace,
