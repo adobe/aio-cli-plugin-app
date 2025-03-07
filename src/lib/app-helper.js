@@ -261,7 +261,6 @@ function writeConfig (file, config) {
   )
 }
 
-
 /**
  *
  *Converts a service array to an input string that can be consumed by generator-aio-app
