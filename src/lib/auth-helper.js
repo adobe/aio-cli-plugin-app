@@ -35,7 +35,7 @@ const setRuntimeApiHostAndAuthHandler = (config) => {
   const aioConfig = (config && 'runtime' in config) ? config : null
 
   if (aioConfig) {
-    aioConfig.runtime.apihost = process.env.APIHOST ?? defaultRuntimeUrl
+    aioConfig.runtime.apihost = process.env.AIO_RUNTIME_APIHOST ?? defaultRuntimeUrl
     aioConfig.runtime.auth_handler = bearerAuthHandler
     return aioConfig
   }
@@ -43,7 +43,7 @@ const setRuntimeApiHostAndAuthHandler = (config) => {
   const owConfig = (config && 'ow' in config) ? config : null
 
   if (owConfig) {
-    owConfig.ow.apihost = process.env.APIHOST ?? defaultRuntimeUrl
+    owConfig.ow.apihost = process.env.AIO_RUNTIME_APIHOST ?? defaultRuntimeUrl
     owConfig.ow.auth_handler = bearerAuthHandler
     return owConfig
   }
