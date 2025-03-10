@@ -113,7 +113,10 @@ class Deploy extends BuildCommand {
               // only send logs in case of web-assets deployment
               await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env)
             } catch (error) {
-              this.warn('Error: Audit Log Service Error: Failed to send audit log event for deployment.')
+              if (flags.verbose) {
+                this.warn('Error: Audit Log Service Error: Failed to send audit log event for deployment.')
+                this.warn(error.message)
+              }
             }
           }
         }
@@ -330,7 +333,7 @@ Deploy.flags = {
   'force-build': Flags.boolean({
     description: '[default: true] Force a build even if one already exists',
     exclusive: ['no-build'], // no-build
-    default: false,
+    default: true,
     allowNo: true
   }),
   'content-hash': Flags.boolean({
