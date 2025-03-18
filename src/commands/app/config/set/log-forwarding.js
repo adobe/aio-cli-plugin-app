@@ -17,8 +17,10 @@ const { setRuntimeApiHostAndAuthHandler } = require('../../../../lib/auth-helper
 class LogForwardingCommand extends BaseCommand {
   async run () {
     let aioConfig = (await this.getFullConfig()).aio
-
-    aioConfig = setRuntimeApiHostAndAuthHandler(aioConfig)
+    // TODO: remove this check once the deploy service is enabled by default
+    if (process.env.IS_DEPLOY_SERVICE_ENABLED === 'true') {
+      aioConfig = setRuntimeApiHostAndAuthHandler(aioConfig)
+    }
     const lf = await LogForwarding.init(aioConfig)
 
     const destination = await this.promptDestination(lf.getSupportedDestinations())

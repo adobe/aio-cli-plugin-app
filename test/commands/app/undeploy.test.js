@@ -20,6 +20,9 @@ const helpers = require('../../../src/lib/app-helper.js')
 jest.mock('../../../src/lib/audit-logger.js')
 const auditLogger = require('../../../src/lib/audit-logger.js')
 
+jest.mock('../../../src/lib/auth-helper.js')
+const authHelper = require('../../../src/lib/auth-helper.js')
+
 const mockFS = require('fs-extra')
 jest.mock('fs-extra')
 
@@ -78,6 +81,7 @@ beforeEach(() => {
       env: 'stage'
     }
   })
+  authHelper.setRuntimeApiHostAndAuthHandler.mockImplementation(aioConfig => aioConfig)
   jest.clearAllMocks()
 })
 
@@ -470,6 +474,38 @@ describe('run', () => {
     await command.run()
     expect(runHook).toHaveBeenCalledWith('pre-undeploy-event-reg', expect.any(Object))
     expect(command.error).toHaveBeenCalledTimes(1)
+  })
+
+  test('Should invoke setRuntimeApiHostAndAuthHandler if IS_DEPLOY_SERVICE_ENABLED = true', async () => {
+    const mockOrg = 'mockorg'
+    const mockProject = 'mockproject'
+    const mockWorkspaceId = 'mockworkspaceid'
+    const mockWorkspaceName = 'mockworkspacename'
+
+    process.env.IS_DEPLOY_SERVICE_ENABLED = true
+
+    command.getFullConfig = jest.fn().mockReturnValue({
+      aio: {
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      }
+    })
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
+    expect(authHelper.setRuntimeApiHostAndAuthHandler).toHaveBeenCalledTimes(1)
+    process.env.IS_DEPLOY_SERVICE_ENABLED = false
   })
 
   test('Send audit logs for successful app undeploy', async () => {
