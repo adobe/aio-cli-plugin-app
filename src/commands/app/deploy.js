@@ -101,8 +101,7 @@ class Deploy extends BuildCommand {
       // - break into smaller pieces deploy, allowing to first deploy all actions then all web assets
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
-        // TODO: remove this check once the deploy service is enabled by default
-        const v = process.env.IS_DEPLOY_SERVICE_ENABLED === 'true' ? setRuntimeApiHostAndAuthHandler(values[i]) : values[i]
+        const v = setRuntimeApiHostAndAuthHandler(values[i])
 
         await this.deploySingleConfig(k, v, flags, spinner)
         if (v.app.hasFrontend && flags['web-assets']) {

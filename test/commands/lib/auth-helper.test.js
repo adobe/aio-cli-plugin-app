@@ -26,15 +26,17 @@ describe('bearerAuthHandler', () => {
 })
 
 describe('setRuntimeApiHostAndAuthHandler', () => {
+  const defaultRuntimeUrl = 'https://adobeioruntime.net'
   beforeEach(() => {
     jest.clearAllMocks()
+    process.env.IS_DEPLOY_SERVICE_ENABLED = 'true'
   })
 
   test('should set runtime.apihost and runtime.auth_handler when config has runtime', () => {
     const config = { runtime: {} }
     const result = setRuntimeApiHostAndAuthHandler(config)
 
-    expect(result.runtime.apihost).toBe(process.env.AIO_RUNTIME_APIHOST ?? 'https://adobeioruntime.net')
+    expect(result.runtime.apihost).toBe(process.env.AIO_RUNTIME_APIHOST ?? defaultRuntimeUrl)
     expect(result.runtime.auth_handler).toBe(bearerAuthHandler)
   })
 
@@ -42,7 +44,7 @@ describe('setRuntimeApiHostAndAuthHandler', () => {
     const config = { ow: {} }
     const result = setRuntimeApiHostAndAuthHandler(config)
 
-    expect(result.ow.apihost).toBe(process.env.AIO_RUNTIME_APIHOST ?? 'https://adobeioruntime.net')
+    expect(result.ow.apihost).toBe(process.env.AIO_RUNTIME_APIHOST ?? defaultRuntimeUrl)
     expect(result.ow.auth_handler).toBe(bearerAuthHandler)
   })
 
@@ -57,5 +59,23 @@ describe('setRuntimeApiHostAndAuthHandler', () => {
     const result = setRuntimeApiHostAndAuthHandler(null)
 
     expect(result).toBeNull()
+  })
+
+  test('should set default runtime.apihost only config has runtime', () => {
+    process.env.IS_DEPLOY_SERVICE_ENABLED = 'false'
+    const config = { runtime: {} }
+    const result = setRuntimeApiHostAndAuthHandler(config)
+
+    expect(result.runtime.apihost).toBe(defaultRuntimeUrl)
+    expect(result.runtime.auth_handler).toBeUndefined()
+  })
+
+  test('should set default ow.apihost only config has openwhisk', () => {
+    process.env.IS_DEPLOY_SERVICE_ENABLED = 'false'
+    const config = { ow: {} }
+    const result = setRuntimeApiHostAndAuthHandler(config)
+
+    expect(result.ow.apihost).toBe(defaultRuntimeUrl)
+    expect(result.ow.auth_handler).toBeUndefined()
   })
 })
