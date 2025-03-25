@@ -12,7 +12,7 @@ governing permissions and limitations under the License.
 const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
 const { getCliEnv } = require('@adobe/aio-lib-env')
-const defaultRuntimeUrl = 'https://adobeioruntime.net/runtime'
+const defaultRuntimeUrl = 'https://adobeioruntime.net'
 
 /**
  * For use with the openwhisk client js library to send a bearer token instead of basic

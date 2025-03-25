@@ -34,7 +34,7 @@ describe('setRuntimeApiHostAndAuthHandler', () => {
     const config = { runtime: {} }
     const result = setRuntimeApiHostAndAuthHandler(config)
 
-    expect(result.runtime.apihost).toBe(process.env.AIO_RUNTIME_APIHOST ?? 'https://adobeioruntime.net/runtime')
+    expect(result.runtime.apihost).toBe(process.env.AIO_RUNTIME_APIHOST ?? 'https://adobeioruntime.net')
     expect(result.runtime.auth_handler).toBe(bearerAuthHandler)
   })
 
@@ -42,7 +42,7 @@ describe('setRuntimeApiHostAndAuthHandler', () => {
     const config = { ow: {} }
     const result = setRuntimeApiHostAndAuthHandler(config)
 
-    expect(result.ow.apihost).toBe(process.env.AIO_RUNTIME_APIHOST ?? 'https://adobeioruntime.net/runtime')
+    expect(result.ow.apihost).toBe(process.env.AIO_RUNTIME_APIHOST ?? 'https://adobeioruntime.net')
     expect(result.ow.auth_handler).toBe(bearerAuthHandler)
   })
 
