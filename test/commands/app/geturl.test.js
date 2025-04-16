@@ -15,7 +15,6 @@ const BaseCommand = require('../../../src/BaseCommand')
 
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 const dataMocks = require('../../data-mocks/config-loader')
-const { loadLocalDevConfig } = require('../../../src/lib/run-local-runtime')
 
 const createFullConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
   const appConfig = dataMocks(appFixtureName, aioConfig)
@@ -59,15 +58,10 @@ describe('run', () => {
   beforeEach(() => {
     mockRuntimeLib.utils.getActionUrls.mockReset()
     mockRuntimeLib.utils.getActionUrls.mockImplementation(jest.fn(
-      (config, isRemoteDev, isLocalDev) => {
+      (config, isRemoteDev) => {
         if (isRemoteDev) {
           return {
             action: 'https://fake_ns.adobeioruntime.net/api/v1/web/sample-app-1.0.0/action'
-          }
-        }
-        if (isLocalDev) {
-          return {
-            action: 'http://localhost:3233/api/v1/web/sample-app-1.0.0/action'
           }
         }
         // !isRemoteDev
@@ -273,25 +267,5 @@ describe('run', () => {
 
     await command.run()
     expect(command.error).toHaveBeenCalledWith(new Error('No action with name invalid found'))
-  })
-
-  test('get local actions, --local', async () => {
-    const appConfig = createFullConfig(command.appConfig)
-    command.getFullConfig.mockResolvedValueOnce(appConfig)
-
-    const res = {
-      runtime: {
-        action: 'http://localhost:3233/api/v1/web/sample-app-1.0.0/action'
-      }
-    }
-    command.argv = ['--local']
-    const urls = await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    Object.values(appConfig.all).forEach(config => {
-      const localConfig = loadLocalDevConfig(config)
-      expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalledWith(localConfig, false, true)
-    })
-    expect(urls).toEqual(res)
-    expect(command.log).toHaveBeenCalledWith(expect.stringContaining(urls.runtime.action))
   })
 })

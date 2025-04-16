@@ -129,7 +129,7 @@ const sampleAppConfig = {
       dependencies: { dependency1: { location: 'fake.com/package' } }
     }
   },
-  actions: { src: '/actions', dist: '/dist/actions', isLocal: true },
+  actions: { src: '/actions', dist: '/dist/actions' },
   root: path.resolve('test/__fixtures__/sample-app')
 }
 
