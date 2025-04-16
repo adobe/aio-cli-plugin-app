@@ -64,23 +64,38 @@ class CleanBuild extends BaseCommand {
         return
       }
 
-      // The last-built-actions.json file is directly created in the dist folder
-      // by the aio app build/run commands
-      const trackingFilePath = path.join(rootConfig.app.dist, 'last-built-actions.json')
+      // let's check both possible locations for last-built-actions.json:
+      // 1. In the root/dist/application and also in  the root/dist
+      const possiblePaths = [
+        // In the app.dist directory
+        path.join(rootConfig.app.dist, 'last-built-actions.json'),
 
-      aioLogger.debug(`Checking for tracking file at: ${trackingFilePath}`)
+        // In the parent directory of app.dist
+        path.join(path.dirname(rootConfig.app.dist), 'last-built-actions.json')
+      ]
 
-      if (fs.existsSync(trackingFilePath)) {
-        aioLogger.debug(`Found tracking file at: ${trackingFilePath}`)
-        try {
-          await fs.remove(trackingFilePath)
-          spinner.succeed(chalk.green('Cleaned build tracking file (last-built-actions.json)'))
-          aioLogger.debug(`Successfully removed tracking file at: ${trackingFilePath}`)
-        } catch (err) {
-          aioLogger.debug(`Error removing file at ${trackingFilePath}: ${err.message}`)
-          spinner.fail(chalk.red(`Failed to clean build tracking file: ${err.message}`))
-          throw err
+      aioLogger.debug(`Checking for tracking files at: ${possiblePaths.join(', ')}`)
+
+      let fileRemoved = false
+
+      // Try each possible path
+      for (const filePath of possiblePaths) {
+        if (fs.existsSync(filePath)) {
+          aioLogger.debug(`Found tracking file at: ${filePath}`)
+          try {
+            await fs.remove(filePath)
+            fileRemoved = true
+            aioLogger.debug(`Successfully removed tracking file at: ${filePath}`)
+          } catch (err) {
+            aioLogger.debug(`Error removing file at ${filePath}: ${err.message}`)
+          }
+        } else {
+          aioLogger.debug(`No tracking file found at: ${filePath}`)
         }
+      }
+
+      if (fileRemoved) {
+        spinner.succeed(chalk.green('Cleaned build tracking file (last-built-actions.json)'))
       } else {
         spinner.info(chalk.blue('No build tracking file found to clean'))
       }
@@ -107,19 +122,10 @@ class CleanBuild extends BaseCommand {
         const standardProdDir = path.join(parentDir, 'web-prod')
         const standardDevDir = path.join(parentDir, 'web-dev')
 
-        // If config has a distProd path, use it
-        if (config.web.distProd) {
-          if (flags.prod || (!flags.dev && !flags.prod)) { // Clean prod by default or if specifically requested
-            webProdPath = config.web.distProd
-
-            // Check if the standard prod path exists and differs from config
-            if (!fs.existsSync(webProdPath) && fs.existsSync(standardProdDir)) {
-              webProdPath = standardProdDir
-            }
-          }
-        } else if (fs.existsSync(standardProdDir) && (flags.prod || (!flags.dev && !flags.prod))) {
-          // If no config path but standard prod path exists
-          webProdPath = standardProdDir
+        // Set web-prod path if prod flag or if neither flags are set (default behavior)
+        if (flags.prod || (!flags.dev && !flags.prod)) {
+          // Use config path if provided, otherwise use standard
+          webProdPath = config.web.distProd || standardProdDir
         }
 
         // Set dev path if dev flag or if neither flags are set (default behavior)
