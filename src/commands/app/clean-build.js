@@ -64,20 +64,28 @@ class CleanBuild extends BaseCommand {
         return
       }
       
-      // Get parent directory of dist path
-      const distParent = path.dirname(rootConfig.app.dist)
+      // The last-built-actions.json file is directly created in the dist folder
+      // by the aio app build/run commands
+      const trackingFilePath = path.join(rootConfig.app.dist, 'last-built-actions.json');
       
-      // ONLY clean the last-built-actions.json file, NOT the last-deployed-actions.json
-      // to avoid affecting deployment tracking
-      const lastBuiltActionsPath = path.join(distParent, 'dist', 'last-built-actions.json')
+      aioLogger.debug(`Checking for tracking file at: ${trackingFilePath}`)
       
-      if (await this.removeFileIfExists(lastBuiltActionsPath)) {
-        spinner.succeed(chalk.green('Cleaned build tracking file (last-built-actions.json)'))
+      if (fs.existsSync(trackingFilePath)) {
+        aioLogger.debug(`Found tracking file at: ${trackingFilePath}`)
+        try {
+          await fs.remove(trackingFilePath)
+          spinner.succeed(chalk.green('Cleaned build tracking file (last-built-actions.json)'))
+          aioLogger.debug(`Successfully removed tracking file at: ${trackingFilePath}`)
+        } catch (err) {
+          aioLogger.debug(`Error removing file at ${trackingFilePath}: ${err.message}`)
+          spinner.fail(chalk.red(`Failed to clean build tracking file: ${err.message}`))
+          throw err
+        }
       } else {
-        spinner.info('No build tracking file found to clean')
+        spinner.info(chalk.blue('No build tracking file found to clean'))
       }
     } catch (err) {
-      spinner.fail(chalk.red('Failed to clean build tracking file'))
+      spinner.fail(chalk.red(`Failed to clean build tracking file: ${err.message}`))
       throw err
     }
   }
@@ -90,23 +98,33 @@ class CleanBuild extends BaseCommand {
     let webDevPath = null
     
     if (flags['web-assets'] && config.app.hasFrontend) {
-      // Production web assets path
-      if (flags.prod || (!flags.dev && !flags.prod)) { // Clean prod by default
-        webProdPath = config.web.distProd
-      }
+      // Get the parent directory for web assets
+      const parentDir = config.web.distProd ? path.dirname(config.web.distProd) : null;
       
-      // Development web assets path
-      if (flags.dev) {
-        // Try to determine the development path from the production path
+      // Check if we have a valid path to work with
+      if (parentDir) {
+        // Standard directories for production and development web assets
+        const standardProdDir = path.join(parentDir, 'web-prod');
+        const standardDevDir = path.join(parentDir, 'web-dev');
+        
+        // If config has a distProd path, use it
         if (config.web.distProd) {
-          const prodDirName = path.basename(config.web.distProd)
-          const parentDir = path.dirname(config.web.distProd)
-          // Replace 'web-prod' with 'web-dev' or add '-dev' suffix
-          if (prodDirName === 'web-prod') {
-            webDevPath = path.join(parentDir, 'web-dev')
-          } else {
-            webDevPath = path.join(parentDir, `${prodDirName}-dev`)
+          if (flags.prod || (!flags.dev && !flags.prod)) { // Clean prod by default or if specifically requested
+            webProdPath = config.web.distProd;
+            
+            // Check if the standard prod path exists and differs from config
+            if (!fs.existsSync(webProdPath) && fs.existsSync(standardProdDir)) {
+              webProdPath = standardProdDir;
+            }
           }
+        } else if (fs.existsSync(standardProdDir) && (flags.prod || (!flags.dev && !flags.prod))) {
+          // If no config path but standard prod path exists
+          webProdPath = standardProdDir;
+        }
+        
+        // Set dev path if dev flag or if neither flags are set (default behavior)
+        if (flags.dev || (!flags.dev && !flags.prod)) {
+          webDevPath = standardDevDir;
         }
       }
     }
@@ -127,8 +145,12 @@ class CleanBuild extends BaseCommand {
     if (webProdPath) {
       try {
         spinner.start(`Cleaning production web assets for '${name}'`)
-        await this.cleanDirectory(webProdPath)
-        spinner.succeed(chalk.green(`Cleaned production web assets for '${name}'`))
+        const cleaned = await this.cleanDirectory(webProdPath)
+        if (cleaned) {
+          spinner.succeed(chalk.green(`Cleaned production web assets for '${name}'`))
+        } else {
+          spinner.info(chalk.blue(`No production web assets found to clean for '${name}'`))
+        }
       } catch (err) {
         spinner.fail(chalk.red(`Failed to clean production web assets for '${name}'`))
         throw err
@@ -139,8 +161,12 @@ class CleanBuild extends BaseCommand {
     if (webDevPath) {
       try {
         spinner.start(`Cleaning development web assets for '${name}'`)
-        await this.cleanDirectory(webDevPath)
-        spinner.succeed(chalk.green(`Cleaned development web assets for '${name}'`))
+        const cleaned = await this.cleanDirectory(webDevPath)
+        if (cleaned) {
+          spinner.succeed(chalk.green(`Cleaned development web assets for '${name}'`))
+        } else {
+          spinner.info(chalk.blue(`No development web assets found to clean for '${name}'`))
+        }
       } catch (err) {
         spinner.fail(chalk.red(`Failed to clean development web assets for '${name}'`))
         throw err
