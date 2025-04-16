@@ -114,7 +114,9 @@ class CleanBuild extends BaseCommand {
 
     if (flags['web-assets'] && config.app.hasFrontend) {
       // Get the parent directory for web assets
-      const parentDir = config.web.distProd ? path.dirname(config.web.distProd) : null
+      // Use fallback if distProd is not defined
+      // const distProdPath = config.web.distProd || path.join(config.app.dist, 'web-prod')
+      const parentDir = config.web.distProd ? path.dirname(config.web.distProd) : config.app.dist
 
       // Check if we have a valid path to work with
       if (parentDir) {
@@ -124,12 +126,13 @@ class CleanBuild extends BaseCommand {
 
         // Set web-prod path if prod flag or if neither flags are set (default behavior)
         if (flags.prod || (!flags.dev && !flags.prod)) {
-          // Use config path if provided, otherwise use standard
+          // Case when prod flag is set or default behavior
           webProdPath = config.web.distProd || standardProdDir
         }
 
         // Set dev path if dev flag or if neither flags are set (default behavior)
         if (flags.dev || (!flags.dev && !flags.prod)) {
+          // Case when dev flag is set or default behavior
           webDevPath = standardDevDir
         }
       }
@@ -148,7 +151,7 @@ class CleanBuild extends BaseCommand {
     }
 
     // Clean production web assets build artifacts
-    if (webProdPath) {
+    if (flags['web-assets'] && webProdPath) {
       try {
         spinner.start(`Cleaning production web assets for '${name}'`)
         const cleaned = await this.cleanDirectory(webProdPath)
@@ -164,7 +167,7 @@ class CleanBuild extends BaseCommand {
     }
 
     // Clean development web assets build artifacts
-    if (webDevPath) {
+    if (flags['web-assets'] && webDevPath) {
       try {
         spinner.start(`Cleaning development web assets for '${name}'`)
         const cleaned = await this.cleanDirectory(webDevPath)
