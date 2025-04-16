@@ -270,19 +270,41 @@ Remove build artifacts from the local machine
 
 ```
 USAGE
-  $ aio app clean-build [-v] [--no-actions] [--no-web-assets] [--dist-dir] [-e <value>]
+  $ aio app clean-build [-v] [--actions] [--web-assets] [--dist-dir] [--tracking-files] [--dev] [--prod] [-e <value>...]
 
 FLAGS
-  -e, --extension=<value>  Clean only a specific extension, this flag can be specified multiple times
-  -v, --verbose            Verbose output
-      --[no-]actions       [default: true] Clean action build artifacts if any
-      --[no-]web-assets    [default: true] Clean web assets build artifacts if any
-      --dist-dir           [default: false] Also clean the entire dist directory
+  -e, --extension=<value>...  Clean only a specific extension, this flag can be specified multiple times
+  -v, --verbose               Verbose output
+      --[no-]actions          [default: true] Clean action build artifacts if any
+      --[no-]web-assets       [default: true] Clean web assets build artifacts if any
+      --dist-dir              [default: false] Clean the entire dist directory (preserves deployment tracking)
+      --[no-]tracking-files   [default: true] Clean build tracking file (forces fresh build on next build without affecting deployment tracking)
+      --dev                   Clean development web assets
+      --prod                  Clean production web assets (default if neither dev nor prod specified)
 
 DESCRIPTION
   Remove build artifacts from the local machine
   This command removes build artifacts from the local machine without affecting deployed resources.
   It helps developers get a clean build environment without having to manually find and delete build files.
+
+EXAMPLES
+  $ aio app clean-build
+  # Cleans all build artifacts (actions, web assets, tracking files)
+
+  $ aio app clean-build --dev
+  # Cleans only development web assets and tracking files
+
+  $ aio app clean-build --prod
+  # Cleans only production web assets and tracking files
+
+  $ aio app clean-build --no-web-assets
+  # Cleans only action build artifacts and tracking files
+
+  $ aio app clean-build --no-actions
+  # Cleans only web assets (both dev and prod) and tracking files
+
+  $ aio app clean-build --dist-dir
+  # Cleans entire dist directory while preserving deployment tracking
 ```
 
 _See code: [src/commands/app/clean-build.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/clean-build.js)_
