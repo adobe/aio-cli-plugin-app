@@ -53,23 +53,23 @@ class CleanBuild extends BaseCommand {
     this.log(chalk.green(chalk.bold('Build artifacts cleaned up successfully!')))
   }
 
-  async cleanTrackingFiles(configs, spinner) {
+  async cleanTrackingFiles (configs, spinner) {
     try {
       spinner.start('Cleaning build tracking files')
-      
+
       // Find root config to get the dist path
       const rootConfig = Object.values(configs)[0]
       if (!rootConfig || !rootConfig.app || !rootConfig.app.dist) {
         spinner.info('No valid configuration found for tracking files')
         return
       }
-      
+
       // The last-built-actions.json file is directly created in the dist folder
       // by the aio app build/run commands
-      const trackingFilePath = path.join(rootConfig.app.dist, 'last-built-actions.json');
-      
+      const trackingFilePath = path.join(rootConfig.app.dist, 'last-built-actions.json')
+
       aioLogger.debug(`Checking for tracking file at: ${trackingFilePath}`)
-      
+
       if (fs.existsSync(trackingFilePath)) {
         aioLogger.debug(`Found tracking file at: ${trackingFilePath}`)
         try {
@@ -92,39 +92,39 @@ class CleanBuild extends BaseCommand {
 
   async cleanOneExt (name, config, flags, spinner) {
     const actionsBuildPath = flags.actions ? this.getActionsBuildPath(config) : null
-    
+
     // Determine web asset paths based on flags
     let webProdPath = null
     let webDevPath = null
-    
+
     if (flags['web-assets'] && config.app.hasFrontend) {
       // Get the parent directory for web assets
-      const parentDir = config.web.distProd ? path.dirname(config.web.distProd) : null;
-      
+      const parentDir = config.web.distProd ? path.dirname(config.web.distProd) : null
+
       // Check if we have a valid path to work with
       if (parentDir) {
         // Standard directories for production and development web assets
-        const standardProdDir = path.join(parentDir, 'web-prod');
-        const standardDevDir = path.join(parentDir, 'web-dev');
-        
+        const standardProdDir = path.join(parentDir, 'web-prod')
+        const standardDevDir = path.join(parentDir, 'web-dev')
+
         // If config has a distProd path, use it
         if (config.web.distProd) {
           if (flags.prod || (!flags.dev && !flags.prod)) { // Clean prod by default or if specifically requested
-            webProdPath = config.web.distProd;
-            
+            webProdPath = config.web.distProd
+
             // Check if the standard prod path exists and differs from config
             if (!fs.existsSync(webProdPath) && fs.existsSync(standardProdDir)) {
-              webProdPath = standardProdDir;
+              webProdPath = standardProdDir
             }
           }
         } else if (fs.existsSync(standardProdDir) && (flags.prod || (!flags.dev && !flags.prod))) {
           // If no config path but standard prod path exists
-          webProdPath = standardProdDir;
+          webProdPath = standardProdDir
         }
-        
+
         // Set dev path if dev flag or if neither flags are set (default behavior)
         if (flags.dev || (!flags.dev && !flags.prod)) {
-          webDevPath = standardDevDir;
+          webDevPath = standardDevDir
         }
       }
     }
@@ -177,13 +177,13 @@ class CleanBuild extends BaseCommand {
     if (flags['dist-dir'] && config.app.dist) {
       try {
         spinner.start(`Cleaning dist directory for '${name}'`)
-        
+
         // We need to preserve the last-deployed-actions.json file
         // First, check if it exists and back it up if it does
         const distParent = path.dirname(config.app.dist)
         const lastDeployedPath = path.join(distParent, 'dist', 'last-deployed-actions.json')
         let deploymentData = null
-        
+
         if (fs.existsSync(lastDeployedPath)) {
           try {
             deploymentData = await fs.readJson(lastDeployedPath)
@@ -192,10 +192,10 @@ class CleanBuild extends BaseCommand {
             aioLogger.debug('Could not read deployment tracking data, continuing with clean')
           }
         }
-        
+
         // Clean the directory
         await this.cleanDirectory(config.app.dist)
-        
+
         // Restore the deployment tracking file if we had data
         if (deploymentData) {
           try {
@@ -207,7 +207,7 @@ class CleanBuild extends BaseCommand {
             this.log(chalk.yellow('Warning: Could not restore deployment tracking file. This will not affect your deployed resources, but may require a full redeploy on next deploy.'))
           }
         }
-        
+
         spinner.succeed(chalk.green(`Cleaned dist directory for '${name}' (preserved deployment tracking)`))
       } catch (err) {
         spinner.fail(chalk.red(`Failed to clean dist directory for '${name}'`))
@@ -233,8 +233,8 @@ class CleanBuild extends BaseCommand {
     aioLogger.debug(`Directory does not exist, nothing to clean: ${dirPath}`)
     return false
   }
-  
-  async removeFileIfExists(filePath) {
+
+  async removeFileIfExists (filePath) {
     if (filePath && fs.existsSync(filePath)) {
       aioLogger.debug(`Removing file: ${filePath}`)
       await fs.remove(filePath)
@@ -245,7 +245,7 @@ class CleanBuild extends BaseCommand {
 }
 
 CleanBuild.description = `Remove build artifacts from the local machine
-This command removes build artifacts from the local machine without affecting deployed resources. 
+This command removes build artifacts from the local machine without affecting deployed resources.
 It helps developers get a clean build environment without having to manually find and delete build files.`
 
 CleanBuild.flags = {
@@ -284,4 +284,4 @@ CleanBuild.flags = {
   })
 }
 
-module.exports = CleanBuild 
+module.exports = CleanBuild

@@ -12,8 +12,8 @@ governing permissions and limitations under the License.
 
 const CleanBuildCommand = require('../../../src/commands/app/clean-build')
 const fs = require('fs-extra')
-const path = require('path')
-const mockLogger = require('@adobe/aio-lib-core-logging')
+// const path = require('path')
+// const mockLogger = require('@adobe/aio-lib-core-logging')
 
 jest.mock('fs-extra')
 jest.mock('@adobe/aio-lib-core-logging')
@@ -106,7 +106,7 @@ describe('run', () => {
 
     fs.existsSync.mockReturnValue(true)
     command.getAppExtConfigs.mockResolvedValue(config)
-    
+
     // Mock parse to return dist-dir flag as true
     command.parse = jest.fn().mockResolvedValue({
       flags: {
@@ -175,4 +175,4 @@ describe('run', () => {
 
     await expect(command.run()).rejects.toThrow('fs error')
   })
-}) 
+})
