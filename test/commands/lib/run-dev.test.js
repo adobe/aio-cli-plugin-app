@@ -11,13 +11,11 @@ governing permissions and limitations under the License.
 */
 
 const runDev = require('../../../src/lib/run-dev')
-const { runLocalRuntime } = require('../../../src/lib/run-local-runtime')
 const cloneDeep = require('lodash.clonedeep')
 const dataMocks = require('../../data-mocks/config-loader')
 const defaults = require('../../../src/lib/defaults')
 const getPort = require('get-port')
 
-const VsCode = require('../../../src/lib/vscode')
 const { bundle } = require('@adobe/aio-lib-web')
 const bundleServe = require('../../../src/lib/bundle-serve')
 const serve = require('../../../src/lib/serve')
@@ -29,11 +27,9 @@ const logPoller = require('../../../src/lib/log-poller')
 const appHelper = require('../../../src/lib/app-helper')
 const actionsWatcher = require('../../../src/lib/actions-watcher')
 
-jest.mock('../../../src/lib/run-local-runtime')
 jest.mock('../../../src/lib/actions-watcher')
 jest.mock('../../../src/lib/app-helper')
 jest.mock('../../../src/lib/cleanup')
-jest.mock('../../../src/lib/vscode')
 jest.mock('../../../src/lib/bundle-serve')
 jest.mock('../../../src/lib/serve')
 jest.mock('../../../src/lib/build-actions')
@@ -53,7 +49,6 @@ const FRONTEND_URL = `https://localhost:${defaults.defaultHttpServerPort}`
 /// START OF TESTS /////////////////////
 
 beforeEach(() => {
-  runLocalRuntime.mockReset()
   buildActions.mockReset()
   deployActions.mockReset()
   bundle.mockReset()
@@ -99,13 +94,6 @@ beforeEach(() => {
       wait: jest.fn()
     }
   })
-
-  VsCode.mockImplementation(() => {
-    return {
-      update: jest.fn(),
-      cleanup: jest.fn()
-    }
-  })
 })
 
 test('no parameters (exception before processing)', async () => {
@@ -115,11 +103,6 @@ test('no parameters (exception before processing)', async () => {
 
 test('port to use', async () => {
   const config = cloneDeep(createAppConfig().application)
-  runLocalRuntime.mockImplementation(() => ({
-    config,
-    cleanup: jest.fn()
-  })
-  )
 
   // use default port
   getPort.mockImplementationOnce(params => {
@@ -143,219 +126,6 @@ test('port to use', async () => {
   await runDev(config, DATA_DIR)
 })
 
-test('isLocal false', async () => {
-  const config = cloneDeep(createAppConfig().application)
-  runLocalRuntime.mockImplementation(() => ({
-    config,
-    cleanup: jest.fn()
-  })
-  )
-
-  const result = runDev(config, DATA_DIR, { isLocal: true })
-  await expect(result).resolves.toEqual(FRONTEND_URL)
-
-  expect(runLocalRuntime).toHaveBeenCalled() // only called when options.isLocal is true
-  expect(buildActions).toHaveBeenCalled() // only with backend, and !options.skipActions
-  expect(deployActions).toHaveBeenCalled() // only with backend
-  expect(bundle).toHaveBeenCalled() // only with frontend + !options.skipServe + !build-static hook
-  expect(serve).not.toHaveBeenCalled() // only with frontend + !options.skipServe + build-static hook
-  expect(bundleServe).toHaveBeenCalled() // only with frontend + !options.skipServe + !build-static hook + !serve-static hook
-  expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalled() // only if it has frontend and backend (config.json write)
-  expect(mockRuntimeLib.utils.checkOpenWhiskCredentials).not.toHaveBeenCalled() // only called when options.isLocal is false
-  expect(logPoller.run).not.toHaveBeenCalled() // only with backend and options.fetchLogs
-  expect(actionsWatcher).toHaveBeenCalled() // only with backend
-})
-
-test('isLocal true, fetchLogs true, cleanup coverage', async () => {
-  const config = cloneDeep(createAppConfig().application)
-  const mockCleanup = {
-    runLocalRuntime: jest.fn(),
-    actionsWatcher: jest.fn(),
-    bundleServe: jest.fn(),
-    vscode: jest.fn(),
-    logPoller: jest.fn()
-  }
-
-  Cleanup.mockImplementation(() => {
-    const fns = []
-    return {
-      add: jest.fn((fn) => {
-        fns.push(fn)
-      }),
-      run: jest.fn(() => {
-        fns.forEach(fn => fn())
-      }),
-      wait: jest.fn(() => {
-        fns.forEach(fn => fn())
-      })
-    }
-  })
-
-  VsCode.mockImplementation(() => {
-    return {
-      update: jest.fn(),
-      cleanup: mockCleanup.vscode
-    }
-  })
-
-  runLocalRuntime.mockImplementation(() => ({ config, cleanup: mockCleanup.runLocalRuntime }))
-  actionsWatcher.mockImplementation(() => ({ cleanup: mockCleanup.actionsWatcher }))
-  bundleServe.mockImplementation(() => ({ url: FRONTEND_URL, cleanup: mockCleanup.bundleServe }))
-  logPoller.run.mockImplementation(() => ({ cleanup: mockCleanup.logPoller }))
-
-  const result = runDev(config, DATA_DIR, { isLocal: true, fetchLogs: true })
-  await expect(result).resolves.toEqual(FRONTEND_URL)
-
-  expect(mockCleanup.runLocalRuntime).toHaveBeenCalled()
-  expect(mockCleanup.actionsWatcher).toHaveBeenCalled()
-  expect(mockCleanup.bundleServe).toHaveBeenCalled()
-  expect(mockCleanup.logPoller).toHaveBeenCalled()
-  expect(mockCleanup.vscode).toHaveBeenCalled()
-})
-
-test('isLocal true, fetchLogs true', async () => {
-  const config = cloneDeep(createAppConfig().application)
-  runLocalRuntime.mockImplementation(() => ({
-    config,
-    cleanup: jest.fn()
-  })
-  )
-
-  const result = runDev(config, DATA_DIR, { isLocal: true, fetchLogs: true })
-  await expect(result).resolves.toEqual(FRONTEND_URL)
-})
-
-test('isLocal true, exception thrown while processing', async () => {
-  const config = cloneDeep(createAppConfig().application)
-  runLocalRuntime.mockRejectedValue('error')
-
-  const result = runDev(config, DATA_DIR, { isLocal: true })
-  await expect(result).rejects.toEqual('error')
-})
-
-test('isLocal true, frontend false, backend false', async () => {
-  const config = cloneDeep(createAppConfig().application)
-  config.app.hasFrontend = false
-  config.app.hasBackend = false
-
-  runLocalRuntime.mockImplementation(() => ({
-    config,
-    cleanup: jest.fn()
-  })
-  )
-
-  const result = runDev(config, DATA_DIR, { isLocal: true })
-  await expect(result).resolves.toEqual(undefined) // no frontend, no url
-
-  // nothing is called because there is nothing to do
-  expect(runLocalRuntime).not.toHaveBeenCalled()
-  expect(buildActions).not.toHaveBeenCalled()
-  expect(deployActions).not.toHaveBeenCalled()
-  expect(bundle).not.toHaveBeenCalled()
-  expect(serve).not.toHaveBeenCalled()
-  expect(bundleServe).not.toHaveBeenCalled()
-  expect(mockRuntimeLib.utils.getActionUrls).not.toHaveBeenCalled()
-  expect(mockRuntimeLib.utils.checkOpenWhiskCredentials).not.toHaveBeenCalled()
-  expect(logPoller.run).not.toHaveBeenCalled()
-  expect(actionsWatcher).not.toHaveBeenCalled()
-})
-
-test('isLocal true, frontend true, backend false', async () => {
-  const config = cloneDeep(createAppConfig().application)
-  config.app.hasFrontend = true
-  config.app.hasBackend = false
-
-  runLocalRuntime.mockImplementation(() => ({
-    config,
-    cleanup: jest.fn()
-  })
-  )
-
-  const result = runDev(config, DATA_DIR, { isLocal: true })
-  await expect(result).resolves.toEqual(FRONTEND_URL)
-
-  expect(runLocalRuntime).not.toHaveBeenCalled()
-  expect(buildActions).not.toHaveBeenCalled()
-  expect(deployActions).not.toHaveBeenCalled()
-  expect(bundle).toHaveBeenCalled()
-  expect(serve).not.toHaveBeenCalled()
-  expect(bundleServe).toHaveBeenCalled()
-  expect(mockRuntimeLib.utils.getActionUrls).not.toHaveBeenCalled()
-  expect(mockRuntimeLib.utils.checkOpenWhiskCredentials).not.toHaveBeenCalled()
-  expect(logPoller.run).not.toHaveBeenCalled()
-  expect(actionsWatcher).not.toHaveBeenCalled()
-})
-
-test('isLocal true, frontend true, skipActions true', async () => {
-  const config = cloneDeep(createAppConfig().application)
-  config.app.hasFrontend = true
-  config.app.hasBackend = false
-
-  runLocalRuntime.mockImplementation(() => ({
-    config,
-    cleanup: jest.fn()
-  })
-  )
-
-  const result = runDev(config, DATA_DIR, { isLocal: true, skipActions: true })
-  await expect(result).resolves.toEqual(FRONTEND_URL)
-
-  expect(runLocalRuntime).not.toHaveBeenCalled()
-  expect(buildActions).not.toHaveBeenCalled()
-  expect(deployActions).not.toHaveBeenCalled()
-  expect(bundle).toHaveBeenCalled()
-  expect(serve).not.toHaveBeenCalled()
-  expect(bundleServe).toHaveBeenCalled()
-  expect(mockRuntimeLib.utils.getActionUrls).not.toHaveBeenCalled()
-  expect(mockRuntimeLib.utils.checkOpenWhiskCredentials).not.toHaveBeenCalled()
-  expect(logPoller.run).not.toHaveBeenCalled()
-  expect(actionsWatcher).not.toHaveBeenCalled()
-})
-
-test('isLocal true, frontend true, backend true, skipServe true', async () => {
-  const config = cloneDeep(createAppConfig().application)
-  config.app.hasFrontend = true
-  config.app.hasBackend = false
-
-  runLocalRuntime.mockImplementation(() => ({
-    config,
-    cleanup: jest.fn()
-  })
-  )
-
-  const result = runDev(config, DATA_DIR, { isLocal: true, skipServe: true })
-  await expect(result).resolves.toEqual(undefined) // nothing was served, no url
-
-  expect(runLocalRuntime).not.toHaveBeenCalled()
-  expect(buildActions).not.toHaveBeenCalled()
-  expect(deployActions).not.toHaveBeenCalled()
-  expect(bundle).not.toHaveBeenCalled()
-  expect(serve).not.toHaveBeenCalled()
-  expect(bundleServe).not.toHaveBeenCalled()
-  expect(mockRuntimeLib.utils.getActionUrls).not.toHaveBeenCalled()
-  expect(mockRuntimeLib.utils.checkOpenWhiskCredentials).not.toHaveBeenCalled()
-  expect(logPoller.run).not.toHaveBeenCalled()
-  expect(actionsWatcher).not.toHaveBeenCalled()
-})
-
-test('isLocal false validation', async () => {
-  const config = cloneDeep(createAppConfig().application)
-
-  const result = runDev(config, DATA_DIR, { isLocal: false })
-  await expect(result).resolves.toEqual(FRONTEND_URL)
-
-  expect(runLocalRuntime).not.toHaveBeenCalled() // only called when options.isLocal is true
-  expect(buildActions).toHaveBeenCalled() // only with backend, and !options.skipActions
-  expect(deployActions).toHaveBeenCalled() // only with backend
-  expect(bundle).toHaveBeenCalled() // only with frontend and !options.skipServe and build-static hook *not* set
-  expect(serve).not.toHaveBeenCalled() // only with frontend and if we don't use the default bundler (build-static hook *is* set)
-  expect(bundleServe).toHaveBeenCalled() // only with frontend and if we use the default bundler (build-static hook *not* set)
-  expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalled() // only if it has frontend and backend (config.json write)
-  expect(mockRuntimeLib.utils.checkOpenWhiskCredentials).toHaveBeenCalled() // only called when options.isLocal is false
-  expect(logPoller.run).not.toHaveBeenCalled() // only with backend and options.fetchLogs
-  expect(actionsWatcher).toHaveBeenCalled() // only with backend
-})
-
 test('isLocal false, build-static hook set, serve-static hook set)', async () => {
   const config = cloneDeep(createAppConfig().application)
   // script contents are the hook names, for easy reference
@@ -368,10 +138,9 @@ test('isLocal false, build-static hook set, serve-static hook set)', async () =>
     }
   })
 
-  const result = runDev(config, DATA_DIR, { isLocal: false })
+  const result = runDev(config, DATA_DIR)
   await expect(result).resolves.toEqual(undefined) // since serve-static is an app hook
 
-  expect(runLocalRuntime).not.toHaveBeenCalled()
   expect(buildActions).toHaveBeenCalled()
   expect(deployActions).toHaveBeenCalled()
   expect(bundle).not.toHaveBeenCalled()
@@ -394,10 +163,9 @@ test('isLocal false, build-static hook set, serve-static hook not set)', async (
     }
   })
 
-  const result = runDev(config, DATA_DIR, { isLocal: false })
+  const result = runDev(config, DATA_DIR, { })
   await expect(result).resolves.toEqual(FRONTEND_URL) // we use our own serve
 
-  expect(runLocalRuntime).not.toHaveBeenCalled()
   expect(buildActions).toHaveBeenCalled()
   expect(deployActions).toHaveBeenCalled()
   expect(bundle).not.toHaveBeenCalled()
@@ -409,13 +177,161 @@ test('isLocal false, build-static hook set, serve-static hook not set)', async (
   expect(actionsWatcher).toHaveBeenCalled()
 })
 
+test('fetchLogs true)', async () => {
+  const config = cloneDeep(createAppConfig().application)
+
+  const result = runDev(config, DATA_DIR, { fetchLogs: true })
+  await expect(result).resolves.toEqual(FRONTEND_URL) // we use our own serve
+
+  expect(buildActions).toHaveBeenCalled()
+  expect(deployActions).toHaveBeenCalled()
+  expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalled()
+  expect(mockRuntimeLib.utils.checkOpenWhiskCredentials).toHaveBeenCalled()
+  expect(logPoller.run).toHaveBeenCalled()
+  expect(actionsWatcher).toHaveBeenCalled()
+})
+
+test('fetchLogs false)', async () => {
+  const config = cloneDeep(createAppConfig().application)
+
+  const result = runDev(config, DATA_DIR, { fetchLogs: false })
+  await expect(result).resolves.toEqual(FRONTEND_URL) // we use our own serve
+
+  expect(buildActions).toHaveBeenCalled()
+  expect(deployActions).toHaveBeenCalled()
+  expect(mockRuntimeLib.utils.getActionUrls).toHaveBeenCalled()
+  expect(mockRuntimeLib.utils.checkOpenWhiskCredentials).toHaveBeenCalled()
+  expect(logPoller.run).not.toHaveBeenCalled()
+  expect(actionsWatcher).toHaveBeenCalled()
+})
+
 test('runDev does not always force builds', async () => {
   const config = cloneDeep(createAppConfig().application)
 
-  await runDev(config, DATA_DIR, { isLocal: false })
+  await runDev(config, DATA_DIR)
 
   expect(buildActions).toHaveBeenCalled()
   expect(buildActions).toHaveBeenCalledWith(expect.any(Object) /* config */,
     null /* filterActions */,
     false /* forceBuild */)
+})
+
+test('calls cleanup on exception - hasBackend:false', async () => {
+  const config = cloneDeep(createAppConfig().application)
+  config.app.hasFrontend = true
+  config.app.hasBackend = false
+
+  Cleanup.mockImplementation(() => {
+    const fns = []
+    return {
+      add: jest.fn((fn) => {
+        fns.push(fn)
+      }),
+      run: jest.fn(() => {
+        fns.forEach(fn => fn())
+      }),
+      wait: jest.fn(() => {
+        throw new Error('Expect the unexpected')
+      })
+    }
+  })
+
+  const result = runDev(config, DATA_DIR)
+  await expect(result).rejects.toThrow('Expect the unexpected')
+})
+
+test('calls cleanup on exception - hasFrontend:false', async () => {
+  const config = cloneDeep(createAppConfig().application)
+  config.app.hasFrontend = false
+  config.app.hasBackend = false
+
+  Cleanup.mockImplementation(() => {
+    const fns = []
+    return {
+      add: jest.fn((fn) => {
+        fns.push(fn)
+      }),
+      run: jest.fn(() => {
+        fns.forEach(fn => fn())
+      }),
+      wait: jest.fn(() => {
+        throw new Error('Expect the unexpected')
+      })
+    }
+  })
+
+  const result = runDev(config, DATA_DIR)
+  await expect(result).rejects.toThrow('Expect the unexpected')
+})
+
+test('calls cleanup on exception - hasBackend && !skipActions', async () => {
+  const config = cloneDeep(createAppConfig().application)
+  config.app.hasFrontend = false
+  config.app.hasBackend = true
+
+  Cleanup.mockImplementation(() => {
+    const fns = []
+    return {
+      add: jest.fn((fn) => {
+        fns.push(fn)
+      }),
+      run: jest.fn(() => {
+        fns.forEach(fn => fn())
+      }),
+      wait: jest.fn(() => {
+        throw new Error('Expect the unexpected')
+      })
+    }
+  })
+
+  const result = runDev(config, DATA_DIR, { skipActions: false })
+  await expect(result).rejects.toThrow('Expect the unexpected')
+})
+
+test('calls cleanup on exception - hasFrontend && !skipActions && skipServe && fetchLogs: true', async () => {
+  const config = cloneDeep(createAppConfig().application)
+  config.app.hasFrontend = true
+  config.app.hasBackend = true
+
+  Cleanup.mockImplementation(() => {
+    const fns = []
+    return {
+      add: jest.fn((fn) => {
+        fns.push(fn)
+      }),
+      run: jest.fn(() => {
+        fns.forEach(fn => fn())
+      }),
+      wait: jest.fn(() => {
+        throw new Error('Expect the unexpected')
+      })
+    }
+  })
+
+  const result = runDev(config, DATA_DIR, { skipActions: false, skipServe: true, fetchLogs: true })
+  await expect(result).rejects.toThrow('Expect the unexpected')
+})
+
+test('calls cleanup on exception)', async () => {
+  const config = cloneDeep(createAppConfig().application)
+  config.app.hasFrontend = true
+  config.app.hasBackend = true
+
+  Cleanup.mockImplementation(() => {
+    const fns = []
+    return {
+      add: jest.fn((fn) => {
+        fns.push(fn)
+      }),
+      run: jest.fn(() => {
+        fns.forEach(fn => fn())
+      }),
+      wait: jest.fn(() => {
+        throw new Error('Expect the unexpected')
+      })
+    }
+  })
+
+  const result = runDev(config, DATA_DIR, { skipActions: true })
+  await expect(result).rejects.toThrow('Expect the unexpected')
 })

@@ -14,4 +14,3 @@ coverage
 oclif.manifest.json
 package-lock.json
 
-bin/openwhisk-standalone*.jar
