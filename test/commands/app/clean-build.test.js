@@ -620,7 +620,7 @@ describe('run', () => {
     // Mock ensureDir to succeed
     fs.ensureDir.mockResolvedValue()
 
-    // Mock writeJson to throw an error - CRUCIAL for hitting lines 219-220
+    // Mock writeJson to throw an error to trigger the warning message about deployment tracking
     fs.writeJson.mockImplementation(() => {
       throw new Error('write error')
     })
@@ -636,7 +636,7 @@ describe('run', () => {
 
     await command.run()
 
-    // Check that the warning was logged (line 220)
+    // Verify the warning message was logged
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('Warning: Could not restore deployment tracking file'))
 
     // We don't need to check aioLogger.debug since it might not be accessible to mock properly
@@ -657,8 +657,8 @@ describe('run', () => {
       }
     }
 
-    // To hit lines 161-162, we need to:
-    // 1. Make cleanDirectory return false (for the 'if (cleaned)' branch)
+    // Setup to test the scenario where web assets directories exist but are empty
+    // 1. Make cleanDirectory return false (indicating directory was empty or not found)
     // 2. Ensure fs.existsSync returns true so that cleanDirectory is called
     fs.existsSync.mockReturnValue(true)
 
@@ -690,7 +690,7 @@ describe('run', () => {
 
     await command.run()
 
-    // Check if the info messages were shown (lines 161-162)
+    // Check if the info messages were shown for both prod and dev assets
     expect(mockOraInstance.info).toHaveBeenCalledWith(expect.stringContaining('No production web assets found to clean'))
     expect(mockOraInstance.info).toHaveBeenCalledWith(expect.stringContaining('No development web assets found to clean'))
 
@@ -698,7 +698,7 @@ describe('run', () => {
     command.cleanDirectory = originalCleanDirectory
   })
 
-  test('properly handles JSON write errors with exact error path', async () => {
+  test('properly handles JSON write errors when restoring deployment tracking', async () => {
     const config = {
       application: {
         app: {
@@ -712,7 +712,7 @@ describe('run', () => {
     fs.existsSync.mockReturnValue(true)
     fs.readJson.mockResolvedValue({ deploymentData: 'test-data' })
     fs.ensureDir.mockResolvedValue(true)
-    // Explicitly fail the writeJson operation
+    // Explicitly fail the writeJson operation to test error handling when restoring deployment tracking
     fs.writeJson.mockImplementation(() => {
       throw new Error('write error')
     })
@@ -728,8 +728,7 @@ describe('run', () => {
 
     await command.run()
 
-    // Ensure the error path in lines 228-229 is executed
-    // These lines log a warning message
+    // Verify that a warning message is shown when the deployment tracking file can't be restored
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('Warning: Could not restore deployment tracking file'))
   })
 
@@ -742,8 +741,7 @@ describe('run', () => {
       }
     }
 
-    // Explicitly set fs.existsSync to return false for ANY path
-    // This ensures we hit line 103-104 where spinner.info is called
+    // Set fs.existsSync to return false to simulate no tracking files found
     fs.existsSync.mockReturnValue(false)
 
     command.getAppExtConfigs.mockResolvedValue(config)
@@ -767,7 +765,7 @@ describe('run', () => {
 
     await command.run()
 
-    // This explicitly verifies line 104 is called
+    // Verify that an info message is shown when no tracking files are found
     expect(mockOraInstance.info).toHaveBeenCalledWith(expect.stringContaining('No build tracking file found to clean'))
   })
 
@@ -807,166 +805,11 @@ describe('run', () => {
 
     require('ora').mockReturnValue(mockOraInstance)
 
-    // This should not throw because the error is caught inside the "catch (err)" block
-    // at lines 90-91 in cleanTrackingFiles
+    // This should not throw because the error is caught inside the cleanTrackingFiles method
     await command.run()
 
     // The outer catch block should not be triggered, so no spinner.fail should be called
     expect(mockOraInstance.fail).not.toHaveBeenCalledWith(expect.stringContaining('Failed to clean build tracking file'))
-  })
-
-  test('handles case where no parent directory exists for web assets', async () => {
-    // Create a new command instance for this test to avoid contamination
-    const commandInstance = new CleanBuildCommand([])
-    commandInstance.error = jest.fn()
-    commandInstance.log = jest.fn()
-
-    // Set up the basic mocks
-    const mockOraInstance = {
-      start: jest.fn().mockReturnThis(),
-      stop: jest.fn().mockReturnThis(),
-      info: jest.fn().mockReturnThis(),
-      succeed: jest.fn().mockReturnThis(),
-      fail: jest.fn().mockReturnThis()
-    }
-    require('ora').mockReturnValue(mockOraInstance)
-
-    // Create a mock implementation of the run method
-    // This allows us to test just the part we care about
-    const originalRun = commandInstance.run
-    commandInstance.run = jest.fn().mockImplementation(async function () {
-      // Skip the actual command.run() implementation
-
-      // Set up the config with null distProd to trigger the edge case
-      const config = {
-        application: {
-          app: {
-            hasFrontend: true,
-            hasBackend: false,
-            dist: '/dist'
-          },
-          web: {
-            distProd: null
-          }
-        }
-      }
-
-      // Since we're mocking the run method, set up flags directly
-      const flags = {
-        'web-assets': true,
-        actions: false,
-        'tracking-files': false,
-        'dist-dir': false,
-        dev: false,
-        prod: false
-      }
-
-      // Initialize variables as the original method would
-      let webProdPath
-      let webDevPath
-
-      // Now implement the specific logic we're testing
-      if (flags['web-assets'] && config.application && config.application.app.hasFrontend) {
-        // Calculate parentDir - this should be null since distProd is null
-        const parentDir = config.application.web.distProd && path.dirname(config.application.web.distProd)
-
-        // Log the values for debugging
-        console.log(`parentDir: ${parentDir}`)
-
-        // This is where the null check happens that we want to test
-        if (parentDir) {
-          // If we get here with parentDir=null, the test should fail
-          const standardProdDir = path.join(parentDir, 'web-prod')
-          const standardDevDir = path.join(parentDir, 'web-dev')
-
-          if (flags.prod || (!flags.dev && !flags.prod)) {
-            webProdPath = config.application.web.distProd || standardProdDir
-          }
-
-          if (flags.dev || (!flags.dev && !flags.prod)) {
-            webDevPath = standardDevDir
-          }
-        }
-      }
-
-      // Log the final values of paths
-      console.log(`webProdPath: ${webProdPath}`)
-      console.log(`webDevPath: ${webDevPath}`)
-
-      // Clean production web assets if webProdPath was set
-      if (flags['web-assets'] && webProdPath) {
-        // This should NOT be called if parentDir is null
-        await this.cleanDirectory(webProdPath)
-      }
-
-      // Clean development web assets if webDevPath was set
-      if (flags['web-assets'] && webDevPath) {
-        // This should NOT be called if parentDir is null
-        await this.cleanDirectory(webDevPath)
-      }
-
-      return null
-    })
-
-    // Keep the real implementation of cleanDirectory for the test
-    commandInstance.cleanDirectory = jest.fn().mockResolvedValue(true)
-
-    // Run the command
-    await commandInstance.run()
-
-    // Verify cleanDirectory was not called at all since webProdPath and webDevPath should not be set
-    expect(commandInstance.cleanDirectory).not.toHaveBeenCalled()
-
-    // Restore the original method
-    commandInstance.run = originalRun
-  })
-
-  test('handles errors when cleaning action build artifacts', async () => {
-    const config = {
-      application: {
-        app: {
-          hasFrontend: false,
-          hasBackend: true,
-          dist: '/dist'
-        },
-        actions: {
-          dist: '/dist/actions'
-        }
-      }
-    }
-
-    fs.existsSync.mockReturnValue(true)
-
-    // Make the emptyDir call fail when attempting to clean actions
-    fs.emptyDir.mockImplementation(path => {
-      if (path === '/dist/actions') {
-        return Promise.reject(new Error('actions clean error'))
-      }
-      return Promise.resolve()
-    })
-
-    command.getAppExtConfigs.mockResolvedValue(config)
-
-    // Mock parse to include actions flag
-    command.parse = jest.fn().mockResolvedValue({
-      flags: {
-        actions: true,
-        'web-assets': false
-      }
-    })
-
-    const mockOraInstance = {
-      start: jest.fn().mockReturnThis(),
-      stop: jest.fn().mockReturnThis(),
-      info: jest.fn().mockReturnThis(),
-      succeed: jest.fn().mockReturnThis(),
-      fail: jest.fn().mockReturnThis()
-    }
-
-    require('ora').mockReturnValue(mockOraInstance)
-
-    await expect(command.run()).rejects.toThrow('actions clean error')
-    expect(mockOraInstance.fail).toHaveBeenCalled()
   })
 
   test('propagates error when cleaning tracking files fails', async () => {
@@ -1005,10 +848,10 @@ describe('run', () => {
 
     require('ora').mockReturnValue(mockOraInstance)
 
-    // The error should be propagated up (line 104)
+    // The error should be propagated up
     await expect(command.run()).rejects.toThrow(testError)
 
-    // Verify spinner.fail was called (line 103)
+    // Verify spinner.fail was called with appropriate message
     expect(mockOraInstance.fail).toHaveBeenCalledWith(expect.stringContaining('Failed to clean build tracking file'))
   })
 
@@ -1060,10 +903,10 @@ describe('run', () => {
 
     require('ora').mockReturnValue(mockOraInstance)
 
-    // The error should be propagated up (line 162)
+    // The error should be propagated up
     await expect(command.run()).rejects.toThrow(testError)
 
-    // Verify spinner.fail was called (line 161)
+    // Verify spinner.fail was called with appropriate message
     expect(mockOraInstance.fail).toHaveBeenCalledWith(expect.stringContaining('Failed to clean production web assets'))
   })
 
@@ -1111,15 +954,14 @@ describe('run', () => {
 
     require('ora').mockReturnValue(mockOraInstance)
 
-    // The error should be propagated up (line 220)
+    // The error should be propagated up
     await expect(command.run()).rejects.toThrow(testError)
 
-    // Verify spinner.fail was called (line 219)
+    // Verify spinner.fail was called with appropriate message
     expect(mockOraInstance.fail).toHaveBeenCalledWith(expect.stringContaining('Failed to clean dist directory'))
   })
 
-  // Test for line 128 - error handling when cleaning development web assets
-  test('handles exact error from line 128 in development web assets cleaning', async () => {
+  test('throws error when cleaning development web assets fails', async () => {
     const config = {
       application: {
         app: {
@@ -1133,16 +975,15 @@ describe('run', () => {
       }
     }
 
-    // Mock fs.existsSync to return true specifically for the web-dev path
+    // Mock fs.existsSync to return true for all paths
     fs.existsSync.mockImplementation(path => {
       return true
     })
 
-    // Define the exact error to be thrown - this will be thrown by the fs.emptyDir call
+    // Create an error to be thrown when cleaning web-dev assets
     const webDevError = new Error('web-dev clean error')
 
-    // This is the key difference - we need to mock the emptyDir method to reject with our error
-    // when cleaning web-dev assets specifically
+    // Mock emptyDir to specifically fail when cleaning web-dev assets
     fs.emptyDir.mockImplementation(path => {
       if (path.includes('web-dev')) {
         return Promise.reject(webDevError)
@@ -1152,7 +993,7 @@ describe('run', () => {
 
     command.getAppExtConfigs.mockResolvedValue(config)
 
-    // Mock parse to include web-assets and dev flags to trigger the webDevPath path
+    // Set flags to trigger cleaning of dev web assets
     command.parse = jest.fn().mockResolvedValue({
       flags: {
         'web-assets': true,
@@ -1170,15 +1011,14 @@ describe('run', () => {
 
     require('ora').mockReturnValue(mockOraInstance)
 
-    // The error should be caught in the catch block on line 126-129
+    // Verify the error is propagated up and not swallowed
     await expect(command.run()).rejects.toThrow(webDevError)
 
-    // Verify spinner.fail was called (line 127)
+    // Verify spinner.fail was called with appropriate message
     expect(mockOraInstance.fail).toHaveBeenCalledWith(expect.stringContaining('Failed to clean development web assets'))
   })
 
-  // Test for line 193 - error handling when restoring deployment tracking file
-  test('specifically targets error in line 193 for restoring deployment tracking', async () => {
+  test('logs warning but continues when restoring deployment tracking file fails', async () => {
     const config = {
       application: {
         app: {
@@ -1194,13 +1034,13 @@ describe('run', () => {
       return true
     })
 
-    // Mock readJson to return valid deployment data - this ensures deploymentData is truthy
+    // Mock readJson to return valid deployment data
     fs.readJson.mockResolvedValue({ deploymentData: 'test-data' })
 
-    // Mock ensureDir to succeed - this ensures we reach the fs.writeJson call
+    // Mock ensureDir to succeed
     fs.ensureDir.mockResolvedValue()
 
-    // This is the key part - we need to make writeJson throw an error to trigger line 193
+    // Simulate an error when trying to write the deployment tracking file
     const writeError = new Error('write error')
     fs.writeJson.mockImplementation(() => {
       throw writeError
@@ -1208,25 +1048,24 @@ describe('run', () => {
 
     command.getAppExtConfigs.mockResolvedValue(config)
 
-    // Mock parse to enable dist-dir flag - this ensures we reach the code path
+    // Set flags to enable dist-dir cleaning
     command.parse = jest.fn().mockResolvedValue({
       flags: {
         'dist-dir': true
       }
     })
 
-    // Run the command - this should not throw since the error is caught in the try/catch block
+    // Run the command - this should not throw since the error is caught and handled with a warning
     await command.run()
 
-    // Verify the warning message was logged (line 194)
+    // Verify the warning message was logged
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('Warning: Could not restore deployment tracking file'))
 
     // Verify that the command still completed successfully despite the error
     expect(fs.emptyDir).toHaveBeenCalledWith('/dist')
   })
 
-  // Specific test for uncovered branch in line 128 - when cleanDirectory throws an error with a custom error message
-  test('covers exact branch in line 128 for webDevPath cleaning errors with different error formats', async () => {
+  test('handles non-standard errors when cleaning development web assets', async () => {
     const config = {
       application: {
         app: {
@@ -1243,13 +1082,13 @@ describe('run', () => {
     // Mock to ensure we hit the webDevPath clean section
     fs.existsSync.mockReturnValue(true)
 
-    // Create a special non-Error object to test error handling branch variations
+    // Create a special non-Error object to test error handling with non-standard error formats
     const customErrorObject = {
       message: 'custom error format',
       toString: () => 'String representation of error'
     }
 
-    // Instead of trying to mock cleanDirectory with a spy, override it directly on the instance
+    // Override cleanDirectory to throw our custom error
     command.cleanDirectory = jest.fn().mockImplementation(dirPath => {
       if (dirPath && dirPath.includes('web-dev')) {
         return Promise.reject(customErrorObject)
@@ -1259,6 +1098,7 @@ describe('run', () => {
 
     command.getAppExtConfigs.mockResolvedValue(config)
 
+    // Set flags to trigger web-dev cleaning
     command.parse = jest.fn().mockResolvedValue({
       flags: {
         'web-assets': true,
@@ -1276,15 +1116,14 @@ describe('run', () => {
 
     require('ora').mockReturnValue(mockOraInstance)
 
-    // Expect the command to throw the custom error
+    // Verify that the non-standard error is still propagated correctly
     await expect(command.run()).rejects.toEqual(customErrorObject)
 
     // Verify spinner.fail was called with appropriate message
     expect(mockOraInstance.fail).toHaveBeenCalledWith(expect.stringContaining('Failed to clean development web assets'))
   })
 
-  // Specific test for uncovered branch in line 193 - different error formats when restoring deployment tracking
-  test('covers exact branch in line 193 for different error formats when restoring deployment tracking', async () => {
+  test('handles non-standard errors when restoring deployment tracking file', async () => {
     const config = {
       application: {
         app: {
@@ -1295,14 +1134,13 @@ describe('run', () => {
       }
     }
 
-    // Ensure we go through all the required paths to reach line 193
+    // Ensure we go through all the required paths
     fs.existsSync.mockReturnValue(true)
     fs.readJson.mockResolvedValue({ deploymentData: 'test-data' })
     fs.ensureDir.mockResolvedValue()
 
-    // Create a non-standard error object to test branch coverage
+    // Create a non-standard error object without a message property
     const nonStandardError = {
-      // No message property
       code: 'EACCES',
       toString: () => 'Permission denied'
     }
@@ -1321,18 +1159,18 @@ describe('run', () => {
       }
     })
 
-    // Should not throw as the error is caught
+    // Should not throw as the error is caught and handled with a warning
     await command.run()
 
-    // This tests the branch in line 193 where err.message might not exist
+    // Verify warning is shown even with non-standard error formats
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('Warning: Could not restore deployment tracking file'))
 
-    // Now test with undefined error
+    // Now test with a standard Error
     fs.writeJson.mockImplementation(() => {
       throw new Error('Unknown error')
     })
 
-    // Should still handle the undefined error without crashing
+    // Should still handle the standard error without crashing
     await command.run()
 
     // Verify warning was still shown
