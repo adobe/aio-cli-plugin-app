@@ -48,7 +48,6 @@ class CleanBuild extends BaseCommand {
       throw error
     }
 
-
     this.log(chalk.green(chalk.bold('Build artifacts cleaned up successfully!')))
   }
 
