@@ -1444,3 +1444,68 @@ describe('run', () => {
     expect(mockLogger.debug).toHaveBeenCalledWith('Could not read deployment tracking data, continuing with clean')
   })
 })
+
+describe('branch coverage for clean-build.js', () => {
+  let originalExistsSync
+
+  beforeAll(() => {
+    // remember real existsSync so we can selectively override it
+    originalExistsSync = fs.existsSync
+  })
+
+  afterAll(() => {
+    fs.existsSync = originalExistsSync
+  })
+
+  test('skips web-assets cleaning when parentDir is falsy (line 122)', async () => {
+    // 1) config.web.distProd = null, config.app.dist = '' → parentDir = ''
+    const configMap = {
+      application: {
+        app: { hasFrontend: true, hasBackend: false, dist: '' },
+        web: { distProd: null }
+      }
+    }
+    command.getAppExtConfigs.mockResolvedValue(configMap)
+
+    // parse flags: web-assets on, but no actions, no prod/dev → only web-assets branch would run
+    command.parse = jest.fn().mockResolvedValue({
+      flags: { actions: false, 'web-assets': true, dev: false, prod: false }
+    })
+
+    // run → should not throw, and should never call emptyDir for anything
+    await command.run()
+
+    expect(fs.emptyDir).not.toHaveBeenCalled()
+  })
+
+  test('skips last-deployed-actions.json logic when file does not exist (line 196)', async () => {
+    // 2) config.app.dist = '/dist', dist-dir on
+    const configMap = {
+      application: {
+        app: { dist: '/dist' /* hasBackend/hasFrontend don't matter */ }
+      }
+    }
+    command.getAppExtConfigs.mockResolvedValue(configMap)
+
+    // simulate: dist folder exists but last-deployed JSON does NOT
+    fs.existsSync = jest.fn((p) => {
+      if (p.endsWith('last-deployed-actions.json')) {
+        return false
+      }
+      // for '/dist' itself, we want true so cleanDirectory runs
+      return true
+    })
+
+    command.parse = jest.fn().mockResolvedValue({
+      flags: { actions: false, 'web-assets': false, 'dist-dir': true }
+    })
+
+    await command.run()
+
+    // we should have cleaned /dist
+    expect(fs.emptyDir).toHaveBeenCalledWith('/dist')
+    // but never tried to read or write the JSON
+    expect(fs.readJson).not.toHaveBeenCalled()
+    expect(fs.writeJson).not.toHaveBeenCalled()
+  })
+})
