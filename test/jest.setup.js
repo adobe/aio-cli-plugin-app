@@ -26,7 +26,8 @@ beforeEach(() => {
   stdout.start()
   stderr.start()
   // change this if you need to see logs from stdout
-  stdout.print = false
+  stdout.print = true
+  stderr.print = true
 })
 afterEach(() => { stdout.stop(); stderr.stop() })
 
