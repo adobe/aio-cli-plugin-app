@@ -21,7 +21,6 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 
 class CleanBuild extends BaseCommand {
   async run () {
-    // cli input
     const { flags } = await this.parse(CleanBuild)
 
     const configs = await this.getAppExtConfigs(flags)
@@ -32,12 +31,12 @@ class CleanBuild extends BaseCommand {
 
     const spinner = ora()
     try {
-      // First clean tracking files if requested
+      // clean tracking files if requested
       if (flags['tracking-files']) {
         await this.cleanTrackingFiles(configs, spinner)
       }
 
-      // Then clean each extension
+      // clean each extension
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
         const v = values[i]
@@ -49,7 +48,7 @@ class CleanBuild extends BaseCommand {
       throw error
     }
 
-    // final message
+
     this.log(chalk.green(chalk.bold('Build artifacts cleaned up successfully!')))
   }
 
@@ -57,15 +56,15 @@ class CleanBuild extends BaseCommand {
     try {
       spinner.start('Cleaning build tracking files')
 
-      // Find root config to get the dist path
+      // root config to get the dist path
       const rootConfig = Object.values(configs)[0]
       if (!rootConfig || !rootConfig.app || !rootConfig.app.dist) {
         spinner.info('No valid configuration found for tracking files')
         return
       }
 
-      // let's check both possible locations for last-built-actions.json:
-      // 1. In the root/dist/application and also in  the root/dist
+      // check both possible locations for last-built-actions.json:
+      // In the root/dist/application and also in  the root/dist
       const possiblePaths = [
         // In the app.dist directory
         path.join(rootConfig.app.dist, 'last-built-actions.json'),
@@ -120,7 +119,7 @@ class CleanBuild extends BaseCommand {
 
       // Check if we have a valid path to work with
       if (parentDir) {
-        // Standard directories for production and development web assets
+        // production and dev web assets directories
         const standardProdDir = path.join(parentDir, 'web-prod')
         const standardDevDir = path.join(parentDir, 'web-dev')
 
@@ -187,8 +186,7 @@ class CleanBuild extends BaseCommand {
       try {
         spinner.start(`Cleaning dist directory for '${name}'`)
 
-        // We need to preserve the last-deployed-actions.json file
-        // First, check if it exists and back it up if it does
+        // We need to preserve the last-deployed-actions.json file. check if it exists and back it up if it does
         const distParent = path.dirname(config.app.dist)
         const lastDeployedPath = path.join(distParent, 'dist', 'last-deployed-actions.json')
         let deploymentData = null
