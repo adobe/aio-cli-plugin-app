@@ -185,8 +185,7 @@ class Deploy extends BuildCommand {
           if (!script) {
             const hookResults = await this.config.runHook('deploy-actions', {
               appConfig: config,
-              filterEntities: filterActions || [],
-              isLocalDev: false
+              filterEntities: filterActions || []
             })
             if (hookResults?.failures?.length > 0) {
               // output should be "Error : <plugin-name> : <error-message>\n" for each failure
