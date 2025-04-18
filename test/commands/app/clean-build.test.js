@@ -158,7 +158,6 @@ describe('CleanBuild Command', () => {
     })
 
     test('calls debug for cleaning locations, removals, and empty', async () => {
-
       fs.existsSync.mockImplementation(p => ['/only', '/only/last-built-actions.json', '/only/last-deployed-actions.json'].includes(p))
       fs.remove.mockResolvedValue()
       fs.emptyDir.mockResolvedValue()
@@ -200,7 +199,6 @@ describe('CleanBuild Command', () => {
     })
 
     test('removes only built tracking file', async () => {
-
       fs.existsSync.mockImplementation(p => ['/only', '/only/last-built-actions.json'].includes(p))
       fs.remove.mockResolvedValue()
       fs.emptyDir.mockResolvedValue()
