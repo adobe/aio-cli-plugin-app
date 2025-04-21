@@ -37,7 +37,6 @@ $ aio app --help
 - [`aio app add service`](#aio-app-add-service)
 - [`aio app add web-assets`](#aio-app-add-web-assets)
 - [`aio app build`](#aio-app-build)
-- [`aio app clean-build`](#aio-app-clean-build)
 - [`aio app create [PATH]`](#aio-app-create-path)
 - [`aio app delete`](#aio-app-delete)
 - [`aio app delete action [ACTION-NAME]`](#aio-app-delete-action-action-name)
@@ -263,31 +262,6 @@ DESCRIPTION
 ```
 
 _See code: [src/commands/app/build.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/build.js)_
-
-## `aio app clean-build`
-
-Remove build artifacts from the local machine
-
-```
-USAGE
-  $ aio app clean-build [-v]
-
-FLAGS
-  
-  -v, --verbose               Verbose output
-
-DESCRIPTION
-  Remove build artifacts from the local machine
-  This command completely cleans all build artifacts from the dist directory including:
-     Action build files
-     Web assets (both production and development)
-     Build tracking files
-     Deployment tracking files
-  After running this command, the next build will be a full build.   
-```
-
-_See code: [src/commands/app/clean-build.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/clean-build.js)_
-
 
 ## `aio app create [PATH]`
 
