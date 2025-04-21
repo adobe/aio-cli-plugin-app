@@ -15,6 +15,7 @@ const fs = require('fs-extra')
 const ora = require('ora')
 const chalk = require('chalk')
 const path = require('path')
+const { LAST_BUILT_ACTIONS_FILENAME, LAST_DEPLOYED_ACTIONS_FILENAME } = require('../../../src/lib/defaults')
 
 // Mock fs-extra, ora, and logging
 jest.mock('fs-extra')
@@ -66,7 +67,10 @@ describe('CleanBuild Command', () => {
     test('cleans multiple locations and removes tracking files', async () => {
       // Setup existsSync: app.dist, config.dist, rootDist, and tracking files exist
       fs.existsSync.mockImplementation(p => {
-        return ['/app/dist', '/custom', '/root/dist', '/app/dist/last-built-actions.json', '/app/dist/last-deployed-actions.json', '/custom/last-built-actions.json', '/custom/last-deployed-actions.json', '/root/dist/last-built-actions.json', '/root/dist/last-deployed-actions.json']
+        return ['/app/dist', '/custom', '/root/dist',
+          `/app/dist/${LAST_BUILT_ACTIONS_FILENAME}`, `/app/dist/${LAST_DEPLOYED_ACTIONS_FILENAME}`,
+          `/custom/${LAST_BUILT_ACTIONS_FILENAME}`, `/custom/${LAST_DEPLOYED_ACTIONS_FILENAME}`,
+          `/root/dist/${LAST_BUILT_ACTIONS_FILENAME}`, `/root/dist/${LAST_DEPLOYED_ACTIONS_FILENAME}`]
           .includes(p)
       })
       fs.remove.mockResolvedValue()
@@ -78,8 +82,8 @@ describe('CleanBuild Command', () => {
       expect(spinner.start).toHaveBeenCalledWith("Cleaning build artifacts for 'ext'")
       // Check removals for each location
       ;['/app/dist', '/custom', '/root/dist'].forEach(location => {
-        expect(fs.remove).toHaveBeenCalledWith(`${location}/last-built-actions.json`)
-        expect(fs.remove).toHaveBeenCalledWith(`${location}/last-deployed-actions.json`)
+        expect(fs.remove).toHaveBeenCalledWith(`${location}/${LAST_BUILT_ACTIONS_FILENAME}`)
+        expect(fs.remove).toHaveBeenCalledWith(`${location}/${LAST_DEPLOYED_ACTIONS_FILENAME}`)
         expect(fs.emptyDir).toHaveBeenCalledWith(location)
       })
       expect(spinner.succeed).toHaveBeenCalledWith(chalk.green("Cleaned build artifacts for 'ext'"))
@@ -158,19 +162,19 @@ describe('CleanBuild Command', () => {
     })
 
     test('calls debug for cleaning locations, removals, and empty', async () => {
-      fs.existsSync.mockImplementation(p => ['/only', '/only/last-built-actions.json', '/only/last-deployed-actions.json'].includes(p))
+      fs.existsSync.mockImplementation(p => ['/only', `/only/${LAST_BUILT_ACTIONS_FILENAME}`, `/only/${LAST_DEPLOYED_ACTIONS_FILENAME}`].includes(p))
       fs.remove.mockResolvedValue()
       fs.emptyDir.mockResolvedValue()
       const config = { root: '/r', app: { dist: '/only' } }
       await cmd.cleanAllBuildArtifacts('ext', config, spinner)
       expect(mockLogger.debug).toHaveBeenCalledWith('Cleaning locations for ext: /only')
-      expect(mockLogger.debug).toHaveBeenCalledWith('Removed tracking file: /only/last-built-actions.json')
-      expect(mockLogger.debug).toHaveBeenCalledWith('Removed tracking file: /only/last-deployed-actions.json')
+      expect(mockLogger.debug).toHaveBeenCalledWith(`Removed tracking file: /only/${LAST_BUILT_ACTIONS_FILENAME}`)
+      expect(mockLogger.debug).toHaveBeenCalledWith(`Removed tracking file: /only/${LAST_DEPLOYED_ACTIONS_FILENAME}`)
       expect(mockLogger.debug).toHaveBeenCalledWith('Emptied directory: /only')
     })
 
     test('calls debug for config.dist branch', async () => {
-      fs.existsSync.mockImplementation(p => ['/dist', '/dist/last-built-actions.json', '/dist/last-deployed-actions.json'].includes(p))
+      fs.existsSync.mockImplementation(p => ['/dist', `/dist/${LAST_BUILT_ACTIONS_FILENAME}`, `/dist/${LAST_DEPLOYED_ACTIONS_FILENAME}`].includes(p))
       fs.remove.mockResolvedValue()
       fs.emptyDir.mockResolvedValue()
       const config = { root: '/r', app: {}, dist: '/dist' }
@@ -180,7 +184,7 @@ describe('CleanBuild Command', () => {
     })
 
     test('calls debug for root/dist branch', async () => {
-      fs.existsSync.mockImplementation(p => ['/r/dist', '/r/dist/last-built-actions.json', '/r/dist/last-deployed-actions.json'].includes(p))
+      fs.existsSync.mockImplementation(p => ['/r/dist', `/r/dist/${LAST_BUILT_ACTIONS_FILENAME}`, `/r/dist/${LAST_DEPLOYED_ACTIONS_FILENAME}`].includes(p))
       fs.remove.mockResolvedValue()
       fs.emptyDir.mockResolvedValue()
       const config = { root: '/r', app: {}, dist: undefined }
@@ -199,27 +203,27 @@ describe('CleanBuild Command', () => {
     })
 
     test('removes only built tracking file', async () => {
-      fs.existsSync.mockImplementation(p => ['/only', '/only/last-built-actions.json'].includes(p))
+      fs.existsSync.mockImplementation(p => ['/only', `/only/${LAST_BUILT_ACTIONS_FILENAME}`].includes(p))
       fs.remove.mockResolvedValue()
       fs.emptyDir.mockResolvedValue()
       const config = { root: '/r', app: { dist: '/only' } }
       await cmd.cleanAllBuildArtifacts('ext', config, spinner)
       expect(mockLogger.debug).toHaveBeenCalledWith('Cleaning locations for ext: /only')
-      expect(mockLogger.debug).toHaveBeenCalledWith('Removed tracking file: /only/last-built-actions.json')
-      expect(mockLogger.debug).not.toHaveBeenCalledWith(expect.stringContaining('last-deployed-actions.json'))
+      expect(mockLogger.debug).toHaveBeenCalledWith(`Removed tracking file: /only/${LAST_BUILT_ACTIONS_FILENAME}`)
+      expect(mockLogger.debug).not.toHaveBeenCalledWith(expect.stringContaining(LAST_DEPLOYED_ACTIONS_FILENAME))
       expect(fs.emptyDir).toHaveBeenCalledWith('/only')
     })
 
     test('removes only deployed tracking file', async () => {
       // deployed-actions.json exists, built-actions.json missing
-      fs.existsSync.mockImplementation(p => ['/only', '/only/last-deployed-actions.json'].includes(p))
+      fs.existsSync.mockImplementation(p => ['/only', `/only/${LAST_DEPLOYED_ACTIONS_FILENAME}`].includes(p))
       fs.remove.mockResolvedValue()
       fs.emptyDir.mockResolvedValue()
       const config = { root: '/r', app: { dist: '/only' } }
       await cmd.cleanAllBuildArtifacts('ext', config, spinner)
       expect(mockLogger.debug).toHaveBeenCalledWith('Cleaning locations for ext: /only')
-      expect(mockLogger.debug).toHaveBeenCalledWith('Removed tracking file: /only/last-deployed-actions.json')
-      expect(mockLogger.debug).not.toHaveBeenCalledWith(expect.stringContaining('last-built-actions.json'))
+      expect(mockLogger.debug).toHaveBeenCalledWith(`Removed tracking file: /only/${LAST_DEPLOYED_ACTIONS_FILENAME}`)
+      expect(mockLogger.debug).not.toHaveBeenCalledWith(expect.stringContaining(LAST_BUILT_ACTIONS_FILENAME))
       expect(fs.emptyDir).toHaveBeenCalledWith('/only')
     })
   })

@@ -17,6 +17,7 @@ const path = require('path')
 
 const BaseCommand = require('../../BaseCommand')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:clean-build', { provider: 'debug' })
+const { LAST_BUILT_ACTIONS_FILENAME, LAST_DEPLOYED_ACTIONS_FILENAME } = require('../../lib/defaults')
 
 class CleanBuild extends BaseCommand {
   async run () {
@@ -66,8 +67,8 @@ class CleanBuild extends BaseCommand {
       // Clean all possible locations
       for (const location of locations) {
         // First try to remove tracking files explicitly
-        const builtPath = path.join(location, 'last-built-actions.json')
-        const deployedPath = path.join(location, 'last-deployed-actions.json')
+        const builtPath = path.join(location, LAST_BUILT_ACTIONS_FILENAME)
+        const deployedPath = path.join(location, LAST_DEPLOYED_ACTIONS_FILENAME)
 
         if (fs.existsSync(builtPath)) {
           await fs.remove(builtPath)
@@ -100,8 +101,7 @@ This command completely cleans all build artifacts from the dist directory inclu
 - Build tracking files
 - Deployment tracking files
 
-This gives you a completely clean slate for building your app. Note that this will
-require a full rebuild on your next build command.`
+Note that this will require a full rebuild on your next build command.`
 
 CleanBuild.flags = {
   ...BaseCommand.flags
