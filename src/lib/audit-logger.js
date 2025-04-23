@@ -16,7 +16,6 @@ const chalk = require('chalk')
 const OPERATIONS = {
   AB_APP_DEPLOY: 'ab_app_deploy',
   AB_APP_UNDEPLOY: 'ab_app_undeploy',
-  AB_APP_TEST: 'ab_app_test',
   AB_APP_ASSETS_DEPLOYED: 'ab_app_assets_deployed',
   AB_APP_ASSETS_UNDEPLOYED: 'ab_app_assets_undeployed'
 }
@@ -25,6 +24,7 @@ const AUDIT_SERVICE_ENDPOINTS = {
   stage: 'https://adp-auditlog-service-stage.adobeioruntime.net/api/v1/web/audit-log-api/event-post',
   prod: 'https://adp-auditlog-service-prod.adobeioruntime.net/api/v1/web/audit-log-api/event-post'
 }
+
 
 /**
  * Send audit log events to audit service
@@ -53,106 +53,127 @@ async function sendAuditLogs (accessToken, logEvent, env = 'prod') {
 }
 
 /**
+ * Send audit log event for app deployment
  *
- * @param {object} flags cli flags
+ * @param {Object} params Parameters object
+ * @param {string} params.accessToken valid access token
+ * @param {object} params.cliCommandFlags cli flags
+ * @param {object} params.project project details
+ * @param {string} [params.env='prod'] valid env stage|prod
+ */
+async function sendAppDeployAuditLog ({ accessToken, cliCommandFlags, project, env }) {
+  const logEvent = getAuditLogEvent(cliCommandFlags, project, OPERATIONS.AB_APP_DEPLOY)
+  return sendAuditLogs(accessToken, logEvent, env)
+}
+
+/**
+ * Send audit log event for app undeployment
+ *
+ * @param {Object} params Parameters object
+ * @param {string} params.accessToken valid access token
+ * @param {object} params.cliCommandFlags cli flags
+ * @param {object} params.project project details
+ * @param {string} [params.env='prod'] valid env stage|prod
+ */
+async function sendAppUndeployAuditLog ({ accessToken, cliCommandFlags, project, env }) {
+  const logEvent = getAuditLogEvent(cliCommandFlags, project, OPERATIONS.AB_APP_UNDEPLOY)
+  return sendAuditLogs(accessToken, logEvent, env)
+}
+
+/**
+ * Send audit log event for app assets deployment
+ *
+ * @param {Object} params Parameters object
+ * @param {string} params.accessToken valid access token
+ * @param {object} params.cliCommandFlags cli flags
+ * @param {object} params.project project details
+ * @param {Array} params.opItems list of deployed files
+ * @param {string} [params.env='prod'] valid env stage|prod
+ */
+async function sendAppAssetsDeployedAuditLog ({ accessToken, cliCommandFlags, project, opItems, env }) {
+  const logEvent = getAuditLogEvent(cliCommandFlags, project, OPERATIONS.AB_APP_ASSETS_DEPLOYED)
+  logEvent.data.opItems = opItems
+  return sendAuditLogs(accessToken, logEvent, env)
+}
+
+/**
+ * Send audit log event for app assets undeployment
+ *
+ * @param {Object} params Parameters object
+ * @param {string} params.accessToken valid access token
+ * @param {object} params.cliCommandFlags cli flags
+ * @param {object} params.project project details
+ * @param {string} [params.env='prod'] valid env stage|prod
+ */
+async function sendAppAssetsUndeployedAuditLog ({ accessToken, cliCommandFlags, project, env }) {
+  const logEvent = getAuditLogEvent(cliCommandFlags, project, OPERATIONS.AB_APP_ASSETS_UNDEPLOYED)
+  return sendAuditLogs(accessToken, logEvent, env)
+}
+
+/**
+ *
+ * @param {object} cliCommandFlags cli flags
  * @param {object} project details
- * @param {string} event log name
+ * @param {string} operation one of: ab_app_deploy, ab_app_undeploy, ab_app_assets_deployed, ab_app_assets_undeployed
  * @returns {object} logEvent
  */
-function getAuditLogEvent (flags, project, event) {
-  let logEvent, logStrMsg
-  if (project && project.org && project.workspace) {
-    if (event === 'AB_APP_DEPLOY') {
-      logStrMsg = `Starting deployment for the App Builder application in workspace ${project.workspace.name}`
-    } else if (event === 'AB_APP_UNDEPLOY') {
-      logStrMsg = `Starting undeployment for the App Builder application in workspace ${project.workspace.name}`
-    } else if (event === 'AB_APP_ASSETS_UNDEPLOYED') {
-      logStrMsg = `All static assets for the App Builder application in workspace: ${project.workspace.name} were successfully undeployed from the CDN`
-    } else if (event === 'AB_APP_ASSETS_DEPLOYED') {
-      logStrMsg = `All static assets for the App Builder application in workspace: ${project.workspace.name} were successfully deployed to the CDN.\n Files deployed - `
-    }
+function getAuditLogEvent (cliCommandFlags, project, operation) {
+  if (!project) {
+    throw new Error('Project is required')
+  }
+  if (!project.org) {
+    throw new Error('Project org is required')
+  }
+  if (!project.workspace) {
+    throw new Error('Project workspace is required')
+  }
 
-    logEvent = {
-      orgId: project.org.id,
-      projectId: project.id,
-      workspaceId: project.workspace.id,
-      workspaceName: project.workspace.name,
-      operation: event in OPERATIONS ? OPERATIONS[event] : OPERATIONS.AB_APP_TEST,
-      timestamp: new Date().valueOf(),
-      data: {
-        cliCommandFlags: flags,
-        opDetailsStr: logStrMsg
-      }
+  const workspaceName = project.workspace.name
+
+  let logStrMsg
+  switch (operation) {
+    case OPERATIONS.AB_APP_DEPLOY:
+      logStrMsg = `Starting deployment for the App Builder application in workspace ${workspaceName}`
+      break
+    case OPERATIONS.AB_APP_UNDEPLOY:
+      logStrMsg = `Starting undeployment for the App Builder application in workspace ${workspaceName}`
+      break
+    case OPERATIONS.AB_APP_ASSETS_UNDEPLOYED:
+      logStrMsg = `All static assets for the App Builder application in workspace: ${workspaceName} were successfully undeployed from the CDN`
+      break
+    case OPERATIONS.AB_APP_ASSETS_DEPLOYED:
+      logStrMsg = `All static assets for the App Builder application in workspace: ${workspaceName} were successfully deployed to the CDN.\n Files deployed - `
+      break
+    default:
+      throw new Error(`Invalid operation: ${operation}`)
+  }
+
+  const orgId = project.org.id
+  const projectId = project.id
+  const workspaceId = project.workspace.id
+
+  const logEvent = {
+    orgId,
+    projectId,
+    workspaceId,
+    workspaceName,
+    operation,
+    timestamp: new Date().valueOf(),
+    data: {
+      cliCommandFlags,
+      opDetailsStr: logStrMsg
     }
   }
   return logEvent
 }
 
-/**
- *
- * @param {string} directory | path to assets directory
- * @returns {Array} log | array of log messages
- */
-function getFilesCountWithExtension (directory) {
-  const log = []
-
-  if (!fs.existsSync(directory)) {
-    this.log(chalk.red(chalk.bold(`Error: Directory ${directory} does not exist.`)))
-    return log
-  }
-
-  const files = fs.readdirSync(directory, { recursive: true })
-
-  if (files.length === 0) {
-    this.log(chalk.red(chalk.bold(`Error: No files found in directory ${directory}.`)))
-    return log
-  }
-
-  const fileTypeCounts = {}
-  files.forEach(file => {
-    const ext = path.extname(file).toLowerCase() || 'no extension'
-    if (fileTypeCounts[ext]) {
-      fileTypeCounts[ext]++
-    } else {
-      fileTypeCounts[ext] = 1
-    }
-  })
-
-  Object.keys(fileTypeCounts).forEach(ext => {
-    const count = fileTypeCounts[ext]
-    let description
-    switch (ext) {
-      case '.js':
-        description = 'Javascript file(s)'
-        break
-      case '.css':
-        description = 'CSS file(s)'
-        break
-      case '.html':
-        description = 'HTML page(s)'
-        break
-      case '.png':
-      case '.jpg':
-      case '.jpeg':
-      case '.gif':
-      case '.svg':
-      case '.webp':
-        description = `${ext} image(s)`
-        break
-      case 'no extension':
-        description = 'file(s) without extension'
-        break
-      default:
-        description = `${ext} file(s)`
-    }
-    log.push(`${count} ${description}\n`)
-  })
-  return log
-}
-
 module.exports = {
+  OPERATIONS,
   sendAuditLogs,
   getAuditLogEvent,
   AUDIT_SERVICE_ENDPOINTS,
-  getFilesCountWithExtension
+  sendAppDeployAuditLog,
+  sendAppUndeployAuditLog,
+  sendAppAssetsDeployedAuditLog,
+  sendAppAssetsUndeployedAuditLog
 }

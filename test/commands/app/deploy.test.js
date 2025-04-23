@@ -186,7 +186,7 @@ beforeEach(() => {
       }
     }
   })
-  auditLogger.getFilesCountWithExtension.mockImplementation((dir) => {
+  helpers.getFilesCountWithExtension.mockImplementation((dir) => {
     return [
       '3 Javascript file(s)',
       '2 CSS file(s)',
@@ -1479,7 +1479,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(auditLogger.getFilesCountWithExtension).toHaveBeenCalledTimes(2)
+    expect(helpers.getFilesCountWithExtension).toHaveBeenCalledTimes(2)
     expect(auditLogger.sendAuditLogs).toHaveBeenCalledWith(mockToken, expect.objectContaining({ orgId: mockOrg, projectId: mockProject, workspaceId: mockWorkspaceId, workspaceName: mockWorkspaceName }), mockEnv)
   })
 

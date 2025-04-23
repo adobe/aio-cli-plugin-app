@@ -11,7 +11,7 @@ governing permissions and limitations under the License.
 
 const execa = require('execa')
 const fs = require('fs-extra')
-const path = require('path')
+const path = require('node:path')
 const which = require('which')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:lib-app-helper', { provider: 'debug' })
 const { getToken, context } = require('@adobe/aio-lib-ims')
@@ -473,6 +473,67 @@ function getObjectValue (obj, key) {
   return keys.filter(o => o.trim()).reduce((o, i) => o && getObjectProp(o, i), obj)
 }
 
+/**
+ * Counts files by extension in a directory
+ *
+ * @param {string} directory Path to assets directory
+ * @returns {Array<string>} Array of formatted log messages
+ */
+function getFilesCountWithExtension (directory) {
+  const log = []
+
+  if (!fs.existsSync(directory)) {
+    throw new Error(`Error: Directory ${directory} does not exist.`)
+  }
+
+  const files = fs.readdirSync(directory, { recursive: true })
+  if (files.length === 0) {
+    throw new Error(`Error: No files found in directory ${directory}.`)
+  }
+
+  const fileTypeCounts = {}
+  files.forEach(file => {
+    const ext = path.extname(file).toLowerCase() || 'no extension'
+    if (fileTypeCounts[ext]) {
+      fileTypeCounts[ext]++
+    } else {
+      fileTypeCounts[ext] = 1
+    }
+  })
+
+  Object.keys(fileTypeCounts).forEach(ext => {
+    const count = fileTypeCounts[ext]
+    let description
+    switch (ext) {
+      case '.js':
+        description = 'Javascript file(s)'
+        break
+      case '.css':
+        description = 'CSS file(s)'
+        break
+      case '.html':
+        description = 'HTML page(s)'
+        break
+      case '.png':
+      case '.jpg':
+      case '.jpeg':
+      case '.gif':
+      case '.svg':
+      case '.webp':
+        description = `${ext} image(s)`
+        break
+      case 'no extension':
+        description = 'file(s) without extension'
+        break
+      default:
+        description = `${ext} file(s)`
+    }
+    log.push(`${count} ${description}\n`)
+  })
+
+  return log
+}
+
 module.exports = {
   getObjectValue,
   getObjectProp,
@@ -496,5 +557,6 @@ module.exports = {
   buildExtensionPointPayloadWoMetadata,
   buildExcShellViewExtensionMetadata,
   atLeastOne,
-  deleteUserConfig
+  deleteUserConfig,
+  getFilesCountWithExtension
 }

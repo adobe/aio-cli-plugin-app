@@ -17,7 +17,7 @@ const mockFetch = jest.fn()
 
 jest.mock('@adobe/aio-lib-core-config')
 jest.mock('execa')
-jest.mock('path')
+jest.mock('node:path')
 jest.mock('fs-extra') // do not touch the real fs
 jest.mock('@adobe/aio-lib-env')
 jest.mock('@adobe/aio-lib-ims')
@@ -25,7 +25,7 @@ jest.mock('@adobe/aio-lib-ims')
 const mockLogger = require('@adobe/aio-lib-core-logging')
 
 const which = require('which')
-const path = require('path')
+const path = require('node:path')
 const fs = require('fs-extra')
 const execa = require('execa')
 const appHelper = require('../../../src/lib/app-helper')
@@ -34,6 +34,9 @@ const libEnv = require('@adobe/aio-lib-env')
 const libIms = require('@adobe/aio-lib-ims')
 
 beforeEach(() => {
+  // use actual implementation
+  path.extname.mockImplementation(jest.requireActual('node:path').extname)
+
   Object.defineProperty(process, 'platform', { value: 'linux' })
   execa.mockReset()
   execa.command.mockReset()
@@ -804,5 +807,69 @@ describe('object values', () => {
       foo: 'bar'
     }
     expect(appHelper.getObjectValue(obj)).toEqual(obj)
+  })
+})
+
+describe('getFilesCountWithExtension', () => {
+  const directory = '__fixtures__/app/web-src'
+
+  it('should return an error message when directory does not exist', () => {
+    fs.existsSync.mockReturnValue(false)
+    
+    expect(() => appHelper.getFilesCountWithExtension(directory)).toThrow(`Error: Directory ${directory} does not exist.`)
+    expect(fs.existsSync).toHaveBeenCalledWith(directory)
+  })
+
+  it('should return an error message when directory is empty', () => {
+    fs.existsSync.mockReturnValue(true)
+    fs.readdirSync.mockReturnValue([])
+
+    expect(() => appHelper.getFilesCountWithExtension(directory)).toThrow(`Error: No files found in directory ${directory}.`)
+    expect(fs.existsSync).toHaveBeenCalledWith(directory)
+    expect(fs.readdirSync).toHaveBeenCalledWith(directory, { recursive: true })
+  })
+
+  it('should return a count of different file types', () => {
+    fs.existsSync.mockReturnValue(true)
+    fs.readdirSync.mockReturnValue(['index.html', 'script.js', 'styles.css', 'image.png', 'image.jpg', 'readme'])
+
+    const result = appHelper.getFilesCountWithExtension(directory)
+    // this really should be 2 image(s) but there is a side effect in the code that makes it split by ext
+    // and this makes more sense than seeing 1 image(s), 1 image(s)
+    expect(result).toEqual([
+      '1 HTML page(s)\n',
+      '1 Javascript file(s)\n',
+      '1 CSS file(s)\n',
+      '1 .png image(s)\n',
+      '1 .jpg image(s)\n',
+      '1 file(s) without extension\n'
+    ])
+  })
+
+  it('should handle directories with files of the same type', () => {
+    fs.existsSync.mockReturnValue(true)
+    fs.readdirSync.mockReturnValue(['script1.js', 'script2.js', 'script3.js'])
+
+    const result = appHelper.getFilesCountWithExtension(directory)
+    expect(result).toEqual(['3 Javascript file(s)\n'])
+  })
+
+  it('should handle files with no extension', () => {
+    fs.existsSync.mockReturnValue(true)
+    fs.readdirSync.mockReturnValue(['readme', 'LICENSE'])
+
+    const result = appHelper.getFilesCountWithExtension(directory)
+    expect(result).toEqual(['2 file(s) without extension\n'])
+  })
+
+  it('should handle files with other extensions', () => {
+    fs.existsSync.mockReturnValue(true)
+    fs.readdirSync.mockReturnValue(['data.json', 'document.pdf'])
+
+    const result = appHelper.getFilesCountWithExtension(directory)
+    expect(result).toEqual([
+      '1 .json file(s)\n',
+      '1 .pdf file(s)\n'
+    ])
   })
 })
