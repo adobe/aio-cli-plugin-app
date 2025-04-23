@@ -171,21 +171,6 @@ beforeEach(() => {
 
   helpers.wrapError.mockImplementation(msg => msg)
   helpers.createWebExportFilter.mockImplementation(filterValue => helpersActual.createWebExportFilter(filterValue))
-  auditLogger.getAuditLogEvent.mockImplementation((flags, project, event) => {
-    return {
-      orgId: 'mockorg',
-      projectId: 'mockproject',
-      workspaceId: 'mockworkspaceid',
-      workspaceName: 'mockworkspacename',
-      operation: 'AB_APP_ASSETS_DEPLOYED'.toLowerCase(),
-      timestamp: new Date().valueOf(),
-      data: {
-        cliCommandFlags: flags,
-        opDetailsStr: 'logStrMsg',
-        opItems: []
-      }
-    }
-  })
   helpers.getFilesCountWithExtension.mockImplementation((dir) => {
     return [
       '3 Javascript file(s)',
@@ -1309,7 +1294,7 @@ describe('run', () => {
       accessToken: mockToken,
       env: mockEnv
     })
-    command.getFullConfig = jest.fn().mockReturnValue({
+    const fullConfig = {
       aio: {
         project: {
           id: mockProject,
@@ -1322,16 +1307,25 @@ describe('run', () => {
           }
         }
       }
-    })
+    }
+    command.getFullConfig = jest.fn().mockReturnValue(fullConfig)
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAuditLogs).toHaveBeenCalledTimes(1)
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledTimes(1)
     expect(authHelper.setRuntimeApiHostAndAuthHandler).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAuditLogs).toHaveBeenCalledWith(mockToken, expect.objectContaining({ orgId: mockOrg, projectId: mockProject, workspaceId: mockWorkspaceId, workspaceName: mockWorkspaceName }), mockEnv)
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledWith(
+      {
+        accessToken: mockToken,
+        cliCommandFlags: expect.any(Object),
+        opItems: expect.any(Array),
+        project: fullConfig.aio.project,
+        env: mockEnv
+      }
+    )
     process.env.IS_DEPLOY_SERVICE_ENABLED = false
   })
 
@@ -1346,7 +1340,8 @@ describe('run', () => {
       accessToken: mockToken,
       env: mockEnv
     })
-    command.getFullConfig = jest.fn().mockReturnValue({
+
+    const fullConfig = {
       aio: {
         project: {
           id: mockProject,
@@ -1359,52 +1354,24 @@ describe('run', () => {
           }
         }
       }
-    })
+    }
+    command.getFullConfig = jest.fn().mockReturnValue(fullConfig)
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAuditLogs).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAuditLogs).toHaveBeenCalledWith(mockToken, expect.objectContaining({ orgId: mockOrg, projectId: mockProject, workspaceId: mockWorkspaceId, workspaceName: mockWorkspaceName }), mockEnv)
-  })
-
-  test('Do not send audit logs for successful app deploy, if no logevent is present', async () => {
-    const mockToken = 'mocktoken'
-    const mockEnv = 'stage'
-    const mockOrg = 'mockorg'
-    const mockProject = 'mockproject'
-    const mockWorkspaceId = 'mockworkspaceid'
-    const mockWorkspaceName = 'mockworkspacename'
-    helpers.getCliInfo.mockResolvedValueOnce({
-      accessToken: mockToken,
-      env: mockEnv
-    })
-    command.getFullConfig = jest.fn().mockReturnValue({
-      aio: {
-        project: {
-          id: mockProject,
-          org: {
-            id: mockOrg
-          },
-          workspace: {
-            id: mockWorkspaceId,
-            name: mockWorkspaceName
-          }
-        }
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledTimes(1)
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledWith(
+      {
+        accessToken: mockToken,
+        cliCommandFlags: expect.any(Object),
+        opItems: expect.any(Array),
+        project: fullConfig.aio.project,
+        env: mockEnv
       }
-    })
-
-    auditLogger.getAuditLogEvent.mockImplementation((flags, project, event) => null)
-
-    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
-
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAuditLogs).toHaveBeenCalledTimes(0)
+    )
   })
 
   test('Do not send audit logs for successful app deploy, if case of no token', async () => {
@@ -1420,7 +1387,7 @@ describe('run', () => {
       env: mockEnv
     })
 
-    command.getFullConfig = jest.fn().mockReturnValue({
+    const fullConfig = {
       aio: {
         project: {
           id: mockProject,
@@ -1433,14 +1400,15 @@ describe('run', () => {
           }
         }
       }
-    })
+    }
+    command.getFullConfig = jest.fn().mockReturnValue(fullConfig)
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAuditLogs).toHaveBeenCalledTimes(0)
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledTimes(0)
   })
 
   test('Send audit logs for successful app deploy + web assets', async () => {
@@ -1458,7 +1426,7 @@ describe('run', () => {
       env: mockEnv
     })
 
-    command.getFullConfig = jest.fn().mockReturnValue({
+    const fullConfig = {
       aio: {
         project: {
           id: mockProject,
@@ -1471,8 +1439,8 @@ describe('run', () => {
           }
         }
       }
-    })
-
+    }
+    command.getFullConfig = jest.fn().mockReturnValue(fullConfig)
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
@@ -1480,7 +1448,15 @@ describe('run', () => {
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(helpers.getFilesCountWithExtension).toHaveBeenCalledTimes(2)
-    expect(auditLogger.sendAuditLogs).toHaveBeenCalledWith(mockToken, expect.objectContaining({ orgId: mockOrg, projectId: mockProject, workspaceId: mockWorkspaceId, workspaceName: mockWorkspaceName }), mockEnv)
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledWith(
+      {
+        accessToken: mockToken,
+        cliCommandFlags: expect.any(Object),
+        opItems: expect.any(Array),
+        project: fullConfig.aio.project,
+        env: mockEnv
+      }
+    )
   })
 
   test('Should deploy successfully even if Audit log service is unavailable', async () => {
@@ -1509,7 +1485,7 @@ describe('run', () => {
       }
     })
 
-    auditLogger.sendAuditLogs.mockRejectedValue({
+    auditLogger.sendAppAssetsDeployedAuditLog.mockRejectedValue({
       message: 'Internal Server Error',
       status: 500
     })
@@ -1524,7 +1500,7 @@ describe('run', () => {
     expect(command.log).toHaveBeenCalledWith(
       expect.stringContaining('Successful deployment 🏄')
     )
-    expect(auditLogger.sendAuditLogs).toHaveBeenCalledTimes(1)
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
@@ -1556,7 +1532,7 @@ describe('run', () => {
       }
     })
 
-    auditLogger.sendAuditLogs.mockRejectedValue({
+    auditLogger.sendAppAssetsDeployedAuditLog.mockRejectedValue({
       message: 'Internal Server Error',
       status: 500
     })
@@ -1572,7 +1548,7 @@ describe('run', () => {
     expect(command.log).toHaveBeenCalledWith(
       expect.stringContaining('Successful deployment 🏄')
     )
-    expect(auditLogger.sendAuditLogs).toHaveBeenCalledTimes(1)
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)

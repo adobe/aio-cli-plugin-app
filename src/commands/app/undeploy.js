@@ -19,7 +19,7 @@ const BaseCommand = require('../../BaseCommand')
 const webLib = require('@adobe/aio-lib-web')
 const { runInProcess, buildExtensionPointPayloadWoMetadata, getCliInfo } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
-const { sendAuditLogs, getAuditLogEvent } = require('../../lib/audit-logger')
+const { sendAppAssetsUndeployedAuditLog } = require('../../lib/audit-logger')
 const { setRuntimeApiHostAndAuthHandler } = require('../../lib/auth-helper')
 
 class Undeploy extends BaseCommand {
@@ -60,11 +60,15 @@ class Undeploy extends BaseCommand {
         const v = process.env.IS_DEPLOY_SERVICE_ENABLED === 'true' ? setRuntimeApiHostAndAuthHandler(values[i]) : values[i]
 
         await this.undeployOneExt(k, v, flags, spinner)
-        const assetUndeployLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_UNDEPLOYED')
         // send logs for case of web-assets undeployment
-        if (assetUndeployLogEvent && cliDetails?.accessToken) {
+        if (cliDetails?.accessToken) {
           try {
-            await sendAuditLogs(cliDetails.accessToken, assetUndeployLogEvent, cliDetails.env)
+            await sendAppAssetsUndeployedAuditLog({
+              accessToken: cliDetails.accessToken,
+              cliCommandFlags: flags,
+              project: aioConfig.project,
+              env: cliDetails.env
+            })
           } catch (error) {
             this.warn('Warning: Audit Log Service Error: Failed to send audit log event for un-deployment.')
           }

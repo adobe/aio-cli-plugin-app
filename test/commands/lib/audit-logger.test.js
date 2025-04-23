@@ -3,207 +3,206 @@ Copyright 2024 Adobe. All rights reserved.
 This file is licensed to you under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License. You may obtain a copy
 of the License at http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software distributed under
 the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-const fs = require('node:fs')
-const path = require('node:path')
-const chalk = require('chalk')
 const fetch = require('node-fetch')
-jest.mock('node-fetch', () => jest.fn())
-const auditLogger = require('../../../src/lib/audit-logger')
-const { getCliEnv } = require('@adobe/aio-lib-env')
+const {
+  OPERATIONS,
+  AUDIT_SERVICE_ENDPOINTS,
+  getAuditLogEvent,
+  sendAppDeployAuditLog,
+  sendAppUndeployAuditLog,
+  sendAppAssetsDeployedAuditLog,
+  sendAppAssetsUndeployedAuditLog
+} = require('../../../src/lib/audit-logger')
 
-jest.mock('fs')
-jest.mock('chalk', () => ({
-  red: jest.fn((text) => text),
-  bold: jest.fn((text) => text)
-}))
+jest.mock('node-fetch')
 
-const mockToken = 'mocktoken'
-const mockEnv = 'stage'
-const mockLogEvent = {
-  projectId: 'mockproject',
-  orgId: 'mockorg'
-}
-
-const mockResponse = Promise.resolve({
-  ok: true,
-  status: 200,
-  text: () => {
-    return {}
+describe('audit-logger', () => {
+  const mockAccessToken = 'fake-token'
+  const mockProject = {
+    org: { id: 'fake-org-id' },
+    id: 'fake-project-id',
+    workspace: {
+      id: 'fake-workspace-id',
+      name: 'fake-workspace'
+    }
   }
-})
+  const mockCliFlags = { flag1: 'value1' }
 
-const mockErrorResponse = Promise.resolve({
-  ok: false,
-  status: 400,
-  text: () => {
-    return {}
-  }
-})
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
 
-beforeEach(() => {
-  fetch.mockReset()
-})
+  describe('getAuditLogEvent', () => {
+    it('should create a valid audit log event for app deploy', () => {
+      const event = getAuditLogEvent(mockCliFlags, mockProject, OPERATIONS.AB_APP_DEPLOY)
 
-test('sendAuditLogs with valid params', async () => {
-  fetch.mockReturnValue(mockResponse)
-  const options = {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + mockToken,
-      'Content-type': 'application/json'
-    },
-    body: JSON.stringify({ event: mockLogEvent })
-  }
-  await auditLogger.sendAuditLogs(mockToken, mockLogEvent, mockEnv)
-  expect(fetch).toHaveBeenCalledTimes(1)
-  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENDPOINTS[mockEnv], options)
-})
+      expect(event).toEqual({
+        orgId: 'fake-org-id',
+        projectId: 'fake-project-id',
+        workspaceId: 'fake-workspace-id',
+        workspaceName: 'fake-workspace',
+        operation: OPERATIONS.AB_APP_DEPLOY,
+        timestamp: expect.any(Number),
+        data: {
+          cliCommandFlags: mockCliFlags,
+          opDetailsStr: expect.stringContaining('Starting deployment for the App Builder application')
+        }
+      })
+    })
 
-// NOTE: this test is blocked until the audit service is available in prod
-test('sendAuditLogs with default params', async () => {
-  fetch.mockReturnValue(mockResponse)
-  const options = {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + mockToken,
-      'Content-type': 'application/json'
-    },
-    body: JSON.stringify({ event: mockLogEvent })
-  }
-  await auditLogger.sendAuditLogs(mockToken, mockLogEvent)
-  expect(fetch).toHaveBeenCalledTimes(1)
-  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENDPOINTS.prod, options)
-})
+    it('should create a valid audit log event for app undeploy', () => {
+      const event = getAuditLogEvent(mockCliFlags, mockProject, OPERATIONS.AB_APP_UNDEPLOY)
 
-test('should take prod endpoint if calling sendAuditLogs with non-exisiting env', async () => {
-  fetch.mockReturnValue(mockResponse)
-  const options = {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + mockToken,
-      'Content-type': 'application/json'
-    },
-    body: JSON.stringify({ event: mockLogEvent })
-  }
-  await auditLogger.sendAuditLogs(mockToken, mockLogEvent, 'dev')
-  expect(fetch).toHaveBeenCalledTimes(1)
-  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENDPOINTS.prod, options)
-})
+      expect(event).toEqual({
+        orgId: 'fake-org-id',
+        projectId: 'fake-project-id',
+        workspaceId: 'fake-workspace-id',
+        workspaceName: 'fake-workspace',
+        operation: OPERATIONS.AB_APP_UNDEPLOY,
+        timestamp: expect.any(Number),
+        data: {
+          cliCommandFlags: mockCliFlags,
+          opDetailsStr: expect.stringContaining('Starting undeployment for the App Builder application')
+        }
+      })
+    })
 
-test('sendAuditLogs error response', async () => {
-  fetch.mockReturnValue(mockErrorResponse)
-  const options = {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + mockToken,
-      'Content-type': 'application/json'
-    },
-    body: JSON.stringify({ event: mockLogEvent })
-  }
-  await expect(auditLogger.sendAuditLogs(mockToken, mockLogEvent, mockEnv)).rejects.toThrow('Failed to send audit log - 400')
-  expect(fetch).toHaveBeenCalledTimes(1)
-  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENDPOINTS[mockEnv], options)
-})
+    it('should throw error if project is missing', () => {
+      expect(() => getAuditLogEvent(mockCliFlags, null, OPERATIONS.AB_APP_DEPLOY))
+        .toThrow('Project is required')
+    })
 
-describe('getAuditLogEvent', () => {
-  const cliCommandFlags = { flag1: 'value1' }
-  const project = {
-    org: { id: 'org123' },
-    id: 'proj456',
-    workspace: { id: 'ws789', name: 'testWorkspace' }
-  }
+    it('should throw error if project org is missing', () => {
+      const invalidProject = { ...mockProject, org: null }
+      expect(() => getAuditLogEvent(mockCliFlags, invalidProject, OPERATIONS.AB_APP_DEPLOY))
+        .toThrow('Project org is required')
+    })
 
-  const mockDeployMessage = 'Starting deployment for the App Builder application in workspace testWorkspace'
-  const mockUndeployMessage = 'Starting undeployment for the App Builder application in workspace testWorkspace'
+    it('should throw error if project workspace is missing', () => {
+      const invalidProject = { ...mockProject, workspace: null }
+      expect(() => getAuditLogEvent(mockCliFlags, invalidProject, OPERATIONS.AB_APP_DEPLOY))
+        .toThrow('Project workspace is required')
+    })
 
-  test('should return correct log event for AB_APP_DEPLOY event', () => {
-    const result = auditLogger.getAuditLogEvent(cliCommandFlags, project, auditLogger.OPERATIONS.AB_APP_DEPLOY)
-
-    expect(result).toEqual({
-      orgId: 'org123',
-      projectId: 'proj456',
-      workspaceId: 'ws789',
-      workspaceName: 'testWorkspace',
-      operation: auditLogger.OPERATIONS.AB_APP_DEPLOY,
-      timestamp: expect.any(Number),
-      data: {
-        cliCommandFlags,
-        opDetailsStr: mockDeployMessage
-      }
+    it('should throw error for invalid operation', () => {
+      expect(() => getAuditLogEvent(mockCliFlags, mockProject, 'invalid_operation'))
+        .toThrow('Invalid operation: invalid_operation')
     })
   })
 
-  test('should return correct log event for AB_APP_UNDEPLOY event', () => {
-    const result = auditLogger.getAuditLogEvent(cliCommandFlags, project, auditLogger.OPERATIONS.AB_APP_UNDEPLOY)
+  describe('sendAppDeployAuditLog', () => {
+    it('should send app deploy audit log successfully', async () => {
+      fetch.mockResolvedValueOnce({ status: 200 })
 
-    expect(result).toEqual({
-      orgId: 'org123',
-      projectId: 'proj456',
-      workspaceId: 'ws789',
-      workspaceName: 'testWorkspace',
-      operation: auditLogger.OPERATIONS.AB_APP_UNDEPLOY,
-      timestamp: expect.any(Number),
-      data: {
-        cliCommandFlags,
-        opDetailsStr: mockUndeployMessage
-      }
+      await sendAppDeployAuditLog({
+        accessToken: mockAccessToken,
+        cliCommandFlags: mockCliFlags,
+        project: mockProject
+      })
+
+      expect(fetch).toHaveBeenCalledWith(
+        AUDIT_SERVICE_ENDPOINTS.prod,
+        expect.objectContaining({
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${mockAccessToken}`,
+            'Content-type': 'application/json'
+          }
+        })
+      )
     })
   })
 
-  test('should return correct log event for AB_APP_ASSETS_UNDEPLOYED event', () => {
-    const result = auditLogger.getAuditLogEvent(cliCommandFlags, project, auditLogger.OPERATIONS.AB_APP_ASSETS_UNDEPLOYED)
+  describe('sendAppUndeployAuditLog', () => {
+    it('should send app undeploy audit log successfully', async () => {
+      fetch.mockResolvedValueOnce({ status: 200 })
 
-    expect(result).toEqual({
-      orgId: 'org123',
-      projectId: 'proj456',
-      workspaceId: 'ws789',
-      workspaceName: 'testWorkspace',
-      operation: auditLogger.OPERATIONS.AB_APP_ASSETS_UNDEPLOYED,
-      timestamp: expect.any(Number),
-      data: {
-        cliCommandFlags,
-        opDetailsStr: 'All static assets for the App Builder application in workspace: testWorkspace were successfully undeployed from the CDN'
-      }
+      await sendAppUndeployAuditLog({
+        accessToken: mockAccessToken,
+        cliCommandFlags: mockCliFlags,
+        project: mockProject
+      })
+
+      expect(fetch).toHaveBeenCalledWith(
+        AUDIT_SERVICE_ENDPOINTS.prod,
+        expect.objectContaining({
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${mockAccessToken}`,
+            'Content-type': 'application/json'
+          }
+        })
+      )
     })
   })
 
-  test('should return correct log event for AB_APP_ASSETS_DEPLOYED event', () => {
-    const result = auditLogger.getAuditLogEvent(cliCommandFlags, project, auditLogger.OPERATIONS.AB_APP_ASSETS_DEPLOYED)
+  describe('sendAppAssetsDeployedAuditLog', () => {
+    it('should send app assets deployed audit log successfully', async () => {
+      fetch.mockResolvedValueOnce({ status: 200 })
+      const mockOpItems = ['file1.js', 'file2.css']
 
-    expect(result).toEqual({
-      orgId: 'org123',
-      projectId: 'proj456',
-      workspaceId: 'ws789',
-      workspaceName: 'testWorkspace',
-      operation: auditLogger.OPERATIONS.AB_APP_ASSETS_DEPLOYED,
-      timestamp: expect.any(Number),
-      data: {
-        cliCommandFlags,
-        opDetailsStr: 'All static assets for the App Builder application in workspace: testWorkspace were successfully deployed to the CDN.\n Files deployed - '
-      }
+      await sendAppAssetsDeployedAuditLog({
+        accessToken: mockAccessToken,
+        cliCommandFlags: mockCliFlags,
+        project: mockProject,
+        opItems: mockOpItems
+      })
+
+      expect(fetch).toHaveBeenCalledWith(
+        AUDIT_SERVICE_ENDPOINTS.prod,
+        expect.objectContaining({
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${mockAccessToken}`,
+            'Content-type': 'application/json'
+          },
+          body: expect.stringContaining(JSON.stringify(mockOpItems))
+        })
+      )
     })
   })
 
-  test('should throw error if project is missing', () => {
-    expect(() => auditLogger.getAuditLogEvent(cliCommandFlags, null, auditLogger.OPERATIONS.AB_APP_DEPLOY)).toThrow('Project is required')
+  describe('sendAppAssetsUndeployedAuditLog', () => {
+    it('should send app assets undeployed audit log successfully', async () => {
+      fetch.mockResolvedValueOnce({ status: 200 })
+
+      await sendAppAssetsUndeployedAuditLog({
+        accessToken: mockAccessToken,
+        cliCommandFlags: mockCliFlags,
+        project: mockProject
+      })
+
+      expect(fetch).toHaveBeenCalledWith(
+        AUDIT_SERVICE_ENDPOINTS.prod,
+        expect.objectContaining({
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${mockAccessToken}`,
+            'Content-type': 'application/json'
+          }
+        })
+      )
+    })
   })
 
-  test('should throw error if project org is missing', () => {
-    expect(() => auditLogger.getAuditLogEvent(cliCommandFlags, {}, auditLogger.OPERATIONS.AB_APP_DEPLOY)).toThrow('Project org is required')
-  })
+  describe('error handling', () => {
+    it('should throw error when audit service returns non-200 status', async () => {
+      fetch.mockResolvedValueOnce({
+        status: 500,
+        text: () => Promise.resolve('Internal Server Error')
+      })
 
-  test('should throw error if project workspace is missing', () => {
-    expect(() => auditLogger.getAuditLogEvent(cliCommandFlags, { org: { id: 'org123' } }, auditLogger.OPERATIONS.AB_APP_DEPLOY)).toThrow('Project workspace is required')
-  })
-
-  test('should throw error if event is not found in OPERATIONS', () => {
-    expect(() => auditLogger.getAuditLogEvent(cliCommandFlags, project, 'UNKNOWN_OPERATION')).toThrow('Invalid operation: UNKNOWN_OPERATION')
+      await expect(sendAppDeployAuditLog({
+        accessToken: mockAccessToken,
+        cliCommandFlags: mockCliFlags,
+        project: mockProject
+      })).rejects.toThrow('Failed to send audit log - 500 Internal Server Error')
+    })
   })
 })

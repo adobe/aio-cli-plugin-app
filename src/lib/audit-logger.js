@@ -9,9 +9,6 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 const fetch = require('node-fetch')
-const fs = require('fs')
-const path = require('path')
-const chalk = require('chalk')
 
 const OPERATIONS = {
   AB_APP_DEPLOY: 'ab_app_deploy',
@@ -25,14 +22,16 @@ const AUDIT_SERVICE_ENDPOINTS = {
   prod: 'https://adp-auditlog-service-prod.adobeioruntime.net/api/v1/web/audit-log-api/event-post'
 }
 
-
 /**
  * Send audit log events to audit service
- * @param {string} accessToken valid access token
- * @param {object} logEvent logEvent details
- * @param {string} env valid env stage|prod
+ *
+ * @param {object} params Parameters object
+ * @param {string} params.accessToken valid access token
+ * @param {object} params.logEvent logEvent details
+ * @param {string} [params.env='prod'] valid env stage|prod
+ * @returns {Promise<void>} Promise that resolves when the audit log is sent successfully
  */
-async function sendAuditLogs (accessToken, logEvent, env = 'prod') {
+async function sendAuditLogs ({ accessToken, logEvent, env = 'prod' }) {
   const url = AUDIT_SERVICE_ENDPOINTS[env] ?? AUDIT_SERVICE_ENDPOINTS.prod
   const payload = {
     event: logEvent
@@ -55,67 +54,73 @@ async function sendAuditLogs (accessToken, logEvent, env = 'prod') {
 /**
  * Send audit log event for app deployment
  *
- * @param {Object} params Parameters object
+ * @param {object} params Parameters object
  * @param {string} params.accessToken valid access token
  * @param {object} params.cliCommandFlags cli flags
  * @param {object} params.project project details
  * @param {string} [params.env='prod'] valid env stage|prod
+ * @returns {Promise<void>} Promise that resolves when the audit log is sent successfully
  */
 async function sendAppDeployAuditLog ({ accessToken, cliCommandFlags, project, env }) {
   const logEvent = getAuditLogEvent(cliCommandFlags, project, OPERATIONS.AB_APP_DEPLOY)
-  return sendAuditLogs(accessToken, logEvent, env)
+  return sendAuditLogs({ accessToken, logEvent, env })
 }
 
 /**
  * Send audit log event for app undeployment
  *
- * @param {Object} params Parameters object
+ * @param {object} params Parameters object
  * @param {string} params.accessToken valid access token
  * @param {object} params.cliCommandFlags cli flags
  * @param {object} params.project project details
  * @param {string} [params.env='prod'] valid env stage|prod
+ * @returns {Promise<void>} Promise that resolves when the audit log is sent successfully
  */
 async function sendAppUndeployAuditLog ({ accessToken, cliCommandFlags, project, env }) {
   const logEvent = getAuditLogEvent(cliCommandFlags, project, OPERATIONS.AB_APP_UNDEPLOY)
-  return sendAuditLogs(accessToken, logEvent, env)
+  return sendAuditLogs({ accessToken, logEvent, env })
 }
 
 /**
  * Send audit log event for app assets deployment
  *
- * @param {Object} params Parameters object
+ * @param {object} params Parameters object
  * @param {string} params.accessToken valid access token
  * @param {object} params.cliCommandFlags cli flags
  * @param {object} params.project project details
  * @param {Array} params.opItems list of deployed files
  * @param {string} [params.env='prod'] valid env stage|prod
+ * @returns {Promise<void>} Promise that resolves when the audit log is sent successfully
  */
 async function sendAppAssetsDeployedAuditLog ({ accessToken, cliCommandFlags, project, opItems, env }) {
   const logEvent = getAuditLogEvent(cliCommandFlags, project, OPERATIONS.AB_APP_ASSETS_DEPLOYED)
   logEvent.data.opItems = opItems
-  return sendAuditLogs(accessToken, logEvent, env)
+  return sendAuditLogs({ accessToken, logEvent, env })
 }
 
 /**
  * Send audit log event for app assets undeployment
  *
- * @param {Object} params Parameters object
+ * @param {object} params Parameters object
  * @param {string} params.accessToken valid access token
  * @param {object} params.cliCommandFlags cli flags
  * @param {object} params.project project details
  * @param {string} [params.env='prod'] valid env stage|prod
+ * @returns {Promise<void>} Promise that resolves when the audit log is sent successfully
  */
 async function sendAppAssetsUndeployedAuditLog ({ accessToken, cliCommandFlags, project, env }) {
   const logEvent = getAuditLogEvent(cliCommandFlags, project, OPERATIONS.AB_APP_ASSETS_UNDEPLOYED)
-  return sendAuditLogs(accessToken, logEvent, env)
+  return sendAuditLogs({ accessToken, logEvent, env })
 }
 
 /**
+ * Creates an audit log event object
  *
  * @param {object} cliCommandFlags cli flags
  * @param {object} project details
  * @param {string} operation one of: ab_app_deploy, ab_app_undeploy, ab_app_assets_deployed, ab_app_assets_undeployed
- * @returns {object} logEvent
+ * @returns {object} logEvent object containing audit log details
+ * @throws {Error} if project, project.org, or project.workspace is missing, or if operation is invalid
  */
 function getAuditLogEvent (cliCommandFlags, project, operation) {
   if (!project) {
@@ -169,9 +174,8 @@ function getAuditLogEvent (cliCommandFlags, project, operation) {
 
 module.exports = {
   OPERATIONS,
-  sendAuditLogs,
-  getAuditLogEvent,
   AUDIT_SERVICE_ENDPOINTS,
+  getAuditLogEvent,
   sendAppDeployAuditLog,
   sendAppUndeployAuditLog,
   sendAppAssetsDeployedAuditLog,

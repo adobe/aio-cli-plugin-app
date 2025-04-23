@@ -815,7 +815,7 @@ describe('getFilesCountWithExtension', () => {
 
   it('should return an error message when directory does not exist', () => {
     fs.existsSync.mockReturnValue(false)
-    
+
     expect(() => appHelper.getFilesCountWithExtension(directory)).toThrow(`Error: Directory ${directory} does not exist.`)
     expect(fs.existsSync).toHaveBeenCalledWith(directory)
   })
