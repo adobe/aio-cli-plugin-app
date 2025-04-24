@@ -204,5 +204,27 @@ describe('audit-logger', () => {
         project: mockProject
       })).rejects.toThrow('Failed to send audit log - 500 Internal Server Error')
     })
+
+    it('should use prod endpoint when invalid environment is provided', async () => {
+      fetch.mockResolvedValueOnce({ status: 200 })
+
+      await sendAppDeployAuditLog({
+        accessToken: mockAccessToken,
+        cliCommandFlags: mockCliFlags,
+        project: mockProject,
+        env: 'invalid-env'
+      })
+
+      expect(fetch).toHaveBeenCalledWith(
+        AUDIT_SERVICE_ENDPOINTS.prod,
+        expect.objectContaining({
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${mockAccessToken}`,
+            'Content-type': 'application/json'
+          }
+        })
+      )
+    })
   })
 })

@@ -6,7 +6,7 @@
   "bugs": "https://github.com/adobe/aio-cli-plugin-app/issues",
   "dependencies": {
     "@adobe/aio-cli-lib-app-config": "^4.0.3",
-    "@adobe/aio-cli-lib-console": "^5",
+    "@adobe/aio-cli-lib-console": "^5.0.3",
     "@adobe/aio-lib-core-config": "^5",
     "@adobe/aio-lib-core-logging": "^3",
     "@adobe/aio-lib-core-networking": "^5",
