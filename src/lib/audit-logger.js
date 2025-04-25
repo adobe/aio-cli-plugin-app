@@ -130,6 +130,8 @@ function getAuditLogEvent (cliCommandFlags, project, operation) {
   }
 
   const workspaceName = project.workspace.name
+  // TODO: get app name, version, and object name
+  let appName, appVersion, objectName
 
   let logStrMsg
   switch (operation) {
@@ -159,6 +161,9 @@ function getAuditLogEvent (cliCommandFlags, project, operation) {
     workspaceId,
     workspaceName,
     operation,
+    appName,
+    appVersion,
+    objectName,
     timestamp: new Date().valueOf(),
     data: {
       cliCommandFlags,
