@@ -79,7 +79,7 @@ class Build extends BaseCommand {
           aioLogger.debug(`run hook for 'build-actions' for actions in '${name}' returned ${script}`)
           spinner.start(`Building actions for '${name}'`)
           if (!script) {
-            builtList = await RuntimeLib.buildActions(config, filterActions, flags['force-build']) // skipCheck is false
+            builtList = await RuntimeLib.buildActions(config, filterActions, flags['force-build'])
           }
           if (builtList.length > 0) {
             spinner.succeed(chalk.green(`Built ${builtList.length} action(s) for '${name}'`))
