@@ -115,7 +115,7 @@ function getAuditLogEvent ({ cliCommandFlags, operation, appInfo }) {
     workspaceName = project.workspace.name
   } else { // non-logged in use case
     const parsedNamespace = parseNamespaceString(runtimeNamespace)
-    workspaceName = parsedNamespace.workspace ?? 'Production'
+    workspaceName = parsedNamespace?.workspace ?? 'Production'
   }
 
   let logStrMsg

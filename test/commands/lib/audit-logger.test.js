@@ -32,6 +32,11 @@ describe('audit-logger', () => {
       name: 'fake-workspace'
     }
   }
+  const mockAppInfo = {
+    name: 'test-app',
+    version: '1.0.0',
+    project: mockProject
+  }
   const mockCliFlags = { flag1: 'value1' }
 
   beforeEach(() => {
@@ -39,8 +44,12 @@ describe('audit-logger', () => {
   })
 
   describe('getAuditLogEvent', () => {
-    it('should create a valid audit log event for app deploy', () => {
-      const event = getAuditLogEvent(mockCliFlags, mockProject, OPERATIONS.AB_APP_DEPLOY)
+    it('should create a valid audit log event for app deploy (logged in)', () => {
+      const event = getAuditLogEvent({
+        cliCommandFlags: mockCliFlags,
+        operation: OPERATIONS.AB_APP_DEPLOY,
+        appInfo: mockAppInfo
+      })
 
       expect(event).toEqual({
         orgId: 'fake-org-id',
@@ -48,6 +57,36 @@ describe('audit-logger', () => {
         workspaceId: 'fake-workspace-id',
         workspaceName: 'fake-workspace',
         operation: OPERATIONS.AB_APP_DEPLOY,
+        appName: 'test-app',
+        appVersion: '1.0.0',
+        objectName: 'test-app',
+        timestamp: expect.any(Number),
+        data: {
+          cliCommandFlags: mockCliFlags,
+          opDetailsStr: expect.stringContaining('Starting deployment for the App Builder application')
+        }
+      })
+    })
+
+    it('should create a valid audit log event for app deploy (non-logged in)', () => {
+      const nonLoggedInAppInfo = {
+        name: 'test-app',
+        version: '1.0.0',
+        runtimeNamespace: 'test-namespace'
+      }
+      const event = getAuditLogEvent({
+        cliCommandFlags: mockCliFlags,
+        operation: OPERATIONS.AB_APP_DEPLOY,
+        appInfo: nonLoggedInAppInfo
+      })
+
+      expect(event).toEqual({
+        runtimeNamespace: 'test-namespace',
+        workspaceName: 'Production',
+        operation: OPERATIONS.AB_APP_DEPLOY,
+        appName: 'test-app',
+        appVersion: '1.0.0',
+        objectName: 'test-app',
         timestamp: expect.any(Number),
         data: {
           cliCommandFlags: mockCliFlags,
@@ -57,7 +96,11 @@ describe('audit-logger', () => {
     })
 
     it('should create a valid audit log event for app undeploy', () => {
-      const event = getAuditLogEvent(mockCliFlags, mockProject, OPERATIONS.AB_APP_UNDEPLOY)
+      const event = getAuditLogEvent({
+        cliCommandFlags: mockCliFlags,
+        operation: OPERATIONS.AB_APP_UNDEPLOY,
+        appInfo: mockAppInfo
+      })
 
       expect(event).toEqual({
         orgId: 'fake-org-id',
@@ -65,6 +108,9 @@ describe('audit-logger', () => {
         workspaceId: 'fake-workspace-id',
         workspaceName: 'fake-workspace',
         operation: OPERATIONS.AB_APP_UNDEPLOY,
+        appName: 'test-app',
+        appVersion: '1.0.0',
+        objectName: 'test-app',
         timestamp: expect.any(Number),
         data: {
           cliCommandFlags: mockCliFlags,
@@ -73,26 +119,48 @@ describe('audit-logger', () => {
       })
     })
 
-    it('should throw error if project is missing', () => {
-      expect(() => getAuditLogEvent(mockCliFlags, null, OPERATIONS.AB_APP_DEPLOY))
-        .toThrow('Project is required')
+    it('should throw error if neither project nor runtimeNamespace is provided', () => {
+      const invalidAppInfo = {
+        name: 'test-app',
+        version: '1.0.0'
+      }
+      expect(() => getAuditLogEvent({
+        cliCommandFlags: mockCliFlags,
+        operation: OPERATIONS.AB_APP_DEPLOY,
+        appInfo: invalidAppInfo
+      })).toThrow('Either project or runtimeNamespace is required')
     })
 
     it('should throw error if project org is missing', () => {
-      const invalidProject = { ...mockProject, org: null }
-      expect(() => getAuditLogEvent(mockCliFlags, invalidProject, OPERATIONS.AB_APP_DEPLOY))
-        .toThrow('Project org is required')
+      const invalidAppInfo = {
+        ...mockAppInfo,
+        project: { ...mockProject, org: null }
+      }
+      expect(() => getAuditLogEvent({
+        cliCommandFlags: mockCliFlags,
+        operation: OPERATIONS.AB_APP_DEPLOY,
+        appInfo: invalidAppInfo
+      })).toThrow('Project org is required')
     })
 
     it('should throw error if project workspace is missing', () => {
-      const invalidProject = { ...mockProject, workspace: null }
-      expect(() => getAuditLogEvent(mockCliFlags, invalidProject, OPERATIONS.AB_APP_DEPLOY))
-        .toThrow('Project workspace is required')
+      const invalidAppInfo = {
+        ...mockAppInfo,
+        project: { ...mockProject, workspace: null }
+      }
+      expect(() => getAuditLogEvent({
+        cliCommandFlags: mockCliFlags,
+        operation: OPERATIONS.AB_APP_DEPLOY,
+        appInfo: invalidAppInfo
+      })).toThrow('Project workspace is required')
     })
 
     it('should throw error for invalid operation', () => {
-      expect(() => getAuditLogEvent(mockCliFlags, mockProject, 'invalid_operation'))
-        .toThrow('Invalid operation: invalid_operation')
+      expect(() => getAuditLogEvent({
+        cliCommandFlags: mockCliFlags,
+        operation: 'invalid_operation',
+        appInfo: mockAppInfo
+      })).toThrow('Invalid operation: invalid_operation')
     })
   })
 
@@ -103,7 +171,7 @@ describe('audit-logger', () => {
       await sendAppDeployAuditLog({
         accessToken: mockAccessToken,
         cliCommandFlags: mockCliFlags,
-        project: mockProject
+        appInfo: mockAppInfo
       })
 
       expect(fetch).toHaveBeenCalledWith(
@@ -126,7 +194,7 @@ describe('audit-logger', () => {
       await sendAppUndeployAuditLog({
         accessToken: mockAccessToken,
         cliCommandFlags: mockCliFlags,
-        project: mockProject
+        appInfo: mockAppInfo
       })
 
       expect(fetch).toHaveBeenCalledWith(
@@ -150,7 +218,7 @@ describe('audit-logger', () => {
       await sendAppAssetsDeployedAuditLog({
         accessToken: mockAccessToken,
         cliCommandFlags: mockCliFlags,
-        project: mockProject,
+        appInfo: mockAppInfo,
         opItems: mockOpItems
       })
 
@@ -175,7 +243,7 @@ describe('audit-logger', () => {
       await sendAppAssetsUndeployedAuditLog({
         accessToken: mockAccessToken,
         cliCommandFlags: mockCliFlags,
-        project: mockProject
+        appInfo: mockAppInfo
       })
 
       expect(fetch).toHaveBeenCalledWith(
@@ -201,7 +269,7 @@ describe('audit-logger', () => {
       await expect(sendAppDeployAuditLog({
         accessToken: mockAccessToken,
         cliCommandFlags: mockCliFlags,
-        project: mockProject
+        appInfo: mockAppInfo
       })).rejects.toThrow('Failed to send audit log - 500 Internal Server Error')
     })
 
@@ -211,7 +279,7 @@ describe('audit-logger', () => {
       await sendAppDeployAuditLog({
         accessToken: mockAccessToken,
         cliCommandFlags: mockCliFlags,
-        project: mockProject,
+        appInfo: mockAppInfo,
         env: 'invalid-env'
       })
 

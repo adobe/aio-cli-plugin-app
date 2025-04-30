@@ -156,6 +156,8 @@ afterAll(() => {
   jest.resetAllMocks()
 })
 
+let command
+
 beforeEach(() => {
   helpers.writeConfig.mockReset()
   helpers.runInProcess.mockReset()
@@ -187,6 +189,37 @@ beforeEach(() => {
     }
   })
   LogForwarding.init.mockResolvedValue(mockLogForwarding)
+
+  command = new TheCommand([])
+  command.error = jest.fn()
+  command.log = jest.fn()
+  command.appConfig = cloneDeep(mockConfigData)
+  command.appConfig.actions = { dist: 'actions' }
+  command.appConfig.web.distProd = 'dist'
+  command.config = { runCommand: jest.fn(), runHook: jest.fn() }
+  command.buildOneExt = jest.fn()
+  command.getFullConfig = jest.fn().mockResolvedValue({
+    aio: {
+      project: {
+        workspace: {
+          name: 'test-workspace'
+        }
+      }
+    },
+    packagejson: {
+      name: 'test-app',
+      version: '1.0.0'
+    }
+  })
+  command.getAppExtConfigs = jest.fn().mockResolvedValue(createAppConfig(command.appConfig))
+  command.getLibConsoleCLI = jest.fn(() => mockLibConsoleCLI)
+
+  mockRuntimeLib.deployActions.mockResolvedValue({ actions: [] })
+  mockWebLib.bundle.mockResolvedValue({ run: mockBundleFunc })
+
+  mockLogForwarding.isLocalConfigChanged.mockReturnValue(true)
+  const config = new LogForwarding.LogForwardingConfig('destination', { field: 'value' })
+  mockLogForwarding.getLocalConfigWithSecrets.mockReturnValue(config)
 })
 
 test('exports', async () => {
@@ -259,61 +292,26 @@ test('flags', async () => {
 })
 
 describe('run', () => {
-  let command
-
-  beforeEach(() => {
-    command = new TheCommand([])
-    command.error = jest.fn()
-    command.log = jest.fn()
-    command.appConfig = cloneDeep(mockConfigData)
-    command.appConfig.actions = { dist: 'actions' }
-    command.appConfig.web.distProd = 'dist'
-    command.config = { runCommand: jest.fn(), runHook: jest.fn() }
-    command.buildOneExt = jest.fn()
-    command.getAppExtConfigs = jest.fn()
-    command.getLibConsoleCLI = jest.fn(() => mockLibConsoleCLI)
-    command.getFullConfig = jest.fn().mockReturnValue({
-      aio: {
-        project: {
-          workspace: {
-            name: 'foo'
-          }
-        }
-      }
-    })
-
-    mockRuntimeLib.deployActions.mockResolvedValue({ actions: [] })
-    mockWebLib.bundle.mockResolvedValue({ run: mockBundleFunc })
-
-    mockLogForwarding.isLocalConfigChanged.mockReturnValue(true)
-    const config = new LogForwarding.LogForwardingConfig('destination', { field: 'value' })
-    mockLogForwarding.getLocalConfigWithSecrets.mockReturnValue(config)
-  })
-
-  afterEach(() => {
-    jest.clearAllMocks()
-  })
-
   test('build & deploy an App with no flags', async () => {
-    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'app-exc-nui'))
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(command.buildOneExt).toHaveBeenCalledTimes(1)
+    expect(command.buildOneExt).toHaveBeenCalledTimes(3)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(2)
   })
 
   test('build & deploy an App verbose', async () => {
-    const appConfig = createAppConfig(command.appConfig)
+    const appConfig = createAppConfig(command.appConfig, 'app-exc-nui')
     command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
 
     command.argv = ['-v']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(command.buildOneExt).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(2)
+    expect(command.buildOneExt).toHaveBeenCalledTimes(3)
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
       expect.objectContaining({ verbose: true, 'force-build': true }),
@@ -350,6 +348,10 @@ describe('run', () => {
             id: '1111'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
 
@@ -376,6 +378,10 @@ describe('run', () => {
             id: '1111'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
 
@@ -576,7 +582,6 @@ describe('run', () => {
     [['--no-log-forwarding-update', '--no-actions']]
   ])('no log forwarding update due to %s arg(s) specified', async (args) => {
     const appConfig = createAppConfig(command.appConfig)
-    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
     command.argv = args
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -739,6 +744,10 @@ describe('run', () => {
             id: '1111'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
     const noScriptFound = undefined
@@ -768,6 +777,10 @@ describe('run', () => {
             id: '1111'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
     mockExtRegExcShellPayload()
@@ -907,6 +920,15 @@ describe('run', () => {
     mockGetProject()
     command.getFullConfig.mockResolvedValue({
       aio: {
+        project: {
+          workspace: {
+            name: 'foo'
+          }
+        }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
     mockExtRegExcShellPayload()
@@ -935,6 +957,10 @@ describe('run', () => {
             id: '1111'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
     mockExtRegExcShellPayload()
@@ -962,6 +988,10 @@ describe('run', () => {
             id: '1111'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
     mockExtRegExcShellPayload()
@@ -991,6 +1021,10 @@ describe('run', () => {
             id: '1111'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
     mockExtRegExcShellPayloadFailure()
@@ -1018,6 +1052,10 @@ describe('run', () => {
             id: '1111'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
     command.argv = []
@@ -1045,6 +1083,10 @@ describe('run', () => {
             id: '1111'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
     mockExtRegExcShellPayload()
@@ -1072,95 +1114,13 @@ describe('run', () => {
             id: '1111'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
     mockExtRegExcShellAndNuiPayload()
-    command.argv = []
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(helpers.buildExcShellViewExtensionMetadata).toHaveBeenCalledTimes(1)
-    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
-    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(1)
-  })
-
-  test('publish phase (no force, nui payload + no view operation)', async () => {
-    mockGetProject()
-    mockGetExtensionPointsRetractedApp()
-    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'app-exc-nui'))
-    command.getFullConfig.mockResolvedValue({
-      aio: {
-        project: {
-          workspace: {
-            name: 'foo'
-          },
-          org: {
-            id: '1111'
-          }
-        }
-      }
-    })
-    const payload = {
-      endpoints: {
-        'dx/excshell/1': {
-          another: [
-          ]
-        }
-      }
-    }
-    helpers.buildExtensionPointPayloadWoMetadata.mockReturnValueOnce(payload)
-    mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites.mockReturnValueOnce(payload)
-    mockLibConsoleCLI.updateExtensionPoints.mockReturnValueOnce(payload)
-    command.argv = []
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(helpers.buildExcShellViewExtensionMetadata).toHaveBeenCalledTimes(0)
-    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
-    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(1)
-  })
-
-  test('publish phase (--force-publish, exc+nui payload)', async () => {
-    mockGetProject()
-    mockGetExtensionPointsRetractedApp()
-    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'exc'))
-    command.getFullConfig.mockResolvedValue({
-      aio: {
-        project: {
-          workspace: {
-            name: 'foo'
-          },
-          org: {
-            id: '1111'
-          }
-        }
-      }
-    })
-
-    mockExtRegExcShellAndNuiPayload()
-    command.argv = ['--force-publish']
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(helpers.buildExcShellViewExtensionMetadata).toHaveBeenCalledTimes(1)
-    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(1)
-    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(0)
-  })
-
-  test('app hook sequence', async () => {
-    const appConfig = createAppConfig(command.appConfig)
-    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
-
-    // set hooks (command the same as hook name, for easy reference)
-    appConfig.application.hooks = {
-      'pre-app-deploy': 'pre-app-deploy',
-      'deploy-actions': 'deploy-actions',
-      'deploy-static': 'deploy-static',
-      'post-app-deploy': 'post-app-deploy'
-    }
-
-    const scriptSequence = []
-    helpers.runInProcess.mockImplementation(script => {
-      scriptSequence.push(script)
-    })
-
     command.argv = []
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -1306,6 +1266,10 @@ describe('run', () => {
             name: mockWorkspaceName
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     }
     command.getFullConfig = jest.fn().mockReturnValue(fullConfig)
@@ -1317,15 +1281,45 @@ describe('run', () => {
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledTimes(1)
     expect(authHelper.setRuntimeApiHostAndAuthHandler).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledWith(
-      {
-        accessToken: mockToken,
-        cliCommandFlags: expect.any(Object),
-        opItems: expect.any(Array),
-        project: fullConfig.aio.project,
-        env: mockEnv
-      }
-    )
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledWith({
+      accessToken: mockToken,
+      appInfo: {
+        name: 'test-app',
+        version: '1.0.0',
+        runtimeNamespace: undefined,
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      },
+      cliCommandFlags: {
+        actions: true,
+        build: true,
+        'content-hash': true,
+        'force-build': true,
+        'force-deploy': false,
+        'force-events': false,
+        'force-publish': false,
+        'log-forwarding-update': true,
+        open: false,
+        publish: false,
+        'web-assets': true,
+        'web-optimize': false
+      },
+      env: mockEnv,
+      opItems: [
+        '3 Javascript file(s)',
+        '2 CSS file(s)',
+        '5 image(s)',
+        '1 HTML page(s)'
+      ]
+    })
     process.env.IS_DEPLOY_SERVICE_ENABLED = false
   })
 
@@ -1353,6 +1347,10 @@ describe('run', () => {
             name: mockWorkspaceName
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     }
     command.getFullConfig = jest.fn().mockReturnValue(fullConfig)
@@ -1363,15 +1361,45 @@ describe('run', () => {
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledWith(
-      {
-        accessToken: mockToken,
-        cliCommandFlags: expect.any(Object),
-        opItems: expect.any(Array),
-        project: fullConfig.aio.project,
-        env: mockEnv
-      }
-    )
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledWith({
+      accessToken: mockToken,
+      appInfo: {
+        name: 'test-app',
+        version: '1.0.0',
+        runtimeNamespace: undefined,
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      },
+      cliCommandFlags: {
+        actions: true,
+        build: true,
+        'content-hash': true,
+        'force-build': true,
+        'force-deploy': false,
+        'force-events': false,
+        'force-publish': false,
+        'log-forwarding-update': true,
+        open: false,
+        publish: false,
+        'web-assets': true,
+        'web-optimize': false
+      },
+      env: mockEnv,
+      opItems: [
+        '3 Javascript file(s)',
+        '2 CSS file(s)',
+        '5 image(s)',
+        '1 HTML page(s)'
+      ]
+    })
   })
 
   test('Do not send audit logs for successful app deploy, if case of no token', async () => {
@@ -1399,6 +1427,10 @@ describe('run', () => {
             name: mockWorkspaceName
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     }
     command.getFullConfig = jest.fn().mockReturnValue(fullConfig)
@@ -1438,6 +1470,10 @@ describe('run', () => {
             name: mockWorkspaceName
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     }
     command.getFullConfig = jest.fn().mockReturnValue(fullConfig)
@@ -1448,15 +1484,45 @@ describe('run', () => {
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(helpers.getFilesCountWithExtension).toHaveBeenCalledTimes(2)
-    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledWith(
-      {
-        accessToken: mockToken,
-        cliCommandFlags: expect.any(Object),
-        opItems: expect.any(Array),
-        project: fullConfig.aio.project,
-        env: mockEnv
-      }
-    )
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledWith({
+      accessToken: mockToken,
+      appInfo: {
+        name: 'test-app',
+        version: '1.0.0',
+        runtimeNamespace: undefined,
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      },
+      cliCommandFlags: {
+        actions: true,
+        build: true,
+        'content-hash': true,
+        'force-build': true,
+        'force-deploy': false,
+        'force-events': false,
+        'force-publish': false,
+        'log-forwarding-update': true,
+        open: false,
+        publish: false,
+        'web-assets': true,
+        'web-optimize': false
+      },
+      env: mockEnv,
+      opItems: [
+        '3 Javascript file(s)',
+        '2 CSS file(s)',
+        '5 image(s)',
+        '1 HTML page(s)'
+      ]
+    })
   })
 
   test('Should deploy successfully even if Audit log service is unavailable', async () => {
@@ -1482,6 +1548,10 @@ describe('run', () => {
             name: mockWorkspaceName
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
 
@@ -1529,6 +1599,10 @@ describe('run', () => {
             name: mockWorkspaceName
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
 
