@@ -294,6 +294,15 @@ test('flags', async () => {
 describe('run', () => {
   test('build & deploy an App with no flags', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'app-exc-nui'))
+    helpers.buildExtensionPointPayloadWoMetadata.mockReturnValueOnce({
+      endpoints: {
+        'dx/excshell/1': {
+          view: [{
+            metadata: {}
+          }]
+        }
+      }
+    })
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -305,6 +314,15 @@ describe('run', () => {
   test('build & deploy an App verbose', async () => {
     const appConfig = createAppConfig(command.appConfig, 'app-exc-nui')
     command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
+    helpers.buildExtensionPointPayloadWoMetadata.mockReturnValueOnce({
+      endpoints: {
+        'dx/excshell/1': {
+          view: [{
+            metadata: {}
+          }]
+        }
+      }
+    })
 
     command.argv = ['-v']
     await command.run()
@@ -1124,7 +1142,8 @@ describe('run', () => {
     command.argv = []
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    // For app-exc-nui config, we have 2 extensions that need web assets deployed
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(2)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
 
     expect(helpers.runInProcess).toHaveBeenCalledTimes(4)
@@ -1440,7 +1459,46 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledTimes(0)
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledTimes(1)
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledWith({
+      accessToken: mockToken,
+      appInfo: {
+        name: 'test-app',
+        version: '1.0.0',
+        runtimeNamespace: undefined,
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      },
+      cliCommandFlags: {
+        actions: true,
+        build: true,
+        'content-hash': true,
+        'force-build': true,
+        'force-deploy': false,
+        'force-events': false,
+        'force-publish': false,
+        'log-forwarding-update': true,
+        open: false,
+        publish: false,
+        'web-assets': true,
+        'web-optimize': false
+      },
+      env: mockEnv,
+      opItems: [
+        '3 Javascript file(s)',
+        '2 CSS file(s)',
+        '5 image(s)',
+        '1 HTML page(s)'
+      ]
+    })
   })
 
   test('Send audit logs for successful app deploy + web assets', async () => {
