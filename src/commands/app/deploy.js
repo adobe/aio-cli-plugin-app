@@ -22,6 +22,7 @@ const { runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExt
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
 const { sendAuditLogs, getAuditLogEvent, getFilesCountWithExtension } = require('../../lib/audit-logger')
+const { setRuntimeApiHostAndAuthHandler } = require('../../lib/auth-helper')
 const logActions = require('../../lib/log-actions')
 
 const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
@@ -100,7 +101,8 @@ class Deploy extends BuildCommand {
       // - break into smaller pieces deploy, allowing to first deploy all actions then all web assets
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
-        const v = values[i]
+        const v = setRuntimeApiHostAndAuthHandler(values[i])
+
         await this.deploySingleConfig(k, v, flags, spinner)
         if (v.app.hasFrontend && flags['web-assets']) {
           const opItems = getFilesCountWithExtension(v.web.distProd)
@@ -111,7 +113,10 @@ class Deploy extends BuildCommand {
               // only send logs in case of web-assets deployment
               await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env)
             } catch (error) {
-              this.warn('Error: Audit Log Service Error: Failed to send audit log event for deployment.')
+              if (flags.verbose) {
+                this.warn('Error: Audit Log Service Error: Failed to send audit log event for deployment.')
+                this.warn(error.message)
+              }
             }
           }
         }
@@ -180,8 +185,7 @@ class Deploy extends BuildCommand {
           if (!script) {
             const hookResults = await this.config.runHook('deploy-actions', {
               appConfig: config,
-              filterEntities: filterActions || [],
-              isLocalDev: false
+              filterEntities: filterActions || []
             })
             if (hookResults?.failures?.length > 0) {
               // output should be "Error : <plugin-name> : <error-message>\n" for each failure
@@ -328,7 +332,7 @@ Deploy.flags = {
   'force-build': Flags.boolean({
     description: '[default: true] Force a build even if one already exists',
     exclusive: ['no-build'], // no-build
-    default: false,
+    default: true,
     allowNo: true
   }),
   'content-hash': Flags.boolean({

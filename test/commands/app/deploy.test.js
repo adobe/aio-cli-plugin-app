@@ -24,6 +24,9 @@ const helpers = require('../../../src/lib/app-helper.js')
 jest.mock('../../../src/lib/audit-logger.js')
 const auditLogger = require('../../../src/lib/audit-logger.js')
 
+jest.mock('../../../src/lib/auth-helper')
+const authHelper = require('../../../src/lib/auth-helper')
+
 const mockWebLib = require('@adobe/aio-lib-web')
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 
@@ -191,6 +194,7 @@ beforeEach(() => {
       '1 HTML page(s)'
     ]
   })
+  authHelper.setRuntimeApiHostAndAuthHandler.mockImplementation((aioConfig) => aioConfig)
   helpers.getCliInfo.mockImplementation(() => {
     return {
       accessToken: 'mocktoken',
@@ -226,7 +230,7 @@ test('flags', async () => {
 
   expect(typeof TheCommand.flags['force-build']).toBe('object')
   expect(typeof TheCommand.flags['force-build'].description).toBe('string')
-  expect(TheCommand.flags['force-build'].default).toEqual(false)
+  expect(TheCommand.flags['force-build'].default).toEqual(true)
   expect(TheCommand.flags['force-build'].allowNo).toEqual(true)
 
   expect(typeof TheCommand.flags['content-hash']).toBe('object')
@@ -327,7 +331,7 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false, verbose: true }),
+      expect.objectContaining({ verbose: true, 'force-build': true }),
       expect.anything())
   })
 
@@ -343,7 +347,7 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false, 'web-assets': false }),
+      expect.objectContaining({ 'web-assets': false, 'force-build': true }),
       expect.anything())
   })
 
@@ -413,7 +417,7 @@ describe('run', () => {
 
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false, 'web-assets': false, action: ['a', 'b', 'c'] }),
+      expect.objectContaining({ 'web-assets': false, action: ['a', 'b', 'c'], 'force-build': true }),
       expect.anything())
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(appConfig.application, {
       filterEntities: { actions: ['a', 'b', 'c'] },
@@ -435,7 +439,7 @@ describe('run', () => {
 
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false, 'web-assets': false, action: ['c'] }),
+      expect.objectContaining({ 'web-assets': false, action: ['c'], 'force-build': true }),
       expect.anything())
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(appConfig.application, {
       filterEntities: { actions: ['c'] },
@@ -458,7 +462,7 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false, 'web-assets': false }),
+      expect.objectContaining({ 'web-assets': false, 'force-build': true }),
       expect.anything())
   })
 
@@ -485,7 +489,7 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false, actions: false }),
+      expect.objectContaining({ actions: false, 'force-build': true }),
       expect.anything())
   })
 
@@ -503,7 +507,7 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false, actions: false }),
+      expect.objectContaining({ actions: false, 'force-build': true }),
       expect.anything())
   })
 
@@ -520,7 +524,7 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false }),
+      expect.objectContaining({ 'force-build': true }),
       expect.anything())
   })
 
@@ -870,8 +874,7 @@ describe('run', () => {
     expect(command.config.runHook).toHaveBeenCalledWith('deploy-actions',
       expect.objectContaining({
         appConfig: expect.any(Object),
-        filterEntities: [],
-        isLocalDev: false
+        filterEntities: []
       }))
     expect(command.config.runHook).toHaveBeenCalledTimes(2)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
@@ -1293,6 +1296,45 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(1)
   })
 
+  test('Should invoke setRuntimeApiHostAndAuthHandler if IS_DEPLOY_SERVICE_ENABLED = true', async () => {
+    process.env.IS_DEPLOY_SERVICE_ENABLED = true
+
+    const mockToken = 'mocktoken'
+    const mockEnv = 'stage'
+    const mockOrg = 'mockorg'
+    const mockProject = 'mockproject'
+    const mockWorkspaceId = 'mockworkspaceid'
+    const mockWorkspaceName = 'mockworkspacename'
+    helpers.getCliInfo.mockResolvedValueOnce({
+      accessToken: mockToken,
+      env: mockEnv
+    })
+    command.getFullConfig = jest.fn().mockReturnValue({
+      aio: {
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      }
+    })
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(auditLogger.sendAuditLogs).toHaveBeenCalledTimes(1)
+    expect(authHelper.setRuntimeApiHostAndAuthHandler).toHaveBeenCalledTimes(1)
+    expect(auditLogger.sendAuditLogs).toHaveBeenCalledWith(mockToken, expect.objectContaining({ orgId: mockOrg, projectId: mockProject, workspaceId: mockWorkspaceId, workspaceName: mockWorkspaceName }), mockEnv)
+    process.env.IS_DEPLOY_SERVICE_ENABLED = false
+  })
+
   test('Send audit logs for successful app deploy', async () => {
     const mockToken = 'mocktoken'
     const mockEnv = 'stage'
@@ -1474,6 +1516,54 @@ describe('run', () => {
 
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
+    await command.run()
+    expect(command.log).toHaveBeenCalledWith(
+      expect.stringContaining('skipping publish phase...')
+    )
+
+    expect(command.log).toHaveBeenCalledWith(
+      expect.stringContaining('Successful deployment 🏄')
+    )
+    expect(auditLogger.sendAuditLogs).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+  })
+
+  test('Should deploy successfully even if Audit log service is unavailable (--verbose)', async () => {
+    const mockToken = 'mocktoken'
+    const mockEnv = 'stage'
+    const mockOrg = 'mockorg'
+    const mockProject = 'mockproject'
+    const mockWorkspaceId = 'mockworkspaceid'
+    const mockWorkspaceName = 'mockworkspacename'
+    helpers.getCliInfo.mockResolvedValueOnce({
+      accessToken: mockToken,
+      env: mockEnv
+    })
+    command.getFullConfig = jest.fn().mockReturnValue({
+      aio: {
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      }
+    })
+
+    auditLogger.sendAuditLogs.mockRejectedValue({
+      message: 'Internal Server Error',
+      status: 500
+    })
+
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+
+    command.argv = ['--verbose']
     await command.run()
     expect(command.log).toHaveBeenCalledWith(
       expect.stringContaining('skipping publish phase...')
