@@ -9,6 +9,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 const fetch = require('node-fetch')
+const { parseNamespaceString } = require('./app-helper')
 
 const OPERATIONS = {
   AB_APP_DEPLOY: 'ab_app_deploy',
@@ -17,9 +18,14 @@ const OPERATIONS = {
   AB_APP_ASSETS_UNDEPLOYED: 'ab_app_assets_undeployed'
 }
 
-const AUDIT_SERVICE_ENDPOINTS = {
+const AUDIT_SERVICE_ENDPOINTS2 = {
   stage: 'https://adp-auditlog-service-stage.adobeioruntime.net/api/v1/web/audit-log-api/event-post',
   prod: 'https://adp-auditlog-service-prod.adobeioruntime.net/api/v1/web/audit-log-api/event-post'
+}
+
+const AUDIT_SERVICE_ENDPOINTS = {
+  stage: 'http://127.0.0.1:3000/audit-log-api/event-post',
+  prod: 'http://127.0.0.1:3000/audit-log-api/event-post'
 }
 
 /**
@@ -39,6 +45,14 @@ const AUDIT_SERVICE_ENDPOINTS = {
  */
 
 /**
+ * @typedef {object} GetAuditLogEventParams
+ * @property {object} cliCommandFlags - CLI command flags
+ * @property {object} project - Project details containing org and workspace information
+ * @property {string} operation - One of: ab_app_deploy, ab_app_undeploy, ab_app_assets_deployed, ab_app_assets_undeployed
+ * @property {string} [runtimeNamespace] - Optional runtime namespace (for non-logged in use case)
+ */
+
+/**
  * Publish audit log events to audit service
  *
  * @param {PublishAuditLogParams} params Parameters object
@@ -52,7 +66,7 @@ async function publishAuditLogs ({ accessToken, logEvent, env = 'prod' }) {
   const options = {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${accessToken}`,
+      Authorization: accessToken ? `Bearer ${accessToken}` : '',
       'Content-type': 'application/json'
     },
     body: JSON.stringify(payload)
@@ -65,73 +79,36 @@ async function publishAuditLogs ({ accessToken, logEvent, env = 'prod' }) {
 }
 
 /**
- * Send audit log event for app deployment
- *
- * @param {AuditLogParams} params Parameters object
- * @returns {Promise<void>} Promise that resolves when the audit log is sent successfully
- */
-async function sendAppDeployAuditLog ({ accessToken, cliCommandFlags, project, env }) {
-  const logEvent = getAuditLogEvent(cliCommandFlags, project, OPERATIONS.AB_APP_DEPLOY)
-  return publishAuditLogs({ accessToken, logEvent, env })
-}
-
-/**
- * Send audit log event for app undeployment
- *
- * @param {AuditLogParams} params Parameters object
- * @returns {Promise<void>} Promise that resolves when the audit log is sent successfully
- */
-async function sendAppUndeployAuditLog ({ accessToken, cliCommandFlags, project, env }) {
-  const logEvent = getAuditLogEvent(cliCommandFlags, project, OPERATIONS.AB_APP_UNDEPLOY)
-  return publishAuditLogs({ accessToken, logEvent, env })
-}
-
-/**
- * Send audit log event for app assets deployment
- *
- * @param {AuditLogParams} params Parameters object
- * @returns {Promise<void>} Promise that resolves when the audit log is sent successfully
- */
-async function sendAppAssetsDeployedAuditLog ({ accessToken, cliCommandFlags, project, opItems, env }) {
-  const logEvent = getAuditLogEvent(cliCommandFlags, project, OPERATIONS.AB_APP_ASSETS_DEPLOYED)
-  logEvent.data.opItems = opItems
-  return publishAuditLogs({ accessToken, logEvent, env })
-}
-
-/**
- * Send audit log event for app assets undeployment
- *
- * @param {AuditLogParams} params Parameters object
- * @returns {Promise<void>} Promise that resolves when the audit log is sent successfully
- */
-async function sendAppAssetsUndeployedAuditLog ({ accessToken, cliCommandFlags, project, env }) {
-  const logEvent = getAuditLogEvent(cliCommandFlags, project, OPERATIONS.AB_APP_ASSETS_UNDEPLOYED)
-  return publishAuditLogs({ accessToken, logEvent, env })
-}
-
-/**
  * Creates an audit log event object
  *
- * @param {object} cliCommandFlags cli flags
- * @param {object} project details
- * @param {string} operation one of: ab_app_deploy, ab_app_undeploy, ab_app_assets_deployed, ab_app_assets_undeployed
+ * @param {GetAuditLogEventParams} params Parameters object
  * @returns {object} logEvent object containing audit log details
  * @throws {Error} if project, project.org, or project.workspace is missing, or if operation is invalid
  */
-function getAuditLogEvent (cliCommandFlags, project, operation) {
-  if (!project) {
-    throw new Error('Project is required')
-  }
-  if (!project.org) {
-    throw new Error('Project org is required')
-  }
-  if (!project.workspace) {
-    throw new Error('Project workspace is required')
+function getAuditLogEvent ({ cliCommandFlags, operation, appInfo }) {
+  const { project, runtimeNamespace } = appInfo
+
+  if (!project && !runtimeNamespace) {
+    throw new Error('Either project or runtimeNamespace is required')
   }
 
-  const workspaceName = project.workspace.name
-  // TODO: get app name, version, and object name
-  let appName, appVersion, objectName
+  let orgId, projectId, workspaceId, workspaceName
+
+  if (project) { // logged in use case
+    if (!project.org) {
+      throw new Error('Project org is required')
+    }
+    if (!project.workspace) {
+      throw new Error('Project workspace is required')
+    }
+    orgId = project.org.id
+    projectId = project.id
+    workspaceId = project.workspace.id
+    workspaceName = project.workspace.name
+  } else { // non-logged in use case
+    const parsedNamespace = parseNamespaceString(runtimeNamespace)
+    workspaceName = parsedNamespace.workspace ?? 'Production'
+  }
 
   let logStrMsg
   switch (operation) {
@@ -151,19 +128,16 @@ function getAuditLogEvent (cliCommandFlags, project, operation) {
       throw new Error(`Invalid operation: ${operation}`)
   }
 
-  const orgId = project.org.id
-  const projectId = project.id
-  const workspaceId = project.workspace.id
-
   const logEvent = {
+    runtimeNamespace,
     orgId,
     projectId,
     workspaceId,
     workspaceName,
     operation,
-    appName,
-    appVersion,
-    objectName,
+    appName: appInfo.name,
+    appVersion: appInfo.version,
+    objectName: appInfo.name,
     timestamp: new Date().valueOf(),
     data: {
       cliCommandFlags,
@@ -171,6 +145,51 @@ function getAuditLogEvent (cliCommandFlags, project, operation) {
     }
   }
   return logEvent
+}
+
+/**
+ * Send audit log event for app deployment
+ *
+ * @param {AuditLogParams} params Parameters object
+ * @returns {Promise<void>} Promise that resolves when the audit log is sent successfully
+ */
+async function sendAppDeployAuditLog ({ accessToken, cliCommandFlags, appInfo, env }) {
+  const logEvent = getAuditLogEvent({ cliCommandFlags, appInfo, operation: OPERATIONS.AB_APP_DEPLOY })
+  return publishAuditLogs({ accessToken, logEvent, env })
+}
+
+/**
+ * Send audit log event for app undeployment
+ *
+ * @param {AuditLogParams} params Parameters object
+ * @returns {Promise<void>} Promise that resolves when the audit log is sent successfully
+ */
+async function sendAppUndeployAuditLog ({ accessToken, cliCommandFlags, appInfo, env }) {
+  const logEvent = getAuditLogEvent({ cliCommandFlags, appInfo, operation: OPERATIONS.AB_APP_UNDEPLOY })
+  return publishAuditLogs({ accessToken, logEvent, env })
+}
+
+/**
+ * Send audit log event for app assets deployment
+ *
+ * @param {AuditLogParams} params Parameters object
+ * @returns {Promise<void>} Promise that resolves when the audit log is sent successfully
+ */
+async function sendAppAssetsDeployedAuditLog ({ accessToken, cliCommandFlags, appInfo, opItems, env }) {
+  const logEvent = getAuditLogEvent({ cliCommandFlags, appInfo, operation: OPERATIONS.AB_APP_ASSETS_DEPLOYED })
+  logEvent.data.opItems = opItems
+  return publishAuditLogs({ accessToken, logEvent, env })
+}
+
+/**
+ * Send audit log event for app assets undeployment
+ *
+ * @param {AuditLogParams} params Parameters object
+ * @returns {Promise<void>} Promise that resolves when the audit log is sent successfully
+ */
+async function sendAppAssetsUndeployedAuditLog ({ accessToken, cliCommandFlags, appInfo, env }) {
+  const logEvent = getAuditLogEvent({ cliCommandFlags, appInfo, operation: OPERATIONS.AB_APP_ASSETS_UNDEPLOYED })
+  return publishAuditLogs({ accessToken, logEvent, env })
 }
 
 module.exports = {

@@ -534,7 +534,32 @@ function getFilesCountWithExtension (directory) {
   return log
 }
 
+/**
+ * Parses the namespace string into the appropriate components:
+ *     (development, orgId, appName, workspace)
+ *
+ * @param {string} namespace the namespace
+ * @returns {object | null} the path components, or null if no match
+ */
+function parseNamespaceString (namespace) {
+  const namespaceLC = namespace.toLowerCase()
+  const regex = /^(development-)?(\d+)-([a-zA-Z0-9]+)(-([a-zA-Z0-9]+))?$/
+
+  const match = namespaceLC.match(regex)
+  if (match) {
+    return {
+      development: !!match[1],
+      orgId: match[2],
+      appName: match[3],
+      workspace: match[5] // if empty, it's basically prod
+    }
+  }
+
+  return null
+}
+
 module.exports = {
+  parseNamespaceString,
   getObjectValue,
   getObjectProp,
   createWebExportFilter,
