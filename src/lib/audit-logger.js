@@ -29,34 +29,42 @@ const AUDIT_SERVICE_ENDPOINTS = {
 }
 
 /**
+ * @typedef {object} AppInfo
+ * @property {string} name - Application name
+ * @property {string} version - Application version
+ * @property {object} project - Project details containing org and workspace information
+ * @property {string} [runtimeNamespace] - Optional runtime namespace (for non-logged in use case)
+ */
+
+/**
  * @typedef {object} AuditLogParams
- * @property {string} accessToken - valid access token
- * @property {object} cliCommandFlags - cli flags
- * @property {object} project - project details
- * @property {Array} [opItems] - list of deployed files (only for assets deployment)
- * @property {string} [env='prod'] - valid env stage|prod
+ * @property {string} accessToken - Valid access token for authentication
+ * @property {object} cliCommandFlags - CLI command flags and options
+ * @property {AppInfo} appInfo - Application information including project details, name, and version
+ * @property {Array} [opItems] - List of deployed files (only for assets deployment)
+ * @property {string} [env='prod'] - Environment to use: 'stage' or 'prod'
  */
 
 /**
  * @typedef {object} PublishAuditLogParams
- * @property {string} accessToken - valid access token
- * @property {object} logEvent - logEvent details
- * @property {string} [env='prod'] - valid env stage|prod
+ * @property {string} accessToken - Valid access token for authentication
+ * @property {object} logEvent - Audit log event details to be published
+ * @property {string} [env='prod'] - Environment to use: 'stage' or 'prod'
  */
 
 /**
  * @typedef {object} GetAuditLogEventParams
- * @property {object} cliCommandFlags - CLI command flags
- * @property {object} project - Project details containing org and workspace information
- * @property {string} operation - One of: ab_app_deploy, ab_app_undeploy, ab_app_assets_deployed, ab_app_assets_undeployed
- * @property {string} [runtimeNamespace] - Optional runtime namespace (for non-logged in use case)
+ * @property {object} cliCommandFlags - CLI command flags and options
+ * @property {AppInfo} appInfo - Application information containing project details, name, version, and optional runtime namespace
+ * @property {string} operation - Operation type: 'ab_app_deploy', 'ab_app_undeploy', 'ab_app_assets_deployed', or 'ab_app_assets_undeployed'
  */
 
 /**
  * Publish audit log events to audit service
  *
- * @param {PublishAuditLogParams} params Parameters object
+ * @param {PublishAuditLogParams} params - Parameters object containing access token, log event, and environment
  * @returns {Promise<void>} Promise that resolves when the audit log is sent successfully
+ * @throws {Error} If the audit log request fails
  */
 async function publishAuditLogs ({ accessToken, logEvent, env = 'prod' }) {
   const url = AUDIT_SERVICE_ENDPOINTS[env] ?? AUDIT_SERVICE_ENDPOINTS.prod
@@ -81,9 +89,9 @@ async function publishAuditLogs ({ accessToken, logEvent, env = 'prod' }) {
 /**
  * Creates an audit log event object
  *
- * @param {GetAuditLogEventParams} params Parameters object
- * @returns {object} logEvent object containing audit log details
- * @throws {Error} if project, project.org, or project.workspace is missing, or if operation is invalid
+ * @param {GetAuditLogEventParams} params - Parameters object containing CLI flags, operation type, and app info
+ * @returns {object} Log event object containing audit log details
+ * @throws {Error} If project or runtimeNamespace is missing, or if operation is invalid
  */
 function getAuditLogEvent ({ cliCommandFlags, operation, appInfo }) {
   const { project, runtimeNamespace } = appInfo
@@ -150,8 +158,9 @@ function getAuditLogEvent ({ cliCommandFlags, operation, appInfo }) {
 /**
  * Send audit log event for app deployment
  *
- * @param {AuditLogParams} params Parameters object
+ * @param {AuditLogParams} params - Parameters object containing access token, CLI flags, app info, and environment
  * @returns {Promise<void>} Promise that resolves when the audit log is sent successfully
+ * @throws {Error} If the audit log request fails
  */
 async function sendAppDeployAuditLog ({ accessToken, cliCommandFlags, appInfo, env }) {
   const logEvent = getAuditLogEvent({ cliCommandFlags, appInfo, operation: OPERATIONS.AB_APP_DEPLOY })
@@ -161,8 +170,9 @@ async function sendAppDeployAuditLog ({ accessToken, cliCommandFlags, appInfo, e
 /**
  * Send audit log event for app undeployment
  *
- * @param {AuditLogParams} params Parameters object
+ * @param {AuditLogParams} params - Parameters object containing access token, CLI flags, app info, and environment
  * @returns {Promise<void>} Promise that resolves when the audit log is sent successfully
+ * @throws {Error} If the audit log request fails
  */
 async function sendAppUndeployAuditLog ({ accessToken, cliCommandFlags, appInfo, env }) {
   const logEvent = getAuditLogEvent({ cliCommandFlags, appInfo, operation: OPERATIONS.AB_APP_UNDEPLOY })
@@ -172,8 +182,9 @@ async function sendAppUndeployAuditLog ({ accessToken, cliCommandFlags, appInfo,
 /**
  * Send audit log event for app assets deployment
  *
- * @param {AuditLogParams} params Parameters object
+ * @param {AuditLogParams} params - Parameters object containing access token, CLI flags, app info, operation items, and environment
  * @returns {Promise<void>} Promise that resolves when the audit log is sent successfully
+ * @throws {Error} If the audit log request fails
  */
 async function sendAppAssetsDeployedAuditLog ({ accessToken, cliCommandFlags, appInfo, opItems, env }) {
   const logEvent = getAuditLogEvent({ cliCommandFlags, appInfo, operation: OPERATIONS.AB_APP_ASSETS_DEPLOYED })
@@ -184,8 +195,9 @@ async function sendAppAssetsDeployedAuditLog ({ accessToken, cliCommandFlags, ap
 /**
  * Send audit log event for app assets undeployment
  *
- * @param {AuditLogParams} params Parameters object
+ * @param {AuditLogParams} params - Parameters object containing access token, CLI flags, app info, and environment
  * @returns {Promise<void>} Promise that resolves when the audit log is sent successfully
+ * @throws {Error} If the audit log request fails
  */
 async function sendAppAssetsUndeployedAuditLog ({ accessToken, cliCommandFlags, appInfo, env }) {
   const logEvent = getAuditLogEvent({ cliCommandFlags, appInfo, operation: OPERATIONS.AB_APP_ASSETS_UNDEPLOYED })
