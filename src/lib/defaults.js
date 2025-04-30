@@ -36,5 +36,8 @@ module.exports = {
   LEGACY_RUNTIME_MANIFEST: 'manifest.yml',
   INCLUDE_DIRECTIVE: '$include',
   APPLICATION_CONFIG_KEY: 'application',
-  EXTENSIONS_CONFIG_KEY: 'extensions'
+  EXTENSIONS_CONFIG_KEY: 'extensions',
+  // Adding tracking file constants
+  LAST_BUILT_ACTIONS_FILENAME: 'last-built-actions.json',
+  LAST_DEPLOYED_ACTIONS_FILENAME: 'last-deployed-actions.json'
 }

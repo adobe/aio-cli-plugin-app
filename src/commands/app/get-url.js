@@ -18,7 +18,6 @@ const BaseCommand = require('../../BaseCommand')
 const { wrapError } = require('../../lib/app-helper')
 const { getActionUrls } = require('@adobe/aio-lib-runtime').utils
 const yaml = require('js-yaml')
-const { loadLocalDevConfig } = require('../../lib/run-local-runtime')
 
 class GetUrlCommand extends BaseCommand {
   async run () {
@@ -46,16 +45,10 @@ class GetUrlCommand extends BaseCommand {
       }
 
       const actionUrls = {}
-      if (flags.local) {
-        Object.values(fullConfig.all).forEach(config => {
-          const localDevConfig = loadLocalDevConfig(config)
-          Object.assign(actionUrls, getActionUrls(localDevConfig, false, true))
-        })
-      } else {
-        Object.values(fullConfig.all).forEach(config => {
-          Object.assign(actionUrls, getActionUrls(config, true))
-        })
-      }
+
+      Object.values(fullConfig.all).forEach(config => {
+        Object.assign(actionUrls, getActionUrls(config, true))
+      })
       urls.runtime = actionUrls
       const cdnUrls = {}
       if (options.cdn) {
@@ -110,9 +103,6 @@ GetUrlCommand.flags = {
   yml: Flags.boolean({
     description: 'Output yml',
     char: 'y'
-  }),
-  local: Flags.boolean({
-    description: 'Display locally based action URLs'
   })
 }
 

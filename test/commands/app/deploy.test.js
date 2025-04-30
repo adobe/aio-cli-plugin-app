@@ -24,6 +24,9 @@ const helpers = require('../../../src/lib/app-helper.js')
 jest.mock('../../../src/lib/audit-logger.js')
 const auditLogger = require('../../../src/lib/audit-logger.js')
 
+jest.mock('../../../src/lib/auth-helper')
+const authHelper = require('../../../src/lib/auth-helper')
+
 const mockWebLib = require('@adobe/aio-lib-web')
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 
@@ -191,6 +194,7 @@ beforeEach(() => {
       '1 HTML page(s)'
     ]
   })
+  authHelper.setRuntimeApiHostAndAuthHandler.mockImplementation((aioConfig) => aioConfig)
   helpers.getCliInfo.mockImplementation(() => {
     return {
       accessToken: 'mocktoken',
@@ -870,8 +874,7 @@ describe('run', () => {
     expect(command.config.runHook).toHaveBeenCalledWith('deploy-actions',
       expect.objectContaining({
         appConfig: expect.any(Object),
-        filterEntities: [],
-        isLocalDev: false
+        filterEntities: []
       }))
     expect(command.config.runHook).toHaveBeenCalledTimes(2)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
@@ -1291,6 +1294,45 @@ describe('run', () => {
     expect(runHook).toHaveBeenCalledWith('pre-deploy-event-reg', expect.any(Object))
     expect(runHook).toHaveBeenCalledWith('post-deploy-event-reg', expect.any(Object))
     expect(command.error).toHaveBeenCalledTimes(1)
+  })
+
+  test('Should invoke setRuntimeApiHostAndAuthHandler if IS_DEPLOY_SERVICE_ENABLED = true', async () => {
+    process.env.IS_DEPLOY_SERVICE_ENABLED = true
+
+    const mockToken = 'mocktoken'
+    const mockEnv = 'stage'
+    const mockOrg = 'mockorg'
+    const mockProject = 'mockproject'
+    const mockWorkspaceId = 'mockworkspaceid'
+    const mockWorkspaceName = 'mockworkspacename'
+    helpers.getCliInfo.mockResolvedValueOnce({
+      accessToken: mockToken,
+      env: mockEnv
+    })
+    command.getFullConfig = jest.fn().mockReturnValue({
+      aio: {
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      }
+    })
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(auditLogger.sendAuditLogs).toHaveBeenCalledTimes(1)
+    expect(authHelper.setRuntimeApiHostAndAuthHandler).toHaveBeenCalledTimes(1)
+    expect(auditLogger.sendAuditLogs).toHaveBeenCalledWith(mockToken, expect.objectContaining({ orgId: mockOrg, projectId: mockProject, workspaceId: mockWorkspaceId, workspaceName: mockWorkspaceName }), mockEnv)
+    process.env.IS_DEPLOY_SERVICE_ENABLED = false
   })
 
   test('Send audit logs for successful app deploy', async () => {

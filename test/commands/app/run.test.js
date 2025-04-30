@@ -156,10 +156,6 @@ describe('run command definition', () => {
   })
 
   test('flags', async () => {
-    expect(typeof TheCommand.flags.local).toBe('object')
-    expect(typeof TheCommand.flags.local.description).toBe('string')
-    expect(TheCommand.flags.local.exclusive).toEqual(['no-actions'])
-
     expect(typeof TheCommand.flags.serve).toBe('object')
     expect(typeof TheCommand.flags.serve.description).toBe('string')
     expect(TheCommand.flags.serve.default).toEqual(true)
@@ -240,7 +236,7 @@ describe('run', () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     mockRunDev.mockImplementation((config, dataDir, options, logFunc) => {
       logFunc('boo')
-      expect(options.isLocal).toBe(undefined)
+      // expect(options.isLocal).toBe(undefined)
     })
     command.argv = ['--verbose']
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
@@ -254,7 +250,6 @@ describe('run', () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     mockRunDev.mockImplementation((config, dataDir, options, logFunc) => {
       logFunc('boo')
-      expect(options.isLocal).toBe(undefined)
     })
     command.argv = []
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
@@ -286,8 +281,7 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledWith(appConfig.application, expect.any(String), expect.objectContaining({
       parcel: expect.objectContaining({
         logLevel: 'warn'
-      }),
-      isLocal: undefined
+      })
     }), expect.any(Function), expect.any(Function))
   })
 
@@ -315,57 +309,7 @@ describe('run', () => {
     expect(mockRunDev).toHaveBeenCalledWith(appConfig.application, expect.any(String), expect.objectContaining({
       parcel: expect.objectContaining({
         logLevel: 'verbose'
-      }),
-      isLocal: undefined
-    }), expect.any(Function), expect.any(Function))
-  })
-
-  test('app:run with --local NOT Apple Silicon', async () => {
-    mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    mockRunDev.mockImplementation((config, dataDir, options, logFunc) => {
-      expect(options.isLocal).toBe(true)
-    })
-
-    command.argv = ['--local']
-    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
-
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRunDev).toHaveBeenCalledTimes(1)
-  })
-
-  test('app:run with --local with Apple Silicon', async () => {
-    mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    mockRunDev.mockImplementation((config, dataDir, options, logFunc) => {
-      expect(options.isLocal).toBe(true)
-    })
-
-    os.cpus.mockImplementation(() => [{ model: 'Apple processor' }])
-    command.argv = ['--local']
-    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
-
-    await command.run()
-    // this should be more like the following ...
-    // await expect(command.run().rejects.toThrow('The --local flag is not supported on Apple Silicon Macs.'))
-    expect(command.error).toHaveBeenCalledWith('The --local flag is not supported on Apple Silicon Macs.')
-  })
-
-  test('app:run with --local --verbose', async () => {
-    mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    command.argv = ['--local', '--verbose']
-    const appConfig = createAppConfig(command.appConfig)
-    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
-    // apple silicon would block this test
-    os.cpus.mockImplementation(() => [{ model: 'Intel Pentium MMX' }])
-
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRunDev).toHaveBeenCalledTimes(1)
-    expect(mockRunDev).toHaveBeenCalledWith(appConfig.application, expect.any(String), expect.objectContaining({
-      parcel: expect.objectContaining({
-        logLevel: 'verbose'
-      }),
-      isLocal: true
+      })
     }), expect.any(Function), expect.any(Function))
   })
 
