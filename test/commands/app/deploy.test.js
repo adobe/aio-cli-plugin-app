@@ -1631,7 +1631,59 @@ describe('run', () => {
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
   })
 
-  test('Should deploy successfully even if Audit log service is unavailable (--verbose)', async () => {
+  test('Should deploy successfully even if Audit log service is unavailable', async () => {
+    const mockToken = 'mocktoken'
+    const mockEnv = 'stage'
+    const mockOrg = 'mockorg'
+    const mockProject = 'mockproject'
+    const mockWorkspaceId = 'mockworkspaceid'
+    const mockWorkspaceName = 'mockworkspacename'
+    helpers.getCliInfo.mockResolvedValueOnce({
+      accessToken: mockToken,
+      env: mockEnv
+    })
+
+    command.getFullConfig = jest.fn().mockReturnValue({
+      aio: {
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
+      }
+    })
+
+    auditLogger.sendAppAssetsDeployedAuditLog.mockRejectedValue({
+      message: 'Internal Server Error',
+      status: 500
+    })
+
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+
+    await command.run()
+    expect(command.log).toHaveBeenCalledWith(
+      expect.stringContaining('skipping publish phase...')
+    )
+
+    expect(command.log).toHaveBeenCalledWith(
+      expect.stringContaining('Successful deployment 🏄')
+    )
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+  })
+
+  test('Should deploy successfully even if Audit log service is unavailable (--verbose', async () => {
     const mockToken = 'mocktoken'
     const mockEnv = 'stage'
     const mockOrg = 'mockorg'
