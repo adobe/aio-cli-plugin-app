@@ -1,5 +1,4 @@
-aio-cli-plugin-app
-==================
+# aio-cli-plugin-app
 
 Create, Build and Deploy Adobe I/O Apps
 
@@ -10,13 +9,14 @@ Create, Build and Deploy Adobe I/O Apps
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Codecov Coverage](https://img.shields.io/codecov/c/github/adobe/aio-cli-plugin-app/master.svg?style=flat-square)](https://codecov.io/gh/adobe/aio-cli-plugin-app/)
 
-
 <!-- toc -->
-* [Usage](#usage)
-* [Commands](#commands)
+
+- [Usage](#usage)
+- [Commands](#commands)
 <!-- tocstop -->
 
 # Usage
+
 ```sh-session
 $ aio plugins:install -g @adobe/aio-cli-plugin-app
 $ # OR
@@ -25,36 +25,38 @@ $ aio app --help
 ```
 
 # Commands
+
 <!-- commands -->
-* [`aio app`](#aio-app)
-* [`aio app add`](#aio-app-add)
-* [`aio app add action`](#aio-app-add-action)
-* [`aio app add ci`](#aio-app-add-ci)
-* [`aio app add event`](#aio-app-add-event)
-* [`aio app add extension`](#aio-app-add-extension)
-* [`aio app add service`](#aio-app-add-service)
-* [`aio app add web-assets`](#aio-app-add-web-assets)
-* [`aio app build`](#aio-app-build)
-* [`aio app create [PATH]`](#aio-app-create-path)
-* [`aio app delete`](#aio-app-delete)
-* [`aio app delete action [ACTION-NAME]`](#aio-app-delete-action-action-name)
-* [`aio app delete ci`](#aio-app-delete-ci)
-* [`aio app delete extension`](#aio-app-delete-extension)
-* [`aio app delete service`](#aio-app-delete-service)
-* [`aio app delete web-assets`](#aio-app-delete-web-assets)
-* [`aio app deploy`](#aio-app-deploy)
-* [`aio app get-url [ACTION]`](#aio-app-get-url-action)
-* [`aio app info`](#aio-app-info)
-* [`aio app init [PATH]`](#aio-app-init-path)
-* [`aio app install PATH`](#aio-app-install-path)
-* [`aio app list`](#aio-app-list)
-* [`aio app list extension`](#aio-app-list-extension)
-* [`aio app logs`](#aio-app-logs)
-* [`aio app pack [PATH]`](#aio-app-pack-path)
-* [`aio app run`](#aio-app-run)
-* [`aio app test`](#aio-app-test)
-* [`aio app undeploy`](#aio-app-undeploy)
-* [`aio app use [CONFIG_FILE_PATH]`](#aio-app-use-config_file_path)
+
+- [`aio app`](#aio-app)
+- [`aio app add`](#aio-app-add)
+- [`aio app add action`](#aio-app-add-action)
+- [`aio app add ci`](#aio-app-add-ci)
+- [`aio app add event`](#aio-app-add-event)
+- [`aio app add extension`](#aio-app-add-extension)
+- [`aio app add service`](#aio-app-add-service)
+- [`aio app add web-assets`](#aio-app-add-web-assets)
+- [`aio app build`](#aio-app-build)
+- [`aio app create [PATH]`](#aio-app-create-path)
+- [`aio app delete`](#aio-app-delete)
+- [`aio app delete action [ACTION-NAME]`](#aio-app-delete-action-action-name)
+- [`aio app delete ci`](#aio-app-delete-ci)
+- [`aio app delete extension`](#aio-app-delete-extension)
+- [`aio app delete service`](#aio-app-delete-service)
+- [`aio app delete web-assets`](#aio-app-delete-web-assets)
+- [`aio app deploy`](#aio-app-deploy)
+- [`aio app get-url [ACTION]`](#aio-app-get-url-action)
+- [`aio app info`](#aio-app-info)
+- [`aio app init [PATH]`](#aio-app-init-path)
+- [`aio app install PATH`](#aio-app-install-path)
+- [`aio app list`](#aio-app-list)
+- [`aio app list extension`](#aio-app-list-extension)
+- [`aio app logs`](#aio-app-logs)
+- [`aio app pack [PATH]`](#aio-app-pack-path)
+- [`aio app run`](#aio-app-run)
+- [`aio app test`](#aio-app-test)
+- [`aio app undeploy`](#aio-app-undeploy)
+- [`aio app use [CONFIG_FILE_PATH]`](#aio-app-use-config_file_path)
 
 ## `aio app`
 
@@ -780,4 +782,5 @@ DESCRIPTION
 ```
 
 _See code: [src/commands/app/use.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/use.js)_
+
 <!-- commandsstop -->
