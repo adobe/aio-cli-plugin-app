@@ -36,7 +36,8 @@ describe('audit-logger', () => {
   const mockAppInfo = {
     name: 'test-app',
     version: '1.0.0',
-    project: mockProject
+    project: mockProject,
+    runtimeNamespace: 'fake-namespace'
   }
   const mockCliFlags = { flag1: 'value1' }
 
@@ -84,7 +85,7 @@ describe('audit-logger', () => {
   })
 
   describe('getAuditLogEvent', () => {
-    it('should create a valid audit log event for app deploy (logged in)', () => {
+    it('should create a valid audit log event for app deploy', () => {
       const event = getAuditLogEvent({
         cliCommandFlags: mockCliFlags,
         operation: OPERATIONS.AB_APP_DEPLOY,
@@ -101,6 +102,7 @@ describe('audit-logger', () => {
         appVersion: '1.0.0',
         objectName: 'test-app',
         timestamp: expect.any(Number),
+        runtimeNamespace: 'fake-namespace',
         data: {
           cliCommandFlags: mockCliFlags,
           opDetailsStr: expect.stringContaining('Starting deployment for the App Builder application')
@@ -125,6 +127,7 @@ describe('audit-logger', () => {
         appVersion: '1.0.0',
         objectName: 'test-app',
         timestamp: expect.any(Number),
+        runtimeNamespace: 'fake-namespace',
         data: {
           cliCommandFlags: mockCliFlags,
           opDetailsStr: expect.stringContaining('Starting undeployment for the App Builder application')
@@ -166,6 +169,19 @@ describe('audit-logger', () => {
         operation: OPERATIONS.AB_APP_DEPLOY,
         appInfo: invalidAppInfo
       })).toThrow('Project workspace is required')
+    })
+
+    it('should throw error if runtime namespace is missing', () => {
+      const invalidAppInfo = {
+        ...mockAppInfo,
+        runtimeNamespace: null,
+        project: { ...mockProject }
+      }
+      expect(() => getAuditLogEvent({
+        cliCommandFlags: mockCliFlags,
+        operation: OPERATIONS.AB_APP_DEPLOY,
+        appInfo: invalidAppInfo
+      })).toThrow('Runtime namespace is required')
     })
 
     it('should throw error for invalid operation', () => {

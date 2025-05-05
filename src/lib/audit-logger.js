@@ -27,6 +27,7 @@ const AUDIT_SERVICE_ENDPOINTS = {
  * @property {string} name - Application name
  * @property {string} version - Application version
  * @property {object} project - Project details containing org and workspace information
+ * @property {object} namespace - the runtime namespace
  */
 
 /**
@@ -114,7 +115,7 @@ async function publishAuditLogs ({ accessToken, logEvent, env = 'prod' }) {
  * @throws {Error} If project is missing, or if operation is invalid
  */
 function getAuditLogEvent ({ cliCommandFlags, operation, appInfo }) {
-  const { project } = appInfo
+  const { project, runtimeNamespace } = appInfo
 
   if (!project) {
     throw new Error('Project is required')
@@ -125,6 +126,10 @@ function getAuditLogEvent ({ cliCommandFlags, operation, appInfo }) {
   }
   if (!project.workspace) {
     throw new Error('Project workspace is required')
+  }
+
+  if (!runtimeNamespace) {
+    throw new Error('Runtime namespace is required')
   }
 
   const orgId = project.org.id
@@ -160,6 +165,7 @@ function getAuditLogEvent ({ cliCommandFlags, operation, appInfo }) {
     appVersion: appInfo.version,
     objectName: appInfo.name,
     timestamp: new Date().valueOf(),
+    runtimeNamespace,
     data: {
       cliCommandFlags,
       opDetailsStr: logStrMsg
