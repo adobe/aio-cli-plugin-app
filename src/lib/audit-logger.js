@@ -58,10 +58,10 @@ const AUDIT_SERVICE_ENDPOINTS = {
  * This function checks for the following environment variables:
  * - AUDIT_SERVICE_ENDPOINT_STAGE: Override for the stage environment endpoint
  * - AUDIT_SERVICE_ENDPOINT_PROD: Override for the production environment endpoint
- * 
+ *
  * If any of these variables are set, a warning will be logged to the console indicating
  * which variables are being overridden and their values.
- * 
+ *
  * @function checkOverrides
  * @returns {void}
  */
