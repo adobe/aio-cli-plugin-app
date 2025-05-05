@@ -60,18 +60,20 @@ class Undeploy extends BaseCommand {
         runtimeNamespace: aioConfig?.runtime?.namespace
       }
 
-      try {
-        // send audit log at start (don't wait for deployment to finish)
-        await sendAppUndeployAuditLog({
-          accessToken: cliDetails?.accessToken,
-          cliCommandFlags: flags,
-          appInfo,
-          env: cliDetails.env
-        })
-      } catch (error) {
-        if (flags.verbose) {
-          this.warn('Error: Audit Log Service Error: Failed to send audit log event for deployment.')
-          this.warn(error.message)
+      if (cliDetails?.accessToken) {
+        try {
+          // send audit log at start (don't wait for deployment to finish)
+          await sendAppUndeployAuditLog({
+            accessToken: cliDetails?.accessToken,
+            cliCommandFlags: flags,
+            appInfo,
+            env: cliDetails.env
+          })
+        } catch (error) {
+          if (flags.verbose) {
+            this.warn('Error: Audit Log Service Error: Failed to send audit log event for deployment.')
+            this.warn(error.message)
+          }
         }
       }
 
@@ -81,16 +83,18 @@ class Undeploy extends BaseCommand {
         const v = process.env.IS_DEPLOY_SERVICE_ENABLED === 'true' ? setRuntimeApiHostAndAuthHandler(values[i]) : values[i]
 
         await this.undeployOneExt(k, v, flags, spinner)
-        // send logs for case of web-assets undeployment
-        try {
-          await sendAppAssetsUndeployedAuditLog({
-            accessToken: cliDetails?.accessToken,
-            cliCommandFlags: flags,
-            appInfo,
-            env: cliDetails.env
-          })
-        } catch (error) {
-          this.warn('Warning: Audit Log Service Error: Failed to send audit log event for un-deployment.')
+        if (cliDetails?.accessToken) {
+          // send logs for case of web-assets undeployment
+          try {
+            await sendAppAssetsUndeployedAuditLog({
+              accessToken: cliDetails?.accessToken,
+              cliCommandFlags: flags,
+              appInfo,
+              env: cliDetails.env
+            })
+          } catch (error) {
+            this.warn('Warning: Audit Log Service Error: Failed to send audit log event for un-deployment.')
+          }
         }
       }
 

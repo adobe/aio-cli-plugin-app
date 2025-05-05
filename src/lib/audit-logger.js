@@ -9,7 +9,6 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 const fetch = require('node-fetch')
-const { parseNamespaceString } = require('./app-helper')
 
 const OPERATIONS = {
   AB_APP_DEPLOY: 'ab_app_deploy',
@@ -18,14 +17,9 @@ const OPERATIONS = {
   AB_APP_ASSETS_UNDEPLOYED: 'ab_app_assets_undeployed'
 }
 
-const AUDIT_SERVICE_ENDPOINTS2 = {
-  stage: 'https://adp-auditlog-service-stage.adobeioruntime.net/api/v1/web/audit-log-api/event-post',
-  prod: 'https://adp-auditlog-service-prod.adobeioruntime.net/api/v1/web/audit-log-api/event-post'
-}
-
 const AUDIT_SERVICE_ENDPOINTS = {
-  stage: 'http://127.0.0.1:3000/audit-log-api/event-post',
-  prod: 'http://127.0.0.1:3000/audit-log-api/event-post'
+  stage: process.env.AUDIT_SERVICE_ENDPOINT_STAGE ?? 'https://adp-auditlog-service-stage.adobeioruntime.net/api/v1/web/audit-log-api/event-post',
+  prod: process.env.AUDIT_SERVICE_ENDPOINT_PROD ?? 'https://adp-auditlog-service-prod.adobeioruntime.net/api/v1/web/audit-log-api/event-post'
 }
 
 /**
@@ -33,7 +27,6 @@ const AUDIT_SERVICE_ENDPOINTS = {
  * @property {string} name - Application name
  * @property {string} version - Application version
  * @property {object} project - Project details containing org and workspace information
- * @property {string} [runtimeNamespace] - Optional runtime namespace (for non-logged in use case)
  */
 
 /**
@@ -60,6 +53,31 @@ const AUDIT_SERVICE_ENDPOINTS = {
  */
 
 /**
+ * Checks for environment variable overrides of audit service endpoints and logs warnings if found.
+ *
+ * This function checks for the following environment variables:
+ * - AUDIT_SERVICE_ENDPOINT_STAGE: Override for the stage environment endpoint
+ * - AUDIT_SERVICE_ENDPOINT_PROD: Override for the production environment endpoint
+ * 
+ * If any of these variables are set, a warning will be logged to the console indicating
+ * which variables are being overridden and their values.
+ * 
+ * @function checkOverrides
+ * @returns {void}
+ */
+function checkOverrides () {
+  const toCheck = ['AUDIT_SERVICE_ENDPOINT_STAGE', 'AUDIT_SERVICE_ENDPOINT_PROD']
+  const overrides = toCheck.filter((toCheck) => process.env[toCheck])
+
+  if (overrides.length > 0) {
+    console.warn('Audit Service overrides detected:')
+    overrides.forEach((override) => {
+      console.warn(`  ${override}: ${process.env[override]}`)
+    })
+  }
+}
+
+/**
  * Publish audit log events to audit service
  *
  * @param {PublishAuditLogParams} params - Parameters object containing access token, log event, and environment
@@ -67,6 +85,8 @@ const AUDIT_SERVICE_ENDPOINTS = {
  * @throws {Error} If the audit log request fails
  */
 async function publishAuditLogs ({ accessToken, logEvent, env = 'prod' }) {
+  checkOverrides()
+
   const url = AUDIT_SERVICE_ENDPOINTS[env] ?? AUDIT_SERVICE_ENDPOINTS.prod
   const payload = {
     event: logEvent
@@ -74,7 +94,7 @@ async function publishAuditLogs ({ accessToken, logEvent, env = 'prod' }) {
   const options = {
     method: 'POST',
     headers: {
-      Authorization: accessToken ? `Bearer ${accessToken}` : '',
+      Authorization: `Bearer ${accessToken}`,
       'Content-type': 'application/json'
     },
     body: JSON.stringify(payload)
@@ -91,32 +111,26 @@ async function publishAuditLogs ({ accessToken, logEvent, env = 'prod' }) {
  *
  * @param {GetAuditLogEventParams} params - Parameters object containing CLI flags, operation type, and app info
  * @returns {object} Log event object containing audit log details
- * @throws {Error} If project or runtimeNamespace is missing, or if operation is invalid
+ * @throws {Error} If project is missing, or if operation is invalid
  */
 function getAuditLogEvent ({ cliCommandFlags, operation, appInfo }) {
-  const { project, runtimeNamespace } = appInfo
+  const { project } = appInfo
 
-  if (!project && !runtimeNamespace) {
-    throw new Error('Either project or runtimeNamespace is required')
+  if (!project) {
+    throw new Error('Project is required')
   }
 
-  let orgId, projectId, workspaceId, workspaceName
-
-  if (project) { // logged in use case
-    if (!project.org) {
-      throw new Error('Project org is required')
-    }
-    if (!project.workspace) {
-      throw new Error('Project workspace is required')
-    }
-    orgId = project.org.id
-    projectId = project.id
-    workspaceId = project.workspace.id
-    workspaceName = project.workspace.name
-  } else { // non-logged in use case
-    const parsedNamespace = parseNamespaceString(runtimeNamespace)
-    workspaceName = parsedNamespace?.workspace ?? 'Production'
+  if (!project.org) {
+    throw new Error('Project org is required')
   }
+  if (!project.workspace) {
+    throw new Error('Project workspace is required')
+  }
+
+  const orgId = project.org.id
+  const projectId = project.id
+  const workspaceId = project.workspace.id
+  const workspaceName = project.workspace.name
 
   let logStrMsg
   switch (operation) {
@@ -137,7 +151,6 @@ function getAuditLogEvent ({ cliCommandFlags, operation, appInfo }) {
   }
 
   const logEvent = {
-    runtimeNamespace,
     orgId,
     projectId,
     workspaceId,
@@ -211,5 +224,6 @@ module.exports = {
   sendAppDeployAuditLog,
   sendAppUndeployAuditLog,
   sendAppAssetsDeployedAuditLog,
-  sendAppAssetsUndeployedAuditLog
+  sendAppAssetsUndeployedAuditLog,
+  checkOverrides
 }

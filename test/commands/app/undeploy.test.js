@@ -13,7 +13,7 @@ governing permissions and limitations under the License.
 const TheCommand = require('../../../src/commands/app/undeploy')
 const BaseCommand = require('../../../src/BaseCommand')
 const dataMocks = require('../../data-mocks/config-loader')
-const { cloneDeep } = require('lodash')
+const cloneDeep = require('lodash.clonedeep')
 
 jest.mock('../../../src/lib/app-helper.js')
 const helpers = require('../../../src/lib/app-helper.js')
@@ -260,16 +260,16 @@ describe('run', () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
     command.warn = jest.fn()
     command.argv = ['-v']
-    
+
     // Mock audit logger to throw an error
     auditLogger.sendAppUndeployAuditLog.mockRejectedValueOnce(new Error('Audit log error'))
-    
+
     await command.run()
-    
+
     // Verify error was logged with verbose flag
     expect(command.warn).toHaveBeenCalledWith('Error: Audit Log Service Error: Failed to send audit log event for deployment.')
     expect(command.warn).toHaveBeenCalledWith('Audit log error')
-    
+
     // Verify deployment still continues
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
@@ -278,15 +278,15 @@ describe('run', () => {
   test('should handle audit log error without verbose flag', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
     command.warn = jest.fn()
-    
+
     // Mock audit logger to throw an error
     auditLogger.sendAppUndeployAuditLog.mockRejectedValueOnce(new Error('Audit log error'))
-    
+
     await command.run()
-    
+
     // Verify error was not logged without verbose flag
     expect(command.warn).not.toHaveBeenCalled()
-    
+
     // Verify deployment still continues
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)

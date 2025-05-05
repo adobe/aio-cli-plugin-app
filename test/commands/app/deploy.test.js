@@ -67,16 +67,19 @@ const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
   return appConfig
 }
 
-const mockExtRegExcShellPayload = () => {
+const mockExtRegExcShellPayload = ({ excShellView = true } = {}) => {
   const payload = {
-    endpoints: {
-      'dx/excshell/1': {
-        view: [
-          { metadata: {} }
-        ]
-      }
+    endpoints: {}
+  }
+
+  if (excShellView) {
+    payload.endpoints['dx/excshell/1'] = {
+      view: [
+        { metadata: {} }
+      ]
     }
   }
+
   helpers.buildExtensionPointPayloadWoMetadata.mockReturnValueOnce(payload)
   mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites.mockReturnValueOnce(payload)
   mockLibConsoleCLI.updateExtensionPoints.mockReturnValueOnce(payload)
@@ -601,7 +604,6 @@ describe('run', () => {
     [['--no-actions']],
     [['--no-log-forwarding-update', '--no-actions']]
   ])('no log forwarding update due to %s arg(s) specified', async (args) => {
-    const appConfig = createAppConfig(command.appConfig)
     command.argv = args
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -1109,7 +1111,7 @@ describe('run', () => {
         version: '1.0.0'
       }
     })
-    mockExtRegExcShellPayload()
+    mockExtRegExcShellPayload({ excShellView: false })
     await command.run()
 
     expect(mockLibConsoleCLI.getProject).toHaveBeenCalledTimes(1)
@@ -1416,85 +1418,46 @@ describe('run', () => {
     })
   })
 
-  // test('Do not send audit logs for successful app deploy, if case of no token', async () => {
-  //   const mockToken = null
-  //   const mockEnv = 'stage'
-  //   const mockOrg = 'mockorg'
-  //   const mockProject = 'mockproject'
-  //   const mockWorkspaceId = 'mockworkspaceid'
-  //   const mockWorkspaceName = 'mockworkspacename'
+  test('Do not send audit logs for successful app deploy, if case of no token', async () => {
+    const mockToken = null
+    const mockEnv = 'stage'
+    const mockOrg = 'mockorg'
+    const mockProject = 'mockproject'
+    const mockWorkspaceId = 'mockworkspaceid'
+    const mockWorkspaceName = 'mockworkspacename'
 
-  //   helpers.getCliInfo.mockResolvedValueOnce({
-  //     accessToken: mockToken,
-  //     env: mockEnv
-  //   })
+    helpers.getCliInfo.mockResolvedValueOnce({
+      accessToken: mockToken,
+      env: mockEnv
+    })
 
-  //   const fullConfig = {
-  //     aio: {
-  //       project: {
-  //         id: mockProject,
-  //         org: {
-  //           id: mockOrg
-  //         },
-  //         workspace: {
-  //           id: mockWorkspaceId,
-  //           name: mockWorkspaceName
-  //         }
-  //       }
-  //     },
-  //     packagejson: {
-  //       name: 'test-app',
-  //       version: '1.0.0'
-  //     }
-  //   }
-  //   command.getFullConfig = jest.fn().mockReturnValue(fullConfig)
-  //   command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+    const fullConfig = {
+      aio: {
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
+      }
+    }
+    command.getFullConfig = jest.fn().mockReturnValue(fullConfig)
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
-  //   await command.run()
-  //   expect(command.error).toHaveBeenCalledTimes(0)
-  //   expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
-  //   expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-  //   expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledTimes(1)
-  //   expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledWith({
-  //     accessToken: mockToken,
-  //     appInfo: {
-  //       name: 'test-app',
-  //       version: '1.0.0',
-  //       runtimeNamespace: undefined,
-  //       project: {
-  //         id: mockProject,
-  //         org: {
-  //           id: mockOrg
-  //         },
-  //         workspace: {
-  //           id: mockWorkspaceId,
-  //           name: mockWorkspaceName
-  //         }
-  //       }
-  //     },
-  //     cliCommandFlags: {
-  //       actions: true,
-  //       build: true,
-  //       'content-hash': true,
-  //       'force-build': true,
-  //       'force-deploy': false,
-  //       'force-events': false,
-  //       'force-publish': false,
-  //       'log-forwarding-update': true,
-  //       open: false,
-  //       publish: false,
-  //       'web-assets': true,
-  //       'web-optimize': false
-  //     },
-  //     env: mockEnv,
-  //     opItems: [
-  //       '3 Javascript file(s)',
-  //       '2 CSS file(s)',
-  //       '5 image(s)',
-  //       '1 HTML page(s)'
-  //     ]
-  //   })
-  // })
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledTimes(0)
+  })
 
   test('Send audit logs for successful app deploy + web assets', async () => {
     const mockToken = 'mocktoken'
@@ -1578,7 +1541,7 @@ describe('run', () => {
     })
   })
 
-  test('Should deploy successfully even if Audit log service is unavailable', async () => {
+  test('Should deploy successfully even if (app deploy) Audit log service is unavailable (--verbose)', async () => {
     const mockToken = 'mocktoken'
     const mockEnv = 'stage'
     const mockOrg = 'mockorg'
@@ -1631,7 +1594,7 @@ describe('run', () => {
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
   })
 
-  test('Should deploy successfully even if Audit log service is unavailable', async () => {
+  test('Should deploy successfully even if (app assets deploy)Audit log service is unavailable', async () => {
     const mockToken = 'mocktoken'
     const mockEnv = 'stage'
     const mockOrg = 'mockorg'

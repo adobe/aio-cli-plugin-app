@@ -62,18 +62,20 @@ class Deploy extends BuildCommand {
         runtimeNamespace: aioConfig?.runtime?.namespace
       }
 
-      try {
-        // send audit log at start (don't wait for deployment to finish)
-        await sendAppDeployAuditLog({
-          accessToken: cliDetails?.accessToken,
-          cliCommandFlags: flags,
-          appInfo,
-          env: cliDetails.env
-        })
-      } catch (error) {
-        if (flags.verbose) {
-          this.warn('Error: Audit Log Service Error: Failed to send audit log event for deployment.')
-          this.warn(error.message)
+      if (cliDetails?.accessToken) {
+        try {
+          // send audit log at start (don't wait for deployment to finish)
+          await sendAppDeployAuditLog({
+            accessToken: cliDetails?.accessToken,
+            cliCommandFlags: flags,
+            appInfo,
+            env: cliDetails.env
+          })
+        } catch (error) {
+          if (flags.verbose) {
+            this.warn('Error: Audit Log Service Error: Failed to send audit log event for deployment.')
+            this.warn(error.message)
+          }
         }
       }
 
@@ -125,7 +127,7 @@ class Deploy extends BuildCommand {
         const v = setRuntimeApiHostAndAuthHandler(values[i])
 
         await this.deploySingleConfig(k, v, flags, spinner)
-        if (v.app.hasFrontend && flags['web-assets']) {
+        if (cliDetails?.accessToken && v.app.hasFrontend && flags['web-assets']) {
           const opItems = getFilesCountWithExtension(v.web.distProd)
           try {
             // only send logs in case of web-assets deployment

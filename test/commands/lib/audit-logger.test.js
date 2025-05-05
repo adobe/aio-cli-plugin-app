@@ -17,7 +17,8 @@ const {
   sendAppDeployAuditLog,
   sendAppUndeployAuditLog,
   sendAppAssetsDeployedAuditLog,
-  sendAppAssetsUndeployedAuditLog
+  sendAppAssetsUndeployedAuditLog,
+  checkOverrides
 } = require('../../../src/lib/audit-logger')
 
 jest.mock('node-fetch')
@@ -39,8 +40,47 @@ describe('audit-logger', () => {
   }
   const mockCliFlags = { flag1: 'value1' }
 
-  beforeEach(() => {
-    jest.clearAllMocks()
+  describe('checkOverrides', () => {
+    const originalEnv = process.env
+
+    beforeEach(() => {
+      jest.resetModules() // Clears any cached modules
+      process.env = { ...originalEnv } // Copies the original environment variables
+      jest.spyOn(console, 'warn').mockImplementation()
+    })
+
+    afterEach(() => {
+      process.env = originalEnv // Restores the original environment variables
+      console.warn.mockRestore()
+    })
+
+    it('should not log warnings when no environment variables are set', () => {
+      checkOverrides()
+      expect(console.warn).not.toHaveBeenCalled()
+    })
+
+    it('should log warning when only stage endpoint is overridden', () => {
+      process.env.AUDIT_SERVICE_ENDPOINT_STAGE = 'https://custom-stage-endpoint.com'
+      checkOverrides()
+      expect(console.warn).toHaveBeenCalledWith('Audit Service overrides detected:')
+      expect(console.warn).toHaveBeenCalledWith('  AUDIT_SERVICE_ENDPOINT_STAGE: https://custom-stage-endpoint.com')
+    })
+
+    it('should log warning when only prod endpoint is overridden', () => {
+      process.env.AUDIT_SERVICE_ENDPOINT_PROD = 'https://custom-prod-endpoint.com'
+      checkOverrides()
+      expect(console.warn).toHaveBeenCalledWith('Audit Service overrides detected:')
+      expect(console.warn).toHaveBeenCalledWith('  AUDIT_SERVICE_ENDPOINT_PROD: https://custom-prod-endpoint.com')
+    })
+
+    it('should log warnings when both endpoints are overridden', () => {
+      process.env.AUDIT_SERVICE_ENDPOINT_STAGE = 'https://custom-stage-endpoint.com'
+      process.env.AUDIT_SERVICE_ENDPOINT_PROD = 'https://custom-prod-endpoint.com'
+      checkOverrides()
+      expect(console.warn).toHaveBeenCalledWith('Audit Service overrides detected:')
+      expect(console.warn).toHaveBeenCalledWith('  AUDIT_SERVICE_ENDPOINT_STAGE: https://custom-stage-endpoint.com')
+      expect(console.warn).toHaveBeenCalledWith('  AUDIT_SERVICE_ENDPOINT_PROD: https://custom-prod-endpoint.com')
+    })
   })
 
   describe('getAuditLogEvent', () => {
@@ -56,33 +96,6 @@ describe('audit-logger', () => {
         projectId: 'fake-project-id',
         workspaceId: 'fake-workspace-id',
         workspaceName: 'fake-workspace',
-        operation: OPERATIONS.AB_APP_DEPLOY,
-        appName: 'test-app',
-        appVersion: '1.0.0',
-        objectName: 'test-app',
-        timestamp: expect.any(Number),
-        data: {
-          cliCommandFlags: mockCliFlags,
-          opDetailsStr: expect.stringContaining('Starting deployment for the App Builder application')
-        }
-      })
-    })
-
-    it('should create a valid audit log event for app deploy (non-logged in)', () => {
-      const nonLoggedInAppInfo = {
-        name: 'test-app',
-        version: '1.0.0',
-        runtimeNamespace: 'test-namespace'
-      }
-      const event = getAuditLogEvent({
-        cliCommandFlags: mockCliFlags,
-        operation: OPERATIONS.AB_APP_DEPLOY,
-        appInfo: nonLoggedInAppInfo
-      })
-
-      expect(event).toEqual({
-        runtimeNamespace: 'test-namespace',
-        workspaceName: 'Production',
         operation: OPERATIONS.AB_APP_DEPLOY,
         appName: 'test-app',
         appVersion: '1.0.0',
@@ -119,7 +132,7 @@ describe('audit-logger', () => {
       })
     })
 
-    it('should throw error if neither project nor runtimeNamespace is provided', () => {
+    it('should throw error if project is not provided', () => {
       const invalidAppInfo = {
         name: 'test-app',
         version: '1.0.0'
@@ -128,7 +141,7 @@ describe('audit-logger', () => {
         cliCommandFlags: mockCliFlags,
         operation: OPERATIONS.AB_APP_DEPLOY,
         appInfo: invalidAppInfo
-      })).toThrow('Either project or runtimeNamespace is required')
+      })).toThrow('Project is required')
     })
 
     it('should throw error if project org is missing', () => {
