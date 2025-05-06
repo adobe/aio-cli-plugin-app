@@ -16,7 +16,7 @@ const fs = require('fs-extra')
 const path = require('path')
 
 const BaseCommand = require('../../BaseCommand')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:clean-build', { provider: 'debug' })
+const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:clean', { provider: 'debug' })
 const { LAST_BUILT_ACTIONS_FILENAME, LAST_DEPLOYED_ACTIONS_FILENAME } = require('../../lib/defaults')
 
 class Clean extends BaseCommand {
