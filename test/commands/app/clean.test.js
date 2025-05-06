@@ -10,7 +10,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const CleanBuild = require('../../../src/commands/app/clean-build')
+const Clean = require('../../../src/commands/app/clean')
 const fs = require('fs-extra')
 const ora = require('ora')
 const chalk = require('chalk')
@@ -22,7 +22,7 @@ jest.mock('fs-extra')
 jest.mock('ora', () => jest.fn())
 jest.mock('@adobe/aio-lib-core-logging', () => jest.fn().mockReturnValue({ debug: jest.fn(), error: jest.fn() }))
 
-describe('CleanBuild Command', () => {
+describe('Clean Command', () => {
   let cmd, spinner
 
   beforeEach(() => {
@@ -45,7 +45,7 @@ describe('CleanBuild Command', () => {
     ora.mockReturnValue(spinner)
 
     // Instantiate command
-    cmd = new CleanBuild([])
+    cmd = new Clean([])
     cmd.parse = jest.fn().mockResolvedValue({ flags: {} })
     cmd.getAppExtConfigs = jest.fn().mockResolvedValue({})
     cmd.log = jest.fn()

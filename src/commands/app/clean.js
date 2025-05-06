@@ -19,9 +19,9 @@ const BaseCommand = require('../../BaseCommand')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:clean-build', { provider: 'debug' })
 const { LAST_BUILT_ACTIONS_FILENAME, LAST_DEPLOYED_ACTIONS_FILENAME } = require('../../lib/defaults')
 
-class CleanBuild extends BaseCommand {
+class Clean extends BaseCommand {
   async run () {
-    const { flags } = await this.parse(CleanBuild)
+    const { flags } = await this.parse(Clean)
     const configs = await this.getAppExtConfigs(flags)
 
     const spinner = ora()
@@ -94,7 +94,7 @@ class CleanBuild extends BaseCommand {
   }
 }
 
-CleanBuild.description = `Remove all build artifacts from the local machine
+Clean.description = `Remove all build artifacts from the local machine
 This command completely cleans all build artifacts from the dist directory including:
 - Action build files
 - Web assets (both production and development)
@@ -103,8 +103,8 @@ This command completely cleans all build artifacts from the dist directory inclu
 
 Note that this will require a full rebuild on your next build command.`
 
-CleanBuild.flags = {
+Clean.flags = {
   ...BaseCommand.flags
 }
 
-module.exports = CleanBuild
+module.exports = Clean
