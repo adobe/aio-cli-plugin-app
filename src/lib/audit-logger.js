@@ -132,28 +132,13 @@ function getAuditLogEvent ({ cliCommandFlags, operation, appInfo }) {
     throw new Error('Runtime namespace is required')
   }
 
+  if (!Object.values(OPERATIONS).find((op) => op === operation)) {
+    throw new Error(`Invalid operation: ${operation}`)
+  }
   const orgId = project.org.id
   const projectId = project.id
   const workspaceId = project.workspace.id
   const workspaceName = project.workspace.name
-
-  let logStrMsg
-  switch (operation) {
-    case OPERATIONS.AB_APP_DEPLOY:
-      logStrMsg = `Starting deployment for the App Builder application in workspace ${workspaceName}`
-      break
-    case OPERATIONS.AB_APP_UNDEPLOY:
-      logStrMsg = `Starting undeployment for the App Builder application in workspace ${workspaceName}`
-      break
-    case OPERATIONS.AB_APP_ASSETS_UNDEPLOYED:
-      logStrMsg = `All static assets for the App Builder application in workspace: ${workspaceName} were successfully undeployed from the CDN`
-      break
-    case OPERATIONS.AB_APP_ASSETS_DEPLOYED:
-      logStrMsg = `All static assets for the App Builder application in workspace: ${workspaceName} were successfully deployed to the CDN.\n Files deployed - `
-      break
-    default:
-      throw new Error(`Invalid operation: ${operation}`)
-  }
 
   const logEvent = {
     orgId,
@@ -161,14 +146,13 @@ function getAuditLogEvent ({ cliCommandFlags, operation, appInfo }) {
     workspaceId,
     workspaceName,
     operation,
-    appName: appInfo.name,
-    appVersion: appInfo.version,
+    objectRef: appInfo.name,
+    objectRev: appInfo.version,
     objectName: appInfo.name,
     timestamp: new Date().valueOf(),
     runtimeNamespace,
     data: {
-      cliCommandFlags,
-      opDetailsStr: logStrMsg
+      cliCommandFlags
     }
   }
   return logEvent

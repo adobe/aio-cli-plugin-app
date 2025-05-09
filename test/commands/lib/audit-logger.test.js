@@ -98,14 +98,13 @@ describe('audit-logger', () => {
         workspaceId: 'fake-workspace-id',
         workspaceName: 'fake-workspace',
         operation: OPERATIONS.AB_APP_DEPLOY,
-        appName: 'test-app',
-        appVersion: '1.0.0',
+        objectRef: 'test-app',
+        objectRev: '1.0.0',
         objectName: 'test-app',
         timestamp: expect.any(Number),
         runtimeNamespace: 'fake-namespace',
         data: {
-          cliCommandFlags: mockCliFlags,
-          opDetailsStr: expect.stringContaining('Starting deployment for the App Builder application')
+          cliCommandFlags: mockCliFlags
         }
       })
     })
@@ -123,14 +122,13 @@ describe('audit-logger', () => {
         workspaceId: 'fake-workspace-id',
         workspaceName: 'fake-workspace',
         operation: OPERATIONS.AB_APP_UNDEPLOY,
-        appName: 'test-app',
-        appVersion: '1.0.0',
+        objectRef: 'test-app',
+        objectRev: '1.0.0',
         objectName: 'test-app',
         timestamp: expect.any(Number),
         runtimeNamespace: 'fake-namespace',
         data: {
-          cliCommandFlags: mockCliFlags,
-          opDetailsStr: expect.stringContaining('Starting undeployment for the App Builder application')
+          cliCommandFlags: mockCliFlags
         }
       })
     })
