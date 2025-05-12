@@ -1,5 +1,4 @@
-aio-cli-plugin-app
-==================
+# aio-cli-plugin-app
 
 Create, Build and Deploy Adobe I/O Apps
 
@@ -10,13 +9,14 @@ Create, Build and Deploy Adobe I/O Apps
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Codecov Coverage](https://img.shields.io/codecov/c/github/adobe/aio-cli-plugin-app/master.svg?style=flat-square)](https://codecov.io/gh/adobe/aio-cli-plugin-app/)
 
-
 <!-- toc -->
+* [aio-cli-plugin-app](#aio-cli-plugin-app)
 * [Usage](#usage)
 * [Commands](#commands)
 <!-- tocstop -->
 
 # Usage
+
 ```sh-session
 $ aio plugins:install -g @adobe/aio-cli-plugin-app
 $ # OR
@@ -25,6 +25,7 @@ $ aio app --help
 ```
 
 # Commands
+
 <!-- commands -->
 * [`aio app`](#aio-app)
 * [`aio app add`](#aio-app-add)
@@ -35,6 +36,7 @@ $ aio app --help
 * [`aio app add service`](#aio-app-add-service)
 * [`aio app add web-assets`](#aio-app-add-web-assets)
 * [`aio app build`](#aio-app-build)
+* [`aio app clean`](#aio-app-clean)
 * [`aio app create [PATH]`](#aio-app-create-path)
 * [`aio app delete`](#aio-app-delete)
 * [`aio app delete action [ACTION-NAME]`](#aio-app-delete-action-action-name)
@@ -72,7 +74,7 @@ DESCRIPTION
   Create, run, test, and deploy Adobe I/O Apps
 ```
 
-_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/index.js)_
+_See code: [src/commands/app/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/index.js)_
 
 ## `aio app add`
 
@@ -90,7 +92,7 @@ DESCRIPTION
   Add a new component to an existing Adobe I/O App
 ```
 
-_See code: [src/commands/app/add/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/add/index.js)_
+_See code: [src/commands/app/add/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/add/index.js)_
 
 ## `aio app add action`
 
@@ -115,7 +117,7 @@ ALIASES
   $ aio app add actions
 ```
 
-_See code: [src/commands/app/add/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/add/action.js)_
+_See code: [src/commands/app/add/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/add/action.js)_
 
 ## `aio app add ci`
 
@@ -133,7 +135,7 @@ DESCRIPTION
   Add CI files
 ```
 
-_See code: [src/commands/app/add/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/add/ci.js)_
+_See code: [src/commands/app/add/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/add/ci.js)_
 
 ## `aio app add event`
 
@@ -158,7 +160,7 @@ ALIASES
   $ aio app add events
 ```
 
-_See code: [src/commands/app/add/event.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/add/event.js)_
+_See code: [src/commands/app/add/event.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/add/event.js)_
 
 ## `aio app add extension`
 
@@ -184,7 +186,7 @@ ALIASES
   $ aio app add extensions
 ```
 
-_See code: [src/commands/app/add/extension.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/add/extension.js)_
+_See code: [src/commands/app/add/extension.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/add/extension.js)_
 
 ## `aio app add service`
 
@@ -208,7 +210,7 @@ ALIASES
   $ aio app add services
 ```
 
-_See code: [src/commands/app/add/service.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/add/service.js)_
+_See code: [src/commands/app/add/service.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/add/service.js)_
 
 ## `aio app add web-assets`
 
@@ -229,7 +231,7 @@ DESCRIPTION
   Add web assets support
 ```
 
-_See code: [src/commands/app/add/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/add/web-assets.js)_
+_See code: [src/commands/app/add/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/add/web-assets.js)_
 
 ## `aio app build`
 
@@ -259,7 +261,32 @@ DESCRIPTION
   Use the --force-build flag to force a build even if one already exists.
 ```
 
-_See code: [src/commands/app/build.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/build.js)_
+_See code: [src/commands/app/build.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/build.js)_
+
+## `aio app clean`
+
+Remove all build artifacts from the local machine
+
+```
+USAGE
+  $ aio app clean [-v] [--version]
+
+FLAGS
+  -v, --verbose  Verbose output
+      --version  Show version
+
+DESCRIPTION
+  Remove all build artifacts from the local machine
+  This command completely cleans all build artifacts from the dist directory including:
+  - Action build files
+  - Web assets (both production and development)
+  - Build tracking files
+  - Deployment tracking files
+
+  Note that this will require a full rebuild on your next build command.
+```
+
+_See code: [src/commands/app/clean.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/clean.js)_
 
 ## `aio app create [PATH]`
 
@@ -281,7 +308,7 @@ DESCRIPTION
   Create a new Adobe I/O App with default parameters
 ```
 
-_See code: [src/commands/app/create.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/create.js)_
+_See code: [src/commands/app/create.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/create.js)_
 
 ## `aio app delete`
 
@@ -299,7 +326,7 @@ DESCRIPTION
   Delete a component from an existing Adobe I/O App
 ```
 
-_See code: [src/commands/app/delete/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/delete/index.js)_
+_See code: [src/commands/app/delete/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/delete/index.js)_
 
 ## `aio app delete action [ACTION-NAME]`
 
@@ -325,7 +352,7 @@ ALIASES
   $ aio app delete actions
 ```
 
-_See code: [src/commands/app/delete/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/delete/action.js)_
+_See code: [src/commands/app/delete/action.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/delete/action.js)_
 
 ## `aio app delete ci`
 
@@ -344,7 +371,7 @@ DESCRIPTION
   Delete existing CI files
 ```
 
-_See code: [src/commands/app/delete/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/delete/ci.js)_
+_See code: [src/commands/app/delete/ci.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/delete/ci.js)_
 
 ## `aio app delete extension`
 
@@ -370,7 +397,7 @@ ALIASES
   $ aio app delete extensions
 ```
 
-_See code: [src/commands/app/delete/extension.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/delete/extension.js)_
+_See code: [src/commands/app/delete/extension.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/delete/extension.js)_
 
 ## `aio app delete service`
 
@@ -394,7 +421,7 @@ ALIASES
   $ aio app delete services
 ```
 
-_See code: [src/commands/app/delete/service.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/delete/service.js)_
+_See code: [src/commands/app/delete/service.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/delete/service.js)_
 
 ## `aio app delete web-assets`
 
@@ -413,7 +440,7 @@ DESCRIPTION
   Delete existing web assets
 ```
 
-_See code: [src/commands/app/delete/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/delete/web-assets.js)_
+_See code: [src/commands/app/delete/web-assets.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/delete/web-assets.js)_
 
 ## `aio app deploy`
 
@@ -459,7 +486,7 @@ DESCRIPTION
   Use the --force-deploy flag to force deploy changes, regardless of production Workspace being published in Exchange.
 ```
 
-_See code: [src/commands/app/deploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/deploy.js)_
+_See code: [src/commands/app/deploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/deploy.js)_
 
 ## `aio app get-url [ACTION]`
 
@@ -467,7 +494,7 @@ Get action URLs
 
 ```
 USAGE
-  $ aio app get-url [ACTION] [-v] [--version] [--cdn] [-j] [-h] [-y] [--local]
+  $ aio app get-url [ACTION] [-v] [--version] [--cdn] [-j] [-h] [-y]
 
 FLAGS
   -h, --hson     Output human readable json
@@ -475,14 +502,13 @@ FLAGS
   -v, --verbose  Verbose output
   -y, --yml      Output yml
       --cdn      Display CDN based action URLs
-      --local    Display locally based action URLs
       --version  Show version
 
 DESCRIPTION
   Get action URLs
 ```
 
-_See code: [src/commands/app/get-url.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/get-url.js)_
+_See code: [src/commands/app/get-url.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/get-url.js)_
 
 ## `aio app info`
 
@@ -504,7 +530,7 @@ DESCRIPTION
   Display settings/configuration in use by an Adobe I/O App
 ```
 
-_See code: [src/commands/app/info.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/info.js)_
+_See code: [src/commands/app/info.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/info.js)_
 
 ## `aio app init [PATH]`
 
@@ -543,7 +569,7 @@ DESCRIPTION
   Create a new Adobe I/O App
 ```
 
-_See code: [src/commands/app/init.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/init.js)_
+_See code: [src/commands/app/init.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/init.js)_
 
 ## `aio app install PATH`
 
@@ -566,7 +592,7 @@ DESCRIPTION
   This command will support installing apps packaged by 'aio app pack'.
 ```
 
-_See code: [src/commands/app/install.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/install.js)_
+_See code: [src/commands/app/install.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/install.js)_
 
 ## `aio app list`
 
@@ -584,7 +610,7 @@ DESCRIPTION
   List components for Adobe I/O App
 ```
 
-_See code: [src/commands/app/list/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/list/index.js)_
+_See code: [src/commands/app/list/index.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/list/index.js)_
 
 ## `aio app list extension`
 
@@ -609,7 +635,7 @@ ALIASES
   $ aio app list extensions
 ```
 
-_See code: [src/commands/app/list/extension.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/list/extension.js)_
+_See code: [src/commands/app/list/extension.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/list/extension.js)_
 
 ## `aio app logs`
 
@@ -633,7 +659,7 @@ DESCRIPTION
   Fetch logs for an Adobe I/O App
 ```
 
-_See code: [src/commands/app/logs.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/logs.js)_
+_See code: [src/commands/app/logs.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/logs.js)_
 
 ## `aio app pack [PATH]`
 
@@ -655,7 +681,7 @@ DESCRIPTION
   This command will support packaging apps for redistribution.
 ```
 
-_See code: [src/commands/app/pack.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/pack.js)_
+_See code: [src/commands/app/pack.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/pack.js)_
 
 ## `aio app run`
 
@@ -663,14 +689,12 @@ Run an Adobe I/O App
 
 ```
 USAGE
-  $ aio app run [-v] [--version] [--local | ] [--serve] [--actions] [--open] [-e <value>]
+  $ aio app run [-v] [--version] [--serve] [--actions] [--open] [-e <value>]
 
 FLAGS
   -e, --extension=<value>  Run only a specific extension, this flag can only be specified once
   -v, --verbose            Verbose output
       --[no-]actions       [default: true] Run actions, defaults to true, to skip actions use --no-actions
-      --local              [deprecated] Run/debug actions locally (requires Docker running, not available on Apple
-                           Silicon Macs)
       --open               Open the default web browser after a successful run, only valid if your app has a front-end
       --[no-]serve         [default: true] Start frontend server (experimental)
       --version            Show version
@@ -679,7 +703,7 @@ DESCRIPTION
   Run an Adobe I/O App
 ```
 
-_See code: [src/commands/app/run.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/run.js)_
+_See code: [src/commands/app/run.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/run.js)_
 
 ## `aio app test`
 
@@ -707,7 +731,7 @@ DESCRIPTION
   If the extension has a hook called 'test' in its 'ext.config.yaml', the script specified will be run instead.
 ```
 
-_See code: [src/commands/app/test.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/test.js)_
+_See code: [src/commands/app/test.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/test.js)_
 
 ## `aio app undeploy`
 
@@ -732,7 +756,7 @@ DESCRIPTION
   Undeploys an Adobe I/O App
 ```
 
-_See code: [src/commands/app/undeploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/undeploy.js)_
+_See code: [src/commands/app/undeploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/undeploy.js)_
 
 ## `aio app use [CONFIG_FILE_PATH]`
 
@@ -779,5 +803,5 @@ DESCRIPTION
   page in https://developer.adobe.com/console/
 ```
 
-_See code: [src/commands/app/use.js](https://github.com/adobe/aio-cli-plugin-app/blob/13.3.0/src/commands/app/use.js)_
+_See code: [src/commands/app/use.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.0.1/src/commands/app/use.js)_
 <!-- commandsstop -->

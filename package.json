@@ -1,7 +1,7 @@
 {
   "name": "@adobe/aio-cli-plugin-app",
   "description": "Create, Build and Deploy Adobe I/O Applications",
-  "version": "13.3.0",
+  "version": "14.0.1",
   "author": "Adobe Inc.",
   "bugs": "https://github.com/adobe/aio-cli-plugin-app/issues",
   "dependencies": {
@@ -16,7 +16,7 @@
     "@adobe/aio-lib-templates": "^3",
     "@adobe/aio-lib-web": "^7",
     "@adobe/generator-aio-app": "^9",
-    "@adobe/generator-app-common-lib": "^2",
+    "@adobe/generator-app-common-lib": "^3",
     "@adobe/inquirer-table-checkbox": "^2",
     "@oclif/core": "^2.11.6",
     "@octokit/rest": "^19.0.11",
@@ -38,7 +38,6 @@
     "junk": "^3.1.0",
     "lodash.clonedeep": "^4.5.0",
     "node-abort-controller": "^3.1.1",
-    "node-fetch": "^2.6.7",
     "open": "^8.4.2",
     "ora": "^5",
     "pure-http": "^3",
