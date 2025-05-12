@@ -10,13 +10,23 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../../../../src/commands/app/config/get/log-forwarding/errors')
-const RuntimeLib = require('@adobe/aio-lib-runtime')
-const ora = require('ora')
+const { stdout } = require('stdout-stderr')
+const TheCommand = require('../../../../../../src/commands/app/config/get/log-forwarding/errors.js')
+const rtLib = require('@adobe/aio-lib-runtime')
+const { setRuntimeApiHostAndAuthHandler } = require('../../../../../../src/lib/auth-helper')
 
-jest.mock('ora')
+jest.mock('@adobe/aio-lib-runtime', () => ({
+  init: jest.fn(),
+  utils: {
+    checkOpenWhiskCredentials: jest.fn()
+  }
+}))
 
-let command, rtLib, spinner
+jest.mock('../../../../../../src/lib/auth-helper', () => ({
+  setRuntimeApiHostAndAuthHandler: jest.fn(config => config)
+}))
+
+let command, logForwarding
 beforeEach(async () => {
   command = new TheCommand([])
   command.appConfig = {
@@ -30,79 +40,70 @@ beforeEach(async () => {
       }
     }
   }
-  rtLib = await RuntimeLib.init({ apihost: 'https://adobeioruntime.net', api_key: 'fake:auth' })
-  RuntimeLib.utils.checkOpenWhiskCredentials = jest.fn()
-  rtLib.logForwarding.getErrors = jest.fn()
-  spinner = ora()
+  logForwarding = {
+    getErrors: jest.fn()
+  }
+  rtLib.init.mockResolvedValue({ logForwarding })
 })
 
-test('app:config:get:log-forwarding:errors command', async () => {
-  return new Promise(resolve => {
-    rtLib.logForwarding.getErrors.mockResolvedValue({
-      configured_forwarder: 'destination',
-      errors: [
-        'error 1',
-        'error 2'
-      ]
-    })
-
-    return command.run()
-      .then(() => {
-        expect(spinner.succeed)
-          .toHaveBeenCalledWith("Log forwarding errors for the last configured destination 'destination':\nerror 1\nerror 2")
-        resolve()
-      })
+test('get log forwarding errors with errors', async () => {
+  const errors = ['Error 1', 'Error 2']
+  logForwarding.getErrors.mockResolvedValue({
+    errors,
+    configured_forwarder: 'test-destination'
   })
+
+  await command.run()
+  expect(stdout.output).toContain('Log forwarding errors for the last configured destination \'test-destination\':')
+  expect(stdout.output).toContain('Error 1')
+  expect(stdout.output).toContain('Error 2')
 })
 
-test('app:config:get:log-forwarding:errors command - no destination returned from the server', async () => {
-  return new Promise(resolve => {
-    rtLib.logForwarding.getErrors.mockResolvedValue({
-      errors: [
-        'error 1',
-        'error 2'
-      ]
-    })
-
-    return command.run()
-      .then(() => {
-        expect(spinner.succeed).toHaveBeenCalledWith('Log forwarding errors:\nerror 1\nerror 2')
-        resolve()
-      })
+test('get log forwarding errors without errors', async () => {
+  logForwarding.getErrors.mockResolvedValue({
+    errors: [],
+    configured_forwarder: 'test-destination'
   })
+
+  await command.run()
+  expect(stdout.output).toContain('No log forwarding errors for the last configured destination \'test-destination\'')
 })
 
-test('app:config:get:log-forwarding:errors command - no errors', async () => {
-  return new Promise(resolve => {
-    rtLib.logForwarding.getErrors.mockResolvedValue({
-      configured_forwarder: 'destination',
-      errors: []
-    })
-
-    return command.run()
-      .then(() => {
-        expect(spinner.succeed)
-          .toHaveBeenCalledWith("No log forwarding errors for the last configured destination 'destination'")
-        resolve()
-      })
+test('get log forwarding errors without configured forwarder', async () => {
+  logForwarding.getErrors.mockResolvedValue({
+    errors: ['Error 1']
   })
+
+  await command.run()
+  expect(stdout.output).toContain('Log forwarding errors:')
+  expect(stdout.output).toContain('Error 1')
 })
 
-test('app:config:get:log-forwarding:errors command - no errors and no destination returned from the server', async () => {
-  return new Promise(resolve => {
-    rtLib.logForwarding.getErrors.mockResolvedValue({
-      errors: []
-    })
-
-    return command.run()
-      .then(() => {
-        expect(spinner.succeed).toHaveBeenCalledWith('No log forwarding errors')
-        resolve()
-      })
+test('get log forwarding errors with deploy service enabled', async () => {
+  process.env.IS_DEPLOY_SERVICE_ENABLED = 'true'
+  logForwarding.getErrors.mockResolvedValue({
+    errors: []
   })
+
+  await command.run()
+  expect(setRuntimeApiHostAndAuthHandler).toHaveBeenCalledWith(command.appConfig.aio)
+  expect(rtLib.init).toHaveBeenCalledWith({
+    ...command.appConfig.aio.runtime,
+    api_key: command.appConfig.aio.runtime.auth
+  })
+
+  delete process.env.IS_DEPLOY_SERVICE_ENABLED
 })
 
-test('app:config:get:log-forwarding:errors command - failed response from server', async () => {
-  rtLib.logForwarding.getErrors.mockRejectedValue(new Error('mocked error'))
+test('failed to get log forwarding errors', async () => {
+  logForwarding.getErrors.mockRejectedValue(new Error('mocked error'))
   await expect(command.run()).rejects.toThrow('mocked error')
+})
+
+test('command aliases are set correctly', () => {
+  expect(TheCommand.aliases).toEqual(['app:config:get:log-forwarding:errors', 'app:config:get:lf:errors'])
+})
+
+test('command description is set correctly', () => {
+  expect(TheCommand.description).toBe('Get log forwarding errors')
 })
