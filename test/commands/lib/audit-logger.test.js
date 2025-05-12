@@ -9,7 +9,6 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const fetch = require('node-fetch')
 const {
   OPERATIONS,
   AUDIT_SERVICE_ENDPOINTS,
@@ -21,7 +20,9 @@ const {
   checkOverrides
 } = require('../../../src/lib/audit-logger')
 
-jest.mock('node-fetch')
+beforeEach(() => {
+  setFetchMock(true, 200, {})
+})
 
 describe('audit-logger', () => {
   const mockAccessToken = 'fake-token'
@@ -193,7 +194,7 @@ describe('audit-logger', () => {
 
   describe('sendAppDeployAuditLog', () => {
     it('should send app deploy audit log successfully', async () => {
-      fetch.mockResolvedValueOnce({ status: 200 })
+      setFetchMock(true, 200, {})
 
       await sendAppDeployAuditLog({
         accessToken: mockAccessToken,
@@ -216,7 +217,7 @@ describe('audit-logger', () => {
 
   describe('sendAppUndeployAuditLog', () => {
     it('should send app undeploy audit log successfully', async () => {
-      fetch.mockResolvedValueOnce({ status: 200 })
+      setFetchMock(true, 200, {})
 
       await sendAppUndeployAuditLog({
         accessToken: mockAccessToken,
@@ -239,7 +240,8 @@ describe('audit-logger', () => {
 
   describe('sendAppAssetsDeployedAuditLog', () => {
     it('should send app assets deployed audit log successfully', async () => {
-      fetch.mockResolvedValueOnce({ status: 200 })
+      setFetchMock(true, 200, {})
+
       const mockOpItems = ['file1.js', 'file2.css']
 
       await sendAppAssetsDeployedAuditLog({
@@ -265,7 +267,7 @@ describe('audit-logger', () => {
 
   describe('sendAppAssetsUndeployedAuditLog', () => {
     it('should send app assets undeployed audit log successfully', async () => {
-      fetch.mockResolvedValueOnce({ status: 200 })
+      setFetchMock(true, 200, {})
 
       await sendAppAssetsUndeployedAuditLog({
         accessToken: mockAccessToken,
@@ -288,10 +290,7 @@ describe('audit-logger', () => {
 
   describe('error handling', () => {
     it('should throw error when audit service returns non-200 status', async () => {
-      fetch.mockResolvedValueOnce({
-        status: 500,
-        text: () => Promise.resolve('Internal Server Error')
-      })
+      setFetchMock(true, 500, 'Internal Server Error')
 
       await expect(sendAppDeployAuditLog({
         accessToken: mockAccessToken,
