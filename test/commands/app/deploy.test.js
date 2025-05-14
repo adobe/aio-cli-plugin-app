@@ -1296,7 +1296,7 @@ describe('run', () => {
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledTimes(1)
-    expect(authHelper.setRuntimeApiHostAndAuthHandler).toHaveBeenCalledTimes(1)
+    expect(authHelper.setRuntimeApiHostAndAuthHandler).toHaveBeenCalledTimes(2) // once in logforwarding, once when deploying
     expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledWith({
       accessToken: mockToken,
       appInfo: {
