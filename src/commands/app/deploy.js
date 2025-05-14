@@ -18,10 +18,10 @@ const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { Flags } = require('@oclif/core')
-const { runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getCliInfo } = require('../../lib/app-helper')
+const { runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getCliInfo, getFilesCountWithExtension } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
-const { sendAuditLogs, getAuditLogEvent, getFilesCountWithExtension } = require('../../lib/audit-logger')
+const { sendAppAssetsDeployedAuditLog, sendAppDeployAuditLog } = require('../../lib/audit-logger')
 const { setRuntimeApiHostAndAuthHandler } = require('../../lib/auth-helper')
 const logActions = require('../../lib/log-actions')
 
@@ -53,15 +53,43 @@ class Deploy extends BuildCommand {
     const spinner = ora()
 
     try {
-      const aioConfig = (await this.getFullConfig()).aio
+      const { aio: aioConfig, packagejson: packageJson } = await this.getFullConfig()
       const cliDetails = await getCliInfo(flags.publish)
+      const appInfo = {
+        name: packageJson.name,
+        version: packageJson.version,
+        project: aioConfig?.project,
+        runtimeNamespace: aioConfig?.runtime?.namespace
+      }
+
+      if (cliDetails?.accessToken) {
+        try {
+          // send audit log at start (don't wait for deployment to finish)
+          await sendAppDeployAuditLog({
+            accessToken: cliDetails?.accessToken,
+            cliCommandFlags: flags,
+            appInfo,
+            env: cliDetails.env
+          })
+        } catch (error) {
+          if (flags.verbose) {
+            this.warn('Error: Audit Log Service Error: Failed to send audit log event for deployment.')
+            this.warn(error.message)
+          }
+        }
+      }
 
       // 1. update log forwarding configuration
       // note: it is possible that .aio file does not exist, which means there is no local lg config
       if (aioConfig?.project?.workspace && flags['log-forwarding-update'] && flags.actions) {
         spinner.start('Updating log forwarding configuration')
         try {
-          const lf = await LogForwarding.init(aioConfig)
+          let lfConfig = aioConfig
+          if (process.env.IS_DEPLOY_SERVICE_ENABLED === 'true') {
+            lfConfig = setRuntimeApiHostAndAuthHandler(aioConfig)
+          }
+
+          const lf = await LogForwarding.init(lfConfig)
           if (lf.isLocalConfigChanged()) {
             const lfConfig = lf.getLocalConfigWithSecrets()
             if (lfConfig.isDefined()) {
@@ -101,22 +129,24 @@ class Deploy extends BuildCommand {
       // - break into smaller pieces deploy, allowing to first deploy all actions then all web assets
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
-        const v = setRuntimeApiHostAndAuthHandler(values[i])
+        const v = process.env.IS_DEPLOY_SERVICE_ENABLED === 'true' ? setRuntimeApiHostAndAuthHandler(values[i]) : values[i]
 
         await this.deploySingleConfig(k, v, flags, spinner)
-        if (v.app.hasFrontend && flags['web-assets']) {
+        if (cliDetails?.accessToken && v.app.hasFrontend && flags['web-assets']) {
           const opItems = getFilesCountWithExtension(v.web.distProd)
-          const assetDeployedLogEvent = getAuditLogEvent(flags, aioConfig.project, 'AB_APP_ASSETS_DEPLOYED')
-          if (assetDeployedLogEvent && cliDetails?.accessToken) {
-            assetDeployedLogEvent.data.opItems = opItems
-            try {
-              // only send logs in case of web-assets deployment
-              await sendAuditLogs(cliDetails.accessToken, assetDeployedLogEvent, cliDetails.env)
-            } catch (error) {
-              if (flags.verbose) {
-                this.warn('Error: Audit Log Service Error: Failed to send audit log event for deployment.')
-                this.warn(error.message)
-              }
+          try {
+            // only send logs in case of web-assets deployment
+            await sendAppAssetsDeployedAuditLog({
+              accessToken: cliDetails?.accessToken,
+              cliCommandFlags: flags,
+              opItems,
+              appInfo,
+              env: cliDetails.env
+            })
+          } catch (error) {
+            if (flags.verbose) {
+              this.warn('Error: Audit Log Service Error: Failed to send audit log event for deployment.')
+              this.warn(error.message)
             }
           }
         }

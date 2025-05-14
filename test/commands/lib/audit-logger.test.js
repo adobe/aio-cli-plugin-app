@@ -3,290 +3,322 @@ Copyright 2024 Adobe. All rights reserved.
 This file is licensed to you under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License. You may obtain a copy
 of the License at http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software distributed under
 the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-const fs = require('fs')
-const auditLogger = require('../../../src/lib/audit-logger')
-
-jest.mock('fs')
-jest.mock('chalk', () => ({
-  red: jest.fn((text) => text),
-  bold: jest.fn((text) => text)
-}))
-
-const OPERATIONS = {
-  AB_APP_DEPLOY: 'ab_app_deploy',
-  AB_APP_UNDEPLOY: 'ab_app_undeploy',
-  AB_APP_ASSETS_UNDEPLOYED: 'ab_app_assets_undeployed',
-  AB_APP_ASSETS_DEPLOYED: 'ab_app_assets_deployed',
-  AB_APP_TEST: 'ab_app_test'
-}
-
-const mockToken = 'mocktoken'
-const mockEnv = 'stage'
-const mockLogEvent = {
-  projectId: 'mockproject',
-  orgId: 'mockorg'
-}
+const {
+  OPERATIONS,
+  AUDIT_SERVICE_ENDPOINTS,
+  getAuditLogEvent,
+  sendAppDeployAuditLog,
+  sendAppUndeployAuditLog,
+  sendAppAssetsDeployedAuditLog,
+  sendAppAssetsUndeployedAuditLog,
+  checkOverrides
+} = require('../../../src/lib/audit-logger')
 
 beforeEach(() => {
   setFetchMock(true, 200, {})
 })
 
-test('sendAuditLogs with valid params', async () => {
-  setFetchMock(true, 200, {})
-  const options = {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + mockToken,
-      'Content-type': 'application/json'
-    },
-    body: JSON.stringify({ event: mockLogEvent })
+describe('audit-logger', () => {
+  const mockAccessToken = 'fake-token'
+  const mockProject = {
+    org: { id: 'fake-org-id' },
+    id: 'fake-project-id',
+    workspace: {
+      id: 'fake-workspace-id',
+      name: 'fake-workspace'
+    }
   }
-  await auditLogger.sendAuditLogs(mockToken, mockLogEvent, mockEnv)
-  expect(fetch).toHaveBeenCalledTimes(1)
-  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENDPOINTS[mockEnv], options)
-})
-
-// NOTE: this test is blocked until the audit service is available in prod
-test('sendAuditLogs with default params', async () => {
-  setFetchMock(true, 200, {})
-  const options = {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + mockToken,
-      'Content-type': 'application/json'
-    },
-    body: JSON.stringify({ event: mockLogEvent })
+  const mockAppInfo = {
+    name: 'test-app',
+    version: '1.0.0',
+    project: mockProject,
+    runtimeNamespace: 'fake-namespace'
   }
-  await auditLogger.sendAuditLogs(mockToken, mockLogEvent)
-  expect(fetch).toHaveBeenCalledTimes(1)
-  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENDPOINTS.prod, options)
-})
+  const mockCliFlags = { flag1: 'value1' }
 
-test('should take prod endpoint if calling sendAuditLogs with non-exisiting env', async () => {
-  setFetchMock(true, 200, {})
-  const options = {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + mockToken,
-      'Content-type': 'application/json'
-    },
-    body: JSON.stringify({ event: mockLogEvent })
-  }
-  await auditLogger.sendAuditLogs(mockToken, mockLogEvent, 'dev')
-  expect(fetch).toHaveBeenCalledTimes(1)
-  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENDPOINTS.prod, options)
-})
+  describe('checkOverrides', () => {
+    const originalEnv = process.env
 
-test('sendAuditLogs error response', async () => {
-  setFetchMock(false, 400, {})
-  const options = {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + mockToken,
-      'Content-type': 'application/json'
-    },
-    body: JSON.stringify({ event: mockLogEvent })
-  }
-  await expect(auditLogger.sendAuditLogs(mockToken, mockLogEvent, mockEnv)).rejects.toThrow('Failed to send audit log - 400')
-  expect(fetch).toHaveBeenCalledTimes(1)
-  expect(fetch).toHaveBeenCalledWith(auditLogger.AUDIT_SERVICE_ENDPOINTS[mockEnv], options)
-})
+    beforeEach(() => {
+      jest.resetModules() // Clears any cached modules
+      process.env = { ...originalEnv } // Copies the original environment variables
+      jest.spyOn(console, 'warn').mockImplementation()
+    })
 
-describe('getAuditLogEvent', () => {
-  const flags = { flag1: 'value1' }
-  const project = {
-    org: { id: 'org123' },
-    id: 'proj456',
-    workspace: { id: 'ws789', name: 'testWorkspace' }
-  }
+    afterEach(() => {
+      process.env = originalEnv // Restores the original environment variables
+      console.warn.mockRestore()
+    })
 
-  const mockDeployMessage = 'Starting deployment for the App Builder application in workspace testWorkspace'
-  const mockUndeployMessage = 'Starting undeployment for the App Builder application in workspace testWorkspace'
+    it('should not log warnings when no environment variables are set', () => {
+      checkOverrides()
+      expect(console.warn).not.toHaveBeenCalled()
+    })
 
-  test('should return correct log event for AB_APP_DEPLOY event', () => {
-    const event = 'AB_APP_DEPLOY'
-    const result = auditLogger.getAuditLogEvent(flags, project, event)
+    it('should log warning when only stage endpoint is overridden', () => {
+      process.env.AUDIT_SERVICE_ENDPOINT_STAGE = 'https://custom-stage-endpoint.com'
+      checkOverrides()
+      expect(console.warn).toHaveBeenCalledWith('Audit Service overrides detected:')
+      expect(console.warn).toHaveBeenCalledWith('  AUDIT_SERVICE_ENDPOINT_STAGE: https://custom-stage-endpoint.com')
+    })
 
-    expect(result).toEqual({
-      orgId: 'org123',
-      projectId: 'proj456',
-      workspaceId: 'ws789',
-      workspaceName: 'testWorkspace',
-      operation: OPERATIONS.AB_APP_DEPLOY,
-      timestamp: expect.any(Number),
-      data: {
-        cliCommandFlags: flags,
-        opDetailsStr: mockDeployMessage
-      }
+    it('should log warning when only prod endpoint is overridden', () => {
+      process.env.AUDIT_SERVICE_ENDPOINT_PROD = 'https://custom-prod-endpoint.com'
+      checkOverrides()
+      expect(console.warn).toHaveBeenCalledWith('Audit Service overrides detected:')
+      expect(console.warn).toHaveBeenCalledWith('  AUDIT_SERVICE_ENDPOINT_PROD: https://custom-prod-endpoint.com')
+    })
+
+    it('should log warnings when both endpoints are overridden', () => {
+      process.env.AUDIT_SERVICE_ENDPOINT_STAGE = 'https://custom-stage-endpoint.com'
+      process.env.AUDIT_SERVICE_ENDPOINT_PROD = 'https://custom-prod-endpoint.com'
+      checkOverrides()
+      expect(console.warn).toHaveBeenCalledWith('Audit Service overrides detected:')
+      expect(console.warn).toHaveBeenCalledWith('  AUDIT_SERVICE_ENDPOINT_STAGE: https://custom-stage-endpoint.com')
+      expect(console.warn).toHaveBeenCalledWith('  AUDIT_SERVICE_ENDPOINT_PROD: https://custom-prod-endpoint.com')
     })
   })
 
-  test('should return correct log event for AB_APP_UNDEPLOY event', () => {
-    const event = 'AB_APP_UNDEPLOY'
-    const result = auditLogger.getAuditLogEvent(flags, project, event)
+  describe('getAuditLogEvent', () => {
+    it('should create a valid audit log event for app deploy', () => {
+      const event = getAuditLogEvent({
+        cliCommandFlags: mockCliFlags,
+        operation: OPERATIONS.AB_APP_DEPLOY,
+        appInfo: mockAppInfo
+      })
 
-    expect(result).toEqual({
-      orgId: 'org123',
-      projectId: 'proj456',
-      workspaceId: 'ws789',
-      workspaceName: 'testWorkspace',
-      operation: OPERATIONS.AB_APP_UNDEPLOY,
-      timestamp: expect.any(Number),
-      data: {
-        cliCommandFlags: flags,
-        opDetailsStr: mockUndeployMessage
+      expect(event).toEqual({
+        orgId: 'fake-org-id',
+        projectId: 'fake-project-id',
+        workspaceId: 'fake-workspace-id',
+        workspaceName: 'fake-workspace',
+        operation: OPERATIONS.AB_APP_DEPLOY,
+        objectRef: 'test-app',
+        objectRev: '1.0.0',
+        objectName: 'test-app',
+        timestamp: expect.any(Number),
+        runtimeNamespace: 'fake-namespace',
+        data: {
+          cliCommandFlags: mockCliFlags
+        }
+      })
+    })
+
+    it('should create a valid audit log event for app undeploy', () => {
+      const event = getAuditLogEvent({
+        cliCommandFlags: mockCliFlags,
+        operation: OPERATIONS.AB_APP_UNDEPLOY,
+        appInfo: mockAppInfo
+      })
+
+      expect(event).toEqual({
+        orgId: 'fake-org-id',
+        projectId: 'fake-project-id',
+        workspaceId: 'fake-workspace-id',
+        workspaceName: 'fake-workspace',
+        operation: OPERATIONS.AB_APP_UNDEPLOY,
+        objectRef: 'test-app',
+        objectRev: '1.0.0',
+        objectName: 'test-app',
+        timestamp: expect.any(Number),
+        runtimeNamespace: 'fake-namespace',
+        data: {
+          cliCommandFlags: mockCliFlags
+        }
+      })
+    })
+
+    it('should throw error if project is not provided', () => {
+      const invalidAppInfo = {
+        name: 'test-app',
+        version: '1.0.0'
       }
+      expect(() => getAuditLogEvent({
+        cliCommandFlags: mockCliFlags,
+        operation: OPERATIONS.AB_APP_DEPLOY,
+        appInfo: invalidAppInfo
+      })).toThrow('Project is required')
+    })
+
+    it('should throw error if project org is missing', () => {
+      const invalidAppInfo = {
+        ...mockAppInfo,
+        project: { ...mockProject, org: null }
+      }
+      expect(() => getAuditLogEvent({
+        cliCommandFlags: mockCliFlags,
+        operation: OPERATIONS.AB_APP_DEPLOY,
+        appInfo: invalidAppInfo
+      })).toThrow('Project org is required')
+    })
+
+    it('should throw error if project workspace is missing', () => {
+      const invalidAppInfo = {
+        ...mockAppInfo,
+        project: { ...mockProject, workspace: null }
+      }
+      expect(() => getAuditLogEvent({
+        cliCommandFlags: mockCliFlags,
+        operation: OPERATIONS.AB_APP_DEPLOY,
+        appInfo: invalidAppInfo
+      })).toThrow('Project workspace is required')
+    })
+
+    it('should throw error if runtime namespace is missing', () => {
+      const invalidAppInfo = {
+        ...mockAppInfo,
+        runtimeNamespace: null,
+        project: { ...mockProject }
+      }
+      expect(() => getAuditLogEvent({
+        cliCommandFlags: mockCliFlags,
+        operation: OPERATIONS.AB_APP_DEPLOY,
+        appInfo: invalidAppInfo
+      })).toThrow('Runtime namespace is required')
+    })
+
+    it('should throw error for invalid operation', () => {
+      expect(() => getAuditLogEvent({
+        cliCommandFlags: mockCliFlags,
+        operation: 'invalid_operation',
+        appInfo: mockAppInfo
+      })).toThrow('Invalid operation: invalid_operation')
     })
   })
 
-  test('should return correct log event for AB_APP_ASSETS_UNDEPLOYED event', () => {
-    const event = 'AB_APP_ASSETS_UNDEPLOYED'
-    const result = auditLogger.getAuditLogEvent(flags, project, event)
+  describe('sendAppDeployAuditLog', () => {
+    it('should send app deploy audit log successfully', async () => {
+      setFetchMock(true, 200, {})
 
-    expect(result).toEqual({
-      orgId: 'org123',
-      projectId: 'proj456',
-      workspaceId: 'ws789',
-      workspaceName: 'testWorkspace',
-      operation: OPERATIONS.AB_APP_ASSETS_UNDEPLOYED,
-      timestamp: expect.any(Number),
-      data: {
-        cliCommandFlags: flags,
-        opDetailsStr: 'All static assets for the App Builder application in workspace: testWorkspace were successfully undeployed from the CDN'
-      }
+      await sendAppDeployAuditLog({
+        accessToken: mockAccessToken,
+        cliCommandFlags: mockCliFlags,
+        appInfo: mockAppInfo
+      })
+
+      expect(fetch).toHaveBeenCalledWith(
+        AUDIT_SERVICE_ENDPOINTS.prod,
+        expect.objectContaining({
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${mockAccessToken}`,
+            'Content-type': 'application/json'
+          }
+        })
+      )
     })
   })
 
-  test('should return correct log event for AB_APP_ASSETS_DEPLOYED event', () => {
-    const event = 'AB_APP_ASSETS_DEPLOYED'
-    const result = auditLogger.getAuditLogEvent(flags, project, event)
+  describe('sendAppUndeployAuditLog', () => {
+    it('should send app undeploy audit log successfully', async () => {
+      setFetchMock(true, 200, {})
 
-    expect(result).toEqual({
-      orgId: 'org123',
-      projectId: 'proj456',
-      workspaceId: 'ws789',
-      workspaceName: 'testWorkspace',
-      operation: OPERATIONS.AB_APP_ASSETS_DEPLOYED,
-      timestamp: expect.any(Number),
-      data: {
-        cliCommandFlags: flags,
-        opDetailsStr: 'All static assets for the App Builder application in workspace: testWorkspace were successfully deployed to the CDN.\n Files deployed - '
-      }
+      await sendAppUndeployAuditLog({
+        accessToken: mockAccessToken,
+        cliCommandFlags: mockCliFlags,
+        appInfo: mockAppInfo
+      })
+
+      expect(fetch).toHaveBeenCalledWith(
+        AUDIT_SERVICE_ENDPOINTS.prod,
+        expect.objectContaining({
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${mockAccessToken}`,
+            'Content-type': 'application/json'
+          }
+        })
+      )
     })
   })
 
-  test('should return undefined if project or workspace is missing', () => {
-    const event = 'AB_APP_DEPLOY'
-    const result = auditLogger.getAuditLogEvent(flags, {}, event)
+  describe('sendAppAssetsDeployedAuditLog', () => {
+    it('should send app assets deployed audit log successfully', async () => {
+      setFetchMock(true, 200, {})
 
-    expect(result).toBeFalsy()
-  })
+      const mockOpItems = ['file1.js', 'file2.css']
 
-  test('should default operation to APP_TEST if event is not found in OPERATIONS', () => {
-    const event = 'UNKNOWN_EVENT'
-    const result = auditLogger.getAuditLogEvent(flags, project, event)
+      await sendAppAssetsDeployedAuditLog({
+        accessToken: mockAccessToken,
+        cliCommandFlags: mockCliFlags,
+        appInfo: mockAppInfo,
+        opItems: mockOpItems
+      })
 
-    expect(result).toEqual({
-      orgId: 'org123',
-      projectId: 'proj456',
-      workspaceId: 'ws789',
-      workspaceName: 'testWorkspace',
-      operation: OPERATIONS.AB_APP_TEST,
-      timestamp: expect.any(Number),
-      data: {
-        cliCommandFlags: flags,
-        opDetailsStr: undefined
-      }
+      expect(fetch).toHaveBeenCalledWith(
+        AUDIT_SERVICE_ENDPOINTS.prod,
+        expect.objectContaining({
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${mockAccessToken}`,
+            'Content-type': 'application/json'
+          },
+          body: expect.stringContaining(JSON.stringify(mockOpItems))
+        })
+      )
     })
   })
-})
 
-describe('getFilesCountWithExtension', () => {
-  const directory = '__fixtures__/app/web-src'
+  describe('sendAppAssetsUndeployedAuditLog', () => {
+    it('should send app assets undeployed audit log successfully', async () => {
+      setFetchMock(true, 200, {})
 
-  // Mock 'this.log'
-  const mockLog = jest.fn()
+      await sendAppAssetsUndeployedAuditLog({
+        accessToken: mockAccessToken,
+        cliCommandFlags: mockCliFlags,
+        appInfo: mockAppInfo
+      })
 
-  beforeEach(() => {
-    mockLog.mockClear() // Clear mock between tests
+      expect(fetch).toHaveBeenCalledWith(
+        AUDIT_SERVICE_ENDPOINTS.prod,
+        expect.objectContaining({
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${mockAccessToken}`,
+            'Content-type': 'application/json'
+          }
+        })
+      )
+    })
   })
 
-  it('should return an error message when directory does not exist', () => {
-    fs.existsSync.mockReturnValue(false)
+  describe('error handling', () => {
+    it('should throw error when audit service returns non-200 status', async () => {
+      setFetchMock(true, 500, 'Internal Server Error')
 
-    const result = auditLogger.getFilesCountWithExtension.call({ log: mockLog }, directory)
+      await expect(sendAppDeployAuditLog({
+        accessToken: mockAccessToken,
+        cliCommandFlags: mockCliFlags,
+        appInfo: mockAppInfo
+      })).rejects.toThrow('Failed to send audit log - 500 Internal Server Error')
+    })
 
-    expect(fs.existsSync).toHaveBeenCalledWith(directory)
-    expect(mockLog).toHaveBeenCalledWith(
-      'Error: Directory __fixtures__/app/web-src does not exist.'
-    )
-    expect(result).toEqual([])
-  })
+    it('should use prod endpoint when invalid environment is provided', async () => {
+      fetch.mockResolvedValueOnce({ status: 200 })
 
-  it('should return an error message when directory is empty', () => {
-    fs.existsSync.mockReturnValue(true)
-    fs.readdirSync.mockReturnValue([])
+      await sendAppDeployAuditLog({
+        accessToken: mockAccessToken,
+        cliCommandFlags: mockCliFlags,
+        appInfo: mockAppInfo,
+        env: 'invalid-env'
+      })
 
-    const result = auditLogger.getFilesCountWithExtension.call({ log: mockLog }, directory)
-
-    expect(fs.readdirSync).toHaveBeenCalledWith(directory, { recursive: true })
-    expect(mockLog).toHaveBeenCalledWith(
-      'Error: No files found in directory __fixtures__/app/web-src.'
-    )
-    expect(result).toEqual([])
-  })
-
-  it('should return a count of different file types', () => {
-    fs.existsSync.mockReturnValue(true)
-    fs.readdirSync.mockReturnValue(['index.html', 'script.js', 'styles.css', 'image.png', 'image.jpg', 'readme'])
-
-    const result = auditLogger.getFilesCountWithExtension.call({ log: mockLog }, directory)
-    // this really should be 2 image(s) but there is a side effect in the code that makes it split by ext
-    // and this makes more sense than seeing 1 image(s), 1 image(s)
-    expect(result).toEqual([
-      '1 HTML page(s)\n',
-      '1 Javascript file(s)\n',
-      '1 CSS file(s)\n',
-      '1 .png image(s)\n',
-      '1 .jpg image(s)\n',
-      '1 file(s) without extension\n'
-    ])
-  })
-
-  it('should handle directories with files of the same type', () => {
-    fs.existsSync.mockReturnValue(true)
-    fs.readdirSync.mockReturnValue(['script1.js', 'script2.js', 'script3.js'])
-
-    const result = auditLogger.getFilesCountWithExtension.call({ log: mockLog }, directory)
-
-    expect(result).toEqual(['3 Javascript file(s)\n'])
-  })
-
-  it('should handle files with no extension', () => {
-    fs.existsSync.mockReturnValue(true)
-    fs.readdirSync.mockReturnValue(['readme', 'LICENSE'])
-
-    const result = auditLogger.getFilesCountWithExtension.call({ log: mockLog }, directory)
-
-    expect(result).toEqual(['2 file(s) without extension\n'])
-  })
-
-  it('should handle files with other extensions', () => {
-    fs.existsSync.mockReturnValue(true)
-    fs.readdirSync.mockReturnValue(['data.json', 'document.pdf'])
-
-    const result = auditLogger.getFilesCountWithExtension.call({ log: mockLog }, directory)
-
-    expect(result).toEqual([
-      '1 .json file(s)\n',
-      '1 .pdf file(s)\n'
-    ])
+      expect(fetch).toHaveBeenCalledWith(
+        AUDIT_SERVICE_ENDPOINTS.prod,
+        expect.objectContaining({
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${mockAccessToken}`,
+            'Content-type': 'application/json'
+          }
+        })
+      )
+    })
   })
 })

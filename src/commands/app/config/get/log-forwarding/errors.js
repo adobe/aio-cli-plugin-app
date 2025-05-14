@@ -12,6 +12,7 @@ governing permissions and limitations under the License.
 const BaseCommand = require('../../../../../BaseCommand')
 const rtLib = require('@adobe/aio-lib-runtime')
 const ora = require('ora')
+const { setRuntimeApiHostAndAuthHandler } = require('../../../../../lib/auth-helper')
 
 class ErrorsCommand extends BaseCommand {
   async run () {
@@ -30,7 +31,13 @@ class ErrorsCommand extends BaseCommand {
   }
 
   async getLogForwarding () {
-    const runtimeConfig = (await this.getFullConfig()).aio.runtime
+    let aioConfig = (await this.getFullConfig()).aio
+    // TODO: remove this check once the deploy service is enabled by default
+    if (process.env.IS_DEPLOY_SERVICE_ENABLED === 'true') {
+      aioConfig = setRuntimeApiHostAndAuthHandler(aioConfig)
+    }
+
+    const runtimeConfig = aioConfig.runtime
     rtLib.utils.checkOpenWhiskCredentials({ ow: runtimeConfig })
     const rt = await rtLib.init({
       ...runtimeConfig,

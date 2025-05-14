@@ -13,6 +13,7 @@ governing permissions and limitations under the License.
 const { stdout } = require('stdout-stderr')
 const TheCommand = require('../../../../../src/commands/app/config/get/log-forwarding.js')
 const LogForwarding = require('../../../../../src/lib/log-forwarding')
+const { setRuntimeApiHostAndAuthHandler } = require('../../../../../src/lib/auth-helper')
 
 jest.mock('../../../../../src/lib/log-forwarding', () => {
   const orig = jest.requireActual('../../../../../src/lib/log-forwarding')
@@ -21,6 +22,10 @@ jest.mock('../../../../../src/lib/log-forwarding', () => {
     init: jest.fn()
   }
 })
+
+jest.mock('../../../../../src/lib/auth-helper', () => ({
+  setRuntimeApiHostAndAuthHandler: jest.fn(config => config)
+}))
 
 let command, lf
 beforeEach(async () => {
@@ -188,4 +193,27 @@ test('get log forwarding settings (no server config)', async () => {
 test('failed to get log forwarding settings', async () => {
   lf.getServerConfig.mockRejectedValue(new Error('mocked error'))
   await expect(command.run()).rejects.toThrow('mocked error')
+})
+
+test('get log forwarding settings with deploy service enabled', async () => {
+  process.env.IS_DEPLOY_SERVICE_ENABLED = 'true'
+  const localConfig = new LogForwarding.LogForwardingConfig()
+  const serverConfig = new LogForwarding.LogForwardingConfig()
+
+  lf.getLocalConfig.mockReturnValue(localConfig)
+  lf.getServerConfig.mockResolvedValue(serverConfig)
+
+  await command.run()
+  expect(setRuntimeApiHostAndAuthHandler).toHaveBeenCalledWith(command.appConfig.aio)
+  expect(LogForwarding.init).toHaveBeenCalledWith(command.appConfig.aio)
+
+  delete process.env.IS_DEPLOY_SERVICE_ENABLED
+})
+
+test('command aliases are set correctly', () => {
+  expect(TheCommand.aliases).toEqual(['app:config:get:log-forwarding', 'app:config:get:lf'])
+})
+
+test('command description is set correctly', () => {
+  expect(TheCommand.description).toBe('Get log forwarding destination configuration')
 })

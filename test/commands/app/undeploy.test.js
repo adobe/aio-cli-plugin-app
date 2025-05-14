@@ -13,6 +13,7 @@ governing permissions and limitations under the License.
 const TheCommand = require('../../../src/commands/app/undeploy')
 const BaseCommand = require('../../../src/BaseCommand')
 const dataMocks = require('../../data-mocks/config-loader')
+const cloneDeep = require('lodash.clonedeep')
 
 jest.mock('../../../src/lib/app-helper.js')
 const helpers = require('../../../src/lib/app-helper.js')
@@ -30,6 +31,9 @@ const mockConfigData = {
   app: {
     hasFrontend: true,
     hasBackend: true
+  },
+  web: {
+    distProd: 'dist'
   }
 }
 
@@ -146,22 +150,29 @@ describe('run', () => {
     command = new TheCommand([])
     command.error = jest.fn()
     command.log = jest.fn()
-    command.appConfig = mockConfigData
-    command.config = {
-      runCommand: jest.fn(),
-      runHook: jest.fn()
-    }
-    command.getLibConsoleCLI = jest.fn(() => mockLibConsoleCLI)
-    command.getAppExtConfigs = jest.fn()
-    command.getFullConfig = jest.fn().mockReturnValue({
+    command.appConfig = cloneDeep(mockConfigData)
+    command.appConfig.actions = { dist: 'actions' }
+    command.appConfig.web.distProd = 'dist'
+    command.config = { runCommand: jest.fn(), runHook: jest.fn() }
+    command.buildOneExt = jest.fn()
+    command.getFullConfig = jest.fn().mockResolvedValue({
       aio: {
         project: {
           workspace: {
-            name: 'foo'
+            name: 'Production'
+          },
+          org: {
+            id: '1111'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
+    command.getLibConsoleCLI = jest.fn(() => mockLibConsoleCLI)
+    command.getAppExtConfigs = jest.fn()
   })
 
   afterEach(() => {
@@ -245,24 +256,40 @@ describe('run', () => {
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(0)
   })
 
-  test('undeploy skip web assets', async () => {
+  test('should handle audit log error with verbose flag', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
+    command.warn = jest.fn()
+    command.argv = ['-v']
 
-    command.argv = ['--no-web-assets']
+    // Mock audit logger to throw an error
+    auditLogger.sendAppUndeployAuditLog.mockRejectedValueOnce(new Error('Audit log error'))
+
     await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
+
+    // Verify error was logged with verbose flag
+    expect(command.warn).toHaveBeenCalledWith('Error: Audit Log Service Error: Failed to send audit log event for deployment.')
+    expect(command.warn).toHaveBeenCalledWith('Audit log error')
+
+    // Verify deployment still continues
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
   })
 
-  test('undeploy skip static verbose', async () => {
+  test('should handle audit log error without verbose flag', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
+    command.warn = jest.fn()
 
-    command.argv = ['--no-web-assets', '-v']
+    // Mock audit logger to throw an error
+    auditLogger.sendAppUndeployAuditLog.mockRejectedValueOnce(new Error('Audit log error'))
+
     await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
+
+    // Verify error was not logged without verbose flag
+    expect(command.warn).not.toHaveBeenCalled()
+
+    // Verify deployment still continues
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(0)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
   })
 
   test('undeploy an app with no backend', async () => {
@@ -348,6 +375,10 @@ describe('run', () => {
             name: 'foo'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
     const payload = {
@@ -379,6 +410,10 @@ describe('run', () => {
             name: 'foo'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
 
@@ -496,6 +531,10 @@ describe('run', () => {
             name: mockWorkspaceName
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
@@ -516,7 +555,7 @@ describe('run', () => {
     const mockWorkspaceId = 'mockworkspaceid'
     const mockWorkspaceName = 'mockworkspacename'
 
-    command.getFullConfig = jest.fn().mockReturnValue({
+    const fullConfig = {
       aio: {
         project: {
           id: mockProject,
@@ -528,16 +567,46 @@ describe('run', () => {
             name: mockWorkspaceName
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
-    })
+    }
+    command.getFullConfig = jest.fn().mockReturnValue(fullConfig)
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAuditLogs.mock.calls.length).toBe(1)
-    expect(auditLogger.sendAuditLogs).toHaveBeenCalledWith(mockToken, expect.objectContaining({ orgId: mockOrg, projectId: mockProject, workspaceId: mockWorkspaceId, workspaceName: mockWorkspaceName }), mockEnv)
+    expect(auditLogger.sendAppAssetsUndeployedAuditLog.mock.calls.length).toBe(1)
+    expect(auditLogger.sendAppAssetsUndeployedAuditLog).toHaveBeenCalledWith({
+      accessToken: mockToken,
+      appInfo: {
+        name: 'test-app',
+        version: '1.0.0',
+        runtimeNamespace: undefined,
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      },
+      cliCommandFlags: {
+        actions: true,
+        events: true,
+        'force-unpublish': false,
+        unpublish: false,
+        'web-assets': true
+      },
+      env: mockEnv
+    })
   })
 
   test('Do not Send audit logs for successful app undeploy if case of no-token', async () => {
@@ -558,6 +627,10 @@ describe('run', () => {
             name: mockWorkspaceName
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
@@ -567,38 +640,7 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAuditLogs.mock.calls.length).toBe(0)
-  })
-
-  test('Do not Send audit logs for successful app undeploy, if no logevent is present', async () => {
-    const mockOrg = 'mockorg'
-    const mockProject = 'mockproject'
-    const mockWorkspaceId = 'mockworkspaceid'
-    const mockWorkspaceName = 'mockworkspacename'
-
-    command.getFullConfig = jest.fn().mockReturnValue({
-      aio: {
-        project: {
-          id: mockProject,
-          org: {
-            id: mockOrg
-          },
-          workspace: {
-            id: mockWorkspaceId,
-            name: mockWorkspaceName
-          }
-        }
-      }
-    })
-    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
-
-    auditLogger.getAuditLogEvent.mockImplementation((flags, project, event) => null)
-
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAuditLogs.mock.calls.length).toBe(0)
+    expect(auditLogger.sendAppAssetsUndeployedAuditLog.mock.calls.length).toBe(0)
   })
 
   test('Should app undeploy successfully even if Audit Log Service is not available', async () => {
@@ -619,11 +661,15 @@ describe('run', () => {
             name: mockWorkspaceName
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
-    auditLogger.sendAuditLogs.mockRejectedValue({
+    auditLogger.sendAppAssetsUndeployedAuditLog.mockRejectedValue({
       message: 'Internal Server Error',
       status: 500
     })
@@ -632,6 +678,82 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAuditLogs).toHaveBeenCalledTimes(1)
+    expect(auditLogger.sendAppAssetsUndeployedAuditLog).toHaveBeenCalledTimes(1)
+  })
+
+  test('Should app undeploy successfully even if Audit Log Service returns 503', async () => {
+    const mockOrg = 'mockorg'
+    const mockProject = 'mockproject'
+    const mockWorkspaceId = 'mockworkspaceid'
+    const mockWorkspaceName = 'mockworkspacename'
+
+    command.getFullConfig = jest.fn().mockReturnValue({
+      aio: {
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
+      }
+    })
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+
+    auditLogger.sendAppAssetsUndeployedAuditLog.mockRejectedValue({
+      message: 'Service Unavailable',
+      status: 503
+    })
+
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
+    expect(auditLogger.sendAppAssetsUndeployedAuditLog).toHaveBeenCalledTimes(1)
+  })
+
+  test('Should app undeploy successfully even if Audit Log Service returns 504', async () => {
+    const mockOrg = 'mockorg'
+    const mockProject = 'mockproject'
+    const mockWorkspaceId = 'mockworkspaceid'
+    const mockWorkspaceName = 'mockworkspacename'
+
+    command.getFullConfig = jest.fn().mockReturnValue({
+      aio: {
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
+      }
+    })
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+
+    auditLogger.sendAppAssetsUndeployedAuditLog.mockRejectedValue({
+      message: 'Gateway Timeout',
+      status: 504
+    })
+
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
+    expect(auditLogger.sendAppAssetsUndeployedAuditLog).toHaveBeenCalledTimes(1)
   })
 })
