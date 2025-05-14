@@ -391,6 +391,8 @@ function buildExtensionPointPayloadWoMetadata (extConfigs) {
       endpointsPayload[extPointName] = {}
       let actionUrls = {}
       if (extPointConfig.app.hasBackend) {
+        // note: 3rd arg, _isLocalDev is not used in RuntimeLib
+        // there is no such thing as --local anymore
         actionUrls = RuntimeLib.utils.getActionUrls(extPointConfig, false, false)
       }
       Object.entries(extPointConfig.operations)
