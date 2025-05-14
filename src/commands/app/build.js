@@ -102,6 +102,8 @@ class Build extends BaseCommand {
     if (flags['web-assets']) {
       if (config.app.hasFrontend && (flags['force-build'] || !fs.existsSync(config.web.distProd))) {
         if (config.app.hasBackend) {
+          // note: 3rd arg, _isLocalDev is not used in RuntimeLib
+          // there is no such thing as --local anymore
           const urls = RuntimeLib.utils.getActionUrls(config, false, false, true)
           await writeConfig(config.web.injectedConfig, urls)
         }

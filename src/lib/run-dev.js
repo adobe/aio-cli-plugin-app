@@ -85,7 +85,9 @@ async function runDev (config, dataDir, options = {}, log = () => {}, inprocHook
         // note the condition: we still write backend urls EVEN if skipActions is set
         // the urls will always point to remotely deployed actions if skipActions is set
         log('injecting backend urls into frontend config')
-        urls = rtLibUtils.getActionUrls(devConfig, true, !skipActions, true)
+        // note: 3rd arg, _isLocalDev is not used in RuntimeLib
+        // there is no such thing as --local anymore
+        urls = rtLibUtils.getActionUrls(devConfig, false, false, true)
       }
       utils.writeConfig(devConfig.web.injectedConfig, urls)
 
