@@ -17,8 +17,8 @@ const OPERATIONS = {
 }
 
 const AUDIT_SERVICE_ENDPOINTS = {
-  stage: process.env.AUDIT_SERVICE_ENDPOINT_STAGE ?? 'https://adp-auditlog-service-stage.adobeioruntime.net/api/v1/web/audit-log-api/event-post',
-  prod: process.env.AUDIT_SERVICE_ENDPOINT_PROD ?? 'https://adp-auditlog-service-prod.adobeioruntime.net/api/v1/web/audit-log-api/event-post'
+  stage: process.env.AUDIT_SERVICE_ENDPOINT_STAGE ?? 'https://deploy-service.stg.app-builder.corp.adp.adobe.io/audit-log-api/event-post',
+  prod: process.env.AUDIT_SERVICE_ENDPOINT_PROD ?? 'https://deploy-service.app-builder.adp.adobe.io/audit-log-api/event-post'
 }
 
 /**
