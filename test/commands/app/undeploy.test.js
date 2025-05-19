@@ -71,6 +71,14 @@ const mockLibConsoleCLI = {
   removeSelectedExtensionPoints: jest.fn()
 }
 
+const getCommandConfig = () => {
+  return {
+    findCommand: jest.fn().mockReturnValue({}),
+    runCommand: jest.fn(),
+    runHook: jest.fn()
+  }
+}
+
 beforeEach(() => {
   mockRuntimeLib.undeployActions.mockReset()
   helpers.runInProcess.mockReset()
@@ -153,7 +161,6 @@ describe('run', () => {
     command.appConfig = cloneDeep(mockConfigData)
     command.appConfig.actions = { dist: 'actions' }
     command.appConfig.web.distProd = 'dist'
-    command.config = { runCommand: jest.fn(), runHook: jest.fn() }
     command.buildOneExt = jest.fn()
     command.getFullConfig = jest.fn().mockResolvedValue({
       aio: {
@@ -173,6 +180,7 @@ describe('run', () => {
     })
     command.getLibConsoleCLI = jest.fn(() => mockLibConsoleCLI)
     command.getAppExtConfigs = jest.fn()
+    command.config = getCommandConfig()
   })
 
   afterEach(() => {
@@ -467,47 +475,41 @@ describe('run', () => {
   })
 
   test('does NOT fire `event` hooks when feature flag is NOT enabled', async () => {
-    const runHook = jest.fn()
-    command.config = { runHook }
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     command.argv = []
     await command.run()
     expect(command.error).not.toHaveBeenCalled()
-    expect(runHook).not.toHaveBeenCalledWith('pre-undeploy-event-reg')
+    expect(command.config.runHook).not.toHaveBeenCalledWith('pre-undeploy-event-reg')
   })
 
   test('does NOT fire `event` hooks when events flag is false', async () => {
-    const runHook = jest.fn()
-    command.config = { runHook }
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     await command.run()
     expect(command.error).not.toHaveBeenCalled()
-    expect(runHook).not.toHaveBeenCalledWith('pre-undeploy-event-reg')
+    expect(command.config.runHook).not.toHaveBeenCalledWith('pre-undeploy-event-reg')
   })
 
   test('DOES fire `event` hooks when feature flag IS enabled', async () => {
-    const runHook = jest.fn()
+    command.config.runHook
       .mockResolvedValue({
         successes: ['ok'],
         failures: []
       })
-    command.config = { runHook }
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     await command.run()
     expect(command.error).not.toHaveBeenCalled()
-    expect(runHook).toHaveBeenCalledWith('pre-undeploy-event-reg', expect.any(Object))
+    expect(command.config.runHook).toHaveBeenCalledWith('pre-undeploy-event-reg', expect.any(Object))
   })
 
   test('outputs error if events hook throws', async () => {
-    const runHook = jest.fn()
+    command.config.runHook
       .mockResolvedValue({
         successes: [],
         failures: [{ plugin: { name: 'ifailedu' }, error: 'some error' }]
       })
-    command.config = { runHook }
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     await command.run()
-    expect(runHook).toHaveBeenCalledWith('pre-undeploy-event-reg', expect.any(Object))
+    expect(command.config.runHook).toHaveBeenCalledWith('pre-undeploy-event-reg', expect.any(Object))
     expect(command.error).toHaveBeenCalledTimes(1)
   })
 
@@ -755,5 +757,16 @@ describe('run', () => {
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
     expect(auditLogger.sendAppAssetsUndeployedAuditLog).toHaveBeenCalledTimes(1)
+  })
+
+  test('does not run app:clean command if not found', async () => {
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
+    // Simulate findCommand returning undefined
+    command.config.findCommand = jest.fn().mockReturnValue(undefined)
+    command.argv = []
+    await command.run()
+    // Should not log or run app:clean
+    expect(command.log).not.toHaveBeenCalledWith('running app:clean command')
+    expect(command.config.runCommand).not.toHaveBeenCalledWith('app:clean')
   })
 })
