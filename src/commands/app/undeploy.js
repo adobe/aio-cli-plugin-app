@@ -110,8 +110,15 @@ class Undeploy extends BaseCommand {
       // delegate to top handler
       throw error
     }
+
+    const command = await this.config.findCommand('app:clean')
+    if (command) {
+      this.log('running app:clean command')
+      await this.config.runCommand('app:clean')
+    }
+
     // final message
-    this.log(chalk.green(chalk.bold('Undeploy done !')))
+    this.log(chalk.green(chalk.bold('Undeploy done!')))
   }
 
   async undeployOneExt (extName, config, flags, spinner) {
