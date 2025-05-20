@@ -80,7 +80,7 @@ class Undeploy extends BaseCommand {
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
         // TODO: remove this check once the deploy service is enabled by default
-        const v = process.env.IS_DEPLOY_SERVICE_ENABLED === 'true' ? setRuntimeApiHostAndAuthHandler(values[i]) : values[i]
+        const v = setRuntimeApiHostAndAuthHandler(values[i])
 
         await this.undeployOneExt(k, v, flags, spinner)
         if (cliDetails?.accessToken) {

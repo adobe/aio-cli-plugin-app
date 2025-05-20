@@ -12,7 +12,7 @@ governing permissions and limitations under the License.
 const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
 const { getCliEnv } = require('@adobe/aio-lib-env')
-const defaultRuntimeUrl = 'https://adobeioruntime.net'
+const defaultDeployServiceUrl = 'https://deploy-service.app-builder.adp.adobe.io/runtime'
 
 /**
  * For use with the openwhisk client js library to send a bearer token instead of basic
@@ -32,29 +32,18 @@ const bearerAuthHandler = {
 }
 
 const setRuntimeApiHostAndAuthHandler = (config) => {
-  // TODO: remove this check once the deploy service is enabled by default
-  if (process.env.IS_DEPLOY_SERVICE_ENABLED === 'true') {
-    const aioConfig = (config && 'runtime' in config) ? config : null
-    if (aioConfig) {
-      aioConfig.runtime.apihost = process.env.AIO_RUNTIME_APIHOST ?? defaultRuntimeUrl
-      aioConfig.runtime.auth_handler = bearerAuthHandler
-      return aioConfig
-    }
-    const owConfig = (config && 'ow' in config) ? config : null
-    if (owConfig) {
-      owConfig.ow.apihost = process.env.AIO_RUNTIME_APIHOST ?? defaultRuntimeUrl
-      owConfig.ow.auth_handler = bearerAuthHandler
-      return owConfig
-    }
-  } else {
-    if (config && config.runtime) {
-      config.runtime.apihost = process.env.AIO_RUNTIME_APIHOST ?? defaultRuntimeUrl
-    }
-    if (config && config.ow) {
-      config.ow.apihost = process.env.AIO_RUNTIME_APIHOST ?? defaultRuntimeUrl
-    }
+  const aioConfig = (config && 'runtime' in config) ? config : null
+  if (aioConfig) {
+    aioConfig.runtime.apihost = process.env.AIO_DEPLOY_SERVICE_URL ?? defaultDeployServiceUrl
+    aioConfig.runtime.auth_handler = bearerAuthHandler
+    return aioConfig
   }
-  return config
+  const owConfig = (config && 'ow' in config) ? config : null
+  if (owConfig) {
+    owConfig.ow.apihost = process.env.AIO_DEPLOY_SERVICE_URL ?? defaultDeployServiceUrl
+    owConfig.ow.auth_handler = bearerAuthHandler
+    return owConfig
+  }
 }
 
 module.exports = {
