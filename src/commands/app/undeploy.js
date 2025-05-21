@@ -17,10 +17,10 @@ const { Flags } = require('@oclif/core')
 
 const BaseCommand = require('../../BaseCommand')
 const webLib = require('@adobe/aio-lib-web')
-const { runInProcess, buildExtensionPointPayloadWoMetadata, getCliInfo } = require('../../lib/app-helper')
+const { runInProcess, buildExtensionPointPayloadWoMetadata } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const { sendAppAssetsUndeployedAuditLog, sendAppUndeployAuditLog } = require('../../lib/audit-logger')
-const { setRuntimeApiHostAndAuthHandler } = require('../../lib/auth-helper')
+const { setRuntimeApiHostAndAuthHandler, getAccessToken } = require('../../lib/auth-helper')
 
 class Undeploy extends BaseCommand {
   async run () {
@@ -52,7 +52,7 @@ class Undeploy extends BaseCommand {
     const spinner = ora()
     try {
       const { aio: aioConfig, packagejson: packageJson } = await this.getFullConfig()
-      const cliDetails = await getCliInfo(flags.unpublish)
+      const cliDetails = await getAccessToken({ useCachedToken: flags.unpublish })
       const appInfo = {
         name: packageJson.name,
         version: packageJson.version,

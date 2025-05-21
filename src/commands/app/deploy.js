@@ -18,11 +18,11 @@ const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { Flags } = require('@oclif/core')
-const { runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getCliInfo, getFilesCountWithExtension } = require('../../lib/app-helper')
+const { runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getFilesCountWithExtension } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
 const { sendAppAssetsDeployedAuditLog, sendAppDeployAuditLog } = require('../../lib/audit-logger')
-const { setRuntimeApiHostAndAuthHandler } = require('../../lib/auth-helper')
+const { setRuntimeApiHostAndAuthHandler, getAccessToken } = require('../../lib/auth-helper')
 const logActions = require('../../lib/log-actions')
 
 const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
@@ -54,7 +54,7 @@ class Deploy extends BuildCommand {
 
     try {
       const { aio: aioConfig, packagejson: packageJson } = await this.getFullConfig()
-      const cliDetails = await getCliInfo(flags.publish)
+      const cliDetails = await getAccessToken({ useCachedToken: flags.publish })
       const appInfo = {
         name: packageJson.name,
         version: packageJson.version,

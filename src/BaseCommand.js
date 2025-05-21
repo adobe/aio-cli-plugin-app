@@ -21,7 +21,7 @@ const STAGE_LAUNCH_PREFIX = 'https://experience-stage.adobe.com/?devMode=true#/c
 const appConfig = require('@adobe/aio-cli-lib-app-config')
 const inquirer = require('inquirer')
 const { CONSOLE_API_KEYS, APPLICATION_CONFIG_KEY, EXTENSIONS_CONFIG_KEY } = require('./lib/defaults')
-const { getCliInfo } = require('./lib/app-helper')
+const { getAccessToken } = require('./lib/auth-helper')
 const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app', { provider: 'debug' })
 
@@ -54,7 +54,7 @@ class BaseCommand extends Command {
   async getLibConsoleCLI () {
     if (!this.consoleCLI) {
       // requires valid login
-      const { accessToken, env } = await getCliInfo()
+      const { accessToken, env } = await getAccessToken()
       // init console CLI sdk consoleCLI
       this.consoleCLI = await LibConsoleCLI.init({ accessToken, env, apiKey: CONSOLE_API_KEYS[env] })
     }

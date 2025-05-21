@@ -180,33 +180,6 @@ function wrapError (err) {
 }
 
 /**
- * getCliInfo
- *
- * @private
- *
- * @param {boolean} useForce - if true, user will be forced to login if not already logged in
- * @returns {Promise<{accessToken: string, env: string}>} accessToken and env
-*/
-async function getCliInfo (useForce = true) {
-  const env = getCliEnv()
-  let accessToken
-  await context.setCli({ 'cli.bare-output': true }, false) // set this globally
-  if (useForce) {
-    aioLogger.debug('Retrieving CLI Token using force=true')
-    accessToken = await getToken(CLI)
-  } else {
-    aioLogger.debug('Retrieving CLI Token using force=false')
-    // in this case, the user might be logged in, but we don't want to force them
-    // we just check the config for the token ( we still use the cli context so we don't need to know
-    // the inner workings of ims-lib and where it stores access tokens)
-    // todo: this is a workaround, we should have a better way to check if the user is logged in (in ims-lib)
-    const contextConfig = await context.getCli()
-    accessToken = contextConfig?.access_token?.token
-  }
-  return { accessToken, env }
-}
-
-/**
  * Joins url path parts
  *
  * @param {...string} args url parts
@@ -545,7 +518,6 @@ module.exports = {
   runInProcess,
   runPackageScript,
   wrapError,
-  getCliInfo,
   removeProtocolFromURL,
   urlJoin,
   checkFile,
