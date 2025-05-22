@@ -16,9 +16,10 @@ const OPERATIONS = {
   AB_APP_ASSETS_UNDEPLOYED: 'ab_app_assets_undeployed'
 }
 
+const AUDIT_SERVICE_ENDPOINT_ROUTE = '/audit-log-api/event-post'
 const AUDIT_SERVICE_ENDPOINTS = {
-  stage: 'https://deploy-service.stg.app-builder.corp.adp.adobe.io/audit-log-api/event-post',
-  prod: 'https://deploy-service.app-builder.adp.adobe.io/audit-log-api/event-post'
+  stage: 'https://deploy-service.stg.app-builder.corp.adp.adobe.io',
+  prod: 'https://deploy-service.app-builder.adp.adobe.io'
 }
 
 /**
@@ -62,8 +63,11 @@ const AUDIT_SERVICE_ENDPOINTS = {
 async function publishAuditLogs ({ accessToken, logEvent, env = 'prod' }) {
   let url = AUDIT_SERVICE_ENDPOINTS[env] ?? AUDIT_SERVICE_ENDPOINTS.prod
   if (process.env.AIO_DEPLOY_SERVICE_URL) {
-    url = `${process.env.AIO_DEPLOY_SERVICE_URL}/audit-log-api/event-post`
+    url = process.env.AIO_DEPLOY_SERVICE_URL
   }
+
+  // add the route to the endpoint
+  url += AUDIT_SERVICE_ENDPOINT_ROUTE
 
   const payload = {
     event: logEvent
@@ -185,7 +189,9 @@ async function sendAppAssetsUndeployedAuditLog ({ accessToken, cliCommandFlags, 
 
 module.exports = {
   OPERATIONS,
+  AUDIT_SERVICE_ENDPOINT_ROUTE,
   AUDIT_SERVICE_ENDPOINTS,
+  publishAuditLogs,
   getAuditLogEvent,
   sendAppDeployAuditLog,
   sendAppUndeployAuditLog,

@@ -676,32 +676,6 @@ describe('writeConfig', () => {
   })
 })
 
-describe('getCliInfo', () => {
-  test('prod', async () => {
-    libEnv.getCliEnv.mockReturnValue('prod')
-    libIms.getToken.mockResolvedValue('token')
-    const res = await appHelper.getCliInfo()
-    expect(res).toEqual(
-      { accessToken: 'token', env: 'prod' }
-    )
-  })
-  test('stage', async () => {
-    libEnv.getCliEnv.mockReturnValue('stage')
-    libIms.getToken.mockResolvedValue('stoken')
-    const res = await appHelper.getCliInfo()
-    expect(res).toEqual(
-      { accessToken: 'stoken', env: 'stage' }
-    )
-  })
-  test('useForceFalse', async () => {
-    libEnv.getCliEnv.mockReturnValue('prod')
-    libIms.getToken.mockResolvedValue('asdasd')
-    const res = await appHelper.getCliInfo(false)
-    expect(res).toEqual({ accessToken: undefined, env: 'prod' })
-    expect(libIms.getToken).toHaveBeenCalledTimes(0)
-  })
-})
-
 describe('createWebExportFilter', () => {
   const webFilter = appHelper.createWebExportFilter(true)
   const nonWebFilter = appHelper.createWebExportFilter(false)

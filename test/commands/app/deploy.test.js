@@ -167,7 +167,6 @@ beforeEach(() => {
   helpers.buildExtensionPointPayloadWoMetadata.mockReset()
   helpers.buildExcShellViewExtensionMetadata.mockReset()
   helpers.createWebExportFilter.mockReset()
-  helpers.getCliInfo.mockReset()
   mockLogForwarding.isLocalConfigChanged.mockReset()
   mockLogForwarding.getLocalConfigWithSecrets.mockReset()
   mockLogForwarding.updateServerConfig.mockReset()
@@ -185,7 +184,7 @@ beforeEach(() => {
     ]
   })
   authHelper.setRuntimeApiHostAndAuthHandler.mockImplementation((aioConfig) => aioConfig)
-  helpers.getCliInfo.mockImplementation(() => {
+  authHelper.getAccessToken.mockImplementation(() => {
     return {
       accessToken: 'mocktoken',
       env: 'stage'
@@ -1257,88 +1256,6 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(1)
   })
 
-  test('Should invoke setRuntimeApiHostAndAuthHandler if IS_DEPLOY_SERVICE_ENABLED = true', async () => {
-    process.env.IS_DEPLOY_SERVICE_ENABLED = true
-
-    const mockToken = 'mocktoken'
-    const mockEnv = 'stage'
-    const mockOrg = 'mockorg'
-    const mockProject = 'mockproject'
-    const mockWorkspaceId = 'mockworkspaceid'
-    const mockWorkspaceName = 'mockworkspacename'
-    helpers.getCliInfo.mockResolvedValueOnce({
-      accessToken: mockToken,
-      env: mockEnv
-    })
-    const fullConfig = {
-      aio: {
-        project: {
-          id: mockProject,
-          org: {
-            id: mockOrg
-          },
-          workspace: {
-            id: mockWorkspaceId,
-            name: mockWorkspaceName
-          }
-        }
-      },
-      packagejson: {
-        name: 'test-app',
-        version: '1.0.0'
-      }
-    }
-    command.getFullConfig = jest.fn().mockReturnValue(fullConfig)
-    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
-
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledTimes(1)
-    expect(authHelper.setRuntimeApiHostAndAuthHandler).toHaveBeenCalledTimes(2) // once in logforwarding, once when deploying
-    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledWith({
-      accessToken: mockToken,
-      appInfo: {
-        name: 'test-app',
-        version: '1.0.0',
-        runtimeNamespace: undefined,
-        project: {
-          id: mockProject,
-          org: {
-            id: mockOrg
-          },
-          workspace: {
-            id: mockWorkspaceId,
-            name: mockWorkspaceName
-          }
-        }
-      },
-      cliCommandFlags: {
-        actions: true,
-        build: true,
-        'content-hash': true,
-        'force-build': true,
-        'force-deploy': false,
-        'force-events': false,
-        'force-publish': false,
-        'log-forwarding-update': true,
-        open: false,
-        publish: false,
-        'web-assets': true,
-        'web-optimize': false
-      },
-      env: mockEnv,
-      opItems: [
-        '3 Javascript file(s)',
-        '2 CSS file(s)',
-        '5 image(s)',
-        '1 HTML page(s)'
-      ]
-    })
-    process.env.IS_DEPLOY_SERVICE_ENABLED = false
-  })
-
   test('Send audit logs for successful app deploy', async () => {
     const mockToken = 'mocktoken'
     const mockEnv = 'stage'
@@ -1346,7 +1263,7 @@ describe('run', () => {
     const mockProject = 'mockproject'
     const mockWorkspaceId = 'mockworkspaceid'
     const mockWorkspaceName = 'mockworkspacename'
-    helpers.getCliInfo.mockResolvedValueOnce({
+    authHelper.getAccessToken.mockResolvedValueOnce({
       accessToken: mockToken,
       env: mockEnv
     })
@@ -1426,7 +1343,7 @@ describe('run', () => {
     const mockWorkspaceId = 'mockworkspaceid'
     const mockWorkspaceName = 'mockworkspacename'
 
-    helpers.getCliInfo.mockResolvedValueOnce({
+    authHelper.getAccessToken.mockResolvedValueOnce({
       accessToken: mockToken,
       env: mockEnv
     })
@@ -1469,7 +1386,7 @@ describe('run', () => {
 
     command.argv = ['--web-assets']
 
-    helpers.getCliInfo.mockResolvedValueOnce({
+    authHelper.getAccessToken.mockResolvedValueOnce({
       accessToken: mockToken,
       env: mockEnv
     })
@@ -1548,7 +1465,7 @@ describe('run', () => {
     const mockProject = 'mockproject'
     const mockWorkspaceId = 'mockworkspaceid'
     const mockWorkspaceName = 'mockworkspacename'
-    helpers.getCliInfo.mockResolvedValueOnce({
+    authHelper.getAccessToken.mockResolvedValueOnce({
       accessToken: mockToken,
       env: mockEnv
     })
@@ -1601,7 +1518,7 @@ describe('run', () => {
     const mockProject = 'mockproject'
     const mockWorkspaceId = 'mockworkspaceid'
     const mockWorkspaceName = 'mockworkspacename'
-    helpers.getCliInfo.mockResolvedValueOnce({
+    authHelper.getAccessToken.mockResolvedValueOnce({
       accessToken: mockToken,
       env: mockEnv
     })
@@ -1653,7 +1570,7 @@ describe('run', () => {
     const mockProject = 'mockproject'
     const mockWorkspaceId = 'mockworkspaceid'
     const mockWorkspaceName = 'mockworkspacename'
-    helpers.getCliInfo.mockResolvedValueOnce({
+    authHelper.getAccessToken.mockResolvedValueOnce({
       accessToken: mockToken,
       env: mockEnv
     })

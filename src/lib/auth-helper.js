@@ -19,17 +19,17 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
  * Retrieves an access token for Adobe I/O CLI authentication.
  * This function handles both CLI and custom contexts, setting up the appropriate
  * authentication context and retrieving the corresponding access token.
- * 
+ *
  * @async
  * @function getAccessToken
- * @param {Object} [options] - Options for token retrieval
+ * @param {object} [options] - Options for token retrieval
  * @param {boolean} [options.useCachedToken=false] - Whether to use a cached token instead of requesting a new one
  * @returns {Promise<{accessToken: string|null, env: string}>} An object containing:
  *   - accessToken: The retrieved access token for authentication, or null if token retrieval failed
  *   - env: The current CLI environment (e.g. 'prod', 'stage')
  * @throws {Error} If token retrieval fails or context setup fails
  */
-async function getAccessToken({ useCachedToken = false } = {}) {
+async function getAccessToken ({ useCachedToken = false } = {}) {
   const env = getCliEnv()
   aioLogger.debug(`Retrieving CLI Token using env=${env}`)
 
