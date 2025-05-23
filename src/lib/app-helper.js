@@ -14,13 +14,10 @@ const fs = require('fs-extra')
 const path = require('node:path')
 const which = require('which')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:lib-app-helper', { provider: 'debug' })
-const { getToken, context } = require('@adobe/aio-lib-ims')
-const { CLI } = require('@adobe/aio-lib-ims/src/context')
 const chalk = require('chalk')
 const aioConfig = require('@adobe/aio-lib-core-config')
 const { AIO_CONFIG_WORKSPACE_SERVICES, AIO_CONFIG_ORG_SERVICES } = require('./defaults')
 const { EOL } = require('os')
-const { getCliEnv } = require('@adobe/aio-lib-env')
 const yaml = require('js-yaml')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
 
@@ -177,33 +174,6 @@ function wrapError (err) {
   }
 
   return new Error(message)
-}
-
-/**
- * getCliInfo
- *
- * @private
- *
- * @param {boolean} useForce - if true, user will be forced to login if not already logged in
- * @returns {Promise<{accessToken: string, env: string}>} accessToken and env
-*/
-async function getCliInfo (useForce = true) {
-  const env = getCliEnv()
-  let accessToken
-  await context.setCli({ 'cli.bare-output': true }, false) // set this globally
-  if (useForce) {
-    aioLogger.debug('Retrieving CLI Token using force=true')
-    accessToken = await getToken(CLI)
-  } else {
-    aioLogger.debug('Retrieving CLI Token using force=false')
-    // in this case, the user might be logged in, but we don't want to force them
-    // we just check the config for the token ( we still use the cli context so we don't need to know
-    // the inner workings of ims-lib and where it stores access tokens)
-    // todo: this is a workaround, we should have a better way to check if the user is logged in (in ims-lib)
-    const contextConfig = await context.getCli()
-    accessToken = contextConfig?.access_token?.token
-  }
-  return { accessToken, env }
 }
 
 /**
@@ -545,7 +515,6 @@ module.exports = {
   runInProcess,
   runPackageScript,
   wrapError,
-  getCliInfo,
   removeProtocolFromURL,
   urlJoin,
   checkFile,

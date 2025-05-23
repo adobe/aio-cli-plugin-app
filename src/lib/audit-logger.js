@@ -16,9 +16,10 @@ const OPERATIONS = {
   AB_APP_ASSETS_UNDEPLOYED: 'ab_app_assets_undeployed'
 }
 
+const AUDIT_SERVICE_ENDPOINT_ROUTE = '/audit-log-api/event-post'
 const AUDIT_SERVICE_ENDPOINTS = {
-  stage: process.env.AUDIT_SERVICE_ENDPOINT_STAGE ?? 'https://deploy-service.stg.app-builder.corp.adp.adobe.io/audit-log-api/event-post',
-  prod: process.env.AUDIT_SERVICE_ENDPOINT_PROD ?? 'https://deploy-service.app-builder.adp.adobe.io/audit-log-api/event-post'
+  stage: 'https://deploy-service.stg.app-builder.corp.adp.adobe.io',
+  prod: 'https://deploy-service.app-builder.adp.adobe.io'
 }
 
 /**
@@ -53,31 +54,6 @@ const AUDIT_SERVICE_ENDPOINTS = {
  */
 
 /**
- * Checks for environment variable overrides of audit service endpoints and logs warnings if found.
- *
- * This function checks for the following environment variables:
- * - AUDIT_SERVICE_ENDPOINT_STAGE: Override for the stage environment endpoint
- * - AUDIT_SERVICE_ENDPOINT_PROD: Override for the production environment endpoint
- *
- * If any of these variables are set, a warning will be logged to the console indicating
- * which variables are being overridden and their values.
- *
- * @function checkOverrides
- * @returns {void}
- */
-function checkOverrides () {
-  const toCheck = ['AUDIT_SERVICE_ENDPOINT_STAGE', 'AUDIT_SERVICE_ENDPOINT_PROD']
-  const overrides = toCheck.filter((toCheck) => process.env[toCheck])
-
-  if (overrides.length > 0) {
-    console.warn('Audit Service overrides detected:')
-    overrides.forEach((override) => {
-      console.warn(`  ${override}: ${process.env[override]}`)
-    })
-  }
-}
-
-/**
  * Publish audit log events to audit service
  *
  * @param {PublishAuditLogParams} params - Parameters object containing access token, log event, and environment
@@ -85,9 +61,14 @@ function checkOverrides () {
  * @throws {Error} If the audit log request fails
  */
 async function publishAuditLogs ({ accessToken, logEvent, env = 'prod' }) {
-  checkOverrides()
+  let url = AUDIT_SERVICE_ENDPOINTS[env] ?? AUDIT_SERVICE_ENDPOINTS.prod
+  if (process.env.AIO_DEPLOY_SERVICE_URL) {
+    url = process.env.AIO_DEPLOY_SERVICE_URL
+  }
 
-  const url = AUDIT_SERVICE_ENDPOINTS[env] ?? AUDIT_SERVICE_ENDPOINTS.prod
+  // add the route to the endpoint
+  url += AUDIT_SERVICE_ENDPOINT_ROUTE
+
   const payload = {
     event: logEvent
   }
@@ -208,11 +189,12 @@ async function sendAppAssetsUndeployedAuditLog ({ accessToken, cliCommandFlags, 
 
 module.exports = {
   OPERATIONS,
+  AUDIT_SERVICE_ENDPOINT_ROUTE,
   AUDIT_SERVICE_ENDPOINTS,
+  publishAuditLogs,
   getAuditLogEvent,
   sendAppDeployAuditLog,
   sendAppUndeployAuditLog,
   sendAppAssetsDeployedAuditLog,
-  sendAppAssetsUndeployedAuditLog,
-  checkOverrides
+  sendAppAssetsUndeployedAuditLog
 }

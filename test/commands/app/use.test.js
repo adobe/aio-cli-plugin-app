@@ -85,11 +85,13 @@ function setConfigMock () {
 const mockAccessToken = 'some-access-token'
 const mockGetCli = jest.fn()
 const mockSetCli = jest.fn()
+const mockGetCurrent = jest.fn()
 jest.mock('@adobe/aio-lib-ims', () => {
   return {
     context: {
       getCli: () => mockGetCli(),
-      setCli: () => mockSetCli()
+      setCli: () => mockSetCli(),
+      getCurrent: () => mockGetCurrent()
     },
     getToken: () => mockAccessToken
   }

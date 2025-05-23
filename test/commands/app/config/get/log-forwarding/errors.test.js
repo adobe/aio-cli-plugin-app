@@ -13,17 +13,12 @@ governing permissions and limitations under the License.
 const { stdout } = require('stdout-stderr')
 const TheCommand = require('../../../../../../src/commands/app/config/get/log-forwarding/errors.js')
 const rtLib = require('@adobe/aio-lib-runtime')
-const { setRuntimeApiHostAndAuthHandler } = require('../../../../../../src/lib/auth-helper')
 
 jest.mock('@adobe/aio-lib-runtime', () => ({
   init: jest.fn(),
   utils: {
     checkOpenWhiskCredentials: jest.fn()
   }
-}))
-
-jest.mock('../../../../../../src/lib/auth-helper', () => ({
-  setRuntimeApiHostAndAuthHandler: jest.fn(config => config)
 }))
 
 let command, logForwarding
@@ -77,22 +72,6 @@ test('get log forwarding errors without configured forwarder', async () => {
   await command.run()
   expect(stdout.output).toContain('Log forwarding errors:')
   expect(stdout.output).toContain('Error 1')
-})
-
-test('get log forwarding errors with deploy service enabled', async () => {
-  process.env.IS_DEPLOY_SERVICE_ENABLED = 'true'
-  logForwarding.getErrors.mockResolvedValue({
-    errors: []
-  })
-
-  await command.run()
-  expect(setRuntimeApiHostAndAuthHandler).toHaveBeenCalledWith(command.appConfig.aio)
-  expect(rtLib.init).toHaveBeenCalledWith({
-    ...command.appConfig.aio.runtime,
-    api_key: command.appConfig.aio.runtime.auth
-  })
-
-  delete process.env.IS_DEPLOY_SERVICE_ENABLED
 })
 
 test('failed to get log forwarding errors', async () => {
