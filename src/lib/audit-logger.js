@@ -116,15 +116,9 @@ function getAuditLogEvent ({ cliCommandFlags, operation, appInfo }) {
     throw new Error(`Invalid operation: ${operation}`)
   }
   const orgId = project.org.id
-  const projectId = project.id
-  const workspaceId = project.workspace.id
-  const workspaceName = project.workspace.name
 
   const logEvent = {
     orgId,
-    projectId,
-    workspaceId,
-    workspaceName,
     operation,
     objectRef: appInfo.name,
     objectRev: appInfo.version,
