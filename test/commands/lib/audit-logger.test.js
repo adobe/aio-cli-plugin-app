@@ -53,9 +53,6 @@ describe('audit-logger', () => {
 
       expect(event).toEqual({
         orgId: 'fake-org-id',
-        projectId: 'fake-project-id',
-        workspaceId: 'fake-workspace-id',
-        workspaceName: 'fake-workspace',
         operation: OPERATIONS.AB_APP_DEPLOY,
         objectRef: 'test-app',
         objectRev: '1.0.0',
@@ -77,9 +74,6 @@ describe('audit-logger', () => {
 
       expect(event).toEqual({
         orgId: 'fake-org-id',
-        projectId: 'fake-project-id',
-        workspaceId: 'fake-workspace-id',
-        workspaceName: 'fake-workspace',
         operation: OPERATIONS.AB_APP_UNDEPLOY,
         objectRef: 'test-app',
         objectRev: '1.0.0',
