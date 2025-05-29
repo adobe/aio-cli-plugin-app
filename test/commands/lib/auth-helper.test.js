@@ -11,12 +11,12 @@ describe('getAccessToken', () => {
     jest.clearAllMocks()
   })
 
-  test('should get token using CLI context by default', async () => {
+  test('should get token using CLI context (default) if current context undefined', async () => {
     const mockToken = 'mocked-token'
     const mockEnv = 'prod'
     getToken.mockResolvedValue(mockToken)
     getCliEnv.mockReturnValue(mockEnv)
-    context.getCurrent.mockResolvedValue(CLI)
+    context.getCurrent.mockResolvedValue(undefined)
 
     const result = await getAccessToken()
 
