@@ -14,15 +14,10 @@ governing permissions and limitations under the License.
 jest.unmock('@adobe/aio-lib-runtime')
 
 const mockFetch = jest.fn()
-jest.mock('@adobe/aio-lib-core-networking', () => ({
-  createFetch: jest.fn(() => mockFetch),
-  HttpExponentialBackoff: jest.fn()
-}))
 
 jest.mock('@adobe/aio-lib-core-config')
 jest.mock('execa')
-jest.mock('process')
-jest.mock('path')
+jest.mock('node:path')
 jest.mock('fs-extra') // do not touch the real fs
 jest.mock('@adobe/aio-lib-env')
 jest.mock('@adobe/aio-lib-ims')
@@ -30,7 +25,7 @@ jest.mock('@adobe/aio-lib-ims')
 const mockLogger = require('@adobe/aio-lib-core-logging')
 
 const which = require('which')
-const path = require('path')
+const path = require('node:path')
 const fs = require('fs-extra')
 const execa = require('execa')
 const appHelper = require('../../../src/lib/app-helper')
@@ -39,6 +34,9 @@ const libEnv = require('@adobe/aio-lib-env')
 const libIms = require('@adobe/aio-lib-ims')
 
 beforeEach(() => {
+  // use actual implementation
+  path.extname.mockImplementation(jest.requireActual('node:path').extname)
+
   Object.defineProperty(process, 'platform', { value: 'linux' })
   execa.mockReset()
   execa.command.mockReset()
@@ -51,78 +49,6 @@ beforeEach(() => {
 })
 
 const getMockConfig = require('../../data-mocks/config-loader')
-
-test('isDockerRunning', async () => {
-  let result
-
-  expect(appHelper.isDockerRunning).toBeDefined()
-  expect(appHelper.isDockerRunning).toBeInstanceOf(Function)
-
-  execa.mockImplementation(() => {
-    return { stdout: jest.fn() }
-  })
-
-  result = await appHelper.isDockerRunning()
-  expect(result).toBeTruthy()
-
-  execa.mockImplementation((cmd, args) => {
-    if (cmd === 'docker' && args.includes('info')) {
-      throw new Error('fake error')
-    }
-    return { stdout: jest.fn() }
-  })
-
-  result = await appHelper.isDockerRunning()
-  expect(result).toBeFalsy()
-})
-
-test('hasDockerCLI', async () => {
-  let result
-
-  expect(appHelper.hasDockerCLI).toBeDefined()
-  expect(appHelper.hasDockerCLI).toBeInstanceOf(Function)
-
-  execa.mockImplementation(() => {
-    return { stdout: jest.fn() }
-  })
-
-  result = await appHelper.hasDockerCLI()
-  expect(result).toBeTruthy()
-
-  execa.mockImplementation((cmd, args) => {
-    if (cmd === 'docker' && args.includes('-v')) {
-      throw new Error('fake error')
-    }
-    return { stdout: jest.fn() }
-  })
-
-  result = await appHelper.hasDockerCLI()
-  expect(result).toBeFalsy()
-})
-
-test('hasJavaCLI', async () => {
-  let result
-
-  expect(appHelper.hasJavaCLI).toBeDefined()
-  expect(appHelper.hasJavaCLI).toBeInstanceOf(Function)
-
-  execa.mockImplementation(() => {
-    return { stdout: jest.fn() }
-  })
-
-  result = await appHelper.hasJavaCLI()
-  expect(result).toBeTruthy()
-
-  execa.mockImplementation((cmd) => {
-    if (cmd === 'java') {
-      throw new Error('fake error')
-    }
-    return { stdout: jest.fn() }
-  })
-
-  result = await appHelper.hasJavaCLI()
-  expect(result).toBeFalsy()
-})
 
 test('isNpmInstalled', () => {
   expect(appHelper.isNpmInstalled).toBeDefined()
@@ -293,7 +219,7 @@ test('runPackageScript logs if package.json does not have matching script', asyn
 test('runInProcess with script should call runScript', async () => {
   expect(appHelper.runInProcess).toBeDefined()
   expect(appHelper.runInProcess).toBeInstanceOf(Function)
-  execa.command.mockReturnValue({ on: () => {} })
+  execa.command.mockReturnValue({ on: () => { } })
   await appHelper.runInProcess('echo new command who dis?', {})
   expect(mockLogger.debug).toHaveBeenCalledWith('runInProcess: error running project hook in process, running as package script instead')
   expect(execa.command).toHaveBeenCalledWith('echo new command who dis?', expect.any(Object))
@@ -308,7 +234,7 @@ test('runInProcess with require', async () => {
   )
   expect(appHelper.runInProcess).toBeDefined()
   expect(appHelper.runInProcess).toBeInstanceOf(Function)
-  execa.command.mockReturnValue({ on: () => {} })
+  execa.command.mockReturnValue({ on: () => { } })
   await appHelper.runInProcess('does-not-exist', {})
   expect(mockReq).toHaveBeenCalled()
   expect(mockLogger.debug).toHaveBeenCalledWith('runInProcess: running project hook in process')
@@ -328,13 +254,13 @@ test('runScript with empty command', async () => {
 })
 
 test('runScript with defined dir', async () => {
-  execa.command.mockReturnValue({ on: () => {} })
+  execa.command.mockReturnValue({ on: () => { } })
   await appHelper.runScript('somecommand', 'somedir')
   expect(execa.command).toHaveBeenCalledWith('somecommand', expect.objectContaining({ cwd: 'somedir' }))
 })
 
 test('runScript with empty dir => process.cwd', async () => {
-  execa.command.mockReturnValue({ on: () => {} })
+  execa.command.mockReturnValue({ on: () => { } })
   await appHelper.runScript('somecommand', undefined)
   expect(execa.command).toHaveBeenCalledWith('somecommand', expect.objectContaining({ cwd: process.cwd() }))
 })
@@ -423,145 +349,6 @@ test('checkFile', () => {
   // if not exists
   fs.lstatSync.mockReturnValue({ isFile: () => false })
   expect(() => appHelper.checkFile('no/exists')).toThrow('no/exists is not a valid file')
-})
-
-test('downloadOWJar failed (server has response, but not ok)', async () => {
-  const response = {
-    ok: false,
-    statusText: 'some error'
-  }
-  mockFetch.mockResolvedValueOnce(response)
-
-  const url = 'https://some.url'
-  const result = appHelper.downloadOWJar(url, 'foo/bar')
-  await expect(result).rejects.toEqual(new Error(`unexpected response while downloading '${url}': ${response.statusText}`))
-})
-
-test('downloadOWJar failed (no server response, fetch exception)', async () => {
-  const err = new Error('some fetch error')
-  mockFetch.mockRejectedValueOnce(err)
-
-  const url = 'https://some.url'
-  const result = appHelper.downloadOWJar(url, 'foo/bar')
-  await expect(result).rejects.toEqual(new Error(`connection error while downloading '${url}', are you online?`))
-})
-
-test('downloadOWJar ok', async () => {
-  const response = {
-    ok: true,
-    statusText: 'success',
-    body: {
-      pipe: jest.fn(),
-      on: jest.fn()
-    }
-  }
-
-  const url = 'https://some.url'
-  const fileToWrite = 'foo/bar'
-
-  fs.createWriteStream.mockImplementation((outFile) => {
-    expect(outFile).toEqual(fileToWrite)
-    return {
-      on: jest.fn((eventName, fn) => {
-        if (eventName === 'finish') { // immediately call it
-          fn()
-        }
-      })
-    }
-  })
-  mockFetch.mockResolvedValueOnce(response)
-
-  const result = appHelper.downloadOWJar(url, fileToWrite)
-  await expect(result).resolves.toBeUndefined()
-})
-
-test('downloadOWJar (server connected ok, streaming error)', async () => {
-  const streamError = new Error('stream error')
-  const response = {
-    ok: true,
-    statusText: 'success',
-    body: {
-      pipe: jest.fn(),
-      on: jest.fn((eventName, fn) => {
-        expect(eventName).toEqual('error')
-        fn(streamError) // immediately call it
-      })
-    }
-  }
-
-  const url = 'https://some.url'
-  const fileToWrite = 'foo/bar'
-
-  mockFetch.mockResolvedValueOnce(response)
-
-  const result = appHelper.downloadOWJar(url, fileToWrite)
-  await expect(result).rejects.toEqual(streamError)
-})
-
-test('runOpenWhiskJar ok', async () => {
-  mockFetch.mockResolvedValue({ ok: true })
-  execa.mockReturnValue({ stdout: jest.fn() })
-
-  const result = appHelper.runOpenWhiskJar('jar', 'conf')
-
-  await expect(result).resolves.toEqual({
-    proc: expect.any(Object)
-  })
-  expect(mockFetch).toHaveBeenCalledTimes(1)
-  expect(execa).toHaveBeenCalledWith('java', expect.arrayContaining(['jar', 'conf']), {})
-})
-
-test('runOpenWhiskJar with AIO_OW_JVM_ARGS env var is passed to execa', async () => {
-  mockFetch.mockResolvedValue({ ok: true })
-  execa.mockReturnValue({ stdout: jest.fn() })
-
-  aioConfig.get.mockReturnValueOnce('arg1 arg2')
-
-  const result = appHelper.runOpenWhiskJar('jar', 'conf')
-
-  await expect(result).resolves.toEqual({
-    proc: expect.any(Object)
-  })
-  expect(mockFetch).toHaveBeenCalledTimes(1)
-  expect(execa).toHaveBeenCalledWith('java', expect.arrayContaining(['arg1', 'arg2', 'jar', 'conf']), {})
-})
-
-test('waitForOpenWhiskReadiness timeout', async () => {
-  const host = 'my-host'
-  const period = 5000
-  const timeout = 5000
-  const endTime = Date.now() - 1000 // ends now
-  const status = 'FAIL'
-
-  const waitFunc = jest.fn((_period) => {
-    expect(_period).toEqual(period)
-  })
-  const result = appHelper.waitForOpenWhiskReadiness(host, endTime, period, timeout, status, waitFunc)
-
-  await expect(result).rejects.toEqual(new Error(`local openwhisk stack startup timed out after ${timeout}ms due to ${status}`))
-  expect(mockFetch).toHaveBeenCalledTimes(0)
-  expect(waitFunc).toHaveBeenCalledTimes(0)
-})
-
-test('waitForOpenWhiskReadiness (fail, retry, then success)', async () => {
-  const host = 'my-host'
-  const period = 5000
-  const timeout = 5000
-  const endTime = Date.now() + 5000
-  const status = null
-
-  const waitFunc = jest.fn((_period) => {
-    expect(_period).toEqual(period)
-  })
-  mockFetch
-    .mockRejectedValueOnce(new Error('some error')) // first fail (fetch exception)
-    .mockRejectedValueOnce({ ok: false }) // second fail (response not ok)
-    .mockResolvedValue({ ok: true }) // finally success
-  const result = appHelper.waitForOpenWhiskReadiness(host, endTime, period, timeout, status, waitFunc)
-
-  await expect(result).resolves.not.toBeDefined()
-  expect(mockFetch).toHaveBeenCalledTimes(3)
-  expect(waitFunc).toHaveBeenCalledTimes(2)
 })
 
 describe('warnIfOverwriteServicesInProductionWorkspace', () => {
@@ -889,32 +676,29 @@ describe('writeConfig', () => {
   })
 })
 
-describe('getCliInfo', () => {
-  test('prod', async () => {
-    libEnv.getCliEnv.mockReturnValue('prod')
-    libIms.getToken.mockResolvedValue('token')
-    const res = await appHelper.getCliInfo()
-    expect(res).toEqual(
-      { accessToken: 'token', env: 'prod' }
-    )
-  })
-  test('stage', async () => {
-    libEnv.getCliEnv.mockReturnValue('stage')
-    libIms.getToken.mockResolvedValue('stoken')
-    const res = await appHelper.getCliInfo()
-    expect(res).toEqual(
-      { accessToken: 'stoken', env: 'stage' }
-    )
-  })
-})
-
 describe('createWebExportFilter', () => {
   const webFilter = appHelper.createWebExportFilter(true)
   const nonWebFilter = appHelper.createWebExportFilter(false)
 
+  test('null action', () => {
+    const action = null
+
+    expect(webFilter(action)).toEqual(false)
+    expect(nonWebFilter(action)).toEqual(false)
+  })
+
+  test('no annotations', () => {
+    const action = {
+      name: 'abcde', url: 'https://fake.site'
+    }
+
+    expect(webFilter(action)).toEqual(false)
+    expect(nonWebFilter(action)).toEqual(true)
+  })
+
   test('no web-export annotation', () => {
     const action = {
-      name: 'abcde', url: 'https://fake.site', annotations: []
+      name: 'abcde', url: 'https://fake.site', annotations: {}
     }
 
     expect(webFilter(action)).toEqual(false)
@@ -960,6 +744,17 @@ describe('createWebExportFilter', () => {
     expect(webFilter(action2)).toEqual(false)
     expect(nonWebFilter(action2)).toEqual(true)
   })
+
+  test('web-export: raw annotation', () => {
+    const action1 = {
+      name: 'abcde',
+      url: 'https://fake.site',
+      annotations: { 'web-export': 'raw' }
+    }
+
+    expect(webFilter(action1)).toEqual(true)
+    expect(nonWebFilter(action1)).toEqual(false)
+  })
 })
 
 describe('object values', () => {
@@ -986,5 +781,69 @@ describe('object values', () => {
       foo: 'bar'
     }
     expect(appHelper.getObjectValue(obj)).toEqual(obj)
+  })
+})
+
+describe('getFilesCountWithExtension', () => {
+  const directory = '__fixtures__/app/web-src'
+
+  it('should return an error message when directory does not exist', () => {
+    fs.existsSync.mockReturnValue(false)
+
+    expect(() => appHelper.getFilesCountWithExtension(directory)).toThrow(`Error: Directory ${directory} does not exist.`)
+    expect(fs.existsSync).toHaveBeenCalledWith(directory)
+  })
+
+  it('should return an error message when directory is empty', () => {
+    fs.existsSync.mockReturnValue(true)
+    fs.readdirSync.mockReturnValue([])
+
+    expect(() => appHelper.getFilesCountWithExtension(directory)).toThrow(`Error: No files found in directory ${directory}.`)
+    expect(fs.existsSync).toHaveBeenCalledWith(directory)
+    expect(fs.readdirSync).toHaveBeenCalledWith(directory, { recursive: true })
+  })
+
+  it('should return a count of different file types', () => {
+    fs.existsSync.mockReturnValue(true)
+    fs.readdirSync.mockReturnValue(['index.html', 'script.js', 'styles.css', 'image.png', 'image.jpg', 'readme'])
+
+    const result = appHelper.getFilesCountWithExtension(directory)
+    // this really should be 2 image(s) but there is a side effect in the code that makes it split by ext
+    // and this makes more sense than seeing 1 image(s), 1 image(s)
+    expect(result).toEqual([
+      '1 HTML page(s)\n',
+      '1 Javascript file(s)\n',
+      '1 CSS file(s)\n',
+      '1 .png image(s)\n',
+      '1 .jpg image(s)\n',
+      '1 file(s) without extension\n'
+    ])
+  })
+
+  it('should handle directories with files of the same type', () => {
+    fs.existsSync.mockReturnValue(true)
+    fs.readdirSync.mockReturnValue(['script1.js', 'script2.js', 'script3.js'])
+
+    const result = appHelper.getFilesCountWithExtension(directory)
+    expect(result).toEqual(['3 Javascript file(s)\n'])
+  })
+
+  it('should handle files with no extension', () => {
+    fs.existsSync.mockReturnValue(true)
+    fs.readdirSync.mockReturnValue(['readme', 'LICENSE'])
+
+    const result = appHelper.getFilesCountWithExtension(directory)
+    expect(result).toEqual(['2 file(s) without extension\n'])
+  })
+
+  it('should handle files with other extensions', () => {
+    fs.existsSync.mockReturnValue(true)
+    fs.readdirSync.mockReturnValue(['data.json', 'document.pdf'])
+
+    const result = appHelper.getFilesCountWithExtension(directory)
+    expect(result).toEqual([
+      '1 .json file(s)\n',
+      '1 .pdf file(s)\n'
+    ])
   })
 })

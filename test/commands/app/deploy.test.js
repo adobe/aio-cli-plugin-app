@@ -24,6 +24,9 @@ const helpers = require('../../../src/lib/app-helper.js')
 jest.mock('../../../src/lib/audit-logger.js')
 const auditLogger = require('../../../src/lib/audit-logger.js')
 
+jest.mock('../../../src/lib/auth-helper')
+const authHelper = require('../../../src/lib/auth-helper')
+
 const mockWebLib = require('@adobe/aio-lib-web')
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
 
@@ -64,16 +67,19 @@ const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
   return appConfig
 }
 
-const mockExtRegExcShellPayload = () => {
+const mockExtRegExcShellPayload = ({ excShellView = true } = {}) => {
   const payload = {
-    endpoints: {
-      'dx/excshell/1': {
-        view: [
-          { metadata: {} }
-        ]
-      }
+    endpoints: {}
+  }
+
+  if (excShellView) {
+    payload.endpoints['dx/excshell/1'] = {
+      view: [
+        { metadata: {} }
+      ]
     }
   }
+
   helpers.buildExtensionPointPayloadWoMetadata.mockReturnValueOnce(payload)
   mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites.mockReturnValueOnce(payload)
   mockLibConsoleCLI.updateExtensionPoints.mockReturnValueOnce(payload)
@@ -153,13 +159,14 @@ afterAll(() => {
   jest.resetAllMocks()
 })
 
+let command
+
 beforeEach(() => {
   helpers.writeConfig.mockReset()
   helpers.runInProcess.mockReset()
   helpers.buildExtensionPointPayloadWoMetadata.mockReset()
   helpers.buildExcShellViewExtensionMetadata.mockReset()
   helpers.createWebExportFilter.mockReset()
-  helpers.getCliInfo.mockReset()
   mockLogForwarding.isLocalConfigChanged.mockReset()
   mockLogForwarding.getLocalConfigWithSecrets.mockReset()
   mockLogForwarding.updateServerConfig.mockReset()
@@ -168,22 +175,7 @@ beforeEach(() => {
 
   helpers.wrapError.mockImplementation(msg => msg)
   helpers.createWebExportFilter.mockImplementation(filterValue => helpersActual.createWebExportFilter(filterValue))
-  auditLogger.getAuditLogEvent.mockImplementation((flags, project, event) => {
-    return {
-      orgId: 'mockorg',
-      projectId: 'mockproject',
-      workspaceId: 'mockworkspaceid',
-      workspaceName: 'mockworkspacename',
-      operation: 'AB_APP_ASSETS_DEPLOYED'.toLowerCase(),
-      timestamp: new Date().valueOf(),
-      data: {
-        cliCommandFlags: flags,
-        opDetailsStr: 'logStrMsg',
-        opItems: []
-      }
-    }
-  })
-  auditLogger.getFilesCountWithExtension.mockImplementation((dir) => {
+  helpers.getFilesCountWithExtension.mockImplementation((dir) => {
     return [
       '3 Javascript file(s)',
       '2 CSS file(s)',
@@ -191,13 +183,45 @@ beforeEach(() => {
       '1 HTML page(s)'
     ]
   })
-  helpers.getCliInfo.mockImplementation(() => {
+  authHelper.setRuntimeApiHostAndAuthHandler.mockImplementation((aioConfig) => aioConfig)
+  authHelper.getAccessToken.mockImplementation(() => {
     return {
       accessToken: 'mocktoken',
       env: 'stage'
     }
   })
   LogForwarding.init.mockResolvedValue(mockLogForwarding)
+
+  command = new TheCommand([])
+  command.error = jest.fn()
+  command.log = jest.fn()
+  command.appConfig = cloneDeep(mockConfigData)
+  command.appConfig.actions = { dist: 'actions' }
+  command.appConfig.web.distProd = 'dist'
+  command.config = { runCommand: jest.fn(), runHook: jest.fn() }
+  command.buildOneExt = jest.fn()
+  command.getFullConfig = jest.fn().mockResolvedValue({
+    aio: {
+      project: {
+        workspace: {
+          name: 'test-workspace'
+        }
+      }
+    },
+    packagejson: {
+      name: 'test-app',
+      version: '1.0.0'
+    }
+  })
+  command.getAppExtConfigs = jest.fn().mockResolvedValue(createAppConfig(command.appConfig))
+  command.getLibConsoleCLI = jest.fn(() => mockLibConsoleCLI)
+
+  mockRuntimeLib.deployActions.mockResolvedValue({ actions: [] })
+  mockWebLib.bundle.mockResolvedValue({ run: mockBundleFunc })
+
+  mockLogForwarding.isLocalConfigChanged.mockReturnValue(true)
+  const config = new LogForwarding.LogForwardingConfig('destination', { field: 'value' })
+  mockLogForwarding.getLocalConfigWithSecrets.mockReturnValue(config)
 })
 
 test('exports', async () => {
@@ -217,7 +241,7 @@ test('flags', async () => {
   expect(typeof TheCommand.flags.action).toBe('object')
   expect(TheCommand.flags.action.char).toBe('a')
   expect(typeof TheCommand.flags.action.description).toBe('string')
-  expect(JSON.stringify(TheCommand.flags.action.exclusive)).toStrictEqual(JSON.stringify(['extension', { name: 'publish', when: () => {} }]))
+  expect(JSON.stringify(TheCommand.flags.action.exclusive)).toStrictEqual(JSON.stringify(['extension', { name: 'publish', when: () => { } }]))
 
   expect(typeof TheCommand.flags['web-assets']).toBe('object')
   expect(typeof TheCommand.flags['web-assets'].description).toBe('string')
@@ -226,7 +250,7 @@ test('flags', async () => {
 
   expect(typeof TheCommand.flags['force-build']).toBe('object')
   expect(typeof TheCommand.flags['force-build'].description).toBe('string')
-  expect(TheCommand.flags['force-build'].default).toEqual(false)
+  expect(TheCommand.flags['force-build'].default).toEqual(true)
   expect(TheCommand.flags['force-build'].allowNo).toEqual(true)
 
   expect(typeof TheCommand.flags['content-hash']).toBe('object')
@@ -270,64 +294,49 @@ test('flags', async () => {
 })
 
 describe('run', () => {
-  let command
-
-  beforeEach(() => {
-    command = new TheCommand([])
-    command.error = jest.fn()
-    command.log = jest.fn()
-    command.appConfig = cloneDeep(mockConfigData)
-    command.appConfig.actions = { dist: 'actions' }
-    command.appConfig.web.distProd = 'dist'
-    command.config = { runCommand: jest.fn(), runHook: jest.fn() }
-    command.buildOneExt = jest.fn()
-    command.getAppExtConfigs = jest.fn()
-    command.getLibConsoleCLI = jest.fn(() => mockLibConsoleCLI)
-    command.getFullConfig = jest.fn().mockReturnValue({
-      aio: {
-        project: {
-          workspace: {
-            name: 'foo'
-          }
+  test('build & deploy an App with no flags', async () => {
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'app-exc-nui'))
+    helpers.buildExtensionPointPayloadWoMetadata.mockReturnValueOnce({
+      endpoints: {
+        'dx/excshell/1': {
+          view: [{
+            metadata: {}
+          }]
         }
       }
     })
 
-    mockRuntimeLib.deployActions.mockResolvedValue({ actions: [] })
-    mockWebLib.bundle.mockResolvedValue({ run: mockBundleFunc })
-
-    mockLogForwarding.isLocalConfigChanged.mockReturnValue(true)
-    const config = new LogForwarding.LogForwardingConfig('destination', { field: 'value' })
-    mockLogForwarding.getLocalConfigWithSecrets.mockReturnValue(config)
-  })
-
-  afterEach(() => {
-    jest.clearAllMocks()
-  })
-
-  test('build & deploy an App with no flags', async () => {
-    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
-
+    mockExtRegExcShellPayload()
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(command.buildOneExt).toHaveBeenCalledTimes(1)
-    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(command.buildOneExt).toHaveBeenCalledTimes(3)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(3) // 3 extensions
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(2)
   })
 
   test('build & deploy an App verbose', async () => {
-    const appConfig = createAppConfig(command.appConfig)
+    const appConfig = createAppConfig(command.appConfig, 'app-exc-nui')
     command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
+    helpers.buildExtensionPointPayloadWoMetadata.mockReturnValueOnce({
+      endpoints: {
+        'dx/excshell/1': {
+          view: [{
+            metadata: {}
+          }]
+        }
+      }
+    })
 
+    mockExtRegExcShellPayload()
     command.argv = ['-v']
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(command.buildOneExt).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(3) // 3 extensions
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(2)
+    expect(command.buildOneExt).toHaveBeenCalledTimes(3)
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false, verbose: true }),
+      expect.objectContaining({ verbose: true, 'force-build': true }),
       expect.anything())
   })
 
@@ -343,7 +352,7 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false, 'web-assets': false }),
+      expect.objectContaining({ 'web-assets': false, 'force-build': true }),
       expect.anything())
   })
 
@@ -361,6 +370,10 @@ describe('run', () => {
             id: '1111'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
 
@@ -387,6 +400,10 @@ describe('run', () => {
             id: '1111'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
 
@@ -413,7 +430,7 @@ describe('run', () => {
 
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false, 'web-assets': false, action: ['a', 'b', 'c'] }),
+      expect.objectContaining({ 'web-assets': false, action: ['a', 'b', 'c'], 'force-build': true }),
       expect.anything())
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(appConfig.application, {
       filterEntities: { actions: ['a', 'b', 'c'] },
@@ -435,7 +452,7 @@ describe('run', () => {
 
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false, 'web-assets': false, action: ['c'] }),
+      expect.objectContaining({ 'web-assets': false, action: ['c'], 'force-build': true }),
       expect.anything())
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledWith(appConfig.application, {
       filterEntities: { actions: ['c'] },
@@ -458,7 +475,7 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false, 'web-assets': false }),
+      expect.objectContaining({ 'web-assets': false, 'force-build': true }),
       expect.anything())
   })
 
@@ -485,7 +502,7 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false, actions: false }),
+      expect.objectContaining({ actions: false, 'force-build': true }),
       expect.anything())
   })
 
@@ -503,7 +520,7 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false, actions: false }),
+      expect.objectContaining({ actions: false, 'force-build': true }),
       expect.anything())
   })
 
@@ -520,7 +537,7 @@ describe('run', () => {
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledWith('application',
       appConfig.application,
-      expect.objectContaining({ 'force-build': false }),
+      expect.objectContaining({ 'force-build': true }),
       expect.anything())
   })
 
@@ -586,8 +603,6 @@ describe('run', () => {
     [['--no-actions']],
     [['--no-log-forwarding-update', '--no-actions']]
   ])('no log forwarding update due to %s arg(s) specified', async (args) => {
-    const appConfig = createAppConfig(command.appConfig)
-    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
     command.argv = args
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -750,6 +765,10 @@ describe('run', () => {
             id: '1111'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
     const noScriptFound = undefined
@@ -779,6 +798,10 @@ describe('run', () => {
             id: '1111'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
     mockExtRegExcShellPayload()
@@ -787,13 +810,13 @@ describe('run', () => {
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
       .mockResolvedValueOnce(noScriptFound) // post-app-deploy
 
-    command.argv = ['--no-actions', '--no-web-assets']
+    command.argv = ['--no-actions', '--no-web-assets', '--force-publish']
     await command.run()
 
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(0)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
-    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
-    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(1)
+    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(0)
   })
 
   test('deploy (--no-actions)', async () => {
@@ -870,8 +893,7 @@ describe('run', () => {
     expect(command.config.runHook).toHaveBeenCalledWith('deploy-actions',
       expect.objectContaining({
         appConfig: expect.any(Object),
-        filterEntities: [],
-        isLocalDev: false
+        filterEntities: []
       }))
     expect(command.config.runHook).toHaveBeenCalledTimes(2)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
@@ -919,6 +941,15 @@ describe('run', () => {
     mockGetProject()
     command.getFullConfig.mockResolvedValue({
       aio: {
+        project: {
+          workspace: {
+            name: 'foo'
+          }
+        }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
     mockExtRegExcShellPayload()
@@ -947,6 +978,10 @@ describe('run', () => {
             id: '1111'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
     mockExtRegExcShellPayload()
@@ -974,6 +1009,10 @@ describe('run', () => {
             id: '1111'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
     mockExtRegExcShellPayload()
@@ -1003,6 +1042,10 @@ describe('run', () => {
             id: '1111'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
     mockExtRegExcShellPayloadFailure()
@@ -1030,6 +1073,10 @@ describe('run', () => {
             id: '1111'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
     command.argv = []
@@ -1057,9 +1104,13 @@ describe('run', () => {
             id: '1111'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
-    mockExtRegExcShellPayload()
+    mockExtRegExcShellPayload({ excShellView: false })
     await command.run()
 
     expect(mockLibConsoleCLI.getProject).toHaveBeenCalledTimes(1)
@@ -1084,107 +1135,19 @@ describe('run', () => {
             id: '1111'
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
     })
     mockExtRegExcShellAndNuiPayload()
     command.argv = []
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(helpers.buildExcShellViewExtensionMetadata).toHaveBeenCalledTimes(1)
-    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
-    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(1)
-  })
-
-  test('publish phase (no force, nui payload + no view operation)', async () => {
-    mockGetProject()
-    mockGetExtensionPointsRetractedApp()
-    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'app-exc-nui'))
-    command.getFullConfig.mockResolvedValue({
-      aio: {
-        project: {
-          workspace: {
-            name: 'foo'
-          },
-          org: {
-            id: '1111'
-          }
-        }
-      }
-    })
-    const payload = {
-      endpoints: {
-        'dx/excshell/1': {
-          another: [
-          ]
-        }
-      }
-    }
-    helpers.buildExtensionPointPayloadWoMetadata.mockReturnValueOnce(payload)
-    mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites.mockReturnValueOnce(payload)
-    mockLibConsoleCLI.updateExtensionPoints.mockReturnValueOnce(payload)
-    command.argv = []
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(helpers.buildExcShellViewExtensionMetadata).toHaveBeenCalledTimes(0)
-    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(0)
-    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(1)
-  })
-
-  test('publish phase (--force-publish, exc+nui payload)', async () => {
-    mockGetProject()
-    mockGetExtensionPointsRetractedApp()
-    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'exc'))
-    command.getFullConfig.mockResolvedValue({
-      aio: {
-        project: {
-          workspace: {
-            name: 'foo'
-          },
-          org: {
-            id: '1111'
-          }
-        }
-      }
-    })
-
-    mockExtRegExcShellAndNuiPayload()
-    command.argv = ['--force-publish']
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(helpers.buildExcShellViewExtensionMetadata).toHaveBeenCalledTimes(1)
-    expect(mockLibConsoleCLI.updateExtensionPoints).toHaveBeenCalledTimes(1)
-    expect(mockLibConsoleCLI.updateExtensionPointsWithoutOverwrites).toHaveBeenCalledTimes(0)
-  })
-
-  test('app hook sequence', async () => {
-    const appConfig = createAppConfig(command.appConfig)
-    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
-
-    // set hooks (command the same as hook name, for easy reference)
-    appConfig.application.hooks = {
-      'pre-app-deploy': 'pre-app-deploy',
-      'deploy-actions': 'deploy-actions',
-      'deploy-static': 'deploy-static',
-      'post-app-deploy': 'post-app-deploy'
-    }
-
-    const scriptSequence = []
-    helpers.runInProcess.mockImplementation(script => {
-      scriptSequence.push(script)
-    })
-
-    command.argv = []
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
-
-    expect(helpers.runInProcess).toHaveBeenCalledTimes(4)
-    expect(scriptSequence.length).toEqual(4)
-    expect(scriptSequence[0]).toEqual('pre-app-deploy')
-    expect(scriptSequence[1]).toEqual('deploy-actions')
-    expect(scriptSequence[2]).toEqual('deploy-static')
-    expect(scriptSequence[3]).toEqual('post-app-deploy')
+    // For app-exc-nui config, we have 2 extensions that need web assets deployed
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(2)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(3) // 3 extensions
   })
 
   test('should update log forwarding on server when local config is defined', async () => {
@@ -1300,11 +1263,12 @@ describe('run', () => {
     const mockProject = 'mockproject'
     const mockWorkspaceId = 'mockworkspaceid'
     const mockWorkspaceName = 'mockworkspacename'
-    helpers.getCliInfo.mockResolvedValueOnce({
+    authHelper.getAccessToken.mockResolvedValueOnce({
       accessToken: mockToken,
       env: mockEnv
     })
-    command.getFullConfig = jest.fn().mockReturnValue({
+
+    const fullConfig = {
       aio: {
         project: {
           id: mockProject,
@@ -1316,30 +1280,75 @@ describe('run', () => {
             name: mockWorkspaceName
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
-    })
+    }
+    command.getFullConfig = jest.fn().mockReturnValue(fullConfig)
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(auditLogger.sendAuditLogs.mock.calls.length).toBeLessThanOrEqual(2)
-    expect(auditLogger.sendAuditLogs).toHaveBeenCalledWith(mockToken, expect.objectContaining({ orgId: mockOrg, projectId: mockProject, workspaceId: mockWorkspaceId, workspaceName: mockWorkspaceName }), mockEnv)
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledTimes(1)
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledWith({
+      accessToken: mockToken,
+      appInfo: {
+        name: 'test-app',
+        version: '1.0.0',
+        runtimeNamespace: undefined,
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      },
+      cliCommandFlags: {
+        actions: true,
+        build: true,
+        'content-hash': true,
+        'force-build': true,
+        'force-deploy': false,
+        'force-events': false,
+        'force-publish': false,
+        'log-forwarding-update': true,
+        open: false,
+        publish: false,
+        'web-assets': true,
+        'web-optimize': false
+      },
+      env: mockEnv,
+      opItems: [
+        '3 Javascript file(s)',
+        '2 CSS file(s)',
+        '5 image(s)',
+        '1 HTML page(s)'
+      ]
+    })
   })
 
-  test('Do not send audit logs for successful app deploy', async () => {
-    const mockToken = 'mocktoken'
+  test('Do not send audit logs for successful app deploy, if case of no token', async () => {
+    const mockToken = null
     const mockEnv = 'stage'
     const mockOrg = 'mockorg'
     const mockProject = 'mockproject'
     const mockWorkspaceId = 'mockworkspaceid'
     const mockWorkspaceName = 'mockworkspacename'
-    helpers.getCliInfo.mockResolvedValueOnce({
+
+    authHelper.getAccessToken.mockResolvedValueOnce({
       accessToken: mockToken,
       env: mockEnv
     })
-    command.getFullConfig = jest.fn().mockReturnValue({
+
+    const fullConfig = {
       aio: {
         project: {
           id: mockProject,
@@ -1351,17 +1360,20 @@ describe('run', () => {
             name: mockWorkspaceName
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
-    })
-
-    auditLogger.getAuditLogEvent.mockImplementation((flags, project, event) => null)
-
+    }
+    command.getFullConfig = jest.fn().mockReturnValue(fullConfig)
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledTimes(0)
   })
 
   test('Send audit logs for successful app deploy + web assets', async () => {
@@ -1374,7 +1386,86 @@ describe('run', () => {
 
     command.argv = ['--web-assets']
 
-    helpers.getCliInfo.mockResolvedValueOnce({
+    authHelper.getAccessToken.mockResolvedValueOnce({
+      accessToken: mockToken,
+      env: mockEnv
+    })
+
+    const fullConfig = {
+      aio: {
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
+      }
+    }
+    command.getFullConfig = jest.fn().mockReturnValue(fullConfig)
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(helpers.getFilesCountWithExtension).toHaveBeenCalledTimes(2)
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledWith({
+      accessToken: mockToken,
+      appInfo: {
+        name: 'test-app',
+        version: '1.0.0',
+        runtimeNamespace: undefined,
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      },
+      cliCommandFlags: {
+        actions: true,
+        build: true,
+        'content-hash': true,
+        'force-build': true,
+        'force-deploy': false,
+        'force-events': false,
+        'force-publish': false,
+        'log-forwarding-update': true,
+        open: false,
+        publish: false,
+        'web-assets': true,
+        'web-optimize': false
+      },
+      env: mockEnv,
+      opItems: [
+        '3 Javascript file(s)',
+        '2 CSS file(s)',
+        '5 image(s)',
+        '1 HTML page(s)'
+      ]
+    })
+  })
+
+  test('Should deploy successfully even if (app deploy) Audit log service is unavailable (--verbose)', async () => {
+    const mockToken = 'mocktoken'
+    const mockEnv = 'stage'
+    const mockOrg = 'mockorg'
+    const mockProject = 'mockproject'
+    const mockWorkspaceId = 'mockworkspaceid'
+    const mockWorkspaceName = 'mockworkspacename'
+    authHelper.getAccessToken.mockResolvedValueOnce({
       accessToken: mockToken,
       env: mockEnv
     })
@@ -1391,16 +1482,137 @@ describe('run', () => {
             name: mockWorkspaceName
           }
         }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
       }
+    })
+
+    auditLogger.sendAppDeployAuditLog.mockRejectedValue({
+      message: 'Internal Server Error',
+      status: 500
+    })
+
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+
+    command.argv = ['--verbose']
+    await command.run()
+    expect(command.log).toHaveBeenCalledWith(
+      expect.stringContaining('skipping publish phase...')
+    )
+
+    expect(command.log).toHaveBeenCalledWith(
+      expect.stringContaining('Successful deployment 🏄')
+    )
+    expect(auditLogger.sendAppDeployAuditLog).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+  })
+
+  test('Should deploy successfully even if (app assets deploy)Audit log service is unavailable', async () => {
+    const mockToken = 'mocktoken'
+    const mockEnv = 'stage'
+    const mockOrg = 'mockorg'
+    const mockProject = 'mockproject'
+    const mockWorkspaceId = 'mockworkspaceid'
+    const mockWorkspaceName = 'mockworkspacename'
+    authHelper.getAccessToken.mockResolvedValueOnce({
+      accessToken: mockToken,
+      env: mockEnv
+    })
+
+    command.getFullConfig = jest.fn().mockReturnValue({
+      aio: {
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
+      }
+    })
+
+    auditLogger.sendAppAssetsDeployedAuditLog.mockRejectedValue({
+      message: 'Internal Server Error',
+      status: 500
     })
 
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
+    expect(command.log).toHaveBeenCalledWith(
+      expect.stringContaining('skipping publish phase...')
+    )
+
+    expect(command.log).toHaveBeenCalledWith(
+      expect.stringContaining('Successful deployment 🏄')
+    )
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-    expect(auditLogger.getFilesCountWithExtension).toHaveBeenCalledTimes(2)
-    expect(auditLogger.sendAuditLogs).toHaveBeenCalledWith(mockToken, expect.objectContaining({ orgId: mockOrg, projectId: mockProject, workspaceId: mockWorkspaceId, workspaceName: mockWorkspaceName }), mockEnv)
+  })
+
+  test('Should deploy successfully even if Audit log service is unavailable (--verbose', async () => {
+    const mockToken = 'mocktoken'
+    const mockEnv = 'stage'
+    const mockOrg = 'mockorg'
+    const mockProject = 'mockproject'
+    const mockWorkspaceId = 'mockworkspaceid'
+    const mockWorkspaceName = 'mockworkspacename'
+    authHelper.getAccessToken.mockResolvedValueOnce({
+      accessToken: mockToken,
+      env: mockEnv
+    })
+
+    command.getFullConfig = jest.fn().mockReturnValue({
+      aio: {
+        project: {
+          id: mockProject,
+          org: {
+            id: mockOrg
+          },
+          workspace: {
+            id: mockWorkspaceId,
+            name: mockWorkspaceName
+          }
+        }
+      },
+      packagejson: {
+        name: 'test-app',
+        version: '1.0.0'
+      }
+    })
+
+    auditLogger.sendAppAssetsDeployedAuditLog.mockRejectedValue({
+      message: 'Internal Server Error',
+      status: 500
+    })
+
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+
+    command.argv = ['--verbose']
+    await command.run()
+    expect(command.log).toHaveBeenCalledWith(
+      expect.stringContaining('skipping publish phase...')
+    )
+
+    expect(command.log).toHaveBeenCalledWith(
+      expect.stringContaining('Successful deployment 🏄')
+    )
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledTimes(1)
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
   })
 })

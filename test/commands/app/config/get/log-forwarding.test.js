@@ -189,3 +189,11 @@ test('failed to get log forwarding settings', async () => {
   lf.getServerConfig.mockRejectedValue(new Error('mocked error'))
   await expect(command.run()).rejects.toThrow('mocked error')
 })
+
+test('command aliases are set correctly', () => {
+  expect(TheCommand.aliases).toEqual(['app:config:get:log-forwarding', 'app:config:get:lf'])
+})
+
+test('command description is set correctly', () => {
+  expect(TheCommand.description).toBe('Get log forwarding destination configuration')
+})

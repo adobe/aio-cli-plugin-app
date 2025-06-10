@@ -8,7 +8,8 @@
       "fixtureJson": true,
       "fixtureHjson": true,
       "fixtureYaml": true,
-      "fakeFileSystem": true
+      "fakeFileSystem": true,
+      "setFetchMock": true
     },
     "settings": {
         "jsdoc": {
@@ -19,6 +20,7 @@
         "ecmaVersion": "latest"
     },
     "rules": {
+      "jsdoc/no-defaults": 0,
         "jsdoc/tag-lines": [
             // The Error level should be `error`, `warn`, or `off` (or 2, 1, or 0)
             "error",

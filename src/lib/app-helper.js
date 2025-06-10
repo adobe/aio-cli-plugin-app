@@ -11,17 +11,13 @@ governing permissions and limitations under the License.
 
 const execa = require('execa')
 const fs = require('fs-extra')
-const path = require('path')
+const path = require('node:path')
 const which = require('which')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:lib-app-helper', { provider: 'debug' })
-const { getToken, context } = require('@adobe/aio-lib-ims')
-const { CLI } = require('@adobe/aio-lib-ims/src/context')
-const { createFetch } = require('@adobe/aio-lib-core-networking')
 const chalk = require('chalk')
 const aioConfig = require('@adobe/aio-lib-core-config')
 const { AIO_CONFIG_WORKSPACE_SERVICES, AIO_CONFIG_ORG_SERVICES } = require('./defaults')
 const { EOL } = require('os')
-const { getCliEnv } = require('@adobe/aio-lib-env')
 const yaml = require('js-yaml')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
 
@@ -155,7 +151,7 @@ async function runScript (command, dir, cmdArgs = []) {
             aioLogger.debug(`Killing ${command} event hook long-running process (pid: ${pid})`)
             process.kill(pid, 'SIGTERM')
           } catch (_) {
-          // do nothing if pid not found
+            // do nothing if pid not found
           }
         })
       }
@@ -178,18 +174,6 @@ function wrapError (err) {
   }
 
   return new Error(message)
-}
-
-/** @private */
-async function getCliInfo () {
-  await context.setCli({ 'cli.bare-output': true }, false) // set this globally
-
-  const env = getCliEnv()
-
-  aioLogger.debug(`Retrieving CLI Token using env=${env}`)
-  const accessToken = await getToken(CLI)
-
-  return { accessToken, env }
 }
 
 /**
@@ -245,116 +229,6 @@ function writeConfig (file, config) {
     file,
     JSON.stringify(config), { encoding: 'utf-8' }
   )
-}
-
-/** @private */
-async function isDockerRunning () {
-  // todo more checks
-  const args = ['info']
-  try {
-    await execa('docker', args)
-    return true
-  } catch (error) {
-    aioLogger.debug('Error spawning docker info: ' + error)
-  }
-  return false
-}
-
-/** @private */
-async function hasDockerCLI () {
-  // todo check min version
-  try {
-    const result = await execa('docker', ['-v'])
-    aioLogger.debug('docker version : ' + result.stdout)
-    return true
-  } catch (error) {
-    aioLogger.debug('Error spawning docker info: ' + error)
-  }
-  return false
-}
-
-/** @private */
-async function hasJavaCLI () {
-  // todo check min version
-  try {
-    const result = await execa('java', ['-version'])
-    // stderr is where the version is printed out for
-    aioLogger.debug('java version : ' + result.stderr)
-    return true
-  } catch (error) {
-    aioLogger.debug('Error spawning java info: ' + error)
-  }
-  return false
-}
-
-/** @private */
-async function downloadOWJar (url, outFile) {
-  aioLogger.debug(`downloadOWJar - url: ${url} outFile: ${outFile}`)
-  let response
-  try {
-    const fetch = createFetch()
-    response = await fetch(url)
-  } catch (e) {
-    aioLogger.debug(`connection error while downloading '${url}'`, e)
-    throw new Error(`connection error while downloading '${url}', are you online?`)
-  }
-  if (!response.ok) throw new Error(`unexpected response while downloading '${url}': ${response.statusText}`)
-  fs.ensureDirSync(path.dirname(outFile))
-  const fstream = fs.createWriteStream(outFile)
-
-  return new Promise((resolve, reject) => {
-    response.body.pipe(fstream)
-    response.body.on('error', (err) => {
-      reject(err)
-    })
-    fstream.on('finish', () => {
-      resolve()
-    })
-  })
-}
-
-/** @private */
-async function waitForOpenWhiskReadiness (host, endTime, period, timeout, lastStatus, waitFunc) {
-  if (Date.now() > endTime) {
-    throw new Error(`local openwhisk stack startup timed out after ${timeout}ms due to ${lastStatus}`)
-  }
-
-  let ok, status
-
-  try {
-    const fetch = createFetch()
-    const response = await fetch(host + '/api/v1')
-    ok = response.ok
-    status = response.statusText
-  } catch (e) {
-    ok = false
-    status = e.toString()
-  }
-
-  if (!ok) {
-    await waitFunc(period)
-    return waitForOpenWhiskReadiness(host, endTime, period, timeout, status, waitFunc)
-  }
-}
-
-/** @private */
-function waitFor (t) {
-  return new Promise(resolve => setTimeout(resolve, t))
-}
-
-/** @private */
-async function runOpenWhiskJar (jarFile, runtimeConfigFile, apihost, waitInitTime, waitPeriodTime, timeout, /* istanbul ignore next */ execaOptions = {}) {
-  aioLogger.debug(`runOpenWhiskJar - jarFile: ${jarFile} runtimeConfigFile ${runtimeConfigFile} apihost: ${apihost} waitInitTime: ${waitInitTime} waitPeriodTime: ${waitPeriodTime} timeout: ${timeout}`)
-  const jvmConfig = aioConfig.get('ow.jvm.args')
-  const jvmArgs = jvmConfig ? jvmConfig.split(' ') : []
-  const proc = execa('java', ['-jar', '-Dwhisk.concurrency-limit.max=10', ...jvmArgs, jarFile, '-m', runtimeConfigFile, '--no-ui', '--disable-color-logging'], execaOptions)
-
-  const endTime = Date.now() + timeout
-  await waitFor(waitInitTime)
-  await waitForOpenWhiskReadiness(apihost, endTime, waitPeriodTime, timeout, null, waitFor)
-
-  // must wrap in an object as execa return value is awaitable
-  return { proc }
 }
 
 /**
@@ -536,11 +410,13 @@ function deleteUserConfig (configData) {
 /** @private */
 const createWebExportFilter = (filterValue) => {
   return (action) => {
-    if (!action || !action.annotations) {
+    if (!action) {
       return false
     }
 
-    return String(!!action.annotations['web-export']) === String(filterValue)
+    // if no annotations, its as if web-export = false
+    const webExportValue = action.annotations?.['web-export'] ?? false
+    return String(!!webExportValue) === String(filterValue)
   }
 }
 
@@ -567,6 +443,67 @@ function getObjectValue (obj, key) {
   return keys.filter(o => o.trim()).reduce((o, i) => o && getObjectProp(o, i), obj)
 }
 
+/**
+ * Counts files by extension in a directory
+ *
+ * @param {string} directory Path to assets directory
+ * @returns {Array<string>} Array of formatted log messages
+ */
+function getFilesCountWithExtension (directory) {
+  const log = []
+
+  if (!fs.existsSync(directory)) {
+    throw new Error(`Error: Directory ${directory} does not exist.`)
+  }
+
+  const files = fs.readdirSync(directory, { recursive: true })
+  if (files.length === 0) {
+    throw new Error(`Error: No files found in directory ${directory}.`)
+  }
+
+  const fileTypeCounts = {}
+  files.forEach(file => {
+    const ext = path.extname(file).toLowerCase() || 'no extension'
+    if (fileTypeCounts[ext]) {
+      fileTypeCounts[ext]++
+    } else {
+      fileTypeCounts[ext] = 1
+    }
+  })
+
+  Object.keys(fileTypeCounts).forEach(ext => {
+    const count = fileTypeCounts[ext]
+    let description
+    switch (ext) {
+      case '.js':
+        description = 'Javascript file(s)'
+        break
+      case '.css':
+        description = 'CSS file(s)'
+        break
+      case '.html':
+        description = 'HTML page(s)'
+        break
+      case '.png':
+      case '.jpg':
+      case '.jpeg':
+      case '.gif':
+      case '.svg':
+      case '.webp':
+        description = `${ext} image(s)`
+        break
+      case 'no extension':
+        description = 'file(s) without extension'
+        break
+      default:
+        description = `${ext} file(s)`
+    }
+    log.push(`${count} ${description}\n`)
+  })
+
+  return log
+}
+
 module.exports = {
   getObjectValue,
   getObjectProp,
@@ -578,23 +515,17 @@ module.exports = {
   runInProcess,
   runPackageScript,
   wrapError,
-  getCliInfo,
   removeProtocolFromURL,
   urlJoin,
   checkFile,
-  hasDockerCLI,
-  hasJavaCLI,
-  isDockerRunning,
   writeConfig,
-  downloadOWJar,
-  runOpenWhiskJar,
   servicesToGeneratorInput,
-  waitForOpenWhiskReadiness,
   warnIfOverwriteServicesInProductionWorkspace,
   setOrgServicesConfig,
   setWorkspaceServicesConfig,
   buildExtensionPointPayloadWoMetadata,
   buildExcShellViewExtensionMetadata,
   atLeastOne,
-  deleteUserConfig
+  deleteUserConfig,
+  getFilesCountWithExtension
 }

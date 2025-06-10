@@ -62,10 +62,12 @@ jest.mock('../../../../src/lib/import')
 // mock login - mocks underlying methods behind getCliInfo
 const mockAccessToken = 'some-access-token'
 const mockSetCli = jest.fn()
+const mockGetCurrent = jest.fn()
 jest.mock('@adobe/aio-lib-ims', () => {
   return {
     context: {
-      setCli: () => mockSetCli()
+      setCli: () => mockSetCli(),
+      getCurrent: () => mockGetCurrent()
     },
     getToken: () => mockAccessToken
   }

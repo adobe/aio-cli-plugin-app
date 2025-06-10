@@ -11,10 +11,13 @@ governing permissions and limitations under the License.
 
 const BaseCommand = require('../../../../BaseCommand')
 const LogForwarding = require('../../../../lib/log-forwarding')
+const { setRuntimeApiHostAndAuthHandler } = require('../../../../lib/auth-helper')
 
 class LogForwardingCommand extends BaseCommand {
   async run () {
-    const lf = await LogForwarding.init((await this.getFullConfig()).aio)
+    let aioConfig = (await this.getFullConfig()).aio
+    aioConfig = setRuntimeApiHostAndAuthHandler(aioConfig)
+    const lf = await LogForwarding.init(aioConfig)
 
     const localConfig = lf.getLocalConfig()
     const serverConfig = await lf.getServerConfig()

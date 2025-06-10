@@ -13,13 +13,11 @@ governing permissions and limitations under the License.
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:runDev', { provider: 'debug' })
 const rtLib = require('@adobe/aio-lib-runtime')
 const rtLibUtils = rtLib.utils
-const vscode = require('./vscode')
 const { bundle } = require('@adobe/aio-lib-web')
 const bundleServe = require('./bundle-serve')
 const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('./defaults')
 const serve = require('./serve')
 const Cleanup = require('./cleanup')
-const { runLocalRuntime } = require('./run-local-runtime')
 
 const buildActions = require('./build-actions')
 const deployActions = require('./deploy-actions')
@@ -47,7 +45,6 @@ async function runDev (config, dataDir, options = {}, log = () => {}, inprocHook
   // control variables
   const hasFrontend = config.app.hasFrontend
   const withBackend = config.app.hasBackend && !skipActions
-  const isLocal = options.isLocal // applies only for backend
   const portToUse = parseInt(process.env.PORT) || SERVER_DEFAULT_PORT
 
   const uiPort = await getPort({ port: portToUse })
@@ -56,12 +53,11 @@ async function runDev (config, dataDir, options = {}, log = () => {}, inprocHook
   }
   aioLogger.debug(`hasFrontend ${hasFrontend}`)
   aioLogger.debug(`withBackend ${withBackend}`)
-  aioLogger.debug(`isLocal ${isLocal}`)
 
   let frontEndUrl
 
   // state
-  let devConfig = config // config will be different if local or remote
+  const devConfig = config // config will be different if local or remote
   devConfig.envFile = '.env'
 
   const cleanup = new Cleanup()
@@ -70,20 +66,14 @@ async function runDev (config, dataDir, options = {}, log = () => {}, inprocHook
   try {
     // Build Phase - actions
     if (withBackend) {
-      if (isLocal) {
-        const { config: localConfig, cleanup: localCleanup } = await runLocalRuntime(config, dataDir, log, options.verbose)
-        devConfig = localConfig
-        cleanup.add(() => localCleanup(), 'cleaning up runDevLocal')
-      } else {
-        // check credentials
-        rtLibUtils.checkOpenWhiskCredentials(devConfig)
-        log('using remote actions')
-      }
+      // check credentials
+      rtLibUtils.checkOpenWhiskCredentials(devConfig)
+      log('using remote actions')
 
       // build and deploy actions
       log('building actions..')
       await buildActions(devConfig, null, false /* force build */)
-      const { cleanup: watcherCleanup } = await actionsWatcher({ config: devConfig, isLocal, log, inprocHook })
+      const { cleanup: watcherCleanup } = await actionsWatcher({ config: devConfig, log, inprocHook })
       cleanup.add(() => watcherCleanup(), 'stopping action watcher...')
     }
 
@@ -95,7 +85,7 @@ async function runDev (config, dataDir, options = {}, log = () => {}, inprocHook
         // note the condition: we still write backend urls EVEN if skipActions is set
         // the urls will always point to remotely deployed actions if skipActions is set
         log('injecting backend urls into frontend config')
-        urls = rtLibUtils.getActionUrls(devConfig, true, isLocal && !skipActions, true)
+        urls = rtLibUtils.getActionUrls(devConfig, true, !skipActions, true)
       }
       utils.writeConfig(devConfig.web.injectedConfig, urls)
 
@@ -122,7 +112,17 @@ async function runDev (config, dataDir, options = {}, log = () => {}, inprocHook
     // Deploy Phase - deploy actions
     if (withBackend) {
       log('redeploying actions..')
-      await deployActions(devConfig, isLocal, log, true, inprocHook)
+      const deployConfig = {
+        filterEntities: {
+          byBuiltActions: true
+        }
+      }
+      await deployActions({
+        config: devConfig,
+        deployConfig,
+        log,
+        inprocHook
+      })
     }
 
     // Deploy Phase - serve the web UI
@@ -155,12 +155,6 @@ async function runDev (config, dataDir, options = {}, log = () => {}, inprocHook
     // also there was a latent issue with projects that defined an action src as a folder with an index.js file.
     // it looks explicitly for package.json and fails if it does not find it.
     // regarless, we don't need it, and when we actually remove --local we can be rid of this.
-    if (isLocal) {
-      log('setting up vscode debug configuration files...')
-      const vscodeConfig = vscode(devConfig)
-      await vscodeConfig.update({ frontEndUrl })
-      cleanup.add(() => vscodeConfig.cleanup(), 'cleaning up vscode debug configuration files...')
-    }
 
     // automatically fetch logs if there are actions
     if (config.app.hasBackend && fetchLogs) {

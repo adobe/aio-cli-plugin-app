@@ -24,7 +24,6 @@ const deployActions = require('./deploy-actions')
 /**
  * @typedef {object} WatcherOptions
  * @property {object} config the app config (see src/lib/config-loader.js)
- * @property {boolean} isLocal whether the deployment is local or not
  * @property {Function} log the app logger
  * @property {object} [watcher] the watcher itself
  */
@@ -61,9 +60,14 @@ module.exports = async (watcherOptions) => {
  * @param {Array<string>} filterActions add filters to deploy only specified OpenWhisk actions
  */
 async function buildAndDeploy (watcherOptions, filterActions) {
-  const { config, isLocal, log, inprocHook } = watcherOptions
+  const { config, log, inprocHook } = watcherOptions
   await buildActions(config, filterActions)
-  await deployActions(config, isLocal, log, filterActions, inprocHook)
+  const deployConfig = {
+    filterEntities: {
+      actions: filterActions
+    }
+  }
+  await deployActions({ config, deployConfig, log, inprocHook })
 }
 
 /**
