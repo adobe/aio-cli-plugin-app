@@ -167,6 +167,7 @@ beforeEach(() => {
   helpers.buildExtensionPointPayloadWoMetadata.mockReset()
   helpers.buildExcShellViewExtensionMetadata.mockReset()
   helpers.createWebExportFilter.mockReset()
+  helpers.rewriteActionUrlInEntities.mockReset()
   mockLogForwarding.isLocalConfigChanged.mockReset()
   mockLogForwarding.getLocalConfigWithSecrets.mockReset()
   mockLogForwarding.updateServerConfig.mockReset()
@@ -183,6 +184,11 @@ beforeEach(() => {
       '1 HTML page(s)'
     ]
   })
+
+  helpers.rewriteActionUrlInEntities.mockImplementation(async ({ entities }) => {
+    return entities
+  })
+
   authHelper.setRuntimeApiHostAndAuthHandler.mockImplementation((aioConfig) => aioConfig)
   authHelper.getAccessToken.mockImplementation(() => {
     return {

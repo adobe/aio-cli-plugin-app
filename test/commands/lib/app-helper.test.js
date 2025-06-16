@@ -847,3 +847,223 @@ describe('getFilesCountWithExtension', () => {
     ])
   })
 })
+
+describe('rewriteActionUrlInEntities', () => {
+  const RuntimeLib = require('@adobe/aio-lib-runtime')
+
+  beforeEach(() => {
+    RuntimeLib.utils.getActionUrls = jest.fn()
+  })
+
+  afterEach(() => {
+    jest.clearAllMocks()
+  })
+
+  test('should rewrite action URLs with URLs from manifest', async () => {
+    const entities = {
+      actions: [
+        { name: 'action1', url: 'old-url-1' },
+        { name: 'action2', url: 'old-url-2' }
+      ]
+    }
+    const config = {
+      actions: { devRemote: false }
+    }
+    const mockActionUrls = {
+      action1: 'https://example.com/api/v1/web/action1',
+      action2: 'https://example.com/api/v1/web/action2'
+    }
+
+    RuntimeLib.utils.getActionUrls.mockReturnValue(mockActionUrls)
+
+    const result = await appHelper.rewriteActionUrlInEntities({ entities, config })
+
+    expect(RuntimeLib.utils.getActionUrls).toHaveBeenCalledWith(config, false)
+    expect(result.actions).toEqual([
+      { name: 'action1', url: 'https://example.com/api/v1/web/action1' },
+      { name: 'action2', url: 'https://example.com/api/v1/web/action2' }
+    ])
+  })
+
+  test('should use devRemote flag when calling getActionUrls', async () => {
+    const entities = { actions: [] }
+    const config = {
+      actions: { devRemote: true }
+    }
+
+    RuntimeLib.utils.getActionUrls.mockReturnValue({})
+
+    await appHelper.rewriteActionUrlInEntities({ entities, config })
+
+    expect(RuntimeLib.utils.getActionUrls).toHaveBeenCalledWith(config, true)
+  })
+
+  test('should preserve original action when no URL found in manifest', async () => {
+    const entities = {
+      actions: [
+        { name: 'action1', url: 'original-url' },
+        { name: 'action2', url: 'another-original-url' }
+      ]
+    }
+    const config = {
+      actions: { devRemote: false }
+    }
+    const mockActionUrls = {
+      action1: 'https://example.com/api/v1/web/action1'
+      // action2 is missing from manifest URLs
+    }
+
+    RuntimeLib.utils.getActionUrls.mockReturnValue(mockActionUrls)
+
+    const result = await appHelper.rewriteActionUrlInEntities({ entities, config })
+
+    expect(result.actions).toEqual([
+      { name: 'action1', url: 'https://example.com/api/v1/web/action1' },
+      { name: 'action2', url: 'another-original-url' } // Original URL preserved
+    ])
+  })
+
+  test('should handle entities with no actions array', async () => {
+    const entities = {}
+    const config = {
+      actions: { devRemote: false }
+    }
+
+    RuntimeLib.utils.getActionUrls.mockReturnValue({})
+
+    const result = await appHelper.rewriteActionUrlInEntities({ entities, config })
+
+    expect(result.actions).toBeUndefined()
+    expect(RuntimeLib.utils.getActionUrls).toHaveBeenCalledWith(config, false)
+  })
+
+  test('should handle entities with undefined actions', async () => {
+    const entities = { actions: undefined }
+    const config = {
+      actions: { devRemote: false }
+    }
+
+    RuntimeLib.utils.getActionUrls.mockReturnValue({})
+
+    const result = await appHelper.rewriteActionUrlInEntities({ entities, config })
+
+    expect(result.actions).toBeUndefined()
+  })
+
+  test('should handle empty actions array', async () => {
+    const entities = { actions: [] }
+    const config = {
+      actions: { devRemote: false }
+    }
+
+    RuntimeLib.utils.getActionUrls.mockReturnValue({})
+
+    const result = await appHelper.rewriteActionUrlInEntities({ entities, config })
+
+    expect(result.actions).toEqual([])
+  })
+
+  test('should create deep copy and not mutate original entities', async () => {
+    const originalEntities = {
+      actions: [
+        { name: 'action1', url: 'original-url', otherProp: 'value' }
+      ],
+      otherProp: 'test'
+    }
+    const config = {
+      actions: { devRemote: false }
+    }
+    const mockActionUrls = {
+      action1: 'https://example.com/api/v1/web/action1'
+    }
+
+    RuntimeLib.utils.getActionUrls.mockReturnValue(mockActionUrls)
+
+    const result = await appHelper.rewriteActionUrlInEntities({ entities: originalEntities, config })
+
+    // Original should be unchanged
+    expect(originalEntities.actions[0].url).toBe('original-url')
+    expect(originalEntities.otherProp).toBe('test')
+
+    // Result should have the new URL
+    expect(result.actions[0].url).toBe('https://example.com/api/v1/web/action1')
+    expect(result.actions[0].otherProp).toBe('value')
+    expect(result.otherProp).toBe('test')
+
+    // Should be different objects
+    expect(result).not.toBe(originalEntities)
+    expect(result.actions).not.toBe(originalEntities.actions)
+    expect(result.actions[0]).not.toBe(originalEntities.actions[0])
+  })
+
+  test('should preserve all other action properties', async () => {
+    const entities = {
+      actions: [
+        {
+          name: 'action1',
+          url: 'old-url',
+          version: '1.0.0',
+          annotations: { 'web-export': true },
+          parameters: { key: 'value' },
+          exec: { kind: 'nodejs:18' }
+        }
+      ]
+    }
+    const config = {
+      actions: { devRemote: false }
+    }
+    const mockActionUrls = {
+      action1: 'https://example.com/api/v1/web/action1'
+    }
+
+    RuntimeLib.utils.getActionUrls.mockReturnValue(mockActionUrls)
+
+    const result = await appHelper.rewriteActionUrlInEntities({ entities, config })
+
+    expect(result.actions[0]).toEqual({
+      name: 'action1',
+      url: 'https://example.com/api/v1/web/action1',
+      version: '1.0.0',
+      annotations: { 'web-export': true },
+      parameters: { key: 'value' },
+      exec: { kind: 'nodejs:18' }
+    })
+  })
+
+  test('should handle empty action URLs from manifest', async () => {
+    const entities = {
+      actions: [
+        { name: 'action1', url: 'original-url' }
+      ]
+    }
+    const config = {
+      actions: { devRemote: false }
+    }
+
+    RuntimeLib.utils.getActionUrls.mockReturnValue({}) // Empty object
+
+    const result = await appHelper.rewriteActionUrlInEntities({ entities, config })
+
+    expect(result.actions[0].url).toBe('original-url') // Should preserve original
+  })
+
+  test('should handle null/undefined URL from manifest', async () => {
+    const entities = {
+      actions: [
+        { name: 'action1', url: 'original-url' }
+      ]
+    }
+    const config = {
+      actions: { devRemote: false }
+    }
+    const mockActionUrls = {
+      action1: null // Null URL
+    }
+
+    RuntimeLib.utils.getActionUrls.mockReturnValue(mockActionUrls)
+
+    const result = await appHelper.rewriteActionUrlInEntities({ entities, config })
+
+    expect(result.actions[0].url).toBe('original-url') // Should preserve original when URL is falsy
+  })
+})
