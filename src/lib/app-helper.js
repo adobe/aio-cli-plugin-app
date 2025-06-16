@@ -504,7 +504,49 @@ function getFilesCountWithExtension (directory) {
   return log
 }
 
+/**
+ * Rewrites action URLs in deployed runtime entities using URLs from the manifest configuration.
+ *
+ * This function takes deployed runtime entities and updates the URL property of each action
+ * with the corresponding URL from the runtime manifest configuration. It creates a deep copy
+ * of the entities to avoid mutating the original object.
+ *
+ * @param {object} params - Parameters object
+ * @param {object} params.entities - The deployed runtime entities object
+ * @param {object} params.config - The application configuration object containing runtime manifest
+ * @returns {Promise<object>} A promise that resolves to a deep copy of the entities object with updated action URLs
+ * @example
+ * const entities = {
+ *   actions: [
+ *     { name: 'my-action', url: 'old-url' },
+ *     { name: 'another-action', url: 'another-old-url' }
+ *   ]
+ * }
+ * const config = {
+ *   actions: { devRemote: false },
+ *   // ... other config properties
+ * }
+ *
+ * const rewrittenEntities = await rewriteActionUrlInEntities({ entities, config })
+ * // rewrittenEntities.actions will have updated URLs from the manifest
+ */
+async function rewriteActionUrlInEntities ({ entities, config }) {
+  const actionUrlsFromManifest = RuntimeLib.utils.getActionUrls(config, config.actions.devRemote)
+  const rewrittenEntities = structuredClone(entities)
+
+  rewrittenEntities.actions = rewrittenEntities.actions?.map(action => {
+    const retAction = structuredClone(action)
+    const url = actionUrlsFromManifest[action.name]
+    if (url) {
+      retAction.url = url
+    }
+    return retAction
+  })
+  return rewrittenEntities
+}
+
 module.exports = {
+  rewriteActionUrlInEntities,
   getObjectValue,
   getObjectProp,
   createWebExportFilter,

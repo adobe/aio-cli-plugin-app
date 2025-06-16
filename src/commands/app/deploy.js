@@ -18,7 +18,11 @@ const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { Flags } = require('@oclif/core')
-const { runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getFilesCountWithExtension } = require('../../lib/app-helper')
+const {
+  rewriteActionUrlInEntities, runInProcess,
+  buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata,
+  getFilesCountWithExtension
+} = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
 const { sendAppAssetsDeployedAuditLog, sendAppDeployAuditLog } = require('../../lib/audit-logger')
@@ -128,7 +132,7 @@ class Deploy extends BuildCommand {
         const k = keys[i]
         const v = setRuntimeApiHostAndAuthHandler(values[i])
 
-        await this.deploySingleConfig(k, v, flags, spinner)
+        await this.deploySingleConfig({ name: k, config: v, originalConfig: values[i], flags, spinner })
         if (cliDetails?.accessToken && v.app.hasFrontend && flags['web-assets']) {
           const opItems = getFilesCountWithExtension(v.web.distProd)
           try {
@@ -167,7 +171,7 @@ class Deploy extends BuildCommand {
     this.log(chalk.green(chalk.bold('Successful deployment 🏄')))
   }
 
-  async deploySingleConfig (name, config, flags, spinner) {
+  async deploySingleConfig ({ name, config, originalConfig, flags, spinner }) {
     const onProgress = !flags.verbose
       ? info => {
         spinner.text = info
@@ -267,7 +271,8 @@ class Deploy extends BuildCommand {
 
     // log deployed resources
     if (deployedRuntimeEntities.actions && deployedRuntimeEntities.actions.length > 0) {
-      await logActions({ entities: deployedRuntimeEntities, log: (...rest) => this.log(chalk.bold(chalk.blue(...rest))) })
+      const entities = await rewriteActionUrlInEntities({ entities: deployedRuntimeEntities, config: originalConfig })
+      await logActions({ entities, log: (...rest) => this.log(chalk.bold(chalk.blue(...rest))) })
     }
 
     // TODO urls should depend on extension point, exc shell only for exc shell extension point - use a post-app-deploy hook ?

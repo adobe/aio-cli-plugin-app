@@ -52,7 +52,13 @@ test('get log forwarding settings (expect init to be passed a config)', async ()
   lf.getServerConfig.mockResolvedValue(serverConfig)
 
   await command.run()
-  expect(LogForwarding.init).toHaveBeenCalledWith(command.appConfig.aio)
+  // config should be deploy service settings
+  const modifiedConfig = structuredClone(command.appConfig.aio)
+  modifiedConfig.runtime.apihost = 'https://deploy-service.app-builder.adp.adobe.io/runtime'
+  modifiedConfig.runtime.auth_handler = {
+    getAuthHeader: expect.any(Function)
+  }
+  expect(LogForwarding.init).toHaveBeenCalledWith(modifiedConfig)
 })
 
 test('get log forwarding settings (local and server are the same)', async () => {
