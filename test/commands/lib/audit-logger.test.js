@@ -11,13 +11,14 @@ governing permissions and limitations under the License.
 
 const {
   OPERATIONS,
+  AUDIT_SERVICE_ENDPOINT_ROUTE,
   AUDIT_SERVICE_ENDPOINTS,
   getAuditLogEvent,
   sendAppDeployAuditLog,
   sendAppUndeployAuditLog,
   sendAppAssetsDeployedAuditLog,
   sendAppAssetsUndeployedAuditLog,
-  checkOverrides
+  publishAuditLogs
 } = require('../../../src/lib/audit-logger')
 
 beforeEach(() => {
@@ -42,49 +43,6 @@ describe('audit-logger', () => {
   }
   const mockCliFlags = { flag1: 'value1' }
 
-  describe('checkOverrides', () => {
-    const originalEnv = process.env
-
-    beforeEach(() => {
-      jest.resetModules() // Clears any cached modules
-      process.env = { ...originalEnv } // Copies the original environment variables
-      jest.spyOn(console, 'warn').mockImplementation()
-    })
-
-    afterEach(() => {
-      process.env = originalEnv // Restores the original environment variables
-      console.warn.mockRestore()
-    })
-
-    it('should not log warnings when no environment variables are set', () => {
-      checkOverrides()
-      expect(console.warn).not.toHaveBeenCalled()
-    })
-
-    it('should log warning when only stage endpoint is overridden', () => {
-      process.env.AUDIT_SERVICE_ENDPOINT_STAGE = 'https://custom-stage-endpoint.com'
-      checkOverrides()
-      expect(console.warn).toHaveBeenCalledWith('Audit Service overrides detected:')
-      expect(console.warn).toHaveBeenCalledWith('  AUDIT_SERVICE_ENDPOINT_STAGE: https://custom-stage-endpoint.com')
-    })
-
-    it('should log warning when only prod endpoint is overridden', () => {
-      process.env.AUDIT_SERVICE_ENDPOINT_PROD = 'https://custom-prod-endpoint.com'
-      checkOverrides()
-      expect(console.warn).toHaveBeenCalledWith('Audit Service overrides detected:')
-      expect(console.warn).toHaveBeenCalledWith('  AUDIT_SERVICE_ENDPOINT_PROD: https://custom-prod-endpoint.com')
-    })
-
-    it('should log warnings when both endpoints are overridden', () => {
-      process.env.AUDIT_SERVICE_ENDPOINT_STAGE = 'https://custom-stage-endpoint.com'
-      process.env.AUDIT_SERVICE_ENDPOINT_PROD = 'https://custom-prod-endpoint.com'
-      checkOverrides()
-      expect(console.warn).toHaveBeenCalledWith('Audit Service overrides detected:')
-      expect(console.warn).toHaveBeenCalledWith('  AUDIT_SERVICE_ENDPOINT_STAGE: https://custom-stage-endpoint.com')
-      expect(console.warn).toHaveBeenCalledWith('  AUDIT_SERVICE_ENDPOINT_PROD: https://custom-prod-endpoint.com')
-    })
-  })
-
   describe('getAuditLogEvent', () => {
     it('should create a valid audit log event for app deploy', () => {
       const event = getAuditLogEvent({
@@ -95,9 +53,6 @@ describe('audit-logger', () => {
 
       expect(event).toEqual({
         orgId: 'fake-org-id',
-        projectId: 'fake-project-id',
-        workspaceId: 'fake-workspace-id',
-        workspaceName: 'fake-workspace',
         operation: OPERATIONS.AB_APP_DEPLOY,
         objectRef: 'test-app',
         objectRev: '1.0.0',
@@ -119,9 +74,6 @@ describe('audit-logger', () => {
 
       expect(event).toEqual({
         orgId: 'fake-org-id',
-        projectId: 'fake-project-id',
-        workspaceId: 'fake-workspace-id',
-        workspaceName: 'fake-workspace',
         operation: OPERATIONS.AB_APP_UNDEPLOY,
         objectRef: 'test-app',
         objectRev: '1.0.0',
@@ -203,7 +155,7 @@ describe('audit-logger', () => {
       })
 
       expect(fetch).toHaveBeenCalledWith(
-        AUDIT_SERVICE_ENDPOINTS.prod,
+        AUDIT_SERVICE_ENDPOINTS.prod + AUDIT_SERVICE_ENDPOINT_ROUTE,
         expect.objectContaining({
           method: 'POST',
           headers: {
@@ -226,7 +178,7 @@ describe('audit-logger', () => {
       })
 
       expect(fetch).toHaveBeenCalledWith(
-        AUDIT_SERVICE_ENDPOINTS.prod,
+        AUDIT_SERVICE_ENDPOINTS.prod + AUDIT_SERVICE_ENDPOINT_ROUTE,
         expect.objectContaining({
           method: 'POST',
           headers: {
@@ -252,7 +204,7 @@ describe('audit-logger', () => {
       })
 
       expect(fetch).toHaveBeenCalledWith(
-        AUDIT_SERVICE_ENDPOINTS.prod,
+        AUDIT_SERVICE_ENDPOINTS.prod + AUDIT_SERVICE_ENDPOINT_ROUTE,
         expect.objectContaining({
           method: 'POST',
           headers: {
@@ -276,7 +228,7 @@ describe('audit-logger', () => {
       })
 
       expect(fetch).toHaveBeenCalledWith(
-        AUDIT_SERVICE_ENDPOINTS.prod,
+        AUDIT_SERVICE_ENDPOINTS.prod + AUDIT_SERVICE_ENDPOINT_ROUTE,
         expect.objectContaining({
           method: 'POST',
           headers: {
@@ -310,7 +262,7 @@ describe('audit-logger', () => {
       })
 
       expect(fetch).toHaveBeenCalledWith(
-        AUDIT_SERVICE_ENDPOINTS.prod,
+        AUDIT_SERVICE_ENDPOINTS.prod + AUDIT_SERVICE_ENDPOINT_ROUTE,
         expect.objectContaining({
           method: 'POST',
           headers: {
@@ -319,6 +271,92 @@ describe('audit-logger', () => {
           }
         })
       )
+    })
+  })
+
+  describe('publishAuditLogs', () => {
+    const mockLogEvent = {
+      orgId: 'fake-org-id',
+      projectId: 'fake-project-id',
+      operation: 'test-operation'
+    }
+
+    it('should publish audit logs successfully to prod environment', async () => {
+      setFetchMock(true, 200, {})
+
+      await publishAuditLogs({
+        accessToken: mockAccessToken,
+        logEvent: mockLogEvent,
+        env: 'prod'
+      })
+
+      expect(fetch).toHaveBeenCalledWith(
+        AUDIT_SERVICE_ENDPOINTS.prod + AUDIT_SERVICE_ENDPOINT_ROUTE,
+        expect.objectContaining({
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${mockAccessToken}`,
+            'Content-type': 'application/json'
+          },
+          body: JSON.stringify({ event: mockLogEvent })
+        })
+      )
+    })
+
+    it('should publish audit logs successfully to stage environment', async () => {
+      setFetchMock(true, 200, {})
+
+      await publishAuditLogs({
+        accessToken: mockAccessToken,
+        logEvent: mockLogEvent,
+        env: 'stage'
+      })
+
+      expect(fetch).toHaveBeenCalledWith(
+        AUDIT_SERVICE_ENDPOINTS.stage + AUDIT_SERVICE_ENDPOINT_ROUTE,
+        expect.objectContaining({
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${mockAccessToken}`,
+            'Content-type': 'application/json'
+          },
+          body: JSON.stringify({ event: mockLogEvent })
+        })
+      )
+    })
+
+    it('should use custom URL when AIO_DEPLOY_SERVICE_URL is set', async () => {
+      const customUrl = 'https://custom-service.example.com'
+      process.env.AIO_DEPLOY_SERVICE_URL = customUrl
+      setFetchMock(true, 200, {})
+
+      await publishAuditLogs({
+        accessToken: mockAccessToken,
+        logEvent: mockLogEvent
+      })
+
+      expect(fetch).toHaveBeenCalledWith(
+        customUrl + AUDIT_SERVICE_ENDPOINT_ROUTE,
+        expect.objectContaining({
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${mockAccessToken}`,
+            'Content-type': 'application/json'
+          },
+          body: JSON.stringify({ event: mockLogEvent })
+        })
+      )
+
+      delete process.env.AIO_DEPLOY_SERVICE_URL
+    })
+
+    it('should throw error when audit service returns non-200 status', async () => {
+      setFetchMock(true, 500, 'Internal Server Error')
+
+      await expect(publishAuditLogs({
+        accessToken: mockAccessToken,
+        logEvent: mockLogEvent
+      })).rejects.toThrow('Failed to send audit log - 500 Internal Server Error')
     })
   })
 })

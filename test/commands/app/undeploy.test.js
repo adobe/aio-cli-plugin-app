@@ -87,7 +87,7 @@ beforeEach(() => {
   auditLogger.getAuditLogEvent.mockImplementation((flags, project, event) => {
     return { orgId: 'mockorg', projectId: 'mockproject', workspaceId: 'mockworkspaceid', workspaceName: 'mockworkspacename' }
   })
-  helpers.getCliInfo.mockImplementation(() => {
+  authHelper.getAccessToken.mockImplementation(() => {
     return {
       accessToken: 'mocktoken',
       env: 'stage'
@@ -513,42 +513,6 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(1)
   })
 
-  test('Should invoke setRuntimeApiHostAndAuthHandler if IS_DEPLOY_SERVICE_ENABLED = true', async () => {
-    const mockOrg = 'mockorg'
-    const mockProject = 'mockproject'
-    const mockWorkspaceId = 'mockworkspaceid'
-    const mockWorkspaceName = 'mockworkspacename'
-
-    process.env.IS_DEPLOY_SERVICE_ENABLED = true
-
-    command.getFullConfig = jest.fn().mockReturnValue({
-      aio: {
-        project: {
-          id: mockProject,
-          org: {
-            id: mockOrg
-          },
-          workspace: {
-            id: mockWorkspaceId,
-            name: mockWorkspaceName
-          }
-        }
-      },
-      packagejson: {
-        name: 'test-app',
-        version: '1.0.0'
-      }
-    })
-    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
-
-    await command.run()
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
-    expect(authHelper.setRuntimeApiHostAndAuthHandler).toHaveBeenCalledTimes(1)
-    process.env.IS_DEPLOY_SERVICE_ENABLED = false
-  })
-
   test('Send audit logs for successful app undeploy', async () => {
     const mockToken = 'mocktoken'
     const mockEnv = 'stage'
@@ -636,7 +600,7 @@ describe('run', () => {
       }
     })
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
-    helpers.getCliInfo.mockImplementationOnce(() => null)
+    authHelper.getAccessToken.mockImplementationOnce(() => null)
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)

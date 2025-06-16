@@ -32,10 +32,7 @@ class ErrorsCommand extends BaseCommand {
 
   async getLogForwarding () {
     let aioConfig = (await this.getFullConfig()).aio
-    // TODO: remove this check once the deploy service is enabled by default
-    if (process.env.IS_DEPLOY_SERVICE_ENABLED === 'true') {
-      aioConfig = setRuntimeApiHostAndAuthHandler(aioConfig)
-    }
+    aioConfig = setRuntimeApiHostAndAuthHandler(aioConfig)
 
     const runtimeConfig = aioConfig.runtime
     rtLib.utils.checkOpenWhiskCredentials({ ow: runtimeConfig })

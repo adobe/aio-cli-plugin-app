@@ -18,11 +18,15 @@ const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { Flags } = require('@oclif/core')
-const { runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getCliInfo, getFilesCountWithExtension } = require('../../lib/app-helper')
+const {
+  rewriteActionUrlInEntities, runInProcess,
+  buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata,
+  getFilesCountWithExtension
+} = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
 const { sendAppAssetsDeployedAuditLog, sendAppDeployAuditLog } = require('../../lib/audit-logger')
-const { setRuntimeApiHostAndAuthHandler } = require('../../lib/auth-helper')
+const { setRuntimeApiHostAndAuthHandler, getAccessToken } = require('../../lib/auth-helper')
 const logActions = require('../../lib/log-actions')
 
 const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
@@ -54,7 +58,7 @@ class Deploy extends BuildCommand {
 
     try {
       const { aio: aioConfig, packagejson: packageJson } = await this.getFullConfig()
-      const cliDetails = await getCliInfo(flags.publish)
+      const cliDetails = await getAccessToken({ useCachedToken: flags.publish })
       const appInfo = {
         name: packageJson.name,
         version: packageJson.version,
@@ -84,10 +88,7 @@ class Deploy extends BuildCommand {
       if (aioConfig?.project?.workspace && flags['log-forwarding-update'] && flags.actions) {
         spinner.start('Updating log forwarding configuration')
         try {
-          let lfConfig = aioConfig
-          if (process.env.IS_DEPLOY_SERVICE_ENABLED === 'true') {
-            lfConfig = setRuntimeApiHostAndAuthHandler(aioConfig)
-          }
+          const lfConfig = setRuntimeApiHostAndAuthHandler(aioConfig)
 
           const lf = await LogForwarding.init(lfConfig)
           if (lf.isLocalConfigChanged()) {
@@ -129,9 +130,9 @@ class Deploy extends BuildCommand {
       // - break into smaller pieces deploy, allowing to first deploy all actions then all web assets
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
-        const v = process.env.IS_DEPLOY_SERVICE_ENABLED === 'true' ? setRuntimeApiHostAndAuthHandler(values[i]) : values[i]
+        const v = setRuntimeApiHostAndAuthHandler(values[i])
 
-        await this.deploySingleConfig(k, v, flags, spinner)
+        await this.deploySingleConfig({ name: k, config: v, originalConfig: values[i], flags, spinner })
         if (cliDetails?.accessToken && v.app.hasFrontend && flags['web-assets']) {
           const opItems = getFilesCountWithExtension(v.web.distProd)
           try {
@@ -170,7 +171,7 @@ class Deploy extends BuildCommand {
     this.log(chalk.green(chalk.bold('Successful deployment 🏄')))
   }
 
-  async deploySingleConfig (name, config, flags, spinner) {
+  async deploySingleConfig ({ name, config, originalConfig, flags, spinner }) {
     const onProgress = !flags.verbose
       ? info => {
         spinner.text = info
@@ -270,7 +271,8 @@ class Deploy extends BuildCommand {
 
     // log deployed resources
     if (deployedRuntimeEntities.actions && deployedRuntimeEntities.actions.length > 0) {
-      await logActions({ entities: deployedRuntimeEntities, log: (...rest) => this.log(chalk.bold(chalk.blue(...rest))) })
+      const entities = await rewriteActionUrlInEntities({ entities: deployedRuntimeEntities, config: originalConfig })
+      await logActions({ entities, log: (...rest) => this.log(chalk.bold(chalk.blue(...rest))) })
     }
 
     // TODO urls should depend on extension point, exc shell only for exc shell extension point - use a post-app-deploy hook ?

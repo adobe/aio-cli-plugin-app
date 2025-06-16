@@ -27,6 +27,8 @@ jest.mock('../../../../../src/lib/log-forwarding', () => {
 
 let command, lf
 beforeEach(async () => {
+  authHelper.setRuntimeApiHostAndAuthHandler.mockClear()
+
   command = new TheCommand([])
   command.appConfig = {
     aio: {
@@ -90,11 +92,10 @@ test('set log forwarding destination and save local', async () => {
   expect(setCall).toHaveBeenCalledWith(new LogForwarding.LogForwardingConfig(destination, input))
   expect(localSetCall).toHaveBeenCalledTimes(1)
   expect(localSetCall).toHaveBeenCalledWith(new LogForwarding.LogForwardingConfig(destination, fullSanitizedSettings))
-  expect(authHelper.setRuntimeApiHostAndAuthHandler).not.toHaveBeenCalled()
+  expect(authHelper.setRuntimeApiHostAndAuthHandler).toHaveBeenCalledTimes(1)
 })
 
-test('should Invoke setRuntimeApiHostAndAuthHandler if IS_DEPLOY_SERVICE_ENABLED = ture and set log forwarding destination', async () => {
-  process.env.IS_DEPLOY_SERVICE_ENABLED = true
+test('should invoke setRuntimeApiHostAndAuthHandler and set log forwarding destination', async () => {
   const destination = 'destination'
   const input = {
     field_one: 'val_one',
@@ -133,7 +134,6 @@ test('should Invoke setRuntimeApiHostAndAuthHandler if IS_DEPLOY_SERVICE_ENABLED
   expect(localSetCall).toHaveBeenCalledTimes(1)
   expect(localSetCall).toHaveBeenCalledWith(new LogForwarding.LogForwardingConfig(destination, fullSanitizedSettings))
   expect(authHelper.setRuntimeApiHostAndAuthHandler).toHaveBeenCalledTimes(1)
-  process.env.IS_DEPLOY_SERVICE_ENABLED = false
 })
 
 test('set log forwarding destination and fail save local', async () => {
