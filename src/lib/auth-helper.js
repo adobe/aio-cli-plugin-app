@@ -64,7 +64,8 @@ const bearerAuthHandler = {
   }
 }
 
-const setRuntimeApiHostAndAuthHandler = (config) => {
+const setRuntimeApiHostAndAuthHandler = (_config) => {
+  const config = structuredClone(_config)
   const aioConfig = (config && 'runtime' in config) ? config : null
   if (aioConfig) {
     const apiEndpoint = process.env.AIO_DEPLOY_SERVICE_URL ?? defaultDeployServiceUrl
