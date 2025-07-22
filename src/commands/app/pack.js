@@ -177,7 +177,7 @@ class Pack extends BaseCommand {
         this.spinner.succeed('Got api-mesh config')
       } catch (err) {
         // Ignore error if no mesh found, otherwise throw
-        if (err?.message.includes('Error: Unable to get mesh config. No mesh found for Org')) {
+        if (err?.message.includes('Error: Unable to get mesh config.')) {
           aioLogger.debug('No api-mesh config found')
         } else {
           console.error(err)
