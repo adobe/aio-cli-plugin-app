@@ -75,7 +75,10 @@ describe('bearerAuthHandler', () => {
 })
 
 describe('setRuntimeApiHostAndAuthHandler', () => {
-  const defaultDeployServiceUrl = 'https://deploy-service.app-builder.adp.adobe.io'
+  const DEPLOY_SERVICE_ENDPOINTS = {
+    prod: 'https://deploy-service.app-builder.adp.adobe.io',
+    stage: 'https://deploy-service.stg.app-builder.corp.adp.adobe.io'
+  }
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -83,22 +86,44 @@ describe('setRuntimeApiHostAndAuthHandler', () => {
   })
 
   test('should set runtime.apihost and runtime.auth_handler when config has runtime', () => {
-    const config = { runtime: {} }
-    const result = setRuntimeApiHostAndAuthHandler(config)
+    // test both envs
+    {
+      const mockEnv = 'prod'
+      getCliEnv.mockReturnValue(mockEnv)
 
-    expect(result.runtime.apihost).toBe(`${defaultDeployServiceUrl}/runtime`)
-    expect(result.runtime.auth_handler).toBe(bearerAuthHandler)
+      const config = { runtime: {} }
+      const result = setRuntimeApiHostAndAuthHandler(config)
+
+      expect(result.runtime.apihost).toBe(`${DEPLOY_SERVICE_ENDPOINTS[mockEnv]}/runtime`)
+      expect(result.runtime.auth_handler).toBe(bearerAuthHandler)
+    }
+    {
+      const mockEnv = 'stage'
+      getCliEnv.mockReturnValue(mockEnv)
+
+      const config = { runtime: {} }
+      const result = setRuntimeApiHostAndAuthHandler(config)
+
+      expect(result.runtime.apihost).toBe(`${DEPLOY_SERVICE_ENDPOINTS[mockEnv]}/runtime`)
+      expect(result.runtime.auth_handler).toBe(bearerAuthHandler)
+    }
   })
 
   test('should set ow.apihost and ow.auth_handler when config has ow', () => {
+    const mockEnv = 'unknown-env-should-use-prod'
+    getCliEnv.mockReturnValue(mockEnv)
+
     const config = { ow: {} }
     const result = setRuntimeApiHostAndAuthHandler(config)
 
-    expect(result.ow.apihost).toBe(`${defaultDeployServiceUrl}/runtime`)
+    expect(result.ow.apihost).toBe(`${DEPLOY_SERVICE_ENDPOINTS.prod}/runtime`)
     expect(result.ow.auth_handler).toBe(bearerAuthHandler)
   })
 
   test('should use custom deploy service URL from environment', () => {
+    const mockEnv = 'prod'
+    getCliEnv.mockReturnValue(mockEnv)
+
     const customUrl = 'https://custom-deploy-service.example.com'
     process.env.AIO_DEPLOY_SERVICE_URL = customUrl
     const config = { runtime: {} }
