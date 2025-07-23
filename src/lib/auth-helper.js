@@ -12,8 +12,12 @@ governing permissions and limitations under the License.
 const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
 const { getCliEnv } = require('@adobe/aio-lib-env')
-const defaultDeployServiceUrl = 'https://deploy-service.app-builder.adp.adobe.io'
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:auth-helper', { provider: 'debug' })
+
+const DEPLOY_SERVICE_ENDPOINTS = {
+  stage: 'https://deploy-service.stg.app-builder.corp.adp.adobe.io',
+  prod: 'https://deploy-service.app-builder.adp.adobe.io'
+}
 
 /**
  * Retrieves an access token for Adobe I/O CLI authentication.
@@ -65,17 +69,21 @@ const bearerAuthHandler = {
 }
 
 const setRuntimeApiHostAndAuthHandler = (_config) => {
+  const env = getCliEnv()
+  let apiEndpoint = DEPLOY_SERVICE_ENDPOINTS[env] ?? DEPLOY_SERVICE_ENDPOINTS.prod
+  if (process.env.AIO_DEPLOY_SERVICE_URL) {
+    apiEndpoint = process.env.AIO_DEPLOY_SERVICE_URL
+  }
+
   const config = structuredClone(_config)
   const aioConfig = (config && 'runtime' in config) ? config : null
   if (aioConfig) {
-    const apiEndpoint = process.env.AIO_DEPLOY_SERVICE_URL ?? defaultDeployServiceUrl
     aioConfig.runtime.apihost = `${apiEndpoint}/runtime`
     aioConfig.runtime.auth_handler = bearerAuthHandler
     return aioConfig
   }
   const owConfig = (config && 'ow' in config) ? config : null
   if (owConfig) {
-    const apiEndpoint = process.env.AIO_DEPLOY_SERVICE_URL ?? defaultDeployServiceUrl
     owConfig.ow.apihost = `${apiEndpoint}/runtime`
     owConfig.ow.auth_handler = bearerAuthHandler
     return owConfig

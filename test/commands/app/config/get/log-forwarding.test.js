@@ -54,7 +54,7 @@ test('get log forwarding settings (expect init to be passed a config)', async ()
   await command.run()
   // config should be deploy service settings
   const modifiedConfig = structuredClone(command.appConfig.aio)
-  modifiedConfig.runtime.apihost = 'https://deploy-service.app-builder.adp.adobe.io/runtime'
+  modifiedConfig.runtime.apihost = 'https://deploy-service.stg.app-builder.corp.adp.adobe.io/runtime' // aio-lib-env is mocked to return 'stage'
   modifiedConfig.runtime.auth_handler = {
     getAuthHeader: expect.any(Function)
   }
