@@ -47,8 +47,8 @@ async function getAccessToken ({ useCachedToken = false } = {}) {
 
   let accessToken = null
   if (useCachedToken) {
-    const contextConfig = await context.get(contextName)
-    accessToken = contextConfig?.access_token?.token
+    const { data } = await context.get(contextName)
+    accessToken = data?.access_token?.token
   } else {
     accessToken = await getToken(contextName)
   }
