@@ -15,6 +15,8 @@ const BaseCommand = require('../../../src/BaseCommand')
 const cloneDeep = require('lodash.clonedeep')
 const dataMocks = require('../../data-mocks/config-loader')
 const helpersActual = jest.requireActual('../../../src/lib/app-helper.js')
+const authHelpersActual = jest.requireActual('../../../src/lib/auth-helper')
+
 const open = require('open')
 const mockBundleFunc = jest.fn()
 
@@ -394,6 +396,8 @@ describe('run', () => {
   })
 
   test('deploy does not require logged in user with --no-publish (workspace: Production)', async () => {
+    authHelper.getAccessToken.mockImplementation(authHelpersActual.getAccessToken)
+
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'exc'))
     mockGetExtensionPointsRetractedApp() // not published
     command.getFullConfig.mockResolvedValue({
@@ -420,6 +424,9 @@ describe('run', () => {
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
     expect(command.buildOneExt).toHaveBeenCalledTimes(1)
     expect(mockLibConsoleCLI.getApplicationExtensions).not.toHaveBeenCalled()
+
+    expect(auditLogger.sendAppDeployAuditLog).toHaveBeenCalledTimes(0)
+    expect(auditLogger.sendAppAssetsDeployedAuditLog).toHaveBeenCalledTimes(0)
   })
 
   test('build & deploy only some actions using --action', async () => {

@@ -58,7 +58,7 @@ class Deploy extends BuildCommand {
 
     try {
       const { aio: aioConfig, packagejson: packageJson } = await this.getFullConfig()
-      const cliDetails = await getAccessToken({ useCachedToken: flags.publish })
+      const cliDetails = await getAccessToken({ useCachedToken: !flags.publish })
       const appInfo = {
         name: packageJson.name,
         version: packageJson.version,

@@ -14,6 +14,7 @@ const TheCommand = require('../../../src/commands/app/undeploy')
 const BaseCommand = require('../../../src/BaseCommand')
 const dataMocks = require('../../data-mocks/config-loader')
 const cloneDeep = require('lodash.clonedeep')
+const authHelperActual = jest.requireActual('../../../src/lib/auth-helper.js')
 
 jest.mock('../../../src/lib/app-helper.js')
 const helpers = require('../../../src/lib/app-helper.js')
@@ -472,6 +473,18 @@ describe('run', () => {
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledWith(expect.stringMatching(/Nothing to be done/))
+  })
+
+  test('undeploy does not require logged in user with --no-unpublish', async () => {
+    authHelper.getAccessToken.mockImplementation(authHelperActual.getAccessToken)
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
+
+    command.argv = ['--no-unpublish']
+    await command.run()
+    expect(command.error).toHaveBeenCalledTimes(0)
+
+    expect(auditLogger.sendAppAssetsUndeployedAuditLog).toHaveBeenCalledTimes(0)
+    expect(auditLogger.sendAppUndeployAuditLog).toHaveBeenCalledTimes(0)
   })
 
   test('does NOT fire `event` hooks when feature flag is NOT enabled', async () => {
