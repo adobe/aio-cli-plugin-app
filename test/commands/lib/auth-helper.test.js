@@ -44,7 +44,7 @@ describe('getAccessToken', () => {
   test('should use cached token when requested', async () => {
     const mockToken = 'cached-token'
     const mockEnv = 'prod'
-    const mockContext = { access_token: { token: mockToken } }
+    const mockContext = { data: { access_token: { token: mockToken } } }
     getCliEnv.mockReturnValue(mockEnv)
     context.getCurrent.mockResolvedValue(CLI)
     context.get.mockResolvedValue(mockContext)

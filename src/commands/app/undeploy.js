@@ -52,7 +52,7 @@ class Undeploy extends BaseCommand {
     const spinner = ora()
     try {
       const { aio: aioConfig, packagejson: packageJson } = await this.getFullConfig()
-      const cliDetails = await getAccessToken({ useCachedToken: flags.unpublish })
+      const cliDetails = await getAccessToken({ useCachedToken: !flags.unpublish })
       const appInfo = {
         name: packageJson.name,
         version: packageJson.version,
