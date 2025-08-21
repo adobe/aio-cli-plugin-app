@@ -95,6 +95,8 @@ beforeEach(() => {
     }
   })
   authHelper.setRuntimeApiHostAndAuthHandler.mockImplementation(aioConfig => aioConfig)
+  // New undeploy flow also applies CDN auth/host; make it a pass-through in tests
+  authHelper.setCDNApiHostAndAuthHandler.mockImplementation(aioConfig => aioConfig)
   jest.clearAllMocks()
 })
 

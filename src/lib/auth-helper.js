@@ -90,8 +90,25 @@ const setRuntimeApiHostAndAuthHandler = (_config) => {
   }
 }
 
+const setCDNApiHostAndAuthHandler = (_config) => {
+  const env = getCliEnv()
+  let apiEndpoint = DEPLOY_SERVICE_ENDPOINTS[env] ?? DEPLOY_SERVICE_ENDPOINTS.prod
+  if (process.env.AIO_DEPLOY_SERVICE_URL) {
+    apiEndpoint = process.env.AIO_DEPLOY_SERVICE_URL
+  }
+
+  const config = structuredClone(_config)
+  if (config.web) {
+    config.web.apihost = `${apiEndpoint}/cdn-api`
+    config.web.namespace = config.ow.namespace
+    config.web.auth_handler = bearerAuthHandler
+  }
+  return config // always return the config (in case there is no web config)
+}
+
 module.exports = {
   getAccessToken,
   bearerAuthHandler,
-  setRuntimeApiHostAndAuthHandler
+  setRuntimeApiHostAndAuthHandler,
+  setCDNApiHostAndAuthHandler
 }

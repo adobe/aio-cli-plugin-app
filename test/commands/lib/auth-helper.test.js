@@ -1,4 +1,4 @@
-const { getAccessToken, bearerAuthHandler, setRuntimeApiHostAndAuthHandler } = require('../../../src/lib/auth-helper')
+const { getAccessToken, bearerAuthHandler, setRuntimeApiHostAndAuthHandler, setCDNApiHostAndAuthHandler } = require('../../../src/lib/auth-helper')
 const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
 const { getCliEnv } = require('@adobe/aio-lib-env')
@@ -141,5 +141,54 @@ describe('setRuntimeApiHostAndAuthHandler', () => {
     const config = { other: {} }
     const result = setRuntimeApiHostAndAuthHandler(config)
     expect(result).not.toBeDefined()
+  })
+})
+
+describe('setCDNApiHostAndAuthHandler', () => {
+  const DEPLOY_SERVICE_ENDPOINTS = {
+    prod: 'https://deploy-service.app-builder.adp.adobe.io',
+    stage: 'https://deploy-service.stg.app-builder.corp.adp.adobe.io'
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    delete process.env.AIO_DEPLOY_SERVICE_URL
+  })
+
+  test('should set web.apihost and web.auth_handler and preserve namespace from ow', () => {
+    const mockEnv = 'stage'
+    getCliEnv.mockReturnValue(mockEnv)
+
+    const config = { web: {}, ow: { namespace: 'ns' } }
+    const result = setCDNApiHostAndAuthHandler(config)
+
+    expect(result.web.apihost).toBe(`${DEPLOY_SERVICE_ENDPOINTS[mockEnv]}/cdn-api`)
+    expect(result.web.auth_handler).toBe(bearerAuthHandler)
+    expect(result.web.namespace).toBe('ns')
+  })
+
+  test('should be a no-op if config has no web key', () => {
+    const mockEnv = 'prod'
+    getCliEnv.mockReturnValue(mockEnv)
+    const input = { ow: { namespace: 'ns' }, other: {} }
+    const result = setCDNApiHostAndAuthHandler(input)
+    expect(result).toEqual(input)
+  })
+
+  test('should use custom deploy service URL from environment', () => {
+    const customUrl = 'https://custom-deploy-service.example.com'
+    process.env.AIO_DEPLOY_SERVICE_URL = customUrl
+    getCliEnv.mockReturnValue('prod')
+
+    const config = { web: {}, ow: { namespace: 'ns' } }
+    const result = setCDNApiHostAndAuthHandler(config)
+    expect(result.web.apihost).toBe(`${customUrl}/cdn-api`)
+  })
+
+  test('falls back to prod endpoint for unknown env', () => {
+    getCliEnv.mockReturnValue('mystery-env')
+    const config = { web: {}, ow: { namespace: 'ns' } }
+    const result = setCDNApiHostAndAuthHandler(config)
+    expect(result.web.apihost).toBe(`${DEPLOY_SERVICE_ENDPOINTS.prod}/cdn-api`)
   })
 })
