@@ -122,6 +122,7 @@ class InitCommand extends TemplatesCommand {
         useDefaultValues: flags.yes,
         installNpm: flags.install,
         installConfig: flags.login,
+        templateOptions: flags['template-options'],
         templates
       })
     }
@@ -174,6 +175,7 @@ class InitCommand extends TemplatesCommand {
       await this.installTemplates({
         useDefaultValues: flags.yes,
         installNpm: flags.install,
+        templateOptions: flags['template-options'],
         templates
       })
     }
@@ -456,21 +458,33 @@ InitCommand.flags = {
     char: 't',
     multiple: true
   }),
+  'template-options': Flags.string({
+    description: 'Optional template options, as a base64-encoded json string',
+    parse: input => {
+      try {
+        const decoded = Buffer.from(input, 'base64').toString('utf8')
+        aioLogger.debug(`--template-options: ${input} decoded as ${decoded}`)
+        return JSON.parse(decoded)
+      } catch (e) {
+        throw new Error(`--template-options: ${input} is not a base64 encoded JSON object.`)
+      }
+    }
+  }),
   org: Flags.string({
-    description: 'Specify the Adobe Developer Console Org to init from',
-    hidden: true,
-    exclusive: ['import'] // also no-login
+    description: 'Specify the Adobe Developer Console Org to init from (orgId, or orgCode)',
+    char: 'o',
+    exclusive: ['import', 'no-login']
   }),
   project: Flags.string({
-    description: 'Specify the Adobe Developer Console Project to init from',
-    hidden: true,
-    exclusive: ['import'] // also no-login
+    description: 'Specify the Adobe Developer Console Project to init from (projectId, or projectName)',
+    char: 'p',
+    exclusive: ['import', 'no-login']
   }),
   workspace: Flags.string({
     description: 'Specify the Adobe Developer Console Workspace to init from, defaults to Stage',
     default: DEFAULT_WORKSPACE,
     char: 'w',
-    exclusive: ['import'] // also no-login
+    exclusive: ['import', 'no-login']
   }),
   'confirm-new-workspace': Flags.boolean({
     description: 'Prompt to confirm before creating a new workspace',
