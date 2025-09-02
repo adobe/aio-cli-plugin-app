@@ -539,8 +539,8 @@ Create a new Adobe I/O App
 ```
 USAGE
   $ aio app init [PATH] [-v] [--version] [--install] [-y] [--login] [-e <value>... | -t <value>... | --repo
-    <value>] [--standalone-app |  | ] [-w <value> | -i <value>] [--confirm-new-workspace] [--use-jwt] [--github-pat
-    <value> ] [--linter none|basic|adobe-recommended]
+    <value>] [--standalone-app |  | ] [--template-options <value>] [-o <value> | -i <value> | ] [-p <value> |  | ] [-w
+    <value> |  | ] [--confirm-new-workspace] [--use-jwt] [--github-pat <value> ] [--linter none|basic|adobe-recommended]
 
 ARGUMENTS
   PATH  [default: .] Path to the app directory
@@ -548,6 +548,8 @@ ARGUMENTS
 FLAGS
   -e, --extension=<value>...        Extension point(s) to implement
   -i, --import=<value>              Import an Adobe I/O Developer Console configuration file
+  -o, --org=<value>                 Specify the Adobe Developer Console Org to init from (orgId, or orgCode)
+  -p, --project=<value>             Specify the Adobe Developer Console Project to init from (projectId, or projectName)
   -t, --template=<value>...         Specify a link to a template that will be installed
   -v, --verbose                     Verbose output
   -w, --workspace=<value>           [default: Stage] Specify the Adobe Developer Console Workspace to init from,
@@ -561,6 +563,7 @@ FLAGS
       --[no-]login                  Login using your Adobe ID for interacting with Adobe I/O Developer Console
       --repo=<value>                Init from gh quick-start repo. Expected to be of the form <owner>/<repo>/<path>
       --standalone-app              Create a stand-alone application
+      --template-options=<value>    Optional template options, as a base64-encoded json string
       --use-jwt                     if the config has both jwt and OAuth Server to Server Credentials (while migrating),
                                     prefer the JWT credentials
       --version                     Show version
