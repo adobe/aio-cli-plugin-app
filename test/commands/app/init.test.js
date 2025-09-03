@@ -223,7 +223,20 @@ describe('Command Prototype', () => {
 
     expect(TheCommand.flags.workspace.default).toBe('Stage')
     expect(TheCommand.flags.workspace.char).toBe('w')
-    expect(TheCommand.flags.workspace.exclusive).toEqual(['import'])
+    expect(TheCommand.flags.workspace.exclusive).toEqual(['import', 'no-login'])
+
+    expect(TheCommand.flags.org).toBeDefined()
+    expect(TheCommand.flags.org.hidden).toBeFalsy()
+    expect(TheCommand.flags.org.char).toBe('o')
+    expect(TheCommand.flags.org.exclusive).toEqual(['import', 'no-login'])
+
+    expect(TheCommand.flags.project).toBeDefined()
+    expect(TheCommand.flags.project.hidden).toBeFalsy()
+    expect(TheCommand.flags.project.char).toBe('p')
+    expect(TheCommand.flags.project.exclusive).toEqual(['import', 'no-login'])
+
+    expect(TheCommand.flags['template-options']).toBeDefined()
+    expect(TheCommand.flags['template-options'].type).toBe('option')
 
     expect(TheCommand.flags['confirm-new-workspace'].type).toBe('boolean')
     expect(TheCommand.flags['confirm-new-workspace'].default).toBe(true)
@@ -799,5 +812,72 @@ describe('dev terms', () => {
     mockConsoleCLIInstance.acceptDevTermsForOrg.mockResolvedValue(false)
 
     await expect(command.run()).rejects.toThrow('The Developer Terms of Service could not be accepted')
+  })
+})
+
+describe('template-options', () => {
+  test('no flag', async () => {
+    command.argv = ['--template', 'some-template']
+
+    const installOptions = {
+      installNpm: true,
+      templates: ['some-template'],
+      useDefaultValues: false
+    }
+
+    await command.run()
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
+  })
+
+  test('valid base64', async () => {
+    const templateOptions = {
+      text: 'base-text'
+    }
+    const base64 = Buffer.from(JSON.stringify(templateOptions)).toString('base64')
+    command.argv = ['--template', 'some-template', '--template-options', `${base64}`]
+
+    const installOptions = {
+      installNpm: true,
+      templates: ['some-template'],
+      useDefaultValues: false,
+      templateOptions
+    }
+
+    await command.run()
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
+  })
+
+  test('valid base64 --no-login', async () => {
+    const templateOptions = {
+      text: 'base-text'
+    }
+    const base64 = Buffer.from(JSON.stringify(templateOptions)).toString('base64')
+    command.argv = ['--no-login', '--template', 'some-template', '--template-options', `${base64}`]
+
+    const installOptions = {
+      installConfig: false,
+      installNpm: true,
+      templates: ['some-template'],
+      useDefaultValues: false,
+      templateOptions
+    }
+
+    await command.run()
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
+  })
+
+  test('invalid base64', async () => {
+    command.argv = ['--template', 'some-template', '--template-options=%'] // % is an invalid base64 character
+
+    expect.assertions(1)
+    await expect(command.run()).rejects.toThrow('--template-options: % is not a base64 encoded JSON object.')
+  })
+
+  test('malformed json', async () => {
+    const options = '{' // ew== in base64
+    command.argv = ['--template', 'some-template', `--template-options=${Buffer.from(options).toString('base64')}`]
+
+    expect.assertions(1)
+    await expect(command.run()).rejects.toThrow('--template-options: ew== is not a base64 encoded JSON object.')
   })
 })
