@@ -26,7 +26,7 @@ const {
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
 const { sendAppAssetsDeployedAuditLog, sendAppDeployAuditLog } = require('../../lib/audit-logger')
-const { setRuntimeApiHostAndAuthHandler, getAccessToken } = require('../../lib/auth-helper')
+const { getAccessToken, setAuthHandler } = require('../../lib/auth-helper')
 const logActions = require('../../lib/log-actions')
 
 const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
@@ -88,7 +88,7 @@ class Deploy extends BuildCommand {
       if (aioConfig?.project?.workspace && flags['log-forwarding-update'] && flags.actions) {
         spinner.start('Updating log forwarding configuration')
         try {
-          const lfConfig = setRuntimeApiHostAndAuthHandler(aioConfig)
+          const lfConfig = setAuthHandler(aioConfig)
 
           const lf = await LogForwarding.init(lfConfig)
           if (lf.isLocalConfigChanged()) {
@@ -130,7 +130,7 @@ class Deploy extends BuildCommand {
       // - break into smaller pieces deploy, allowing to first deploy all actions then all web assets
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
-        const v = setRuntimeApiHostAndAuthHandler(values[i])
+        const v = setAuthHandler(values[i])
 
         await this.deploySingleConfig({ name: k, config: v, originalConfig: values[i], flags, spinner })
         if (cliDetails?.accessToken && v.app.hasFrontend && flags['web-assets']) {
