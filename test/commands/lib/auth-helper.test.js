@@ -1,4 +1,4 @@
-const { getAccessToken, bearerAuthHandler, setRuntimeApiHostAndAuthHandler, setCDNApiHostAndAuthHandler } = require('../../../src/lib/auth-helper')
+const { getAccessToken, bearerAuthHandler, setAuthHandler } = require('../../../src/lib/auth-helper')
 const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
 const { getCliEnv } = require('@adobe/aio-lib-env')
@@ -74,7 +74,7 @@ describe('bearerAuthHandler', () => {
   })
 })
 
-describe('setRuntimeApiHostAndAuthHandler', () => {
+describe('setAuthHandler', () => {
   const DEPLOY_SERVICE_ENDPOINTS = {
     prod: 'https://deploy-service.app-builder.adp.adobe.io',
     stage: 'https://deploy-service.stg.app-builder.corp.adp.adobe.io'
@@ -92,7 +92,7 @@ describe('setRuntimeApiHostAndAuthHandler', () => {
       getCliEnv.mockReturnValue(mockEnv)
 
       const config = { runtime: {} }
-      const result = setRuntimeApiHostAndAuthHandler(config)
+      const result = setAuthHandler(config)
 
       expect(result.runtime.apihost).toBe(`${DEPLOY_SERVICE_ENDPOINTS[mockEnv]}/runtime`)
       expect(result.runtime.auth_handler).toBe(bearerAuthHandler)
@@ -102,7 +102,7 @@ describe('setRuntimeApiHostAndAuthHandler', () => {
       getCliEnv.mockReturnValue(mockEnv)
 
       const config = { runtime: {} }
-      const result = setRuntimeApiHostAndAuthHandler(config)
+      const result = setAuthHandler(config)
 
       expect(result.runtime.apihost).toBe(`${DEPLOY_SERVICE_ENDPOINTS[mockEnv]}/runtime`)
       expect(result.runtime.auth_handler).toBe(bearerAuthHandler)
@@ -114,7 +114,7 @@ describe('setRuntimeApiHostAndAuthHandler', () => {
     getCliEnv.mockReturnValue(mockEnv)
 
     const config = { ow: {} }
-    const result = setRuntimeApiHostAndAuthHandler(config)
+    const result = setAuthHandler(config)
 
     expect(result.ow.apihost).toBe(`${DEPLOY_SERVICE_ENDPOINTS.prod}/runtime`)
     expect(result.ow.auth_handler).toBe(bearerAuthHandler)
@@ -127,32 +127,20 @@ describe('setRuntimeApiHostAndAuthHandler', () => {
     const customUrl = 'https://custom-deploy-service.example.com'
     process.env.AIO_DEPLOY_SERVICE_URL = customUrl
     const config = { runtime: {} }
-    const result = setRuntimeApiHostAndAuthHandler(config)
+    const result = setAuthHandler(config)
 
     expect(result.runtime.apihost).toBe(`${customUrl}/runtime`)
   })
 
   test('should return undefined when config is null or undefined', () => {
-    expect(setRuntimeApiHostAndAuthHandler(null)).not.toBeDefined()
-    expect(setRuntimeApiHostAndAuthHandler()).not.toBeDefined()
+    expect(setAuthHandler(null)).not.toBeDefined()
+    expect(setAuthHandler()).not.toBeDefined()
   })
 
-  test('should return undefined when config has neither runtime nor ow', () => {
+  test('should return undefined when config has neither runtime nor ow nor web', () => {
     const config = { other: {} }
-    const result = setRuntimeApiHostAndAuthHandler(config)
+    const result = setAuthHandler(config)
     expect(result).not.toBeDefined()
-  })
-})
-
-describe('setCDNApiHostAndAuthHandler', () => {
-  const DEPLOY_SERVICE_ENDPOINTS = {
-    prod: 'https://deploy-service.app-builder.adp.adobe.io',
-    stage: 'https://deploy-service.stg.app-builder.corp.adp.adobe.io'
-  }
-
-  beforeEach(() => {
-    jest.clearAllMocks()
-    delete process.env.AIO_DEPLOY_SERVICE_URL
   })
 
   test('should set web.apihost and web.auth_handler and preserve namespace from ow', () => {
@@ -160,35 +148,38 @@ describe('setCDNApiHostAndAuthHandler', () => {
     getCliEnv.mockReturnValue(mockEnv)
 
     const config = { web: {}, ow: { namespace: 'ns' } }
-    const result = setCDNApiHostAndAuthHandler(config)
+    const result = setAuthHandler(config)
 
     expect(result.web.apihost).toBe(`${DEPLOY_SERVICE_ENDPOINTS[mockEnv]}/cdn-api`)
     expect(result.web.auth_handler).toBe(bearerAuthHandler)
     expect(result.web.namespace).toBe('ns')
   })
 
-  test('should be a no-op if config has no web key', () => {
-    const mockEnv = 'prod'
-    getCliEnv.mockReturnValue(mockEnv)
-    const input = { ow: { namespace: 'ns' }, other: {} }
-    const result = setCDNApiHostAndAuthHandler(input)
-    expect(result).toEqual(input)
-  })
-
-  test('should use custom deploy service URL from environment', () => {
+  test('should use custom deploy service URL from environment for web', () => {
     const customUrl = 'https://custom-deploy-service.example.com'
     process.env.AIO_DEPLOY_SERVICE_URL = customUrl
     getCliEnv.mockReturnValue('prod')
 
     const config = { web: {}, ow: { namespace: 'ns' } }
-    const result = setCDNApiHostAndAuthHandler(config)
+    const result = setAuthHandler(config)
     expect(result.web.apihost).toBe(`${customUrl}/cdn-api`)
+    expect(result.web.auth_handler).toBe(bearerAuthHandler)
+    expect(result.web.namespace).toBe('ns')
   })
 
   test('falls back to prod endpoint for unknown env', () => {
     getCliEnv.mockReturnValue('mystery-env')
     const config = { web: {}, ow: { namespace: 'ns' } }
-    const result = setCDNApiHostAndAuthHandler(config)
+    const result = setAuthHandler(config)
     expect(result.web.apihost).toBe(`${DEPLOY_SERVICE_ENDPOINTS.prod}/cdn-api`)
+    expect(result.web.auth_handler).toBe(bearerAuthHandler)
+    expect(result.web.namespace).toBe('ns')
+  })
+  test('web.namespace=undefined if ow.namespace is not set', () => {
+    const config = { web: {} }
+    const result = setAuthHandler(config)
+    expect(result.web.namespace).toBe(undefined)
+    expect(result.web.apihost).toBe(`${DEPLOY_SERVICE_ENDPOINTS.prod}/cdn-api`)
+    expect(result.web.auth_handler).toBe(bearerAuthHandler)
   })
 })

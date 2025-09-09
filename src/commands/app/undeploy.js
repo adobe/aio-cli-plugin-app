@@ -20,7 +20,7 @@ const webLib = require('@adobe/aio-lib-web')
 const { runInProcess, buildExtensionPointPayloadWoMetadata } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const { sendAppAssetsUndeployedAuditLog, sendAppUndeployAuditLog } = require('../../lib/audit-logger')
-const { setCDNApiHostAndAuthHandler, getAccessToken, setRuntimeApiHostAndAuthHandler } = require('../../lib/auth-helper')
+const { getAccessToken, setAuthHandler } = require('../../lib/auth-helper')
 
 class Undeploy extends BaseCommand {
   async run () {
@@ -80,7 +80,7 @@ class Undeploy extends BaseCommand {
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
         // TODO: remove this check once the deploy service is enabled by default
-        const v = setCDNApiHostAndAuthHandler(setRuntimeApiHostAndAuthHandler(values[i]))
+        const v = setAuthHandler(values[i])
 
         await this.undeployOneExt(k, v, flags, spinner)
         if (cliDetails?.accessToken) {

@@ -27,7 +27,7 @@ jest.mock('../../../../../src/lib/log-forwarding', () => {
 
 let command, lf
 beforeEach(async () => {
-  authHelper.setRuntimeApiHostAndAuthHandler.mockClear()
+  authHelper.setAuthHandler.mockClear()
 
   command = new TheCommand([])
   command.appConfig = {
@@ -51,7 +51,7 @@ beforeEach(async () => {
     getConfigFromJson: jest.fn()
   }
   LogForwarding.init.mockResolvedValue(lf)
-  authHelper.setRuntimeApiHostAndAuthHandler.mockImplementation(aioConfig => aioConfig)
+  authHelper.setAuthHandler.mockImplementation(aioConfig => aioConfig)
 })
 
 test('set log forwarding destination and save local', async () => {
@@ -92,10 +92,10 @@ test('set log forwarding destination and save local', async () => {
   expect(setCall).toHaveBeenCalledWith(new LogForwarding.LogForwardingConfig(destination, input))
   expect(localSetCall).toHaveBeenCalledTimes(1)
   expect(localSetCall).toHaveBeenCalledWith(new LogForwarding.LogForwardingConfig(destination, fullSanitizedSettings))
-  expect(authHelper.setRuntimeApiHostAndAuthHandler).toHaveBeenCalledTimes(1)
+  expect(authHelper.setAuthHandler).toHaveBeenCalledTimes(1)
 })
 
-test('should invoke setRuntimeApiHostAndAuthHandler and set log forwarding destination', async () => {
+test('should invoke setAuthHandler and set log forwarding destination', async () => {
   const destination = 'destination'
   const input = {
     field_one: 'val_one',
@@ -133,7 +133,7 @@ test('should invoke setRuntimeApiHostAndAuthHandler and set log forwarding desti
   expect(setCall).toHaveBeenCalledWith(new LogForwarding.LogForwardingConfig(destination, input))
   expect(localSetCall).toHaveBeenCalledTimes(1)
   expect(localSetCall).toHaveBeenCalledWith(new LogForwarding.LogForwardingConfig(destination, fullSanitizedSettings))
-  expect(authHelper.setRuntimeApiHostAndAuthHandler).toHaveBeenCalledTimes(1)
+  expect(authHelper.setAuthHandler).toHaveBeenCalledTimes(1)
 })
 
 test('set log forwarding destination and fail save local', async () => {

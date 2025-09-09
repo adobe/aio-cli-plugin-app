@@ -191,9 +191,7 @@ beforeEach(() => {
     return entities
   })
 
-  authHelper.setRuntimeApiHostAndAuthHandler.mockImplementation((aioConfig) => aioConfig)
-  // New deploy flow also applies CDN auth/host; make it a pass-through in tests
-  authHelper.setCDNApiHostAndAuthHandler.mockImplementation((aioConfig) => aioConfig)
+  authHelper.setAuthHandler.mockImplementation((aioConfig) => aioConfig)
   authHelper.getAccessToken.mockImplementation(() => {
     return {
       accessToken: 'mocktoken',
