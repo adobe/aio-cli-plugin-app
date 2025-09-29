@@ -222,7 +222,7 @@ describe('npmInstall', () => {
     command = new TheCommand()
   })
 
-  test('success', async () => {
+  test('success (defaults)', async () => {
     execa.mockImplementationOnce((cmd, args, options) => {
       expect(cmd).toEqual('npm')
       expect(args).toEqual(['install'])
@@ -230,8 +230,7 @@ describe('npmInstall', () => {
       return Promise.resolve({ stdout: '' })
     })
 
-    const isVerbose = false
-    await expect(command.npmInstall(isVerbose)).resolves.toEqual(undefined)
+    await expect(command.npmInstall()).resolves.toEqual(undefined)
   })
 
   test('success --verbose', async () => {
@@ -244,6 +243,19 @@ describe('npmInstall', () => {
 
     const isVerbose = true
     await expect(command.npmInstall(isVerbose)).resolves.toEqual(undefined)
+  })
+
+  test('success --verbose --no-allow-scripts', async () => {
+    execa.mockImplementationOnce((cmd, args, options) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['install', '--ignore-scripts'])
+      expect(options.stdio).toEqual('inherit')
+      return Promise.resolve({ stdout: '' })
+    })
+
+    const isVerbose = true
+    const allowScripts = false
+    await expect(command.npmInstall(isVerbose, allowScripts)).resolves.toEqual(undefined)
   })
 
   test('failure', async () => {
@@ -267,7 +279,7 @@ describe('npmCI', () => {
     command = new TheCommand()
   })
 
-  test('success', async () => {
+  test('success (defaults)', async () => {
     execa.mockImplementationOnce((cmd, args, options) => {
       expect(cmd).toEqual('npm')
       expect(args).toEqual(['ci'])
@@ -275,8 +287,7 @@ describe('npmCI', () => {
       return Promise.resolve({ stdout: '' })
     })
 
-    const isVerbose = false
-    await expect(command.npmCI(isVerbose)).resolves.toEqual(undefined)
+    await expect(command.npmCI()).resolves.toEqual(undefined)
   })
 
   test('success --verbose', async () => {
@@ -289,6 +300,19 @@ describe('npmCI', () => {
 
     const isVerbose = true
     await expect(command.npmCI(isVerbose)).resolves.toEqual(undefined)
+  })
+
+  test('success --verbose --no-allow-scripts', async () => {
+    execa.mockImplementationOnce((cmd, args, options) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['ci', '--ignore-scripts'])
+      expect(options.stdio).toEqual('inherit')
+      return Promise.resolve({ stdout: '' })
+    })
+
+    const isVerbose = true
+    const allowScripts = false
+    await expect(command.npmCI(isVerbose, allowScripts)).resolves.toEqual(undefined)
   })
 
   test('failure', async () => {

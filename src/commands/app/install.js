@@ -54,10 +54,10 @@ class InstallCommand extends BaseCommand {
 
       const packageLockPath = path.join(outputPath, PACKAGE_LOCK_FILE)
       if (fs.existsSync(packageLockPath)) {
-        await this.npmCI(flags.verbose)
+        await this.npmCI(flags.verbose, flags['allow-scripts'])
       } else {
         this.warn('No lockfile found, running standard npm install. It is recommended that you include a lockfile with your app bundle.')
-        await this.npmInstall(flags.verbose)
+        await this.npmInstall(flags.verbose, flags['allow-scripts'])
       }
       if (flags.tests) {
         await this.runTests()
@@ -138,19 +138,21 @@ class InstallCommand extends BaseCommand {
     }
   }
 
-  async npmInstall (isVerbose) {
+  async npmInstall (isVerbose = false, allowScripts = true) {
+    const ignoreScripts = allowScripts ? undefined : '--ignore-scripts'
     this.spinner.start('Running npm install...')
     const stdio = isVerbose ? 'inherit' : 'ignore'
-    return execa('npm', ['install'], { stdio })
+    return execa('npm', ['install', ignoreScripts], { stdio })
       .then(() => {
         this.spinner.succeed('Ran npm install')
       })
   }
 
-  async npmCI (isVerbose) {
+  async npmCI (isVerbose = false, allowScripts = true) {
+    const ignoreScripts = allowScripts ? undefined : '--ignore-scripts'
     this.spinner.start('Running npm ci...')
     const stdio = isVerbose ? 'inherit' : 'ignore'
-    return execa('npm', ['ci'], { stdio })
+    return execa('npm', ['ci', ignoreScripts], { stdio })
       .then(() => {
         this.spinner.succeed('Ran npm ci')
       })
@@ -173,6 +175,11 @@ InstallCommand.description = `This command will support installing apps packaged
 
 InstallCommand.flags = {
   ...BaseCommand.flags,
+  'allow-scripts': Flags.boolean({
+    description: 'Allow post and preinstall scripts during npm install/npm ci',
+    default: true,
+    allowNo: true
+  }),
   output: Flags.string({
     description: 'The packaged app output folder path',
     char: 'o',
