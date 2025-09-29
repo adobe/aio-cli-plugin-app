@@ -19,7 +19,7 @@ const execa = require('execa')
 const unzipper = require('unzipper')
 const { validateJsonWithSchema } = require('../../lib/install-helper')
 const jsYaml = require('js-yaml')
-const { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE } = require('../../lib/defaults')
+const { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE, PACKAGE_LOCK_FILE } = require('../../lib/defaults')
 const ora = require('ora')
 
 // eslint-disable-next-line node/no-missing-require
@@ -51,7 +51,14 @@ class InstallCommand extends BaseCommand {
       await this.unzipFile(args.path, outputPath)
       await this.validateAppConfig(outputPath, USER_CONFIG_FILE)
       await this.validateDeployConfig(outputPath, DEPLOY_CONFIG_FILE)
-      await this.npmInstall(flags.verbose)
+
+      const packageLockPath = path.join(outputPath, PACKAGE_LOCK_FILE)
+      if (fs.existsSync(packageLockPath)) {
+        await this.npmCI(flags.verbose)
+      } else {
+        this.warn('No lockfile found, running standard npm install. It is recommended that you include a lockfile with your app bundle.')
+        await this.npmInstall(flags.verbose)
+      }
       if (flags.tests) {
         await this.runTests()
       }
@@ -137,6 +144,15 @@ class InstallCommand extends BaseCommand {
     return execa('npm', ['install'], { stdio })
       .then(() => {
         this.spinner.succeed('Ran npm install')
+      })
+  }
+
+  async npmCI (isVerbose) {
+    this.spinner.start('Running npm ci...')
+    const stdio = isVerbose ? 'inherit' : 'ignore'
+    return execa('npm', ['ci'], { stdio })
+      .then(() => {
+        this.spinner.succeed('Ran npm ci')
       })
   }
 

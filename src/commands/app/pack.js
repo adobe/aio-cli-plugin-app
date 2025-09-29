@@ -71,8 +71,13 @@ class Pack extends BaseCommand {
         this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
       }
 
+      const filesToInclude = flags['lock-file'] ? ['package-lock.json'] : []
+
       // 1a. Get file list to pack
-      const fileList = await this.filesToPack({ filesToExclude: [flags.output, DEFAULTS.DIST_FOLDER, ...distLocations] })
+      const fileList = await this.filesToPack({
+        filesToExclude: [flags.output, DEFAULTS.DIST_FOLDER, ...distLocations],
+        filesToInclude
+      })
       this.log('=== Files to pack ===')
       fileList.forEach((file) => {
         this.log(`  ${file}`)
@@ -265,10 +270,11 @@ class Pack extends BaseCommand {
    *
    * @param {object} options the options for the method
    * @param {Array<string>} options.filesToExclude a list of files to exclude
+   * @param {Array<string>} options.filesToInclude a list of files to include (will always be included)
    * @param {string} options.workingDirectory the working directory to run `npm pack` in
    * @returns {Array<string>} a list of files that are to be packed
    */
-  async filesToPack ({ filesToExclude = [], workingDirectory = process.cwd() } = {}) {
+  async filesToPack ({ filesToExclude = [], filesToInclude = [], workingDirectory = process.cwd() } = {}) {
     const { stdout } = await execa('npm', ['pack', '--dry-run', '--json'], { cwd: workingDirectory })
 
     const noJunkFiles = (file) => {
@@ -290,11 +296,14 @@ class Pack extends BaseCommand {
     }
 
     const { files } = JSON.parse(stdout)[0]
-    return files
-      .map(file => file.path)
-      .filter(file => !filesToExclude.includes(file))
-      .filter(noJunkFiles) // no junk files like .DS_Store
-      .filter(noDotFiles) // no files that start with a '.'
+    return [
+      ...files
+        .map(file => file.path)
+        .filter(file => !filesToExclude.includes(file))
+        .filter(noJunkFiles) // no junk files like .DS_Store
+        .filter(noDotFiles), // no files that start with a '.'
+      ...filesToInclude
+    ]
   }
 
   /**
@@ -361,6 +370,11 @@ Pack.description = `This command will support packaging apps for redistribution.
 
 Pack.flags = {
   ...BaseCommand.flags,
+  'lock-file': Flags.boolean({
+    description: 'Include the package-lock.json file in the packaged app',
+    default: true,
+    allowNo: true
+  }),
   output: Flags.string({
     description: 'The packaged app output file path',
     char: 'o',
