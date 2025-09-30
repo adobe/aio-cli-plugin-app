@@ -332,6 +332,27 @@ test('zipHelper', async () => {
 })
 
 describe('filesToPack', () => {
+  test('always include specific files', async () => {
+    const jsonOutput = [{
+      files: [
+        { path: 'fileA' },
+        { path: 'fileB' }
+      ]
+    }]
+
+    execa.mockImplementationOnce((cmd, args) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['pack', '--dry-run', '--json'])
+      return { stdout: JSON.stringify(jsonOutput, null, 2) }
+    })
+
+    const command = new TheCommand()
+    command.argv = []
+    const includeFiles = ['foo.json', 'bar.json']
+    const filesToPack = await command.filesToPack({ filesToInclude: includeFiles })
+    expect(filesToPack).toEqual(['fileA', 'fileB', ...includeFiles])
+  })
+
   test('nothing filtered', async () => {
     const jsonOutput = [{
       files: [
@@ -515,6 +536,43 @@ describe('run', () => {
 
     expect(command.copyPackageFiles).toHaveBeenCalledTimes(1)
     expect(command.filesToPack).toHaveBeenCalledTimes(1)
+    expect(command.filesToPack).toHaveBeenCalledWith({
+      filesToExclude: expect.any(Array),
+      filesToInclude: ['package-lock.json']
+    })
+    expect(command.createDeployYamlFile).toHaveBeenCalledTimes(1)
+    expect(command.addCodeDownloadAnnotation).toHaveBeenCalledTimes(1)
+    expect(command.zipHelper).toHaveBeenCalledTimes(1)
+    const expectedObj = {
+      artifactsFolder: path.join('dist', 'app-package'),
+      appConfig: expect.any(Object)
+    }
+    expect(runHook).toHaveBeenCalledWith('pre-pack', expectedObj)
+    expect(runHook).toHaveBeenCalledWith('post-pack', expectedObj)
+  })
+
+  test('defaults with --no-lock-file flag', async () => {
+    mockGetFullConfig.mockImplementation(async () => fixtureJson('pack/1.all.config.json'))
+
+    const command = new TheCommand()
+    command.argv = ['--no-lock-file']
+
+    // since we already unit test the methods above, we mock it here
+    command.copyPackageFiles = jest.fn()
+    command.filesToPack = jest.fn(() => (['some-file']))
+    command.createDeployYamlFile = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
+    command.zipHelper = jest.fn()
+    const runHook = jest.fn()
+    command.config = { runHook }
+    await command.run()
+
+    expect(command.copyPackageFiles).toHaveBeenCalledTimes(1)
+    expect(command.filesToPack).toHaveBeenCalledTimes(1)
+    expect(command.filesToPack).toHaveBeenCalledWith({
+      filesToExclude: expect.any(Array),
+      filesToInclude: []
+    })
     expect(command.createDeployYamlFile).toHaveBeenCalledTimes(1)
     expect(command.addCodeDownloadAnnotation).toHaveBeenCalledTimes(1)
     expect(command.zipHelper).toHaveBeenCalledTimes(1)

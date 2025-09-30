@@ -13,6 +13,7 @@ governing permissions and limitations under the License.
 const TheCommand = require('../../../src/commands/app/install.js')
 const BaseCommand = require('../../../src/BaseCommand.js')
 const fs = require('fs-extra')
+const { PACKAGE_LOCK_FILE } = require('../../../src/lib/defaults.js')
 const unzipper = require('unzipper')
 const execa = require('execa')
 const installHelper = require('../../../src/lib/install-helper')
@@ -221,7 +222,7 @@ describe('npmInstall', () => {
     command = new TheCommand()
   })
 
-  test('success', async () => {
+  test('success (defaults)', async () => {
     execa.mockImplementationOnce((cmd, args, options) => {
       expect(cmd).toEqual('npm')
       expect(args).toEqual(['install'])
@@ -229,8 +230,7 @@ describe('npmInstall', () => {
       return Promise.resolve({ stdout: '' })
     })
 
-    const isVerbose = false
-    await expect(command.npmInstall(isVerbose)).resolves.toEqual(undefined)
+    await expect(command.npmInstall()).resolves.toEqual(undefined)
   })
 
   test('success --verbose', async () => {
@@ -245,6 +245,19 @@ describe('npmInstall', () => {
     await expect(command.npmInstall(isVerbose)).resolves.toEqual(undefined)
   })
 
+  test('success --verbose --no-allow-scripts', async () => {
+    execa.mockImplementationOnce((cmd, args, options) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['install', '--ignore-scripts'])
+      expect(options.stdio).toEqual('inherit')
+      return Promise.resolve({ stdout: '' })
+    })
+
+    const isVerbose = true
+    const allowScripts = false
+    await expect(command.npmInstall(isVerbose, allowScripts)).resolves.toEqual(undefined)
+  })
+
   test('failure', async () => {
     const errorMessage = 'npm install error'
 
@@ -255,6 +268,63 @@ describe('npmInstall', () => {
     })
 
     await expect(command.npmInstall()).rejects.toThrow(errorMessage)
+  })
+})
+
+describe('npmCI', () => {
+  let command
+
+  beforeEach(() => {
+    execa.mockReset()
+    command = new TheCommand()
+  })
+
+  test('success (defaults)', async () => {
+    execa.mockImplementationOnce((cmd, args, options) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['ci'])
+      expect(options.stdio).toEqual('ignore')
+      return Promise.resolve({ stdout: '' })
+    })
+
+    await expect(command.npmCI()).resolves.toEqual(undefined)
+  })
+
+  test('success --verbose', async () => {
+    execa.mockImplementationOnce((cmd, args, options) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['ci'])
+      expect(options.stdio).toEqual('inherit')
+      return Promise.resolve({ stdout: '' })
+    })
+
+    const isVerbose = true
+    await expect(command.npmCI(isVerbose)).resolves.toEqual(undefined)
+  })
+
+  test('success --verbose --no-allow-scripts', async () => {
+    execa.mockImplementationOnce((cmd, args, options) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['ci', '--ignore-scripts'])
+      expect(options.stdio).toEqual('inherit')
+      return Promise.resolve({ stdout: '' })
+    })
+
+    const isVerbose = true
+    const allowScripts = false
+    await expect(command.npmCI(isVerbose, allowScripts)).resolves.toEqual(undefined)
+  })
+
+  test('failure', async () => {
+    const errorMessage = 'npm ci error'
+
+    execa.mockImplementationOnce((cmd, args) => {
+      expect(cmd).toEqual('npm')
+      expect(args).toEqual(['ci'])
+      throw new Error(errorMessage)
+    })
+
+    await expect(command.npmCI()).rejects.toThrow(errorMessage)
   })
 })
 
@@ -284,7 +354,11 @@ describe('runTests', () => {
 })
 
 describe('run', () => {
-  test('no flags', async () => {
+  beforeEach(() => {
+    fs.existsSync.mockReset()
+  })
+
+  test('no flags, no lockfile', async () => {
     const command = new TheCommand()
     command.argv = ['my-app.zip']
 
@@ -295,6 +369,7 @@ describe('run', () => {
     command.validateDeployConfig = jest.fn()
     command.runTests = jest.fn()
     command.npmInstall = jest.fn()
+    command.npmCI = jest.fn()
     command.error = jest.fn()
     await command.run()
 
@@ -305,6 +380,36 @@ describe('run', () => {
     expect(command.validateDeployConfig).toHaveBeenCalledTimes(1)
     expect(command.runTests).toHaveBeenCalledTimes(1)
     expect(command.npmInstall).toHaveBeenCalledTimes(1)
+    expect(command.npmCI).toHaveBeenCalledTimes(0)
+    expect(command.error).toHaveBeenCalledTimes(0)
+  })
+
+  test('no flags, has lockfile', async () => {
+    const command = new TheCommand()
+    command.argv = ['my-app.zip']
+
+    // since we already unit test the methods above, we mock it here
+    command.validateZipDirectoryStructure = jest.fn()
+    command.unzipFile = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
+    command.validateDeployConfig = jest.fn()
+    command.runTests = jest.fn()
+    command.npmInstall = jest.fn()
+    command.npmCI = jest.fn()
+    command.error = jest.fn()
+
+    fs.existsSync.mockImplementation((filePath) => filePath === PACKAGE_LOCK_FILE)
+
+    await command.run()
+
+    expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
+    expect(command.unzipFile).toHaveBeenCalledTimes(1)
+    expect(libConfig.coalesce).toHaveBeenCalledTimes(1)
+    expect(libConfig.validate).toHaveBeenCalledTimes(1)
+    expect(command.validateDeployConfig).toHaveBeenCalledTimes(1)
+    expect(command.runTests).toHaveBeenCalledTimes(1)
+    expect(command.npmInstall).toHaveBeenCalledTimes(0)
+    expect(command.npmCI).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(0)
   })
 
@@ -321,6 +426,7 @@ describe('run', () => {
     command.addCodeDownloadAnnotation = jest.fn()
     command.validateDeployConfig = jest.fn()
     command.npmInstall = jest.fn()
+    command.npmCI = jest.fn()
     command.error = jest.fn()
     command.runTests = jest.fn(() => { throw errorObject })
 
@@ -351,6 +457,7 @@ describe('run', () => {
     command.addCodeDownloadAnnotation = jest.fn()
     command.validateDeployConfig = jest.fn()
     command.npmInstall = jest.fn()
+    command.npmCI = jest.fn()
     command.error = jest.fn()
     command.runTests = jest.fn(() => { throw new Error(errorMessage) })
 
@@ -379,6 +486,7 @@ describe('run', () => {
     command.validateDeployConfig = jest.fn()
     command.runTests = jest.fn()
     command.npmInstall = jest.fn()
+    command.npmCI = jest.fn()
     command.error = jest.fn()
 
     await command.run()
@@ -405,6 +513,7 @@ describe('run', () => {
     command.validateDeployConfig = jest.fn()
     command.runTests = jest.fn()
     command.npmInstall = jest.fn()
+    command.npmCI = jest.fn()
     command.error = jest.fn()
 
     const err = new Error('fake validation error')
@@ -452,6 +561,7 @@ describe('run', () => {
     command.validateDeployConfig = jest.fn()
     command.runTests = jest.fn()
     command.npmInstall = jest.fn()
+    command.npmCI = jest.fn()
     command.error = jest.fn()
 
     await command.run()
