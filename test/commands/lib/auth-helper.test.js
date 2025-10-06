@@ -77,7 +77,7 @@ describe('bearerAuthHandler', () => {
 describe('setRuntimeApiHostAndAuthHandler', () => {
   const DEPLOY_SERVICE_ENDPOINTS = {
     prod: 'https://deploy-service.app-builder.adp.adobe.io',
-    stage: 'https://deploy-service.stg.app-builder.corp.adp.adobe.io'
+    stage: 'https://deploy-service.stg.app-builder.adp.adobe.io'
   }
 
   beforeEach(() => {
