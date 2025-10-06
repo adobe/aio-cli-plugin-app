@@ -18,7 +18,7 @@ const OPERATIONS = {
 
 const AUDIT_SERVICE_ENDPOINT_ROUTE = '/audit-log-api/event-post'
 const AUDIT_SERVICE_ENDPOINTS = {
-  stage: 'https://deploy-service.stg.app-builder.corp.adp.adobe.io',
+  stage: 'https://deploy-service.stg.app-builder.adp.adobe.io',
   prod: 'https://deploy-service.app-builder.adp.adobe.io'
 }
 
