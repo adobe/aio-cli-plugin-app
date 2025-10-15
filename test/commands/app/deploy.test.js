@@ -191,7 +191,7 @@ beforeEach(() => {
     return entities
   })
 
-  authHelper.setRuntimeApiHostAndAuthHandler.mockImplementation((aioConfig) => aioConfig)
+  authHelper.setAuthHandler.mockImplementation((aioConfig) => aioConfig)
   authHelper.getAccessToken.mockImplementation(() => {
     return {
       accessToken: 'mocktoken',

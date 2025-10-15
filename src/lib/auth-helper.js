@@ -68,7 +68,11 @@ const bearerAuthHandler = {
   }
 }
 
-const setRuntimeApiHostAndAuthHandler = (_config) => {
+const setAuthHandler = (_config) => {
+  if (!_config || (!_config.runtime && !_config.ow && !_config.web)) {
+    return
+  }
+
   const env = getCliEnv()
   let apiEndpoint = DEPLOY_SERVICE_ENDPOINTS[env] ?? DEPLOY_SERVICE_ENDPOINTS.prod
   if (process.env.AIO_DEPLOY_SERVICE_URL) {
@@ -76,22 +80,31 @@ const setRuntimeApiHostAndAuthHandler = (_config) => {
   }
 
   const config = structuredClone(_config)
+  // config is .aio
   const aioConfig = (config && 'runtime' in config) ? config : null
-  if (aioConfig) {
+  if (config?.runtime) {
     aioConfig.runtime.apihost = `${apiEndpoint}/runtime`
     aioConfig.runtime.auth_handler = bearerAuthHandler
     return aioConfig
   }
-  const owConfig = (config && 'ow' in config) ? config : null
-  if (owConfig) {
-    owConfig.ow.apihost = `${apiEndpoint}/runtime`
-    owConfig.ow.auth_handler = bearerAuthHandler
-    return owConfig
+
+  if (config?.ow) {
+    config.ow.apihost = `${apiEndpoint}/runtime`
+    config.ow.auth_handler = bearerAuthHandler
   }
+
+  if (config?.web) {
+    config.web.apihost = `${apiEndpoint}/cdn-api`
+    config.web.namespace = config.ow?.namespace // for now we can only set the web.namespace if the ow.namespace is set
+    config.web.auth_handler = bearerAuthHandler
+  }
+
+  return config
+  // note we can't structuredClone the config from now on because the config contains functions
 }
 
 module.exports = {
   getAccessToken,
   bearerAuthHandler,
-  setRuntimeApiHostAndAuthHandler
+  setAuthHandler
 }

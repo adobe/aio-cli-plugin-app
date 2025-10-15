@@ -94,7 +94,7 @@ beforeEach(() => {
       env: 'stage'
     }
   })
-  authHelper.setRuntimeApiHostAndAuthHandler.mockImplementation(aioConfig => aioConfig)
+  authHelper.setAuthHandler.mockImplementation(aioConfig => aioConfig)
   jest.clearAllMocks()
 })
 
