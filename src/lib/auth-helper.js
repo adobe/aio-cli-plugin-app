@@ -96,6 +96,7 @@ const setRuntimeApiHostAndAuthHandler = (_config) => {
  * @function getTokenData
  * @param {string} token - The JWT token to decode
  * @returns {object} The decoded payload of the JWT token
+ * @throws
  */
 const getTokenData = (token) => {
   const [, payload] = token.split('.', 3)
