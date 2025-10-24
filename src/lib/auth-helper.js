@@ -90,8 +90,22 @@ const setRuntimeApiHostAndAuthHandler = (_config) => {
   }
 }
 
+/**
+ * Decodes a JWT token and returns its payload as a JavaScript object.
+ *
+ * @function getTokenData
+ * @param {string} token - The JWT token to decode
+ * @returns {object} The decoded payload of the JWT token
+ * @throws
+ */
+const getTokenData = (token) => {
+  const [, payload] = token.split('.', 3)
+  return JSON.parse(Buffer.from(payload, 'base64'))
+}
+
 module.exports = {
   getAccessToken,
+  getTokenData,
   bearerAuthHandler,
   setRuntimeApiHostAndAuthHandler
 }
