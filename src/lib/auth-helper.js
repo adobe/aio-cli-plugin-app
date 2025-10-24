@@ -15,7 +15,7 @@ const { getCliEnv } = require('@adobe/aio-lib-env')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:auth-helper', { provider: 'debug' })
 
 const DEPLOY_SERVICE_ENDPOINTS = {
-  stage: 'https://deploy-service.stg.app-builder.corp.adp.adobe.io',
+  stage: 'https://deploy-service.stg.app-builder.adp.adobe.io',
   prod: 'https://deploy-service.app-builder.adp.adobe.io'
 }
 

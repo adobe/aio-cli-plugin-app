@@ -33,6 +33,7 @@ module.exports = {
   IMPORT_CONFIG_FILE: 'config.json',
   USER_CONFIG_FILE: 'app.config.yaml',
   DEPLOY_CONFIG_FILE: 'deploy.yaml',
+  PACKAGE_LOCK_FILE: 'package-lock.json',
   LEGACY_RUNTIME_MANIFEST: 'manifest.yml',
   INCLUDE_DIRECTIVE: '$include',
   APPLICATION_CONFIG_KEY: 'application',
