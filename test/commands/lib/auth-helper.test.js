@@ -61,10 +61,23 @@ describe('getTokenData', () => {
   test('should decode JWT token and return payload', () => {
     // Example JWT token with payload: {"user_id":"12345","name":"Test User"}
     const exampleToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzNDUiLCJuYW1lIjoiVGVzdCBVc2VyIn0.sflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
-
     const result = getTokenData(exampleToken)
-
     expect(result).toEqual({ user_id: '12345', name: 'Test User' })
+  })
+  test('should return null for invalid token', () => {
+    const invalidToken = 'invalid.token.string'
+    const result = getTokenData(invalidToken)
+    expect(result).toBeNull()
+  })
+  test('should return null for malformed token', () => {
+    const malformedToken = 'malformedtoken'
+    const result = getTokenData(malformedToken)
+    expect(result).toBeNull()
+  })
+  test('should return null for non-string token', () => {
+    const nonStringToken = 12345
+    const result = getTokenData(nonStringToken)
+    expect(result).toBeNull()
   })
 })
 
@@ -88,7 +101,7 @@ describe('bearerAuthHandler', () => {
 describe('setRuntimeApiHostAndAuthHandler', () => {
   const DEPLOY_SERVICE_ENDPOINTS = {
     prod: 'https://deploy-service.app-builder.adp.adobe.io',
-    stage: 'https://deploy-service.stg.app-builder.adp.adobe.io'
+    stage: 'https://deploy-service.stg.app-builder.corp.adp.adobe.io'
   }
 
   beforeEach(() => {
