@@ -18,6 +18,7 @@ const helpersActual = jest.requireActual('../../../src/lib/app-helper.js')
 const authHelpersActual = jest.requireActual('../../../src/lib/auth-helper')
 
 const open = require('open')
+const ora = require('ora')
 const mockBundleFunc = jest.fn()
 
 jest.mock('../../../src/lib/app-helper.js')
@@ -203,6 +204,7 @@ beforeEach(() => {
   command = new TheCommand([])
   command.error = jest.fn()
   command.log = jest.fn()
+  command.warn = jest.fn()
   command.appConfig = cloneDeep(mockConfigData)
   command.appConfig.actions = { dist: 'actions' }
   command.appConfig.web.distProd = 'dist'
@@ -1627,5 +1629,133 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+  })
+
+  test('should deploy successfully when auto-provision database is configured', async () => {
+    // Create app config with database auto-provision enabled
+    const appConfigWithDb = createAppConfig({
+      ...command.appConfig,
+      manifest: {
+        full: {
+          database: {
+            'auto-provision': true
+          }
+        },
+        database: {
+          region: 'emea'
+        }
+      }
+    })
+
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfigWithDb)
+    command.provisionDatabase = jest.fn().mockResolvedValue()
+
+    await command.run()
+
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.provisionDatabase).toHaveBeenCalledTimes(1)
+    expect(command.provisionDatabase).toHaveBeenCalledWith(
+      appConfigWithDb.application,
+      expect.any(Object), // spinner
+      expect.objectContaining({ 'force-build': true }) // flags
+    )
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('database provisioning', () => {
+  const createDatabaseConfig = (region = null, autoProvision = true) => ({
+    manifest: {
+      full: {
+        database: {
+          'auto-provision': autoProvision,
+          ...(region && { region })
+        }
+      }
+    }
+  })
+
+  // Helper function to set up and run test
+  const runProvisionTest = async (config, flags, mockResult) => {
+    const spinner = ora()
+
+    if (mockResult instanceof Error) {
+      command.config.runCommand.mockRejectedValueOnce(mockResult)
+    } else {
+      command.config.runCommand.mockResolvedValueOnce(mockResult)
+    }
+
+    return {
+      result: await command.provisionDatabase(config, spinner, flags).catch(e => { throw e }),
+      spinner
+    }
+  }
+
+  test('should use default region when not specified in manifest', async () => {
+    const config = createDatabaseConfig()
+    const flags = { verbose: false }
+
+    const { spinner } = await runProvisionTest(config, flags)
+
+    expect(spinner.info).toHaveBeenCalledWith(expect.stringContaining('No region is configured for the database, deploying in default region amer'))
+    expect(spinner.start).toHaveBeenCalledWith('Deploying database for region \'amer\'')
+    expect(command.config.runCommand).toHaveBeenCalledWith('app:db:provision', ['--region', 'amer', '--yes'])
+    expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Deployed database for application in region \'amer\''))
+  })
+
+  test('should use configured region when specified in manifest', async () => {
+    const config = createDatabaseConfig('emea')
+    const flags = { verbose: false }
+
+    const { spinner } = await runProvisionTest(config, flags)
+
+    expect(spinner.info).not.toHaveBeenCalledWith(expect.stringContaining('No region is configured for the database'))
+    expect(spinner.start).toHaveBeenCalledWith('Deploying database for region \'emea\'')
+    expect(command.config.runCommand).toHaveBeenCalledWith('app:db:provision', ['--region', 'emea', '--yes'])
+    expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Deployed database for application in region \'emea\''))
+  })
+
+  test('should show verbose output when verbose flag is true', async () => {
+    const config = createDatabaseConfig('amer')
+    const flags = { verbose: true }
+
+    const { spinner } = await runProvisionTest(config, flags)
+
+    expect(spinner.info).toHaveBeenCalledWith(expect.stringContaining('Running: aio app db provision --region amer --yes'))
+    expect(spinner.info).not.toHaveBeenCalledWith(expect.stringContaining('No region is configured for the database'))
+    expect(spinner.start).toHaveBeenCalledTimes(2) // Once initially, once after verbose info
+    expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Deployed database for application in region \'amer\''))
+  })
+
+  test('should handle provision command failure', async () => {
+    const config = createDatabaseConfig('amer')
+    const flags = { verbose: false }
+    const error = new Error('Database provision failed')
+
+    await expect(runProvisionTest(config, flags, error))
+      .rejects.toThrow('Database provision failed')
+
+    expect(command.warn).not.toHaveBeenCalled()
+  })
+
+  test('should show verbose error details when verbose flag is true and provision fails', async () => {
+    const config = createDatabaseConfig('amer')
+    const flags = { verbose: true }
+    const error = new Error('Database provision failed')
+
+    await expect(runProvisionTest(config, flags, error))
+      .rejects.toThrow('Database provision failed')
+
+    expect(command.warn).not.toHaveBeenCalled()
+  })
+
+  test('should fail if invalid region specified', async () => {
+    const config = createDatabaseConfig('invalid-region')
+    const flags = { verbose: false }
+    const error = new Error('Invalid region: invalid-region')
+
+    await expect(runProvisionTest(config, flags, error))
+      .rejects.toThrow('Invalid region: invalid-region')
   })
 })
