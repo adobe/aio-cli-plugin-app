@@ -297,7 +297,7 @@ USAGE
   $ aio app create [PATH] [-v] [--version] [-i <value>]
 
 ARGUMENTS
-  [PATH]  [default: .] Path to the app directory
+  PATH  [default: .] Path to the app directory
 
 FLAGS
   -i, --import=<value>  Import an Adobe I/O Developer Console configuration file
@@ -337,7 +337,7 @@ USAGE
   $ aio app delete action [ACTION-NAME] [-v] [--version] [-y]
 
 ARGUMENTS
-  [ACTION-NAME]  Action `pkg/name` to delete, you can specify multiple actions via a comma separated list
+  ACTION-NAME  Action `pkg/name` to delete, you can specify multiple actions via a comma separated list
 
 FLAGS
   -v, --verbose  Verbose output
@@ -543,7 +543,7 @@ USAGE
     <value> |  | ] [--confirm-new-workspace] [--use-jwt] [--github-pat <value> ] [--linter none|basic|adobe-recommended]
 
 ARGUMENTS
-  [PATH]  [default: .] Path to the app directory
+  PATH  [default: .] Path to the app directory
 
 FLAGS
   -e, --extension=<value>...        Extension point(s) to implement
@@ -674,7 +674,7 @@ USAGE
   $ aio app pack [PATH] [-v] [--version] [--lock-file] [-o <value>]
 
 ARGUMENTS
-  [PATH]  [default: .] Path to the app directory to package
+  PATH  [default: .] Path to the app directory to package
 
 FLAGS
   -o, --output=<value>  [default: dist/app.zip] The packaged app output file path
@@ -773,7 +773,7 @@ USAGE
     [--confirm-new-workspace] [--no-service-sync | --confirm-service-sync] [--no-input] [--use-jwt]
 
 ARGUMENTS
-  [CONFIG_FILE_PATH]  path to an Adobe I/O Developer Console configuration file
+  CONFIG_FILE_PATH  path to an Adobe I/O Developer Console configuration file
 
 FLAGS
   -g, --global                      Use the global Adobe Developer Console Org / Project / Workspace configuration,
