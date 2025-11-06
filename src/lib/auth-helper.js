@@ -95,7 +95,7 @@ const setRuntimeApiHostAndAuthHandler = (_config) => {
  *
  * @function getTokenData
  * @param {string} token - The JWT token to decode
- * @returns {object} The decoded payload of the JWT token or null if the token is invalid or cannot be decoded
+ * @returns {object|null} The decoded payload of the JWT token or null if the token is invalid or cannot be decoded
  */
 const getTokenData = (token) => {
   if (typeof token !== 'string') {
