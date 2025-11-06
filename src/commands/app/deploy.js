@@ -305,25 +305,28 @@ class Deploy extends BuildCommand {
   }
 
   async provisionDatabase (config, spinner, flags) {
-    const region = config.manifest?.full?.database?.region || 'amer'
+    const region = config.manifest?.full?.database?.region
+    const args = ['--yes']
 
-    if (!config.manifest?.full?.database?.region) {
-      spinner.info(chalk.green('No region is configured for the database, deploying in default region amer'))
+    if (region) {
+      args.unshift('--region', region)
     }
 
-    const message = `Deploying database for region '${region}'`
+    const message = region ? `Deploying database in region '${region}'` : 'Deploying database in default region'
 
     try {
       spinner.start(message)
 
       if (flags.verbose) {
-        spinner.info(chalk.dim(`Running: aio app db provision --region ${region} --yes`))
+        const commandStr = region ? `aio app db provision --region ${region} --yes` : 'aio app db provision --yes'
+        spinner.info(chalk.dim(`Running: ${commandStr}`))
         spinner.start(message)
       }
 
-      await this.config.runCommand('app:db:provision', ['--region', region, '--yes'])
+      await this.config.runCommand('app:db:provision', args)
 
-      spinner.succeed(chalk.green(`Deployed database for application in region '${region}'`))
+      const successMessage = region ? `Deployed database for application in region '${region}'` : 'Deployed database for application'
+      spinner.succeed(chalk.green(successMessage))
     } catch (error) {
       spinner.fail(chalk.red('Database deployment failed'))
       throw error

@@ -1698,10 +1698,9 @@ describe('database provisioning', () => {
 
     const { spinner } = await runProvisionTest(config, flags)
 
-    expect(spinner.info).toHaveBeenCalledWith(expect.stringContaining('No region is configured for the database, deploying in default region amer'))
-    expect(spinner.start).toHaveBeenCalledWith('Deploying database for region \'amer\'')
-    expect(command.config.runCommand).toHaveBeenCalledWith('app:db:provision', ['--region', 'amer', '--yes'])
-    expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Deployed database for application in region \'amer\''))
+    expect(spinner.start).toHaveBeenCalledWith('Deploying database in default region')
+    expect(command.config.runCommand).toHaveBeenCalledWith('app:db:provision', ['--yes'])
+    expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Deployed database for application'))
   })
 
   test('should use configured region when specified in manifest', async () => {
@@ -1710,8 +1709,7 @@ describe('database provisioning', () => {
 
     const { spinner } = await runProvisionTest(config, flags)
 
-    expect(spinner.info).not.toHaveBeenCalledWith(expect.stringContaining('No region is configured for the database'))
-    expect(spinner.start).toHaveBeenCalledWith('Deploying database for region \'emea\'')
+    expect(spinner.start).toHaveBeenCalledWith('Deploying database in region \'emea\'')
     expect(command.config.runCommand).toHaveBeenCalledWith('app:db:provision', ['--region', 'emea', '--yes'])
     expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Deployed database for application in region \'emea\''))
   })
@@ -1723,9 +1721,19 @@ describe('database provisioning', () => {
     const { spinner } = await runProvisionTest(config, flags)
 
     expect(spinner.info).toHaveBeenCalledWith(expect.stringContaining('Running: aio app db provision --region amer --yes'))
-    expect(spinner.info).not.toHaveBeenCalledWith(expect.stringContaining('No region is configured for the database'))
     expect(spinner.start).toHaveBeenCalledTimes(2) // Once initially, once after verbose info
     expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Deployed database for application in region \'amer\''))
+  })
+
+  test('should show verbose output without region when no region configured', async () => {
+    const config = createDatabaseConfig()
+    const flags = { verbose: true }
+
+    const { spinner } = await runProvisionTest(config, flags)
+
+    expect(spinner.info).toHaveBeenCalledWith(expect.stringContaining('Running: aio app db provision --yes'))
+    expect(spinner.start).toHaveBeenCalledTimes(2) // Once initially, once after verbose info
+    expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Deployed database for application'))
   })
 
   test('should handle provision command failure', async () => {
