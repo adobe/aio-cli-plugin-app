@@ -95,18 +95,17 @@ const setRuntimeApiHostAndAuthHandler = (_config) => {
  *
  * @function getTokenData
  * @param {string} token - The JWT token to decode
- * @returns {object} The decoded payload of the JWT token
- * @returnss {null} If the token is invalid or cannot be decoded
+ * @returns {object} The decoded payload of the JWT token or null if the token is invalid or cannot be decoded
  */
 const getTokenData = (token) => {
   if (typeof token !== 'string') {
     aioLogger.error('Invalid token provided to getTokenData :: not a string')
-    return null;
+    return null
   }
   const [, payload] = token.split('.', 3)
   if (!payload) {
     aioLogger.error('Invalid token provided to getTokenData :: not a jwt')
-    return null;
+    return null
   }
   try {
     const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
@@ -116,7 +115,7 @@ const getTokenData = (token) => {
     return JSON.parse(decoded)
   } catch (e) {
     aioLogger.error('Error decoding token payload in getTokenData ::', e)
-    return null;
+    return null
   }
 }
 
