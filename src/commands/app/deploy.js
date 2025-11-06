@@ -132,8 +132,7 @@ class Deploy extends BuildCommand {
       // - break into smaller pieces deploy, allowing to first deploy all actions then all web assets
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
-        const v = setRuntimeApiHostAndAuthHandler(values[i])
-        v.auditUserId = appInfo.auditUserId
+        const v = { auditUserId: appInfo.auditUserId, ...setRuntimeApiHostAndAuthHandler(values[i])}
         await this.deploySingleConfig({ name: k, config: v, originalConfig: values[i], flags, spinner })
         if (cliDetails?.accessToken && v.app.hasFrontend && flags['web-assets']) {
           const opItems = getFilesCountWithExtension(v.web.distProd)
