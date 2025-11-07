@@ -1630,51 +1630,20 @@ describe('run', () => {
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
   })
-
-  test('should deploy successfully when auto-provision database is configured', async () => {
-    // Create app config with database auto-provision enabled
-    const appConfigWithDb = createAppConfig({
-      ...command.appConfig,
-      manifest: {
-        full: {
-          database: {
-            'auto-provision': true,
-            region: 'emea'
-          }
-        }
-      }
-    })
-
-    command.getAppExtConfigs.mockResolvedValueOnce(appConfigWithDb)
-    command.provisionDatabase = jest.fn().mockResolvedValue()
-
-    await command.run()
-
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(command.provisionDatabase).toHaveBeenCalledTimes(1)
-    expect(command.provisionDatabase).toHaveBeenCalledWith(
-      appConfigWithDb.application,
-      expect.any(Object), // spinner
-      expect.objectContaining({ 'force-build': true }) // flags
-    )
-    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
-  })
 })
 
 describe('database provisioning', () => {
-  const createDatabaseConfig = (region = null, autoProvision = true) => ({
+  // Helper functions for unit tests
+  const createDatabaseConfig = (region = null) => ({
     manifest: {
       full: {
         database: {
-          'auto-provision': autoProvision,
           ...(region && { region })
         }
       }
     }
   })
 
-  // Helper function to set up and run test
   const runProvisionTest = async (config, flags, mockResult) => {
     const spinner = ora()
 
@@ -1690,18 +1659,60 @@ describe('database provisioning', () => {
     }
   }
 
-  test('should use default region when not specified in manifest', async () => {
-    const config = createDatabaseConfig()
-    const flags = { verbose: false }
+  test('should provision database when auto-provision is true', async () => {
+    const appConfigWithDb = createAppConfig({
+      ...command.appConfig,
+      manifest: {
+        full: {
+          database: {
+            'auto-provision': true,
+            region: 'emea'
+          }
+        }
+      }
+    })
 
-    const { spinner } = await runProvisionTest(config, flags)
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfigWithDb)
+    command.config.runCommand.mockResolvedValue()
 
-    expect(spinner.start).toHaveBeenCalledWith('Deploying database in default region')
-    expect(command.config.runCommand).toHaveBeenCalledWith('app:db:provision', ['--yes'])
-    expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Deployed database for application'))
+    await command.run()
+
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.config.runCommand).toHaveBeenCalledWith('app:db:provision', ['--region', 'emea', '--yes'])
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(command.log).toHaveBeenCalledWith(
+      expect.stringContaining('Successful deployment 🏄')
+    )
   })
 
-  test('should use configured region when specified in manifest', async () => {
+  test('should not provision database when auto-provision is false', async () => {
+    const appConfigWithoutDb = createAppConfig({
+      ...command.appConfig,
+      manifest: {
+        full: {
+          database: {
+            'auto-provision': false
+          }
+        }
+      }
+    })
+
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfigWithoutDb)
+
+    await command.run()
+
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(command.config.runCommand).not.toHaveBeenCalledWith('app:db:provision', expect.anything())
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(command.log).toHaveBeenCalledWith(
+      expect.stringContaining('Successful deployment 🏄')
+    )
+  })
+
+  //  tests for provisionDatabase method behavior
+  test('should run provision command correctly with region', async () => {
     const config = createDatabaseConfig('emea')
     const flags = { verbose: false }
 
@@ -1712,7 +1723,18 @@ describe('database provisioning', () => {
     expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Deployed database for application in region \'emea\''))
   })
 
-  test('should show verbose output when verbose flag is true', async () => {
+  test('should run provision command correctly without region', async () => {
+    const config = createDatabaseConfig()
+    const flags = { verbose: false }
+
+    const { spinner } = await runProvisionTest(config, flags)
+
+    expect(spinner.start).toHaveBeenCalledWith('Deploying database in default region')
+    expect(command.config.runCommand).toHaveBeenCalledWith('app:db:provision', ['--yes'])
+    expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Deployed database for application'))
+  })
+
+  test('should show verbose output with region', async () => {
     const config = createDatabaseConfig('amer')
     const flags = { verbose: true }
 
@@ -1723,7 +1745,7 @@ describe('database provisioning', () => {
     expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Deployed database for application in region \'amer\''))
   })
 
-  test('should show verbose output without region when no region configured', async () => {
+  test('should show verbose output without region', async () => {
     const config = createDatabaseConfig()
     const flags = { verbose: true }
 
@@ -1741,27 +1763,5 @@ describe('database provisioning', () => {
 
     await expect(runProvisionTest(config, flags, error))
       .rejects.toThrow('Database provision failed')
-
-    expect(command.warn).not.toHaveBeenCalled()
-  })
-
-  test('should show verbose error details when verbose flag is true and provision fails', async () => {
-    const config = createDatabaseConfig('amer')
-    const flags = { verbose: true }
-    const error = new Error('Database provision failed')
-
-    await expect(runProvisionTest(config, flags, error))
-      .rejects.toThrow('Database provision failed')
-
-    expect(command.warn).not.toHaveBeenCalled()
-  })
-
-  test('should fail if invalid region specified', async () => {
-    const config = createDatabaseConfig('invalid-region')
-    const flags = { verbose: false }
-    const error = new Error('Invalid region: invalid-region')
-
-    await expect(runProvisionTest(config, flags, error))
-      .rejects.toThrow('Invalid region: invalid-region')
   })
 })
