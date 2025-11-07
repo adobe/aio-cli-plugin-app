@@ -1638,11 +1638,9 @@ describe('run', () => {
       manifest: {
         full: {
           database: {
-            'auto-provision': true
+            'auto-provision': true,
+            region: 'emea'
           }
-        },
-        database: {
-          region: 'emea'
         }
       }
     })
