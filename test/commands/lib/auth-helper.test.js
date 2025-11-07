@@ -1,5 +1,5 @@
 const { getAccessToken, bearerAuthHandler, setRuntimeApiHostAndAuthHandler, getTokenData } = require('../../../src/lib/auth-helper')
-const { getToken, context } = require('@adobe/aio-lib-ims')
+const { getToken, context, getTokenData: getImsTokenData } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
 const { getCliEnv } = require('@adobe/aio-lib-env')
 
@@ -58,18 +58,25 @@ describe('getAccessToken', () => {
 })
 
 describe('getTokenData', () => {
-  test('should decode JWT token and return payload', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  test('should call through to getImsTokenData to decode JWT token and return payload', () => {
+    getImsTokenData.mockReturnValue({ user_id: '12345', name: 'Test User' })
     // Example JWT token with payload: {"user_id":"12345","name":"Test User"}
     const exampleToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzNDUiLCJuYW1lIjoiVGVzdCBVc2VyIn0.sflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
     const result = getTokenData(exampleToken)
     expect(result).toEqual({ user_id: '12345', name: 'Test User' })
   })
   test('should return null for invalid token', () => {
+    getImsTokenData.mockImplementation(() => { throw new Error('Invalid token') })
     const invalidToken = 'invalid.token.string'
     const result = getTokenData(invalidToken)
     expect(result).toBeNull()
   })
   test('should return null for malformed token', () => {
+    getImsTokenData.mockImplementation(() => { throw new Error('Malformed token') })
     const malformedToken = 'malformedtoken'
     const result = getTokenData(malformedToken)
     expect(result).toBeNull()
