@@ -209,6 +209,11 @@ class Deploy extends BuildCommand {
       this.error(err)
     }
 
+    // provision database if configured
+    if (config.manifest?.full?.database?.['auto-provision'] === true) {
+      await this.provisionDatabase(config, spinner, flags)
+    }
+
     if (flags.actions) {
       if (config.app.hasBackend) {
         let filterEntities
@@ -302,6 +307,35 @@ class Deploy extends BuildCommand {
       }
     } catch (err) {
       this.error(err)
+    }
+  }
+
+  async provisionDatabase (config, spinner, flags) {
+    const region = config.manifest?.full?.database?.region
+    const args = ['--yes']
+
+    if (region) {
+      args.unshift('--region', region)
+    }
+
+    const message = region ? `Deploying database in region '${region}'` : 'Deploying database in default region'
+
+    try {
+      spinner.start(message)
+
+      if (flags.verbose) {
+        const commandStr = region ? `aio app db provision --region ${region} --yes` : 'aio app db provision --yes'
+        spinner.info(chalk.dim(`Running: ${commandStr}`))
+        spinner.start(message)
+      }
+
+      await this.config.runCommand('app:db:provision', args)
+
+      const successMessage = region ? `Deployed database for application in region '${region}'` : 'Deployed database for application'
+      spinner.succeed(chalk.green(successMessage))
+    } catch (error) {
+      spinner.fail(chalk.red('Database deployment failed'))
+      throw error
     }
   }
 
