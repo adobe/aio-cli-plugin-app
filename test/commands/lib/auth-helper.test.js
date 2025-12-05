@@ -1,5 +1,5 @@
-const { getAccessToken, bearerAuthHandler, setRuntimeApiHostAndAuthHandler, getTokenData } = require('../../../src/lib/auth-helper')
-const { getToken, context, getTokenData: getImsTokenData } = require('@adobe/aio-lib-ims')
+const { getAccessToken, bearerAuthHandler, setRuntimeApiHostAndAuthHandler } = require('../../../src/lib/auth-helper')
+const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
 const { getCliEnv } = require('@adobe/aio-lib-env')
 
@@ -54,37 +54,6 @@ describe('getAccessToken', () => {
     expect(getToken).not.toHaveBeenCalled()
     expect(context.get).toHaveBeenCalledWith(CLI)
     expect(result).toEqual({ accessToken: mockToken, env: mockEnv })
-  })
-})
-
-describe('getTokenData', () => {
-  beforeEach(() => {
-    jest.clearAllMocks()
-  })
-
-  test('should call through to getImsTokenData to decode JWT token and return payload', () => {
-    getImsTokenData.mockReturnValue({ user_id: '12345', name: 'Test User' })
-    // Example JWT token with payload: {"user_id":"12345","name":"Test User"}
-    const exampleToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzNDUiLCJuYW1lIjoiVGVzdCBVc2VyIn0.sflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
-    const result = getTokenData(exampleToken)
-    expect(result).toEqual({ user_id: '12345', name: 'Test User' })
-  })
-  test('should return null for invalid token', () => {
-    getImsTokenData.mockImplementation(() => { throw new Error('Invalid token') })
-    const invalidToken = 'invalid.token.string'
-    const result = getTokenData(invalidToken)
-    expect(result).toBeNull()
-  })
-  test('should return null for malformed token', () => {
-    getImsTokenData.mockImplementation(() => { throw new Error('Malformed token') })
-    const malformedToken = 'malformedtoken'
-    const result = getTokenData(malformedToken)
-    expect(result).toBeNull()
-  })
-  test('should return null for non-string token', () => {
-    const nonStringToken = 12345
-    const result = getTokenData(nonStringToken)
-    expect(result).toBeNull()
   })
 })
 

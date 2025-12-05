@@ -26,7 +26,7 @@ const {
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
 const { sendAppAssetsDeployedAuditLog, sendAppDeployAuditLog } = require('../../lib/audit-logger')
-const { setRuntimeApiHostAndAuthHandler, getAccessToken, getTokenData } = require('../../lib/auth-helper')
+const { setRuntimeApiHostAndAuthHandler, getAccessToken } = require('../../lib/auth-helper')
 const logActions = require('../../lib/log-actions')
 
 const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
@@ -68,8 +68,6 @@ class Deploy extends BuildCommand {
 
       if (cliDetails?.accessToken) {
         try {
-          // store user id from token data for cdn deploy audit metadata
-          appInfo.auditUserId = getTokenData(cliDetails.accessToken)?.user_id
           // send audit log at start (don't wait for deployment to finish)
           await sendAppDeployAuditLog({
             accessToken: cliDetails?.accessToken,
@@ -132,10 +130,7 @@ class Deploy extends BuildCommand {
       // - break into smaller pieces deploy, allowing to first deploy all actions then all web assets
       for (let i = 0; i < keys.length; ++i) {
         const k = keys[i]
-        // auditUserId is only set if it is available in the token data
-        // falsy because "", 0, false, null, undefined, NaN, etc. are all invalid values
         const v = {
-          ...(appInfo.auditUserId && { auditUserId: appInfo.auditUserId }),
           ...setRuntimeApiHostAndAuthHandler(values[i])
         }
         await this.deploySingleConfig({ name: k, config: v, originalConfig: values[i], flags, spinner })

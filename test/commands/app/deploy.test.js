@@ -198,9 +198,7 @@ beforeEach(() => {
       env: 'stage'
     }
   })
-  authHelper.getTokenData.mockImplementation(() => {
-    return null // default to null, tests can override
-  })
+
   LogForwarding.init.mockResolvedValue(mockLogForwarding)
 
   command = new TheCommand([])
@@ -671,136 +669,6 @@ describe('run', () => {
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('https://example.com'))
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('http://prefix?fake=https://example.com'))
     expect(open).toHaveBeenCalledWith('http://prefix?fake=https://example.com')
-  })
-
-  test('deploy should pass auditUserId to deployWeb config when user_id is present in token', async () => {
-    const mockUserId = 'test-user-123'
-    const mockToken = 'mock.token.value'
-
-    authHelper.getAccessToken.mockResolvedValueOnce({
-      accessToken: mockToken,
-      env: 'stage'
-    })
-    authHelper.getTokenData.mockReturnValueOnce({
-      user_id: mockUserId
-    })
-
-    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
-    mockWebLib.deployWeb.mockResolvedValue('https://example.com')
-
-    command.argv = []
-    await command.run()
-
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(authHelper.getTokenData).toHaveBeenCalledWith(mockToken)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledWith(
-      expect.objectContaining({
-        auditUserId: mockUserId
-      }),
-      expect.any(Function)
-    )
-  })
-
-  test('deploy should NOT include auditUserId in config when user_id is undefined', async () => {
-    const mockToken = 'mock.token.value'
-
-    authHelper.getAccessToken.mockResolvedValueOnce({
-      accessToken: mockToken,
-      env: 'stage'
-    })
-    authHelper.getTokenData.mockReturnValueOnce({
-      // user_id is undefined
-    })
-
-    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
-    mockWebLib.deployWeb.mockResolvedValue('https://example.com')
-
-    command.argv = []
-    await command.run()
-
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledWith(
-      expect.not.objectContaining({
-        auditUserId: expect.anything()
-      }),
-      expect.any(Function)
-    )
-  })
-
-  test('deploy should NOT include auditUserId in config when user_id is null', async () => {
-    const mockToken = 'mock.token.value'
-
-    authHelper.getAccessToken.mockResolvedValueOnce({
-      accessToken: mockToken,
-      env: 'stage'
-    })
-    authHelper.getTokenData.mockReturnValueOnce({
-      user_id: null
-    })
-
-    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
-    mockWebLib.deployWeb.mockResolvedValue('https://example.com')
-
-    command.argv = []
-    await command.run()
-
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledWith(
-      expect.not.objectContaining({
-        auditUserId: expect.anything()
-      }),
-      expect.any(Function)
-    )
-  })
-
-  test('deploy should NOT include auditUserId in config when user_id is empty string', async () => {
-    const mockToken = 'mock.token.value'
-
-    authHelper.getAccessToken.mockResolvedValueOnce({
-      accessToken: mockToken,
-      env: 'stage'
-    })
-    authHelper.getTokenData.mockReturnValueOnce({
-      user_id: ''
-    })
-
-    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
-    mockWebLib.deployWeb.mockResolvedValue('https://example.com')
-
-    command.argv = []
-    await command.run()
-
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledWith(
-      expect.not.objectContaining({
-        auditUserId: expect.anything()
-      }),
-      expect.any(Function)
-    )
-  })
-
-  test('deploy should NOT include auditUserId when getTokenData returns null', async () => {
-    const mockToken = 'mock.token.value'
-
-    authHelper.getAccessToken.mockResolvedValueOnce({
-      accessToken: mockToken,
-      env: 'stage'
-    })
-    authHelper.getTokenData.mockReturnValueOnce(null)
-
-    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
-    mockWebLib.deployWeb.mockResolvedValue('https://example.com')
-
-    command.argv = []
-    await command.run()
-
-    expect(command.error).toHaveBeenCalledTimes(0)
-    expect(mockWebLib.deployWeb).toHaveBeenCalledWith(
-      expect.not.objectContaining({
-        auditUserId: expect.anything()
-      }),
-      expect.any(Function)
-    )
   })
 
   test('deploy should show action urls (web-export: true)', async () => {

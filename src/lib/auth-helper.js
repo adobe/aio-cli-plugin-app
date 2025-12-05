@@ -9,7 +9,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { getToken, context, getTokenData: getImsTokenData } = require('@adobe/aio-lib-ims')
+const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
 const { getCliEnv } = require('@adobe/aio-lib-env')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:auth-helper', { provider: 'debug' })
@@ -90,29 +90,8 @@ const setRuntimeApiHostAndAuthHandler = (_config) => {
   }
 }
 
-/**
- * Decodes a JWT token and returns its payload as a JavaScript object.
- *
- * @function getTokenData
- * @param {string} token - The JWT token to decode
- * @returns {object|null} The decoded payload of the JWT token or null if the token is invalid or cannot be decoded
- */
-const getTokenData = (token) => {
-  if (typeof token !== 'string') {
-    aioLogger.error('Invalid token provided to getTokenData :: not a string')
-    return null
-  }
-  try {
-    return getImsTokenData(token)
-  } catch (e) {
-    aioLogger.error('Error decoding token payload in getTokenData ::', e)
-    return null
-  }
-}
-
 module.exports = {
   getAccessToken,
-  getTokenData,
   bearerAuthHandler,
   setRuntimeApiHostAndAuthHandler
 }
