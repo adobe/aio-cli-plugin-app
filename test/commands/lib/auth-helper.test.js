@@ -1,5 +1,5 @@
-const { getAccessToken, bearerAuthHandler, setRuntimeApiHostAndAuthHandler, getTokenData } = require('../../../src/lib/auth-helper')
-const { getToken, context, getTokenData: getImsTokenData } = require('@adobe/aio-lib-ims')
+const { getAccessToken, bearerAuthHandler, setRuntimeApiHostAndAuthHandler } = require('../../../src/lib/auth-helper')
+const { getToken, context } = require('@adobe/aio-lib-ims')
 const { CLI } = require('@adobe/aio-lib-ims/src/context')
 const { getCliEnv } = require('@adobe/aio-lib-env')
 
@@ -54,29 +54,6 @@ describe('getAccessToken', () => {
     expect(getToken).not.toHaveBeenCalled()
     expect(context.get).toHaveBeenCalledWith(CLI)
     expect(result).toEqual({ accessToken: mockToken, env: mockEnv })
-  })
-})
-
-describe('getTokenData', () => {
-  beforeEach(() => {
-    jest.clearAllMocks()
-  })
-  test('should return null for invalid token', () => {
-    getImsTokenData.mockImplementation(() => { throw new Error('Invalid token') })
-    const invalidToken = 'invalid.token.string'
-    const result = getTokenData(invalidToken)
-    expect(result).toBeNull()
-  })
-  test('should return null for malformed token', () => {
-    getImsTokenData.mockImplementation(() => { throw new Error('Malformed token') })
-    const malformedToken = 'malformedtoken'
-    const result = getTokenData(malformedToken)
-    expect(result).toBeNull()
-  })
-  test('should return null for non-string token', () => {
-    const nonStringToken = 12345
-    const result = getTokenData(nonStringToken)
-    expect(result).toBeNull()
   })
 })
 
