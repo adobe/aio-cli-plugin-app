@@ -107,6 +107,8 @@ class InitCommand extends TemplatesCommand {
       await this.withQuickstart(flags.repo, flags['github-pat'])
     } else {
       // 2. prompt for templates to be installed
+
+      // TODO: Modify this to be a prompt for natural language here -mg  
       const templates = await this.getTemplatesForFlags(flags)
       // If no templates selected, init a standalone app
       if (templates.length <= 0) {
@@ -152,6 +154,8 @@ class InitCommand extends TemplatesCommand {
     let templates
     if (!flags.repo) {
       // 5. get list of templates to install
+
+      // TODO: Modify this to be a prompt for natural language here -mg 
       templates = await this.getTemplatesForFlags(flags, orgSupportedServices)
       // If no templates selected, init a standalone app
       if (templates.length <= 0) {
