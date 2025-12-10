@@ -9,7 +9,7 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
  * @throws {Error} If API call fails
  */
 async function getAIRecommendation (prompt, apiUrl) {
-  const url = apiUrl || process.env.TEMPLATE_RECOMMENDATION_API || 'https://268550-garageweektest.adobeio-static.net/api/v1/web/recommend-template'
+  const url = apiUrl || process.env.TEMPLATE_RECOMMENDATION_API || 'https://development-918-aiappinit-stage.adobeioruntime.net/api/v1/web/recommend-api/recommend-template'
   
   aioLogger.debug(`Calling template recommendation API: ${url}`)
   aioLogger.debug(`Prompt: ${prompt}`)
