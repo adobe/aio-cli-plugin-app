@@ -240,12 +240,13 @@ class InitCommand extends TemplatesCommand {
       
       // Step 3: No template was returned
       if (!template || !template.name) {
-        this.log(chalk.yellow('\nNo template matched your description. Falling back to table selection...'))
+        spinner.info('AI could not find a matching template')
+        this.log(chalk.cyan('\n💡 No specific match found. Please explore templates from the options below:\n'))
         return this.getTemplatesForFlags(flags, orgSupportedServices)
       }
 
       // Step 4: Display AI recommendation
-      this.log(chalk.bold('\n  Recommendation:'))
+      this.log(chalk.bold('\n🤖 AI Recommendation:'))
       this.log(chalk.dim(`   Based on "${userPrompt}"\n`))
       this.log(`   ${chalk.bold(template.name)}`)
       if (template.description) {
@@ -266,14 +267,14 @@ class InitCommand extends TemplatesCommand {
       if (confirm) {
         return [template.name]
       } else {
-        this.log(chalk.yellow('\nFalling back to traditional template selection...'))
+        this.log(chalk.cyan('\n💡 Please explore templates from the options below:\n'))
         return this.getTemplatesForFlags(flags, orgSupportedServices)
       }
-      
+
     } catch (error) {
-      spinner.fail('Could not get AI recommendation')
+      spinner.info('AI recommendation unavailable')
       aioLogger.error('AI API error:', error)
-      this.log(chalk.yellow(`\nError: ${error.message}. Falling back to table selection...`))
+      this.log(chalk.cyan('\n💡 AI could not recommend a template. Please explore templates from the options below:\n'))
       return this.getTemplatesForFlags(flags, orgSupportedServices)
     }
   }

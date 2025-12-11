@@ -40,5 +40,7 @@ module.exports = {
   EXTENSIONS_CONFIG_KEY: 'extensions',
   // Adding tracking file constants
   LAST_BUILT_ACTIONS_FILENAME: 'last-built-actions.json',
-  LAST_DEPLOYED_ACTIONS_FILENAME: 'last-deployed-actions.json'
+  LAST_DEPLOYED_ACTIONS_FILENAME: 'last-deployed-actions.json',
+  // Template recommendation API
+  defaultTemplateRecommendationApiUrl: 'https://development-918-aiappinit-stage.adobeioruntime.net/api/v1/web/recommend-api/recommend-template'
 }
