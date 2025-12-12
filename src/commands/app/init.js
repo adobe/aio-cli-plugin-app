@@ -236,16 +236,17 @@ class InitCommand extends TemplatesCommand {
       // Step 2: Call backend API via lib
       const template = await getAIRecommendation(userPrompt)
       
-      spinner.succeed('Found matching template!')
+   
       
       // Step 3: No template was returned
       if (!template || !template.name) {
-        spinner.info('AI could not find a matching template')
-        this.log(chalk.cyan('\n💡 No specific match found. Please explore templates from the options below:\n'))
+        spinner.stop()
+        this.log(chalk.cyan('\n💡 AI could not find a matching template. Please explore templates from the options below:\n'))
         return this.getTemplatesForFlags(flags, orgSupportedServices)
       }
 
       // Step 4: Display AI recommendation
+      spinner.succeed('Found matching template!')
       this.log(chalk.bold('\n🤖 AI Recommendation:'))
       this.log(chalk.dim(`   Based on "${userPrompt}"\n`))
       this.log(`   ${chalk.bold(template.name)}`)
@@ -272,9 +273,9 @@ class InitCommand extends TemplatesCommand {
       }
 
     } catch (error) {
-      spinner.info('AI recommendation unavailable')
+      spinner.stop()
       aioLogger.error('AI API error:', error)
-      this.log(chalk.cyan('\n💡 AI could not recommend a template. Please explore templates from the options below:\n'))
+      this.log(chalk.cyan('\n💡 AI recommendation unavailable. Please explore templates from the options below:\n'))
       return this.getTemplatesForFlags(flags, orgSupportedServices)
     }
   }
