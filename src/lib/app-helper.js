@@ -584,6 +584,47 @@ function getObjectValue (obj, key) {
   return keys.filter(o => o.trim()).reduce((o, i) => o && getObjectProp(o, i), obj)
 }
 
+/**
+ * Checks if a deployment configuration contains agents (nodejs:22 runtime).
+ *
+ * @param {object} config the app config object
+ * @returns {boolean} true if the config contains agents
+ */
+function hasAgents (config) {
+  const packages = config?.manifest?.full?.packages
+  
+  if (!packages || typeof packages !== 'object') {
+    return false
+  }
+  
+  for (const pkg of Object.values(packages)) {
+    const actions = pkg?.actions || {}
+    for (const action of Object.values(actions)) {
+      if (action?.runtime === 'nodejs:22') {
+        return true
+      }
+    }
+  }
+  
+  return false
+}
+
+/**
+ * Gets the Restate UI URL with optional namespace.
+ *
+ * @param {string} namespace the user's namespace
+ * @param {string} baseUrl the base Restate UI URL
+ * @returns {string} the complete Restate UI URL
+ */
+function getRestateUiUrl (namespace, baseUrl) {
+  // For now, return base URL
+  // TODO: Add namespace filtering when Restate UI supports it via query params
+  // const url = new URL(baseUrl)
+  // url.searchParams.set('namespace', namespace)
+  // return url.toString()
+  return baseUrl
+}
+
 module.exports = {
   getObjectValue,
   getObjectProp,
@@ -613,5 +654,7 @@ module.exports = {
   buildExtensionPointPayloadWoMetadata,
   buildExcShellViewExtensionMetadata,
   atLeastOne,
-  deleteUserConfig
+  deleteUserConfig,
+  hasAgents,
+  getRestateUiUrl
 }

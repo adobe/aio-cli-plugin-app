@@ -18,12 +18,13 @@ const BaseCommand = require('../../BaseCommand')
 const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { Flags } = require('@oclif/core')
-const { runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getCliInfo } = require('../../lib/app-helper')
+const { runInProcess, buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata, getCliInfo, hasAgents, getRestateUiUrl } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const LogForwarding = require('../../lib/log-forwarding')
 const { sendAuditLogs, getAuditLogEvent, getFilesCountWithExtension } = require('../../lib/audit-logger')
 const { setRuntimeApiHostAndAuthHandler } = require('../../lib/auth-helper')
 const logActions = require('../../lib/log-actions')
+const { RESTATE_UI_BASE_URL } = require('../../lib/defaults')
 
 const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
 const POST_DEPLOY_EVENT_REG = 'post-deploy-event-reg'
@@ -128,6 +129,23 @@ class Deploy extends BuildCommand {
         this.log(chalk.blue(chalk.bold(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': '${Object.keys(payload.endpoints)}'`)))
       } else {
         this.log('skipping publish phase...')
+      }
+
+      // 5. Check if any deployed config has agents and display Restate UI link
+      let hasAnyAgents = false
+      let namespaceForRestate = null
+      
+      for (const config of values) {
+        if (hasAgents(config)) {
+          hasAnyAgents = true
+          namespaceForRestate = config.ow?.namespace || process.env.AIO_RUNTIME_NAMESPACE
+          break
+        }
+      }
+      
+      if (hasAnyAgents && namespaceForRestate) {
+        const restateUiUrl = getRestateUiUrl(namespaceForRestate, RESTATE_UI_BASE_URL)
+        this.log(chalk.blue(chalk.bold(`\nRestate UI for deployed agents:\n  -> ${restateUiUrl}`)))
       }
     } catch (error) {
       spinner.stop()
