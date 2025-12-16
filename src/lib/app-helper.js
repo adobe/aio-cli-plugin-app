@@ -610,18 +610,15 @@ function hasAgents (config) {
 }
 
 /**
- * Gets the Restate UI URL with optional namespace.
+ * Gets the Restate UI URL.
  *
- * @param {string} namespace the user's namespace
+ * @param {string} namespace the user's namespace (unused, kept for API compatibility)
  * @param {string} baseUrl the base Restate UI URL
- * @returns {string} the complete Restate UI URL
+ * @returns {string} the Restate UI URL
  */
 function getRestateUiUrl (namespace, baseUrl) {
-  // For now, return base URL
-  // TODO: Add namespace filtering when Restate UI supports it via query params
-  // const url = new URL(baseUrl)
-  // url.searchParams.set('namespace', namespace)
-  // return url.toString()
+  // Note: Restate UI doesn't currently support query parameter filtering
+  // Returning base URL for now. Developers can manually filter in the UI.
   return baseUrl
 }
 
