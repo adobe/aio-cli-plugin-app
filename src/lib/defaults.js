@@ -37,5 +37,5 @@ module.exports = {
   INCLUDE_DIRECTIVE: '$include',
   APPLICATION_CONFIG_KEY: 'application',
   EXTENSIONS_CONFIG_KEY: 'extensions',
-  RESTATE_UI_BASE_URL: 'https://restate-ns-team-ethos651stageva6-faast-stg-pri-ctrl-b.corp.ethos651-stage-va6.ethos.adobe.net/ui'
+  RESTATE_UI_BASE_URL: 'https://restate-ns-team-ethos651stageva6-faast-stg-pri-ctrl-b.corp.ethos651-stage-va6.ethos.adobe.net/ui/invocations'
 }
