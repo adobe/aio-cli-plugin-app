@@ -390,6 +390,49 @@ async function writeFile (destination, data, flags = {}) {
 }
 
 /**
+ * Formats IMS credentials into simplified environment variable format.
+ * First credential has no suffix, subsequent credentials get _2, _3, etc.
+ * Dynamically maps all credential fields to IMS_* environment variables.
+ *
+ * @param {object} credentials The credentials object from transformCredentials
+ * @returns {object} Key-value pairs of IMS environment variables
+ * @private
+ */
+function formatImsCredentialsForEnv (credentials) {
+  const result = {}
+  const credentialKeys = Object.keys(credentials)
+
+  credentialKeys.forEach((credKey, index) => {
+    const credential = credentials[credKey]
+    const suffix = index === 0 ? '' : `_${index + 1}`
+
+    // Dynamically map each credential field to IMS_* variables
+    Object.keys(credential).forEach(fieldName => {
+      const value = credential[fieldName]
+
+      // If field already starts with 'ims_', just uppercase it (avoid double-prefixing)
+      // Otherwise, add IMS_ prefix
+      const envVarName = fieldName.startsWith('ims_')
+        ? `${fieldName.toUpperCase()}${suffix}`
+        : `IMS_${fieldName.toUpperCase()}${suffix}`
+
+      // Special handling for redirect_uri - extract first element if array
+      if (fieldName === 'redirect_uri' && Array.isArray(value)) {
+        result[envVarName] = value[0]
+      } else if (Array.isArray(value)) {
+        // Serialize arrays to JSON
+        result[envVarName] = JSON.stringify(value)
+      } else {
+        // Use primitive values as-is
+        result[envVarName] = value
+      }
+    })
+  })
+
+  return result
+}
+
+/**
  * Writes the json object as AIO_ env vars to the .env file in the specified parent folder.
  *
  * @param {object} json the json object to transform and write to disk
@@ -649,10 +692,17 @@ async function importConfigJson (configFileOrBuffer, destinationFolder = process
 
   const { runtime, credentials } = config.project.workspace.details
 
+  // Transform credentials and format as simplified IMS_* env vars
+  const transformedCredentials = transformCredentials(credentials, config.project.org.ims_org_id, flags.useJwt)
+  const imsEnvVars = formatImsCredentialsForEnv(transformedCredentials)
+
+  // Merge IMS vars with any extra env vars
+  const allExtraEnvVars = { ...imsEnvVars, ...extraEnvVars }
+
+  // Only pass runtime through the flatten process (keeps AIO_runtime_* format)
   await writeEnv({
-    runtime: transformRuntime(runtime),
-    ims: { contexts: transformCredentials(credentials, config.project.org.ims_org_id, flags.useJwt) }
-  }, destinationFolder, flags, extraEnvVars)
+    runtime: transformRuntime(runtime)
+  }, destinationFolder, flags, allExtraEnvVars)
 
   // remove the credentials
   delete config.project.workspace.details.runtime
@@ -748,5 +798,6 @@ module.exports = {
   mergeEnv,
   splitEnvLine,
   getProjectCredentialType,
+  formatImsCredentialsForEnv,
   CONSOLE_CONFIG_KEY
 }

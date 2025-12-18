@@ -84,6 +84,23 @@ test('flattenObjectWithSeparator', () => {
   })
 })
 
+test('flattenObjectWithSeparator with arrays', () => {
+  const json = {
+    foo: 'a',
+    arrayField: ['item1', 'item2', 'item3'],
+    nested: {
+      arrayInside: [1, 2, 3]
+    }
+  }
+
+  const result = flattenObjectWithSeparator(json, {})
+  expect(result).toEqual({
+    AIO_foo: 'a',
+    AIO_arrayField: JSON.stringify(['item1', 'item2', 'item3']),
+    AIO_nested_arrayInside: JSON.stringify([1, 2, 3])
+  })
+})
+
 test('writeAio', async () => {
   const hjson = fixtureHjson('writeaio.hjson')
   const parentFolder = 'my-parent-folder'
@@ -417,6 +434,23 @@ test('do not enrich ims.contexts.jwt with ims_org_id if no jwt credentials defin
   await expect(fs.writeFile.mock.calls[0][2]).toMatchObject({ flag: 'w' })
   await expect(fs.writeFile.mock.calls[1][0]).toMatch(aioPath)
   await expect(fs.writeFile.mock.calls[1][1]).toMatchFixture('config.orgid.no.jwt.aio')
+  await expect(fs.writeFile.mock.calls[1][2]).toMatchObject({ flag: 'w' })
+  expect(fs.writeFile).toHaveBeenCalledTimes(2)
+})
+
+test('api_key credential with api_key field', async () => {
+  const workingFolder = 'my-working-folder'
+  const aioPath = path.join(workingFolder, '.aio')
+  const envPath = path.join(workingFolder, '.env')
+  const configPath = '/some/config/path'
+
+  fs.readFileSync.mockReturnValueOnce(fixtureFile('config.apikey.json'))
+  await importConfigJson(configPath, workingFolder, { overwrite: true })
+  await expect(fs.writeFile.mock.calls[0][0]).toMatch(envPath)
+  await expect(fs.writeFile.mock.calls[0][1]).toMatchFixture('config.apikey.env')
+  await expect(fs.writeFile.mock.calls[0][2]).toMatchObject({ flag: 'w' })
+  await expect(fs.writeFile.mock.calls[1][0]).toMatch(aioPath)
+  await expect(fs.writeFile.mock.calls[1][1]).toMatchFixture('config.apikey.aio')
   await expect(fs.writeFile.mock.calls[1][2]).toMatchObject({ flag: 'w' })
   expect(fs.writeFile).toHaveBeenCalledTimes(2)
 })
