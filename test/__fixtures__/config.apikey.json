@@ -1,0 +1,44 @@
+{
+    "project": {
+        "id": "123",
+        "name": "TestProject",
+        "title": "Test Title",
+        "description": "My project description",
+        "org": {
+            "id": "25591412",
+            "name": "Developers",
+            "ims_org_id": "XOXOXOXOXOXOX@AdobeOrg"
+        },
+        "workspace": {
+            "id": "1356",
+            "name": "TestWorkspace",
+            "title": "Test Title",
+            "description": "My workspace description",
+            "action_url": "https://ABCD-TestProject-TestWorkspace.adobeioruntime.net",
+            "app_url": "https://ABCD-TestProject-TestWorkspace.adobestatic.net",
+            "details": {
+                "credentials": [
+                    {
+                        "id": "503084",
+                        "name": "API Key Project",
+                        "integration_type": "apikey",
+                        "api_key": {
+                            "client_id": "41987c01396a4c2b9dd4d842f8b50f7b",
+                            "api_key": "my-actual-api-key-value-12345"
+                        }
+                    }
+                ],
+                "services": [],
+                "runtime": {
+                    "namespaces": [
+                        {
+                            "name": "Name",
+                            "auth": "Auth"
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}
+
