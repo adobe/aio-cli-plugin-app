@@ -24,6 +24,8 @@ const {
   getFilesCountWithExtension
 } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
+const dbLib = require('@adobe/aio-lib-db')
+const { DB_STATUS } = require('../../lib/defaults')
 const LogForwarding = require('../../lib/log-forwarding')
 const { sendAppAssetsDeployedAuditLog, sendAppDeployAuditLog } = require('../../lib/audit-logger')
 const { setRuntimeApiHostAndAuthHandler, getAccessToken } = require('../../lib/auth-helper')
@@ -306,31 +308,70 @@ class Deploy extends BuildCommand {
   }
 
   async provisionDatabase (config, spinner, flags) {
+    const { namespace, auth } = config.ow || {}
+    if (!(namespace && auth)) {
+      throw new Error('Database deployment requires OW auth configuration.')
+    }
     const region = config.manifest?.full?.database?.region
-    const args = ['--yes']
+    const regionMess = region ? `'${region}'` : 'default'
 
-    if (region) {
-      args.unshift('--region', region)
+    const progress = ({ next = undefined, status = undefined, verboseOnly = false }, statusMethod = spinner.info) => {
+      if (flags.verbose) {
+        const method = statusMethod.bind(spinner)
+        method(status)
+        spinner.start(next)
+      } else if (next && !verboseOnly) {
+        spinner.text = next
+      }
     }
 
-    const message = region ? `Deploying database in region '${region}'` : 'Deploying database in default region'
-
+    let provRes
     try {
-      spinner.start(message)
+      spinner.start(`Deploying database in the ${regionMess} region...`)
 
-      if (flags.verbose) {
-        const commandStr = region ? `aio app db provision --region ${region} --yes` : 'aio app db provision --yes'
-        spinner.info(chalk.dim(`Running: ${commandStr}`))
-        spinner.start(message)
+      const db = await dbLib.init({ ow: { namespace, auth }, region })
+      progress({ next: 'Checking existing database deployment status...', verboseOnly: true })
+
+      let prevStatus
+      let statusRegion
+      const next = `Submitting database provisioning request in the ${regionMess} region...`
+      try {
+        const statusRes = await db.provisionStatus()
+        prevStatus = statusRes.status.toUpperCase()
+        statusRegion = statusRes.region
+        const regionMessage = statusRegion ? ` in region '${statusRegion}'` : ''
+        progress({ status: chalk.dim(`Existing database provisioning status: ${prevStatus}${regionMessage}`), next })
+      } catch (err) {
+        progress({ status: chalk.red(`Database status check failed: ${err.message}`), next }, spinner.warn)
+        prevStatus = null
       }
 
-      await this.config.runCommand('app:db:provision', args)
+      if (prevStatus === DB_STATUS.PROVISIONED) {
+        spinner.succeed(chalk.green(`Database is deployed and ready for use in the '${statusRegion}' region`))
+        return
+      } else if (prevStatus === DB_STATUS.REQUESTED || prevStatus === DB_STATUS.PROCESSING) {
+        spinner.succeed(chalk.green(`Database provisioning request has already been submitted in the '${statusRegion}' region and is pending`))
+        return
+      }
 
-      const successMessage = region ? `Deployed database for application in region '${region}'` : 'Deployed database for application'
-      spinner.succeed(chalk.green(successMessage))
+      provRes = await db.provisionRequest()
+      progress({ status: chalk.dim(`Database provisioning result:\n${JSON.stringify(provRes, null, 2)}`) })
     } catch (error) {
       spinner.fail(chalk.red('Database deployment failed'))
       throw error
+    }
+
+    const resultStatus = provRes?.status?.toUpperCase() || DB_STATUS.UNKNOWN
+    if (resultStatus === DB_STATUS.PROVISIONED) {
+      spinner.succeed(chalk.green(`Database is deployed and ready for use in the '${provRes.region}' region`))
+    } else if (resultStatus === DB_STATUS.REQUESTED || resultStatus === DB_STATUS.PROCESSING) {
+      spinner.succeed(chalk.green(`Database provisioning request submitted in the '${provRes.region}' region, database deployment is now pending`))
+    } else if (resultStatus === DB_STATUS.FAILED || resultStatus === DB_STATUS.REJECTED) {
+      const message = `Database provisioning request failed with status '${resultStatus}'`
+      spinner.fail(chalk.red(message))
+      throw new Error(`${message}: ${provRes.message || 'Unknown error'}`)
+    } else {
+      spinner.warn(chalk.yellow(`Database provisioning request returned unexpected status '${resultStatus}', an update to the aio cli tool may be necessary.`))
     }
   }
 
