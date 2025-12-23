@@ -40,5 +40,16 @@ module.exports = {
   EXTENSIONS_CONFIG_KEY: 'extensions',
   // Adding tracking file constants
   LAST_BUILT_ACTIONS_FILENAME: 'last-built-actions.json',
-  LAST_DEPLOYED_ACTIONS_FILENAME: 'last-deployed-actions.json'
+  LAST_DEPLOYED_ACTIONS_FILENAME: 'last-deployed-actions.json',
+  // Database constants
+  DB_STATUS: {
+    PROVISIONED: 'PROVISIONED',
+    REQUESTED: 'REQUESTED',
+    PROCESSING: 'PROCESSING',
+    FAILED: 'FAILED',
+    REJECTED: 'REJECTED',
+    NOT_PROVISIONED: 'NOT_PROVISIONED',
+    DELETED: 'DELETED',
+    UNKNOWN: 'UNKNOWN'
+  }
 }
