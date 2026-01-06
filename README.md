@@ -572,17 +572,6 @@ FLAGS
 
 DESCRIPTION
   Create a new Adobe I/O App
-
-EXAMPLES
-  # Initialize with traditional template selection
-  $ aio app init
-  
-  # Initialize with AI-powered chat mode
-  $ aio app init --chat
-  $ aio app init -c
-  
-  # Initialize from a quickstart repository
-  $ aio app init --repo adobe/appbuilder-quickstarts/progressive-web-app
 ```
 
 _See code: [src/commands/app/init.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.3.1/src/commands/app/init.js)_
