@@ -15,7 +15,6 @@ const { defaultTemplateRecommendationApiUrl } = require('./defaults')
 
 /**
  * Calls the template recommendation API to get AI-based template suggestions
- * 
  * @param {string} prompt - User's natural language description of what they want to build
  * @param {string} [apiUrl] - Optional API URL (defaults to env var TEMPLATE_RECOMMENDATION_API or default URL from defaults.js)
  * @returns {Promise<object>} Template recommendation from the API
@@ -23,7 +22,6 @@ const { defaultTemplateRecommendationApiUrl } = require('./defaults')
  */
 async function getAIRecommendation (prompt, apiUrl) {
   const url = apiUrl || process.env.TEMPLATE_RECOMMENDATION_API || defaultTemplateRecommendationApiUrl
-  
   aioLogger.debug(`Calling template recommendation API: ${url}`)
   aioLogger.debug(`Prompt: ${prompt}`)
 
@@ -43,11 +41,9 @@ async function getAIRecommendation (prompt, apiUrl) {
 
   const data = await response.json()
   aioLogger.debug(`API response: ${JSON.stringify(data)}`)
-  
   return data.body || data
 }
 
 module.exports = {
   getAIRecommendation
 }
-

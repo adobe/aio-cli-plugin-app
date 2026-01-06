@@ -108,22 +108,14 @@ class InitCommand extends TemplatesCommand {
       await this.withQuickstart(flags.repo, flags['github-pat'])
     } else {
       // 2. prompt for templates to be installed
-      
-      // Ask user: Do you want to use natural language?
-      const { useNL } = await inquirer.prompt([{
-        type: 'confirm',
-        name: 'useNL',
-        message: 'Do you want to describe your needs in natural language? (AI will recommend templates)',
-        default: false
-      }])
-
       let templates
-      if (useNL) {
-        templates = await this.getTemplatesWithAI(flags) // NEW AI FUNCTION
+      if (flags.chat) {
+        // Use AI-powered natural language recommendations
+        templates = await this.getTemplatesWithAI(flags)
       } else {
-        templates = await this.getTemplatesForFlags(flags) // EXISTING TABLE FLOW
+        // Use traditional template selection table
+        templates = await this.getTemplatesForFlags(flags)
       }
-      
       // If no templates selected, init a standalone app
       if (templates.length <= 0) {
         flags['standalone-app'] = true
@@ -168,21 +160,13 @@ class InitCommand extends TemplatesCommand {
     let templates
     if (!flags.repo) {
       // 5. get list of templates to install
-      
-      // Ask user: Do you want to use natural language?
-      const { useNL } = await inquirer.prompt([{
-        type: 'confirm',
-        name: 'useNL',
-        message: 'Do you want to describe your needs in natural language? (AI will recommend templates)',
-        default: false
-      }])
-
-      if (useNL) {
-        templates = await this.getTemplatesWithAI(flags, orgSupportedServices) // NEW AI FUNCTION
+      if (flags.chat) {
+        // Use AI-powered natural language recommendations
+        templates = await this.getTemplatesWithAI(flags, orgSupportedServices)
       } else {
-        templates = await this.getTemplatesForFlags(flags, orgSupportedServices) // EXISTING TABLE FLOW
+        // Use traditional template selection table
+        templates = await this.getTemplatesForFlags(flags, orgSupportedServices)
       }
-      
       // If no templates selected, init a standalone app
       if (templates.length <= 0) {
         flags['standalone-app'] = true
@@ -231,13 +215,10 @@ class InitCommand extends TemplatesCommand {
 
     const spinner = ora()
     spinner.start(`Analyzing your request: "${userPrompt}"`)
-    
     try {
       // Step 2: Call backend API via lib
       const template = await getAIRecommendation(userPrompt)
-      
-   
-      
+
       // Step 3: No template was returned
       if (!template || !template.name) {
         spinner.stop()
@@ -271,7 +252,6 @@ class InitCommand extends TemplatesCommand {
         this.log(chalk.cyan('\n💡 Please explore templates from the options below:\n'))
         return this.getTemplatesForFlags(flags, orgSupportedServices)
       }
-
     } catch (error) {
       spinner.stop()
       aioLogger.error('AI API error:', error)
@@ -604,6 +584,12 @@ InitCommand.flags = {
     description: 'Specify the linter to use for the project',
     options: ['none', 'basic', 'adobe-recommended'],
     default: 'basic'
+  }),
+  chat: Flags.boolean({
+    description: 'Use AI chat mode for natural language template recommendations',
+    char: 'c',
+    default: false,
+    exclusive: ['repo', 'template', 'import']
   })
 }
 
