@@ -18,9 +18,12 @@ The `@oclif/core` dependency was upgraded from version 1.x to version 2.x in the
 - **Merged Date**: July 14, 2023 at 01:07:31 UTC
 - **Merged By**: shazron (Shazron Abdullah)
 
-## Version Change
-- **From**: `@oclif/core`: `^1.15.0` (previously `1.26.2`)
-- **To**: `@oclif/core`: `2.8.12` (initially in the PR, later updated to `^2.11.6`)
+## Version Change in package.json
+The actual change made in the package.json file:
+- **From**: `"@oclif/core": "^1.15.0"`
+- **To**: `"@oclif/core": "2.8.12"`
+
+Note: The commit message references versions 1.26.2 → 2.8.11, which represent the actual installed versions at the time (from package-lock.json), while the package.json specified `^1.15.0` and was updated to `2.8.12`. The version was later updated to `^2.11.6` in subsequent commits.
 
 ## Description
 This was a major version upgrade (semver-major) from version 1 to version 2 of the @oclif/core package. The upgrade was initially created by Dependabot but required manual fixes to address breaking changes and test failures.
