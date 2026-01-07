@@ -541,11 +541,13 @@ USAGE
   $ aio app init [PATH] [-v] [--version] [--install] [-y] [--login] [-e <value>... | -t <value>... | --repo
     <value>] [--standalone-app |  | ] [--template-options <value>] [-o <value> | -i <value> | ] [-p <value> |  | ] [-w
     <value> |  | ] [--confirm-new-workspace] [--use-jwt] [--github-pat <value> ] [--linter none|basic|adobe-recommended]
+    [-c]
 
 ARGUMENTS
   [PATH]  [default: .] Path to the app directory
 
 FLAGS
+  -c, --chat                        Use AI chat mode for natural language template recommendations
   -e, --extension=<value>...        Extension point(s) to implement
   -i, --import=<value>              Import an Adobe I/O Developer Console configuration file
   -o, --org=<value>                 Specify the Adobe Developer Console Org to init from (orgId, or orgCode)

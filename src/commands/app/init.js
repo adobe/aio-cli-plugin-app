@@ -24,6 +24,7 @@ const { importConsoleConfig } = require('../../lib/import')
 const { loadAndValidateConfigFile } = require('../../lib/import-helper')
 const { Octokit } = require('@octokit/rest')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
+const { getAIRecommendation } = require('../../lib/template-recommendation')
 
 const DEFAULT_WORKSPACE = 'Stage'
 
@@ -107,9 +108,14 @@ class InitCommand extends TemplatesCommand {
       await this.withQuickstart(flags.repo, flags['github-pat'])
     } else {
       // 2. prompt for templates to be installed
-
-      // TODO: Modify this to be a prompt for natural language here -mg  
-      const templates = await this.getTemplatesForFlags(flags)
+      let templates
+      if (flags.chat) {
+        // Use AI-powered natural language recommendations
+        templates = await this.getTemplatesWithAI(flags)
+      } else {
+        // Use traditional template selection table
+        templates = await this.getTemplatesForFlags(flags)
+      }
       // If no templates selected, init a standalone app
       if (templates.length <= 0) {
         flags['standalone-app'] = true
@@ -154,9 +160,13 @@ class InitCommand extends TemplatesCommand {
     let templates
     if (!flags.repo) {
       // 5. get list of templates to install
-
-      // TODO: Modify this to be a prompt for natural language here -mg 
-      templates = await this.getTemplatesForFlags(flags, orgSupportedServices)
+      if (flags.chat) {
+        // Use AI-powered natural language recommendations
+        templates = await this.getTemplatesWithAI(flags, orgSupportedServices)
+      } else {
+        // Use traditional template selection table
+        templates = await this.getTemplatesForFlags(flags, orgSupportedServices)
+      }
       // If no templates selected, init a standalone app
       if (templates.length <= 0) {
         flags['standalone-app'] = true
@@ -185,6 +195,69 @@ class InitCommand extends TemplatesCommand {
     }
 
     this.log(chalk.blue(chalk.bold(`Project initialized for Workspace ${workspace.name}, you can run 'aio app use -w <workspace>' to switch workspace.`)))
+  }
+
+  async getTemplatesWithAI (flags, orgSupportedServices = null) {
+    // Step 1: Ask user to describe their needs in natural language
+    const { userPrompt } = await inquirer.prompt([
+      {
+        type: 'input',
+        name: 'userPrompt',
+        message: 'Describe what you want to build (e.g., "I need a CRUD API" or "I want an event-driven app"):',
+        validate: (input) => {
+          if (!input || input.trim() === '') {
+            return 'Please provide a description of what you want to build.'
+          }
+          return true
+        }
+      }
+    ])
+
+    const spinner = ora()
+    spinner.start(`Analyzing your request: "${userPrompt}"`)
+    try {
+      // Step 2: Call backend API via lib
+      const template = await getAIRecommendation(userPrompt)
+
+      // Step 3: No template was returned
+      if (!template || !template.name) {
+        spinner.stop()
+        this.log(chalk.cyan('\n💡 AI could not find a matching template. Please explore templates from the options below:\n'))
+        return this.getTemplatesForFlags(flags, orgSupportedServices)
+      }
+
+      // Step 4: Display AI recommendation
+      spinner.succeed('Found matching template!')
+      this.log(chalk.bold('\n🤖 AI Recommendation:'))
+      this.log(chalk.dim(`   Based on "${userPrompt}"\n`))
+      this.log(`   ${chalk.bold(template.name)}`)
+      if (template.description) {
+        this.log(`   ${chalk.dim(template.description)}`)
+      }
+      this.log('') // Empty line
+
+      // Step 5: Confirm with user
+      const { confirm } = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'confirm',
+          message: 'Do you want to install this recommended template?',
+          default: false
+        }
+      ])
+
+      if (confirm) {
+        return [template.name]
+      } else {
+        this.log(chalk.cyan('\n💡 Please explore templates from the options below:\n'))
+        return this.getTemplatesForFlags(flags, orgSupportedServices)
+      }
+    } catch (error) {
+      spinner.stop()
+      aioLogger.error('AI API error:', error)
+      this.log(chalk.cyan('\n💡 AI recommendation unavailable. Please explore templates from the options below:\n'))
+      return this.getTemplatesForFlags(flags, orgSupportedServices)
+    }
   }
 
   async getTemplatesForFlags (flags, orgSupportedServices = null) {
@@ -511,6 +584,12 @@ InitCommand.flags = {
     description: 'Specify the linter to use for the project',
     options: ['none', 'basic', 'adobe-recommended'],
     default: 'basic'
+  }),
+  chat: Flags.boolean({
+    description: 'Use AI chat mode for natural language template recommendations',
+    char: 'c',
+    default: false,
+    exclusive: ['repo', 'template', 'import']
   })
 }
 

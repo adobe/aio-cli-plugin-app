@@ -27,6 +27,9 @@ jest.mock('inquirer', () => ({
   prompt: jest.fn(),
   createPromptModule: jest.fn()
 }))
+jest.mock('../../../src/lib/template-recommendation', () => ({
+  getAIRecommendation: jest.fn()
+}))
 
 // mock ora
 jest.mock('ora', () => {
@@ -240,6 +243,12 @@ describe('Command Prototype', () => {
 
     expect(TheCommand.flags['confirm-new-workspace'].type).toBe('boolean')
     expect(TheCommand.flags['confirm-new-workspace'].default).toBe(true)
+
+    expect(TheCommand.flags.chat).toBeDefined()
+    expect(TheCommand.flags.chat.type).toBe('boolean')
+    expect(TheCommand.flags.chat.char).toBe('c')
+    expect(TheCommand.flags.chat.default).toBe(false)
+    expect(TheCommand.flags.chat.exclusive).toEqual(['repo', 'template', 'import'])
   })
 
   test('args', async () => {
@@ -509,6 +518,146 @@ describe('--no-login', () => {
     command.runCodeGenerators = jest.fn()
     command.argv = ['--yes', '--no-login', '--linter=invalid']
     await expect(command.run()).rejects.toThrow('Expected --linter=invalid to be one of: none, basic, adobe-recommended\nSee more help with --help')
+  })
+
+  test('--chat --no-login (AI mode)', async () => {
+    const installOptions = {
+      useDefaultValues: false,
+      installNpm: true,
+      installConfig: false,
+      templates: ['@adobe/generator-app-excshell']
+    }
+    command.getTemplatesWithAI = jest.fn().mockResolvedValue(['@adobe/generator-app-excshell'])
+    command.runCodeGenerators = jest.fn()
+
+    command.argv = ['--chat', '--no-login']
+    await command.run()
+
+    expect(command.getTemplatesWithAI).toHaveBeenCalledWith(expect.objectContaining({
+      chat: true,
+      login: false,
+      install: true,
+      linter: 'basic'
+    }))
+    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
+    expect(LibConsoleCLI.init).not.toHaveBeenCalled()
+  })
+
+  test('--chat cannot be used with --template', async () => {
+    command.argv = ['--chat', '--template', '@adobe/my-template', '--no-login']
+    await expect(command.run()).rejects.toThrow()
+  })
+
+  test('--chat cannot be used with --repo', async () => {
+    command.argv = ['--chat', '--repo', 'adobe/appbuilder-quickstarts/qr-code', '--no-login']
+    await expect(command.run()).rejects.toThrow()
+  })
+
+  test('--chat with login (covers line 168)', async () => {
+    const { getAIRecommendation } = require('../../../src/lib/template-recommendation')
+    getAIRecommendation.mockResolvedValue({ name: '@adobe/generator-app-excshell' })
+    inquirer.prompt.mockResolvedValueOnce({ userPrompt: 'I want a web app' })
+      .mockResolvedValueOnce({ confirm: true })
+
+    command.argv = ['--chat'] // with login (default)
+    await command.run()
+
+    expect(getAIRecommendation).toHaveBeenCalledWith('I want a web app')
+    expect(command.installTemplates).toHaveBeenCalledWith(expect.objectContaining({
+      useDefaultValues: false,
+      installNpm: true,
+      templates: ['@adobe/generator-app-excshell']
+    }))
+    expect(LibConsoleCLI.init).toHaveBeenCalled()
+  })
+})
+
+describe('getTemplatesWithAI', () => {
+  let getAIRecommendation
+
+  beforeEach(() => {
+    const templateRecommendation = require('../../../src/lib/template-recommendation')
+    getAIRecommendation = templateRecommendation.getAIRecommendation
+    jest.clearAllMocks()
+  })
+
+  test('should return template when user accepts AI recommendation', async () => {
+    getAIRecommendation.mockResolvedValue({
+      name: '@adobe/generator-app-excshell',
+      description: 'Experience Cloud SPA'
+    })
+    inquirer.prompt
+      .mockResolvedValueOnce({ userPrompt: 'I want a web app' })
+      .mockResolvedValueOnce({ confirm: true })
+
+    const result = await command.getTemplatesWithAI({})
+
+    expect(result).toEqual(['@adobe/generator-app-excshell'])
+    expect(getAIRecommendation).toHaveBeenCalledWith('I want a web app')
+  })
+
+  test('should fallback to getTemplatesForFlags when user declines recommendation', async () => {
+    getAIRecommendation.mockResolvedValue({
+      name: '@adobe/test-template',
+      description: 'Test template'
+    })
+    inquirer.prompt
+      .mockResolvedValueOnce({ userPrompt: 'test prompt' })
+      .mockResolvedValueOnce({ confirm: false })
+    command.getTemplatesForFlags = jest.fn().mockResolvedValue(['@adobe/fallback-template'])
+
+    const result = await command.getTemplatesWithAI({}, null)
+
+    expect(result).toEqual(['@adobe/fallback-template'])
+    expect(command.getTemplatesForFlags).toHaveBeenCalledWith({}, null)
+  })
+
+  test('should fallback to getTemplatesForFlags when AI returns null', async () => {
+    getAIRecommendation.mockResolvedValue(null)
+    inquirer.prompt.mockResolvedValueOnce({ userPrompt: 'nonsense prompt' })
+    command.getTemplatesForFlags = jest.fn().mockResolvedValue(['@adobe/fallback'])
+
+    const result = await command.getTemplatesWithAI({}, null)
+
+    expect(result).toEqual(['@adobe/fallback'])
+    expect(command.getTemplatesForFlags).toHaveBeenCalled()
+  })
+
+  test('should fallback to getTemplatesForFlags when AI returns template without name', async () => {
+    getAIRecommendation.mockResolvedValue({ description: 'no name field' })
+    inquirer.prompt.mockResolvedValueOnce({ userPrompt: 'test' })
+    command.getTemplatesForFlags = jest.fn().mockResolvedValue(['@adobe/fallback'])
+
+    const result = await command.getTemplatesWithAI({})
+
+    expect(result).toEqual(['@adobe/fallback'])
+    expect(command.getTemplatesForFlags).toHaveBeenCalled()
+  })
+
+  test('should fallback to getTemplatesForFlags on API error', async () => {
+    getAIRecommendation.mockRejectedValue(new Error('API Error'))
+    inquirer.prompt.mockResolvedValueOnce({ userPrompt: 'test' })
+    command.getTemplatesForFlags = jest.fn().mockResolvedValue(['@adobe/fallback'])
+
+    const result = await command.getTemplatesWithAI({})
+
+    expect(result).toEqual(['@adobe/fallback'])
+    expect(command.getTemplatesForFlags).toHaveBeenCalled()
+  })
+
+  test('should validate empty prompt and reject empty input', async () => {
+    let capturedValidator
+    inquirer.prompt.mockImplementationOnce(async (questions) => {
+      capturedValidator = questions[0].validate
+      return { userPrompt: 'valid input' }
+    }).mockResolvedValueOnce({ confirm: true })
+    getAIRecommendation.mockResolvedValue({ name: '@adobe/test' })
+    await command.getTemplatesWithAI({})
+
+    // Test the validator that was captured
+    expect(capturedValidator('')).toBe('Please provide a description of what you want to build.')
+    expect(capturedValidator('  ')).toBe('Please provide a description of what you want to build.')
+    expect(capturedValidator('valid input')).toBe(true)
   })
 })
 
