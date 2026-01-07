@@ -11,6 +11,14 @@ governing permissions and limitations under the License.
 
 // defaults & constants
 
+const { PROD_ENV, STAGE_ENV } = require('@adobe/aio-lib-env')
+
+// Template recommendation API endpoints (same pattern as aio-lib-state)
+const TEMPLATE_RECOMMENDATION_API_ENDPOINTS = {
+  [PROD_ENV]: 'https://development-918-aiappinit.adobeioruntime.net/api/v1/web/recommend-api/recommend-template',
+  [STAGE_ENV]: 'https://development-918-aiappinit-stage.adobeioruntime.net/api/v1/web/recommend-api/recommend-template'
+}
+
 module.exports = {
   defaultAppHostname: 'adobeio-static.net',
   stageAppHostname: 'dev.runtime.adobe.io',
@@ -41,6 +49,6 @@ module.exports = {
   // Adding tracking file constants
   LAST_BUILT_ACTIONS_FILENAME: 'last-built-actions.json',
   LAST_DEPLOYED_ACTIONS_FILENAME: 'last-deployed-actions.json',
-  // Template recommendation API
-  defaultTemplateRecommendationApiUrl: 'https://development-918-aiappinit-stage.adobeioruntime.net/api/v1/web/recommend-api/recommend-template'
+  // Template recommendation API endpoints
+  TEMPLATE_RECOMMENDATION_API_ENDPOINTS
 }

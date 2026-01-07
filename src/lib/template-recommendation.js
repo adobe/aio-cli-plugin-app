@@ -11,27 +11,33 @@ governing permissions and limitations under the License.
 */
 
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:template-recommendation', { provider: 'debug' })
-const { defaultTemplateRecommendationApiUrl } = require('./defaults')
+const { TEMPLATE_RECOMMENDATION_API_ENDPOINTS } = require('./defaults')
+const { getCliEnv } = require('@adobe/aio-lib-env')
 
 /**
  * Calls the template recommendation API to get AI-based template suggestions
  * @param {string} prompt - User's natural language description of what they want to build
- * @param {string} [apiUrl] - Optional API URL (defaults to env var TEMPLATE_RECOMMENDATION_API or default URL from defaults.js)
+ * @param {string} [apiUrl] - Optional API URL (defaults to env var TEMPLATE_RECOMMENDATION_API or environment-based URL)
  * @returns {Promise<object>} Template recommendation from the API
  * @throws {Error} If API call fails
  */
 async function getAIRecommendation (prompt, apiUrl) {
-  const url = apiUrl || process.env.TEMPLATE_RECOMMENDATION_API || defaultTemplateRecommendationApiUrl
-  aioLogger.debug(`Calling template recommendation API: ${url}`)
+  // Select URL based on environment (same pattern as aio-lib-state)
+  const env = getCliEnv()
+  const url = apiUrl || process.env.TEMPLATE_RECOMMENDATION_API || TEMPLATE_RECOMMENDATION_API_ENDPOINTS[env]
+  aioLogger.debug(`Calling template recommendation API: ${url} (env: ${env})`)
   aioLogger.debug(`Prompt: ${prompt}`)
 
-  const response = await fetch(url, {
+  const payload = { prompt }
+  const options = {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ prompt })
-  })
+    body: JSON.stringify(payload)
+  }
+
+  const response = await fetch(url, options)
 
   if (!response.ok) {
     const errorText = await response.text()

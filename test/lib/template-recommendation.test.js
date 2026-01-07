@@ -13,9 +13,6 @@ governing permissions and limitations under the License.
 // Unmock the module (in case it's mocked by other tests like init.test.js)
 jest.unmock('../../src/lib/template-recommendation')
 
-// Unmock the module in case init.test.js has mocked it
-jest.unmock('../../src/lib/template-recommendation')
-
 // Mock fetch before requiring the module
 global.fetch = jest.fn()
 
@@ -41,7 +38,9 @@ describe('template-recommendation', () => {
         expect.stringContaining('recommend-template'),
         expect.objectContaining({
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json'
+          },
           body: JSON.stringify({ prompt: 'I want a web app' })
         })
       )
