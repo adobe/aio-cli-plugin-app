@@ -20,7 +20,7 @@ const { EOL } = require('os')
 const { atLeastOne, deleteUserConfig } = require('../../../lib/app-helper')
 
 class DeleteActionCommand extends BaseCommand {
-  async run() {
+  async run () {
     const { args, flags } = await this.parse(DeleteActionCommand)
 
     aioLogger.debug(`deleting actions from the project, with args ${JSON.stringify(args)}, and flags: ${JSON.stringify(flags)}`)
@@ -108,7 +108,7 @@ class DeleteActionCommand extends BaseCommand {
     )))
   }
 
-  async getAllActions(config, flags = {}) {
+  async getAllActions (config, flags = {}) {
     const actions = []
     const actionsByImpl = {}
     const allConfigEntries = Object.entries(config.all)

@@ -18,7 +18,7 @@ const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
 const inquirer = require('inquirer')
 
 class AddActionCommand extends TemplatesCommand {
-  async run() {
+  async run () {
     const { flags } = await this.parse(AddActionCommand)
 
     aioLogger.debug(`add actions with flags: ${JSON.stringify(flags)}`)
@@ -63,7 +63,7 @@ class AddActionCommand extends TemplatesCommand {
     }
   }
 
-  async getSearchCriteria(orgSupportedServices) {
+  async getSearchCriteria (orgSupportedServices) {
     const choices = [
       {
         name: 'All Action Templates',

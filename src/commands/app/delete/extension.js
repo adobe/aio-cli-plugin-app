@@ -19,7 +19,7 @@ const fs = require('fs-extra')
 const { EOL } = require('os')
 
 class DeleteExtensionCommand extends BaseCommand {
-  async run() {
+  async run () {
     const { flags } = await this.parse(DeleteExtensionCommand)
 
     aioLogger.debug(`delete extension with flags: ${JSON.stringify(flags)}`)
@@ -52,7 +52,7 @@ class DeleteExtensionCommand extends BaseCommand {
     )))
   }
 
-  async selectOrGetConfigsToDelete(flags, config) {
+  async selectOrGetConfigsToDelete (flags, config) {
     const alreadyImplemented = config.implements
     if (alreadyImplemented.length <= 0) {
       throw new Error('There are no implementations left in the project')
@@ -71,7 +71,7 @@ class DeleteExtensionCommand extends BaseCommand {
     return await this.getAppExtConfigs(flags)
   }
 
-  async deleteImplementations(configs, flags) {
+  async deleteImplementations (configs, flags) {
     for (const [id, c] of Object.entries(configs)) {
       // delete actions
       if (c.app.hasBackend) {

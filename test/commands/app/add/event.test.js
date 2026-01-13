@@ -98,7 +98,7 @@ describe('good flags', () => {
     command.selectTemplates.mockResolvedValue(['@adobe/generator-add-events-generic'])
     await command.run()
     expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
-    expect(await command.getConfigFileForKey).toHaveBeenCalledWith('application.events')
+    expect(await command.getConfigFileForKey).toHaveBeenCalledWith('application.events', { 'config-validation': true, extension: ['application'], install: true, yes: false })
   })
 
   test('multiple ext configs', async () => {

@@ -15,7 +15,7 @@ const ora = require('ora')
 const { setRuntimeApiHostAndAuthHandler } = require('../../../../../lib/auth-helper')
 
 class ErrorsCommand extends BaseCommand {
-  async run() {
+  async run () {
     const { flags } = await this.parse(ErrorsCommand)
     const spinner = ora()
     const lf = await this.getLogForwarding(flags)
@@ -31,7 +31,7 @@ class ErrorsCommand extends BaseCommand {
     }
   }
 
-  async getLogForwarding(flags) {
+  async getLogForwarding (flags) {
     let aioConfig = (await this.getFullConfig({}, flags)).aio
     aioConfig = setRuntimeApiHostAndAuthHandler(aioConfig)
 

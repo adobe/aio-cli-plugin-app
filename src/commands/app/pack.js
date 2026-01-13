@@ -33,7 +33,7 @@ const DEFAULTS = {
 }
 
 class Pack extends BaseCommand {
-  async run() {
+  async run () {
     const { args, flags } = await this.parse(Pack)
 
     aioLogger.debug(`flags: ${JSON.stringify(flags, null, 2)}`)
@@ -120,7 +120,7 @@ class Pack extends BaseCommand {
     this.spinner.succeed('Packaging done.')
   }
 
-  get spinner() {
+  get spinner () {
     if (!this._spinner) {
       this._spinner = ora()
     }
@@ -132,7 +132,7 @@ class Pack extends BaseCommand {
    *
    * @param {object} appConfig the app's configuration file
    */
-  async createDeployYamlFile(appConfig) {
+  async createDeployYamlFile (appConfig) {
     // get extensions
     let extensions
     if (appConfig.implements?.filter(item => item !== 'application').length > 0) {
@@ -216,7 +216,7 @@ class Pack extends BaseCommand {
    * @param {string} destinationFolder the destination folder for the files
    * @param {Array<string>} filesList a list of files to copy
    */
-  async copyPackageFiles(destinationFolder, filesList) {
+  async copyPackageFiles (destinationFolder, filesList) {
     for (const src of filesList) {
       const dest = path.join(destinationFolder, src)
       if (await fs.pathExists(src)) {
@@ -236,7 +236,7 @@ class Pack extends BaseCommand {
    * @param {boolean} pathInZip internal path in zip
    * @returns {Promise} returns with a blank promise when done
    */
-  zipHelper(filePath, out, pathInZip = false) {
+  zipHelper (filePath, out, pathInZip = false) {
     aioLogger.debug(`Creating zip of file/folder '${filePath}'`)
     const stream = fs.createWriteStream(out)
     const archive = archiver('zip', { zlib: { level: 9 } })
@@ -274,7 +274,7 @@ class Pack extends BaseCommand {
    * @param {string} options.workingDirectory the working directory to run `npm pack` in
    * @returns {Array<string>} a list of files that are to be packed
    */
-  async filesToPack({ filesToExclude = [], filesToInclude = [], workingDirectory = process.cwd() } = {}) {
+  async filesToPack ({ filesToExclude = [], filesToInclude = [], workingDirectory = process.cwd() } = {}) {
     const { stdout } = await execa('npm', ['pack', '--dry-run', '--json'], { cwd: workingDirectory })
 
     const noJunkFiles = (file) => {
@@ -313,7 +313,7 @@ class Pack extends BaseCommand {
    *
    * @param {object} appConfig the app's configuration file
    */
-  async addCodeDownloadAnnotation(appConfig) {
+  async addCodeDownloadAnnotation (appConfig) {
     // get each annotation key relative to the file it is defined in
     /// iterate only over extensions that have actions defined
     const fileToAnnotationKey = {}

@@ -20,7 +20,7 @@ const { getActionUrls } = require('@adobe/aio-lib-runtime').utils
 const yaml = require('js-yaml')
 
 class GetUrlCommand extends BaseCommand {
-  async run() {
+  async run () {
     // cli input
     const { args, flags } = await this.parse(GetUrlCommand)
 

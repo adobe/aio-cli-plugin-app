@@ -32,13 +32,13 @@ const {
 
 class BaseCommand extends Command {
   // default error handler for app commands
-  async catch(error) {
+  async catch (error) {
     const { flags } = await this.parse(this.prototype)
     aioLogger.error(error) // debug log
     this.error(flags.verbose && error.stack ? error.stack : error.message)
   }
 
-  async init() {
+  async init () {
     await super.init()
     // setup a prompt that outputs to stderr
     this.prompt = inquirer.createPromptModule({ output: process.stderr })
@@ -51,7 +51,7 @@ class BaseCommand extends Command {
       `aio-cli-plugin-app/${vs?.cliVersion} (${vs?.architecture}; ${vs?.nodeVersion}; ${vs?.shell})`
   }
 
-  async getLibConsoleCLI() {
+  async getLibConsoleCLI () {
     if (!this.consoleCLI) {
       // requires valid login
       const { accessToken, env } = await getAccessToken()
@@ -61,11 +61,11 @@ class BaseCommand extends Command {
     return this.consoleCLI
   }
 
-  async cleanConsoleCLIOutput() {
+  async cleanConsoleCLIOutput () {
     LibConsoleCLI.cleanStdOut()
   }
 
-  async getAppExtConfigs(flags, options = {}) {
+  async getAppExtConfigs (flags, options = {}) {
     const all = (await this.getFullConfig(options, flags)).all
 
     // default case: no flags, return all
@@ -96,7 +96,7 @@ class BaseCommand extends Command {
     return ret
   }
 
-  async getRuntimeManifestConfigFile(implName, flags) {
+  async getRuntimeManifestConfigFile (implName, flags) {
     let configKey
     if (implName === APPLICATION_CONFIG_KEY) {
       configKey = APPLICATION_CONFIG_KEY
@@ -112,7 +112,7 @@ class BaseCommand extends Command {
     return configData
   }
 
-  async getEventsConfigFile(implName, flags) {
+  async getEventsConfigFile (implName, flags) {
     let configKey
     if (implName === APPLICATION_CONFIG_KEY) {
       configKey = APPLICATION_CONFIG_KEY
@@ -128,7 +128,7 @@ class BaseCommand extends Command {
     return configData
   }
 
-  async getConfigFileForKey(fullKey, flags = {}) {
+  async getConfigFileForKey (fullKey, flags = {}) {
     // NOTE: the index returns undefined if the key is loaded from a legacy configuration file
     const fullConfig = await this.getFullConfig({}, flags)
     // full key like 'extensions.dx/excshell/1.runtimeManifest'
@@ -142,19 +142,18 @@ class BaseCommand extends Command {
     return configData || {}
   }
 
-  async getFullConfig(options = {}, flags = {}) {
+  async getFullConfig (options = {}, flags = {}) {
     // validate appConfig defaults to true unless flag is explicitly set to off
     const validateAppConfig = flags['config-validation'] !== false
     aioLogger.debug(`validateAppConfig=${validateAppConfig}`)
 
     if (!this.appConfig) {
-      // this will explicitly set validateAppConfig=false if not set
       this.appConfig = await appConfig.load({ ...options, validateAppConfig })
     }
     return this.appConfig
   }
 
-  getLaunchUrlPrefix() {
+  getLaunchUrlPrefix () {
     // todo: it might make sense to have a value that defines if this is an ExC hosted app, or otherwise
     // so we can decide what type of url to return here.
     // at some point we could also just delete the .env value and return our expected url here.
@@ -173,19 +172,19 @@ class BaseCommand extends Command {
     return (launchPrefix || defaultLaunchPrefix)
   }
 
-  get pjson() {
+  get pjson () {
     return this.config.pjson
   }
 
-  get appName() {
+  get appName () {
     return this.pjson.name
   }
 
-  get appVersion() {
+  get appVersion () {
     return this.pjson.version
   }
 
-  preRelease() {
+  preRelease () {
     this.log(chalk.yellow('Pre-release warning: This command is in pre-release, and not suitable for production.'))
   }
 }

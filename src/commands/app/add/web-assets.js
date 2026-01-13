@@ -15,7 +15,7 @@ const { Flags } = require('@oclif/core')
 const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
 
 class AddWebAssetsCommand extends TemplatesCommand {
-  async run() {
+  async run () {
     const { flags } = await this.parse(AddWebAssetsCommand)
     aioLogger.debug(`add web-assets with flags: ${JSON.stringify(flags)}`)
 

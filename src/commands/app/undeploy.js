@@ -23,7 +23,7 @@ const { sendAppAssetsUndeployedAuditLog, sendAppUndeployAuditLog } = require('..
 const { setRuntimeApiHostAndAuthHandler, getAccessToken } = require('../../lib/auth-helper')
 
 class Undeploy extends BaseCommand {
-  async run() {
+  async run () {
     // cli input
     const { flags } = await this.parse(Undeploy)
 
@@ -121,7 +121,7 @@ class Undeploy extends BaseCommand {
     this.log(chalk.green(chalk.bold('Undeploy done!')))
   }
 
-  async undeployOneExt(extName, config, flags, spinner) {
+  async undeployOneExt (extName, config, flags, spinner) {
     const onProgress = !flags.verbose
       ? info => {
         spinner.text = info
@@ -183,7 +183,7 @@ class Undeploy extends BaseCommand {
     }
   }
 
-  async unpublishExtensionPoints(libConsoleCLI, deployConfigs, aioConfig, force) {
+  async unpublishExtensionPoints (libConsoleCLI, deployConfigs, aioConfig, force) {
     const payload = buildExtensionPointPayloadWoMetadata(deployConfigs)
     let res
     if (force) {

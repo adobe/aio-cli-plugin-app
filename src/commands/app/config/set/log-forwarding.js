@@ -15,7 +15,7 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const { setRuntimeApiHostAndAuthHandler } = require('../../../../lib/auth-helper')
 
 class LogForwardingCommand extends BaseCommand {
-  async run() {
+  async run () {
     const { flags } = await this.parse(LogForwardingCommand)
     let aioConfig = (await this.getFullConfig({}, flags)).aio
     aioConfig = setRuntimeApiHostAndAuthHandler(aioConfig)
@@ -38,7 +38,7 @@ class LogForwardingCommand extends BaseCommand {
     })
   }
 
-  async promptDestination(supportedDestinations) {
+  async promptDestination (supportedDestinations) {
     const responses = await this.prompt([{
       name: 'type',
       message: 'select log forwarding destination',

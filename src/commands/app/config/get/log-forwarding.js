@@ -14,7 +14,7 @@ const LogForwarding = require('../../../../lib/log-forwarding')
 const { setRuntimeApiHostAndAuthHandler } = require('../../../../lib/auth-helper')
 
 class LogForwardingCommand extends BaseCommand {
-  async run() {
+  async run () {
     const { flags } = await this.parse(LogForwardingCommand)
     let aioConfig = (await this.getFullConfig({}, flags)).aio
     aioConfig = setRuntimeApiHostAndAuthHandler(aioConfig)
@@ -38,7 +38,7 @@ class LogForwardingCommand extends BaseCommand {
     this.printConfig(serverConfig)
   }
 
-  printConfig(config) {
+  printConfig (config) {
     if (config.isDefined()) {
       this.log(`destination: ${config.getDestination()}`)
       this.log('settings:', config.getSettings())
