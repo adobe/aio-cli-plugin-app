@@ -16,10 +16,10 @@ const yaml = require('js-yaml')
 const deepCopy = require('lodash.clonedeep')
 
 class Info extends BaseCommand {
-  async run () {
+  async run() {
     // cli input
     const { flags } = await this.parse(Info)
-    const appConfig = deepCopy(await this.getFullConfig({ allowNoImpl: true }))
+    const appConfig = deepCopy(await this.getFullConfig({ allowNoImpl: true }, flags))
 
     // includes .env secret delete all aio config for now
     delete appConfig.aio
@@ -47,7 +47,7 @@ class Info extends BaseCommand {
 }
 
 /** @private */
-function mask (k) {
+function mask(k) {
   return k ? '<hidden>' : 'undefined'
 }
 

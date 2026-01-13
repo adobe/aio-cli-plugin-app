@@ -33,7 +33,7 @@ const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
 const POST_DEPLOY_EVENT_REG = 'post-deploy-event-reg'
 
 class Deploy extends BuildCommand {
-  async run () {
+  async run() {
     // cli input
     const { flags } = await this.parse(Deploy)
 
@@ -57,7 +57,7 @@ class Deploy extends BuildCommand {
     const spinner = ora()
 
     try {
-      const { aio: aioConfig, packagejson: packageJson } = await this.getFullConfig()
+      const { aio: aioConfig, packagejson: packageJson } = await this.getFullConfig({}, flags)
       const cliDetails = await getAccessToken({ useCachedToken: !flags.publish })
       const appInfo = {
         name: packageJson.name,
@@ -172,7 +172,7 @@ class Deploy extends BuildCommand {
     this.log(chalk.green(chalk.bold('Successful deployment 🏄')))
   }
 
-  async deploySingleConfig ({ name, config, originalConfig, flags, spinner }) {
+  async deploySingleConfig({ name, config, originalConfig, flags, spinner }) {
     const onProgress = !flags.verbose
       ? info => {
         spinner.text = info
@@ -300,7 +300,7 @@ class Deploy extends BuildCommand {
     }
   }
 
-  async publishExtensionPoints (deployConfigs, aioConfig, force) {
+  async publishExtensionPoints(deployConfigs, aioConfig, force) {
     const libConsoleCLI = await this.getLibConsoleCLI()
 
     const payload = buildExtensionPointPayloadWoMetadata(deployConfigs)
@@ -320,7 +320,7 @@ class Deploy extends BuildCommand {
     return newPayload
   }
 
-  async getApplicationExtension (aioConfig) {
+  async getApplicationExtension(aioConfig) {
     const libConsoleCLI = await this.getLibConsoleCLI()
 
     const { appId } = await libConsoleCLI.getProject(aioConfig.project.org.id, aioConfig.project.id)

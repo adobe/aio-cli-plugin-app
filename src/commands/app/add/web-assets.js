@@ -15,11 +15,11 @@ const { Flags } = require('@oclif/core')
 const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
 
 class AddWebAssetsCommand extends TemplatesCommand {
-  async run () {
+  async run() {
     const { flags } = await this.parse(AddWebAssetsCommand)
     aioLogger.debug(`add web-assets with flags: ${JSON.stringify(flags)}`)
 
-    const projectName = (await this.getFullConfig()).packagejson.name
+    const projectName = (await this.getFullConfig({}, flags)).packagejson.name
     // guaranteed to have at least one, otherwise would throw in config load or in matching the ext name
     const entries = Object.entries(await this.getAppExtConfigs(flags))
     if (entries.length > 1) {

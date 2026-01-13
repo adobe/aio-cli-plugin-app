@@ -18,7 +18,7 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const path = require('path')
 
 class Test extends BaseCommand {
-  async run () {
+  async run() {
     const { flags } = await this.parse(Test)
     let { all, unit, e2e, action, extension } = flags
 
@@ -31,7 +31,7 @@ class Test extends BaseCommand {
       unit = true
     }
 
-    const buildConfigs = await this.getAppExtConfigs({ extension })
+    const buildConfigs = await this.getAppExtConfigs(flags, { extension })
     aioLogger.debug(`run buildConfigs:${JSON.stringify(buildConfigs, null, 2)}`)
 
     const totalResults = []
@@ -51,7 +51,7 @@ class Test extends BaseCommand {
     return exitCode
   }
 
-  printReport (totalResults) {
+  printReport(totalResults) {
     if (totalResults.length > 0) {
       const greenCheckMark = chalk.green('√')
       const redX = chalk.red('×')
@@ -66,7 +66,7 @@ class Test extends BaseCommand {
     }
   }
 
-  normalizedActionList (extensionConfig) {
+  normalizedActionList(extensionConfig) {
     const actionList = []
     const packages = extensionConfig.manifest.full.packages
     for (const [packageName, pkg] of Object.entries(packages)) {
@@ -79,21 +79,21 @@ class Test extends BaseCommand {
     return actionList
   }
 
-  escapeBackslashes (pathString) {
+  escapeBackslashes(pathString) {
     // for Jest:
     // - replace backslashes with forward slashes,
     // - OR on Windows you need to escape forward slashes
     return pathString.replace(/\\/g, '/')
   }
 
-  testFolders (extensionConfig) {
+  testFolders(extensionConfig) {
     return { // add leading period path for jest
       unit: './' + this.escapeBackslashes(path.relative(extensionConfig.root, extensionConfig.tests.unit)),
       e2e: './' + this.escapeBackslashes(path.relative(extensionConfig.root, extensionConfig.tests.e2e))
     }
   }
 
-  filterActions (actionFilters, extensionConfig, flags) {
+  filterActions(actionFilters, extensionConfig, flags) {
     const { unit, e2e } = flags
     const commandList = []
     const { unit: unitTestFolder, e2e: e2eTestFolder } = this.testFolders(extensionConfig)
@@ -140,7 +140,7 @@ class Test extends BaseCommand {
     return commandList
   }
 
-  async runExtensionTest (extensionName, extensionConfig, flags) {
+  async runExtensionTest(extensionName, extensionConfig, flags) {
     const { unit, e2e, action } = flags
     const commandList = []
     const { unit: unitTestFolder, e2e: e2eTestFolder } = this.testFolders(extensionConfig)

@@ -17,7 +17,7 @@ const path = require('path')
 const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
 
 class AddEventCommand extends TemplatesCommand {
-  async run () {
+  async run() {
     const { flags } = await this.parse(AddEventCommand)
 
     aioLogger.debug(`add events with flags: ${JSON.stringify(flags)}`)
@@ -31,8 +31,8 @@ class AddEventCommand extends TemplatesCommand {
     const configName = entries[0][0]
     const config = entries[0][1]
     const actionFolder = path.relative(config.root, config.actions.src)
-    const runtimeManifestData = await this.getRuntimeManifestConfigFile(configName)
-    const eventsData = await this.getEventsConfigFile(configName)
+    const runtimeManifestData = await this.getRuntimeManifestConfigFile(configName, flags)
+    const eventsData = await this.getEventsConfigFile(configName, flags)
     const templateOptions = {
       'skip-prompt': false,
       'action-folder': actionFolder,
@@ -56,7 +56,7 @@ class AddEventCommand extends TemplatesCommand {
     }
   }
 
-  async getSearchCriteria () {
+  async getSearchCriteria() {
     const TEMPLATE_CATEGORIES = ['events', 'helper-template']
     const searchCriteria = {
       [TemplateRegistryAPI.SEARCH_CRITERIA_STATUSES]: TemplateRegistryAPI.TEMPLATE_STATUS_APPROVED,

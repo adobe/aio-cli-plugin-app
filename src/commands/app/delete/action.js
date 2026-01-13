@@ -20,7 +20,7 @@ const { EOL } = require('os')
 const { atLeastOne, deleteUserConfig } = require('../../../lib/app-helper')
 
 class DeleteActionCommand extends BaseCommand {
-  async run () {
+  async run() {
     const { args, flags } = await this.parse(DeleteActionCommand)
 
     aioLogger.debug(`deleting actions from the project, with args ${JSON.stringify(args)}, and flags: ${JSON.stringify(flags)}`)
@@ -30,8 +30,8 @@ class DeleteActionCommand extends BaseCommand {
       this.error('<action-name> must also be provided when using --yes')
     }
 
-    const fullConfig = await this.getFullConfig()
-    const { actions, actionsByImpl } = await this.getAllActions(fullConfig)
+    const fullConfig = await this.getFullConfig({}, flags)
+    const { actions, actionsByImpl } = await this.getAllActions(fullConfig, flags)
     if (actions.length <= 0) {
       this.error('There are no actions in this project!')
     }
@@ -108,7 +108,7 @@ class DeleteActionCommand extends BaseCommand {
     )))
   }
 
-  async getAllActions (config) {
+  async getAllActions(config, flags = {}) {
     const actions = []
     const actionsByImpl = {}
     const allConfigEntries = Object.entries(config.all)
@@ -121,7 +121,7 @@ class DeleteActionCommand extends BaseCommand {
           for (const [actionName, action] of actionEntries) {
             const fullActionName = `${pkgName}/${actionName}`
             const startKey = implName === 'application' ? 'application' : `extensions.${implName}`
-            const configData = await this.getConfigFileForKey(`${startKey}.runtimeManifest.packages.${pkgName}.actions.${actionName}`)
+            const configData = await this.getConfigFileForKey(`${startKey}.runtimeManifest.packages.${pkgName}.actions.${actionName}`, flags)
             const actionObj = {
               // assumes path is not relative
               path: action.function,
@@ -157,13 +157,13 @@ DeleteActionCommand.flags = {
 }
 
 DeleteActionCommand.args =
-  {
-    'action-name': Args.string({
-      description: 'Action `pkg/name` to delete, you can specify multiple actions via a comma separated list',
-      default: '',
-      required: false
-    })
-  }
+{
+  'action-name': Args.string({
+    description: 'Action `pkg/name` to delete, you can specify multiple actions via a comma separated list',
+    default: '',
+    required: false
+  })
+}
 
 DeleteActionCommand.aliases = ['app:delete:actions']
 

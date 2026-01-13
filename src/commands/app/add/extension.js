@@ -15,7 +15,7 @@ const { Flags } = require('@oclif/core')
 const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
 
 class AddExtensionCommand extends TemplatesCommand {
-  async run () {
+  async run() {
     const { flags } = await this.parse(AddExtensionCommand)
 
     aioLogger.debug(`add extensions with flags: ${JSON.stringify(flags)}`)
@@ -24,7 +24,7 @@ class AddExtensionCommand extends TemplatesCommand {
       this.error('--extension= must also be provided when using --yes')
     }
 
-    const fullConfig = await this.getFullConfig({ allowNoImpl: true })
+    const fullConfig = await this.getFullConfig({ allowNoImpl: true }, flags)
     const alreadyImplemented = fullConfig.implements
 
     if (flags.extension) {
@@ -34,7 +34,7 @@ class AddExtensionCommand extends TemplatesCommand {
     }
   }
 
-  async selectExtensionsToInstall (alreadyImplemented, useDefaultValues, installNpm) {
+  async selectExtensionsToInstall(alreadyImplemented, useDefaultValues, installNpm) {
     const excludeExtensions = alreadyImplemented.map(e => `${TemplateRegistryAPI.SEARCH_CRITERIA_FILTER_NOT}${e}`)
 
     const orderByCriteria = {

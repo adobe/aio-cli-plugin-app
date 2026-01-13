@@ -32,13 +32,13 @@ const {
 
 class BaseCommand extends Command {
   // default error handler for app commands
-  async catch (error) {
+  async catch(error) {
     const { flags } = await this.parse(this.prototype)
     aioLogger.error(error) // debug log
     this.error(flags.verbose && error.stack ? error.stack : error.message)
   }
 
-  async init () {
+  async init() {
     await super.init()
     // setup a prompt that outputs to stderr
     this.prompt = inquirer.createPromptModule({ output: process.stderr })
@@ -51,7 +51,7 @@ class BaseCommand extends Command {
       `aio-cli-plugin-app/${vs?.cliVersion} (${vs?.architecture}; ${vs?.nodeVersion}; ${vs?.shell})`
   }
 
-  async getLibConsoleCLI () {
+  async getLibConsoleCLI() {
     if (!this.consoleCLI) {
       // requires valid login
       const { accessToken, env } = await getAccessToken()
@@ -61,12 +61,12 @@ class BaseCommand extends Command {
     return this.consoleCLI
   }
 
-  async cleanConsoleCLIOutput () {
+  async cleanConsoleCLIOutput() {
     LibConsoleCLI.cleanStdOut()
   }
 
-  async getAppExtConfigs (flags, options = {}) {
-    const all = (await this.getFullConfig(options)).all
+  async getAppExtConfigs(flags, options = {}) {
+    const all = (await this.getFullConfig(options, flags)).all
 
     // default case: no flags, return all
     let ret = all
@@ -96,41 +96,41 @@ class BaseCommand extends Command {
     return ret
   }
 
-  async getRuntimeManifestConfigFile (implName) {
+  async getRuntimeManifestConfigFile(implName, flags) {
     let configKey
     if (implName === APPLICATION_CONFIG_KEY) {
       configKey = APPLICATION_CONFIG_KEY
     } else {
       configKey = `${EXTENSIONS_CONFIG_KEY}.${implName}`
     }
-    let configData = await this.getConfigFileForKey(`${configKey}.runtimeManifest`)
+    let configData = await this.getConfigFileForKey(`${configKey}.runtimeManifest`, flags)
     if (!configData.file) {
       // first action manifest is not defined
-      configData = await this.getConfigFileForKey(`${configKey}`)
+      configData = await this.getConfigFileForKey(`${configKey}`, flags)
       configData.key = configData.key + '.runtimeManifest'
     }
     return configData
   }
 
-  async getEventsConfigFile (implName) {
+  async getEventsConfigFile(implName, flags) {
     let configKey
     if (implName === APPLICATION_CONFIG_KEY) {
       configKey = APPLICATION_CONFIG_KEY
     } else {
       configKey = `${EXTENSIONS_CONFIG_KEY}.${implName}`
     }
-    let configData = await this.getConfigFileForKey(`${configKey}.events`)
+    let configData = await this.getConfigFileForKey(`${configKey}.events`, flags)
     if (!configData.file) {
       // first events manifest is not defined
-      configData = await this.getConfigFileForKey(`${configKey}`)
+      configData = await this.getConfigFileForKey(`${configKey}`, flags)
       configData.key = configData.key + '.events'
     }
     return configData
   }
 
-  async getConfigFileForKey (fullKey) {
+  async getConfigFileForKey(fullKey, flags = {}) {
     // NOTE: the index returns undefined if the key is loaded from a legacy configuration file
-    const fullConfig = await this.getFullConfig()
+    const fullConfig = await this.getFullConfig({}, flags)
     // full key like 'extensions.dx/excshell/1.runtimeManifest'
     // returns { key: relKey, file: configFile}
     const configData = fullConfig.includeIndex[fullKey]
@@ -142,9 +142,10 @@ class BaseCommand extends Command {
     return configData || {}
   }
 
-  async getFullConfig (options = {}) {
-    // validate appConfig defaults to false for now
-    const validateAppConfig = options.validateAppConfig === true
+  async getFullConfig(options = {}, flags = {}) {
+    // validate appConfig defaults to true unless flag is explicitly set to off
+    const validateAppConfig = flags['config-validation'] !== false
+    aioLogger.debug(`validateAppConfig=${validateAppConfig}`)
 
     if (!this.appConfig) {
       // this will explicitly set validateAppConfig=false if not set
@@ -153,7 +154,7 @@ class BaseCommand extends Command {
     return this.appConfig
   }
 
-  getLaunchUrlPrefix () {
+  getLaunchUrlPrefix() {
     // todo: it might make sense to have a value that defines if this is an ExC hosted app, or otherwise
     // so we can decide what type of url to return here.
     // at some point we could also just delete the .env value and return our expected url here.
@@ -172,26 +173,31 @@ class BaseCommand extends Command {
     return (launchPrefix || defaultLaunchPrefix)
   }
 
-  get pjson () {
+  get pjson() {
     return this.config.pjson
   }
 
-  get appName () {
+  get appName() {
     return this.pjson.name
   }
 
-  get appVersion () {
+  get appVersion() {
     return this.pjson.version
   }
 
-  preRelease () {
+  preRelease() {
     this.log(chalk.yellow('Pre-release warning: This command is in pre-release, and not suitable for production.'))
   }
 }
 
 BaseCommand.flags = {
   verbose: Flags.boolean({ char: 'v', description: 'Verbose output' }),
-  version: Flags.boolean({ description: 'Show version' })
+  version: Flags.boolean({ description: 'Show version' }),
+  'config-validation': Flags.boolean({
+    description: '[default: true] Validate the app configuration before deploying',
+    default: true,
+    allowNo: true
+  })
 }
 
 BaseCommand.args = {}

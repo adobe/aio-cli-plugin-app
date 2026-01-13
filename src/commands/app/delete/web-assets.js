@@ -20,12 +20,12 @@ const { EOL } = require('os')
 const path = require('path')
 
 class DeleteWebAssetsCommand extends BaseCommand {
-  async run () {
+  async run() {
     const { flags } = await this.parse(DeleteWebAssetsCommand)
 
     aioLogger.debug(`deleting web assets from the project, using flags: ${JSON.stringify(flags)}`)
 
-    const fullConfig = await this.getFullConfig()
+    const fullConfig = await this.getFullConfig({}, flags)
     const webAssetsByImpl = this.getAllWebAssets(fullConfig)
     if (!webAssetsByImpl) {
       this.error('web-assets not found')
@@ -71,7 +71,7 @@ class DeleteWebAssetsCommand extends BaseCommand {
     }
   }
 
-  getAllWebAssets (config) {
+  getAllWebAssets(config) {
     let webAssetsByImpl = {}
     Object.entries(config.all).forEach(([implName, implConfig]) => {
       if (implConfig.app.hasFrontend) {

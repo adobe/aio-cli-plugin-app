@@ -19,7 +19,7 @@ const LogForwarding = require('../../lib/log-forwarding')
 const SECURED = 'require-adobe-auth'
 
 class Logs extends BaseCommand {
-  _processEachAction (fullConfig, processFn) {
+  _processEachAction(fullConfig, processFn) {
     const isSecuredAction = (pkg, aName) => pkg && pkg.actions && pkg.actions[aName] &&
       pkg.actions[aName].annotations && pkg.actions[aName].annotations[SECURED]
 
@@ -34,9 +34,9 @@ class Logs extends BaseCommand {
     })
   }
 
-  async run () {
+  async run() {
     const { flags } = await this.parse(Logs)
-    const fullConfig = await this.getFullConfig()
+    const fullConfig = await this.getFullConfig({}, flags)
 
     // has any backend
     const hasAnyBackend = Object.values(fullConfig.all).reduce((hasBackend, config) => hasBackend && config.app.hasBackend, true)
