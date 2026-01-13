@@ -19,3 +19,4 @@ on:
 jobs:
   checkout:
     uses: adobe/aio-reusable-workflows/.github/workflows/prerelease.yml@main
+    secrets: inherit
