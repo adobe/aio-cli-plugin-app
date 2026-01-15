@@ -47,5 +47,8 @@ class ErrorsCommand extends BaseCommand {
 
 ErrorsCommand.description = 'Get log forwarding errors'
 ErrorsCommand.aliases = ['app:config:get:log-forwarding:errors', 'app:config:get:lf:errors']
+ErrorsCommand.flags = {
+  ...BaseCommand.flags
+}
 
 module.exports = ErrorsCommand

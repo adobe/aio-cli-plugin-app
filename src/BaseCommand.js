@@ -193,7 +193,7 @@ BaseCommand.flags = {
   verbose: Flags.boolean({ char: 'v', description: 'Verbose output' }),
   version: Flags.boolean({ description: 'Show version' }),
   'config-validation': Flags.boolean({
-    description: '[default: true] Validate the app configuration before deploying',
+    description: '[default: true] Validate the app configuration file(s) before continuing.',
     default: true,
     allowNo: true
   })

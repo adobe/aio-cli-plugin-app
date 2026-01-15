@@ -202,6 +202,7 @@ class Test extends BaseCommand {
 }
 
 Test.flags = {
+  ...BaseCommand.flags,
   extension: Flags.string({
     char: 'e',
     description: 'the extension(s) to test',

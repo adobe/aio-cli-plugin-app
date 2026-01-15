@@ -51,5 +51,8 @@ class LogForwardingCommand extends BaseCommand {
 
 LogForwardingCommand.description = 'Set log forwarding destination configuration'
 LogForwardingCommand.aliases = ['app:config:set:log-forwarding', 'app:config:set:lf']
+LogForwardingCommand.flags = {
+  ...BaseCommand.flags
+}
 
 module.exports = LogForwardingCommand
