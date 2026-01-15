@@ -383,11 +383,11 @@ Pack.flags = {
 }
 
 Pack.args =
-  {
-    path: Args.string({
-      description: 'Path to the app directory to package',
-      default: '.'
-    })
-  }
+{
+  path: Args.string({
+    description: 'Path to the app directory to package',
+    default: '.'
+  })
+}
 
 module.exports = Pack

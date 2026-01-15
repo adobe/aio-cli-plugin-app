@@ -31,7 +31,7 @@ class Test extends BaseCommand {
       unit = true
     }
 
-    const buildConfigs = await this.getAppExtConfigs({ extension })
+    const buildConfigs = await this.getAppExtConfigs(flags, { extension })
     aioLogger.debug(`run buildConfigs:${JSON.stringify(buildConfigs, null, 2)}`)
 
     const totalResults = []
@@ -202,6 +202,7 @@ class Test extends BaseCommand {
 }
 
 Test.flags = {
+  ...BaseCommand.flags,
   extension: Flags.string({
     char: 'e',
     description: 'the extension(s) to test',

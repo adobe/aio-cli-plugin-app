@@ -579,6 +579,7 @@ describe('run', () => {
       },
       cliCommandFlags: {
         actions: true,
+        'config-validation': true,
         events: true,
         'force-unpublish': false,
         unpublish: false,

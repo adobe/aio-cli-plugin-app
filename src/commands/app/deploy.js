@@ -57,7 +57,7 @@ class Deploy extends BuildCommand {
     const spinner = ora()
 
     try {
-      const { aio: aioConfig, packagejson: packageJson } = await this.getFullConfig()
+      const { aio: aioConfig, packagejson: packageJson } = await this.getFullConfig({}, flags)
       const cliDetails = await getAccessToken({ useCachedToken: !flags.publish })
       const appInfo = {
         name: packageJson.name,

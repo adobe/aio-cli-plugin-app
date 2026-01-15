@@ -25,7 +25,7 @@ class DeleteWebAssetsCommand extends BaseCommand {
 
     aioLogger.debug(`deleting web assets from the project, using flags: ${JSON.stringify(flags)}`)
 
-    const fullConfig = await this.getFullConfig()
+    const fullConfig = await this.getFullConfig({}, flags)
     const webAssetsByImpl = this.getAllWebAssets(fullConfig)
     if (!webAssetsByImpl) {
       this.error('web-assets not found')
