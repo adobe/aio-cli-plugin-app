@@ -123,14 +123,21 @@ describe('getFullConfig', () => {
     mockConfigLoader.load.mockResolvedValue({ a: 'hello' })
     const config = await cmd.getFullConfig({ someOptions: {} })
     expect(config).toEqual({ a: 'hello' })
-    expect(mockConfigLoader.load).toHaveBeenCalledWith({ someOptions: {}, validateAppConfig: false })
+    expect(mockConfigLoader.load).toHaveBeenCalledWith({ someOptions: {}, validateAppConfig: true })
   })
-  test('with validateAppConfig=true', async () => {
+  test('with config-validation=true', async () => {
     const cmd = new TheCommand()
     mockConfigLoader.load.mockResolvedValue({ a: 'hello' })
-    const config = await cmd.getFullConfig({ someOptions: {}, validateAppConfig: true })
+    const config = await cmd.getFullConfig({ someOptions: {} }, { 'config-validation': true })
     expect(config).toEqual({ a: 'hello' })
     expect(mockConfigLoader.load).toHaveBeenCalledWith({ someOptions: {}, validateAppConfig: true })
+  })
+  test('with config-validation=false', async () => {
+    const cmd = new TheCommand()
+    mockConfigLoader.load.mockResolvedValue({ a: 'hello' })
+    const config = await cmd.getFullConfig({ someOptions: {} }, { 'config-validation': false })
+    expect(config).toEqual({ a: 'hello' })
+    expect(mockConfigLoader.load).toHaveBeenCalledWith({ someOptions: {}, validateAppConfig: false })
   })
 })
 
@@ -139,7 +146,7 @@ describe('getConfigFileForKey', () => {
     mockConfigLoader.load.mockResolvedValue(getMockConfig('exc', {}))
     const cmd = new TheCommand()
     expect(await cmd.getConfigFileForKey('notexist.key.abc')).toEqual({})
-    expect(mockConfigLoader.load).toHaveBeenCalledWith({ validateAppConfig: false })
+    expect(mockConfigLoader.load).toHaveBeenCalledWith({ validateAppConfig: true })
   })
   test('returns file and key if found', async () => {
     const config = getMockConfig('exc', {})
@@ -154,7 +161,7 @@ describe('getRuntimeManifestConfigFile', () => {
     mockConfigLoader.load.mockResolvedValue(getMockConfig('app-no-actions', {}))
     const cmd = new TheCommand()
     expect(await cmd.getRuntimeManifestConfigFile('application')).toEqual({ file: 'app.config.yaml', key: 'application.runtimeManifest' })
-    expect(mockConfigLoader.load).toHaveBeenCalledWith({ validateAppConfig: false })
+    expect(mockConfigLoader.load).toHaveBeenCalledWith({ validateAppConfig: true })
   })
   test('multiple implementations', async () => {
     const config = getMockConfig('app-exc-nui', {})
@@ -171,7 +178,7 @@ describe('getEventsConfigFile', () => {
     mockConfigLoader.load.mockResolvedValue(getMockConfig('app-no-actions', {}))
     const cmd = new TheCommand()
     expect(await cmd.getEventsConfigFile('application')).toEqual({ file: 'app.config.yaml', key: 'application.events' })
-    expect(mockConfigLoader.load).toHaveBeenCalledWith({ validateAppConfig: false })
+    expect(mockConfigLoader.load).toHaveBeenCalledWith({ validateAppConfig: true })
   })
   test('multiple implementations', async () => {
     const config = getMockConfig('app-exc-nui', {})
@@ -189,13 +196,20 @@ describe('getAppExtConfigs', () => {
     mockConfigLoader.load.mockResolvedValue(config)
     const cmd = new TheCommand()
     expect(await cmd.getAppExtConfigs({})).toEqual(config.all)
-    expect(mockConfigLoader.load).toHaveBeenCalledWith({ validateAppConfig: false })
+    expect(mockConfigLoader.load).toHaveBeenCalledWith({ validateAppConfig: true })
   })
   test('with options', async () => {
     const config = getMockConfig('app-exc-nui', {})
     mockConfigLoader.load.mockResolvedValue(config)
     const cmd = new TheCommand()
     expect(await cmd.getAppExtConfigs({}, { some: 'options' })).toEqual(config.all)
+    expect(mockConfigLoader.load).toHaveBeenCalledWith({ some: 'options', validateAppConfig: true })
+  })
+  test('with flag validateAppConfig=false', async () => {
+    const config = getMockConfig('app-exc-nui', {})
+    mockConfigLoader.load.mockResolvedValue(config)
+    const cmd = new TheCommand()
+    expect(await cmd.getAppExtConfigs({ 'config-validation': false }, { some: 'options' })).toEqual(config.all)
     expect(mockConfigLoader.load).toHaveBeenCalledWith({ some: 'options', validateAppConfig: false })
   })
   test('-e exc -e asset', async () => {

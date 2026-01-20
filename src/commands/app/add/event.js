@@ -31,8 +31,8 @@ class AddEventCommand extends TemplatesCommand {
     const configName = entries[0][0]
     const config = entries[0][1]
     const actionFolder = path.relative(config.root, config.actions.src)
-    const runtimeManifestData = await this.getRuntimeManifestConfigFile(configName)
-    const eventsData = await this.getEventsConfigFile(configName)
+    const runtimeManifestData = await this.getRuntimeManifestConfigFile(configName, flags)
+    const eventsData = await this.getEventsConfigFile(configName, flags)
     const templateOptions = {
       'skip-prompt': false,
       'action-folder': actionFolder,

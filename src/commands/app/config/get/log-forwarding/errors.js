@@ -16,8 +16,9 @@ const { setRuntimeApiHostAndAuthHandler } = require('../../../../../lib/auth-hel
 
 class ErrorsCommand extends BaseCommand {
   async run () {
+    const { flags } = await this.parse(ErrorsCommand)
     const spinner = ora()
-    const lf = await this.getLogForwarding()
+    const lf = await this.getLogForwarding(flags)
     spinner.start('Checking for errors...')
     const res = await lf.getErrors()
     const destinationMessage = res.configured_forwarder !== undefined
@@ -30,8 +31,8 @@ class ErrorsCommand extends BaseCommand {
     }
   }
 
-  async getLogForwarding () {
-    let aioConfig = (await this.getFullConfig()).aio
+  async getLogForwarding (flags) {
+    let aioConfig = (await this.getFullConfig({}, flags)).aio
     aioConfig = setRuntimeApiHostAndAuthHandler(aioConfig)
 
     const runtimeConfig = aioConfig.runtime
@@ -46,5 +47,8 @@ class ErrorsCommand extends BaseCommand {
 
 ErrorsCommand.description = 'Get log forwarding errors'
 ErrorsCommand.aliases = ['app:config:get:log-forwarding:errors', 'app:config:get:lf:errors']
+ErrorsCommand.flags = {
+  ...BaseCommand.flags
+}
 
 module.exports = ErrorsCommand

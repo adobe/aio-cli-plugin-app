@@ -24,7 +24,7 @@ class AddExtensionCommand extends TemplatesCommand {
       this.error('--extension= must also be provided when using --yes')
     }
 
-    const fullConfig = await this.getFullConfig({ allowNoImpl: true })
+    const fullConfig = await this.getFullConfig({ allowNoImpl: true }, flags)
     const alreadyImplemented = fullConfig.implements
 
     if (flags.extension) {

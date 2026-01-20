@@ -30,7 +30,7 @@ class GetUrlCommand extends BaseCommand {
       options.cdn = flags.cdn
 
       const urls = {}
-      const fullConfig = await this.getFullConfig()
+      const fullConfig = await this.getFullConfig({}, flags)
       if (options.action) {
         let action
         // search for action
@@ -107,9 +107,9 @@ GetUrlCommand.flags = {
 }
 
 GetUrlCommand.args =
-  {
-    action: Args.string({
-    })
-  }
+{
+  action: Args.string({
+  })
+}
 
 module.exports = GetUrlCommand

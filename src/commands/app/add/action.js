@@ -32,7 +32,7 @@ class AddActionCommand extends TemplatesCommand {
     const config = entries[0][1]
 
     const actionFolder = path.relative(config.root, config.actions.src)
-    const configData = await this.getRuntimeManifestConfigFile(configName)
+    const configData = await this.getRuntimeManifestConfigFile(configName, flags)
 
     const projectOrgId = aioConfigLoader.get('project.org.id')
     if (!projectOrgId) {
