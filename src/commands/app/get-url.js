@@ -19,6 +19,7 @@ const { wrapError } = require('../../lib/app-helper')
 const { getActionUrls } = require('@adobe/aio-lib-runtime').utils
 const yaml = require('js-yaml')
 const { loadLocalDevConfig } = require('../../lib/run-local-runtime')
+const { transformActionUrlsObject } = require('../../lib/url-transformer')
 
 class GetUrlCommand extends BaseCommand {
   async run () {
@@ -56,13 +57,13 @@ class GetUrlCommand extends BaseCommand {
           Object.assign(actionUrls, getActionUrls(config, true))
         })
       }
-      urls.runtime = actionUrls
+      urls.runtime = transformActionUrlsObject(actionUrls)
       const cdnUrls = {}
       if (options.cdn) {
         Object.values(fullConfig.all).forEach(config => {
           Object.assign(cdnUrls, getActionUrls(config, false))
         })
-        urls.cdn = cdnUrls
+        urls.cdn = transformActionUrlsObject(cdnUrls)
       }
 
       if (flags.json) {

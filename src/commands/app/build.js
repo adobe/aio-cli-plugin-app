@@ -102,8 +102,9 @@ class Build extends BaseCommand {
     if (flags['web-assets']) {
       if (config.app.hasFrontend && (flags['force-build'] || !fs.existsSync(config.web.distProd))) {
         if (config.app.hasBackend) {
+          const { transformActionUrlsObject } = require('../../lib/url-transformer')
           const urls = RuntimeLib.utils.getActionUrls(config, false, false, true)
-          await writeConfig(config.web.injectedConfig, urls)
+          await writeConfig(config.web.injectedConfig, transformActionUrlsObject(urls))
         }
         spinner.start('Building web assets')
         try {

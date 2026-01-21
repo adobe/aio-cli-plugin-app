@@ -11,6 +11,7 @@ governing permissions and limitations under the License.
 */
 
 const { createWebExportFilter } = require('./app-helper')
+const { transformActionEntities } = require('./url-transformer')
 
 /**
  * Logs deployed action entities.
@@ -31,10 +32,11 @@ module.exports = async ({
 
   log('Your deployed actions:')
 
-  const _web = entities.actions.filter(createWebExportFilter(true))
-  const _webRaw = entities.actions.filter(createWebExportFilter('raw'))
+  const actions = transformActionEntities(entities.actions)
+  const _web = actions.filter(createWebExportFilter(true))
+  const _webRaw = actions.filter(createWebExportFilter('raw'))
   const web = [..._web, ..._webRaw]
-  const nonWeb = entities.actions.filter(createWebExportFilter(false))
+  const nonWeb = actions.filter(createWebExportFilter(false))
 
   if (web.length > 0) {
     log('web actions:')

@@ -502,7 +502,8 @@ function buildExtensionPointPayloadWoMetadata (extConfigs) {
       endpointsPayload[extPointName] = {}
       let actionUrls = {}
       if (extPointConfig.app.hasBackend) {
-        actionUrls = RuntimeLib.utils.getActionUrls(extPointConfig, false, false)
+        const { transformActionUrlsObject } = require('./url-transformer')
+        actionUrls = transformActionUrlsObject(RuntimeLib.utils.getActionUrls(extPointConfig, false, false))
       }
       Object.entries(extPointConfig.operations)
         .forEach(([opName, opList]) => {
