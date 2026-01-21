@@ -57,6 +57,9 @@ class Pack extends BaseCommand {
       .map(([, extConfig]) => path.relative(process.cwd(), extConfig.app.dist))
 
     try {
+      // 0. validate package.json and package-lock.json compatibility
+      await this.validatePackageLockCompatibility()
+
       // 1. create artifacts phase
       this.spinner.start(`Creating package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER_PATH}'...`)
       await fs.emptyDir(DEFAULTS.ARTIFACTS_FOLDER_PATH)
@@ -125,6 +128,26 @@ class Pack extends BaseCommand {
       this._spinner = ora()
     }
     return this._spinner
+  }
+
+  /**
+   * Validates that package.json and package-lock.json are compatible
+   */
+  async validatePackageLockCompatibility () {
+    const packageLockPath = path.join(process.cwd(), 'package-lock.json')
+    if (!(await fs.pathExists(packageLockPath))) {
+      return
+    }
+
+    this.spinner.start('Validating package.json and package-lock.json compatibility...')
+    try {
+      await execa('npm', ['ci', '--dry-run'], { cwd: process.cwd() })
+      this.spinner.succeed('Validated package.json and package-lock.json compatibility')
+    } catch (error) {
+      this.spinner.fail('package.json and package-lock.json are incompatible')
+      const errorMessage = error.stderr || error.message || 'npm ci --dry-run failed'
+      throw new Error(`package.json and package-lock.json are incompatible. Run 'npm install' to update your package-lock.json.\n\nError: ${errorMessage}`)
+    }
   }
 
   /**

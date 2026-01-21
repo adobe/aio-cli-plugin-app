@@ -524,6 +524,20 @@ describe('run', () => {
     const command = new TheCommand()
     command.argv = []
 
+    // mock package-lock.json exists and npm ci --dry-run succeeds
+    fs.pathExists.mockImplementation(async (filePath) => {
+      if (filePath.includes('package-lock.json')) {
+        return true
+      }
+      return false
+    })
+    execa.mockImplementationOnce((cmd, args) => {
+      if (cmd === 'npm' && args[0] === 'ci' && args[1] === '--dry-run') {
+        return Promise.resolve({ stdout: '', stderr: '' })
+      }
+      return Promise.resolve({ stdout: JSON.stringify([{ files: [] }]) })
+    })
+
     // since we already unit test the methods above, we mock it here
     command.copyPackageFiles = jest.fn()
     command.filesToPack = jest.fn(() => (['some-file']))
@@ -534,6 +548,7 @@ describe('run', () => {
     command.config = { runHook }
     await command.run()
 
+    expect(execa).toHaveBeenCalledWith('npm', ['ci', '--dry-run'], { cwd: expect.any(String) })
     expect(command.copyPackageFiles).toHaveBeenCalledTimes(1)
     expect(command.filesToPack).toHaveBeenCalledTimes(1)
     expect(command.filesToPack).toHaveBeenCalledWith({
@@ -557,6 +572,19 @@ describe('run', () => {
     const command = new TheCommand()
     command.argv = ['--no-lock-file']
 
+    fs.pathExists.mockImplementation(async (filePath) => {
+      if (filePath.includes('package-lock.json')) {
+        return true
+      }
+      return false
+    })
+    execa.mockImplementationOnce((cmd, args) => {
+      if (cmd === 'npm' && args[0] === 'ci' && args[1] === '--dry-run') {
+        return Promise.resolve({ stdout: '', stderr: '' })
+      }
+      return Promise.resolve({ stdout: JSON.stringify([{ files: [] }]) })
+    })
+
     // since we already unit test the methods above, we mock it here
     command.copyPackageFiles = jest.fn()
     command.filesToPack = jest.fn(() => (['some-file']))
@@ -567,6 +595,7 @@ describe('run', () => {
     command.config = { runHook }
     await command.run()
 
+    expect(execa).toHaveBeenCalledWith('npm', ['ci', '--dry-run'], { cwd: expect.any(String) })
     expect(command.copyPackageFiles).toHaveBeenCalledTimes(1)
     expect(command.filesToPack).toHaveBeenCalledTimes(1)
     expect(command.filesToPack).toHaveBeenCalledWith({
@@ -589,6 +618,19 @@ describe('run', () => {
 
     const command = new TheCommand()
     command.argv = ['--verbose']
+
+    fs.pathExists.mockImplementation(async (filePath) => {
+      if (filePath.includes('package-lock.json')) {
+        return true
+      }
+      return false
+    })
+    execa.mockImplementationOnce((cmd, args) => {
+      if (cmd === 'npm' && args[0] === 'ci' && args[1] === '--dry-run') {
+        return Promise.resolve({ stdout: '', stderr: '' })
+      }
+      return Promise.resolve({ stdout: JSON.stringify([{ files: [] }]) })
+    })
 
     const errorObject = new Error('zip error')
 
@@ -626,6 +668,19 @@ describe('run', () => {
     const command = new TheCommand()
     command.argv = []
 
+    fs.pathExists.mockImplementation(async (filePath) => {
+      if (filePath.includes('package-lock.json')) {
+        return true
+      }
+      return false
+    })
+    execa.mockImplementationOnce((cmd, args) => {
+      if (cmd === 'npm' && args[0] === 'ci' && args[1] === '--dry-run') {
+        return Promise.resolve({ stdout: '', stderr: '' })
+      }
+      return Promise.resolve({ stdout: JSON.stringify([{ files: [] }]) })
+    })
+
     const errorMessage = 'zip error'
 
     // since we already unit test the methods above, we mock it here
@@ -662,6 +717,20 @@ describe('run', () => {
     const command = new TheCommand()
     command.argv = ['new_folder', '--output', 'app-2.zip']
 
+    // mock package-lock.json exists and npm ci --dry-run succeeds
+    fs.pathExists.mockImplementation(async (filePath) => {
+      if (filePath.includes('package-lock.json')) {
+        return true
+      }
+      return false
+    })
+    execa.mockImplementationOnce((cmd, args) => {
+      if (cmd === 'npm' && args[0] === 'ci' && args[1] === '--dry-run') {
+        return Promise.resolve({ stdout: '', stderr: '' })
+      }
+      return Promise.resolve({ stdout: JSON.stringify([{ files: [] }]) })
+    })
+
     // since we already unit test the methods above, we mock it here
     command.copyPackageFiles = jest.fn()
     command.filesToPack = jest.fn(() => ([]))
@@ -689,6 +758,18 @@ describe('run', () => {
 
   test('outputs error if events hook throws', async () => {
     mockGetFullConfig.mockImplementation(async () => fixtureJson('pack/1.all.config.json'))
+    fs.pathExists.mockImplementation(async (filePath) => {
+      if (filePath.includes('package-lock.json')) {
+        return true
+      }
+      return false
+    })
+    execa.mockImplementationOnce((cmd, args) => {
+      if (cmd === 'npm' && args[0] === 'ci' && args[1] === '--dry-run') {
+        return Promise.resolve({ stdout: '', stderr: '' })
+      }
+      return Promise.resolve({ stdout: JSON.stringify([{ files: [] }]) })
+    })
     const runHook = jest.fn()
       .mockResolvedValue({
         successes: [],
@@ -720,5 +801,157 @@ describe('run', () => {
 
     await expect(command.run()).rejects.toThrow('invalid fake config error')
     expect(mockGetFullConfig).toHaveBeenCalledWith({ validateAppConfig: true })
+  })
+
+  test('skips npm ci check when package-lock.json does not exist', async () => {
+    mockGetFullConfig.mockImplementation(async () => fixtureJson('pack/1.all.config.json'))
+
+    const command = new TheCommand()
+    command.argv = []
+
+    fs.pathExists.mockImplementation(async (filePath) => {
+      if (filePath.includes('package-lock.json')) {
+        return false
+      }
+      return false
+    })
+
+    command.copyPackageFiles = jest.fn()
+    command.filesToPack = jest.fn(() => (['some-file']))
+    command.createDeployYamlFile = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
+    command.zipHelper = jest.fn()
+    const runHook = jest.fn()
+    command.config = { runHook }
+    await command.run()
+
+    const npmCiCalls = execa.mock.calls.filter(call => call[0] === 'npm' && call[1] && call[1][0] === 'ci')
+    expect(npmCiCalls.length).toBe(0)
+    expect(command.copyPackageFiles).toHaveBeenCalledTimes(1)
+  })
+
+  test('errors when npm ci --dry-run fails', async () => {
+    mockGetFullConfig.mockImplementation(async () => fixtureJson('pack/1.all.config.json'))
+
+    const command = new TheCommand()
+    command.argv = []
+
+    fs.pathExists.mockImplementation(async (filePath) => {
+      if (filePath.includes('package-lock.json')) {
+        return true
+      }
+      return false
+    })
+
+    execa.mockImplementationOnce((cmd, args) => {
+      if (cmd === 'npm' && args[0] === 'ci' && args[1] === '--dry-run') {
+        const error = new Error('npm ci failed')
+        error.stderr = 'npm ERR! code ERESOLVE\nnpm ERR! ERESOLVE unable to resolve dependency tree'
+        return Promise.reject(error)
+      }
+      return Promise.resolve({ stdout: JSON.stringify([{ files: [] }]) })
+    })
+
+    // since we already unit test the methods above, we mock it here
+    command.copyPackageFiles = jest.fn()
+    command.filesToPack = jest.fn(() => (['some-file']))
+    command.createDeployYamlFile = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
+    command.zipHelper = jest.fn()
+    command.error = jest.fn()
+    const runHook = jest.fn()
+    command.config = { runHook }
+
+    await command.run()
+
+    expect(execa).toHaveBeenCalledWith('npm', ['ci', '--dry-run'], { cwd: expect.any(String) })
+    expect(command.error).toHaveBeenCalledTimes(1)
+    const errorMessage = command.error.mock.calls[0][0]
+    expect(errorMessage).toContain('package.json and package-lock.json are incompatible')
+    expect(errorMessage).toContain('Run \'npm install\' to update your package-lock.json')
+    expect(command.copyPackageFiles).not.toHaveBeenCalled()
+  })
+
+  test('errors when npm ci --dry-run fails without stderr', async () => {
+    mockGetFullConfig.mockImplementation(async () => fixtureJson('pack/1.all.config.json'))
+
+    const command = new TheCommand()
+    command.argv = []
+
+    fs.pathExists.mockImplementation(async (filePath) => {
+      if (filePath.includes('package-lock.json')) {
+        return true
+      }
+      return false
+    })
+
+    execa.mockImplementationOnce((cmd, args) => {
+      if (cmd === 'npm' && args[0] === 'ci' && args[1] === '--dry-run') {
+        const error = new Error('npm ci failed')
+        return Promise.reject(error)
+      }
+      return Promise.resolve({ stdout: JSON.stringify([{ files: [] }]) })
+    })
+
+    // since we already unit test the methods above, we mock it here
+    command.copyPackageFiles = jest.fn()
+    command.filesToPack = jest.fn(() => (['some-file']))
+    command.createDeployYamlFile = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
+    command.zipHelper = jest.fn()
+    command.error = jest.fn()
+    const runHook = jest.fn()
+    command.config = { runHook }
+
+    await command.run()
+
+    expect(execa).toHaveBeenCalledWith('npm', ['ci', '--dry-run'], { cwd: expect.any(String) })
+    expect(command.error).toHaveBeenCalledTimes(1)
+    const errorMessage = command.error.mock.calls[0][0]
+    expect(errorMessage).toContain('package.json and package-lock.json are incompatible')
+    expect(errorMessage).toContain('Run \'npm install\' to update your package-lock.json')
+    expect(command.copyPackageFiles).not.toHaveBeenCalled()
+  })
+
+  test('errors when npm ci --dry-run fails without stderr or message', async () => {
+    mockGetFullConfig.mockImplementation(async () => fixtureJson('pack/1.all.config.json'))
+
+    const command = new TheCommand()
+    command.argv = []
+
+    fs.pathExists.mockImplementation(async (filePath) => {
+      if (filePath.includes('package-lock.json')) {
+        return true
+      }
+      return false
+    })
+
+    execa.mockImplementationOnce((cmd, args) => {
+      if (cmd === 'npm' && args[0] === 'ci' && args[1] === '--dry-run') {
+        const error = {}
+        return Promise.reject(error)
+      }
+      return Promise.resolve({ stdout: JSON.stringify([{ files: [] }]) })
+    })
+
+    // since we already unit test the methods above, we mock it here
+    command.copyPackageFiles = jest.fn()
+    command.filesToPack = jest.fn(() => (['some-file']))
+    command.createDeployYamlFile = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
+    command.zipHelper = jest.fn()
+    command.error = jest.fn()
+    const runHook = jest.fn()
+    command.config = { runHook }
+
+    await command.run()
+
+    expect(execa).toHaveBeenCalledWith('npm', ['ci', '--dry-run'], { cwd: expect.any(String) })
+    expect(command.error).toHaveBeenCalledTimes(1)
+    const errorMessage = command.error.mock.calls[0][0]
+    expect(errorMessage).toContain('package.json and package-lock.json are incompatible')
+    expect(errorMessage).toContain('Run \'npm install\' to update your package-lock.json')
+    expect(errorMessage).toContain('Error: npm ci --dry-run failed')
+    expect(command.copyPackageFiles).not.toHaveBeenCalled()
   })
 })
