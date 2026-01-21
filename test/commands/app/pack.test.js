@@ -578,12 +578,6 @@ describe('run', () => {
       }
       return false
     })
-    execa.mockImplementationOnce((cmd, args) => {
-      if (cmd === 'npm' && args[0] === 'ci' && args[1] === '--dry-run') {
-        return Promise.resolve({ stdout: '', stderr: '' })
-      }
-      return Promise.resolve({ stdout: JSON.stringify([{ files: [] }]) })
-    })
 
     // since we already unit test the methods above, we mock it here
     command.copyPackageFiles = jest.fn()
@@ -595,7 +589,8 @@ describe('run', () => {
     command.config = { runHook }
     await command.run()
 
-    expect(execa).toHaveBeenCalledWith('npm', ['ci', '--dry-run'], { cwd: expect.any(String) })
+    const npmCiCalls = execa.mock.calls.filter(call => call[0] === 'npm' && call[1] && call[1][0] === 'ci')
+    expect(npmCiCalls.length).toBe(0)
     expect(command.copyPackageFiles).toHaveBeenCalledTimes(1)
     expect(command.filesToPack).toHaveBeenCalledTimes(1)
     expect(command.filesToPack).toHaveBeenCalledWith({

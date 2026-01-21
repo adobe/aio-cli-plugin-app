@@ -57,8 +57,10 @@ class Pack extends BaseCommand {
       .map(([, extConfig]) => path.relative(process.cwd(), extConfig.app.dist))
 
     try {
-      // 0. validate package.json and package-lock.json compatibility
-      await this.validatePackageLockCompatibility()
+      // 0. validate package.json and package-lock.json compatibility (skip if --no-lock-file)
+      if (flags['lock-file']) {
+        await this.validatePackageLockCompatibility()
+      }
 
       // 1. create artifacts phase
       this.spinner.start(`Creating package artifacts folder '${DEFAULTS.ARTIFACTS_FOLDER_PATH}'...`)
@@ -394,7 +396,7 @@ Pack.description = `This command will support packaging apps for redistribution.
 Pack.flags = {
   ...BaseCommand.flags,
   'lock-file': Flags.boolean({
-    description: 'Include the package-lock.json file in the packaged app',
+    description: 'Include the package-lock.json file in the packaged app. When disabled, compatibility validation is skipped since the provisioner will use npm install instead of npm ci.',
     default: true,
     allowNo: true
   }),
