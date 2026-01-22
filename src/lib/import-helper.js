@@ -740,7 +740,7 @@ const getProjectCredentialType = (projectConfig, flags) => {
  * @param {object} config Console config object
  * @returns {{ client_id, client_secret, org_id, scopes } | undefined} OAuthS2S credential or undefined
  */
-const getOauthS2SCredential = (config) => {
+const getOAuthS2SCredential = (config) => {
   const credential = config?.project?.workspace?.details?.credentials
     ?.find(c => c.integration_type === 'oauth_server_to_server')
     ?.oauth_server_to_server
@@ -758,7 +758,7 @@ const getOauthS2SCredential = (config) => {
 
 module.exports = {
   getServiceApiKey,
-  getOauthS2SCredential,
+  getOAuthS2SCredential,
   writeFile,
   loadConfigFile,
   loadAndValidateConfigFile,

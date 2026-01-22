@@ -1,4 +1,4 @@
-const { loadAndValidateConfigFile, importConfigJson, loadConfigFile, getServiceApiKey, getOauthS2SCredential } = require('./import-helper')
+const { loadAndValidateConfigFile, importConfigJson, loadConfigFile, getServiceApiKey, getOAuthS2SCredential } = require('./import-helper')
 const { SERVICE_API_KEY_ENV, IMS_OAUTH_S2S_ENV } = require('./defaults')
 
 /**
@@ -23,7 +23,7 @@ async function importConsoleConfig (consoleConfigFileOrBuffer, flags) {
   const config = loadFunc(consoleConfigFileOrBuffer).values
 
   const serviceClientId = getServiceApiKey(config, useJwt)
-  const oauthS2SCredential = getOauthS2SCredential(config)
+  const oauthS2SCredential = getOAuthS2SCredential(config)
 
   let extraEnvVars
   if (typeof oauthS2SCredential === 'object') {

@@ -20,7 +20,7 @@ inquirer.createPromptModule.mockReturnValue(mockPrompt)
 
 const {
   getServiceApiKey,
-  getOauthS2SCredential,
+  getOAuthS2SCredential,
   loadAndValidateConfigFile,
   importConfigJson,
   writeAio,
@@ -42,8 +42,8 @@ test('exports', () => {
   expect(getServiceApiKey).toBeDefined()
   expect(getServiceApiKey).toBeInstanceOf(Function)
 
-  expect(getOauthS2SCredential).toBeDefined()
-  expect(getOauthS2SCredential).toBeInstanceOf(Function)
+  expect(getOAuthS2SCredential).toBeDefined()
+  expect(getOAuthS2SCredential).toBeInstanceOf(Function)
 
   expect(loadAndValidateConfigFile).toBeDefined()
   expect(loadAndValidateConfigFile).toBeInstanceOf(Function)
@@ -451,28 +451,28 @@ describe('getServiceApiKey', () => {
   })
 })
 
-describe('getOauthS2SCredential', () => {
+describe('getOAuthS2SCredential', () => {
   test('bad config (undefined)', () => {
-    expect(getOauthS2SCredential(undefined)).toBeUndefined()
+    expect(getOAuthS2SCredential(undefined)).toBeUndefined()
   })
 
   test('bad config (empty object)', () => {
-    expect(getOauthS2SCredential({})).toBeUndefined()
+    expect(getOAuthS2SCredential({})).toBeUndefined()
   })
 
   test('config file only has jwt (no OAuth S2S)', () => {
     const config = fixtureHjson('valid.config.json')
-    expect(getOauthS2SCredential(config)).toBeUndefined()
+    expect(getOAuthS2SCredential(config)).toBeUndefined()
   })
 
   test('config file has no OAuth S2S credentials', () => {
     const config = fixtureHjson('oauths2s/valid.config.no.creds.json')
-    expect(getOauthS2SCredential(config)).toBeUndefined()
+    expect(getOAuthS2SCredential(config)).toBeUndefined()
   })
 
   test('config file has OAuth S2S', () => {
     const config = fixtureHjson('oauths2s/valid.config.json')
-    expect(getOauthS2SCredential(config)).toEqual({
+    expect(getOAuthS2SCredential(config)).toEqual({
       client_id: 'CXCXCXCXCXCXCXCXC',
       client_secret: 'SFSFSFSFSFSFSFSFSFSFSFSFSFS',
       org_id: 'XOXOXOXOXOXOX@AdobeOrg',
@@ -482,8 +482,8 @@ describe('getOauthS2SCredential', () => {
 
   test('config file has OAuth S2S (migration, contains jwt)', () => {
     // Note: migration configs have integration_type 'oauth_server_to_server_migrate', not 'oauth_server_to_server'
-    // so getOauthS2SCredential should return undefined for migration configs
+    // so getOAuthS2SCredential should return undefined for migration configs
     const config = fixtureHjson('oauths2s/valid.config.migrate.json')
-    expect(getOauthS2SCredential(config)).toBeUndefined()
+    expect(getOAuthS2SCredential(config)).toBeUndefined()
   })
 })
