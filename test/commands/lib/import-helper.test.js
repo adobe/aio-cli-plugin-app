@@ -20,6 +20,7 @@ inquirer.createPromptModule.mockReturnValue(mockPrompt)
 
 const {
   getServiceApiKey,
+  getOauthS2SCredential,
   loadAndValidateConfigFile,
   importConfigJson,
   writeAio,
@@ -40,6 +41,9 @@ beforeEach(() => {
 test('exports', () => {
   expect(getServiceApiKey).toBeDefined()
   expect(getServiceApiKey).toBeInstanceOf(Function)
+
+  expect(getOauthS2SCredential).toBeDefined()
+  expect(getOauthS2SCredential).toBeInstanceOf(Function)
 
   expect(loadAndValidateConfigFile).toBeDefined()
   expect(loadAndValidateConfigFile).toBeInstanceOf(Function)
@@ -444,5 +448,42 @@ describe('getServiceApiKey', () => {
   test('config file has OAuth S2S (migration, contains jwt, useJwt=true)', () => {
     const config = fixtureHjson('oauths2s/valid.config.migrate.json')
     expect(getServiceApiKey(config, true)).toEqual('XUXUXUXUXUXUXUX')
+  })
+})
+
+describe('getOauthS2SCredential', () => {
+  test('bad config (undefined)', () => {
+    expect(getOauthS2SCredential(undefined)).toBeUndefined()
+  })
+
+  test('bad config (empty object)', () => {
+    expect(getOauthS2SCredential({})).toBeUndefined()
+  })
+
+  test('config file only has jwt (no OAuth S2S)', () => {
+    const config = fixtureHjson('valid.config.json')
+    expect(getOauthS2SCredential(config)).toBeUndefined()
+  })
+
+  test('config file has no OAuth S2S credentials', () => {
+    const config = fixtureHjson('oauths2s/valid.config.no.creds.json')
+    expect(getOauthS2SCredential(config)).toBeUndefined()
+  })
+
+  test('config file has OAuth S2S', () => {
+    const config = fixtureHjson('oauths2s/valid.config.json')
+    expect(getOauthS2SCredential(config)).toEqual({
+      client_id: 'CXCXCXCXCXCXCXCXC',
+      client_secret: 'SFSFSFSFSFSFSFSFSFSFSFSFSFS',
+      org_id: 'XOXOXOXOXOXOX@AdobeOrg',
+      scopes: ['openid', 'AdobeID']
+    })
+  })
+
+  test('config file has OAuth S2S (migration, contains jwt)', () => {
+    // Note: migration configs have integration_type 'oauth_server_to_server_migrate', not 'oauth_server_to_server'
+    // so getOauthS2SCredential should return undefined for migration configs
+    const config = fixtureHjson('oauths2s/valid.config.migrate.json')
+    expect(getOauthS2SCredential(config)).toBeUndefined()
   })
 })

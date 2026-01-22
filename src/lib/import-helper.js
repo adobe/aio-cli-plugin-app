@@ -741,8 +741,10 @@ const getProjectCredentialType = (projectConfig, flags) => {
  * @returns {{ client_id, client_secret, org_id, scopes } | undefined} OAuthS2S credential or undefined
  */
 const getOauthS2SCredential = (config) => {
-  const credential = (config.project?.workspace?.details?.credentials?.find(c => c.integration_type === 'oauth_server_to_server')).oauth_server_to_server
-  const imsOrgId = config.project?.org?.ims_org_id
+  const credential = config?.project?.workspace?.details?.credentials
+    ?.find(c => c.integration_type === 'oauth_server_to_server')
+    ?.oauth_server_to_server
+  const imsOrgId = config?.project?.org?.ims_org_id
 
   if (credential) {
     return {
