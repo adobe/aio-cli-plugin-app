@@ -734,8 +734,29 @@ const getProjectCredentialType = (projectConfig, flags) => {
   return LibConsoleCLI.OAUTH_SERVER_TO_SERVER_CREDENTIAL
 }
 
+/**
+ * Get the OAuth server_to_server credential in IMS API format, from the console config.
+ *
+ * @param {object} config Console config object
+ * @returns {{ client_id, client_secret, org_id, scopes } | undefined} OAuthS2S credential or undefined
+ */
+const getOauthS2SCredential = (config) => {
+  const credential = (config.project?.workspace?.details?.credentials?.find(c => c.integration_type === 'oauth_server_to_server')).oauth_server_to_server
+  const imsOrgId = config.project?.org?.ims_org_id
+
+  if (credential) {
+    return {
+      client_id: credential.client_id,
+      client_secret: credential.client_secrets[0], // take the first secret
+      org_id: imsOrgId,
+      scopes: credential.scopes
+    }
+  }
+}
+
 module.exports = {
   getServiceApiKey,
+  getOauthS2SCredential,
   writeFile,
   loadConfigFile,
   loadAndValidateConfigFile,

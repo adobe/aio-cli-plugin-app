@@ -1,5 +1,5 @@
-const { loadAndValidateConfigFile, importConfigJson, loadConfigFile, getServiceApiKey } = require('./import-helper')
-const { SERVICE_API_KEY_ENV } = require('./defaults')
+const { loadAndValidateConfigFile, importConfigJson, loadConfigFile, getServiceApiKey, getOauthS2SCredential } = require('./import-helper')
+const { SERVICE_API_KEY_ENV, IMS_OAUTH_S2S_ENV } = require('./defaults')
 
 /**
  * Imports the project's console config to the local environment.
@@ -23,7 +23,14 @@ async function importConsoleConfig (consoleConfigFileOrBuffer, flags) {
   const config = loadFunc(consoleConfigFileOrBuffer).values
 
   const serviceClientId = getServiceApiKey(config, useJwt)
-  const extraEnvVars = { [SERVICE_API_KEY_ENV]: serviceClientId }
+  const oauthS2SCredential = getOauthS2SCredential(config)
+
+  let extraEnvVars
+  if (typeof oauthS2SCredential === 'object') {
+    extraEnvVars = { [SERVICE_API_KEY_ENV]: serviceClientId, [IMS_OAUTH_S2S_ENV]: JSON.stringify(oauthS2SCredential) }
+  } else {
+    extraEnvVars = { [SERVICE_API_KEY_ENV]: serviceClientId }
+  }
 
   await importConfigJson(consoleConfigFileOrBuffer, process.cwd(), { interactive, overwrite, merge, useJwt }, extraEnvVars)
   return config
