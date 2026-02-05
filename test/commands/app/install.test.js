@@ -413,6 +413,40 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
   })
 
+  test('no flags, has lockfile, npm ci fails and falls back to npm install', async () => {
+    const command = new TheCommand()
+    command.argv = ['my-app.zip']
+
+    const npmCIError = new Error('npm ci can only install packages when your package.json and package-lock.json are in sync')
+
+    // we simulate npm ci failing and verify it falls back to npm install
+    command.validateZipDirectoryStructure = jest.fn()
+    command.unzipFile = jest.fn()
+    command.addCodeDownloadAnnotation = jest.fn()
+    command.validateDeployConfig = jest.fn()
+    command.runTests = jest.fn()
+    command.npmInstall = jest.fn()
+    command.npmCI = jest.fn().mockRejectedValue(npmCIError)
+    command.warn = jest.fn()
+    command.error = jest.fn()
+
+    fs.existsSync.mockImplementation((filePath) => filePath === PACKAGE_LOCK_FILE)
+
+    await command.run()
+
+    expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
+    expect(command.unzipFile).toHaveBeenCalledTimes(1)
+    expect(libConfig.coalesce).toHaveBeenCalledTimes(1)
+    expect(libConfig.validate).toHaveBeenCalledTimes(1)
+    expect(command.validateDeployConfig).toHaveBeenCalledTimes(1)
+    expect(command.runTests).toHaveBeenCalledTimes(1)
+    expect(command.npmCI).toHaveBeenCalledTimes(1)
+    expect(command.npmInstall).toHaveBeenCalledTimes(1)
+    expect(command.warn).toHaveBeenCalledWith(expect.stringContaining('npm ci failed'))
+    expect(command.warn).toHaveBeenCalledWith(expect.stringContaining('Falling back to npm install'))
+    expect(command.error).toHaveBeenCalledTimes(0)
+  })
+
   test('subcommand throws error (--verbose)', async () => {
     const command = new TheCommand()
     command.argv = ['my-app.zip', '--verbose']

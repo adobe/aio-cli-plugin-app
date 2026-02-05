@@ -54,7 +54,17 @@ class InstallCommand extends BaseCommand {
 
       const packageLockPath = path.join(outputPath, PACKAGE_LOCK_FILE)
       if (fs.existsSync(packageLockPath)) {
-        await this.npmCI(flags.verbose, flags['allow-scripts'])
+        try {
+          await this.npmCI(flags.verbose, flags['allow-scripts'])
+        } catch (npmCIError) {
+          // Log the npm ci failure for monitoring
+          aioLogger.warn(`npm ci failed: ${npmCIError.message}`)
+          aioLogger.debug('npm ci error details:', npmCIError)
+
+          // Fallback to npm install with a warning message
+          this.warn('npm ci failed (lockfile out of sync). Falling back to npm install.')
+          await this.npmInstall(flags.verbose, flags['allow-scripts'])
+        }
       } else {
         this.warn('No lockfile found, running standard npm install. It is recommended that you include a lockfile with your app bundle.')
         await this.npmInstall(flags.verbose, flags['allow-scripts'])
