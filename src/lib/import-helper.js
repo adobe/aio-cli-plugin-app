@@ -390,6 +390,83 @@ async function writeFile (destination, data, flags = {}) {
 }
 
 /**
+ * Formats IMS credentials into legacy AIO_ims_contexts format for backwards compatibility.
+ * DEPRECATED: This format will be removed in v15.0.0
+ *
+ * @param {object} credentials The credentials object from transformCredentials
+ * @returns {object} Key-value pairs of legacy IMS environment variables
+ * @private
+ */
+function formatLegacyImsCredentialsForEnv (credentials) {
+  const result = {}
+
+  Object.keys(credentials).forEach(credKey => {
+    const credential = credentials[credKey]
+    // Escape underscores in credential name (matching old flattenObjectWithSeparator behavior)
+    const escapedCredKey = credKey.replace(/_/gi, '__')
+    const prefix = `AIO_ims_contexts_${escapedCredKey}_`
+
+    // Use the same flattening logic as the old implementation
+    Object.keys(credential).forEach(fieldName => {
+      const value = credential[fieldName]
+      const escapedFieldName = fieldName.replace(/_/gi, '__') // escape underscores
+      const envVarName = `${prefix}${escapedFieldName}`
+
+      if (Array.isArray(value)) {
+        result[envVarName] = JSON.stringify(value)
+      } else {
+        result[envVarName] = value
+      }
+    })
+  })
+
+  return result
+}
+
+/**
+ * Formats IMS credentials into simplified environment variable format.
+ * First credential has no suffix, subsequent credentials get _2, _3, etc.
+ * Dynamically maps all credential fields to IMS_* environment variables.
+ *
+ * @param {object} credentials The credentials object from transformCredentials
+ * @returns {object} Key-value pairs of IMS environment variables
+ * @private
+ */
+function formatImsCredentialsForEnv (credentials) {
+  const result = {}
+  const credentialKeys = Object.keys(credentials)
+
+  credentialKeys.forEach((credKey, index) => {
+    const credential = credentials[credKey]
+    const suffix = index === 0 ? '' : `_${index + 1}`
+
+    // Dynamically map each credential field to IMS_* variables
+    Object.keys(credential).forEach(fieldName => {
+      const value = credential[fieldName]
+
+      // If field already starts with 'ims_', just uppercase it (avoid double-prefixing)
+      // Otherwise, add IMS_ prefix
+      const envVarName = fieldName.startsWith('ims_')
+        ? `${fieldName.toUpperCase()}${suffix}`
+        : `IMS_${fieldName.toUpperCase()}${suffix}`
+
+      // Special handling for redirect_uri - extract first element if array
+      if (fieldName === 'redirect_uri' && Array.isArray(value)) {
+        result[envVarName] = value[0]
+      } else if (Array.isArray(value)) {
+        // Serialize arrays to JSON
+        result[envVarName] = JSON.stringify(value)
+      } else {
+        // Use primitive values as-is
+        result[envVarName] = value
+      }
+    })
+  })
+
+  return result
+}
+
+/**
  * Writes the json object as AIO_ env vars to the .env file in the specified parent folder.
  *
  * @param {object} json the json object to transform and write to disk
@@ -411,11 +488,54 @@ async function writeEnv (json, parentFolder, flags, extraEnvVars) {
   const resultObject = { ...flattenObjectWithSeparator(json), ...extraEnvVars }
   aioLogger.debug(`convertJsonToEnv - flattened and separated json: ${prettyPrintJson(resultObject)}`)
 
-  const data = Object
-    .keys(resultObject)
-    .map(key => `${key}=${resultObject[key]}`)
-    .join(EOL)
-    .concat(EOL)
+  // Separate variables by type for organized output with deprecation notices
+  const legacyImsVars = {}
+  const newImsVars = {}
+  const otherVars = {}
+
+  Object.keys(resultObject).forEach(key => {
+    if (key.startsWith('AIO_ims_contexts_')) {
+      legacyImsVars[key] = resultObject[key]
+    } else if (key.startsWith('IMS_')) {
+      newImsVars[key] = resultObject[key]
+    } else {
+      otherVars[key] = resultObject[key]
+    }
+  })
+
+  // Build the .env file content with sections and comments
+  const sections = []
+
+  // Add non-IMS variables first (runtime, etc)
+  if (Object.keys(otherVars).length > 0) {
+    sections.push(
+      Object.keys(otherVars)
+        .map(key => `${key}=${otherVars[key]}`)
+        .join(EOL)
+    )
+  }
+
+  // Add legacy IMS variables with deprecation notice
+  if (Object.keys(legacyImsVars).length > 0) {
+    sections.push(
+      [
+        '# Legacy credential format (deprecated)',
+        ...Object.keys(legacyImsVars).map(key => `${key}=${legacyImsVars[key]}`)
+      ].join(EOL)
+    )
+  }
+
+  // Add new IMS variables
+  if (Object.keys(newImsVars).length > 0) {
+    sections.push(
+      [
+        '# Simplified credential format (For adding to actions)',
+        ...Object.keys(newImsVars).map(key => `${key}=${newImsVars[key]}`)
+      ].join(EOL)
+    )
+  }
+
+  const data = sections.join(EOL + EOL).concat(EOL)
   aioLogger.debug(`writeEnv - data:${data}`)
 
   return writeFile(destination, data, { ...flags, fileFormat: FILE_FORMAT_ENV })
@@ -649,10 +769,20 @@ async function importConfigJson (configFileOrBuffer, destinationFolder = process
 
   const { runtime, credentials } = config.project.workspace.details
 
+  // Transform credentials and format as simplified IMS_* env vars
+  const transformedCredentials = transformCredentials(credentials, config.project.org.ims_org_id, flags.useJwt)
+
+  // Generate both legacy and new formats for backwards compatibility
+  const legacyImsEnvVars = formatLegacyImsCredentialsForEnv(transformedCredentials)
+  const imsEnvVars = formatImsCredentialsForEnv(transformedCredentials)
+
+  // Merge all vars: legacy (for backwards compatibility) + new (recommended) + extra
+  const allExtraEnvVars = { ...legacyImsEnvVars, ...imsEnvVars, ...extraEnvVars }
+
+  // Only pass runtime through the flatten process (keeps AIO_runtime_* format)
   await writeEnv({
-    runtime: transformRuntime(runtime),
-    ims: { contexts: transformCredentials(credentials, config.project.org.ims_org_id, flags.useJwt) }
-  }, destinationFolder, flags, extraEnvVars)
+    runtime: transformRuntime(runtime)
+  }, destinationFolder, flags, allExtraEnvVars)
 
   // remove the credentials
   delete config.project.workspace.details.runtime
@@ -748,5 +878,6 @@ module.exports = {
   mergeEnv,
   splitEnvLine,
   getProjectCredentialType,
+  formatImsCredentialsForEnv,
   CONSOLE_CONFIG_KEY
 }
