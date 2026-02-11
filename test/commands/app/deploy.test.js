@@ -18,6 +18,7 @@ const helpersActual = jest.requireActual('../../../src/lib/app-helper.js')
 const authHelpersActual = jest.requireActual('../../../src/lib/auth-helper')
 
 const open = require('open')
+const ora = require('ora')
 const mockBundleFunc = jest.fn()
 
 jest.mock('../../../src/lib/app-helper.js')
@@ -31,6 +32,9 @@ const authHelper = require('../../../src/lib/auth-helper')
 
 const mockWebLib = require('@adobe/aio-lib-web')
 const mockRuntimeLib = require('@adobe/aio-lib-runtime')
+
+jest.mock('@adobe/aio-lib-db')
+const mockDbLib = require('@adobe/aio-lib-db')
 
 jest.mock('@adobe/aio-lib-core-config')
 const mockConfig = require('@adobe/aio-lib-core-config')
@@ -55,6 +59,7 @@ jest.mock('../../../src/lib/log-forwarding', () => {
   }
 })
 const LogForwarding = require('../../../src/lib/log-forwarding')
+const { DB_STATUS } = require('../../../src/lib/defaults')
 
 const createWebExportAnnotation = (value) => ({
   annotations: { 'web-export': value }
@@ -204,6 +209,7 @@ beforeEach(() => {
   command = new TheCommand([])
   command.error = jest.fn()
   command.log = jest.fn()
+  command.warn = jest.fn()
   command.appConfig = cloneDeep(mockConfigData)
   command.appConfig.actions = { dist: 'actions' }
   command.appConfig.web.distProd = 'dist'
@@ -1630,5 +1636,333 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('database provisioning', () => {
+  let mockDb
+  beforeEach(() => {
+    mockDb = {
+      provisionStatus: jest.fn(),
+      provisionRequest: jest.fn()
+    }
+    mockDbLib.init.mockResolvedValue(mockDb)
+  })
+
+  // Helper functions for unit tests
+  const createDatabaseConfig = (region = null, provision = true) => ({
+    ow: { namespace: 'test_ns', auth: 'user:pass' },
+    manifest: {
+      full: {
+        database: {
+          'auto-provision': provision,
+          ...(region && { region })
+        }
+      }
+    }
+  })
+
+  const runProvisionTest = async (
+    config,
+    flags,
+    spinner,
+    mockResult = { status: DB_STATUS.PROVISIONED, region: 'amer' },
+    mockStatus = { status: DB_STATUS.NOT_PROVISIONED }
+  ) => {
+    if (mockStatus instanceof Error) {
+      mockDb.provisionStatus.mockRejectedValueOnce(mockStatus)
+    } else {
+      mockDb.provisionStatus.mockResolvedValueOnce(mockStatus)
+    }
+
+    if (mockResult instanceof Error) {
+      mockDb.provisionRequest.mockRejectedValueOnce(mockResult)
+    } else {
+      mockDb.provisionRequest.mockResolvedValueOnce(mockResult)
+    }
+
+    await command.provisionDatabase(config, spinner, flags).catch(e => { throw e })
+    return spinner
+  }
+
+  test('should provision database when auto-provision is true', async () => {
+    mockDb.provisionStatus.mockResolvedValue({ status: DB_STATUS.NOT_PROVISIONED })
+    mockDb.provisionRequest.mockResolvedValue({ status: DB_STATUS.PROVISIONED, region: 'amer' })
+    const appConfigWithDb = createAppConfig({ ...command.appConfig, ...createDatabaseConfig() })
+
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfigWithDb)
+
+    await command.run()
+
+    expect(command.error).toHaveBeenCalledTimes(0)
+
+    const expectedInitConfig = { ow: { namespace: 'test_ns', auth: 'user:pass' } }
+    expect(mockDbLib.init).toHaveBeenCalledWith(expect.objectContaining(expectedInitConfig))
+    expect(mockDb.provisionStatus).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionRequest).toHaveBeenCalledTimes(1)
+
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(command.log).toHaveBeenCalledWith(
+      expect.stringContaining('Successful deployment 🏄')
+    )
+  })
+
+  test('should not provision database when auto-provision is false', async () => {
+    mockDb.provisionStatus.mockResolvedValue({ status: DB_STATUS.NOT_PROVISIONED })
+    mockDb.provisionRequest.mockResolvedValue({ status: DB_STATUS.PROVISIONED, region: 'emea' })
+
+    const appConfigWithoutDb = createAppConfig({ ...command.appConfig, ...createDatabaseConfig(null, false) })
+
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfigWithoutDb)
+
+    await command.run()
+
+    expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockDbLib.init).not.toHaveBeenCalled()
+    expect(mockDb.provisionStatus).not.toHaveBeenCalled()
+    expect(mockDb.provisionRequest).not.toHaveBeenCalled()
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
+    expect(command.log).toHaveBeenCalledWith(
+      expect.stringContaining('Successful deployment 🏄')
+    )
+  })
+
+  //  tests for provisionDatabase method behavior
+  test('should run provision command correctly with region', async () => {
+    const config = createDatabaseConfig('amer')
+    const flags = { verbose: false }
+    const spinner = ora()
+
+    await runProvisionTest(config, flags, spinner)
+
+    expect(spinner.start).toHaveBeenCalledWith(expect.stringContaining('Deploying database in the \'amer\' region'))
+    expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Database is deployed and ready for use'))
+
+    const expectedInitConfig = {
+      ow: { namespace: 'test_ns', auth: 'user:pass' },
+      region: 'amer'
+    }
+    expect(mockDbLib.init).toHaveBeenCalledWith(expect.objectContaining(expectedInitConfig))
+    expect(mockDb.provisionStatus).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionRequest).toHaveBeenCalledTimes(1)
+  })
+
+  test('should run provision command correctly without region', async () => {
+    const config = createDatabaseConfig()
+    const flags = { verbose: false }
+    const spinner = ora()
+
+    await runProvisionTest(config, flags, spinner)
+
+    expect(spinner.start).toHaveBeenCalledWith(expect.stringContaining('Deploying database in the default region'))
+    expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Database is deployed and ready for use'))
+
+    const expectedInitConfig = { ow: { namespace: 'test_ns', auth: 'user:pass' } }
+    expect(mockDbLib.init).toHaveBeenCalledWith(expect.objectContaining(expectedInitConfig))
+    expect(mockDbLib.init).not.toHaveBeenCalledWith(expect.objectContaining({ region: expect.any(String) }))
+    expect(mockDb.provisionStatus).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionRequest).toHaveBeenCalledTimes(1)
+  })
+
+  test('should show verbose output with region', async () => {
+    const config = createDatabaseConfig('apac')
+    const flags = { verbose: true }
+    const spinner = ora()
+
+    await runProvisionTest(config, flags, spinner, { status: DB_STATUS.PROVISIONED, region: 'apac' }, { status: DB_STATUS.DELETED })
+
+    // Existing database status
+    expect(spinner.start).toHaveBeenCalledWith(expect.stringContaining('Checking existing database deployment status...'))
+    expect(spinner.info).toHaveBeenCalledWith(expect.stringContaining('status: DELETED'))
+    // Provision request
+    expect(spinner.start).toHaveBeenCalledWith(expect.stringContaining('in the \'apac\' region...'))
+    expect(spinner.info).toHaveBeenCalledWith(expect.stringContaining('Database provisioning result:'))
+    expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Database is deployed and ready for use'))
+  })
+
+  test('should show verbose output without region', async () => {
+    const config = createDatabaseConfig()
+    const flags = { verbose: true }
+    const spinner = ora()
+
+    await runProvisionTest(config, flags, spinner, { status: DB_STATUS.PROVISIONED, region: 'emea' })
+
+    // Existing database status
+    expect(spinner.start).toHaveBeenCalledWith(expect.stringContaining('Checking existing database deployment status...'))
+    expect(spinner.info).toHaveBeenCalledWith(expect.stringContaining('status: NOT_PROVISIONED'))
+    // Provision request
+    expect(spinner.start).toHaveBeenCalledWith(expect.stringContaining('in the default region...'))
+    expect(spinner.info).toHaveBeenCalledWith(expect.stringContaining('Database provisioning result:'))
+    expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Database is deployed and ready for use'))
+  })
+
+  test('should handle provision command failure', async () => {
+    const config = createDatabaseConfig('amer')
+    const flags = { verbose: false }
+    const error = new Error('Database provision failed')
+    const spinner = ora()
+
+    await expect(runProvisionTest(config, flags, spinner, error))
+      .rejects.toThrow('Database provision failed')
+    expect(spinner.fail).toHaveBeenCalled()
+  })
+
+  test('should not provision if database is already provisioned', async () => {
+    const config = createDatabaseConfig('apac')
+    const spinner = ora()
+
+    await runProvisionTest(config, {}, spinner, null, { status: DB_STATUS.PROVISIONED, region: 'apac' })
+
+    expect(mockDbLib.init).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionStatus).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionRequest).not.toHaveBeenCalled()
+
+    expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Database is deployed and ready for use'))
+  })
+
+  test('should not provision database if request is pending', async () => {
+    const config = createDatabaseConfig('apac')
+    const spinner = ora()
+
+    await runProvisionTest(config, {}, spinner, null, { status: DB_STATUS.REQUESTED, region: 'apac' })
+
+    expect(mockDbLib.init).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionStatus).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionRequest).not.toHaveBeenCalled()
+
+    expect(spinner.succeed).toHaveBeenCalledWith(
+      expect.stringContaining('already been submitted')
+    )
+  })
+
+  test('should try to provision if previous request failed', async () => {
+    const config = createDatabaseConfig('apac')
+
+    await runProvisionTest(config, { }, ora(), undefined, { status: DB_STATUS.FAILED, region: 'apac' })
+
+    expect(mockDbLib.init).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionStatus).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionRequest).toHaveBeenCalledTimes(1)
+  })
+
+  test('should try to provision if database status check fails with verbose flag', async () => {
+    const config = createDatabaseConfig('apac')
+    const spinner = ora()
+
+    await runProvisionTest(config, { verbose: true }, spinner, undefined, new Error('Status check failure'))
+
+    expect(mockDbLib.init).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionStatus).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionRequest).toHaveBeenCalledTimes(1)
+    expect(spinner.warn).toHaveBeenCalledWith(expect.stringContaining('status check failed'))
+  })
+
+  test('should try to provision if database status check fails without verbose flag', async () => {
+    const config = createDatabaseConfig('apac')
+    const spinner = ora()
+
+    await runProvisionTest(config, { }, spinner, undefined, new Error('Status check failure'))
+
+    expect(mockDbLib.init).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionStatus).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionRequest).toHaveBeenCalledTimes(1)
+    expect(spinner.warn).not.toHaveBeenCalledWith(expect.stringContaining('status check failed'))
+  })
+
+  test('should report success when provision request gets submitted and responds as pending', async () => {
+    const config = createDatabaseConfig()
+    const spinner = ora()
+
+    await runProvisionTest(config, {}, spinner, { status: DB_STATUS.PROCESSING, region: 'apac' })
+
+    expect(mockDbLib.init).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionStatus).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionRequest).toHaveBeenCalledTimes(1)
+    expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('request submitted'))
+  })
+
+  test('should report warning when provision request reports unrecognized status', async () => {
+    const config = createDatabaseConfig()
+    const spinner = ora()
+
+    await runProvisionTest(config, {}, spinner, { status: 'OTHER_STATUS' })
+
+    expect(mockDbLib.init).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionStatus).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionRequest).toHaveBeenCalledTimes(1)
+    expect(spinner.warn).toHaveBeenCalledWith(expect.stringContaining('unexpected status'))
+  })
+
+  test('should report warning when provision request responds without status', async () => {
+    const config = createDatabaseConfig()
+    const spinner = ora()
+
+    await runProvisionTest(config, {}, spinner, {})
+
+    expect(mockDbLib.init).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionStatus).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionRequest).toHaveBeenCalledTimes(1)
+    expect(spinner.warn).toHaveBeenCalledWith(expect.stringContaining('unexpected status'))
+  })
+
+  test('should throw error if provision request returns failure status with known message', async () => {
+    const config = createDatabaseConfig()
+    const spinner = ora()
+
+    await expect(runProvisionTest(config, {}, spinner, { status: DB_STATUS.FAILED, message: 'Could not be provisioned' }))
+      .rejects.toThrow('Could not be provisioned')
+
+    expect(mockDbLib.init).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionStatus).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionRequest).toHaveBeenCalledTimes(1)
+    expect(spinner.fail).toHaveBeenCalled()
+  })
+
+  test('should throw error if provision request returns failure status with unknown message', async () => {
+    const config = createDatabaseConfig()
+    const spinner = ora()
+
+    await expect(runProvisionTest(config, {}, spinner, { status: DB_STATUS.REJECTED }))
+      .rejects.toThrow('Unknown error')
+
+    expect(mockDbLib.init).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionStatus).toHaveBeenCalledTimes(1)
+    expect(mockDb.provisionRequest).toHaveBeenCalledTimes(1)
+    expect(spinner.fail).toHaveBeenCalled()
+  })
+
+  test('should throw error if OW auth is missing in config', async () => {
+    const config = createDatabaseConfig()
+    config.ow = { namespace: 'test_ns' } // missing auth
+
+    await expect(runProvisionTest(config, {}, ora())).rejects.toThrow()
+
+    expect(mockDbLib.init).not.toHaveBeenCalled()
+    expect(mockDb.provisionStatus).not.toHaveBeenCalled()
+    expect(mockDb.provisionRequest).not.toHaveBeenCalled()
+  })
+
+  test('should throw error if OW namespace is missing in config', async () => {
+    const config = createDatabaseConfig()
+    config.ow = { auth: 'user:pass' } // missing namespace
+
+    await expect(runProvisionTest(config, {}, ora())).rejects.toThrow()
+
+    expect(mockDbLib.init).not.toHaveBeenCalled()
+    expect(mockDb.provisionStatus).not.toHaveBeenCalled()
+    expect(mockDb.provisionRequest).not.toHaveBeenCalled()
+  })
+
+  test('should throw error if OW config is missing entirely', async () => {
+    const config = createDatabaseConfig()
+    delete config.ow
+
+    await expect(runProvisionTest(config, {}, ora())).rejects.toThrow()
+
+    expect(mockDbLib.init).not.toHaveBeenCalled()
+    expect(mockDb.provisionStatus).not.toHaveBeenCalled()
+    expect(mockDb.provisionRequest).not.toHaveBeenCalled()
   })
 })

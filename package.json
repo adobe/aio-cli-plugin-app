@@ -10,6 +10,7 @@
     "@adobe/aio-lib-core-config": "^5",
     "@adobe/aio-lib-core-logging": "^3",
     "@adobe/aio-lib-core-networking": "^5",
+    "@adobe/aio-lib-db": "^0.1.0-beta.4",
     "@adobe/aio-lib-env": "^3",
     "@adobe/aio-lib-ims": "^7",
     "@adobe/aio-lib-runtime": "^7.1.3",
