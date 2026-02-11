@@ -30,7 +30,7 @@ async function importConsoleConfig (consoleConfigFileOrBuffer, flags) {
     // unpack oauthS2S json into IMS_OAUTH_S2S_* env vars
     const oauthS2SEnv = Object.entries(oauthS2SCredential).reduce((acc, [key, value]) => {
       if (Array.isArray(value)) {
-        value = JSON.stringify(value) // store e.g. scopes as array to be consistent with the AIO_* vars
+        value = JSON.stringify(value) // stringify arrays e.g. scopes to be consistent with AIO_* vars behavior
       }
       acc[`${IMS_OAUTH_S2S_ENV}_${key.toUpperCase()}`] = value
       return acc
