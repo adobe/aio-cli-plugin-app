@@ -34,7 +34,7 @@ test('exports', () => {
 })
 
 describe('importConsoleConfig', () => {
-  test('with oauth_server_to_server credentials, adds IMS_OAUTH_S2S to env vars', async () => {
+  test('with oauth_server_to_server credentials, unpacks IMS_OAUTH_S2S_* env vars', async () => {
     const configContent = fixtureFile('oauths2s/valid.config.json')
     // The file is read twice: once by importConsoleConfig (loadFunc) and once by importConfigJson
     fs.readFileSync.mockReturnValue(configContent)
@@ -44,17 +44,17 @@ describe('importConsoleConfig', () => {
     expect(config).toBeDefined()
     expect(config.project.name).toEqual('TestProject123')
 
-    // Check that writeFile was called with the IMS_OAUTH_S2S_ENV variable
     const envWriteCall = fs.writeFile.mock.calls.find(call => call[0].endsWith('.env'))
     expect(envWriteCall).toBeDefined()
-    expect(envWriteCall[1]).toContain(SERVICE_API_KEY_ENV)
-    expect(envWriteCall[1]).toContain(IMS_OAUTH_S2S_ENV)
-
-    // Verify the IMS_OAUTH_S2S value contains expected credential data
     const envContent = envWriteCall[1]
-    expect(envContent).toContain('"client_id":"CXCXCXCXCXCXCXCXC"')
-    expect(envContent).toContain('"client_secret":"SFSFSFSFSFSFSFSFSFSFSFSFSFS"')
-    expect(envContent).toContain('"org_id":"XOXOXOXOXOXOX@AdobeOrg"')
+    expect(envContent).toContain(SERVICE_API_KEY_ENV)
+    expect(envContent).toContain(IMS_OAUTH_S2S_ENV)
+
+    // Credential is unpacked into IMS_OAUTH_S2S_* vars
+    expect(envContent).toContain('IMS_OAUTH_S2S_CLIENT_ID=CXCXCXCXCXCXCXCXC')
+    expect(envContent).toContain('IMS_OAUTH_S2S_CLIENT_SECRET=SFSFSFSFSFSFSFSFSFSFSFSFSFS')
+    expect(envContent).toContain('IMS_OAUTH_S2S_ORG_ID=XOXOXOXOXOXOX@AdobeOrg')
+    expect(envContent).toContain('IMS_OAUTH_S2S_SCOPES=["openid","AdobeID"]') // stringified array
   })
 
   test('with jwt credentials only, does not add IMS_OAUTH_S2S to env vars', async () => {
