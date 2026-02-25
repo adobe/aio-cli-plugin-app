@@ -158,6 +158,7 @@ describe('run', () => {
     mockFS.existsSync.mockReset()
     command = new TheCommand([])
     command.error = jest.fn()
+    command.warn = jest.fn()
     command.log = jest.fn()
     command.appConfig = cloneDeep(mockConfigData)
     command.appConfig.actions = { dist: 'actions' }
@@ -325,27 +326,36 @@ describe('run', () => {
     expect(command.log).toHaveBeenCalledWith('no frontend, skipping frontend undeploy')
   })
 
-  test('should fail if scripts.undeployActions fails', async () => {
+  test('should not fail if scripts.undeployActions fails', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
 
     const error = new Error('mock failure Actions')
     mockRuntimeLib.undeployActions.mockRejectedValue(error)
 
-    await expect(command.run()).rejects.toThrow(error)
+    await expect(command.run()).resolves.toBeUndefined()
+
+    // // multiple check lines because error wraps text
+    // expect(stdout.output).toEqual(expect.stringContaining('Error when un-deploying actions for application'))
+    // expect(stdout.output).toEqual(expect.stringContaining('mock failure Actions'))
 
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
   })
 
-  test('should fail if scripts.undeployWeb fails', async () => {
+  test('should not fail if scripts.undeployWeb fails', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
 
     const error = new Error('mock failure UI')
     mockWebLib.undeployWeb.mockRejectedValue(error)
 
-    await expect(command.run()).rejects.toThrow(error)
+    await expect(command.run()).resolves.toBeUndefined()
+
+    // expect(stdout.output).toEqual(expect.stringContaining('Error when un-deploying web assets for application'))
+    // expect(stdout.output).toEqual(expect.stringContaining('mock failure UI'))
 
     expect(command.error).toHaveBeenCalledTimes(0)
+    expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
   })
 
