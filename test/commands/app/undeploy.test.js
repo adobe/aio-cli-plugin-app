@@ -334,9 +334,8 @@ describe('run', () => {
 
     await expect(command.run()).resolves.toBeUndefined()
 
-    // // multiple check lines because error wraps text
-    // expect(stdout.output).toEqual(expect.stringContaining('Error when un-deploying actions for application'))
-    // expect(stdout.output).toEqual(expect.stringContaining('mock failure Actions'))
+    // multiple check lines because error wraps text
+    expect(command.warn).toHaveBeenCalledWith('Error when un-deploying actions for application: mock failure Actions')
 
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
@@ -351,8 +350,7 @@ describe('run', () => {
 
     await expect(command.run()).resolves.toBeUndefined()
 
-    // expect(stdout.output).toEqual(expect.stringContaining('Error when un-deploying web assets for application'))
-    // expect(stdout.output).toEqual(expect.stringContaining('mock failure UI'))
+    expect(command.warn).toHaveBeenCalledWith('Error when un-deploying web assets for application: mock failure UI')
 
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
