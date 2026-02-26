@@ -146,7 +146,7 @@ class Undeploy extends BaseCommand {
           }
           spinner.succeed(chalk.green(`Un-deploying actions for ${extName}`))
         } catch (err) {
-          this.warn(`Error when un-deploying actions for ${extName}: ${err.message}`)
+          spinner.warn(chalk.yellow(`Error when un-deploying actions for ${extName}: ${err.message}`))
         }
       } else {
         this.log('no manifest file, skipping action undeploy')
@@ -162,7 +162,7 @@ class Undeploy extends BaseCommand {
 
           spinner.succeed(chalk.green(`Un-Deploying web assets for ${extName}`))
         } catch (err) {
-          this.warn(`Error when un-deploying web assets for ${extName}: ${err.message}`)
+          spinner.warn(chalk.yellow(`Error when un-deploying web assets for ${extName}: ${err.message}`))
         }
       } else {
         this.log('no frontend, skipping frontend undeploy')
