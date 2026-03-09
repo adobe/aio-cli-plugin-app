@@ -50,65 +50,60 @@ class Undeploy extends BaseCommand {
     }
 
     const spinner = ora()
-    try {
-      const { aio: aioConfig, packagejson: packageJson } = await this.getFullConfig()
-      const cliDetails = await getAccessToken({ useCachedToken: !flags.unpublish })
-      const appInfo = {
-        name: packageJson.name,
-        version: packageJson.version,
-        project: aioConfig?.project,
-        runtimeNamespace: aioConfig?.runtime?.namespace
-      }
 
+    const { aio: aioConfig, packagejson: packageJson } = await this.getFullConfig({}, flags)
+    const cliDetails = await getAccessToken({ useCachedToken: !flags.unpublish })
+    const appInfo = {
+      name: packageJson.name,
+      version: packageJson.version,
+      project: aioConfig?.project,
+      runtimeNamespace: aioConfig?.runtime?.namespace
+    }
+
+    if (cliDetails?.accessToken) {
+      try {
+        // send audit log at start (don't wait for deployment to finish)
+        await sendAppUndeployAuditLog({
+          accessToken: cliDetails?.accessToken,
+          cliCommandFlags: flags,
+          appInfo,
+          env: cliDetails.env
+        })
+      } catch (error) {
+        if (flags.verbose) {
+          this.warn('Error: Audit Log Service Error: Failed to send audit log event for deployment.')
+          this.warn(error.message)
+        }
+      }
+    }
+
+    for (let i = 0; i < keys.length; ++i) {
+      const k = keys[i]
+      // TODO: remove this check once the deploy service is enabled by default
+      const v = setRuntimeApiHostAndAuthHandler(values[i])
+
+      await this.undeployOneExt(k, v, flags, spinner)
       if (cliDetails?.accessToken) {
+        // send logs for case of web-assets undeployment
         try {
-          // send audit log at start (don't wait for deployment to finish)
-          await sendAppUndeployAuditLog({
+          await sendAppAssetsUndeployedAuditLog({
             accessToken: cliDetails?.accessToken,
             cliCommandFlags: flags,
             appInfo,
             env: cliDetails.env
           })
         } catch (error) {
-          if (flags.verbose) {
-            this.warn('Error: Audit Log Service Error: Failed to send audit log event for deployment.')
-            this.warn(error.message)
-          }
+          this.warn('Warning: Audit Log Service Error: Failed to send audit log event for un-deployment.')
         }
       }
+    }
 
-      for (let i = 0; i < keys.length; ++i) {
-        const k = keys[i]
-        // TODO: remove this check once the deploy service is enabled by default
-        const v = setRuntimeApiHostAndAuthHandler(values[i])
-
-        await this.undeployOneExt(k, v, flags, spinner)
-        if (cliDetails?.accessToken) {
-          // send logs for case of web-assets undeployment
-          try {
-            await sendAppAssetsUndeployedAuditLog({
-              accessToken: cliDetails?.accessToken,
-              cliCommandFlags: flags,
-              appInfo,
-              env: cliDetails.env
-            })
-          } catch (error) {
-            this.warn('Warning: Audit Log Service Error: Failed to send audit log event for un-deployment.')
-          }
-        }
-      }
-
-      // 1.2. unpublish extension manifest
-      if (flags.unpublish) {
-        const payload = await this.unpublishExtensionPoints(libConsoleCLI, undeployConfigs, aioConfig, flags['force-unpublish'])
-        this.log(chalk.blue(chalk.bold(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': '${Object.keys(payload.endpoints)}'`)))
-      } else {
-        this.log('skipping unpublish phase...')
-      }
-    } catch (error) {
-      spinner.stop()
-      // delegate to top handler
-      throw error
+    // 1.2. unpublish extension manifest
+    if (flags.unpublish) {
+      const payload = await this.unpublishExtensionPoints(libConsoleCLI, undeployConfigs, aioConfig, flags['force-unpublish'])
+      this.log(chalk.blue(chalk.bold(`New Extension Point(s) in Workspace '${aioConfig.project.workspace.name}': '${Object.keys(payload.endpoints)}'`)))
+    } else {
+      this.log('skipping unpublish phase...')
     }
 
     const command = await this.config.findCommand('app:clean')
@@ -151,8 +146,7 @@ class Undeploy extends BaseCommand {
           }
           spinner.succeed(chalk.green(`Un-deploying actions for ${extName}`))
         } catch (err) {
-          spinner.fail(chalk.green(`Un-deploying actions for ${extName}`))
-          throw err
+          spinner.warn(chalk.yellow(`Error when un-deploying actions for ${extName}: ${err.message}`))
         }
       } else {
         this.log('no manifest file, skipping action undeploy')
@@ -168,8 +162,7 @@ class Undeploy extends BaseCommand {
 
           spinner.succeed(chalk.green(`Un-Deploying web assets for ${extName}`))
         } catch (err) {
-          spinner.fail(chalk.green(`Un-Deploying web assets for ${extName}`))
-          throw err
+          spinner.warn(chalk.yellow(`Error when un-deploying web assets for ${extName}: ${err.message}`))
         }
       } else {
         this.log('no frontend, skipping frontend undeploy')

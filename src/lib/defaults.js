@@ -22,6 +22,7 @@ module.exports = {
   defaultImageCacheDuration: '604800',
   AIO_CONFIG_IMS_ORG_ID: 'project.org.ims_org_id',
   SERVICE_API_KEY_ENV: 'SERVICE_API_KEY',
+  IMS_OAUTH_S2S_ENV: 'IMS_OAUTH_S2S',
   ENTP_INT_CERTS_FOLDER: 'entp-int-certs',
   CONSOLE_API_KEYS: {
     prod: 'aio-cli-console-auth',

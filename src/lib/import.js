@@ -1,5 +1,5 @@
-const { loadAndValidateConfigFile, importConfigJson, loadConfigFile, getServiceApiKey } = require('./import-helper')
-const { SERVICE_API_KEY_ENV } = require('./defaults')
+const { loadAndValidateConfigFile, importConfigJson, loadConfigFile, getServiceApiKey, getOAuthS2SCredential } = require('./import-helper')
+const { SERVICE_API_KEY_ENV, IMS_OAUTH_S2S_ENV } = require('./defaults')
 
 /**
  * Imports the project's console config to the local environment.
@@ -22,8 +22,24 @@ async function importConsoleConfig (consoleConfigFileOrBuffer, flags) {
   const loadFunc = skipValidation ? loadConfigFile : loadAndValidateConfigFile
   const config = loadFunc(consoleConfigFileOrBuffer).values
 
-  const serviceClientId = getServiceApiKey(config, useJwt)
-  const extraEnvVars = { [SERVICE_API_KEY_ENV]: serviceClientId }
+  const serviceClientId = getServiceApiKey(config, useJwt) // = client_id, legacy
+  const oauthS2SCredential = getOAuthS2SCredential(config)
+
+  let extraEnvVars
+  if (typeof oauthS2SCredential === 'object') {
+    // unpack oauthS2S json into IMS_OAUTH_S2S_* env vars
+    const oauthS2SEnv = Object.entries(oauthS2SCredential).reduce((acc, [key, value]) => {
+      if (Array.isArray(value)) {
+        value = JSON.stringify(value) // stringify arrays e.g. scopes to be consistent with AIO_* vars behavior
+      }
+      acc[`${IMS_OAUTH_S2S_ENV}_${key.toUpperCase()}`] = value
+      return acc
+    }, {})
+
+    extraEnvVars = { [SERVICE_API_KEY_ENV]: serviceClientId, ...oauthS2SEnv }
+  } else {
+    extraEnvVars = { [SERVICE_API_KEY_ENV]: serviceClientId }
+  }
 
   await importConfigJson(consoleConfigFileOrBuffer, process.cwd(), { interactive, overwrite, merge, useJwt }, extraEnvVars)
   return config

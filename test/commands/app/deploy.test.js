@@ -1334,6 +1334,7 @@ describe('run', () => {
       cliCommandFlags: {
         actions: true,
         build: true,
+        'config-validation': true,
         'content-hash': true,
         'force-build': true,
         'force-deploy': false,
@@ -1457,6 +1458,7 @@ describe('run', () => {
       cliCommandFlags: {
         actions: true,
         build: true,
+        'config-validation': true,
         'content-hash': true,
         'force-build': true,
         'force-deploy': false,
