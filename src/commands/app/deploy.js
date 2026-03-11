@@ -135,7 +135,7 @@ class Deploy extends BuildCommand {
         const v = {
           ...setRuntimeApiHostAndAuthHandler(values[i])
         }
-        await this.deploySingleConfig({ name: k, config: v, originalConfig: values[i], flags, spinner })
+        await this.deploySingleConfig({ name: k, config: v, originalConfig: values[i], flags, spinner, accessToken: cliDetails?.accessToken })
         if (cliDetails?.accessToken && v.app.hasFrontend && flags['web-assets']) {
           const opItems = getFilesCountWithExtension(v.web.distProd)
           try {
@@ -174,7 +174,7 @@ class Deploy extends BuildCommand {
     this.log(chalk.green(chalk.bold('Successful deployment 🏄')))
   }
 
-  async deploySingleConfig ({ name, config, originalConfig, flags, spinner }) {
+  async deploySingleConfig ({ name, config, originalConfig, flags, spinner, accessToken }) {
     const onProgress = !flags.verbose
       ? info => {
         spinner.text = info
@@ -208,7 +208,7 @@ class Deploy extends BuildCommand {
 
     // provision database if configured
     if (config.manifest?.full?.database?.['auto-provision'] === true) {
-      await this.provisionDatabase(config, spinner, flags)
+      await this.provisionDatabase(config, spinner, flags, accessToken)
     }
 
     if (flags.actions) {
@@ -307,11 +307,15 @@ class Deploy extends BuildCommand {
     }
   }
 
-  async provisionDatabase (config, spinner, flags) {
-    const { namespace, auth } = config.ow || {}
-    if (!(namespace && auth)) {
-      throw new Error('Database deployment requires OW auth configuration.')
+  async provisionDatabase (config, spinner, flags, accessToken) {
+    const { namespace } = config.ow || {}
+    if (!(namespace)) {
+      throw new Error('Database deployment requires OW namespace configuration.')
     }
+    if (!accessToken) {
+      throw new Error('Database deployment requires an IMS access token.')
+    }
+
     const region = config.manifest?.full?.database?.region
     const regionMess = region ? `'${region}'` : 'default'
 
@@ -329,7 +333,8 @@ class Deploy extends BuildCommand {
     try {
       spinner.start(`Deploying database in the ${regionMess} region...`)
 
-      const db = await dbLib.init({ ow: { namespace, auth }, region })
+      const db = await dbLib.init({ ow: { namespace }, region, token: accessToken })
+
       progress({ next: 'Checking existing database deployment status...', verboseOnly: true })
 
       let prevStatus
