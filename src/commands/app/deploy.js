@@ -24,6 +24,8 @@ const {
   getFilesCountWithExtension
 } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
+const dbLib = require('@adobe/aio-lib-db')
+const { DB_STATUS } = require('../../lib/defaults')
 const LogForwarding = require('../../lib/log-forwarding')
 const { sendAppAssetsDeployedAuditLog, sendAppDeployAuditLog } = require('../../lib/audit-logger')
 const { setRuntimeApiHostAndAuthHandler, getAccessToken } = require('../../lib/auth-helper')
@@ -133,7 +135,7 @@ class Deploy extends BuildCommand {
         const v = {
           ...setRuntimeApiHostAndAuthHandler(values[i])
         }
-        await this.deploySingleConfig({ name: k, config: v, originalConfig: values[i], flags, spinner })
+        await this.deploySingleConfig({ name: k, config: v, originalConfig: values[i], flags, spinner, accessToken: cliDetails?.accessToken })
         if (cliDetails?.accessToken && v.app.hasFrontend && flags['web-assets']) {
           const opItems = getFilesCountWithExtension(v.web.distProd)
           try {
@@ -172,7 +174,7 @@ class Deploy extends BuildCommand {
     this.log(chalk.green(chalk.bold('Successful deployment 🏄')))
   }
 
-  async deploySingleConfig ({ name, config, originalConfig, flags, spinner }) {
+  async deploySingleConfig ({ name, config, originalConfig, flags, spinner, accessToken }) {
     const onProgress = !flags.verbose
       ? info => {
         spinner.text = info
@@ -202,6 +204,11 @@ class Deploy extends BuildCommand {
       }
     } catch (err) {
       this.error(err)
+    }
+
+    // provision database if configured
+    if (config.manifest?.full?.database?.['auto-provision'] === true) {
+      await this.provisionDatabase(config, spinner, flags, accessToken)
     }
 
     if (flags.actions) {
@@ -297,6 +304,79 @@ class Deploy extends BuildCommand {
       }
     } catch (err) {
       this.error(err)
+    }
+  }
+
+  async provisionDatabase (config, spinner, flags, accessToken) {
+    const { namespace } = config.ow || {}
+    if (!(namespace)) {
+      throw new Error('Database deployment requires OW namespace configuration.')
+    }
+    if (!accessToken) {
+      throw new Error('Database deployment requires an IMS access token.')
+    }
+
+    const region = config.manifest?.full?.database?.region
+    const regionMess = region ? `'${region}'` : 'default'
+
+    const progress = ({ next = undefined, status = undefined, verboseOnly = false }, statusMethod = spinner.info) => {
+      if (flags.verbose) {
+        const method = statusMethod.bind(spinner)
+        method(status)
+        spinner.start(next)
+      } else if (next && !verboseOnly) {
+        spinner.text = next
+      }
+    }
+
+    let provRes
+    try {
+      spinner.start(`Deploying database in the ${regionMess} region...`)
+
+      const db = await dbLib.init({ ow: { namespace }, region, token: accessToken })
+
+      progress({ next: 'Checking existing database deployment status...', verboseOnly: true })
+
+      let prevStatus
+      let statusRegion
+      const next = `Submitting database provisioning request in the ${regionMess} region...`
+      try {
+        const statusRes = await db.provisionStatus()
+        prevStatus = statusRes.status.toUpperCase()
+        statusRegion = statusRes.region
+        const regionMessage = statusRegion ? ` in region '${statusRegion}'` : ''
+        progress({ status: chalk.dim(`Existing database provisioning status: ${prevStatus}${regionMessage}`), next })
+      } catch (err) {
+        progress({ status: chalk.red(`Database status check failed: ${err.message}`), next }, spinner.warn)
+        prevStatus = null
+      }
+
+      if (prevStatus === DB_STATUS.PROVISIONED) {
+        spinner.succeed(chalk.green(`Database is deployed and ready for use in the '${statusRegion}' region`))
+        return
+      } else if (prevStatus === DB_STATUS.REQUESTED || prevStatus === DB_STATUS.PROCESSING) {
+        spinner.succeed(chalk.green(`Database provisioning request has already been submitted in the '${statusRegion}' region and is pending`))
+        return
+      }
+
+      provRes = await db.provisionRequest()
+      progress({ status: chalk.dim(`Database provisioning result:\n${JSON.stringify(provRes, null, 2)}`) })
+    } catch (error) {
+      spinner.fail(chalk.red('Database deployment failed'))
+      throw error
+    }
+
+    const resultStatus = provRes?.status?.toUpperCase() || DB_STATUS.UNKNOWN
+    if (resultStatus === DB_STATUS.PROVISIONED) {
+      spinner.succeed(chalk.green(`Database is deployed and ready for use in the '${provRes.region}' region`))
+    } else if (resultStatus === DB_STATUS.REQUESTED || resultStatus === DB_STATUS.PROCESSING) {
+      spinner.succeed(chalk.green(`Database provisioning request submitted in the '${provRes.region}' region, database deployment is now pending`))
+    } else if (resultStatus === DB_STATUS.FAILED || resultStatus === DB_STATUS.REJECTED) {
+      const message = `Database provisioning request failed with status '${resultStatus}'`
+      spinner.fail(chalk.red(message))
+      throw new Error(`${message}: ${provRes.message || 'Unknown error'}`)
+    } else {
+      spinner.warn(chalk.yellow(`Database provisioning request returned unexpected status '${resultStatus}', an update to the aio cli tool may be necessary.`))
     }
   }
 
