@@ -70,7 +70,7 @@
     "stdout-stderr": "^0.1.9"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "files": [
     "bin/run",
