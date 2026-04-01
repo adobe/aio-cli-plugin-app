@@ -176,6 +176,7 @@ beforeEach(() => {
   helpers.buildExcShellViewExtensionMetadata.mockReset()
   helpers.createWebExportFilter.mockReset()
   helpers.rewriteActionUrlInEntities.mockReset()
+  mockConfig.reload.mockReset()
   mockLogForwarding.isLocalConfigChanged.mockReset()
   mockLogForwarding.getLocalConfigWithSecrets.mockReset()
   mockLogForwarding.updateServerConfig.mockReset()
@@ -866,6 +867,24 @@ describe('run', () => {
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(0)
     expect(command.error).toHaveBeenCalledTimes(0)
+  })
+
+  test('deploy reloads config before deploying actions', async () => {
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+    const noScriptFound = undefined
+    helpers.runInProcess
+      .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
+      .mockResolvedValueOnce(noScriptFound) // deploy-actions
+      .mockResolvedValueOnce(noScriptFound) // post-app-deploy
+
+    command.argv = ['--no-web-assets']
+    await command.run()
+
+    expect(mockConfig.reload).toHaveBeenCalledTimes(1)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(mockConfig.reload.mock.invocationCallOrder[0]).toBeLessThan(
+      mockRuntimeLib.deployActions.mock.invocationCallOrder[0]
+    )
   })
 
   test('deploy (has deploy-actions and deploy-static hooks)', async () => {
