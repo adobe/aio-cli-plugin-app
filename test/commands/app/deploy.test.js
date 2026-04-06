@@ -919,15 +919,17 @@ describe('run', () => {
       .mockResolvedValueOnce(undefined) // post-app-deploy
 
     command.argv = ['--no-web-assets']
-    await command.run()
+    try {
+      await command.run()
 
-    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
-    const deployedConfig = mockRuntimeLib.deployActions.mock.calls[0][0]
-    // The config passed to deployActions should reflect the refreshed auth,
-    // not the stale value from the initial config load
-    expect(deployedConfig.ow.auth).toBe(freshAuth)
-
-    delete process.env.AIO_RUNTIME_AUTH
+      expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+      const deployedConfig = mockRuntimeLib.deployActions.mock.calls[0][0]
+      // The config passed to deployActions should reflect the refreshed auth,
+      // not the stale value from the initial config load
+      expect(deployedConfig.ow.auth).toBe(freshAuth)
+    } finally {
+      delete process.env.AIO_RUNTIME_AUTH
+    }
   })
 
   test('deploy should clear appConfig cache after reload so subsequent loads are fresh', async () => {
@@ -991,19 +993,21 @@ describe('run', () => {
 
     mockExtRegExcShellAndNuiPayload()
     command.argv = ['--no-web-assets']
-    await command.run()
+    try {
+      await command.run()
 
-    // All 3 extensions should have been deployed
-    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(3)
+      // All 3 extensions should have been deployed
+      expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(3)
 
-    // The second and third extension deploys should use the fresh auth,
-    // not the stale auth from the initial config load
-    const secondExtConfig = mockRuntimeLib.deployActions.mock.calls[1][0]
-    const thirdExtConfig = mockRuntimeLib.deployActions.mock.calls[2][0]
-    expect(secondExtConfig.ow.auth).toBe(freshAuth)
-    expect(thirdExtConfig.ow.auth).toBe(freshAuth)
-
-    delete process.env.AIO_RUNTIME_AUTH
+      // The second and third extension deploys should use the fresh auth,
+      // not the stale auth from the initial config load
+      const secondExtConfig = mockRuntimeLib.deployActions.mock.calls[1][0]
+      const thirdExtConfig = mockRuntimeLib.deployActions.mock.calls[2][0]
+      expect(secondExtConfig.ow.auth).toBe(freshAuth)
+      expect(thirdExtConfig.ow.auth).toBe(freshAuth)
+    } finally {
+      delete process.env.AIO_RUNTIME_AUTH
+    }
   })
 
   test('deploy (has deploy-actions and deploy-static hooks)', async () => {
