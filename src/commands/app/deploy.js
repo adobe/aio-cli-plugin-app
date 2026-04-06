@@ -30,6 +30,7 @@ const LogForwarding = require('../../lib/log-forwarding')
 const { sendAppAssetsDeployedAuditLog, sendAppDeployAuditLog } = require('../../lib/audit-logger')
 const { setRuntimeApiHostAndAuthHandler, getAccessToken } = require('../../lib/auth-helper')
 const logActions = require('../../lib/log-actions')
+const aioConfigLoader = require('@adobe/aio-lib-core-config')
 
 const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
 const POST_DEPLOY_EVENT_REG = 'post-deploy-event-reg'
@@ -230,6 +231,7 @@ class Deploy extends BuildCommand {
               // output should be "Error : <plugin-name> : <error-message>\n" for each failure
               this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
             }
+            aioConfigLoader.reload()
             deployedRuntimeEntities = await rtLib.deployActions(config, { filterEntities, useForce: flags['force-deploy'] }, onProgress)
           }
 
