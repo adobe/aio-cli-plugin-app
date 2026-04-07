@@ -108,6 +108,7 @@ test('flags', async () => {
 test('unknown flag', async () => {
   const message = 'Nonexistent flag: --wtf\nSee more help with --help'
   const command = new TheCommand()
+  command.config = global.createOclifMockConfig()
   command.argv = ['my-app.zip', '--wtf'] // have to specify the default arg because an oclif quirk
   await expect(command.run()).rejects.toEqual(expect.objectContaining({ message: expect.stringContaining(message) }))
 })
@@ -333,9 +334,9 @@ describe('runTests', () => {
 
   beforeEach(() => {
     command = new TheCommand()
-    command.config = {
+    command.config = global.createOclifMockConfig({
       runCommand: jest.fn()
-    }
+    })
     execa.mockImplementationOnce(() => {
       return Promise.resolve({ stdout: '' })
     })
@@ -360,6 +361,7 @@ describe('run', () => {
 
   test('no flags, no lockfile', async () => {
     const command = new TheCommand()
+    command.config = global.createOclifMockConfig()
     command.argv = ['my-app.zip']
 
     // since we already unit test the methods above, we mock it here
@@ -386,6 +388,7 @@ describe('run', () => {
 
   test('no flags, has lockfile', async () => {
     const command = new TheCommand()
+    command.config = global.createOclifMockConfig()
     command.argv = ['my-app.zip']
 
     // since we already unit test the methods above, we mock it here
@@ -415,6 +418,7 @@ describe('run', () => {
 
   test('no flags, has lockfile, npm ci fails and falls back to npm install', async () => {
     const command = new TheCommand()
+    command.config = global.createOclifMockConfig()
     command.argv = ['my-app.zip']
 
     const npmCIError = new Error('npm ci can only install packages when your package.json and package-lock.json are in sync')
@@ -449,6 +453,7 @@ describe('run', () => {
 
   test('subcommand throws error (--verbose)', async () => {
     const command = new TheCommand()
+    command.config = global.createOclifMockConfig()
     command.argv = ['my-app.zip', '--verbose']
 
     const errorObject = new Error('this is a subcommand error message')
@@ -480,6 +485,7 @@ describe('run', () => {
 
   test('subcommand throws error (not verbose)', async () => {
     const command = new TheCommand()
+    command.config = global.createOclifMockConfig()
     command.argv = ['my-app.zip']
 
     const errorMessage = 'this is a subcommand error message'
@@ -511,6 +517,7 @@ describe('run', () => {
 
   test('flag --output', async () => {
     const command = new TheCommand()
+    command.config = global.createOclifMockConfig()
     command.argv = ['my-app.zip', '--output', 'my-dest-folder']
 
     // since we already unit test the methods above, we mock it here
@@ -538,6 +545,7 @@ describe('run', () => {
 
   test('app config validation error', async () => {
     const command = new TheCommand()
+    command.config = global.createOclifMockConfig()
     command.argv = ['my-app.zip']
 
     // since we already unit test the methods above, we mock it here
@@ -560,6 +568,7 @@ describe('run', () => {
 
   test('flag --tests', async () => {
     const command = new TheCommand()
+    command.config = global.createOclifMockConfig()
     command.argv = ['my-app.zip', '--output', 'my-dest-folder', '--tests']
 
     // since we already unit test the methods above, we mock it here
@@ -586,6 +595,7 @@ describe('run', () => {
 
   test('flag --no-tests', async () => {
     const command = new TheCommand()
+    command.config = global.createOclifMockConfig()
     command.argv = ['my-app.zip', '--output', 'my-dest-folder', '--no-tests']
 
     // since we already unit test the methods above, we mock it here

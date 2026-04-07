@@ -41,9 +41,9 @@ beforeEach(() => {
   command.getFullConfig.mockResolvedValue(createFullConfig({}))
   command.getConfigFileForKey = jest.fn()
   command.getConfigFileForKey.mockResolvedValue({})
-  command.config = {
+  command.config = global.createOclifMockConfig({
     runCommand: jest.fn()
-  }
+  })
 
   command.selectTemplates = jest.fn()
   command.selectTemplates.mockResolvedValue([])

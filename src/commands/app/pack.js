@@ -22,7 +22,6 @@ const { getObjectValue } = require('../../lib/app-helper')
 const ora = require('ora')
 const junk = require('junk')
 
-// eslint-disable-next-line node/no-missing-require
 const libConfig = require('@adobe/aio-cli-lib-app-config')
 
 const DIST_FOLDER = 'dist'

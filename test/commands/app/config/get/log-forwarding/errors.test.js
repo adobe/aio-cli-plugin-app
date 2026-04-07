@@ -24,6 +24,7 @@ jest.mock('@adobe/aio-lib-runtime', () => ({
 let command, logForwarding
 beforeEach(async () => {
   command = new TheCommand([])
+  command.config = global.createOclifMockConfig()
   command.appConfig = {
     aio: {
       runtime: {

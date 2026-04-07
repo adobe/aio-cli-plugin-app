@@ -37,6 +37,7 @@ describe('bad flags', () => {
   let command
   beforeEach(() => {
     command = new TheCommand([])
+    command.config = global.createOclifMockConfig()
   })
   test('unknown', async () => {
     command.argv = ['--wtf']
@@ -68,6 +69,7 @@ describe('bad user selections', () => {
   let command
   beforeEach(() => {
     command = new TheCommand([])
+    command.config = global.createOclifMockConfig()
     command.getAppExtConfigs = jest.fn()
     command.appConfig = cloneDeep(mockConfigData)
     fs.removeSync.mockClear()

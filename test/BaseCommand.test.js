@@ -282,7 +282,7 @@ describe('getLibConsoleCLI', () => {
 
 test('init', async () => {
   const cmd = new TheCommand([])
-  cmd.config = {}
+  cmd.config = global.createOclifMockConfig()
   await cmd.init()
   expect(cmd.prompt).toBe(mockExtensionPrompt)
   expect(inquirer.createPromptModule).toHaveBeenCalledWith({ output: process.stderr })
@@ -290,6 +290,7 @@ test('init', async () => {
 
 test('catch', async () => {
   const cmd = new TheCommand([])
+  cmd.config = global.createOclifMockConfig()
   cmd.error = jest.fn()
   await cmd.catch(new Error('fake error'))
   expect(cmd.error).toHaveBeenCalledWith('fake error')
@@ -297,6 +298,7 @@ test('catch', async () => {
 
 test('will change error message when aio app outside of the application root', async () => {
   const cmd = new TheCommand([])
+  cmd.config = global.createOclifMockConfig()
   cmd.error = jest.fn()
   await cmd.catch(new Error('ENOENT: no such file or directory, open \'package.json\''))
 
@@ -308,6 +310,7 @@ test('will change error message when aio app outside of the application root', a
 
 test('will change error message when aio app outside of the application root (--verbose)', async () => {
   const cmd = new TheCommand(['--verbose'])
+  cmd.config = global.createOclifMockConfig()
   cmd.error = jest.fn()
   await cmd.catch(new Error('ENOENT: no such file or directory, open \'package.json\''))
 
@@ -319,6 +322,7 @@ test('will change error message when aio app outside of the application root (--
 
 test('will handle errors without stack traces when using --verbose flag', async () => {
   const cmd = new TheCommand(['--verbose'])
+  cmd.config = global.createOclifMockConfig()
   cmd.error = jest.fn()
   const errorWithoutStack = new Error('fake error')
   delete errorWithoutStack.stack
@@ -329,6 +333,7 @@ test('will handle errors without stack traces when using --verbose flag', async 
 
 test('will handle errors without stack traces when not using --verbose flag', async () => {
   const cmd = new TheCommand([])
+  cmd.config = global.createOclifMockConfig()
   cmd.error = jest.fn()
   const errorWithoutStack = new Error('fake error')
   delete errorWithoutStack.stack

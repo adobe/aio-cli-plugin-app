@@ -22,7 +22,6 @@ const jsYaml = require('js-yaml')
 const { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE, PACKAGE_LOCK_FILE } = require('../../lib/defaults')
 const ora = require('ora')
 
-// eslint-disable-next-line node/no-missing-require
 const libConfig = require('@adobe/aio-cli-lib-app-config')
 
 class InstallCommand extends BaseCommand {
