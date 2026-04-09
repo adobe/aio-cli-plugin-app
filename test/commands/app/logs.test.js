@@ -69,6 +69,7 @@ describe('run', () => {
     mockFS.existsSync.mockReset()
 
     command = new TheCommand([])
+    command.config = global.createOclifMockConfig()
     command.appConfig = createFullConfig()
     command.error = jest.fn()
     command.log = jest.fn()

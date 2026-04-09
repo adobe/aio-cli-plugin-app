@@ -215,7 +215,7 @@ beforeEach(() => {
   command.appConfig = cloneDeep(mockConfigData)
   command.appConfig.actions = { dist: 'actions' }
   command.appConfig.web.distProd = 'dist'
-  command.config = { runCommand: jest.fn(), runHook: jest.fn() }
+  command.config = { runCommand: jest.fn(), runHook: jest.fn().mockResolvedValue({ successes: [] }) }
   command.buildOneExt = jest.fn()
   command.getFullConfig = jest.fn().mockResolvedValue({
     aio: {
@@ -1037,7 +1037,7 @@ describe('run', () => {
     await expect(command.run()).rejects.toThrow('error-pre-app-deploy')
 
     expect(helpers.runInProcess).toHaveBeenCalledTimes(1)
-    expect(command.config.runHook).not.toHaveBeenCalled()
+    expect(command.config.runHook).not.toHaveBeenCalledWith(expect.stringContaining('deploy'), expect.anything())
     expect(mockRuntimeLib.deployActions).not.toHaveBeenCalled()
     expect(mockWebLib.deployWeb).not.toHaveBeenCalled()
   })
@@ -1058,7 +1058,8 @@ describe('run', () => {
         appConfig: expect.any(Object),
         filterEntities: []
       }))
-    expect(command.config.runHook).toHaveBeenCalledTimes(2)
+    // 3 calls: preparse (from parse()) + deploy-actions + deploy-static
+    expect(command.config.runHook).toHaveBeenCalledTimes(3)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     expect(mockWebLib.deployWeb).toHaveBeenCalledTimes(1)
   })
@@ -1345,7 +1346,7 @@ describe('run', () => {
   })
 
   test('does NOT fire `event` hooks when feature flag is NOT enabled', async () => {
-    const runHook = jest.fn()
+    const runHook = jest.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     command.argv = []
@@ -1356,7 +1357,7 @@ describe('run', () => {
   })
 
   test('DOES fire `event` hooks when feature flag IS enabled', async () => {
-    const runHook = jest.fn()
+    const runHook = jest.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     await command.run()
@@ -1366,10 +1367,12 @@ describe('run', () => {
   })
 
   test('handles error and exits when first hook fails', async () => {
-    const runHook = jest.fn().mockResolvedValueOnce({
-      successes: [],
-      failures: [{ plugin: { name: 'ifailedu' }, error: 'some error' }]
-    })
+    const runHook = jest.fn()
+      .mockResolvedValueOnce({ successes: [] }) // preparse
+      .mockResolvedValueOnce({
+        successes: [],
+        failures: [{ plugin: { name: 'ifailedu' }, error: 'some error' }]
+      })
     command.config = { runHook }
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     await command.run()
@@ -1381,6 +1384,7 @@ describe('run', () => {
 
   test('handles error and exits when second hook fails', async () => {
     const runHook = jest.fn()
+      .mockResolvedValueOnce({ successes: [] }) // preparse
       .mockResolvedValueOnce({
         successes: [{ plugin: { name: 'imsuccess' }, result: 'some string' }],
         failures: []
@@ -1399,6 +1403,7 @@ describe('run', () => {
 
   test('handles error and exits when third hook fails', async () => {
     const runHook = jest.fn()
+      .mockResolvedValueOnce({ successes: [] }) // preparse
       .mockResolvedValueOnce({
         successes: [{ plugin: { name: 'imsuccess' }, result: 'some string' }],
         failures: []

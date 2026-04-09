@@ -46,6 +46,7 @@ describe('instance methods', () => {
 
   beforeEach(() => {
     command = new TheCommand([])
+    command.config = global.createOclifMockConfig()
   })
 
   describe('run', () => {
@@ -72,6 +73,7 @@ describe('run', () => {
     mockConfigLoader.load.mockResolvedValue(getMockConfig('exc', global.fakeConfig.tvm))
 
     const command = new TheCommand([])
+    command.config = global.createOclifMockConfig()
     command.error = jest.fn()
     command.log = jest.fn()
     await command.run()
@@ -89,6 +91,7 @@ describe('run', () => {
     )
 
     const command = new TheCommand(['--json'])
+    command.config = global.createOclifMockConfig()
     command.error = jest.fn()
     command.log = jest.fn()
     await command.run()
@@ -105,6 +108,7 @@ describe('run', () => {
       getMockConfig('exc', global.fakeConfig.tvm, global.extraConfig.s3Creds('dx/excshell/1'))
     )
     const command = new TheCommand(['--yml'])
+    command.config = global.createOclifMockConfig()
     command.error = jest.fn()
     command.log = jest.fn()
     await command.run()
@@ -121,6 +125,7 @@ describe('run', () => {
       getMockConfig('exc', global.fakeConfig.tvm, { 'all.dx/excshell/1.ow.auth': undefined })
     )
     const command = new TheCommand([])
+    command.config = global.createOclifMockConfig()
     command.error = jest.fn()
     command.log = jest.fn()
     await command.run()

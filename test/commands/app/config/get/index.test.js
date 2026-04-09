@@ -15,7 +15,7 @@ const { Help } = require('@oclif/core')
 
 test('returns help file for app:config:get command', () => {
   const command = new TheCommand([])
-  command.config = {}
+  command.config = global.createOclifMockConfig()
   const spy = jest.spyOn(Help.prototype, 'showHelp').mockReturnValue(true)
   return command.run().then(() => {
     expect(spy).toHaveBeenCalledWith(['app:config:get', '--help'])

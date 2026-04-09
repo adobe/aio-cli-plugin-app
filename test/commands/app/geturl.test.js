@@ -72,6 +72,7 @@ describe('run', () => {
     ))
 
     command = new TheCommand([])
+    command.config = global.createOclifMockConfig()
     command.error = jest.fn()
     command.log = jest.fn()
     command.appConfig = {}

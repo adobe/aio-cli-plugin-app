@@ -10,16 +10,6 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-/* eslint jest/expect-expect: [
-  "error",
-  {
-    "assertFunctionNames": [
-        "expect", "expectFlagError", "expectNoErrors", "expectErrors"
-    ]
-  }
-]
-*/
-
 const TheCommand = require('../../../src/commands/app/test')
 const BaseCommand = require('../../../src/BaseCommand')
 const appHelper = require('../../../src/lib/app-helper')
@@ -115,6 +105,7 @@ describe('Command Prototype', () => {
 
     const expectFlagError = async (argv, message) => {
       const command = new TheCommand([])
+      command.config = global.createOclifMockConfig()
       command.argv = argv
       await expect(command.run()).rejects.toEqual(expect.objectContaining({ message: expect.stringContaining(message) }))
     }
@@ -137,6 +128,7 @@ describe('run', () => {
   let command
   beforeEach(() => {
     command = new TheCommand([])
+    command.config = global.createOclifMockConfig()
     command.error = jest.fn()
 
     appHelper.runScript.mockClear()

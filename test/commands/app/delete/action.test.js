@@ -85,6 +85,7 @@ beforeEach(() => {
   fs.removeSync.mockClear()
 
   command = new TheCommand([])
+  command.config = global.createOclifMockConfig()
   command.log = jest.fn()
   command.appConfig = cloneDeep(mockConfigData)
   command.buildOneExt = jest.fn()
@@ -101,6 +102,7 @@ describe('command interface, flags', () => {
 
   test('--yes without <action-name>', async () => {
     const command = new TheCommand(['--yes'])
+    command.config = global.createOclifMockConfig()
     expect(typeof command.run).toBe('function')
     await expect(command.run()).rejects.toThrow('<action-name> must also be provided')
   })

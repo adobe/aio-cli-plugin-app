@@ -40,11 +40,11 @@ class Cleanup {
       try {
         await this.run()
         aioLogger.info('exiting!')
-        process.exit(0) // eslint-disable-line no-process-exit
+        process.exit(0)
       } catch (e) {
         aioLogger.error('unexpected error while cleaning up!')
         aioLogger.error(e)
-        process.exit(1) // eslint-disable-line no-process-exit
+        process.exit(1)
       }
     })
   }
