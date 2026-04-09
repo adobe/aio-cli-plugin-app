@@ -23,6 +23,7 @@ beforeEach(() => {
   fs.removeSync.mockClear()
   fs.existsSync.mockClear()
   command = new TheCommand([])
+  command.config = global.createOclifMockConfig()
   command.prompt = jest.fn()
 })
 

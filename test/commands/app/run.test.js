@@ -115,7 +115,7 @@ beforeEach(() => {
   command.error = jest.fn()
   command.log = jest.fn()
   command.config = {
-    runHook: jest.fn(),
+    runHook: jest.fn().mockResolvedValue({ successes: [] }),
     findCommand: jest.fn().mockReturnValue({
       load: mockFindCommandLoad
     }),

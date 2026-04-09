@@ -22,6 +22,7 @@ const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
 let command
 beforeEach(() => {
   command = new TheCommand([])
+  command.config = global.createOclifMockConfig()
   command.getAppExtConfigs = jest.fn()
   command.getAppExtConfigs.mockResolvedValue(createAppConfig(command.appConfig))
   command.getFullConfig = jest.fn()

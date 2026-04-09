@@ -10,16 +10,6 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-/* eslint jest/expect-expect: [
-  "error",
-  {
-    "assertFunctionNames": [
-        "expect"
-    ]
-  }
-]
-*/
-
 const TheCommand = require('../../../src/commands/app/pack')
 const BaseCommand = require('../../../src/BaseCommand')
 const execa = require('execa')
@@ -103,6 +93,7 @@ test('flags', async () => {
 test('unknown flag', async () => {
   const message = 'Nonexistent flag: --wtf\nSee more help with --help'
   const command = new TheCommand()
+  command.config = global.createOclifMockConfig()
   command.argv = ['.', '--wtf'] // have to specify the default arg because an oclif quirk
   await expect(command.run()).rejects.toEqual(expect.objectContaining({ message: expect.stringContaining(message) }))
 })
@@ -137,7 +128,7 @@ test('createDeployYamlFile (1 extension)', async () => {
   command.config = {
     findCommand: jest.fn().mockReturnValue({}),
     runCommand: jest.fn(),
-    runHook: jest.fn()
+    runHook: jest.fn().mockResolvedValue({ successes: [] })
   }
 
   execa.mockImplementationOnce((cmd, args) => {
@@ -156,7 +147,7 @@ test('createDeployYamlFile (1 extension)', async () => {
   command.config = {
     findCommand: jest.fn().mockReturnValue(null),
     runCommand: jest.fn(),
-    runHook: jest.fn()
+    runHook: jest.fn().mockResolvedValue({ successes: [] })
   }
   importHelper.writeFile.mockClear()
 
@@ -175,7 +166,7 @@ test('createDeployYamlFile (1 extension), no api-mesh', async () => {
   command.config = {
     findCommand: jest.fn().mockReturnValue({}),
     runCommand: jest.fn(),
-    runHook: jest.fn()
+    runHook: jest.fn().mockResolvedValue({ successes: [] })
   }
 
   execa.mockImplementationOnce((cmd, args) => {
@@ -201,7 +192,7 @@ test('createDeployYamlFile (1 extension), no api-mesh, plugin throws error', asy
   command.config = {
     findCommand: jest.fn().mockReturnValue({}),
     runCommand: jest.fn(),
-    runHook: jest.fn()
+    runHook: jest.fn().mockResolvedValue({ successes: [] })
   }
 
   execa.mockImplementationOnce((cmd, args) => {
@@ -224,13 +215,13 @@ test('createDeployYamlFile (1 extension), api-mesh get call throws non 404 error
   command.config = {
     findCommand: jest.fn().mockReturnValue({}),
     runCommand: jest.fn(),
-    runHook: jest.fn()
+    runHook: jest.fn().mockResolvedValue({ successes: [] })
   }
 
   execa.mockImplementationOnce((cmd, args) => {
     expect(cmd).toEqual('aio')
     expect(args).toEqual(['api-mesh', 'get', '--json'])
-    // eslint-disable-next-line no-throw-literal
+
     return {
       stderr: 'Error: api-mesh service is unavailable'
     }
@@ -247,7 +238,7 @@ test('createDeployYamlFile (coverage: standalone app, no services)', async () =>
   command.config = {
     findCommand: jest.fn().mockReturnValue(null),
     runCommand: jest.fn(),
-    runHook: jest.fn()
+    runHook: jest.fn().mockResolvedValue({ successes: [] })
   }
 
   await command.createDeployYamlFile(extConfig)
@@ -265,7 +256,7 @@ test('createDeployYamlFile error on invalid version string', async () => {
   command.config = {
     findCommand: jest.fn().mockReturnValue(null),
     runCommand: jest.fn(),
-    runHook: jest.fn()
+    runHook: jest.fn().mockResolvedValue({ successes: [] })
   }
 
   await expect(command.createDeployYamlFile(extConfig)).rejects.toThrow('Application version format must be "X.Y.Z", where X, Y, and Z are non-negative integers.')
@@ -544,7 +535,7 @@ describe('run', () => {
     command.createDeployYamlFile = jest.fn()
     command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn()
-    const runHook = jest.fn()
+    const runHook = jest.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
     await command.run()
 
@@ -585,7 +576,7 @@ describe('run', () => {
     command.createDeployYamlFile = jest.fn()
     command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn()
-    const runHook = jest.fn()
+    const runHook = jest.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
     await command.run()
 
@@ -636,7 +627,7 @@ describe('run', () => {
     command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn(() => { throw errorObject })
     command.error = jest.fn()
-    const runHook = jest.fn()
+    const runHook = jest.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
 
     await command.run()
@@ -685,7 +676,7 @@ describe('run', () => {
     command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn(() => { throw new Error(errorMessage) })
     command.error = jest.fn()
-    const runHook = jest.fn()
+    const runHook = jest.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
 
     await command.run()
@@ -732,7 +723,7 @@ describe('run', () => {
     command.createDeployYamlFile = jest.fn()
     command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn()
-    const runHook = jest.fn()
+    const runHook = jest.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
 
     await command.run()
@@ -791,7 +782,7 @@ describe('run', () => {
     command.filesToPack = jest.fn(() => ([]))
     command.createDeployYamlFile = jest.fn()
     command.zipHelper = jest.fn()
-    const runHook = jest.fn()
+    const runHook = jest.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
 
     await expect(command.run()).rejects.toThrow('invalid fake config error')
@@ -816,7 +807,7 @@ describe('run', () => {
     command.createDeployYamlFile = jest.fn()
     command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn()
-    const runHook = jest.fn()
+    const runHook = jest.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
     await command.run()
 
@@ -854,7 +845,7 @@ describe('run', () => {
     command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn()
     command.error = jest.fn()
-    const runHook = jest.fn()
+    const runHook = jest.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
 
     await command.run()
@@ -895,7 +886,7 @@ describe('run', () => {
     command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn()
     command.error = jest.fn()
-    const runHook = jest.fn()
+    const runHook = jest.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
 
     await command.run()
@@ -936,7 +927,7 @@ describe('run', () => {
     command.addCodeDownloadAnnotation = jest.fn()
     command.zipHelper = jest.fn()
     command.error = jest.fn()
-    const runHook = jest.fn()
+    const runHook = jest.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
 
     await command.run()

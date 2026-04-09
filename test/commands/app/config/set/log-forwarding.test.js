@@ -30,6 +30,7 @@ beforeEach(async () => {
   authHelper.setRuntimeApiHostAndAuthHandler.mockClear()
 
   command = new TheCommand([])
+  command.config = global.createOclifMockConfig()
   command.appConfig = {
     aio: {
       runtime: {

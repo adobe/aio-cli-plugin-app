@@ -59,7 +59,7 @@ beforeEach(() => {
   command.getLibConsoleCLI.mockResolvedValue({
     getEnabledServicesForOrg: mockGetEnabledServicesForOrg
   })
-  command.config = { bin: 'aio' }
+  command.config = global.createOclifMockConfig({ bin: 'aio' })
 
   command.selectTemplates = jest.fn()
   command.selectTemplates.mockResolvedValue([])
