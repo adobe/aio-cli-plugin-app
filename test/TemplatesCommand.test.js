@@ -97,7 +97,7 @@ beforeEach(() => {
   command = new TheCommand()
   command.config = {
     runCommand: jest.fn(),
-    runHook: jest.fn()
+    runHook: jest.fn().mockResolvedValue({ successes: [] })
   }
 
   inquirer.registerPrompt.mockReset()

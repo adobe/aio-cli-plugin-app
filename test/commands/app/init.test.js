@@ -144,7 +144,7 @@ beforeEach(() => {
   command = new TheCommand([])
   command.config = {
     findCommand: jest.fn(() => ({})),
-    runHook: jest.fn()
+    runHook: jest.fn().mockResolvedValue({ successes: [] })
   }
 
   command.selectTemplates = jest.fn()
@@ -329,7 +329,8 @@ describe('--no-login', () => {
     command.argv = ['--no-login', '--standalone-app']
     await command.run()
 
-    expect(command.config.runHook).not.toHaveBeenCalled()
+    // runHook is only called for preparse (by oclif v4's parse()), not for any app hooks
+    expect(command.config.runHook).not.toHaveBeenCalledWith('telemetry', expect.anything())
     expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(command.runCodeGenerators).toHaveBeenCalledWith(['base-app', 'add-ci', 'add-vscode-config', 'application'], false, 'cwd', 'basic')
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()

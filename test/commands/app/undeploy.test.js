@@ -76,7 +76,7 @@ const getCommandConfig = () => {
   return {
     findCommand: jest.fn().mockReturnValue({}),
     runCommand: jest.fn(),
-    runHook: jest.fn()
+    runHook: jest.fn().mockResolvedValue({ successes: [] })
   }
 }
 
@@ -512,6 +512,7 @@ describe('run', () => {
 
   test('DOES fire `event` hooks when feature flag IS enabled', async () => {
     command.config.runHook
+      .mockResolvedValueOnce({ successes: [] }) // preparse
       .mockResolvedValue({
         successes: ['ok'],
         failures: []

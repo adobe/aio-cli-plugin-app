@@ -55,6 +55,7 @@ describe('run', () => {
   let command
   beforeEach(() => {
     command = new TheCommand([])
+    command.config = global.createOclifMockConfig()
     command.error = jest.fn()
     command.log = jest.fn()
     command.getAppExtConfigs = jest.fn()
@@ -73,6 +74,7 @@ describe('run', () => {
 
   test('list all extension --json', async () => {
     command = new TheCommand(['--json'])
+    command.config = global.createOclifMockConfig()
     command.error = jest.fn()
     command.log = jest.fn()
     command.getAppExtConfigs = jest.fn()
@@ -91,6 +93,7 @@ describe('run', () => {
 
   test('list all extension --yml', async () => {
     command = new TheCommand(['--yml'])
+    command.config = global.createOclifMockConfig()
     command.error = jest.fn()
     command.log = jest.fn()
     command.getAppExtConfigs = jest.fn()
@@ -109,6 +112,7 @@ describe('run', () => {
 
   test('list all extension points legacy app', async () => {
     command = new TheCommand([])
+    command.config = global.createOclifMockConfig()
     command.error = jest.fn()
     command.log = jest.fn()
     command.getAppExtConfigs = jest.fn()

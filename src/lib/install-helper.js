@@ -20,7 +20,6 @@ const ajvAddFormats = require('ajv-formats')
  * @returns {object} with keys valid (boolean) and errors (object). errors is null if no errors
  */
 function validateJsonWithSchema (fileJson, schemaName) {
-  /* eslint-disable-next-line node/no-unpublished-require */
   const schemas = require('../../schema/index')
   const ajv = new Ajv({
     allErrors: true,

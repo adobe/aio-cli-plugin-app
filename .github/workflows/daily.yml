@@ -8,4 +8,5 @@ on:
 jobs:
   build:
     uses: adobe/aio-reusable-workflows/.github/workflows/daily.yml@main
+    secrets: inherit
 

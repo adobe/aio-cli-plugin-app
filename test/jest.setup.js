@@ -47,6 +47,15 @@ jest.mock('execa')
 
 jest.mock('@adobe/aio-lib-env')
 
+// oclif v4's parse() calls this.config.runHook('preparse', ...) which requires
+// a mock config when commands are instantiated directly in tests
+global.createOclifMockConfig = (overrides = {}) => ({
+  runHook: jest.fn().mockResolvedValue({ successes: [] }),
+  runCommand: jest.fn(),
+  findCommand: jest.fn(),
+  ...overrides
+})
+
 /*
   jest/no-conditional-expect
   See:
@@ -108,7 +117,6 @@ global.fixtureYaml = (output) => {
 expect.extend({
   toMatchFixture (received, argument) {
     const val = fixtureFile(argument)
-    // eslint-disable-next-line jest/no-standalone-expect
     expect(eol.auto(received)).toEqual(eol.auto(val))
     return { pass: true }
   }
@@ -117,7 +125,6 @@ expect.extend({
 expect.extend({
   toMatchFixtureJson (received, argument) {
     const val = fixtureJson(argument)
-    // eslint-disable-next-line jest/no-standalone-expect
     expect(received).toEqual(val)
     return { pass: true }
   }
@@ -126,7 +133,6 @@ expect.extend({
 expect.extend({
   toMatchFixtureHjson (received, argument) {
     const val = fixtureHjson(argument)
-    // eslint-disable-next-line jest/no-standalone-expect
     expect(received).toEqual(val)
     return { pass: true }
   }

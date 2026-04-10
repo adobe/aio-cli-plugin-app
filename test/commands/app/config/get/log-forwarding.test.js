@@ -25,6 +25,7 @@ jest.mock('../../../../../src/lib/log-forwarding', () => {
 let command, lf
 beforeEach(async () => {
   command = new TheCommand([])
+  command.config = global.createOclifMockConfig()
   command.appConfig = {
     aio: {
       runtime: {

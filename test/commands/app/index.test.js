@@ -46,7 +46,7 @@ describe('instance methods', () => {
 
     test('returns help file for app command', () => {
       const spy = jest.spyOn(Help.prototype, 'showHelp').mockReturnValue(true)
-      command.config = {}
+      command.config = global.createOclifMockConfig()
       return command.run().then(() => {
         expect(spy).toHaveBeenCalledWith(['app', '--help'])
       })
