@@ -248,6 +248,52 @@ test('createDeployYamlFile (coverage: standalone app, no services)', async () =>
   await expect(importHelper.writeFile.mock.calls[0][2]).toMatchObject({ overwrite: true })
 })
 
+test('createDeployYamlFile with optional-apis flag', async () => {
+  const extConfig = fixtureJson('pack/2.all.config.json')
+
+  const command = new TheCommand()
+  command.argv = []
+  command.config = {
+    findCommand: jest.fn().mockReturnValue(null),
+    runCommand: jest.fn(),
+    runHook: jest.fn().mockResolvedValue({ successes: [] })
+  }
+
+  await command.createDeployYamlFile(extConfig, { optionalApis: ['AdobeAnalyticsSDK', 'GraphQLServiceSDK'] })
+
+  const writtenYaml = importHelper.writeFile.mock.calls[0][1]
+  const parsed = yaml.load(writtenYaml)
+
+  expect(parsed.apis).toEqual([
+    { code: 'AdobeAnalyticsSDK', optional: true },
+    { code: 'AudienceManagerCustomerSDK' },
+    { code: 'GraphQLServiceSDK', optional: true }
+  ])
+})
+
+test('createDeployYamlFile without optional-apis flag preserves existing behavior', async () => {
+  const extConfig = fixtureJson('pack/2.all.config.json')
+
+  const command = new TheCommand()
+  command.argv = []
+  command.config = {
+    findCommand: jest.fn().mockReturnValue(null),
+    runCommand: jest.fn(),
+    runHook: jest.fn().mockResolvedValue({ successes: [] })
+  }
+
+  await command.createDeployYamlFile(extConfig)
+
+  const writtenYaml = importHelper.writeFile.mock.calls[0][1]
+  const parsed = yaml.load(writtenYaml)
+
+  expect(parsed.apis).toEqual([
+    { code: 'AdobeAnalyticsSDK' },
+    { code: 'AudienceManagerCustomerSDK' },
+    { code: 'GraphQLServiceSDK' }
+  ])
+})
+
 test('createDeployYamlFile error on invalid version string', async () => {
   const extConfig = fixtureJson('pack/6.all.config.json')
 

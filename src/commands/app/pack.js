@@ -96,7 +96,10 @@ class Pack extends BaseCommand {
 
       // 3. add/modify artifacts phase
       this.spinner.start('Creating configuration files...')
-      await this.createDeployYamlFile(appConfig)
+      const optionalApis = flags['optional-apis']
+        ? flags['optional-apis'].split(',').map(s => s.trim()).filter(Boolean)
+        : []
+      await this.createDeployYamlFile(appConfig, { optionalApis })
       this.spinner.succeed('Created configuration files')
 
       this.spinner.start('Adding code-download annotations...')
@@ -155,8 +158,10 @@ class Pack extends BaseCommand {
    * Creates the deploy.yaml file
    *
    * @param {object} appConfig the app's configuration file
+   * @param {object} [options] additional options
+   * @param {Array<string>} [options.optionalApis] service codes to mark as optional in deploy.yaml
    */
-  async createDeployYamlFile (appConfig) {
+  async createDeployYamlFile (appConfig, { optionalApis = [] } = {}) {
     // get extensions
     let extensions
     if (appConfig.implements?.filter(item => item !== 'application').length > 0) {
@@ -173,7 +178,14 @@ class Pack extends BaseCommand {
     // get apis
     let apis
     if (appConfig.aio?.project?.workspace?.details?.services?.length > 0) {
-      apis = appConfig.aio.project.workspace.details.services.map(service => ({ code: service.code }))
+      const optionalSet = new Set(optionalApis)
+      apis = appConfig.aio.project.workspace.details.services.map(service => {
+        const entry = { code: service.code }
+        if (optionalSet.has(service.code)) {
+          entry.optional = true
+        }
+        return entry
+      })
     }
 
     // read name and version from package.json
@@ -403,6 +415,10 @@ Pack.flags = {
     description: 'The packaged app output file path',
     char: 'o',
     default: DEFAULTS.OUTPUT_ZIP_FILE_PATH
+  }),
+  'optional-apis': Flags.string({
+    description: 'Comma-separated list of API service codes to mark as optional in deploy.yaml. Optional APIs are skipped during installation if the target org lacks the entitlement.',
+    default: ''
   })
 }
 

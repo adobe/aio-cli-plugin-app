@@ -83,7 +83,8 @@
     "api": {
       "type": "object",
       "properties": {
-        "code": { "type": "string" }
+        "code": { "type": "string" },
+        "optional": { "type": "boolean", "default": false }
       },
       "required": ["code"]
     }
