@@ -192,6 +192,9 @@ class InitCommand extends TemplatesCommand {
         this.error(`Extension(s) '${notFound.join(', ')}' not found in the Template Registry.`)
       }
       return extensionTemplates.map(t => t.name)
+    } else if (flags.yes) {
+      // with --yes and no explicit template, default to standalone app (no prompts)
+      return []
     } else if (!flags['standalone-app']) {
       const noLogin = flags.import || !flags.login
       let [searchCriteria, orderByCriteria] = await this.getSearchCriteria(orgSupportedServices)
@@ -210,9 +213,12 @@ class InitCommand extends TemplatesCommand {
     }
   }
 
-  async ensureDevTermAccepted (consoleCLI, orgId) {
+  async ensureDevTermAccepted (consoleCLI, orgId, skipPrompts = false) {
     const isTermAccepted = await consoleCLI.checkDevTermsForOrg(orgId)
     if (!isTermAccepted) {
+      if (skipPrompts) {
+        this.error('Developer Terms of Service have not been accepted for this organization. Please run `aio app init` without --yes to accept the terms first.')
+      }
       const terms = await consoleCLI.getDevTermsForOrg()
       const confirmDevTerms = await consoleCLI.prompt.promptConfirm(`${terms.text}
       \nYou have not accepted the Developer Terms of Service. Go to ${hyperlinker('https://www.adobe.com/go/developer-terms', 'https://www.adobe.com/go/developer-terms')} to view the terms. Do you accept the terms? (y/n):`)
@@ -294,26 +300,65 @@ class InitCommand extends TemplatesCommand {
 
   async selectConsoleOrg (consoleCLI, flags) {
     const organizations = await consoleCLI.getOrganizations()
-    const selectedOrg = await consoleCLI.promptForSelectOrganization(organizations, { orgId: flags.org, orgCode: flags.org })
-    await this.ensureDevTermAccepted(consoleCLI, selectedOrg.id)
+    if (!organizations || organizations.length === 0) {
+      this.error('No organizations found for the logged-in user')
+    }
+    // initially select the first org, if multiple orgs are present, prompt user to select one
+    let selectedOrg = organizations[0]
+    if (organizations.length > 1) {
+      if (flags.yes) {
+        this.log(`Auto-selecting organization: '${selectedOrg.name || selectedOrg.id}'`)
+      } else {
+        selectedOrg = await consoleCLI.promptForSelectOrganization(organizations, { orgId: flags.org, orgCode: flags.org })
+      }
+    }
+    await this.ensureDevTermAccepted(consoleCLI, selectedOrg.id, flags.yes)
     return selectedOrg
   }
 
   async selectOrCreateConsoleProject (consoleCLI, org, flags) {
     const projects = await consoleCLI.getProjects(org.id)
+
+    if (flags.yes) {
+      // Use the aio-lib-console SDK to fetch a pre-generated unique project name (IOC-7430)
+      // Returns { name: '280TomatoGull', title: 'Project 289' }
+      let generatedName
+      let generatedTitle
+      try {
+        const data = await consoleCLI.getProjectNextAvailableIdentifiers(org.id)
+        generatedName = data.name || data.title.replace(/\s+/g, '')
+        generatedTitle = data.title || generatedName
+        aioLogger.debug(`next-available-identifiers response: ${JSON.stringify(data)}`)
+      } catch (e) {
+        aioLogger.debug(`Failed to fetch next-available-identifiers, falling back to timestamp name: ${e.message}`)
+        generatedName = `app${Date.now()}`
+        generatedTitle = generatedName
+      }
+      this.log(`Auto-generating project name: '${generatedName}'`)
+      const project = await consoleCLI.createProject(org.id, {
+        name: generatedName,
+        title: generatedTitle,
+        description: generatedTitle
+      })
+      project.isNew = true
+      return project
+    }
+
     let project = await consoleCLI.promptForSelectProject(
       projects,
       { projectId: flags.project, projectName: flags.project },
       { allowCreate: true }
     )
     if (!project) {
-      if (flags.project) {
+      // if project is provided and not yes, error out
+      if (flags.project && !flags.yes) {
         this.error(`--project ${flags.project} not found`)
+      } else {
+        // user has escaped project selection prompt, let's create a new one
+        const projectDetails = await consoleCLI.promptForCreateProjectDetails()
+        project = await consoleCLI.createProject(org.id, projectDetails)
+        project.isNew = true
       }
-      // user has escaped project selection prompt, let's create a new one
-      const projectDetails = await consoleCLI.promptForCreateProjectDetails()
-      project = await consoleCLI.createProject(org.id, projectDetails)
-      project.isNew = true
     }
     return project
   }
@@ -324,7 +369,7 @@ class InitCommand extends TemplatesCommand {
     const workspaces = await consoleCLI.getWorkspaces(org.id, project.id)
     let workspace = workspaces.find(w => w.name.toLowerCase() === workspaceName.toLowerCase())
     if (!workspace) {
-      if (flags['confirm-new-workspace']) {
+      if (!flags.yes && flags['confirm-new-workspace']) {
         const shouldNewWorkspace = await consoleCLI.prompt.promptConfirm(`Workspace '${workspaceName}' does not exist \n > Do you wish to create a new workspace?`)
         if (!shouldNewWorkspace) {
           this.error(`Workspace '${workspaceName}' does not exist and creation aborted`)

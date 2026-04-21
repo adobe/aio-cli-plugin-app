@@ -55,6 +55,7 @@ const mockConsoleCLIInstance = {
   promptForSelectOrganization: jest.fn(),
   getOrganizations: jest.fn(),
   getProjects: jest.fn(),
+  getProjectNextAvailableIdentifiers: jest.fn(),
   promptForSelectProject: jest.fn(),
   promptForCreateProjectDetails: jest.fn(),
   createProject: jest.fn(),
@@ -158,6 +159,7 @@ beforeEach(() => {
 
   resetMockConsoleCLI()
   mockConsoleCLIInstance.promptForSelectOrganization.mockResolvedValue({ id: 'my-org' })
+  mockConsoleCLIInstance.getOrganizations.mockResolvedValue([{ id: 'my-org' }, { id: 'other-org' }])
   mockConsoleCLIInstance.getDevTermsForOrg.mockResolvedValue({ text: 'These are the Dev Terms.' })
   mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
   mockConsoleCLIInstance.createProject.mockResolvedValue({})
@@ -421,19 +423,17 @@ describe('--no-login', () => {
     expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
 
-  test('--yes --no-install, select excshell', async () => {
-    const installOptions = {
-      useDefaultValues: true,
-      installNpm: false,
-      installConfig: false,
-      templates: ['@adobe/my-extension']
-    }
-    command.selectTemplates.mockResolvedValue(['@adobe/my-extension'])
-
+  test('--yes --no-install without --template creates standalone app', async () => {
     command.argv = ['--no-login', '--yes', '--no-install']
     await command.run()
 
-    expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
+    expect(command.installTemplates).toHaveBeenCalledWith({
+      useDefaultValues: true,
+      installNpm: false,
+      installConfig: false,
+      templates: []
+    })
+    expect(command.selectTemplates).not.toHaveBeenCalled()
     expect(LibConsoleCLI.init).not.toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).not.toHaveBeenCalled()
   })
@@ -542,6 +542,77 @@ describe('--login', () => {
     expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
     expect(LibConsoleCLI.init).toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).toHaveBeenCalled()
+  })
+
+  test('--yes falls back to timestamp name when getProjectNextAvailableIdentifiers throws', async () => {
+    mockConsoleCLIInstance.getProjectNextAvailableIdentifiers.mockRejectedValue(new Error('API error'))
+    mockConsoleCLIInstance.createProject.mockResolvedValue({ id: 'newprojid', name: 'app12345' })
+
+    command.argv = ['--yes', '--no-install', '--template', '@adobe/my-extension']
+    await command.run()
+
+    expect(mockConsoleCLIInstance.getProjectNextAvailableIdentifiers).toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.createProject).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ name: expect.stringMatching(/^app\d+$/) })
+    )
+    expect(importHelperLib.importConfigJson).toHaveBeenCalled()
+  })
+
+  test('--yes uses name and title from getProjectNextAvailableIdentifiers', async () => {
+    mockConsoleCLIInstance.getProjectNextAvailableIdentifiers.mockResolvedValue({ name: 'TomatoGull', title: 'Project 289' })
+    mockConsoleCLIInstance.createProject.mockResolvedValue({ id: 'newprojid', name: 'TomatoGull' })
+
+    command.argv = ['--yes', '--no-install', '--template', '@adobe/my-extension']
+    await command.run()
+
+    expect(mockConsoleCLIInstance.createProject).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ name: 'TomatoGull', title: 'Project 289' })
+    )
+  })
+
+  test('--yes derives name from title when getProjectNextAvailableIdentifiers returns no name', async () => {
+    mockConsoleCLIInstance.getProjectNextAvailableIdentifiers.mockResolvedValue({ title: 'Project 289' })
+    mockConsoleCLIInstance.createProject.mockResolvedValue({ id: 'newprojid', name: 'Project289' })
+
+    command.argv = ['--yes', '--no-install', '--template', '@adobe/my-extension']
+    await command.run()
+
+    expect(mockConsoleCLIInstance.createProject).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ name: 'Project289', title: 'Project 289' })
+    )
+  })
+
+  test('--yes uses name as title when getProjectNextAvailableIdentifiers returns no title', async () => {
+    mockConsoleCLIInstance.getProjectNextAvailableIdentifiers.mockResolvedValue({ name: 'TomatoGull' })
+    mockConsoleCLIInstance.createProject.mockResolvedValue({ id: 'newprojid', name: 'TomatoGull' })
+
+    command.argv = ['--yes', '--no-install', '--template', '@adobe/my-extension']
+    await command.run()
+
+    expect(mockConsoleCLIInstance.createProject).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ name: 'TomatoGull', title: 'TomatoGull' })
+    )
+  })
+
+  test('--yes with missing workspace auto-creates without confirm prompt', async () => {
+    mockConsoleCLIInstance.getProjectNextAvailableIdentifiers.mockResolvedValue({ name: 'TomatoGull', title: 'Project 289' })
+    mockConsoleCLIInstance.createProject.mockResolvedValue({ id: 'newprojid', name: 'TomatoGull' })
+    mockConsoleCLIInstance.getWorkspaces.mockResolvedValue([{ name: 'Stage' }, { name: 'Production' }])
+    mockConsoleCLIInstance.createWorkspace.mockResolvedValue({ id: 'newwsid', name: 'CustomWs' })
+
+    command.argv = ['--yes', '--no-install', '--template', '@adobe/my-extension', '-w', 'CustomWs']
+    await command.run()
+
+    expect(mockConsoleCLIInstance.prompt.promptConfirm).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.createWorkspace).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({ name: 'CustomWs' })
+    )
   })
 
   test('--import fakeconfig.json', async () => {
@@ -787,6 +858,43 @@ describe('no args', () => {
   })
 })
 
+describe('selectConsoleOrg', () => {
+  test('no organizations returned', async () => {
+    mockConsoleCLIInstance.getOrganizations.mockResolvedValue(null)
+    await expect(command.run()).rejects.toThrow('No organizations found for the logged-in user')
+  })
+
+  test('empty organizations list', async () => {
+    mockConsoleCLIInstance.getOrganizations.mockResolvedValue([])
+    await expect(command.run()).rejects.toThrow('No organizations found for the logged-in user')
+  })
+
+  test('single org is auto-selected without prompt', async () => {
+    mockConsoleCLIInstance.getOrganizations.mockResolvedValue([{ id: 'my-org', name: 'My Org' }])
+    command.argv = ['--standalone-app']
+    await command.run()
+    expect(mockConsoleCLIInstance.promptForSelectOrganization).not.toHaveBeenCalled()
+    expect(LibConsoleCLI.init).toHaveBeenCalled()
+  })
+
+  test('--yes with multiple orgs auto-selects first org without prompt', async () => {
+    command.argv = ['--yes', '--no-install', '--template', '@adobe/my-extension']
+    await command.run()
+    expect(mockConsoleCLIInstance.promptForSelectOrganization).not.toHaveBeenCalled()
+    expect(importHelperLib.importConfigJson).toHaveBeenCalled()
+  })
+})
+
+describe('ensureDevTermAccepted', () => {
+  test('uses skipPrompts=false by default (terms already accepted)', async () => {
+    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(true)
+    // Call directly without the third argument to exercise the default parameter
+    await command.ensureDevTermAccepted(mockConsoleCLIInstance, 'org-id')
+    expect(mockConsoleCLIInstance.checkDevTermsForOrg).toHaveBeenCalledWith('org-id')
+    expect(mockConsoleCLIInstance.prompt.promptConfirm).not.toHaveBeenCalled()
+  })
+})
+
 describe('dev terms', () => {
   test('not accepted', async () => {
     mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(false)
@@ -813,6 +921,13 @@ describe('dev terms', () => {
     mockConsoleCLIInstance.acceptDevTermsForOrg.mockResolvedValue(false)
 
     await expect(command.run()).rejects.toThrow('The Developer Terms of Service could not be accepted')
+  })
+
+  test('--yes errors without prompting when terms not accepted', async () => {
+    mockConsoleCLIInstance.checkDevTermsForOrg.mockResolvedValue(false)
+    command.argv = ['--yes', '--no-install', '--template', '@adobe/my-extension']
+    await expect(command.run()).rejects.toThrow('Developer Terms of Service have not been accepted')
+    expect(mockConsoleCLIInstance.prompt.promptConfirm).not.toHaveBeenCalled()
   })
 })
 
