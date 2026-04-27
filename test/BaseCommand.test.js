@@ -288,6 +288,33 @@ test('init', async () => {
   expect(inquirer.createPromptModule).toHaveBeenCalledWith({ output: process.stderr })
 })
 
+test('init normalizes oclif v2 string hooks to v4 object format', async () => {
+  const cmd = new TheCommand([])
+  const plugin = {
+    hooks: {
+      'pre-deploy-event-reg': ['./src/hooks/pre-deploy-event-reg.js'],
+      'post-deploy-event-reg': './src/hooks/post-deploy-event-reg.js',
+      'already-v4': [{ identifier: 'default', target: './src/hooks/foo.js' }]
+    }
+  }
+  cmd.config = global.createOclifMockConfig({
+    getPluginsList: jest.fn().mockReturnValue([plugin])
+  })
+  await cmd.init()
+  expect(plugin.hooks['pre-deploy-event-reg']).toEqual([{ identifier: 'default', target: './src/hooks/pre-deploy-event-reg.js' }])
+  expect(plugin.hooks['post-deploy-event-reg']).toEqual([{ identifier: 'default', target: './src/hooks/post-deploy-event-reg.js' }])
+  expect(plugin.hooks['already-v4']).toEqual([{ identifier: 'default', target: './src/hooks/foo.js' }])
+})
+
+test('init skips plugins with no hooks', async () => {
+  const cmd = new TheCommand([])
+  const plugin = { name: 'no-hooks-plugin' }
+  cmd.config = global.createOclifMockConfig({
+    getPluginsList: jest.fn().mockReturnValue([plugin])
+  })
+  await expect(cmd.init()).resolves.not.toThrow()
+})
+
 test('catch', async () => {
   const cmd = new TheCommand([])
   cmd.config = global.createOclifMockConfig()
