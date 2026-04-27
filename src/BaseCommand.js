@@ -40,6 +40,17 @@ class BaseCommand extends Command {
 
   async init () {
     await super.init()
+    // Normalize hooks from plugins loaded by oclif v2 into this v4 Config.
+    // oclif v2 stores hooks as string arrays; v4 expects {identifier, target} objects.
+    for (const plugin of this.config.getPluginsList()) {
+      if (!plugin.hooks) continue
+      for (const [event, hooks] of Object.entries(plugin.hooks)) {
+        plugin.hooks[event] = (Array.isArray(hooks) ? hooks : [hooks]).map(h =>
+          typeof h === 'string' ? { identifier: 'default', target: h } : h
+        )
+      }
+    }
+
     // setup a prompt that outputs to stderr
     this.prompt = inquirer.createPromptModule({ output: process.stderr })
 
