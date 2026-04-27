@@ -43,7 +43,10 @@ class BaseCommand extends Command {
     // Normalize hooks from plugins loaded by oclif v2 into this v4 Config.
     // oclif v2 stores hooks as string arrays; v4 expects {identifier, target} objects.
     // Only mutate when string hooks are present; guard against frozen plugin references.
-    for (const plugin of this.config.getPluginsList()) {
+    const pluginList = typeof this.config.getPluginsList === 'function'
+      ? this.config.getPluginsList()
+      : [...(this.config.plugins?.values() ?? [])]
+    for (const plugin of pluginList) {
       if (!plugin.hooks) {
         continue
       }

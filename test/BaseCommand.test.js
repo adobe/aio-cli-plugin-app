@@ -331,6 +331,27 @@ test('init does not mutate hooks already in v4 format', async () => {
   expect(plugin.hooks['some-event']).toBe(original) // same reference, not replaced
 })
 
+test('init falls back to this.config.plugins Map when getPluginsList is unavailable', async () => {
+  const cmd = new TheCommand([])
+  const plugin = { hooks: { 'pre-deploy-event-reg': ['./src/hooks/hook.js'] } }
+  const mockConfig = global.createOclifMockConfig({
+    plugins: new Map([['test-plugin', plugin]])
+  })
+  delete mockConfig.getPluginsList
+  cmd.config = mockConfig
+  await cmd.init()
+  expect(plugin.hooks['pre-deploy-event-reg']).toEqual([{ identifier: 'default', target: './src/hooks/hook.js' }])
+})
+
+test('init handles config with neither getPluginsList nor plugins without throwing', async () => {
+  const cmd = new TheCommand([])
+  const mockConfig = global.createOclifMockConfig()
+  delete mockConfig.getPluginsList
+  delete mockConfig.plugins
+  cmd.config = mockConfig
+  await expect(cmd.init()).resolves.not.toThrow()
+})
+
 
 test('catch', async () => {
   const cmd = new TheCommand([])
