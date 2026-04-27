@@ -55,7 +55,13 @@ class BaseCommand extends Command {
         if (!hooksArr.some(h => typeof h === 'string')) {
           continue
         }
-        plugin.hooks[event] = hooksArr.map(h =>
+        try {
+          plugin.hooks[event] = hooksArr.map(h =>
+            typeof h === 'string' ? { identifier: 'default', target: h } : h
+          )
+        } catch (e) {
+          // plugin hooks object is frozen or sealed; skip normalization for this event
+        }
           typeof h === 'string' ? { identifier: 'default', target: h } : h
         )
       }
