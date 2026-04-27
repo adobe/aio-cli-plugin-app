@@ -294,7 +294,8 @@ test('init normalizes oclif v2 string hooks to v4 object format', async () => {
     hooks: {
       'pre-deploy-event-reg': ['./src/hooks/pre-deploy-event-reg.js'],
       'post-deploy-event-reg': './src/hooks/post-deploy-event-reg.js',
-      'already-v4': [{ identifier: 'default', target: './src/hooks/foo.js' }]
+      'already-v4': [{ identifier: 'default', target: './src/hooks/foo.js' }],
+      'mixed': ['./src/hooks/string.js', { identifier: 'named', target: './src/hooks/obj.js' }]
     }
   }
   cmd.config = global.createOclifMockConfig({
@@ -304,6 +305,10 @@ test('init normalizes oclif v2 string hooks to v4 object format', async () => {
   expect(plugin.hooks['pre-deploy-event-reg']).toEqual([{ identifier: 'default', target: './src/hooks/pre-deploy-event-reg.js' }])
   expect(plugin.hooks['post-deploy-event-reg']).toEqual([{ identifier: 'default', target: './src/hooks/post-deploy-event-reg.js' }])
   expect(plugin.hooks['already-v4']).toEqual([{ identifier: 'default', target: './src/hooks/foo.js' }])
+  expect(plugin.hooks['mixed']).toEqual([
+    { identifier: 'default', target: './src/hooks/string.js' },
+    { identifier: 'named', target: './src/hooks/obj.js' }
+  ])
 })
 
 test('init skips plugins with no hooks', async () => {
@@ -314,6 +319,18 @@ test('init skips plugins with no hooks', async () => {
   })
   await expect(cmd.init()).resolves.not.toThrow()
 })
+
+test('init does not mutate hooks already in v4 format', async () => {
+  const cmd = new TheCommand([])
+  const original = [{ identifier: 'default', target: './src/hooks/foo.js' }]
+  const plugin = { hooks: { 'some-event': original } }
+  cmd.config = global.createOclifMockConfig({
+    getPluginsList: jest.fn().mockReturnValue([plugin])
+  })
+  await cmd.init()
+  expect(plugin.hooks['some-event']).toBe(original) // same reference, not replaced
+})
+
 
 test('catch', async () => {
   const cmd = new TheCommand([])
