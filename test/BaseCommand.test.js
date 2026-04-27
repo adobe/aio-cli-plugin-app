@@ -295,7 +295,7 @@ test('init normalizes oclif v2 string hooks to v4 object format', async () => {
       'pre-deploy-event-reg': ['./src/hooks/pre-deploy-event-reg.js'],
       'post-deploy-event-reg': './src/hooks/post-deploy-event-reg.js',
       'already-v4': [{ identifier: 'default', target: './src/hooks/foo.js' }],
-      'mixed': ['./src/hooks/string.js', { identifier: 'named', target: './src/hooks/obj.js' }]
+      mixed: ['./src/hooks/string.js', { identifier: 'named', target: './src/hooks/obj.js' }]
     }
   }
   cmd.config = global.createOclifMockConfig({
@@ -351,7 +351,6 @@ test('init handles config with neither getPluginsList nor plugins without throwi
   cmd.config = mockConfig
   await expect(cmd.init()).resolves.not.toThrow()
 })
-
 
 test('catch', async () => {
   const cmd = new TheCommand([])
