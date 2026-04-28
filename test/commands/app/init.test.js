@@ -55,7 +55,6 @@ const mockConsoleCLIInstance = {
   promptForSelectOrganization: jest.fn(),
   getOrganizations: jest.fn(),
   getProjects: jest.fn(),
-  getProjectNextAvailableIdentifiers: jest.fn(),
   promptForSelectProject: jest.fn(),
   promptForCreateProjectDetails: jest.fn(),
   createProject: jest.fn(),
@@ -614,6 +613,16 @@ describe('--login', () => {
       expect.anything(),
       { name: 'App2', title: 'App Builder Project 2', description: 'App Builder Project 2 - generated' }
     )
+  })
+
+  test('--yes errors when all App{N} names up to MAX_SUFFIX are taken', async () => {
+    const MAX_SUFFIX = 10000
+    const allTaken = Array.from({ length: MAX_SUFFIX }, (_, i) => ({ name: `App${i + 1}` }))
+    mockConsoleCLIInstance.getProjects.mockResolvedValue(allTaken)
+
+    command.argv = ['--yes', '--no-install', '--template', '@adobe/my-extension']
+    await expect(command.run()).rejects.toThrow(`Could not find an available generated App name after ${MAX_SUFFIX} attempts`)
+    expect(mockConsoleCLIInstance.createProject).not.toHaveBeenCalled()
   })
 
   test('--yes with missing workspace auto-creates without confirm prompt', async () => {

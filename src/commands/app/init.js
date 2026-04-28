@@ -363,9 +363,13 @@ class InitCommand extends TemplatesCommand {
       // gaps left by deleted projects (e.g. if App2 was deleted, it is reused
       // before App4 is attempted).
       const existingNames = new Set(projects.map(p => p.name))
+      const MAX_SUFFIX = 10000
       let suffix = 1
       while (existingNames.has(`App${suffix}`)) {
         suffix++
+        if (suffix > MAX_SUFFIX) {
+          this.error(`Could not find an available generated App name after ${MAX_SUFFIX} attempts`)
+        }
       }
 
       const generatedName = `App${suffix}`
