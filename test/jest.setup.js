@@ -53,6 +53,7 @@ global.createOclifMockConfig = (overrides = {}) => ({
   runHook: jest.fn().mockResolvedValue({ successes: [] }),
   runCommand: jest.fn(),
   findCommand: jest.fn(),
+  getPluginsList: jest.fn().mockReturnValue([]),
   ...overrides
 })
 
