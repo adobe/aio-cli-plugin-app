@@ -352,6 +352,17 @@ test('init handles config with neither getPluginsList nor plugins without throwi
   await expect(cmd.init()).resolves.not.toThrow()
 })
 
+test('init skips normalization gracefully when plugin hooks object is frozen', async () => {
+  const cmd = new TheCommand([])
+  const plugin = { hooks: Object.freeze({ 'pre-deploy-event-reg': ['./src/hooks/hook.js'] }) }
+  cmd.config = global.createOclifMockConfig({
+    getPluginsList: jest.fn().mockReturnValue([plugin])
+  })
+  await expect(cmd.init()).resolves.not.toThrow()
+  // hooks remain as-is since the frozen object blocked the assignment
+  expect(plugin.hooks['pre-deploy-event-reg']).toEqual(['./src/hooks/hook.js'])
+})
+
 test('catch', async () => {
   const cmd = new TheCommand([])
   cmd.config = global.createOclifMockConfig()
