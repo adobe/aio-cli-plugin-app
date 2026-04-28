@@ -887,6 +887,129 @@ describe('run', () => {
     )
   })
 
+  test('deploy should pass refreshed config to deployActions when pre-deploy hook changes env', async () => {
+    const staleAuth = 'stale-auth-token'
+    const freshAuth = 'fresh-auth-from-hook'
+
+    // Initial config loaded before hooks run has stale auth
+    const staleAppConfig = createAppConfig({
+      ...command.appConfig,
+      runtime: { auth: staleAuth, namespace: 'test-ns' }
+    })
+
+    // After reload, the config should be re-derived with the fresh auth
+    const freshAppConfig = createAppConfig({
+      ...command.appConfig,
+      runtime: { auth: freshAuth, namespace: 'test-ns' }
+    })
+
+    // First call returns stale config (initial load), second call returns fresh config (after reload)
+    command.getAppExtConfigs
+      .mockResolvedValueOnce(staleAppConfig)
+      .mockResolvedValueOnce(freshAppConfig)
+
+    // Pre-deploy hook simulates writing a new auth token to .env
+    helpers.runInProcess
+      .mockImplementationOnce(async () => {
+        // In real code, a hook might write new credentials to .env
+        process.env.AIO_RUNTIME_AUTH = freshAuth
+        return undefined // no script found
+      })
+      .mockResolvedValueOnce(undefined) // deploy-actions
+      .mockResolvedValueOnce(undefined) // post-app-deploy
+
+    command.argv = ['--no-web-assets']
+    try {
+      await command.run()
+
+      expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+      const deployedConfig = mockRuntimeLib.deployActions.mock.calls[0][0]
+      // The config passed to deployActions should reflect the refreshed auth,
+      // not the stale value from the initial config load
+      expect(deployedConfig.ow.auth).toBe(freshAuth)
+    } finally {
+      delete process.env.AIO_RUNTIME_AUTH
+    }
+  })
+
+  test('deploy should clear appConfig cache after reload so subsequent loads are fresh', async () => {
+    const staleAppConfig = createAppConfig({
+      ...command.appConfig,
+      runtime: { auth: 'stale-auth', namespace: 'stale-ns' }
+    })
+    const freshAppConfig = createAppConfig({
+      ...command.appConfig,
+      runtime: { auth: 'fresh-auth', namespace: 'fresh-ns' }
+    })
+
+    command.getAppExtConfigs
+      .mockResolvedValueOnce(staleAppConfig)
+      .mockResolvedValueOnce(freshAppConfig)
+
+    helpers.runInProcess
+      .mockResolvedValueOnce(undefined) // pre-app-deploy
+      .mockResolvedValueOnce(undefined) // deploy-actions
+      .mockResolvedValueOnce(undefined) // post-app-deploy
+
+    command.argv = ['--no-web-assets']
+    await command.run()
+
+    // After deploy with reload, the appConfig cache should be cleared
+    // so that a subsequent getAppExtConfigs call returns fresh config.
+    // This matters for multi-extension loops and post-deploy logic.
+    expect(command.appConfig).toBeNull()
+  })
+
+  test('deploy should pass refreshed config for each extension in multi-extension deploy', async () => {
+    const staleAuth = 'stale-auth-multi'
+    const freshAuth = 'fresh-auth-multi'
+
+    const staleMultiConfig = createAppConfig({
+      ...command.appConfig,
+      runtime: { auth: staleAuth, namespace: 'test-ns' }
+    }, 'app-exc-nui')
+
+    // Fresh config returned after each reload
+    const freshMultiConfig = createAppConfig({
+      ...command.appConfig,
+      runtime: { auth: freshAuth, namespace: 'test-ns' }
+    }, 'app-exc-nui')
+
+    // Initial load returns stale config, then each per-extension reload returns fresh config
+    command.getAppExtConfigs
+      .mockResolvedValueOnce(staleMultiConfig) // initial load in run()
+      .mockResolvedValue(freshMultiConfig) // all subsequent reload calls
+
+    // Each extension: pre-app-deploy, deploy-actions, post-app-deploy
+    // app-exc-nui has 3 extensions (application, dx/asset-compute/worker/1, dx/excshell/1)
+    // First extension's pre-deploy hook changes env
+    helpers.runInProcess
+      .mockImplementationOnce(async () => {
+        // First extension's pre-deploy hook modifies .env
+        process.env.AIO_RUNTIME_AUTH = freshAuth
+        return undefined
+      })
+      .mockResolvedValue(undefined) // all other hook calls return undefined
+
+    mockExtRegExcShellAndNuiPayload()
+    command.argv = ['--no-web-assets']
+    try {
+      await command.run()
+
+      // All 3 extensions should have been deployed
+      expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(3)
+
+      // The second and third extension deploys should use the fresh auth,
+      // not the stale auth from the initial config load
+      const secondExtConfig = mockRuntimeLib.deployActions.mock.calls[1][0]
+      const thirdExtConfig = mockRuntimeLib.deployActions.mock.calls[2][0]
+      expect(secondExtConfig.ow.auth).toBe(freshAuth)
+      expect(thirdExtConfig.ow.auth).toBe(freshAuth)
+    } finally {
+      delete process.env.AIO_RUNTIME_AUTH
+    }
+  })
+
   test('deploy (has deploy-actions and deploy-static hooks)', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     const noScriptFound = undefined
