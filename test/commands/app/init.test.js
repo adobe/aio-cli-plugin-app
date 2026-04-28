@@ -915,6 +915,13 @@ describe('selectConsoleOrg', () => {
     await expect(command.run()).rejects.toThrow('--org non-existent-org not found')
     expect(mockConsoleCLIInstance.promptForSelectOrganization).not.toHaveBeenCalled()
   })
+
+  test('--org throws when mismatched against the only org (single org)', async () => {
+    mockConsoleCLIInstance.getOrganizations.mockResolvedValue([{ id: 'only-org' }])
+    command.argv = ['--yes', '--org', 'wrong-org', '--no-install', '--template', '@adobe/my-extension']
+    await expect(command.run()).rejects.toThrow('--org wrong-org not found')
+    expect(mockConsoleCLIInstance.promptForSelectOrganization).not.toHaveBeenCalled()
+  })
 })
 
 describe('ensureDevTermAccepted', () => {

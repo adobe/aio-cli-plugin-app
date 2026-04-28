@@ -303,23 +303,24 @@ class InitCommand extends TemplatesCommand {
     if (!organizations || organizations.length === 0) {
       this.error('No organizations found for the logged-in user')
     }
-    // initially select the first org, if multiple orgs are present, prompt user to select one
-    let selectedOrg = organizations[0]
-    if (organizations.length > 1) {
-      if (flags.yes) {
-        if (flags.org) {
-          // --org was explicitly supplied — find it by id or code, error if not found.
-          // Never prompt in --yes mode; the caller must supply a valid org.
-          const found = organizations.find(o => o.id === flags.org || o.code === flags.org)
-          if (!found) {
-            this.error(`--org ${flags.org} not found`)
-          }
-          selectedOrg = found
-        }
-        this.log(`Auto-selecting organization: '${selectedOrg.name || selectedOrg.id}'`)
-      } else {
-        selectedOrg = await consoleCLI.promptForSelectOrganization(organizations, { orgId: flags.org, orgCode: flags.org })
+    // If --org was supplied, validate it against the full list regardless of how many orgs
+    // exist. This prevents silent mismatches when there is only one org but the caller
+    // passed a wrong id or code.
+    let selectedOrg
+    if (flags.org) {
+      selectedOrg = organizations.find(o => o.id === flags.org || o.code === flags.org)
+      if (!selectedOrg) {
+        this.error(`--org ${flags.org} not found`)
       }
+    } else if (organizations.length > 1 && !flags.yes) {
+      // Multiple orgs and no --org: prompt interactively (only when not in --yes mode).
+      selectedOrg = await consoleCLI.promptForSelectOrganization(organizations, {})
+    } else {
+      // Single org, or --yes with no --org: auto-select the first (and likely only) org.
+      selectedOrg = organizations[0]
+    }
+    if (flags.yes || organizations.length === 1) {
+      this.log(`Auto-selecting organization: '${selectedOrg.name || selectedOrg.id}'`)
     }
     await this.ensureDevTermAccepted(consoleCLI, selectedOrg.id, flags.yes)
     return selectedOrg
