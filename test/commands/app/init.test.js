@@ -900,6 +900,21 @@ describe('selectConsoleOrg', () => {
     expect(mockConsoleCLIInstance.promptForSelectOrganization).not.toHaveBeenCalled()
     expect(importHelperLib.importConfigJson).toHaveBeenCalled()
   })
+
+  test('--yes --org selects matching org by id without prompt', async () => {
+    mockConsoleCLIInstance.getOrganizations.mockResolvedValue([{ id: 'org-a' }, { id: 'org-b' }])
+    command.argv = ['--yes', '--org', 'org-b', '--no-install', '--template', '@adobe/my-extension']
+    await command.run()
+    expect(mockConsoleCLIInstance.promptForSelectOrganization).not.toHaveBeenCalled()
+    expect(mockConsoleCLIInstance.getEnabledServicesForOrg).toHaveBeenCalledWith('org-b')
+  })
+
+  test('--yes --org throws when org not found', async () => {
+    mockConsoleCLIInstance.getOrganizations.mockResolvedValue([{ id: 'org-a' }, { id: 'org-b' }])
+    command.argv = ['--yes', '--org', 'non-existent-org', '--no-install', '--template', '@adobe/my-extension']
+    await expect(command.run()).rejects.toThrow('--org non-existent-org not found')
+    expect(mockConsoleCLIInstance.promptForSelectOrganization).not.toHaveBeenCalled()
+  })
 })
 
 describe('ensureDevTermAccepted', () => {

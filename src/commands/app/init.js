@@ -307,6 +307,15 @@ class InitCommand extends TemplatesCommand {
     let selectedOrg = organizations[0]
     if (organizations.length > 1) {
       if (flags.yes) {
+        if (flags.org) {
+          // --org was explicitly supplied — find it by id or code, error if not found.
+          // Never prompt in --yes mode; the caller must supply a valid org.
+          const found = organizations.find(o => o.id === flags.org || o.code === flags.org)
+          if (!found) {
+            this.error(`--org ${flags.org} not found`)
+          }
+          selectedOrg = found
+        }
         this.log(`Auto-selecting organization: '${selectedOrg.name || selectedOrg.id}'`)
       } else {
         selectedOrg = await consoleCLI.promptForSelectOrganization(organizations, { orgId: flags.org, orgCode: flags.org })
@@ -381,10 +390,10 @@ class InitCommand extends TemplatesCommand {
       { allowCreate: true }
     )
     if (!project) {
-      // promptForSelectProject returns null when the user escapes the prompt (e.g. presses
-      // Escape or selects "Create new project"). If --project was explicitly provided but
-      // not found, treat that as an error rather than silently creating a different project.
-      if (flags.project && !flags.yes) {
+      // promptForSelectProject returns null when the user selects "Create new project" or
+      // escapes the prompt. If --project was explicitly provided but not found/selected,
+      // always error — never silently create a different project.
+      if (flags.project) {
         this.error(`--project ${flags.project} not found`)
       } else {
         // User chose to create a new project — collect details interactively and create it.
