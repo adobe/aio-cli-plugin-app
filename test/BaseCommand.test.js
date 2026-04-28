@@ -288,6 +288,81 @@ test('init', async () => {
   expect(inquirer.createPromptModule).toHaveBeenCalledWith({ output: process.stderr })
 })
 
+test('init normalizes oclif v2 string hooks to v4 object format', async () => {
+  const cmd = new TheCommand([])
+  const plugin = {
+    hooks: {
+      'pre-deploy-event-reg': ['./src/hooks/pre-deploy-event-reg.js'],
+      'post-deploy-event-reg': './src/hooks/post-deploy-event-reg.js',
+      'already-v4': [{ identifier: 'default', target: './src/hooks/foo.js' }],
+      mixed: ['./src/hooks/string.js', { identifier: 'named', target: './src/hooks/obj.js' }]
+    }
+  }
+  cmd.config = global.createOclifMockConfig({
+    getPluginsList: jest.fn().mockReturnValue([plugin])
+  })
+  await cmd.init()
+  expect(plugin.hooks['pre-deploy-event-reg']).toEqual([{ identifier: 'default', target: './src/hooks/pre-deploy-event-reg.js' }])
+  expect(plugin.hooks['post-deploy-event-reg']).toEqual([{ identifier: 'default', target: './src/hooks/post-deploy-event-reg.js' }])
+  expect(plugin.hooks['already-v4']).toEqual([{ identifier: 'default', target: './src/hooks/foo.js' }])
+  expect(plugin.hooks['mixed']).toEqual([
+    { identifier: 'default', target: './src/hooks/string.js' },
+    { identifier: 'named', target: './src/hooks/obj.js' }
+  ])
+})
+
+test('init skips plugins with no hooks', async () => {
+  const cmd = new TheCommand([])
+  const plugin = { name: 'no-hooks-plugin' }
+  cmd.config = global.createOclifMockConfig({
+    getPluginsList: jest.fn().mockReturnValue([plugin])
+  })
+  await expect(cmd.init()).resolves.not.toThrow()
+})
+
+test('init does not mutate hooks already in v4 format', async () => {
+  const cmd = new TheCommand([])
+  const original = [{ identifier: 'default', target: './src/hooks/foo.js' }]
+  const plugin = { hooks: { 'some-event': original } }
+  cmd.config = global.createOclifMockConfig({
+    getPluginsList: jest.fn().mockReturnValue([plugin])
+  })
+  await cmd.init()
+  expect(plugin.hooks['some-event']).toBe(original) // same reference, not replaced
+})
+
+test('init falls back to this.config.plugins Map when getPluginsList is unavailable', async () => {
+  const cmd = new TheCommand([])
+  const plugin = { hooks: { 'pre-deploy-event-reg': ['./src/hooks/hook.js'] } }
+  const mockConfig = global.createOclifMockConfig({
+    plugins: new Map([['test-plugin', plugin]])
+  })
+  delete mockConfig.getPluginsList
+  cmd.config = mockConfig
+  await cmd.init()
+  expect(plugin.hooks['pre-deploy-event-reg']).toEqual([{ identifier: 'default', target: './src/hooks/hook.js' }])
+})
+
+test('init handles config with neither getPluginsList nor plugins without throwing', async () => {
+  const cmd = new TheCommand([])
+  const mockConfig = global.createOclifMockConfig()
+  delete mockConfig.getPluginsList
+  delete mockConfig.plugins
+  cmd.config = mockConfig
+  await expect(cmd.init()).resolves.not.toThrow()
+})
+
+test('init skips normalization gracefully when plugin hooks object is frozen', async () => {
+  const cmd = new TheCommand([])
+  const plugin = { hooks: Object.freeze({ 'pre-deploy-event-reg': ['./src/hooks/hook.js'] }) }
+  cmd.config = global.createOclifMockConfig({
+    getPluginsList: jest.fn().mockReturnValue([plugin])
+  })
+  await expect(cmd.init()).resolves.not.toThrow()
+  // hooks remain as-is since the frozen object blocked the assignment
+  expect(plugin.hooks['pre-deploy-event-reg']).toEqual(['./src/hooks/hook.js'])
+})
+
 test('catch', async () => {
   const cmd = new TheCommand([])
   cmd.config = global.createOclifMockConfig()
