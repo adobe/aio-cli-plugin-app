@@ -318,11 +318,10 @@ class InitCommand extends TemplatesCommand {
     } else {
       // Single org, or --yes with no --org: auto-select the first (and likely only) org.
       selectedOrg = organizations[0]
-    }
-    if (flags.yes || organizations.length === 1) {
-    if (flags.yes) {
       this.log(`Auto-selecting organization: '${selectedOrg.name || selectedOrg.id}'`)
     }
+    await this.ensureDevTermAccepted(consoleCLI, selectedOrg.id, flags.yes)
+    return selectedOrg
   }
 
   async selectOrCreateConsoleProject (consoleCLI, org, flags) {
