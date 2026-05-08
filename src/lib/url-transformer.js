@@ -10,14 +10,8 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-/**
- * Transforms action URLs to use next-adobeioruntime.net for display
- */
 function transformActionUrl (url) {
-  if (!url || typeof url !== 'string') {
-    return url
-  }
-  return url.replace(/adobeioruntime\.net/g, 'next-adobeioruntime.net')
+  return url
 }
 
 function transformActionEntities (actions) {
