@@ -39,7 +39,7 @@
     "junk": "^3.1.0",
     "lodash.clonedeep": "^4.5.0",
     "node-abort-controller": "^3.1.1",
-    "open": "^8.4.2",
+    "open": "^11.0.0",
     "ora": "^5",
     "pure-http": "^3",
     "serve-static": "^1.14.1",
