@@ -1,5 +1,7 @@
 # aio-cli-plugin-app
 
+test
+
 Create, Build and Deploy Adobe I/O Apps
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
