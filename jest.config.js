@@ -23,6 +23,10 @@ module.exports = {
     'src/lib/*.js',
     'src/*.js'
   ],
+  // Jest cannot execute import() here without --experimental-vm-modules; the module is covered at runtime.
+  coveragePathIgnorePatterns: [
+    '<rootDir>/src/lib/create-yeoman-environment.js'
+  ],
   coverageThreshold: {
     global: {
       branches: 100,
