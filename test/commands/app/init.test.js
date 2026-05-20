@@ -16,7 +16,7 @@ const BaseCommand = require('../../../src/BaseCommand')
 const importHelperLib = require('../../../src/lib/import-helper')
 const inquirer = require('inquirer')
 const savedDataDir = process.env.XDG_DATA_HOME
-const yeoman = require('yeoman-environment')
+const { createYeomanEnvironment } = require('../../../src/lib/create-yeoman-environment')
 const { Octokit } = require('@octokit/rest')
 
 jest.mock('@adobe/aio-lib-core-config')
@@ -83,8 +83,8 @@ function resetMockConsoleCLI () {
   mockConsoleCLIInstance.prompt.promptConfirm.mockReset()
 }
 
-jest.mock('yeoman-environment')
-yeoman.createEnv.mockReturnValue({
+jest.mock('../../../src/lib/create-yeoman-environment')
+createYeomanEnvironment.mockResolvedValue({
   instantiate: jest.fn(),
   runGenerator: jest.fn()
 })

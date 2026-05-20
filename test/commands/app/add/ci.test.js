@@ -17,20 +17,19 @@ const generators = require('@adobe/generator-aio-app')
 
 jest.mock('fs-extra')
 
-jest.mock('yeoman-environment')
-const yeoman = require('yeoman-environment')
+jest.mock('../../../../src/lib/create-yeoman-environment')
+const { createYeomanEnvironment } = require('../../../../src/lib/create-yeoman-environment')
 
 const mockInstantiate = jest.fn()
 const mockRunGenerator = jest.fn()
-yeoman.createEnv.mockReturnValue({
+createYeomanEnvironment.mockResolvedValue({
   instantiate: mockInstantiate,
   runGenerator: mockRunGenerator
 })
-
 beforeEach(() => {
   mockInstantiate.mockReset()
   mockRunGenerator.mockReset()
-  yeoman.createEnv.mockClear()
+  createYeomanEnvironment.mockClear()
   fs.ensureDirSync.mockClear()
 })
 
@@ -50,7 +49,7 @@ describe('bad flags', () => {
 
 describe('template module cannot be registered', () => {
   test('unknown error', async () => {
-    mockInstantiate.mockImplementation(() => { throw new Error('some error') })
+    mockInstantiate.mockRejectedValue(new Error('some error'))
     await expect(TheCommand.run([])).rejects.toThrow('some error')
   })
 })
@@ -59,7 +58,7 @@ describe('no flags', () => {
   test('should pass', async () => {
     await TheCommand.run([])
 
-    expect(yeoman.createEnv).toHaveBeenCalled()
+    expect(createYeomanEnvironment).toHaveBeenCalledWith({ skipInstall: true })
     expect(mockInstantiate).toHaveBeenCalledWith(generators['add-ci'], { options: { } })
     expect(mockRunGenerator).toHaveBeenCalled()
   })
