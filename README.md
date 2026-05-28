@@ -24,6 +24,16 @@ $ aio discover -i
 $ aio app --help
 ```
 
+## Agent skills
+
+Install [Agent Skills](https://agentskills.io/) for Cursor, Claude Code, Codex, and other agents:
+
+```bash
+npx skills add adobe/aio-cli-plugin-app
+```
+
+See [skills/README.md](skills/README.md) for the skill list and install options.
+
 # Commands
 
 <!-- commands -->
