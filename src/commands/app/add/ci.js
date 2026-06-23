@@ -9,10 +9,11 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('../../../BaseCommand')
-const { createYeomanEnvironment } = require('../../../lib/create-yeoman-environment')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:ci', { provider: 'debug' })
-const generators = require('@adobe/generator-aio-app')
+import BaseCommand from '../../../BaseCommand.js'
+import { createYeomanEnvironment } from '../../../lib/create-yeoman-environment.js'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:add:ci', { provider: 'debug' })
+import generators from '@adobe/generator-aio-app'
 
 class AddCICommand extends BaseCommand {
   async run () {
@@ -39,4 +40,4 @@ AddCICommand.flags = {
 
 AddCICommand.args = {}
 
-module.exports = AddCICommand
+export default AddCICommand

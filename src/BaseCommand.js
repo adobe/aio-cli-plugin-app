@@ -10,22 +10,23 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { Command, Flags } = require('@oclif/core')
-const chalk = require('chalk')
-const coreConfig = require('@adobe/aio-lib-core-config')
+import { Command, Flags } from '@oclif/core'
+import chalk from 'chalk'
+import coreConfig from '@adobe/aio-lib-core-config'
 const DEFAULT_LAUNCH_PREFIX = 'https://experience.adobe.com/?devMode=true#/custom-apps/?localDevUrl='
 const STAGE_LAUNCH_PREFIX = 'https://experience-stage.adobe.com/?devMode=true#/custom-apps/?localDevUrl='
-const appConfig = require('@adobe/aio-cli-lib-app-config')
-const inquirer = require('inquirer')
-const { CONSOLE_API_KEYS, APPLICATION_CONFIG_KEY, EXTENSIONS_CONFIG_KEY } = require('./lib/defaults')
-const { getAccessToken } = require('./lib/auth-helper')
-const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app', { provider: 'debug' })
+import appConfig from '@adobe/aio-cli-lib-app-config'
+import inquirer from 'inquirer'
+import { CONSOLE_API_KEYS, APPLICATION_CONFIG_KEY, EXTENSIONS_CONFIG_KEY } from './lib/defaults.js'
+import { getAccessToken } from './lib/auth-helper.js'
+import LibConsoleCLI from '@adobe/aio-cli-lib-console'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app', { provider: 'debug' })
 
-const {
+import {
   getCliEnv, /* function */
   STAGE_ENV /* string */
-} = require('@adobe/aio-lib-env')
+} from '@adobe/aio-lib-env'
 
 class BaseCommand extends Command {
   // default error handler for app commands
@@ -223,4 +224,4 @@ BaseCommand.flags = {
 
 BaseCommand.args = {}
 
-module.exports = BaseCommand
+export default BaseCommand

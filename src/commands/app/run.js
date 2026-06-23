@@ -10,20 +10,20 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const ora = require('ora')
-const chalk = require('chalk')
-const fs = require('fs-extra')
-const https = require('https')
-const getPort = require('get-port')
-const open = require('open')
+import ora from 'ora'
+import chalk from 'chalk'
+import fs from 'fs-extra'
+import https from 'https'
+import getPort from 'get-port'
+import open from 'open'
 
-const { Flags, ux } = require('@oclif/core')
-const coreConfig = require('@adobe/aio-lib-core-config')
+import { Flags, ux } from '@oclif/core'
+import coreConfig from '@adobe/aio-lib-core-config'
 
-const BaseCommand = require('../../BaseCommand')
-const runDev = require('../../lib/run-dev')
-const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('../../lib/defaults')
-const { runInProcess } = require('../../lib/app-helper')
+import BaseCommand from '../../BaseCommand.js'
+import runDev from '../../lib/run-dev.js'
+import { defaultHttpServerPort as SERVER_DEFAULT_PORT } from '../../lib/defaults.js'
+import { runInProcess } from '../../lib/app-helper.js'
 
 const DEV_KEYS_DIR = 'dist/dev-keys/'
 const PRIVATE_KEY_PATH = DEV_KEYS_DIR + 'private.key'
@@ -229,4 +229,4 @@ Run.flags = {
   })
 }
 
-module.exports = Run
+export default Run

@@ -10,11 +10,11 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const rtLib = require('@adobe/aio-lib-runtime')
-const { writeAio, writeEnv } = require('./import-helper')
-const crypto = require('crypto')
-const fs = require('fs-extra')
-const path = require('path')
+import rtLib from '@adobe/aio-lib-runtime'
+import { writeAio, writeEnv } from './import-helper.js'
+import crypto from 'crypto'
+import fs from 'fs-extra'
+import path from 'path'
 
 const SECRET_FIELD_TYPE = 'password'
 const CHECKSUM_DIR = 'dist'
@@ -260,7 +260,7 @@ function getChecksum (config) {
     .digest('hex')
 }
 
-module.exports = {
+export {
   init,
   LogForwardingConfig
 }

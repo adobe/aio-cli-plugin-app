@@ -9,21 +9,22 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TemplatesCommand = require('../../TemplatesCommand')
-const { createYeomanEnvironment } = require('../../lib/create-yeoman-environment')
-const path = require('path')
-const fs = require('fs-extra')
-const ora = require('ora')
-const chalk = require('chalk')
-const { Flags, Args } = require('@oclif/core')
-const generators = require('@adobe/generator-aio-app')
-const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
-const inquirer = require('inquirer')
-const hyperlinker = require('hyperlinker')
-const { importConsoleConfig } = require('../../lib/import')
-const { loadAndValidateConfigFile } = require('../../lib/import-helper')
-const { Octokit } = require('@octokit/rest')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
+import TemplatesCommand from '../../TemplatesCommand.js'
+import { createYeomanEnvironment } from '../../lib/create-yeoman-environment.js'
+import path from 'path'
+import fs from 'fs-extra'
+import ora from 'ora'
+import chalk from 'chalk'
+import { Flags, Args } from '@oclif/core'
+import generators from '@adobe/generator-aio-app'
+import TemplateRegistryAPI from '@adobe/aio-lib-templates'
+import inquirer from 'inquirer'
+import hyperlinker from 'hyperlinker'
+import { importConsoleConfig } from '../../lib/import.js'
+import { loadAndValidateConfigFile } from '../../lib/import-helper.js'
+import { Octokit } from '@octokit/rest'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:init', { provider: 'debug' })
 
 const DEFAULT_WORKSPACE = 'Stage'
 
@@ -607,4 +608,4 @@ InitCommand.args =
     })
   }
 
-module.exports = InitCommand
+export default InitCommand

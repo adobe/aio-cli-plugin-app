@@ -9,12 +9,12 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-const { EventPoller, run: logPoller } = require('../../../src/lib/log-poller')
-const { printActionLogs } = require('@adobe/aio-lib-runtime')
-const mockLogger = require('@adobe/aio-lib-core-logging')
+import { EventPoller, run as logPoller } from '../../../src/lib/log-poller.js'
+import { printActionLogs } from '@adobe/aio-lib-runtime'
+import mockLogger from '@adobe/aio-lib-core-logging'
 
-jest.mock('../../../src/lib/app-helper.js')
-jest.mock('@adobe/aio-lib-runtime')
+vi.mock('../../../src/lib/app-helper.js')
+vi.mock('@adobe/aio-lib-runtime')
 
 test('exports', () => {
   expect(typeof EventPoller).toEqual('function')
@@ -23,7 +23,7 @@ test('exports', () => {
 
 describe('logPoller', () => {
   beforeEach(() => {
-    jest.useFakeTimers()
+    vi.useFakeTimers()
 
     mockLogger.mockReset()
     printActionLogs.mockReset()
@@ -35,7 +35,7 @@ describe('logPoller', () => {
     }))
 
     const { poller, cleanup } = await logPoller({}, 1000)
-    jest.advanceTimersByTime(1000)
+    vi.advanceTimersByTime(1000)
     cleanup()
 
     expect(typeof poller).toEqual('object')
@@ -50,7 +50,7 @@ describe('logPoller', () => {
     })
 
     const { poller, cleanup } = await logPoller({}, 1000)
-    jest.advanceTimersByTime(1000)
+    vi.advanceTimersByTime(1000)
     cleanup()
 
     expect(typeof poller).toEqual('object')
@@ -61,7 +61,7 @@ describe('logPoller', () => {
   test('cleanup', async () => {
     const { poller, cleanup } = await logPoller({})
 
-    poller.stop = jest.fn()
+    poller.stop = vi.fn()
     await cleanup()
     expect(poller.stop).toHaveBeenCalled()
   })
@@ -70,30 +70,30 @@ describe('logPoller', () => {
 describe('EventPoller', () => {
   test('start', () => {
     const poller = new EventPoller(1234)
-    poller.emit = jest.fn()
-    jest.spyOn(global, 'setTimeout')
+    poller.emit = vi.fn()
+    vi.spyOn(global, 'setTimeout')
 
     poller.start('some fake args')
     expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), 1234)
-    jest.runAllTimers()
+    vi.runAllTimers()
     expect(poller.emit).toHaveBeenCalledWith('poll', 'some fake args')
   })
 
   test('stop', () => {
     const poller = new EventPoller(1234)
-    poller.emit = jest.fn()
-    jest.spyOn(global, 'setTimeout')
+    poller.emit = vi.fn()
+    vi.spyOn(global, 'setTimeout')
 
     poller.start('some fake args')
     expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), 1234)
-    jest.runAllTimers()
+    vi.runAllTimers()
     expect(poller.emit).toHaveBeenCalledWith('poll', 'some fake args')
     poller.stop()
   })
 
   test('onPoll', () => {
     const poller = new EventPoller(1234)
-    poller.on = jest.fn()
+    poller.on = vi.fn()
 
     const a = () => {}
     poller.onPoll(a)

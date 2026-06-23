@@ -9,66 +9,68 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-const fs = require('fs-extra')
-const path = require('path')
-const TheCommand = require('../../../src/commands/app/init')
-const BaseCommand = require('../../../src/BaseCommand')
-const importHelperLib = require('../../../src/lib/import-helper')
-const inquirer = require('inquirer')
+import fs from 'fs-extra'
+import path from 'path'
+import TheCommand from '../../../src/commands/app/init.js'
+import BaseCommand from '../../../src/BaseCommand.js'
+import * as importHelperLib from '../../../src/lib/import-helper.js'
+import inquirer from 'inquirer'
 const savedDataDir = process.env.XDG_DATA_HOME
-const { createYeomanEnvironment } = require('../../../src/lib/create-yeoman-environment')
-const { Octokit } = require('@octokit/rest')
+import { createYeomanEnvironment } from '../../../src/lib/create-yeoman-environment.js'
+import { Octokit } from '@octokit/rest'
 
-jest.mock('@adobe/aio-lib-core-config')
-jest.mock('fs-extra')
-jest.mock('../../../src/lib/import-helper')
-jest.mock('inquirer', () => ({
-  registerPrompt: jest.fn(),
-  prompt: jest.fn(),
-  createPromptModule: jest.fn()
+vi.mock('@adobe/aio-lib-core-config')
+vi.mock('fs-extra')
+vi.mock('../../../src/lib/import-helper')
+vi.mock('inquirer', () => ({
+  default: {
+    registerPrompt: vi.fn(),
+    prompt: vi.fn(),
+    createPromptModule: vi.fn()
+  }
 }))
 
 // mock ora
-jest.mock('ora', () => {
+vi.mock('ora', () => {
   const mockOra = {
-    start: jest.fn(() => mockOra),
-    stop: jest.fn(() => mockOra),
-    succeed: jest.fn(() => mockOra),
-    fail: jest.fn(() => mockOra),
-    info: jest.fn(() => mockOra),
-    warn: jest.fn(() => mockOra),
-    stopAndPersist: jest.fn(() => mockOra),
-    clear: jest.fn(() => mockOra),
-    promise: jest.fn(() => Promise.resolve(mockOra))
+    start: vi.fn(() => mockOra),
+    stop: vi.fn(() => mockOra),
+    succeed: vi.fn(() => mockOra),
+    fail: vi.fn(() => mockOra),
+    info: vi.fn(() => mockOra),
+    warn: vi.fn(() => mockOra),
+    stopAndPersist: vi.fn(() => mockOra),
+    clear: vi.fn(() => mockOra),
+    promise: vi.fn(() => Promise.resolve(mockOra))
   }
-  return jest.fn(() => mockOra)
+  return { default: vi.fn(() => mockOra) }
 })
 
 // mock login
-jest.mock('@adobe/aio-lib-ims')
+vi.mock('@adobe/aio-lib-ims')
 
 // mock console calls
-jest.mock('@adobe/aio-cli-lib-console')
-const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
+vi.mock('@adobe/aio-cli-lib-console')
+import LibConsoleCLI from '@adobe/aio-cli-lib-console'
 const mockConsoleCLIInstance = {
-  getEnabledServicesForOrg: jest.fn(),
-  promptForSelectOrganization: jest.fn(),
-  getOrganizations: jest.fn(),
-  getProjects: jest.fn(),
-  promptForSelectProject: jest.fn(),
-  promptForCreateProjectDetails: jest.fn(),
-  createProject: jest.fn(),
-  getWorkspaces: jest.fn(),
-  promptForSelectWorkspace: jest.fn(),
-  getServicePropertiesFromWorkspace: jest.fn(),
-  subscribeToServices: jest.fn(),
-  getWorkspaceConfig: jest.fn(),
-  createWorkspace: jest.fn(),
-  checkDevTermsForOrg: jest.fn(),
-  getDevTermsForOrg: jest.fn(),
-  acceptDevTermsForOrg: jest.fn(),
+  getEnabledServicesForOrg: vi.fn(),
+  promptForSelectOrganization: vi.fn(),
+  getOrganizations: vi.fn(),
+  getProjects: vi.fn(),
+  promptForSelectProject: vi.fn(),
+  promptForCreateProjectDetails: vi.fn(),
+  createProject: vi.fn(),
+  getWorkspaces: vi.fn(),
+  promptForSelectWorkspace: vi.fn(),
+  getServicePropertiesFromWorkspace: vi.fn(),
+  subscribeToServices: vi.fn(),
+  getWorkspaceConfig: vi.fn(),
+  createWorkspace: vi.fn(),
+  checkDevTermsForOrg: vi.fn(),
+  getDevTermsForOrg: vi.fn(),
+  acceptDevTermsForOrg: vi.fn(),
   prompt: {
-    promptConfirm: jest.fn()
+    promptConfirm: vi.fn()
   }
 }
 LibConsoleCLI.init.mockResolvedValue(mockConsoleCLIInstance)
@@ -83,13 +85,13 @@ function resetMockConsoleCLI () {
   mockConsoleCLIInstance.prompt.promptConfirm.mockReset()
 }
 
-jest.mock('../../../src/lib/create-yeoman-environment')
+vi.mock('../../../src/lib/create-yeoman-environment')
 createYeomanEnvironment.mockResolvedValue({
-  instantiate: jest.fn(),
-  runGenerator: jest.fn()
+  instantiate: vi.fn(),
+  runGenerator: vi.fn()
 })
 
-jest.mock('@octokit/rest')
+vi.mock('@octokit/rest')
 
 // FAKE DATA ///////////////////////
 
@@ -135,22 +137,22 @@ let command
 
 beforeEach(() => {
   fakeCwd = 'cwd'
-  process.chdir = jest.fn().mockImplementation(dir => { fakeCwd = dir })
-  process.cwd = jest.fn().mockImplementation(() => fakeCwd)
+  process.chdir = vi.fn().mockImplementation(dir => { fakeCwd = dir })
+  process.cwd = vi.fn().mockImplementation(() => fakeCwd)
   process.chdir.mockClear()
   process.cwd.mockClear()
 
   command = new TheCommand([])
   command.config = {
-    findCommand: jest.fn(() => ({})),
-    runHook: jest.fn().mockResolvedValue({ successes: [] })
+    findCommand: vi.fn(() => ({})),
+    runHook: vi.fn().mockResolvedValue({ successes: [] })
   }
 
-  command.selectTemplates = jest.fn()
+  command.selectTemplates = vi.fn()
   command.selectTemplates.mockResolvedValue([])
-  command.installTemplates = jest.fn()
-  command.getTemplatesByExtensionPointIds = jest.fn()
-  command.runInstallPackages = jest.fn()
+  command.installTemplates = vi.fn()
+  command.getTemplatesByExtensionPointIds = vi.fn()
+  command.runInstallPackages = vi.fn()
 
   inquirer.prompt.mockResolvedValue({
     components: 'allTemplates'
@@ -318,7 +320,7 @@ describe('--no-login', () => {
   })
 
   test('--standalone-app', async () => {
-    command.runCodeGenerators = jest.fn()
+    command.runCodeGenerators = vi.fn()
     const installOptions = {
       useDefaultValues: false,
       installNpm: true,
@@ -390,7 +392,7 @@ describe('--no-login', () => {
     })
     Octokit.mockImplementation(() => ({ repos: { getContent } }))
 
-    command.error = jest.fn()
+    command.error = vi.fn()
     command.argv = ['--no-login', '--repo=adobe/appbuilder-quickstarts/dne']
 
     await command.run()
@@ -412,7 +414,7 @@ describe('--no-login', () => {
     })
     Octokit.mockImplementation(() => ({ repos: { getContent } }))
 
-    command.error = jest.fn()
+    command.error = vi.fn()
     command.argv = ['--no-login', '--repo=adobe/appbuilder-quickstarts/dne']
 
     await command.run()
@@ -471,7 +473,7 @@ describe('--no-login', () => {
   })
 
   test('--yes --no-login --linter=none', async () => {
-    command.runCodeGenerators = jest.fn()
+    command.runCodeGenerators = vi.fn()
     const installOptions = {
       useDefaultValues: true,
       installNpm: true,
@@ -489,7 +491,7 @@ describe('--no-login', () => {
   })
 
   test('--yes --no-login --linter=adobe-recommended', async () => {
-    command.runCodeGenerators = jest.fn()
+    command.runCodeGenerators = vi.fn()
     const installOptions = {
       useDefaultValues: true,
       installNpm: true,
@@ -507,7 +509,7 @@ describe('--no-login', () => {
   })
 
   test('--yes --no-login --linter=invalid', async () => {
-    command.runCodeGenerators = jest.fn()
+    command.runCodeGenerators = vi.fn()
     command.argv = ['--yes', '--no-login', '--linter=invalid']
     await expect(command.run()).rejects.toThrow('Expected --linter=invalid to be one of: none, basic, adobe-recommended\nSee more help with --help')
   })

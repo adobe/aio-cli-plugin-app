@@ -10,11 +10,12 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { Flags } = require('@oclif/core')
-const BaseCommand = require('../../BaseCommand')
-const { wrapError } = require('../../lib/app-helper')
-const rtLib = require('@adobe/aio-lib-runtime')
-const LogForwarding = require('../../lib/log-forwarding')
+import { Flags } from '@oclif/core'
+import BaseCommand from '../../BaseCommand.js'
+import { wrapError } from '../../lib/app-helper.js'
+import rtLib from '@adobe/aio-lib-runtime'
+import { init as LogForwardingInit } from '../../lib/log-forwarding.js'
+const LogForwarding = { init: LogForwardingInit }
 
 const SECURED = 'require-adobe-auth'
 
@@ -142,4 +143,4 @@ Logs.flags = {
   })
 }
 
-module.exports = Logs
+export default Logs

@@ -10,12 +10,13 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { runScript } = require('../../lib/app-helper')
-const { Flags } = require('@oclif/core')
-const BaseCommand = require('../../BaseCommand')
-const chalk = require('chalk')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:test', { provider: 'debug' })
-const path = require('path')
+import { runScript } from '../../lib/app-helper.js'
+import { Flags } from '@oclif/core'
+import BaseCommand from '../../BaseCommand.js'
+import chalk from 'chalk'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:test', { provider: 'debug' })
+import path from 'path'
 
 class Test extends BaseCommand {
   async run () {
@@ -237,4 +238,5 @@ For the --extension flag, it tries a substring search on the 'extension-name' on
 If the extension has a hook called 'test' in its 'ext.config.yaml', the script specified will be run instead.
 
 `
-module.exports = Test
+
+export default Test

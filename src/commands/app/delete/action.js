@@ -9,15 +9,16 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('../../../BaseCommand')
-const inquirer = require('inquirer')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:delete:action', { provider: 'debug' })
-const { Flags, Args } = require('@oclif/core')
-const fs = require('fs-extra')
-const path = require('path')
-const chalk = require('chalk')
-const { EOL } = require('os')
-const { atLeastOne, deleteUserConfig } = require('../../../lib/app-helper')
+import BaseCommand from '../../../BaseCommand.js'
+import inquirer from 'inquirer'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:delete:action', { provider: 'debug' })
+import { Flags, Args } from '@oclif/core'
+import fs from 'fs-extra'
+import path from 'path'
+import chalk from 'chalk'
+import { EOL } from 'os'
+import { atLeastOne, deleteUserConfig } from '../../../lib/app-helper.js'
 
 class DeleteActionCommand extends BaseCommand {
   async run () {
@@ -167,4 +168,4 @@ DeleteActionCommand.args =
 
 DeleteActionCommand.aliases = ['app:delete:actions']
 
-module.exports = DeleteActionCommand
+export default DeleteActionCommand

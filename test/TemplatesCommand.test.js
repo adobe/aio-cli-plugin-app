@@ -10,14 +10,16 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../src/TemplatesCommand')
-const BaseCommand = require('../src/BaseCommand')
-const nock = require('nock')
-const inquirer = require('inquirer')
+import TheCommand from '../src/TemplatesCommand.js'
+import BaseCommand from '../src/BaseCommand.js'
+import nock from 'nock'
+import inquirer from 'inquirer'
 
-jest.mock('inquirer', () => ({
-  registerPrompt: jest.fn(),
-  prompt: jest.fn()
+vi.mock('inquirer', () => ({
+  default: {
+    registerPrompt: vi.fn(),
+    prompt: vi.fn()
+  }
 }))
 
 const CUSTOM_TEMPLATE_REGISTRY_CONFIG = {
@@ -96,8 +98,8 @@ let command
 beforeEach(() => {
   command = new TheCommand()
   command.config = {
-    runCommand: jest.fn(),
-    runHook: jest.fn().mockResolvedValue({ successes: [] })
+    runCommand: vi.fn(),
+    runHook: vi.fn().mockResolvedValue({ successes: [] })
   }
 
   inquirer.registerPrompt.mockReset()

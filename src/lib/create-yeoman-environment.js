@@ -21,4 +21,4 @@ async function createYeomanEnvironment (options) {
   return createEnv(options)
 }
 
-module.exports = { createYeomanEnvironment }
+export { createYeomanEnvironment }

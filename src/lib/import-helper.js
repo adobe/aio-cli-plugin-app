@@ -9,17 +9,18 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:import', { provider: 'debug' })
-const config = require('@adobe/aio-lib-core-config')
-const { defaultOwApihost } = require('./defaults')
-const path = require('path')
-const fs = require('fs-extra')
-const inquirer = require('inquirer')
-const yaml = require('js-yaml')
-const hjson = require('hjson')
-const { EOL } = require('os')
-const { validateJsonWithSchema } = require('./install-helper')
-const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:import', { provider: 'debug' })
+import config from '@adobe/aio-lib-core-config'
+import { defaultOwApihost } from './defaults.js'
+import path from 'path'
+import fs from 'fs-extra'
+import inquirer from 'inquirer'
+import yaml from 'js-yaml'
+import hjson from 'hjson'
+import { EOL } from 'os'
+import { validateJsonWithSchema } from './install-helper.js'
+import LibConsoleCLI from '@adobe/aio-cli-lib-console'
 
 const AIO_FILE = '.aio'
 const ENV_FILE = '.env'
@@ -756,7 +757,7 @@ const getOAuthS2SCredential = (config) => {
   }
 }
 
-module.exports = {
+export {
   getServiceApiKey,
   getOAuthS2SCredential,
   writeFile,

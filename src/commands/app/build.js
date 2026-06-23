@@ -10,16 +10,17 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const ora = require('ora')
-const chalk = require('chalk')
+import ora from 'ora'
+import chalk from 'chalk'
 
-const BaseCommand = require('../../BaseCommand')
-const { Flags } = require('@oclif/core')
-const { runInProcess, writeConfig } = require('../../lib/app-helper')
-const RuntimeLib = require('@adobe/aio-lib-runtime')
-const { bundle } = require('@adobe/aio-lib-web')
-const fs = require('fs-extra')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:build', { provider: 'debug' })
+import BaseCommand from '../../BaseCommand.js'
+import { Flags } from '@oclif/core'
+import { runInProcess, writeConfig } from '../../lib/app-helper.js'
+import RuntimeLib from '@adobe/aio-lib-runtime'
+import { bundle } from '@adobe/aio-lib-web'
+import fs from 'fs-extra'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:build', { provider: 'debug' })
 
 class Build extends BaseCommand {
   async run () {
@@ -190,4 +191,4 @@ Build.flags = {
   })
 }
 
-module.exports = Build
+export default Build

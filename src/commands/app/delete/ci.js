@@ -9,13 +9,14 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('../../../BaseCommand')
-const path = require('path')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
-const { Flags } = require('@oclif/core')
-const fs = require('fs-extra')
+import BaseCommand from '../../../BaseCommand.js'
+import path from 'path'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
+import { Flags } from '@oclif/core'
+import fs from 'fs-extra'
 
-const { constants } = require('@adobe/generator-app-common-lib')
+import { constants } from '@adobe/generator-app-common-lib'
 const { ciDirName } = constants
 const DEPLOY_PROD_FILENAME = '/workflows/deploy_prod.yml'
 const DEPLOY_STAGE_FILENAME = '/workflows/deploy_stage.yml'
@@ -62,4 +63,4 @@ DeleteCICommand.flags = {
 
 DeleteCICommand.args = {}
 
-module.exports = DeleteCICommand
+export default DeleteCICommand

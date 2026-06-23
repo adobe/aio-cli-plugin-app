@@ -9,8 +9,8 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { Help } = require('@oclif/core')
-const BaseCommand = require('../../../BaseCommand')
+import { Help } from '@oclif/core'
+import BaseCommand from '../../../BaseCommand.js'
 
 class AddCommand extends BaseCommand {
   async run () {
@@ -23,4 +23,4 @@ AddCommand.description = 'Add a new component to an existing Adobe I/O App'
 
 AddCommand.args = {}
 
-module.exports = AddCommand
+export default AddCommand

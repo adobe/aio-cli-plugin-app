@@ -9,16 +9,16 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-const consoleDataMocks = require('@adobe/aio-cli-lib-console/test/data-mocks')
+import consoleDataMocks from '@adobe/aio-cli-lib-console/test/data-mocks'
 
-jest.mock('@adobe/aio-cli-lib-console')
-const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
+vi.mock('@adobe/aio-cli-lib-console')
+import LibConsoleCLI from '@adobe/aio-cli-lib-console'
 const mockConsoleCLIInstance = {
-  getEnabledServicesForOrg: jest.fn(),
-  promptForRemoveServiceSubscriptions: jest.fn(),
-  subscribeToServicesWithCredentialType: jest.fn(),
-  getServicePropertiesFromWorkspaceWithCredentialType: jest.fn(),
-  confirmNewServiceSubscriptions: jest.fn()
+  getEnabledServicesForOrg: vi.fn(),
+  promptForRemoveServiceSubscriptions: vi.fn(),
+  subscribeToServicesWithCredentialType: vi.fn(),
+  getServicePropertiesFromWorkspaceWithCredentialType: vi.fn(),
+  confirmNewServiceSubscriptions: vi.fn()
 }
 LibConsoleCLI.init.mockResolvedValue(mockConsoleCLIInstance)
 /** @private */
@@ -40,8 +40,8 @@ function setDefaultMockConsoleCLI () {
 }
 
 // mock config
-const config = require('@adobe/aio-lib-core-config')
-jest.mock('@adobe/aio-lib-core-config')
+import config from '@adobe/aio-lib-core-config'
+vi.mock('@adobe/aio-lib-core-config')
 let mockConfigProject, mockWorkspace, mockProject, mockOrgId
 /** @private */
 function setDefaultMockConfig () {
@@ -54,9 +54,9 @@ function setDefaultMockConfig () {
 
 // mock login - mocks underlying methods behind getCliInfo
 const mockAccessToken = 'some-access-token'
-const mockSetCli = jest.fn()
-const mockGetCurrent = jest.fn()
-jest.mock('@adobe/aio-lib-ims', () => {
+const mockSetCli = vi.fn()
+const mockGetCurrent = vi.fn()
+vi.mock('@adobe/aio-lib-ims', () => {
   return {
     context: {
       setCli: () => mockSetCli(),
@@ -65,16 +65,16 @@ jest.mock('@adobe/aio-lib-ims', () => {
     getToken: () => mockAccessToken
   }
 })
-jest.mock('@adobe/aio-lib-env', () => {
+vi.mock('@adobe/aio-lib-env', () => {
   return {
     getCliEnv: () => 'prod'
   }
 })
 
-const logSpy = jest.spyOn(console, 'error')
+const logSpy = vi.spyOn(console, 'error')
 
-const TheCommand = require('../../../../src/commands/app/delete/service')
-const BaseCommand = require('../../../../src/BaseCommand')
+import TheCommand from '../../../../src/commands/app/delete/service.js'
+import BaseCommand from '../../../../src/BaseCommand.js'
 
 beforeEach(() => {
   resetMockConsoleCLI()

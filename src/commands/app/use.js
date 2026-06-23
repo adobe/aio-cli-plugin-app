@@ -9,20 +9,21 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('../../BaseCommand')
-const { CONSOLE_CONFIG_KEY, getProjectCredentialType } = require('../../lib/import-helper')
-const { importConsoleConfig, downloadConsoleConfigToBuffer } = require('../../lib/import')
-const { Flags, Args } = require('@oclif/core')
-const inquirer = require('inquirer')
-const config = require('@adobe/aio-lib-core-config')
-const { EOL } = require('os')
-const { warnIfOverwriteServicesInProductionWorkspace } = require('../../lib/app-helper')
-const path = require('path')
-const { ENTP_INT_CERTS_FOLDER } = require('../../lib/defaults')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:use', { provider: 'debug' })
-const chalk = require('chalk')
+import BaseCommand from '../../BaseCommand.js'
+import { CONSOLE_CONFIG_KEY, getProjectCredentialType } from '../../lib/import-helper.js'
+import { importConsoleConfig, downloadConsoleConfigToBuffer } from '../../lib/import.js'
+import { Flags, Args } from '@oclif/core'
+import inquirer from 'inquirer'
+import config from '@adobe/aio-lib-core-config'
+import { EOL } from 'os'
+import { warnIfOverwriteServicesInProductionWorkspace } from '../../lib/app-helper.js'
+import path from 'path'
+import { ENTP_INT_CERTS_FOLDER } from '../../lib/defaults.js'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:use', { provider: 'debug' })
+import chalk from 'chalk'
 
-const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
+import LibConsoleCLI from '@adobe/aio-cli-lib-console'
 
 class Use extends BaseCommand {
   async run () {
@@ -424,4 +425,4 @@ Use.args =
     })
   }
 
-module.exports = Use
+export default Use

@@ -10,7 +10,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const logActions = require('../../../src/lib/log-actions')
+import logActions from '../../../src/lib/log-actions.js'
 
 beforeEach(() => {
 })
@@ -20,7 +20,7 @@ test('exports', () => {
 })
 
 test('default log', async () => {
-  const log = jest.fn()
+  const log = vi.fn()
   const entities = {
     actions: [
       {} // non-web action
@@ -32,7 +32,7 @@ test('default log', async () => {
 })
 
 test('no actions', async () => {
-  const log = jest.fn()
+  const log = vi.fn()
   const entities = {} // no actions
 
   await logActions({ entities, log })
@@ -40,7 +40,7 @@ test('no actions', async () => {
 })
 
 test('one web action (truthy), one web action (raw)', async () => {
-  const log = jest.fn()
+  const log = vi.fn()
   const entities = {
     actions: [
       { annotations: { 'web-export': true } }, // web action
@@ -54,7 +54,7 @@ test('one web action (truthy), one web action (raw)', async () => {
 })
 
 test('one non-web action', async () => {
-  const log = jest.fn()
+  const log = vi.fn()
   const entities = {
     actions: [
       {} // non-web action
@@ -67,7 +67,7 @@ test('one non-web action', async () => {
 })
 
 test('two web actions, one non-web action', async () => {
-  const log = jest.fn()
+  const log = vi.fn()
   const entities = {
     actions: [
       { annotations: { 'web-export': true } }, // web action

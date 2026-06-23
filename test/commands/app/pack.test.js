@@ -10,27 +10,27 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../src/commands/app/pack')
-const BaseCommand = require('../../../src/BaseCommand')
-const execa = require('execa')
-const fs = require('fs-extra')
-const path = require('node:path')
-const importHelper = require('../../../src/lib/import-helper')
-const yaml = require('js-yaml')
-const archiver = require('archiver')
+import TheCommand from '../../../src/commands/app/pack.js'
+import BaseCommand from '../../../src/BaseCommand.js'
+import execa from 'execa'
+import fs from 'fs-extra'
+import path from 'node:path'
+import * as importHelper from '../../../src/lib/import-helper.js'
+import yaml from 'js-yaml'
+import archiver from 'archiver'
 
-const libConfig = require('@adobe/aio-cli-lib-app-config')
+import libConfig from '@adobe/aio-cli-lib-app-config'
 
 // mocks
-jest.mock('execa')
-jest.mock('fs-extra')
-jest.mock('../../../src/lib/import-helper')
-jest.mock('archiver')
+vi.mock('execa')
+vi.mock('fs-extra')
+vi.mock('../../../src/lib/import-helper')
+vi.mock('archiver')
 
-const mockGetFullConfig = jest.fn()
+const mockGetFullConfig = vi.fn()
 
 beforeAll(() => {
-  jest.spyOn(libConfig, 'load').mockImplementation(mockGetFullConfig)
+  vi.spyOn(libConfig, 'load').mockImplementation(mockGetFullConfig)
 })
 
 // mock cwd
@@ -41,7 +41,7 @@ const savedCwd = process.cwd
 afterAll(() => {
   process.chdir = savedChdir
   process.cwd = savedCwd
-  jest.clearAllMocks()
+  vi.clearAllMocks()
 })
 
 beforeEach(() => {
@@ -52,8 +52,8 @@ beforeEach(() => {
   importHelper.writeFile.mockReset()
 
   fakeCwd = 'cwd'
-  process.chdir = jest.fn().mockImplementation(dir => { fakeCwd = dir })
-  process.cwd = jest.fn().mockImplementation(() => fakeCwd)
+  process.chdir = vi.fn().mockImplementation(dir => { fakeCwd = dir })
+  process.cwd = vi.fn().mockImplementation(() => fakeCwd)
   process.chdir.mockClear()
   process.cwd.mockClear()
 
@@ -126,9 +126,9 @@ test('createDeployYamlFile (1 extension)', async () => {
   const command = new TheCommand()
   command.argv = []
   command.config = {
-    findCommand: jest.fn().mockReturnValue({}),
-    runCommand: jest.fn(),
-    runHook: jest.fn().mockResolvedValue({ successes: [] })
+    findCommand: vi.fn().mockReturnValue({}),
+    runCommand: vi.fn(),
+    runHook: vi.fn().mockResolvedValue({ successes: [] })
   }
 
   execa.mockImplementationOnce((cmd, args) => {
@@ -145,9 +145,9 @@ test('createDeployYamlFile (1 extension)', async () => {
 
   // no api-mesh command
   command.config = {
-    findCommand: jest.fn().mockReturnValue(null),
-    runCommand: jest.fn(),
-    runHook: jest.fn().mockResolvedValue({ successes: [] })
+    findCommand: vi.fn().mockReturnValue(null),
+    runCommand: vi.fn(),
+    runHook: vi.fn().mockResolvedValue({ successes: [] })
   }
   importHelper.writeFile.mockClear()
 
@@ -164,9 +164,9 @@ test('createDeployYamlFile (1 extension), no api-mesh', async () => {
   const command = new TheCommand()
   command.argv = []
   command.config = {
-    findCommand: jest.fn().mockReturnValue({}),
-    runCommand: jest.fn(),
-    runHook: jest.fn().mockResolvedValue({ successes: [] })
+    findCommand: vi.fn().mockReturnValue({}),
+    runCommand: vi.fn(),
+    runHook: vi.fn().mockResolvedValue({ successes: [] })
   }
 
   execa.mockImplementationOnce((cmd, args) => {
@@ -190,9 +190,9 @@ test('createDeployYamlFile (1 extension), no api-mesh, plugin throws error', asy
   const command = new TheCommand()
   command.argv = []
   command.config = {
-    findCommand: jest.fn().mockReturnValue({}),
-    runCommand: jest.fn(),
-    runHook: jest.fn().mockResolvedValue({ successes: [] })
+    findCommand: vi.fn().mockReturnValue({}),
+    runCommand: vi.fn(),
+    runHook: vi.fn().mockResolvedValue({ successes: [] })
   }
 
   execa.mockImplementationOnce((cmd, args) => {
@@ -213,9 +213,9 @@ test('createDeployYamlFile (1 extension), api-mesh get call throws non 404 error
   const command = new TheCommand()
   command.argv = []
   command.config = {
-    findCommand: jest.fn().mockReturnValue({}),
-    runCommand: jest.fn(),
-    runHook: jest.fn().mockResolvedValue({ successes: [] })
+    findCommand: vi.fn().mockReturnValue({}),
+    runCommand: vi.fn(),
+    runHook: vi.fn().mockResolvedValue({ successes: [] })
   }
 
   execa.mockImplementationOnce((cmd, args) => {
@@ -236,9 +236,9 @@ test('createDeployYamlFile (coverage: standalone app, no services)', async () =>
   const command = new TheCommand()
   command.argv = []
   command.config = {
-    findCommand: jest.fn().mockReturnValue(null),
-    runCommand: jest.fn(),
-    runHook: jest.fn().mockResolvedValue({ successes: [] })
+    findCommand: vi.fn().mockReturnValue(null),
+    runCommand: vi.fn(),
+    runHook: vi.fn().mockResolvedValue({ successes: [] })
   }
 
   await command.createDeployYamlFile(extConfig)
@@ -254,9 +254,9 @@ test('createDeployYamlFile error on invalid version string', async () => {
   const command = new TheCommand()
   command.argv = []
   command.config = {
-    findCommand: jest.fn().mockReturnValue(null),
-    runCommand: jest.fn(),
-    runHook: jest.fn().mockResolvedValue({ successes: [] })
+    findCommand: vi.fn().mockReturnValue(null),
+    runCommand: vi.fn(),
+    runHook: vi.fn().mockResolvedValue({ successes: [] })
   }
 
   await expect(command.createDeployYamlFile(extConfig)).rejects.toThrow('Application version format must be "X.Y.Z", where X, Y, and Z are non-negative integers.')
@@ -281,16 +281,16 @@ test('zipHelper', async () => {
     .mockImplementationOnce(() => ({ isDirectory: () => false }))
 
   const archiverMock = {
-    on: jest.fn((evt, trigger) => {
+    on: vi.fn((evt, trigger) => {
       if (evt === 'error') {
         onError = trigger
       }
     }),
-    pipe: jest.fn(),
-    destroy: jest.fn(),
-    directory: jest.fn(),
-    file: jest.fn(),
-    finalize: jest.fn()
+    pipe: vi.fn(),
+    destroy: vi.fn(),
+    directory: vi.fn(),
+    file: vi.fn(),
+    finalize: vi.fn()
   }
 
   archiver.mockImplementation(() => archiverMock)
@@ -530,12 +530,12 @@ describe('run', () => {
     })
 
     // since we already unit test the methods above, we mock it here
-    command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn(() => (['some-file']))
-    command.createDeployYamlFile = jest.fn()
-    command.addCodeDownloadAnnotation = jest.fn()
-    command.zipHelper = jest.fn()
-    const runHook = jest.fn().mockResolvedValue({ successes: [] })
+    command.copyPackageFiles = vi.fn()
+    command.filesToPack = vi.fn(() => (['some-file']))
+    command.createDeployYamlFile = vi.fn()
+    command.addCodeDownloadAnnotation = vi.fn()
+    command.zipHelper = vi.fn()
+    const runHook = vi.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
     await command.run()
 
@@ -571,12 +571,12 @@ describe('run', () => {
     })
 
     // since we already unit test the methods above, we mock it here
-    command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn(() => (['some-file']))
-    command.createDeployYamlFile = jest.fn()
-    command.addCodeDownloadAnnotation = jest.fn()
-    command.zipHelper = jest.fn()
-    const runHook = jest.fn().mockResolvedValue({ successes: [] })
+    command.copyPackageFiles = vi.fn()
+    command.filesToPack = vi.fn(() => (['some-file']))
+    command.createDeployYamlFile = vi.fn()
+    command.addCodeDownloadAnnotation = vi.fn()
+    command.zipHelper = vi.fn()
+    const runHook = vi.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
     await command.run()
 
@@ -621,13 +621,13 @@ describe('run', () => {
     const errorObject = new Error('zip error')
 
     // since we already unit test the methods above, we mock it here
-    command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn(() => ([]))
-    command.createDeployYamlFile = jest.fn()
-    command.addCodeDownloadAnnotation = jest.fn()
-    command.zipHelper = jest.fn(() => { throw errorObject })
-    command.error = jest.fn()
-    const runHook = jest.fn().mockResolvedValue({ successes: [] })
+    command.copyPackageFiles = vi.fn()
+    command.filesToPack = vi.fn(() => ([]))
+    command.createDeployYamlFile = vi.fn()
+    command.addCodeDownloadAnnotation = vi.fn()
+    command.zipHelper = vi.fn(() => { throw errorObject })
+    command.error = vi.fn()
+    const runHook = vi.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
 
     await command.run()
@@ -670,13 +670,13 @@ describe('run', () => {
     const errorMessage = 'zip error'
 
     // since we already unit test the methods above, we mock it here
-    command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn(() => ([]))
-    command.createDeployYamlFile = jest.fn()
-    command.addCodeDownloadAnnotation = jest.fn()
-    command.zipHelper = jest.fn(() => { throw new Error(errorMessage) })
-    command.error = jest.fn()
-    const runHook = jest.fn().mockResolvedValue({ successes: [] })
+    command.copyPackageFiles = vi.fn()
+    command.filesToPack = vi.fn(() => ([]))
+    command.createDeployYamlFile = vi.fn()
+    command.addCodeDownloadAnnotation = vi.fn()
+    command.zipHelper = vi.fn(() => { throw new Error(errorMessage) })
+    command.error = vi.fn()
+    const runHook = vi.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
 
     await command.run()
@@ -718,12 +718,12 @@ describe('run', () => {
     })
 
     // since we already unit test the methods above, we mock it here
-    command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn(() => ([]))
-    command.createDeployYamlFile = jest.fn()
-    command.addCodeDownloadAnnotation = jest.fn()
-    command.zipHelper = jest.fn()
-    const runHook = jest.fn().mockResolvedValue({ successes: [] })
+    command.copyPackageFiles = vi.fn()
+    command.filesToPack = vi.fn(() => ([]))
+    command.createDeployYamlFile = vi.fn()
+    command.addCodeDownloadAnnotation = vi.fn()
+    command.zipHelper = vi.fn()
+    const runHook = vi.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
 
     await command.run()
@@ -756,14 +756,14 @@ describe('run', () => {
       }
       return Promise.resolve({ stdout: JSON.stringify([{ files: [] }]) })
     })
-    const runHook = jest.fn()
+    const runHook = vi.fn()
       .mockResolvedValue({
         successes: [],
         failures: [{ plugin: { name: 'ifailedu' }, error: { message: 'some error' } }]
       })
     const command = new TheCommand()
     command.config = { runHook }
-    command.error = jest.fn()
+    command.error = vi.fn()
     command.argv = ['new_folder', '--output', 'app-2.zip']
     await command.run()
     expect(runHook).toHaveBeenCalledWith('pre-pack', expect.any(Object))
@@ -778,11 +778,11 @@ describe('run', () => {
     command.argv = ['new_folder', '--output', 'app-2.zip']
 
     // since we already unit test the methods above, we mock it here
-    command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn(() => ([]))
-    command.createDeployYamlFile = jest.fn()
-    command.zipHelper = jest.fn()
-    const runHook = jest.fn().mockResolvedValue({ successes: [] })
+    command.copyPackageFiles = vi.fn()
+    command.filesToPack = vi.fn(() => ([]))
+    command.createDeployYamlFile = vi.fn()
+    command.zipHelper = vi.fn()
+    const runHook = vi.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
 
     await expect(command.run()).rejects.toThrow('invalid fake config error')
@@ -802,12 +802,12 @@ describe('run', () => {
       return false
     })
 
-    command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn(() => (['some-file']))
-    command.createDeployYamlFile = jest.fn()
-    command.addCodeDownloadAnnotation = jest.fn()
-    command.zipHelper = jest.fn()
-    const runHook = jest.fn().mockResolvedValue({ successes: [] })
+    command.copyPackageFiles = vi.fn()
+    command.filesToPack = vi.fn(() => (['some-file']))
+    command.createDeployYamlFile = vi.fn()
+    command.addCodeDownloadAnnotation = vi.fn()
+    command.zipHelper = vi.fn()
+    const runHook = vi.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
     await command.run()
 
@@ -839,13 +839,13 @@ describe('run', () => {
     })
 
     // since we already unit test the methods above, we mock it here
-    command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn(() => (['some-file']))
-    command.createDeployYamlFile = jest.fn()
-    command.addCodeDownloadAnnotation = jest.fn()
-    command.zipHelper = jest.fn()
-    command.error = jest.fn()
-    const runHook = jest.fn().mockResolvedValue({ successes: [] })
+    command.copyPackageFiles = vi.fn()
+    command.filesToPack = vi.fn(() => (['some-file']))
+    command.createDeployYamlFile = vi.fn()
+    command.addCodeDownloadAnnotation = vi.fn()
+    command.zipHelper = vi.fn()
+    command.error = vi.fn()
+    const runHook = vi.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
 
     await command.run()
@@ -880,13 +880,13 @@ describe('run', () => {
     })
 
     // since we already unit test the methods above, we mock it here
-    command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn(() => (['some-file']))
-    command.createDeployYamlFile = jest.fn()
-    command.addCodeDownloadAnnotation = jest.fn()
-    command.zipHelper = jest.fn()
-    command.error = jest.fn()
-    const runHook = jest.fn().mockResolvedValue({ successes: [] })
+    command.copyPackageFiles = vi.fn()
+    command.filesToPack = vi.fn(() => (['some-file']))
+    command.createDeployYamlFile = vi.fn()
+    command.addCodeDownloadAnnotation = vi.fn()
+    command.zipHelper = vi.fn()
+    command.error = vi.fn()
+    const runHook = vi.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
 
     await command.run()
@@ -921,13 +921,13 @@ describe('run', () => {
     })
 
     // since we already unit test the methods above, we mock it here
-    command.copyPackageFiles = jest.fn()
-    command.filesToPack = jest.fn(() => (['some-file']))
-    command.createDeployYamlFile = jest.fn()
-    command.addCodeDownloadAnnotation = jest.fn()
-    command.zipHelper = jest.fn()
-    command.error = jest.fn()
-    const runHook = jest.fn().mockResolvedValue({ successes: [] })
+    command.copyPackageFiles = vi.fn()
+    command.filesToPack = vi.fn(() => (['some-file']))
+    command.createDeployYamlFile = vi.fn()
+    command.addCodeDownloadAnnotation = vi.fn()
+    command.zipHelper = vi.fn()
+    command.error = vi.fn()
+    const runHook = vi.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
 
     await command.run()

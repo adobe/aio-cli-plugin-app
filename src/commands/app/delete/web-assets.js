@@ -9,15 +9,16 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('../../../BaseCommand')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
-const { Flags } = require('@oclif/core')
-const fs = require('fs-extra')
-const inquirer = require('inquirer')
-const { atLeastOne } = require('../../../lib/app-helper')
-const chalk = require('chalk')
-const { EOL } = require('os')
-const path = require('path')
+import BaseCommand from '../../../BaseCommand.js'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
+import { Flags } from '@oclif/core'
+import fs from 'fs-extra'
+import inquirer from 'inquirer'
+import { atLeastOne } from '../../../lib/app-helper.js'
+import chalk from 'chalk'
+import { EOL } from 'os'
+import path from 'path'
 
 class DeleteWebAssetsCommand extends BaseCommand {
   async run () {
@@ -100,4 +101,4 @@ DeleteWebAssetsCommand.flags = {
 
 DeleteWebAssetsCommand.args = {}
 
-module.exports = DeleteWebAssetsCommand
+export default DeleteWebAssetsCommand

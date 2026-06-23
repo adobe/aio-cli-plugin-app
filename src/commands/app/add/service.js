@@ -9,23 +9,24 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { importConsoleConfig, downloadConsoleConfigToBuffer } = require('../../../lib/import')
-const { getProjectCredentialType } = require('../../../lib/import-helper')
-const path = require('path')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:service', { provider: 'debug' })
-const config = require('@adobe/aio-lib-core-config')
-const chalk = require('chalk')
-const { Flags } = require('@oclif/core')
+import { importConsoleConfig, downloadConsoleConfigToBuffer } from '../../../lib/import.js'
+import { getProjectCredentialType } from '../../../lib/import-helper.js'
+import path from 'path'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:add:service', { provider: 'debug' })
+import config from '@adobe/aio-lib-core-config'
+import chalk from 'chalk'
+import { Flags } from '@oclif/core'
 
-const {
+import {
   setOrgServicesConfig,
   setWorkspaceServicesConfig,
   warnIfOverwriteServicesInProductionWorkspace
-} = require('../../../lib/app-helper')
+} from '../../../lib/app-helper.js'
 
-const BaseCommand = require('../../../BaseCommand')
+import BaseCommand from '../../../BaseCommand.js'
 
-const { ENTP_INT_CERTS_FOLDER } = require('../../../lib/defaults')
+import { ENTP_INT_CERTS_FOLDER } from '../../../lib/defaults.js'
 
 class AddServiceCommand extends BaseCommand {
   async run () {
@@ -173,4 +174,4 @@ AddServiceCommand.flags = {
 AddServiceCommand.aliases = ['app:add:services']
 AddServiceCommand.args = {}
 
-module.exports = AddServiceCommand
+export default AddServiceCommand

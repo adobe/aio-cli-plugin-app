@@ -10,32 +10,31 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { stdout } = require('stdout-stderr')
-const { Command } = require('@oclif/core')
+import { stdout } from 'stdout-stderr'
+import { Command } from '@oclif/core'
 
-jest.mock('@adobe/aio-lib-core-config')
-const mockAioConfig = require('@adobe/aio-lib-core-config')
+vi.mock('@adobe/aio-lib-core-config')
+import mockAioConfig from '@adobe/aio-lib-core-config'
 
-const mockConfigLoader = require('@adobe/aio-cli-lib-app-config')
-jest.mock('@adobe/aio-cli-lib-app-config')
-const getMockConfig = require('./data-mocks/config-loader')
+import mockConfigLoader from '@adobe/aio-cli-lib-app-config'
+vi.mock('@adobe/aio-cli-lib-app-config')
+import getMockConfig from './data-mocks/config-loader.js'
 
-const libEnv = require('@adobe/aio-lib-env')
-jest.mock('@adobe/aio-lib-env')
+import * as libEnv from '@adobe/aio-lib-env'
+vi.mock('@adobe/aio-lib-env')
 
-jest.mock('@adobe/aio-lib-ims')
-const { getToken } = require('@adobe/aio-lib-ims')
+vi.mock('@adobe/aio-lib-ims')
+import { getToken } from '@adobe/aio-lib-ims'
 
-jest.mock('@adobe/aio-cli-lib-console')
-const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
+vi.mock('@adobe/aio-cli-lib-console')
+import LibConsoleCLI from '@adobe/aio-cli-lib-console'
 LibConsoleCLI.init.mockResolvedValue({})
 
-const TheCommand = require('../src/BaseCommand')
+import TheCommand from '../src/BaseCommand.js'
 
-jest.mock('inquirer')
-const inquirer = require('inquirer')
-const mockExtensionPrompt = jest.fn()
-inquirer.createPromptModule = jest.fn().mockReturnValue(mockExtensionPrompt)
+import inquirer from 'inquirer'
+const mockExtensionPrompt = vi.fn()
+inquirer.createPromptModule = vi.fn().mockReturnValue(mockExtensionPrompt)
 
 beforeEach(() => {
   libEnv.getCliEnv.mockReturnValue('prod')
@@ -76,7 +75,7 @@ test('basecommand defines method', async () => {
 
 test('preRelease() outputs to log', async () => {
   const cmd = new TheCommand()
-  cmd.log = jest.fn()
+  cmd.log = vi.fn()
 
   cmd.preRelease()
   expect(cmd.log).toHaveBeenCalledWith(expect.stringMatching('Pre-release warning: This command is in pre-release, and not suitable for production.'))
@@ -299,7 +298,7 @@ test('init normalizes oclif v2 string hooks to v4 object format', async () => {
     }
   }
   cmd.config = global.createOclifMockConfig({
-    getPluginsList: jest.fn().mockReturnValue([plugin])
+    getPluginsList: vi.fn().mockReturnValue([plugin])
   })
   await cmd.init()
   expect(plugin.hooks['pre-deploy-event-reg']).toEqual([{ identifier: 'default', target: './src/hooks/pre-deploy-event-reg.js' }])
@@ -315,7 +314,7 @@ test('init skips plugins with no hooks', async () => {
   const cmd = new TheCommand([])
   const plugin = { name: 'no-hooks-plugin' }
   cmd.config = global.createOclifMockConfig({
-    getPluginsList: jest.fn().mockReturnValue([plugin])
+    getPluginsList: vi.fn().mockReturnValue([plugin])
   })
   await expect(cmd.init()).resolves.not.toThrow()
 })
@@ -325,7 +324,7 @@ test('init does not mutate hooks already in v4 format', async () => {
   const original = [{ identifier: 'default', target: './src/hooks/foo.js' }]
   const plugin = { hooks: { 'some-event': original } }
   cmd.config = global.createOclifMockConfig({
-    getPluginsList: jest.fn().mockReturnValue([plugin])
+    getPluginsList: vi.fn().mockReturnValue([plugin])
   })
   await cmd.init()
   expect(plugin.hooks['some-event']).toBe(original) // same reference, not replaced
@@ -356,7 +355,7 @@ test('init skips normalization gracefully when plugin hooks object is frozen', a
   const cmd = new TheCommand([])
   const plugin = { hooks: Object.freeze({ 'pre-deploy-event-reg': ['./src/hooks/hook.js'] }) }
   cmd.config = global.createOclifMockConfig({
-    getPluginsList: jest.fn().mockReturnValue([plugin])
+    getPluginsList: vi.fn().mockReturnValue([plugin])
   })
   await expect(cmd.init()).resolves.not.toThrow()
   // hooks remain as-is since the frozen object blocked the assignment
@@ -366,7 +365,7 @@ test('init skips normalization gracefully when plugin hooks object is frozen', a
 test('catch', async () => {
   const cmd = new TheCommand([])
   cmd.config = global.createOclifMockConfig()
-  cmd.error = jest.fn()
+  cmd.error = vi.fn()
   await cmd.catch(new Error('fake error'))
   expect(cmd.error).toHaveBeenCalledWith('fake error')
 })
@@ -374,7 +373,7 @@ test('catch', async () => {
 test('will change error message when aio app outside of the application root', async () => {
   const cmd = new TheCommand([])
   cmd.config = global.createOclifMockConfig()
-  cmd.error = jest.fn()
+  cmd.error = vi.fn()
   await cmd.catch(new Error('ENOENT: no such file or directory, open \'package.json\''))
 
   const errorList = [
@@ -386,7 +385,7 @@ test('will change error message when aio app outside of the application root', a
 test('will change error message when aio app outside of the application root (--verbose)', async () => {
   const cmd = new TheCommand(['--verbose'])
   cmd.config = global.createOclifMockConfig()
-  cmd.error = jest.fn()
+  cmd.error = vi.fn()
   await cmd.catch(new Error('ENOENT: no such file or directory, open \'package.json\''))
 
   const errorList = [
@@ -398,7 +397,7 @@ test('will change error message when aio app outside of the application root (--
 test('will handle errors without stack traces when using --verbose flag', async () => {
   const cmd = new TheCommand(['--verbose'])
   cmd.config = global.createOclifMockConfig()
-  cmd.error = jest.fn()
+  cmd.error = vi.fn()
   const errorWithoutStack = new Error('fake error')
   delete errorWithoutStack.stack
   await cmd.catch(errorWithoutStack)
@@ -409,7 +408,7 @@ test('will handle errors without stack traces when using --verbose flag', async 
 test('will handle errors without stack traces when not using --verbose flag', async () => {
   const cmd = new TheCommand([])
   cmd.config = global.createOclifMockConfig()
-  cmd.error = jest.fn()
+  cmd.error = vi.fn()
   const errorWithoutStack = new Error('fake error')
   delete errorWithoutStack.stack
   await cmd.catch(errorWithoutStack)

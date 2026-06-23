@@ -10,27 +10,28 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const ora = require('ora')
-const chalk = require('chalk')
-const open = require('open')
+import ora from 'ora'
+import chalk from 'chalk'
+import open from 'open'
 
-const BaseCommand = require('../../BaseCommand')
-const BuildCommand = require('./build')
-const webLib = require('@adobe/aio-lib-web')
-const { Flags } = require('@oclif/core')
-const {
+import BaseCommand from '../../BaseCommand.js'
+import BuildCommand from './build.js'
+import webLib from '@adobe/aio-lib-web'
+import { Flags } from '@oclif/core'
+import {
   rewriteActionUrlInEntities, runInProcess,
   buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata,
   getFilesCountWithExtension
-} = require('../../lib/app-helper')
-const rtLib = require('@adobe/aio-lib-runtime')
-const dbLib = require('@adobe/aio-lib-db')
-const { DB_STATUS } = require('../../lib/defaults')
-const LogForwarding = require('../../lib/log-forwarding')
-const { sendAppAssetsDeployedAuditLog, sendAppDeployAuditLog } = require('../../lib/audit-logger')
-const { setRuntimeApiHostAndAuthHandler, getAccessToken } = require('../../lib/auth-helper')
-const logActions = require('../../lib/log-actions')
-const aioConfigLoader = require('@adobe/aio-lib-core-config')
+} from '../../lib/app-helper.js'
+import rtLib from '@adobe/aio-lib-runtime'
+import dbLib from '@adobe/aio-lib-db'
+import { DB_STATUS } from '../../lib/defaults.js'
+import { init as LogForwardingInit, LogForwardingConfig } from '../../lib/log-forwarding.js'
+const LogForwarding = { init: LogForwardingInit, LogForwardingConfig }
+import { sendAppAssetsDeployedAuditLog, sendAppDeployAuditLog } from '../../lib/audit-logger.js'
+import { setRuntimeApiHostAndAuthHandler, getAccessToken } from '../../lib/auth-helper.js'
+import logActions from '../../lib/log-actions.js'
+import aioConfigLoader from '@adobe/aio-lib-core-config'
 
 const PRE_DEPLOY_EVENT_REG = 'pre-deploy-event-reg'
 const POST_DEPLOY_EVENT_REG = 'post-deploy-event-reg'
@@ -499,4 +500,4 @@ Deploy.flags = {
 
 Deploy.args = {}
 
-module.exports = Deploy
+export default Deploy

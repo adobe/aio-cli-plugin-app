@@ -10,9 +10,9 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../../src/commands/app/add/event')
-const BaseCommand = require('../../../../src/BaseCommand')
-const dataMocks = require('../../../data-mocks/config-loader')
+import TheCommand from '../../../../src/commands/app/add/event.js'
+import BaseCommand from '../../../../src/BaseCommand.js'
+import dataMocks from '../../../data-mocks/config-loader.js'
 
 const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
   const appConfig = dataMocks(appFixtureName, aioConfig).all
@@ -23,10 +23,10 @@ let command
 beforeEach(() => {
   command = new TheCommand([])
   command.config = global.createOclifMockConfig()
-  command.getAppExtConfigs = jest.fn()
+  command.getAppExtConfigs = vi.fn()
   command.getAppExtConfigs.mockResolvedValue(createAppConfig(command.appConfig))
-  command.getFullConfig = jest.fn()
-  command.installTemplates = jest.fn()
+  command.getFullConfig = vi.fn()
+  command.installTemplates = vi.fn()
   command.getFullConfig.mockResolvedValue({
     packagejson: {
       version: '1.0.0',
@@ -36,7 +36,7 @@ beforeEach(() => {
       }
     }
   })
-  command.getConfigFileForKey = jest.fn(async () => ({}))
+  command.getConfigFileForKey = vi.fn(async () => ({}))
 })
 
 describe('Command Prototype', () => {
@@ -55,7 +55,7 @@ describe('bad flags', () => {
 
 describe('good flags', () => {
   test('no templates selected', async () => {
-    command.selectTemplates = jest.fn()
+    command.selectTemplates = vi.fn()
     command.selectTemplates.mockResolvedValue([])
     await expect(command.run()).rejects.toThrow('No events templates were chosen to be installed.')
   })
@@ -74,7 +74,7 @@ describe('good flags', () => {
       templates: ['@adobe/generator-add-events-generic'],
       templateOptions
     }
-    command.selectTemplates = jest.fn()
+    command.selectTemplates = vi.fn()
     command.selectTemplates.mockResolvedValue(['@adobe/generator-add-events-generic'])
     await command.run()
     expect(command.installTemplates).toHaveBeenCalledWith(installOptions)
@@ -95,7 +95,7 @@ describe('good flags', () => {
       templates: ['@adobe/generator-add-events-generic'],
       templateOptions
     }
-    command.selectTemplates = jest.fn()
+    command.selectTemplates = vi.fn()
     command.selectTemplates.mockResolvedValue(['@adobe/generator-add-events-generic'])
     await command.run()
     expect(command.installTemplates).toHaveBeenCalledWith(installOptions)

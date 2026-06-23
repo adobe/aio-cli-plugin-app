@@ -9,7 +9,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const {
+import {
   OPERATIONS,
   AUDIT_SERVICE_ENDPOINT_ROUTE,
   AUDIT_SERVICE_ENDPOINTS,
@@ -19,7 +19,7 @@ const {
   sendAppAssetsDeployedAuditLog,
   sendAppAssetsUndeployedAuditLog,
   publishAuditLogs
-} = require('../../../src/lib/audit-logger')
+} from '../../../src/lib/audit-logger.js'
 
 beforeEach(() => {
   setFetchMock(true, 200, {})

@@ -9,12 +9,12 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-const fs = require('fs-extra')
+import fs from 'fs-extra'
 
-const TheCommand = require('../../../../src/commands/app/delete/action')
-const BaseCommand = require('../../../../src/BaseCommand')
-const cloneDeep = require('lodash.clonedeep')
-const path = require('path')
+import TheCommand from '../../../../src/commands/app/delete/action.js'
+import BaseCommand from '../../../../src/BaseCommand.js'
+import cloneDeep from 'lodash.clonedeep'
+import path from 'path'
 
 // application.runtimeManifest.packages.pkga.actions.0
 const mockConfigData = {
@@ -71,12 +71,12 @@ const mockConfigData = {
   }
 }
 
-jest.mock('fs-extra')
-jest.mock('inquirer', () => {
-  return {
+vi.mock('fs-extra')
+vi.mock('inquirer', () => ({
+  default: {
     Separator: class {}
   }
-})
+}))
 
 let command
 
@@ -86,11 +86,11 @@ beforeEach(() => {
 
   command = new TheCommand([])
   command.config = global.createOclifMockConfig()
-  command.log = jest.fn()
+  command.log = vi.fn()
   command.appConfig = cloneDeep(mockConfigData)
-  command.buildOneExt = jest.fn()
-  command.getAppExtConfigs = jest.fn()
-  command.getLibConsoleCLI = jest.fn()
+  command.buildOneExt = vi.fn()
+  command.getAppExtConfigs = vi.fn()
+  command.getLibConsoleCLI = vi.fn()
 })
 
 describe('command interface, flags', () => {
@@ -161,7 +161,7 @@ describe('good flags', () => {
       }
     }
     fs.statSync.mockReturnValue({ isFile: () => true })
-    const dirnameSpy = jest.spyOn(path, 'dirname').mockReturnValueOnce('mock-dirname')
+    const dirnameSpy = vi.spyOn(path, 'dirname').mockReturnValueOnce('mock-dirname')
     command.getAllActions = () => {
       return { actions: [{ name: 'fakeActionName', path: 'boom.js' }], actionsByImpl: { } }
     }
@@ -181,7 +181,7 @@ describe('good flags', () => {
     fs.statSync = () => {
       return { isFile: () => true }
     }
-    const dirnameSpy = jest.spyOn(path, 'dirname').mockReturnValueOnce('mock-dirname')
+    const dirnameSpy = vi.spyOn(path, 'dirname').mockReturnValueOnce('mock-dirname')
     command.getAllActions = () => {
       return { actions: [{ name: 'fakeActionName', path: 'boom.js' }], actionsByImpl: { } }
     }
@@ -197,7 +197,7 @@ describe('good flags', () => {
         deleteAction: true
       }
     }
-    command.log = jest.fn()
+    command.log = vi.fn()
     fs.statSync = () => {
       return { isFile: () => false }
     }
@@ -265,10 +265,10 @@ describe('getAllActions', () => {
         actions: [{ path: 'fakeActionName' }]
       }
     }
-    fs.statSync = jest.fn().mockReturnValue({
+    fs.statSync = vi.fn().mockReturnValue({
       isFile: () => true
     })
-    const dirnameSpy = jest.spyOn(path, 'dirname').mockReturnValueOnce('mock-me?')
+    const dirnameSpy = vi.spyOn(path, 'dirname').mockReturnValueOnce('mock-me?')
     await command.run()
     expect(fs.removeSync).toHaveBeenCalledWith('mock-me?')
     dirnameSpy.mockRestore()

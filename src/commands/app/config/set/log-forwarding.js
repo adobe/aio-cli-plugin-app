@@ -9,10 +9,12 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('../../../../BaseCommand')
-const LogForwarding = require('../../../../lib/log-forwarding')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:lf:set', { provider: 'debug' })
-const { setRuntimeApiHostAndAuthHandler } = require('../../../../lib/auth-helper')
+import BaseCommand from '../../../../BaseCommand.js'
+import { init as LogForwardingInit, LogForwardingConfig } from '../../../../lib/log-forwarding.js'
+const LogForwarding = { init: LogForwardingInit, LogForwardingConfig }
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:lf:set', { provider: 'debug' })
+import { setRuntimeApiHostAndAuthHandler } from '../../../../lib/auth-helper.js'
 
 class LogForwardingCommand extends BaseCommand {
   async run () {
@@ -55,4 +57,4 @@ LogForwardingCommand.flags = {
   ...BaseCommand.flags
 }
 
-module.exports = LogForwardingCommand
+export default LogForwardingCommand

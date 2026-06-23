@@ -10,15 +10,14 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const fs = require('fs-extra')
-const path = require('path')
-const inquirer = require('inquirer')
+import fs from 'fs-extra'
+import path from 'path'
+import inquirer from 'inquirer'
 
-// mock prompt before import
-const mockPrompt = jest.fn()
-inquirer.createPromptModule.mockReturnValue(mockPrompt)
+// Use the prompt function captured by import-helper.js at module load time
+const mockPrompt = inquirer.createPromptModule.mock.results[0].value
 
-const {
+import {
   getServiceApiKey,
   getOAuthS2SCredential,
   loadAndValidateConfigFile,
@@ -30,12 +29,12 @@ const {
   flattenObjectWithSeparator,
   loadConfigFile,
   writeDefaultAppConfig
-} = require('../../../src/lib/import-helper')
+} from '../../../src/lib/import-helper.js'
 
-jest.mock('fs-extra')
+vi.mock('fs-extra')
 
 beforeEach(() => {
-  jest.clearAllMocks()
+  vi.clearAllMocks()
 })
 
 test('exports', () => {

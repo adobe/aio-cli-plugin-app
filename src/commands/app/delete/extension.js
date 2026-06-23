@@ -9,14 +9,15 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('../../../BaseCommand')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
-const { Flags } = require('@oclif/core')
+import BaseCommand from '../../../BaseCommand.js'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
+import { Flags } from '@oclif/core'
 
-const { atLeastOne, deleteUserConfig } = require('../../../lib/app-helper')
-const chalk = require('chalk')
-const fs = require('fs-extra')
-const { EOL } = require('os')
+import { atLeastOne, deleteUserConfig } from '../../../lib/app-helper.js'
+import chalk from 'chalk'
+import fs from 'fs-extra'
+import { EOL } from 'os'
 
 class DeleteExtensionCommand extends BaseCommand {
   async run () {
@@ -124,4 +125,4 @@ DeleteExtensionCommand.flags = {
 DeleteExtensionCommand.aliases = ['app:delete:ext', 'app:delete:extensions']
 DeleteExtensionCommand.args = {}
 
-module.exports = DeleteExtensionCommand
+export default DeleteExtensionCommand

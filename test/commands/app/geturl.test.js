@@ -10,11 +10,11 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../src/commands/app/get-url')
-const BaseCommand = require('../../../src/BaseCommand')
+import TheCommand from '../../../src/commands/app/get-url.js'
+import BaseCommand from '../../../src/BaseCommand.js'
 
-const mockRuntimeLib = require('@adobe/aio-lib-runtime')
-const dataMocks = require('../../data-mocks/config-loader')
+import mockRuntimeLib from '@adobe/aio-lib-runtime'
+import dataMocks from '../../data-mocks/config-loader.js'
 
 const createFullConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
   const appConfig = dataMocks(appFixtureName, aioConfig)
@@ -22,7 +22,7 @@ const createFullConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
 }
 
 beforeEach(() => {
-  jest.clearAllMocks()
+  vi.clearAllMocks()
 })
 
 test('exports', async () => {
@@ -57,7 +57,7 @@ describe('run', () => {
 
   beforeEach(() => {
     mockRuntimeLib.utils.getActionUrls.mockReset()
-    mockRuntimeLib.utils.getActionUrls.mockImplementation(jest.fn(
+    mockRuntimeLib.utils.getActionUrls.mockImplementation(vi.fn(
       (config, isRemoteDev) => {
         if (isRemoteDev) {
           return {
@@ -73,10 +73,10 @@ describe('run', () => {
 
     command = new TheCommand([])
     command.config = global.createOclifMockConfig()
-    command.error = jest.fn()
-    command.log = jest.fn()
+    command.error = vi.fn()
+    command.log = vi.fn()
     command.appConfig = {}
-    command.getFullConfig = jest.fn()
+    command.getFullConfig = vi.fn()
   })
 
   test('get all action urls', async () => {

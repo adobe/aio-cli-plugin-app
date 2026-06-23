@@ -9,8 +9,9 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const Ajv = require('ajv')
-const ajvAddFormats = require('ajv-formats')
+import Ajv from 'ajv'
+import ajvAddFormats from 'ajv-formats'
+import schemas from '../../schema/index.js'
 
 /**
  * Validate the file json with one of our schemas.
@@ -20,7 +21,6 @@ const ajvAddFormats = require('ajv-formats')
  * @returns {object} with keys valid (boolean) and errors (object). errors is null if no errors
  */
 function validateJsonWithSchema (fileJson, schemaName) {
-  const schemas = require('../../schema/index')
   const ajv = new Ajv({
     allErrors: true,
     allowUnionTypes: true
@@ -31,6 +31,6 @@ function validateJsonWithSchema (fileJson, schemaName) {
   return { valid: validate(fileJson), errors: validate.errors }
 }
 
-module.exports = {
+export {
   validateJsonWithSchema
 }

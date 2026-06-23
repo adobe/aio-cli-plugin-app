@@ -1,6 +1,6 @@
-const config = require('@adobe/eslint-config-aio-lib-config')
+import config from '@adobe/eslint-config-aio-lib-config'
 
-module.exports = [
+export default [
   ...config,
   {
     languageOptions: {
@@ -48,7 +48,7 @@ module.exports = [
     files: ['test/**/*.js'],
     languageOptions: {
       globals: {
-        jest: true,
+        vi: true,
         describe: true,
         test: true,
         it: true,

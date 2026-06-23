@@ -9,17 +9,18 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const execa = require('execa')
-const fs = require('fs-extra')
-const path = require('node:path')
-const which = require('which')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:lib-app-helper', { provider: 'debug' })
-const chalk = require('chalk')
-const aioConfig = require('@adobe/aio-lib-core-config')
-const { AIO_CONFIG_WORKSPACE_SERVICES, AIO_CONFIG_ORG_SERVICES } = require('./defaults')
-const { EOL } = require('os')
-const yaml = require('js-yaml')
-const RuntimeLib = require('@adobe/aio-lib-runtime')
+import execa from 'execa'
+import fs from 'fs-extra'
+import path from 'node:path'
+import which from 'which'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:lib-app-helper', { provider: 'debug' })
+import chalk from 'chalk'
+import aioConfig from '@adobe/aio-lib-core-config'
+import { AIO_CONFIG_WORKSPACE_SERVICES, AIO_CONFIG_ORG_SERVICES } from './defaults.js'
+import { EOL } from 'os'
+import yaml from 'js-yaml'
+import RuntimeLib from '@adobe/aio-lib-runtime'
 
 /** @private */
 function isNpmInstalled () {
@@ -89,7 +90,8 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
 async function runInProcess (hookPath, config) {
   if (hookPath) {
     try {
-      const hook = require(path.resolve(hookPath))
+      const hookModule = await import(path.resolve(hookPath))
+      const hook = hookModule.default || hookModule
       aioLogger.debug('runInProcess: running project hook in process')
       return hook(config)
     } catch (e) {
@@ -547,7 +549,7 @@ async function rewriteActionUrlInEntities ({ entities, config }) {
   return rewrittenEntities
 }
 
-module.exports = {
+export {
   rewriteActionUrlInEntities,
   getObjectValue,
   getObjectProp,

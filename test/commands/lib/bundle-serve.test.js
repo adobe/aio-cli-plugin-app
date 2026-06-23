@@ -10,11 +10,11 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const bundleServe = require('../../../src/lib/bundle-serve')
+import bundleServe from '../../../src/lib/bundle-serve.js'
 
 let createBundler = () => {
   return {
-    watch: jest.fn((cb) => { cb(); return { unsubscribe: jest.fn() } })
+    watch: vi.fn((cb) => { cb(); return { unsubscribe: vi.fn() } })
   }
 }
 
@@ -56,7 +56,7 @@ test('bundle-serve https', async () => {
 test('watch error', async () => {
   createBundler = () => {
     return {
-      watch: jest.fn((cb) => cb(new Error()))
+      watch: vi.fn((cb) => cb(new Error()))
     }
   }
   await expect(bundleServe(createBundler(), {})).rejects.toThrow()

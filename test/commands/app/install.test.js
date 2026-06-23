@@ -10,28 +10,28 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../src/commands/app/install.js')
-const BaseCommand = require('../../../src/BaseCommand.js')
-const fs = require('fs-extra')
-const { PACKAGE_LOCK_FILE } = require('../../../src/lib/defaults.js')
-const unzipper = require('unzipper')
-const execa = require('execa')
-const installHelper = require('../../../src/lib/install-helper')
-const { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE } = require('../../../src/lib/defaults')
-const path = require('node:path')
-const jsYaml = require('js-yaml')
+import TheCommand from '../../../src/commands/app/install.js'
+import BaseCommand from '../../../src/BaseCommand.js'
+import fs from 'fs-extra'
+import { PACKAGE_LOCK_FILE } from '../../../src/lib/defaults.js'
+import unzipper from 'unzipper'
+import execa from 'execa'
+import * as installHelper from '../../../src/lib/install-helper.js'
+import { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE } from '../../../src/lib/defaults.js'
+import path from 'node:path'
+import jsYaml from 'js-yaml'
 
-const libConfig = require('@adobe/aio-cli-lib-app-config')
+import libConfig from '@adobe/aio-cli-lib-app-config'
 
-jest.mock('fs-extra')
-jest.mock('unzipper')
-jest.mock('../../../src/lib/install-helper')
-jest.mock('js-yaml')
-jest.mock('ora')
-jest.mock('execa')
+vi.mock('fs-extra')
+vi.mock('unzipper')
+vi.mock('../../../src/lib/install-helper')
+vi.mock('js-yaml')
+vi.mock('ora')
+vi.mock('execa')
 
-const mockReadStreamPipe = jest.fn()
-const mockUnzipExtract = jest.fn()
+const mockReadStreamPipe = vi.fn()
+const mockUnzipExtract = vi.fn()
 
 // mock cwd
 let fakeCwd
@@ -41,7 +41,7 @@ const savedCwd = process.cwd
 afterAll(() => {
   process.chdir = savedChdir
   process.cwd = savedCwd
-  jest.clearAllMocks()
+  vi.clearAllMocks()
 })
 
 beforeEach(() => {
@@ -59,10 +59,10 @@ beforeEach(() => {
       pipe: mockReadStreamPipe
     }
   })
-  unzipper.Parse = jest.fn()
+  unzipper.Parse = vi.fn()
 
   mockUnzipExtract.mockClear()
-  unzipper.Open.file = jest.fn(async () => {
+  unzipper.Open.file = vi.fn(async () => {
     return {
       extract: mockUnzipExtract
     }
@@ -72,13 +72,13 @@ beforeEach(() => {
   execa.command.mockReset()
 
   fakeCwd = 'cwd'
-  process.chdir = jest.fn().mockImplementation(dir => { fakeCwd = dir })
-  process.cwd = jest.fn().mockImplementation(() => fakeCwd)
+  process.chdir = vi.fn().mockImplementation(dir => { fakeCwd = dir })
+  process.cwd = vi.fn().mockImplementation(() => fakeCwd)
   process.chdir.mockClear()
   process.cwd.mockClear()
 
-  jest.spyOn(libConfig, 'coalesce').mockImplementation(async () => ({ config: {} })).mockClear()
-  jest.spyOn(libConfig, 'validate').mockImplementation(async () => {}).mockClear()
+  vi.spyOn(libConfig, 'coalesce').mockImplementation(async () => ({ config: {} })).mockClear()
+  vi.spyOn(libConfig, 'validate').mockImplementation(async () => {}).mockClear()
 })
 
 test('exports', () => {
@@ -142,7 +142,7 @@ test('diffArray', () => {
 })
 
 describe('validateZipDirectoryStructure', () => {
-  const autodrain = jest.fn()
+  const autodrain = vi.fn()
 
   test('fail', async () => {
     /** @private */
@@ -335,7 +335,7 @@ describe('runTests', () => {
   beforeEach(() => {
     command = new TheCommand()
     command.config = global.createOclifMockConfig({
-      runCommand: jest.fn()
+      runCommand: vi.fn()
     })
     execa.mockImplementationOnce(() => {
       return Promise.resolve({ stdout: '' })
@@ -365,14 +365,14 @@ describe('run', () => {
     command.argv = ['my-app.zip']
 
     // since we already unit test the methods above, we mock it here
-    command.validateZipDirectoryStructure = jest.fn()
-    command.unzipFile = jest.fn()
-    command.addCodeDownloadAnnotation = jest.fn()
-    command.validateDeployConfig = jest.fn()
-    command.runTests = jest.fn()
-    command.npmInstall = jest.fn()
-    command.npmCI = jest.fn()
-    command.error = jest.fn()
+    command.validateZipDirectoryStructure = vi.fn()
+    command.unzipFile = vi.fn()
+    command.addCodeDownloadAnnotation = vi.fn()
+    command.validateDeployConfig = vi.fn()
+    command.runTests = vi.fn()
+    command.npmInstall = vi.fn()
+    command.npmCI = vi.fn()
+    command.error = vi.fn()
     await command.run()
 
     expect(command.validateZipDirectoryStructure).toHaveBeenCalledTimes(1)
@@ -392,14 +392,14 @@ describe('run', () => {
     command.argv = ['my-app.zip']
 
     // since we already unit test the methods above, we mock it here
-    command.validateZipDirectoryStructure = jest.fn()
-    command.unzipFile = jest.fn()
-    command.addCodeDownloadAnnotation = jest.fn()
-    command.validateDeployConfig = jest.fn()
-    command.runTests = jest.fn()
-    command.npmInstall = jest.fn()
-    command.npmCI = jest.fn()
-    command.error = jest.fn()
+    command.validateZipDirectoryStructure = vi.fn()
+    command.unzipFile = vi.fn()
+    command.addCodeDownloadAnnotation = vi.fn()
+    command.validateDeployConfig = vi.fn()
+    command.runTests = vi.fn()
+    command.npmInstall = vi.fn()
+    command.npmCI = vi.fn()
+    command.error = vi.fn()
 
     fs.existsSync.mockImplementation((filePath) => filePath === PACKAGE_LOCK_FILE)
 
@@ -424,15 +424,15 @@ describe('run', () => {
     const npmCIError = new Error('npm ci can only install packages when your package.json and package-lock.json are in sync')
 
     // we simulate npm ci failing and verify it falls back to npm install
-    command.validateZipDirectoryStructure = jest.fn()
-    command.unzipFile = jest.fn()
-    command.addCodeDownloadAnnotation = jest.fn()
-    command.validateDeployConfig = jest.fn()
-    command.runTests = jest.fn()
-    command.npmInstall = jest.fn()
-    command.npmCI = jest.fn().mockRejectedValue(npmCIError)
-    command.warn = jest.fn()
-    command.error = jest.fn()
+    command.validateZipDirectoryStructure = vi.fn()
+    command.unzipFile = vi.fn()
+    command.addCodeDownloadAnnotation = vi.fn()
+    command.validateDeployConfig = vi.fn()
+    command.runTests = vi.fn()
+    command.npmInstall = vi.fn()
+    command.npmCI = vi.fn().mockRejectedValue(npmCIError)
+    command.warn = vi.fn()
+    command.error = vi.fn()
 
     fs.existsSync.mockImplementation((filePath) => filePath === PACKAGE_LOCK_FILE)
 
@@ -460,14 +460,14 @@ describe('run', () => {
 
     // since we already unit test the methods above, we mock it here
     // we only reject one call, to simulate a subcommand failure
-    command.validateZipDirectoryStructure = jest.fn()
-    command.unzipFile = jest.fn()
-    command.addCodeDownloadAnnotation = jest.fn()
-    command.validateDeployConfig = jest.fn()
-    command.npmInstall = jest.fn()
-    command.npmCI = jest.fn()
-    command.error = jest.fn()
-    command.runTests = jest.fn(() => { throw errorObject })
+    command.validateZipDirectoryStructure = vi.fn()
+    command.unzipFile = vi.fn()
+    command.addCodeDownloadAnnotation = vi.fn()
+    command.validateDeployConfig = vi.fn()
+    command.npmInstall = vi.fn()
+    command.npmCI = vi.fn()
+    command.error = vi.fn()
+    command.runTests = vi.fn(() => { throw errorObject })
 
     await command.run()
 
@@ -492,14 +492,14 @@ describe('run', () => {
 
     // since we already unit test the methods above, we mock it here
     // we only reject one call, to simulate a subcommand failure
-    command.validateZipDirectoryStructure = jest.fn()
-    command.unzipFile = jest.fn()
-    command.addCodeDownloadAnnotation = jest.fn()
-    command.validateDeployConfig = jest.fn()
-    command.npmInstall = jest.fn()
-    command.npmCI = jest.fn()
-    command.error = jest.fn()
-    command.runTests = jest.fn(() => { throw new Error(errorMessage) })
+    command.validateZipDirectoryStructure = vi.fn()
+    command.unzipFile = vi.fn()
+    command.addCodeDownloadAnnotation = vi.fn()
+    command.validateDeployConfig = vi.fn()
+    command.npmInstall = vi.fn()
+    command.npmCI = vi.fn()
+    command.error = vi.fn()
+    command.runTests = vi.fn(() => { throw new Error(errorMessage) })
 
     await command.run()
 
@@ -521,14 +521,14 @@ describe('run', () => {
     command.argv = ['my-app.zip', '--output', 'my-dest-folder']
 
     // since we already unit test the methods above, we mock it here
-    command.validateZipDirectoryStructure = jest.fn()
-    command.unzipFile = jest.fn()
-    command.addCodeDownloadAnnotation = jest.fn()
-    command.validateDeployConfig = jest.fn()
-    command.runTests = jest.fn()
-    command.npmInstall = jest.fn()
-    command.npmCI = jest.fn()
-    command.error = jest.fn()
+    command.validateZipDirectoryStructure = vi.fn()
+    command.unzipFile = vi.fn()
+    command.addCodeDownloadAnnotation = vi.fn()
+    command.validateDeployConfig = vi.fn()
+    command.runTests = vi.fn()
+    command.npmInstall = vi.fn()
+    command.npmCI = vi.fn()
+    command.error = vi.fn()
 
     await command.run()
 
@@ -540,7 +540,7 @@ describe('run', () => {
     expect(command.runTests).toHaveBeenCalledTimes(1)
     expect(command.npmInstall).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(fakeCwd).toEqual(path.resolve('my-dest-folder'))
+    expect(process.chdir).toHaveBeenCalledWith(path.join('cwd', 'my-dest-folder'))
   })
 
   test('app config validation error', async () => {
@@ -549,18 +549,18 @@ describe('run', () => {
     command.argv = ['my-app.zip']
 
     // since we already unit test the methods above, we mock it here
-    command.validateZipDirectoryStructure = jest.fn()
-    command.unzipFile = jest.fn()
-    command.addCodeDownloadAnnotation = jest.fn()
-    command.validateDeployConfig = jest.fn()
-    command.runTests = jest.fn()
-    command.npmInstall = jest.fn()
-    command.npmCI = jest.fn()
-    command.error = jest.fn()
+    command.validateZipDirectoryStructure = vi.fn()
+    command.unzipFile = vi.fn()
+    command.addCodeDownloadAnnotation = vi.fn()
+    command.validateDeployConfig = vi.fn()
+    command.runTests = vi.fn()
+    command.npmInstall = vi.fn()
+    command.npmCI = vi.fn()
+    command.error = vi.fn()
 
     const err = new Error('fake validation error')
     libConfig.validate.mockImplementation(async () => { throw err })
-    command.spinner.fail = jest.fn()
+    command.spinner.fail = vi.fn()
 
     await command.run()
     expect(command.spinner.fail).toHaveBeenCalledWith('fake validation error')
@@ -572,13 +572,13 @@ describe('run', () => {
     command.argv = ['my-app.zip', '--output', 'my-dest-folder', '--tests']
 
     // since we already unit test the methods above, we mock it here
-    command.validateZipDirectoryStructure = jest.fn()
-    command.unzipFile = jest.fn()
-    command.addCodeDownloadAnnotation = jest.fn()
-    command.validateDeployConfig = jest.fn()
-    command.runTests = jest.fn()
-    command.npmInstall = jest.fn()
-    command.error = jest.fn()
+    command.validateZipDirectoryStructure = vi.fn()
+    command.unzipFile = vi.fn()
+    command.addCodeDownloadAnnotation = vi.fn()
+    command.validateDeployConfig = vi.fn()
+    command.runTests = vi.fn()
+    command.npmInstall = vi.fn()
+    command.error = vi.fn()
 
     await command.run()
 
@@ -590,7 +590,7 @@ describe('run', () => {
     expect(command.runTests).toHaveBeenCalledTimes(1)
     expect(command.npmInstall).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(fakeCwd).toEqual(path.resolve('my-dest-folder'))
+    expect(process.chdir).toHaveBeenCalledWith(path.join('cwd', 'my-dest-folder'))
   })
 
   test('flag --no-tests', async () => {
@@ -599,14 +599,14 @@ describe('run', () => {
     command.argv = ['my-app.zip', '--output', 'my-dest-folder', '--no-tests']
 
     // since we already unit test the methods above, we mock it here
-    command.validateZipDirectoryStructure = jest.fn()
-    command.unzipFile = jest.fn()
-    command.addCodeDownloadAnnotation = jest.fn()
-    command.validateDeployConfig = jest.fn()
-    command.runTests = jest.fn()
-    command.npmInstall = jest.fn()
-    command.npmCI = jest.fn()
-    command.error = jest.fn()
+    command.validateZipDirectoryStructure = vi.fn()
+    command.unzipFile = vi.fn()
+    command.addCodeDownloadAnnotation = vi.fn()
+    command.validateDeployConfig = vi.fn()
+    command.runTests = vi.fn()
+    command.npmInstall = vi.fn()
+    command.npmCI = vi.fn()
+    command.error = vi.fn()
 
     await command.run()
 
@@ -618,6 +618,6 @@ describe('run', () => {
     expect(command.runTests).toHaveBeenCalledTimes(0)
     expect(command.npmInstall).toHaveBeenCalledTimes(1)
     expect(command.error).toHaveBeenCalledTimes(0)
-    expect(fakeCwd).toEqual(path.resolve('my-dest-folder'))
+    expect(process.chdir).toHaveBeenCalledWith(path.join('cwd', 'my-dest-folder'))
   })
 })

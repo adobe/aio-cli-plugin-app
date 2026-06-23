@@ -1,4 +1,4 @@
-const { validateJsonWithSchema } = require('../src/lib/install-helper')
+import { validateJsonWithSchema } from '../src/lib/install-helper.js'
 
 describe('config.json', () => {
   const schemaName = 'config.json'

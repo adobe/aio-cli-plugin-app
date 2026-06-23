@@ -10,34 +10,33 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../src/commands/app/deploy')
-const BaseCommand = require('../../../src/BaseCommand')
-const cloneDeep = require('lodash.clonedeep')
-const dataMocks = require('../../data-mocks/config-loader')
-const helpersActual = jest.requireActual('../../../src/lib/app-helper.js')
-const authHelpersActual = jest.requireActual('../../../src/lib/auth-helper')
+import TheCommand from '../../../src/commands/app/deploy.js'
+import BaseCommand from '../../../src/BaseCommand.js'
+import cloneDeep from 'lodash.clonedeep'
+import dataMocks from '../../data-mocks/config-loader.js'
+const helpersActual = await vi.importActual('../../../src/lib/app-helper.js')
 
-const open = require('open')
-const ora = require('ora')
-const mockBundleFunc = jest.fn()
+import open from 'open'
+import ora from 'ora'
+const mockBundleFunc = vi.fn()
 
-jest.mock('../../../src/lib/app-helper.js')
-const helpers = require('../../../src/lib/app-helper.js')
+vi.mock('../../../src/lib/app-helper.js')
+import * as helpers from '../../../src/lib/app-helper.js'
 
-jest.mock('../../../src/lib/audit-logger.js')
-const auditLogger = require('../../../src/lib/audit-logger.js')
+vi.mock('../../../src/lib/audit-logger.js')
+import * as auditLogger from '../../../src/lib/audit-logger.js'
 
-jest.mock('../../../src/lib/auth-helper')
-const authHelper = require('../../../src/lib/auth-helper')
+vi.mock('../../../src/lib/auth-helper.js')
+import * as authHelper from '../../../src/lib/auth-helper.js'
 
-const mockWebLib = require('@adobe/aio-lib-web')
-const mockRuntimeLib = require('@adobe/aio-lib-runtime')
+import mockWebLib from '@adobe/aio-lib-web'
+import mockRuntimeLib from '@adobe/aio-lib-runtime'
 
-jest.mock('@adobe/aio-lib-db')
-const mockDbLib = require('@adobe/aio-lib-db')
+vi.mock('@adobe/aio-lib-db')
+import mockDbLib from '@adobe/aio-lib-db'
 
-jest.mock('@adobe/aio-lib-core-config')
-const mockConfig = require('@adobe/aio-lib-core-config')
+vi.mock('@adobe/aio-lib-core-config')
+import mockConfig from '@adobe/aio-lib-core-config'
 const MOCK_ACCESS_TOKEN = 'mocktoken'
 
 const mockConfigData = {
@@ -50,17 +49,17 @@ const mockConfigData = {
   }
 }
 
-jest.mock('open', () => jest.fn())
+vi.mock('open', () => ({ default: vi.fn() }))
 
-jest.mock('../../../src/lib/log-forwarding', () => {
-  const orig = jest.requireActual('../../../src/lib/log-forwarding')
+vi.mock('../../../src/lib/log-forwarding.js', async () => {
+  const orig = await vi.importActual('../../../src/lib/log-forwarding.js')
   return {
     ...orig,
-    init: jest.fn()
+    init: vi.fn()
   }
 })
-const LogForwarding = require('../../../src/lib/log-forwarding')
-const { DB_STATUS } = require('../../../src/lib/defaults')
+import * as LogForwarding from '../../../src/lib/log-forwarding.js'
+import { DB_STATUS } from '../../../src/lib/defaults.js'
 
 const createWebExportAnnotation = (value) => ({
   annotations: { 'web-export': value }
@@ -150,21 +149,21 @@ const mockGetProject = () => {
 }
 
 const mockLibConsoleCLI = {
-  updateExtensionPoints: jest.fn(),
-  updateExtensionPointsWithoutOverwrites: jest.fn(),
-  getProject: jest.fn(),
-  getApplicationExtensions: jest.fn()
+  updateExtensionPoints: vi.fn(),
+  updateExtensionPointsWithoutOverwrites: vi.fn(),
+  getProject: vi.fn(),
+  getApplicationExtensions: vi.fn()
 }
 
 const mockLogForwarding = {
-  isLocalConfigChanged: jest.fn(),
-  getLocalConfigWithSecrets: jest.fn(),
-  updateServerConfig: jest.fn()
+  isLocalConfigChanged: vi.fn(),
+  getLocalConfigWithSecrets: vi.fn(),
+  updateServerConfig: vi.fn()
 }
 
 afterAll(() => {
-  jest.clearAllMocks()
-  jest.resetAllMocks()
+  vi.clearAllMocks()
+  vi.resetAllMocks()
 })
 
 let command
@@ -181,7 +180,7 @@ beforeEach(() => {
   mockLogForwarding.getLocalConfigWithSecrets.mockReset()
   mockLogForwarding.updateServerConfig.mockReset()
 
-  jest.clearAllMocks()
+  vi.clearAllMocks()
 
   helpers.wrapError.mockImplementation(msg => msg)
   helpers.createWebExportFilter.mockImplementation(filterValue => helpersActual.createWebExportFilter(filterValue))
@@ -209,20 +208,23 @@ beforeEach(() => {
   LogForwarding.init.mockResolvedValue(mockLogForwarding)
 
   command = new TheCommand([])
-  command.error = jest.fn()
-  command.log = jest.fn()
-  command.warn = jest.fn()
+  command.error = vi.fn()
+  command.log = vi.fn()
+  command.warn = vi.fn()
   command.appConfig = cloneDeep(mockConfigData)
   command.appConfig.actions = { dist: 'actions' }
   command.appConfig.web.distProd = 'dist'
-  command.config = { runCommand: jest.fn(), runHook: jest.fn().mockResolvedValue({ successes: [] }) }
-  command.buildOneExt = jest.fn()
-  command.getFullConfig = jest.fn().mockResolvedValue({
+  command.config = { runCommand: vi.fn(), runHook: vi.fn().mockResolvedValue({ successes: [] }) }
+  command.buildOneExt = vi.fn()
+  command.getFullConfig = vi.fn().mockResolvedValue({
     aio: {
       project: {
         workspace: {
           name: 'test-workspace'
         }
+      },
+      runtime: {
+        namespace: 'test-ns'
       }
     },
     packagejson: {
@@ -230,8 +232,8 @@ beforeEach(() => {
       version: '1.0.0'
     }
   })
-  command.getAppExtConfigs = jest.fn().mockResolvedValue(createAppConfig(command.appConfig))
-  command.getLibConsoleCLI = jest.fn(() => mockLibConsoleCLI)
+  command.getAppExtConfigs = vi.fn().mockResolvedValue(createAppConfig(command.appConfig))
+  command.getLibConsoleCLI = vi.fn(() => mockLibConsoleCLI)
 
   mockRuntimeLib.deployActions.mockResolvedValue({ actions: [] })
   mockWebLib.bundle.mockResolvedValue({ run: mockBundleFunc })
@@ -405,21 +407,12 @@ describe('run', () => {
   })
 
   test('deploy does not require logged in user with --no-publish (workspace: Production)', async () => {
-    authHelper.getAccessToken.mockImplementation(authHelpersActual.getAccessToken)
+    authHelper.getAccessToken.mockResolvedValue({ accessToken: null, env: 'prod' })
 
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'exc'))
     mockGetExtensionPointsRetractedApp() // not published
     command.getFullConfig.mockResolvedValue({
-      aio: {
-        project: {
-          workspace: {
-            name: 'Production'
-          },
-          org: {
-            id: '1111'
-          }
-        }
-      },
+      aio: null,
       packagejson: {
         name: 'test-app',
         version: '1.0.0'
@@ -1223,7 +1216,7 @@ describe('run', () => {
   })
 
   test('does NOT fire `event` hooks when feature flag is NOT enabled', async () => {
-    const runHook = jest.fn().mockResolvedValue({ successes: [] })
+    const runHook = vi.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     command.argv = []
@@ -1234,7 +1227,7 @@ describe('run', () => {
   })
 
   test('DOES fire `event` hooks when feature flag IS enabled', async () => {
-    const runHook = jest.fn().mockResolvedValue({ successes: [] })
+    const runHook = vi.fn().mockResolvedValue({ successes: [] })
     command.config = { runHook }
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     await command.run()
@@ -1244,7 +1237,7 @@ describe('run', () => {
   })
 
   test('handles error and exits when first hook fails', async () => {
-    const runHook = jest.fn()
+    const runHook = vi.fn()
       .mockResolvedValueOnce({ successes: [] }) // preparse
       .mockResolvedValueOnce({
         successes: [],
@@ -1260,7 +1253,7 @@ describe('run', () => {
   })
 
   test('handles error and exits when second hook fails', async () => {
-    const runHook = jest.fn()
+    const runHook = vi.fn()
       .mockResolvedValueOnce({ successes: [] }) // preparse
       .mockResolvedValueOnce({
         successes: [{ plugin: { name: 'imsuccess' }, result: 'some string' }],
@@ -1279,7 +1272,7 @@ describe('run', () => {
   })
 
   test('handles error and exits when third hook fails', async () => {
-    const runHook = jest.fn()
+    const runHook = vi.fn()
       .mockResolvedValueOnce({ successes: [] }) // preparse
       .mockResolvedValueOnce({
         successes: [{ plugin: { name: 'imsuccess' }, result: 'some string' }],
@@ -1331,7 +1324,7 @@ describe('run', () => {
         version: '1.0.0'
       }
     }
-    command.getFullConfig = jest.fn().mockReturnValue(fullConfig)
+    command.getFullConfig = vi.fn().mockReturnValue(fullConfig)
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
@@ -1412,7 +1405,7 @@ describe('run', () => {
         version: '1.0.0'
       }
     }
-    command.getFullConfig = jest.fn().mockReturnValue(fullConfig)
+    command.getFullConfig = vi.fn().mockReturnValue(fullConfig)
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
@@ -1455,7 +1448,7 @@ describe('run', () => {
         version: '1.0.0'
       }
     }
-    command.getFullConfig = jest.fn().mockReturnValue(fullConfig)
+    command.getFullConfig = vi.fn().mockReturnValue(fullConfig)
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
@@ -1517,7 +1510,7 @@ describe('run', () => {
       env: mockEnv
     })
 
-    command.getFullConfig = jest.fn().mockReturnValue({
+    command.getFullConfig = vi.fn().mockReturnValue({
       aio: {
         project: {
           id: mockProject,
@@ -1570,7 +1563,7 @@ describe('run', () => {
       env: mockEnv
     })
 
-    command.getFullConfig = jest.fn().mockReturnValue({
+    command.getFullConfig = vi.fn().mockReturnValue({
       aio: {
         project: {
           id: mockProject,
@@ -1622,7 +1615,7 @@ describe('run', () => {
       env: mockEnv
     })
 
-    command.getFullConfig = jest.fn().mockReturnValue({
+    command.getFullConfig = vi.fn().mockReturnValue({
       aio: {
         project: {
           id: mockProject,
@@ -1668,8 +1661,8 @@ describe('database provisioning', () => {
   let mockDb
   beforeEach(() => {
     mockDb = {
-      provisionStatus: jest.fn(),
-      provisionRequest: jest.fn()
+      provisionStatus: vi.fn(),
+      provisionRequest: vi.fn()
     }
     mockDbLib.init.mockResolvedValue(mockDb)
   })

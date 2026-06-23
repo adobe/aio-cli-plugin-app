@@ -10,19 +10,20 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('../../BaseCommand')
-const { Flags, Args } = require('@oclif/core')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:install', { provider: 'debug' })
-const path = require('node:path')
-const fs = require('fs-extra')
-const execa = require('execa')
-const unzipper = require('unzipper')
-const { validateJsonWithSchema } = require('../../lib/install-helper')
-const jsYaml = require('js-yaml')
-const { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE, PACKAGE_LOCK_FILE } = require('../../lib/defaults')
-const ora = require('ora')
+import BaseCommand from '../../BaseCommand.js'
+import { Flags, Args } from '@oclif/core'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:install', { provider: 'debug' })
+import path from 'node:path'
+import fs from 'fs-extra'
+import execa from 'execa'
+import unzipper from 'unzipper'
+import { validateJsonWithSchema } from '../../lib/install-helper.js'
+import jsYaml from 'js-yaml'
+import { USER_CONFIG_FILE, DEPLOY_CONFIG_FILE, PACKAGE_LOCK_FILE } from '../../lib/defaults.js'
+import ora from 'ora'
 
-const libConfig = require('@adobe/aio-cli-lib-app-config')
+import libConfig from '@adobe/aio-cli-lib-app-config'
 
 class InstallCommand extends BaseCommand {
   async run () {
@@ -151,7 +152,7 @@ class InstallCommand extends BaseCommand {
     const ignoreScripts = allowScripts ? undefined : '--ignore-scripts'
     this.spinner.start('Running npm install...')
     const stdio = isVerbose ? 'inherit' : 'ignore'
-    return execa('npm', ['install', ignoreScripts], { stdio })
+    return execa('npm', ['install', ignoreScripts].filter(Boolean), { stdio })
       .then(() => {
         this.spinner.succeed('Ran npm install')
       })
@@ -161,7 +162,7 @@ class InstallCommand extends BaseCommand {
     const ignoreScripts = allowScripts ? undefined : '--ignore-scripts'
     this.spinner.start('Running npm ci...')
     const stdio = isVerbose ? 'inherit' : 'ignore'
-    return execa('npm', ['ci', ignoreScripts], { stdio })
+    return execa('npm', ['ci', ignoreScripts].filter(Boolean), { stdio })
       .then(() => {
         this.spinner.succeed('Ran npm ci')
       })
@@ -209,4 +210,4 @@ InstallCommand.args =
     })
   }
 
-module.exports = InstallCommand
+export default InstallCommand

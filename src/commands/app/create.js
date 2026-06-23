@@ -9,9 +9,9 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('../../BaseCommand')
-const InitCommand = require('./init')
-const { Flags, Args } = require('@oclif/core')
+import BaseCommand from '../../BaseCommand.js'
+import InitCommand from './init.js'
+import { Flags, Args } from '@oclif/core'
 
 class Create extends BaseCommand {
   async run () {
@@ -43,4 +43,4 @@ Create.args =
     })
   }
 
-module.exports = Create
+export default Create

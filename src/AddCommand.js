@@ -9,9 +9,9 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('./BaseCommand')
-const { Flags } = require('@oclif/core')
-const { installPackages } = require('./lib/app-helper')
+import BaseCommand from './BaseCommand.js'
+import { Flags } from '@oclif/core'
+import { installPackages } from './lib/app-helper.js'
 
 class AddCommand extends BaseCommand {
   async runInstallPackages (flags, spinner) {
@@ -32,4 +32,4 @@ AddCommand.flags = {
   ...BaseCommand.flags
 }
 
-module.exports = AddCommand
+export default AddCommand

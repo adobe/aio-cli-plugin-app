@@ -10,11 +10,11 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const buildActions = require('../../../src/lib/build-actions')
-const utils = require('../../../src/lib/app-helper')
-const { buildActions: rtBuildActions } = require('@adobe/aio-lib-runtime')
+import buildActions from '../../../src/lib/build-actions.js'
+import * as utils from '../../../src/lib/app-helper.js'
+import { buildActions as rtBuildActions } from '@adobe/aio-lib-runtime'
 
-jest.mock('../../../src/lib/app-helper')
+vi.mock('../../../src/lib/app-helper')
 
 const extensionConfig = {
   hooks: {

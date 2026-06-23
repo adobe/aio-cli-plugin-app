@@ -10,7 +10,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { createWebExportFilter } = require('./app-helper')
+import { createWebExportFilter } from './app-helper.js'
 
 /**
  * Logs deployed action entities.
@@ -21,7 +21,7 @@ const { createWebExportFilter } = require('./app-helper')
  * @param {object} [options.deployConfig] see https://github.com/adobe/aio-lib-runtime?tab=readme-ov-file#typedefs
  * @param {Function} [options.log] a log function
  */
-module.exports = async ({
+export default async ({
   entities,
   log = console.log
 }) => {

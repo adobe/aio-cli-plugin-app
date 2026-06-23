@@ -10,13 +10,13 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../../src/commands/app/list/extension-points')
-const BaseCommand = require('../../../../src/BaseCommand')
-const yaml = require('js-yaml')
-const dataMocks = require('../../../data-mocks/config-loader')
+import TheCommand from '../../../../src/commands/app/list/extension-points.js'
+import BaseCommand from '../../../../src/BaseCommand.js'
+import yaml from 'js-yaml'
+import dataMocks from '../../../data-mocks/config-loader.js'
 
-jest.mock('@adobe/aio-cli-lib-console')
-const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
+vi.mock('@adobe/aio-cli-lib-console')
+import LibConsoleCLI from '@adobe/aio-cli-lib-console'
 const mockConsoleCLIInstance = {}
 LibConsoleCLI.init.mockResolvedValue(mockConsoleCLIInstance)
 
@@ -61,9 +61,9 @@ describe('run', () => {
   beforeEach(() => {
     command = new TheCommand([])
     command.config = global.createOclifMockConfig()
-    command.error = jest.fn()
-    command.log = jest.fn()
-    command.getAppExtConfigs = jest.fn()
+    command.error = vi.fn()
+    command.log = vi.fn()
+    command.getAppExtConfigs = vi.fn()
   })
 
   test('get all extension points', async () => {
@@ -92,8 +92,8 @@ describe('run', () => {
   test('get all extension points --yml', async () => {
     command.getAppExtConfigs.mockResolvedValue(createAppConfig(command.appConfig, 'app-exc-nui'))
     command.argv = ['--yml']
-    command.error = jest.fn()
-    command.log = jest.fn()
+    command.error = vi.fn()
+    command.log = vi.fn()
 
     await command.run()
     expect(command.error).toHaveBeenCalledTimes(0)

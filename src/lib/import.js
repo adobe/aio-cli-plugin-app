@@ -1,5 +1,5 @@
-const { loadAndValidateConfigFile, importConfigJson, loadConfigFile, getServiceApiKey, getOAuthS2SCredential } = require('./import-helper')
-const { SERVICE_API_KEY_ENV, IMS_OAUTH_S2S_ENV } = require('./defaults')
+import { loadAndValidateConfigFile, importConfigJson, loadConfigFile, getServiceApiKey, getOAuthS2SCredential } from './import-helper.js'
+import { SERVICE_API_KEY_ENV, IMS_OAUTH_S2S_ENV } from './defaults.js'
 
 /**
  * Imports the project's console config to the local environment.
@@ -63,7 +63,7 @@ async function downloadConsoleConfigToBuffer (consoleCLI, config, supportedServi
   return Buffer.from(JSON.stringify(workspaceConfig))
 }
 
-module.exports = {
+export {
   importConsoleConfig,
   downloadConsoleConfigToBuffer
 }

@@ -9,12 +9,13 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const AddCommand = require('../../../AddCommand')
-const TemplatesCommand = require('../../../TemplatesCommand')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:event', { provider: 'debug' })
-const { Flags } = require('@oclif/core')
-const path = require('path')
-const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
+import AddCommand from '../../../AddCommand.js'
+import TemplatesCommand from '../../../TemplatesCommand.js'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:add:event', { provider: 'debug' })
+import { Flags } from '@oclif/core'
+import path from 'path'
+import TemplateRegistryAPI from '@adobe/aio-lib-templates'
 
 class AddEventCommand extends TemplatesCommand {
   async run () {
@@ -94,4 +95,4 @@ AddEventCommand.flags = {
 AddEventCommand.aliases = ['app:add:events']
 AddEventCommand.args = {}
 
-module.exports = AddEventCommand
+export default AddEventCommand

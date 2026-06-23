@@ -10,12 +10,12 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../src/commands/app/create')
-const BaseCommand = require('../../../src/BaseCommand')
-const InitCommand = require('../../../src/commands/app/init')
+import TheCommand from '../../../src/commands/app/create.js'
+import BaseCommand from '../../../src/BaseCommand.js'
+import InitCommand from '../../../src/commands/app/init.js'
 
 beforeEach(() => {
-  jest.clearAllMocks()
+  vi.clearAllMocks()
 })
 
 describe('Command Prototype', () => {
@@ -51,19 +51,19 @@ describe('bad flags', () => {
 
     // check that the returned error wasn't that no error was thrown
     expect(error).not.toBeInstanceOf(NoErrorThrownError)
-    expect(error).toEqual(new Error('Nonexistent flag: --wtf\nSee more help with --help'))
+    expect(error.message).toBe('Nonexistent flag: --wtf\nSee more help with --help')
   })
 })
 
 describe('runs', () => {
   test('Calls to InitCommand with -y', async () => {
-    const mySpy = jest.spyOn(InitCommand, 'run').mockImplementation(jest.fn())
+    const mySpy = vi.spyOn(InitCommand, 'run').mockImplementation(vi.fn())
     await TheCommand.run(['new-project'])
     expect(mySpy).toHaveBeenCalledWith(['new-project', '-y'])
   })
 
   test('import', async () => {
-    const mySpy = jest.spyOn(InitCommand, 'run').mockImplementation(jest.fn())
+    const mySpy = vi.spyOn(InitCommand, 'run').mockImplementation(vi.fn())
     await TheCommand.run(['new-project', '--import', 'config-file'])
     expect(mySpy).toHaveBeenCalledWith(['new-project', '-y', '--import', 'config-file'])
   })

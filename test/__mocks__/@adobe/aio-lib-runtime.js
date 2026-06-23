@@ -1,5 +1,5 @@
 /*
-Copyright 2020 Adobe. All rights reserved.
+Copyright 2026 Adobe. All rights reserved.
 This file is licensed to you under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License. You may obtain a copy
 of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -9,28 +9,29 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-const originalRuntimeLib = jest.requireActual('@adobe/aio-lib-runtime')
+
+const originalRuntimeLib = await vi.importActual('@adobe/aio-lib-runtime')
 
 const cleanRtLibInstance = {
   actions: {},
   activations: {},
   namespaces: {},
   packages: {
-    update: jest.fn(),
-    list: jest.fn(() => '')
+    update: vi.fn(),
+    list: vi.fn(() => '')
   },
   rules: {
-    list: jest.fn(() => '')
+    list: vi.fn(() => '')
   },
   triggers: {
-    list: jest.fn(() => '')
+    list: vi.fn(() => '')
   },
   logForwarding: {
-    get: jest.fn(),
-    setAdobeIoRuntime: jest.fn(),
-    setAzureLogAnalytics: jest.fn(),
-    setSplunkHec: jest.fn(),
-    setNewRelic: jest.fn()
+    get: vi.fn(),
+    setAdobeIoRuntime: vi.fn(),
+    setAzureLogAnalytics: vi.fn(),
+    setSplunkHec: vi.fn(),
+    setNewRelic: vi.fn()
   },
   feeds: {},
   routes: {}
@@ -43,7 +44,7 @@ const RtLibInstanceMethods = {
       const word = cmd.shift()
       method = method[word] = method[word] || {}
     }
-    method = method[cmd.shift()] = jest.fn()
+    method = method[cmd.shift()] = vi.fn()
     return method
   },
   mockResolvedFixtureMulitValue: function (methodName, returnValues) {
@@ -85,18 +86,18 @@ const mockRtLibInstance = {
 }
 
 const mockRtUtils = {
-  getActionUrls: jest.fn(),
-  checkOpenWhiskCredentials: jest.fn()
+  getActionUrls: vi.fn(),
+  checkOpenWhiskCredentials: vi.fn()
 }
 
-const init = jest.fn().mockReturnValue(mockRtLibInstance)
+const init = vi.fn().mockReturnValue(mockRtLibInstance)
 const mockActionMethods = {
-  buildActions: jest.fn(),
-  deployActions: jest.fn(),
-  undeployActions: jest.fn(),
-  printActionLogs: jest.fn()
+  buildActions: vi.fn(),
+  deployActions: vi.fn(),
+  undeployActions: vi.fn(),
+  printActionLogs: vi.fn()
 }
-module.exports = {
+export default {
   utils: {
     ...mockRtUtils,
     _absApp: originalRuntimeLib.utils._absApp,

@@ -9,13 +9,14 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('../../../BaseCommand')
+import BaseCommand from '../../../BaseCommand.js'
 
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:list:extensions', { provider: 'debug' })
-const { Flags } = require('@oclif/core')
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:list:extensions', { provider: 'debug' })
+import { Flags } from '@oclif/core'
 
-const chalk = require('chalk')
-const yaml = require('js-yaml')
+import chalk from 'chalk'
+import yaml from 'js-yaml'
 
 class ListExtensionCommand extends BaseCommand {
   async run () {
@@ -95,4 +96,4 @@ ListExtensionCommand.flags = {
 ListExtensionCommand.aliases = ['app:list:ext', 'app:list:extensions']
 ListExtensionCommand.args = {}
 
-module.exports = ListExtensionCommand
+export default ListExtensionCommand

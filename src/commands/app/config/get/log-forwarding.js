@@ -9,9 +9,10 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('../../../../BaseCommand')
-const LogForwarding = require('../../../../lib/log-forwarding')
-const { setRuntimeApiHostAndAuthHandler } = require('../../../../lib/auth-helper')
+import BaseCommand from '../../../../BaseCommand.js'
+import { init as LogForwardingInit, LogForwardingConfig } from '../../../../lib/log-forwarding.js'
+const LogForwarding = { init: LogForwardingInit, LogForwardingConfig }
+import { setRuntimeApiHostAndAuthHandler } from '../../../../lib/auth-helper.js'
 
 class LogForwardingCommand extends BaseCommand {
   async run () {
@@ -55,4 +56,4 @@ LogForwardingCommand.flags = {
   ...BaseCommand.flags
 }
 
-module.exports = LogForwardingCommand
+export default LogForwardingCommand

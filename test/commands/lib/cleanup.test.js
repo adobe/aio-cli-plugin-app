@@ -10,18 +10,18 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const Cleanup = require('../../../src/lib/cleanup')
-const mockLogger = require('@adobe/aio-lib-core-logging')
-const execa = require('execa')
+import Cleanup from '../../../src/lib/cleanup.js'
+import mockLogger from '@adobe/aio-lib-core-logging'
+import execa from 'execa'
 
-jest.mock('execa')
-jest.mock('@adobe/aio-lib-core-logging')
+vi.mock('execa')
+vi.mock('@adobe/aio-lib-core-logging')
 
-process.exit = jest.fn()
-process.on = jest.fn()
+process.exit = vi.fn()
+process.on = vi.fn()
 
 let theCleanup
-const mockKill = jest.fn()
+const mockKill = vi.fn()
 
 beforeEach(() => {
   theCleanup = new Cleanup()
@@ -46,8 +46,8 @@ test('exports', () => {
 })
 
 test('add', () => {
-  const fn1 = jest.fn()
-  const fn2 = jest.fn()
+  const fn1 = vi.fn()
+  const fn2 = vi.fn()
 
   expect(theCleanup.resources.length).toEqual(0)
   theCleanup.add(fn1, 'fn1')
@@ -56,8 +56,8 @@ test('add', () => {
 })
 
 test('run', async () => {
-  const fn1 = jest.fn()
-  const fn2 = jest.fn()
+  const fn1 = vi.fn()
+  const fn2 = vi.fn()
 
   theCleanup.add(fn1, 'fn1')
   theCleanup.add(fn2, 'fn2')
@@ -70,8 +70,8 @@ test('run', async () => {
 })
 
 test('wait (cleanup no errors)', async () => {
-  const fn1 = jest.fn()
-  const fn2 = jest.fn()
+  const fn1 = vi.fn()
+  const fn2 = vi.fn()
 
   process.exit.mockImplementation((code) => {
     expect(code).toEqual(0) // ok
@@ -95,8 +95,8 @@ test('wait (cleanup no errors)', async () => {
 })
 
 test('wait (cleanup has error)', async () => {
-  const fn1 = jest.fn()
-  const fn2 = jest.fn(() => {
+  const fn1 = vi.fn()
+  const fn2 = vi.fn(() => {
     throw new Error('error')
   })
 

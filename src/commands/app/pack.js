@@ -9,20 +9,21 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('../../BaseCommand')
-const { Flags, Args } = require('@oclif/core')
-const path = require('node:path')
-const fs = require('fs-extra')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:pack', { provider: 'debug' })
-const archiver = require('archiver')
-const yaml = require('js-yaml')
-const execa = require('execa')
-const { loadConfigFile, writeFile } = require('../../lib/import-helper')
-const { getObjectValue } = require('../../lib/app-helper')
-const ora = require('ora')
-const junk = require('junk')
+import BaseCommand from '../../BaseCommand.js'
+import { Flags, Args } from '@oclif/core'
+import path from 'node:path'
+import fs from 'fs-extra'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:pack', { provider: 'debug' })
+import archiver from 'archiver'
+import yaml from 'js-yaml'
+import execa from 'execa'
+import { loadConfigFile, writeFile } from '../../lib/import-helper.js'
+import { getObjectValue } from '../../lib/app-helper.js'
+import ora from 'ora'
+import junk from 'junk'
 
-const libConfig = require('@adobe/aio-cli-lib-app-config')
+import libConfig from '@adobe/aio-cli-lib-app-config'
 
 const DIST_FOLDER = 'dist'
 const DEFAULTS = {
@@ -414,4 +415,4 @@ Pack.args =
   })
 }
 
-module.exports = Pack
+export default Pack

@@ -10,18 +10,18 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { stdout } = require('stdout-stderr')
-const TheCommand = require('../../../../../src/commands/app/config/set/log-forwarding.js')
-const LogForwarding = require('../../../../../src/lib/log-forwarding')
+import { stdout } from 'stdout-stderr'
+import TheCommand from '../../../../../src/commands/app/config/set/log-forwarding.js'
+import * as LogForwarding from '../../../../../src/lib/log-forwarding.js'
 
-jest.mock('../../../../../src/lib/auth-helper')
-const authHelper = require('../../../../../src/lib/auth-helper')
+vi.mock('../../../../../src/lib/auth-helper')
+import * as authHelper from '../../../../../src/lib/auth-helper.js'
 
-jest.mock('../../../../../src/lib/log-forwarding', () => {
-  const orig = jest.requireActual('../../../../../src/lib/log-forwarding')
+vi.mock('../../../../../src/lib/log-forwarding', async () => {
+  const orig = await vi.importActual('../../../../../src/lib/log-forwarding')
   return {
     ...orig,
-    init: jest.fn()
+    init: vi.fn()
   }
 })
 
@@ -42,14 +42,14 @@ beforeEach(async () => {
       }
     }
   }
-  command.prompt = jest.fn()
+  command.prompt = vi.fn()
 
   lf = {
-    getSupportedDestinations: jest.fn().mockReturnValue([{ value: 'destination', name: 'Destination' }]),
-    getSettingsConfig: jest.fn().mockReturnValue({ key: 'value' }),
-    updateServerConfig: jest.fn(),
-    updateLocalConfig: jest.fn(),
-    getConfigFromJson: jest.fn()
+    getSupportedDestinations: vi.fn().mockReturnValue([{ value: 'destination', name: 'Destination' }]),
+    getSettingsConfig: vi.fn().mockReturnValue({ key: 'value' }),
+    updateServerConfig: vi.fn(),
+    updateLocalConfig: vi.fn(),
+    getConfigFromJson: vi.fn()
   }
   LogForwarding.init.mockResolvedValue(lf)
   authHelper.setRuntimeApiHostAndAuthHandler.mockImplementation(aioConfig => aioConfig)
@@ -73,10 +73,10 @@ test('set log forwarding destination and save local', async () => {
     field_two: 'val_two sanitized',
     secret: 'val_secret'
   }
-  const setCall = jest.fn().mockResolvedValue({
+  const setCall = vi.fn().mockResolvedValue({
     destination: serverSanitizedSettings
   })
-  const localSetCall = jest.fn()
+  const localSetCall = vi.fn()
   lf.updateServerConfig = setCall
   lf.updateLocalConfig = localSetCall.mockResolvedValue()
   lf.getConfigFromJson.mockReturnValue(new LogForwarding.LogForwardingConfig(destination, serverSanitizedSettings))
@@ -114,10 +114,10 @@ test('should invoke setRuntimeApiHostAndAuthHandler and set log forwarding desti
     field_two: 'val_two sanitized',
     secret: 'val_secret'
   }
-  const setCall = jest.fn().mockResolvedValue({
+  const setCall = vi.fn().mockResolvedValue({
     destination: serverSanitizedSettings
   })
-  const localSetCall = jest.fn()
+  const localSetCall = vi.fn()
   lf.updateServerConfig = setCall
   lf.updateLocalConfig = localSetCall.mockResolvedValue()
   lf.getConfigFromJson.mockReturnValue(new LogForwarding.LogForwardingConfig(destination, serverSanitizedSettings))
@@ -155,10 +155,10 @@ test('set log forwarding destination and fail save local', async () => {
     field_two: 'val_two sanitized',
     secret: 'val_secret'
   }
-  const setCall = jest.fn().mockResolvedValue({
+  const setCall = vi.fn().mockResolvedValue({
     destination: serverSanitizedSettings
   })
-  const localSetCall = jest.fn()
+  const localSetCall = vi.fn()
   lf.updateServerConfig = setCall
   lf.updateLocalConfig = localSetCall.mockRejectedValue(Error('mocked error'))
   lf.getConfigFromJson.mockReturnValue(new LogForwarding.LogForwardingConfig(destination, serverSanitizedSettings))
@@ -183,7 +183,7 @@ test('failed to set log forwarding settings', async () => {
     field_two: 'val_two'
   }
   command.prompt.mockResolvedValueOnce({ type: destination })
-  lf.updateServerConfig = jest.fn().mockRejectedValue(new Error(`mocked error for ${destination}`))
+  lf.updateServerConfig = vi.fn().mockRejectedValue(new Error(`mocked error for ${destination}`))
   command.prompt.mockResolvedValueOnce(input)
   await expect(command.run()).rejects.toThrow(`mocked error for ${destination}`)
 })

@@ -10,14 +10,15 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const fs = require('fs-extra')
-const path = require('path')
-const httpTerminator = require('http-terminator')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:serve', { provider: 'debug' })
-const pureHTTP = require('pure-http')
-const sirv = require('serve-static')
-const https = require('https')
-const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('./defaults')
+import fs from 'fs-extra'
+import path from 'path'
+import httpTerminator from 'http-terminator'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:serve', { provider: 'debug' })
+import pureHTTP from 'pure-http'
+import sirv from 'serve-static'
+import https from 'https'
+import { defaultHttpServerPort as SERVER_DEFAULT_PORT } from './defaults.js'
 
 /**
  * @typedef {object} ServeWebObject
@@ -34,7 +35,7 @@ const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('./defaults')
  * @param {Function} [log] the app logger
  * @returns {ServeWebObject} the ServeWebObject
  */
-module.exports = async (webRoot, uiPort = SERVER_DEFAULT_PORT, options = {}, log = () => {}) => {
+export default async (webRoot, uiPort = SERVER_DEFAULT_PORT, options = {}, log = () => {}) => {
   let actualPort = uiPort
   log('starting local frontend server ..')
 

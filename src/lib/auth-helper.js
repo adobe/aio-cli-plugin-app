@@ -9,10 +9,11 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { getToken, context } = require('@adobe/aio-lib-ims')
-const { CLI } = require('@adobe/aio-lib-ims/src/context')
-const { getCliEnv } = require('@adobe/aio-lib-env')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:auth-helper', { provider: 'debug' })
+import { getToken, context } from '@adobe/aio-lib-ims'
+import { CLI } from '@adobe/aio-lib-ims/src/context'
+import { getCliEnv } from '@adobe/aio-lib-env'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:auth-helper', { provider: 'debug' })
 
 const DEPLOY_SERVICE_ENDPOINTS = {
   stage: 'https://deploy-service.stg.app-builder.adp.adobe.io',
@@ -90,7 +91,7 @@ const setRuntimeApiHostAndAuthHandler = (_config) => {
   }
 }
 
-module.exports = {
+export {
   getAccessToken,
   bearerAuthHandler,
   setRuntimeApiHostAndAuthHandler

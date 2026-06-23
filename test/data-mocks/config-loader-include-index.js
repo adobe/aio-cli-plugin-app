@@ -919,7 +919,7 @@ const excComplexIncludeIndex = {
   }
 }
 
-module.exports = {
+export {
   excComplexIncludeIndex,
   appExcNuiIncludeIndex,
   appIncludeIndex,

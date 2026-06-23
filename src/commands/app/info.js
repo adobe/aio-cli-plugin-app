@@ -10,10 +10,10 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('../../BaseCommand')
-const { Flags } = require('@oclif/core')
-const yaml = require('js-yaml')
-const deepCopy = require('lodash.clonedeep')
+import BaseCommand from '../../BaseCommand.js'
+import { Flags } from '@oclif/core'
+import yaml from 'js-yaml'
+import deepCopy from 'lodash.clonedeep'
 
 class Info extends BaseCommand {
   async run () {
@@ -81,4 +81,4 @@ Info.flags = {
 
 Info.args = {}
 
-module.exports = Info
+export default Info

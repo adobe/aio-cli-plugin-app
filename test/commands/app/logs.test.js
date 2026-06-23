@@ -10,16 +10,16 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../src/commands/app/logs')
-const BaseCommand = require('../../../src/BaseCommand')
-const dataMocks = require('../../data-mocks/config-loader')
-const LogForwarding = require('../../../src/lib/log-forwarding')
+import TheCommand from '../../../src/commands/app/logs.js'
+import BaseCommand from '../../../src/BaseCommand.js'
+import dataMocks from '../../data-mocks/config-loader.js'
+import * as LogForwarding from '../../../src/lib/log-forwarding.js'
 
-jest.mock('../../../src/lib/log-forwarding', () => {
-  const orig = jest.requireActual('../../../src/lib/log-forwarding')
+vi.mock('../../../src/lib/log-forwarding', async () => {
+  const orig = await vi.importActual('../../../src/lib/log-forwarding')
   return {
     ...orig,
-    init: jest.fn()
+    init: vi.fn()
   }
 })
 
@@ -27,13 +27,13 @@ const createFullConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
   return dataMocks(appFixtureName, aioConfig)
 }
 
-const mockFS = require('fs-extra')
-jest.mock('fs-extra')
+import mockFS from 'fs-extra'
+vi.mock('fs-extra')
 
-jest.mock('../../../src/lib/app-helper.js')
-const helpers = require('../../../src/lib/app-helper.js')
+vi.mock('../../../src/lib/app-helper.js')
+import * as helpers from '../../../src/lib/app-helper.js'
 
-const mockRuntimeLib = require('@adobe/aio-lib-runtime')
+import mockRuntimeLib from '@adobe/aio-lib-runtime'
 const printActionLogs = mockRuntimeLib.printActionLogs
 
 describe('interface', () => {
@@ -71,13 +71,13 @@ describe('run', () => {
     command = new TheCommand([])
     command.config = global.createOclifMockConfig()
     command.appConfig = createFullConfig()
-    command.error = jest.fn()
-    command.log = jest.fn()
-    mockedLogger = jest.spyOn(command.log, 'bind')
-    command.getFullConfig = jest.fn()
+    command.error = vi.fn()
+    command.log = vi.fn()
+    mockedLogger = vi.spyOn(command.log, 'bind')
+    command.getFullConfig = vi.fn()
     command.getFullConfig.mockResolvedValue(command.appConfig)
     logForwarding = {
-      getServerConfig: jest.fn()
+      getServerConfig: vi.fn()
         .mockResolvedValue(new LogForwarding.LogForwardingConfig('adobe_io_runtime', {}))
     }
     LogForwarding.init.mockResolvedValue(logForwarding)
@@ -177,7 +177,7 @@ describe('run', () => {
   test('--action multiple', async () => {
     mockFS.existsSync.mockReturnValue(true)
     command.argv = ['--action', 'pkg1/hello', '--action', '/actionwithoutpkg'] // pass-through (we don't check if it exists)
-    const mockedLogger = jest.spyOn(command.log, 'bind')
+    const mockedLogger = vi.spyOn(command.log, 'bind')
     await command.run()
     const ow = owConfig()
     expect(printActionLogs).toHaveBeenCalledWith({ ow }, expect.any(Function), 1, ['pkg1/hello', '/actionwithoutpkg'], false, false)

@@ -9,14 +9,15 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const AddCommand = require('./AddCommand')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:TemplatesCommand', { provider: 'debug' })
-const inquirerTableCheckbox = require('@adobe/inquirer-table-checkbox')
-const inquirer = require('inquirer')
-const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
-const hyperlinker = require('hyperlinker')
-const ora = require('ora')
-const terminalSize = require('term-size')
+import AddCommand from './AddCommand.js'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:TemplatesCommand', { provider: 'debug' })
+import inquirerTableCheckbox from '@adobe/inquirer-table-checkbox'
+import inquirer from 'inquirer'
+import TemplateRegistryAPI from '@adobe/aio-lib-templates'
+import hyperlinker from 'hyperlinker'
+import ora from 'ora'
+import terminalSize from 'term-size'
 
 class TemplatesCommand extends AddCommand {
   /**
@@ -264,4 +265,4 @@ TemplatesCommand.flags = {
   ...AddCommand.flags
 }
 
-module.exports = TemplatesCommand
+export default TemplatesCommand

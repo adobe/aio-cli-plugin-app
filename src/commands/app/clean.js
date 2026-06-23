@@ -10,14 +10,15 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const ora = require('ora')
-const chalk = require('chalk')
-const fs = require('fs-extra')
-const path = require('path')
+import ora from 'ora'
+import chalk from 'chalk'
+import fs from 'fs-extra'
+import path from 'path'
 
-const BaseCommand = require('../../BaseCommand')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:clean', { provider: 'debug' })
-const { LAST_BUILT_ACTIONS_FILENAME, LAST_DEPLOYED_ACTIONS_FILENAME } = require('../../lib/defaults')
+import BaseCommand from '../../BaseCommand.js'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:clean', { provider: 'debug' })
+import { LAST_BUILT_ACTIONS_FILENAME, LAST_DEPLOYED_ACTIONS_FILENAME } from '../../lib/defaults.js'
 
 class Clean extends BaseCommand {
   async run () {
@@ -107,4 +108,4 @@ Clean.flags = {
   ...BaseCommand.flags
 }
 
-module.exports = Clean
+export default Clean

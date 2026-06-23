@@ -10,15 +10,15 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { stdout } = require('stdout-stderr')
-const TheCommand = require('../../../../../src/commands/app/config/get/log-forwarding.js')
-const LogForwarding = require('../../../../../src/lib/log-forwarding')
+import { stdout } from 'stdout-stderr'
+import TheCommand from '../../../../../src/commands/app/config/get/log-forwarding.js'
+import * as LogForwarding from '../../../../../src/lib/log-forwarding.js'
 
-jest.mock('../../../../../src/lib/log-forwarding', () => {
-  const orig = jest.requireActual('../../../../../src/lib/log-forwarding')
+vi.mock('../../../../../src/lib/log-forwarding', async () => {
+  const orig = await vi.importActual('../../../../../src/lib/log-forwarding')
   return {
     ...orig,
-    init: jest.fn()
+    init: vi.fn()
   }
 })
 
@@ -38,8 +38,8 @@ beforeEach(async () => {
     }
   }
   lf = {
-    getLocalConfig: jest.fn(),
-    getServerConfig: jest.fn()
+    getLocalConfig: vi.fn(),
+    getServerConfig: vi.fn()
   }
 
   LogForwarding.init.mockResolvedValue(lf)

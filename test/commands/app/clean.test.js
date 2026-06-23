@@ -10,17 +10,17 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const Clean = require('../../../src/commands/app/clean')
-const fs = require('fs-extra')
-const ora = require('ora')
-const chalk = require('chalk')
-const path = require('path')
-const { LAST_BUILT_ACTIONS_FILENAME, LAST_DEPLOYED_ACTIONS_FILENAME } = require('../../../src/lib/defaults')
+import Clean from '../../../src/commands/app/clean.js'
+import fs from 'fs-extra'
+import ora from 'ora'
+import chalk from 'chalk'
+import path from 'path'
+import { LAST_BUILT_ACTIONS_FILENAME, LAST_DEPLOYED_ACTIONS_FILENAME } from '../../../src/lib/defaults.js'
 
 // Mock fs-extra, ora, and logging
-jest.mock('fs-extra')
-jest.mock('ora', () => jest.fn())
-jest.mock('@adobe/aio-lib-core-logging', () => jest.fn().mockReturnValue({ debug: jest.fn(), error: jest.fn() }))
+vi.mock('fs-extra')
+vi.mock('ora', () => ({ default: vi.fn() }))
+vi.mock('@adobe/aio-lib-core-logging', () => ({ default: vi.fn().mockReturnValue({ debug: vi.fn(), error: vi.fn() }) }))
 
 describe('Clean Command', () => {
   let cmd, spinner
@@ -32,27 +32,27 @@ describe('Clean Command', () => {
     fs.emptyDir.mockReset()
 
     // Spy on path.join for predictable rootDist
-    jest.spyOn(path, 'join').mockImplementation((...args) => args.join('/'))
+    vi.spyOn(path, 'join').mockImplementation((...args) => args.join('/'))
 
     // Setup spinner mock
     spinner = {
-      start: jest.fn().mockReturnThis(),
-      succeed: jest.fn().mockReturnThis(),
-      info: jest.fn().mockReturnThis(),
-      fail: jest.fn().mockReturnThis(),
-      stop: jest.fn().mockReturnThis()
+      start: vi.fn().mockReturnThis(),
+      succeed: vi.fn().mockReturnThis(),
+      info: vi.fn().mockReturnThis(),
+      fail: vi.fn().mockReturnThis(),
+      stop: vi.fn().mockReturnThis()
     }
     ora.mockReturnValue(spinner)
 
     // Instantiate command
     cmd = new Clean([])
-    cmd.parse = jest.fn().mockResolvedValue({ flags: {} })
-    cmd.getAppExtConfigs = jest.fn().mockResolvedValue({})
-    cmd.log = jest.fn()
+    cmd.parse = vi.fn().mockResolvedValue({ flags: {} })
+    cmd.getAppExtConfigs = vi.fn().mockResolvedValue({})
+    cmd.log = vi.fn()
   })
 
   afterEach(() => {
-    jest.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('cleanAllBuildArtifacts', () => {
@@ -130,7 +130,7 @@ describe('Clean Command', () => {
     test('calls cleanAllBuildArtifacts for each extension and logs success', async () => {
       const configs = { e1: {}, e2: {} }
       cmd.getAppExtConfigs.mockResolvedValue(configs)
-      cmd.cleanAllBuildArtifacts = jest.fn().mockResolvedValue()
+      cmd.cleanAllBuildArtifacts = vi.fn().mockResolvedValue()
 
       await cmd.run()
       expect(cmd.cleanAllBuildArtifacts).toHaveBeenCalledTimes(2)
@@ -142,7 +142,7 @@ describe('Clean Command', () => {
     test('stops spinner and rethrows when cleanAllBuildArtifacts errors', async () => {
       const err = new Error('oops')
       cmd.getAppExtConfigs.mockResolvedValue({ e: {} })
-      cmd.cleanAllBuildArtifacts = jest.fn().mockRejectedValue(err)
+      cmd.cleanAllBuildArtifacts = vi.fn().mockRejectedValue(err)
 
       await expect(cmd.run()).rejects.toThrow(err)
       expect(spinner.stop).toHaveBeenCalled()
@@ -151,8 +151,8 @@ describe('Clean Command', () => {
 
   describe('debug logging and full branch coverage', () => {
     let mockCreator, mockLogger
-    beforeEach(() => {
-      mockCreator = require('@adobe/aio-lib-core-logging')
+    beforeEach(async () => {
+      mockCreator = (await import('@adobe/aio-lib-core-logging')).default
       mockLogger = mockCreator()
       mockLogger.debug.mockClear()
       // reset fs and spinner mocks

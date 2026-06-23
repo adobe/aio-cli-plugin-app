@@ -1,14 +1,14 @@
-const { getAccessToken, bearerAuthHandler, setRuntimeApiHostAndAuthHandler } = require('../../../src/lib/auth-helper')
-const { getToken, context } = require('@adobe/aio-lib-ims')
-const { CLI } = require('@adobe/aio-lib-ims/src/context')
-const { getCliEnv } = require('@adobe/aio-lib-env')
+import { getAccessToken, bearerAuthHandler, setRuntimeApiHostAndAuthHandler } from '../../../src/lib/auth-helper.js'
+import { getToken, context } from '@adobe/aio-lib-ims'
+import { CLI } from '@adobe/aio-lib-ims/src/context'
+import { getCliEnv } from '@adobe/aio-lib-env'
 
-jest.mock('@adobe/aio-lib-ims')
-jest.mock('@adobe/aio-lib-env')
+vi.mock('@adobe/aio-lib-ims')
+vi.mock('@adobe/aio-lib-env')
 
 describe('getAccessToken', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   test('should get token using CLI context (default) if current context undefined', async () => {
@@ -59,7 +59,7 @@ describe('getAccessToken', () => {
 
 describe('bearerAuthHandler', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   test('getAuthHeader should return a Bearer token', async () => {
@@ -81,7 +81,7 @@ describe('setRuntimeApiHostAndAuthHandler', () => {
   }
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     delete process.env.AIO_DEPLOY_SERVICE_URL
   })
 

@@ -9,19 +9,19 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-const fs = require('fs-extra')
+import fs from 'fs-extra'
 
-const TheCommand = require('../../../../src/commands/app/add/ci')
-const BaseCommand = require('../../../../src/BaseCommand')
-const generators = require('@adobe/generator-aio-app')
+import TheCommand from '../../../../src/commands/app/add/ci.js'
+import BaseCommand from '../../../../src/BaseCommand.js'
+import generators from '@adobe/generator-aio-app'
 
-jest.mock('fs-extra')
+vi.mock('fs-extra')
 
-jest.mock('../../../../src/lib/create-yeoman-environment')
-const { createYeomanEnvironment } = require('../../../../src/lib/create-yeoman-environment')
+vi.mock('../../../../src/lib/create-yeoman-environment')
+import { createYeomanEnvironment } from '../../../../src/lib/create-yeoman-environment.js'
 
-const mockInstantiate = jest.fn()
-const mockRunGenerator = jest.fn()
+const mockInstantiate = vi.fn()
+const mockRunGenerator = vi.fn()
 createYeomanEnvironment.mockResolvedValue({
   instantiate: mockInstantiate,
   runGenerator: mockRunGenerator

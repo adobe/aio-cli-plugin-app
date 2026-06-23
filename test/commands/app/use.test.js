@@ -9,33 +9,33 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-const TheCommand = require('../../../src/commands/app/use')
-const BaseCommand = require('../../../src/BaseCommand')
-const importHelperLib = require('../../../src/lib/import-helper')
-const inquirer = require('inquirer')
-const { EOL } = require('os')
+import TheCommand from '../../../src/commands/app/use.js'
+import BaseCommand from '../../../src/BaseCommand.js'
+import * as importHelperLib from '../../../src/lib/import-helper.js'
+import inquirer from 'inquirer'
+import { EOL } from 'os'
 
 // mock inquirer
-const mockPrompt = jest.fn()
+const mockPrompt = vi.fn()
 inquirer.createPromptModule.mockReturnValue(mockPrompt)
 
 // mock LibConsoleCLI
-const consoleDataMocks = require('@adobe/aio-cli-lib-console/test/data-mocks')
-jest.mock('@adobe/aio-cli-lib-console')
-const LibConsoleCLI = require('@adobe/aio-cli-lib-console')
+import consoleDataMocks from '@adobe/aio-cli-lib-console/test/data-mocks'
+vi.mock('@adobe/aio-cli-lib-console')
+import LibConsoleCLI from '@adobe/aio-cli-lib-console'
 const mockConsoleCLIInstance = {
-  getWorkspaces: jest.fn(),
-  promptForSelectWorkspace: jest.fn(),
-  getEnabledServicesForOrg: jest.fn(),
-  subscribeToServicesWithCredentialType: jest.fn(),
-  getServicePropertiesFromWorkspaceWithCredentialType: jest.fn(),
-  getWorkspaceConfig: jest.fn(),
-  promptForCreateWorkspaceDetails: jest.fn(),
-  createWorkspace: jest.fn(),
-  selectOrCreateWorkspace: jest.fn(),
-  promptForUseOperation: jest.fn(),
+  getWorkspaces: vi.fn(),
+  promptForSelectWorkspace: vi.fn(),
+  getEnabledServicesForOrg: vi.fn(),
+  subscribeToServicesWithCredentialType: vi.fn(),
+  getServicePropertiesFromWorkspaceWithCredentialType: vi.fn(),
+  getWorkspaceConfig: vi.fn(),
+  promptForCreateWorkspaceDetails: vi.fn(),
+  createWorkspace: vi.fn(),
+  selectOrCreateWorkspace: vi.fn(),
+  promptForUseOperation: vi.fn(),
   prompt: {
-    promptConfirm: jest.fn()
+    promptConfirm: vi.fn()
   }
 }
 LibConsoleCLI.init.mockResolvedValue(mockConsoleCLIInstance)
@@ -66,8 +66,8 @@ function setDefaultMockConsoleCLI () {
 }
 
 // mock config
-jest.mock('@adobe/aio-lib-core-config')
-const mockConfig = require('@adobe/aio-lib-core-config')
+vi.mock('@adobe/aio-lib-core-config')
+import mockConfig from '@adobe/aio-lib-core-config'
 let fakeCurrentConfig = {}
 let fakeGlobalConfig = {}
 /** @private */
@@ -83,10 +83,10 @@ function setConfigMock () {
 }
 // mock login
 const mockAccessToken = 'some-access-token'
-const mockGetCli = jest.fn()
-const mockSetCli = jest.fn()
-const mockGetCurrent = jest.fn()
-jest.mock('@adobe/aio-lib-ims', () => {
+const mockGetCli = vi.fn()
+const mockSetCli = vi.fn()
+const mockGetCurrent = vi.fn()
+vi.mock('@adobe/aio-lib-ims', () => {
   return {
     context: {
       getCli: () => mockGetCli(),
@@ -98,12 +98,12 @@ jest.mock('@adobe/aio-lib-ims', () => {
 })
 
 // mock import config
-jest.mock('../../../src/lib/import-helper', () => {
-  const allAutoMocked = jest.createMockFromModule('../../../src/lib/import-helper')
-  const actual = jest.requireActual('../../../src/lib/import-helper')
+vi.mock('../../../src/lib/import-helper.js', async () => {
+  const actual = await vi.importActual('../../../src/lib/import-helper.js')
   return {
-    __esModules: true,
-    ...allAutoMocked,
+    ...Object.fromEntries(
+      Object.entries(actual).map(([k, v]) => [k, typeof v === 'function' ? vi.fn() : v])
+    ),
     formatPlayerName: actual.formatPlayerName
   }
 })
@@ -132,11 +132,11 @@ function mockInvalidConsoleImportConfig () {
 // mock data dir
 const savedDataDir = process.env.XDG_DATA_HOME
 process.env.XDG_DATA_HOME = 'data-dir'
-const path = require('path')
-const certDir = path.join('data-dir', '@adobe', 'aio-cli-plugin-app', 'entp-int-certs')
+import path from 'path'
+const certDir = path.join('data-dir', '@oclif', 'core', 'entp-int-certs')
 
 beforeEach(() => {
-  jest.clearAllMocks()
+  vi.clearAllMocks()
   mockGetCli.mockReturnValue({})
   importHelperLib.loadConfigFile.mockReset()
   importHelperLib.getServiceApiKey.mockReset()
@@ -413,6 +413,7 @@ describe('run with global configuration', () => {
       project: fakeGlobalConfig.project,
       workspace: fakeGlobalConfig.workspace,
       certDir,
+      credentialType: undefined,
       serviceProperties: currentServices
     })
   })
@@ -444,6 +445,7 @@ describe('run with global configuration', () => {
       project: fakeGlobalConfig.project,
       workspace: fakeGlobalConfig.workspace,
       certDir,
+      credentialType: undefined,
       serviceProperties: currentServices
     })
   })
@@ -477,6 +479,7 @@ describe('run with global configuration', () => {
       project: fakeGlobalConfig.project,
       workspace: fakeGlobalConfig.workspace,
       certDir,
+      credentialType: undefined,
       serviceProperties: currentServices
     })
   })
@@ -659,6 +662,7 @@ describe('switch to a workspace in the same org', () => {
       project: { id: fakeCurrentConfig.id, name: fakeCurrentConfig.name },
       workspace: { id: newWorkspace.id, name: newWorkspace.name },
       certDir,
+      credentialType: undefined,
       serviceProperties: currentServices
     })
   })
@@ -727,7 +731,7 @@ describe('switch to a workspace in the same org', () => {
     mockConsoleImportConfig()
     mockPrompt.mockReturnValueOnce({ res: true })
     const newWorkspace = consoleDataMocks.workspaces.find(w => w.name === 'Production')
-    const logSpy = jest.spyOn(console, 'error')
+    const logSpy = vi.spyOn(console, 'error')
 
     const currentServices = [consoleDataMocks.serviceProperties[0], consoleDataMocks.serviceProperties[1]]
     const servicesInTargetWorkspace = [consoleDataMocks.serviceProperties[0]]
@@ -756,6 +760,7 @@ describe('switch to a workspace in the same org', () => {
       project: { id: fakeCurrentConfig.id, name: fakeCurrentConfig.name },
       workspace: { id: newWorkspace.id, name: newWorkspace.name },
       certDir,
+      credentialType: undefined,
       serviceProperties: currentServices
     })
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(`⚠ Warning: you are authorizing to overwrite Services in your *Production* Workspace in Project '${fakeCurrentConfig.name}'`))

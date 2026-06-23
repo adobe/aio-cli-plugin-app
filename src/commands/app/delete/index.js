@@ -9,8 +9,8 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { Help } = require('@oclif/core')
-const BaseCommand = require('../../../BaseCommand')
+import { Help } from '@oclif/core'
+import BaseCommand from '../../../BaseCommand.js'
 
 class DeleteCommand extends BaseCommand {
   async run () {
@@ -23,4 +23,4 @@ DeleteCommand.description = 'Delete a component from an existing Adobe I/O App'
 
 DeleteCommand.args = {}
 
-module.exports = DeleteCommand
+export default DeleteCommand

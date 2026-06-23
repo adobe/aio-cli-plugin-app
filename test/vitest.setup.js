@@ -1,5 +1,5 @@
 /*
-Copyright 2019 Adobe. All rights reserved.
+Copyright 2026 Adobe. All rights reserved.
 This file is licensed to you under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License. You may obtain a copy
 of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -10,16 +10,15 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { stdout, stderr } = require('stdout-stderr')
-const upath = require('upath')
+import { stdout, stderr } from 'stdout-stderr'
+import upath from 'upath'
 
-jest.setTimeout(45000)
-
-const fs = require('fs')
-const eol = require('eol')
-const path = require('path')
-const hjson = require('hjson')
-const jsYaml = require('js-yaml')
+import fs from 'fs'
+import eol from 'eol'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import hjson from 'hjson'
+import jsYaml from 'js-yaml'
 
 // trap console log
 beforeEach(() => {
@@ -35,25 +34,29 @@ process.on('unhandledRejection', error => {
 })
 
 // don't wait for user input in tests
-jest.mock('inquirer', () => ({ prompt: jest.fn(), createPromptModule: jest.fn(() => jest.fn()) }))
+vi.mock('inquirer', () => ({ default: { prompt: vi.fn(), createPromptModule: vi.fn(() => vi.fn()) } }))
 // make sure we mock the app scripts
-jest.mock('@adobe/aio-lib-web')
+vi.mock('@adobe/aio-lib-web')
 //
-jest.mock('ora')
+vi.mock('ora')
 //
-jest.mock('which')
+vi.mock('which')
 //
-jest.mock('execa')
+vi.mock('execa')
 
-jest.mock('@adobe/aio-lib-env')
+vi.mock('@adobe/aio-lib-env')
+vi.mock('@adobe/aio-lib-runtime')
+vi.mock('@adobe/aio-lib-core-config')
+vi.mock('@adobe/aio-lib-core-logging')
+vi.mock('@adobe/aio-lib-ims')
 
 // oclif v4's parse() calls this.config.runHook('preparse', ...) which requires
 // a mock config when commands are instantiated directly in tests
 global.createOclifMockConfig = (overrides = {}) => ({
-  runHook: jest.fn().mockResolvedValue({ successes: [] }),
-  runCommand: jest.fn(),
-  findCommand: jest.fn(),
-  getPluginsList: jest.fn().mockReturnValue([]),
+  runHook: vi.fn().mockResolvedValue({ successes: [] }),
+  runCommand: vi.fn(),
+  findCommand: vi.fn(),
+  getPluginsList: vi.fn().mockReturnValue([]),
   ...overrides
 })
 
@@ -80,7 +83,7 @@ global.getErrorForCallThatShouldThrowAnError = async (callThatShouldThrowAnError
 }
 
 global.setFetchMock = (ok = true, status = 200, mockData = {}) => {
-  global.fetch = jest.fn().mockResolvedValue({
+  global.fetch = vi.fn().mockResolvedValue({
     ok,
     status,
     text: () => Promise.resolve(mockData)
@@ -89,6 +92,7 @@ global.setFetchMock = (ok = true, status = 200, mockData = {}) => {
 
 /* global fixtureFile, fixtureJson */
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const fixturesFolder = path.join(__dirname, '__fixtures__')
 
 global.fixturePath = (file) => {

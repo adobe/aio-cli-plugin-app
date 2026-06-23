@@ -10,9 +10,10 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const EventEmitter = require('events')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:log-poller', { provider: 'debug' })
-const { printActionLogs } = require('@adobe/aio-lib-runtime')
+import EventEmitter from 'events'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:log-poller', { provider: 'debug' })
+import { printActionLogs } from '@adobe/aio-lib-runtime'
 
 const FETCH_LOG_INTERVAL = 10000
 
@@ -111,7 +112,7 @@ const run = async (config, logInterval = FETCH_LOG_INTERVAL) => {
   }
 }
 
-module.exports = {
+export {
   EventPoller,
   run
 }

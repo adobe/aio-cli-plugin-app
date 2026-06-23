@@ -10,32 +10,32 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const runDev = require('../../../src/lib/run-dev')
-const cloneDeep = require('lodash.clonedeep')
-const dataMocks = require('../../data-mocks/config-loader')
-const defaults = require('../../../src/lib/defaults')
-const getPort = require('get-port')
+import runDev from '../../../src/lib/run-dev.js'
+import cloneDeep from 'lodash.clonedeep'
+import dataMocks from '../../data-mocks/config-loader.js'
+import * as defaults from '../../../src/lib/defaults.js'
+import getPort from 'get-port'
 
-const { bundle } = require('@adobe/aio-lib-web')
-const bundleServe = require('../../../src/lib/bundle-serve')
-const serve = require('../../../src/lib/serve')
-const Cleanup = require('../../../src/lib/cleanup')
-const buildActions = require('../../../src/lib/build-actions')
-const deployActions = require('../../../src/lib/deploy-actions')
-const mockRuntimeLib = require('@adobe/aio-lib-runtime')
-const logPoller = require('../../../src/lib/log-poller')
-const appHelper = require('../../../src/lib/app-helper')
-const actionsWatcher = require('../../../src/lib/actions-watcher')
+import { bundle } from '@adobe/aio-lib-web'
+import bundleServe from '../../../src/lib/bundle-serve.js'
+import serve from '../../../src/lib/serve.js'
+import Cleanup from '../../../src/lib/cleanup.js'
+import buildActions from '../../../src/lib/build-actions.js'
+import deployActions from '../../../src/lib/deploy-actions.js'
+import mockRuntimeLib from '@adobe/aio-lib-runtime'
+import * as logPoller from '../../../src/lib/log-poller.js'
+import * as appHelper from '../../../src/lib/app-helper.js'
+import actionsWatcher from '../../../src/lib/actions-watcher.js'
 
-jest.mock('../../../src/lib/actions-watcher')
-jest.mock('../../../src/lib/app-helper')
-jest.mock('../../../src/lib/cleanup')
-jest.mock('../../../src/lib/bundle-serve')
-jest.mock('../../../src/lib/serve')
-jest.mock('../../../src/lib/build-actions')
-jest.mock('../../../src/lib/deploy-actions')
-jest.mock('../../../src/lib/log-poller')
-jest.mock('get-port')
+vi.mock('../../../src/lib/actions-watcher')
+vi.mock('../../../src/lib/app-helper')
+vi.mock('../../../src/lib/cleanup')
+vi.mock('../../../src/lib/bundle-serve')
+vi.mock('../../../src/lib/serve')
+vi.mock('../../../src/lib/build-actions')
+vi.mock('../../../src/lib/deploy-actions')
+vi.mock('../../../src/lib/log-poller')
+vi.mock('get-port')
 
 const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
   const appConfig = dataMocks(appFixtureName, aioConfig).all
@@ -67,31 +67,31 @@ beforeEach(() => {
   })
 
   logPoller.run.mockImplementation(() => ({
-    cleanup: jest.fn()
+    cleanup: vi.fn()
   }))
 
   actionsWatcher.mockImplementation(() => ({
-    cleanup: jest.fn()
+    cleanup: vi.fn()
   }))
 
   bundle.mockImplementation(() => ({
     bundler: {},
-    cleanup: jest.fn()
+    cleanup: vi.fn()
   }))
   serve.mockImplementation(() => ({
     url: FRONTEND_URL,
-    cleanup: jest.fn()
+    cleanup: vi.fn()
   }))
   bundleServe.mockImplementation(() => ({
     url: FRONTEND_URL,
-    cleanup: jest.fn()
+    cleanup: vi.fn()
   }))
 
   Cleanup.mockImplementation(() => {
     return {
-      add: jest.fn(),
-      run: jest.fn(),
-      wait: jest.fn()
+      add: vi.fn(),
+      run: vi.fn(),
+      wait: vi.fn()
     }
   })
 })
@@ -224,13 +224,13 @@ test('calls cleanup on exception - hasBackend:false', async () => {
   Cleanup.mockImplementation(() => {
     const fns = []
     return {
-      add: jest.fn((fn) => {
+      add: vi.fn((fn) => {
         fns.push(fn)
       }),
-      run: jest.fn(() => {
+      run: vi.fn(() => {
         fns.forEach(fn => fn())
       }),
-      wait: jest.fn(() => {
+      wait: vi.fn(() => {
         throw new Error('Expect the unexpected')
       })
     }
@@ -248,13 +248,13 @@ test('calls cleanup on exception - hasFrontend:false', async () => {
   Cleanup.mockImplementation(() => {
     const fns = []
     return {
-      add: jest.fn((fn) => {
+      add: vi.fn((fn) => {
         fns.push(fn)
       }),
-      run: jest.fn(() => {
+      run: vi.fn(() => {
         fns.forEach(fn => fn())
       }),
-      wait: jest.fn(() => {
+      wait: vi.fn(() => {
         throw new Error('Expect the unexpected')
       })
     }
@@ -272,13 +272,13 @@ test('calls cleanup on exception - hasBackend && !skipActions', async () => {
   Cleanup.mockImplementation(() => {
     const fns = []
     return {
-      add: jest.fn((fn) => {
+      add: vi.fn((fn) => {
         fns.push(fn)
       }),
-      run: jest.fn(() => {
+      run: vi.fn(() => {
         fns.forEach(fn => fn())
       }),
-      wait: jest.fn(() => {
+      wait: vi.fn(() => {
         throw new Error('Expect the unexpected')
       })
     }
@@ -296,13 +296,13 @@ test('calls cleanup on exception - hasFrontend && !skipActions && skipServe && f
   Cleanup.mockImplementation(() => {
     const fns = []
     return {
-      add: jest.fn((fn) => {
+      add: vi.fn((fn) => {
         fns.push(fn)
       }),
-      run: jest.fn(() => {
+      run: vi.fn(() => {
         fns.forEach(fn => fn())
       }),
-      wait: jest.fn(() => {
+      wait: vi.fn(() => {
         throw new Error('Expect the unexpected')
       })
     }
@@ -320,13 +320,13 @@ test('calls cleanup on exception)', async () => {
   Cleanup.mockImplementation(() => {
     const fns = []
     return {
-      add: jest.fn((fn) => {
+      add: vi.fn((fn) => {
         fns.push(fn)
       }),
-      run: jest.fn(() => {
+      run: vi.fn(() => {
         fns.forEach(fn => fn())
       }),
-      wait: jest.fn(() => {
+      wait: vi.fn(() => {
         throw new Error('Expect the unexpected')
       })
     }

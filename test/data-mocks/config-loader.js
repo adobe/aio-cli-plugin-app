@@ -10,22 +10,22 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const path = require('path')
+import path from 'path'
 const winCompat = p => {
   return p.startsWith('/') ? path.resolve(p) : path.normalize(p) // path.resolve to get C or D
 }
 
-const cloneDeep = require('lodash.clonedeep')
+import cloneDeep from 'lodash.clonedeep'
 const root = winCompat('/')
 // const dataDir = 'fakeDir'
-const {
+import {
   excComplexIncludeIndex,
   appExcNuiIncludeIndex,
   appIncludeIndex,
   appNoActionsIncludeIndex,
   excIncludeIndex,
   legacyIncludeIndex
-} = require('./config-loader-include-index')
+} from './config-loader-include-index.js'
 
 const ow = {
   defaultApihost: 'https://adobeioruntime.net',
@@ -440,7 +440,7 @@ const expectedConfigs = {
 }
 
 // get config for fixture - that works
-module.exports = (appFixtureName, mockedAIOConfig, rewriteMockConfig = {}) => {
+export default (appFixtureName, mockedAIOConfig, rewriteMockConfig = {}) => {
   // important deepCopy to modify mock
   const config = cloneDeep(expectedConfigs[appFixtureName])
 

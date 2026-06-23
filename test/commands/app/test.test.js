@@ -10,21 +10,21 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../src/commands/app/test')
-const BaseCommand = require('../../../src/BaseCommand')
-const appHelper = require('../../../src/lib/app-helper')
+import TheCommand from '../../../src/commands/app/test.js'
+import BaseCommand from '../../../src/BaseCommand.js'
+import * as appHelper from '../../../src/lib/app-helper.js'
 
 // mocks
-jest.mock('../../../src/lib/app-helper')
+vi.mock('../../../src/lib/app-helper')
 
-const mockGetAppExtConfigs = jest.fn()
+const mockGetAppExtConfigs = vi.fn()
 
 beforeAll(() => {
-  jest.spyOn(BaseCommand.prototype, 'getAppExtConfigs').mockImplementation(mockGetAppExtConfigs)
+  vi.spyOn(BaseCommand.prototype, 'getAppExtConfigs').mockImplementation(mockGetAppExtConfigs)
 })
 
 afterAll(() => {
-  jest.clearAllMocks()
+  vi.clearAllMocks()
 })
 
 /** @private */
@@ -129,7 +129,7 @@ describe('run', () => {
   beforeEach(() => {
     command = new TheCommand([])
     command.config = global.createOclifMockConfig()
-    command.error = jest.fn()
+    command.error = vi.fn()
 
     appHelper.runScript.mockClear()
     appHelper.runScript.mockResolvedValue({ exitCode: 0 })

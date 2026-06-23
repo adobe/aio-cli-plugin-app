@@ -10,13 +10,13 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../src/commands/app/info.js')
-const BaseCommand = require('../../../src/BaseCommand.js')
-const yaml = require('js-yaml')
+import TheCommand from '../../../src/commands/app/info.js'
+import BaseCommand from '../../../src/BaseCommand.js'
+import yaml from 'js-yaml'
 
-const mockConfigLoader = require('@adobe/aio-cli-lib-app-config')
-jest.mock('@adobe/aio-cli-lib-app-config')
-const getMockConfig = require('../../data-mocks/config-loader')
+import mockConfigLoader from '@adobe/aio-cli-lib-app-config'
+vi.mock('@adobe/aio-cli-lib-app-config')
+import getMockConfig from '../../data-mocks/config-loader.js'
 
 test('exports', async () => {
   expect(typeof TheCommand).toEqual('function')
@@ -74,8 +74,8 @@ describe('run', () => {
 
     const command = new TheCommand([])
     command.config = global.createOclifMockConfig()
-    command.error = jest.fn()
-    command.log = jest.fn()
+    command.error = vi.fn()
+    command.log = vi.fn()
     await command.run()
     expect(mockConfigLoader.load).toHaveBeenCalledWith({ allowNoImpl: true, validateAppConfig: true })
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -92,8 +92,8 @@ describe('run', () => {
 
     const command = new TheCommand(['--json'])
     command.config = global.createOclifMockConfig()
-    command.error = jest.fn()
-    command.log = jest.fn()
+    command.error = vi.fn()
+    command.log = vi.fn()
     await command.run()
     expect(mockConfigLoader.load).toHaveBeenCalledWith({ allowNoImpl: true, validateAppConfig: true })
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -109,8 +109,8 @@ describe('run', () => {
     )
     const command = new TheCommand(['--yml'])
     command.config = global.createOclifMockConfig()
-    command.error = jest.fn()
-    command.log = jest.fn()
+    command.error = vi.fn()
+    command.log = vi.fn()
     await command.run()
     expect(mockConfigLoader.load).toHaveBeenCalledWith({ allowNoImpl: true, validateAppConfig: true })
     expect(command.error).toHaveBeenCalledTimes(0)
@@ -126,8 +126,8 @@ describe('run', () => {
     )
     const command = new TheCommand([])
     command.config = global.createOclifMockConfig()
-    command.error = jest.fn()
-    command.log = jest.fn()
+    command.error = vi.fn()
+    command.log = vi.fn()
     await command.run()
     expect(mockConfigLoader.load).toHaveBeenCalledWith({ allowNoImpl: true, validateAppConfig: true })
     expect(command.error).toHaveBeenCalledTimes(0)

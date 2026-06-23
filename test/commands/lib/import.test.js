@@ -9,20 +9,20 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-const inquirer = require('inquirer')
-const fs = require('fs-extra')
+import inquirer from 'inquirer'
+import fs from 'fs-extra'
 
 // mock prompt before import
-const mockPrompt = jest.fn()
+const mockPrompt = vi.fn()
 inquirer.createPromptModule.mockReturnValue(mockPrompt)
 
-const { importConsoleConfig, downloadConsoleConfigToBuffer } = require('../../../src/lib/import')
-const { SERVICE_API_KEY_ENV, IMS_OAUTH_S2S_ENV } = require('../../../src/lib/defaults')
+import { importConsoleConfig, downloadConsoleConfigToBuffer } from '../../../src/lib/import.js'
+import { SERVICE_API_KEY_ENV, IMS_OAUTH_S2S_ENV } from '../../../src/lib/defaults.js'
 
-jest.mock('fs-extra')
+vi.mock('fs-extra')
 
 beforeEach(() => {
-  jest.clearAllMocks()
+  vi.clearAllMocks()
 })
 
 test('exports', () => {

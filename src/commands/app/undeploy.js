@@ -10,17 +10,17 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const ora = require('ora')
-const chalk = require('chalk')
+import ora from 'ora'
+import chalk from 'chalk'
 
-const { Flags } = require('@oclif/core')
+import { Flags } from '@oclif/core'
 
-const BaseCommand = require('../../BaseCommand')
-const webLib = require('@adobe/aio-lib-web')
-const { runInProcess, buildExtensionPointPayloadWoMetadata } = require('../../lib/app-helper')
-const rtLib = require('@adobe/aio-lib-runtime')
-const { sendAppAssetsUndeployedAuditLog, sendAppUndeployAuditLog } = require('../../lib/audit-logger')
-const { setRuntimeApiHostAndAuthHandler, getAccessToken } = require('../../lib/auth-helper')
+import BaseCommand from '../../BaseCommand.js'
+import webLib from '@adobe/aio-lib-web'
+import { runInProcess, buildExtensionPointPayloadWoMetadata } from '../../lib/app-helper.js'
+import rtLib from '@adobe/aio-lib-runtime'
+import { sendAppAssetsUndeployedAuditLog, sendAppUndeployAuditLog } from '../../lib/audit-logger.js'
+import { setRuntimeApiHostAndAuthHandler, getAccessToken } from '../../lib/auth-helper.js'
 
 class Undeploy extends BaseCommand {
   async run () {
@@ -229,4 +229,4 @@ Undeploy.flags = {
 
 Undeploy.args = {}
 
-module.exports = Undeploy
+export default Undeploy

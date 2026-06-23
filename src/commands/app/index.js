@@ -10,8 +10,8 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { Help } = require('@oclif/core')
-const BaseCommand = require('../../BaseCommand')
+import { Help } from '@oclif/core'
+import BaseCommand from '../../BaseCommand.js'
 
 class IndexCommand extends BaseCommand {
   async run () {
@@ -24,4 +24,4 @@ IndexCommand.description = 'Create, run, test, and deploy Adobe I/O Apps'
 
 IndexCommand.args = {}
 
-module.exports = IndexCommand
+export default IndexCommand

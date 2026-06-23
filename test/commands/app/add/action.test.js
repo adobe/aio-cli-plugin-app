@@ -10,17 +10,19 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../../src/commands/app/add/action')
-const TemplatesCommand = require('../../../../src/TemplatesCommand')
-const dataMocks = require('../../../data-mocks/config-loader')
-const inquirer = require('inquirer')
-const config = require('@adobe/aio-lib-core-config')
+import TheCommand from '../../../../src/commands/app/add/action.js'
+import TemplatesCommand from '../../../../src/TemplatesCommand.js'
+import dataMocks from '../../../data-mocks/config-loader.js'
+import inquirer from 'inquirer'
+import config from '@adobe/aio-lib-core-config'
 
-jest.mock('@adobe/aio-lib-core-config')
-jest.mock('fs-extra')
-jest.mock('inquirer', () => ({
-  registerPrompt: jest.fn(),
-  prompt: jest.fn()
+vi.mock('@adobe/aio-lib-core-config')
+vi.mock('fs-extra')
+vi.mock('inquirer', () => ({
+  default: {
+    registerPrompt: vi.fn(),
+    prompt: vi.fn()
+  }
 }))
 
 const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
@@ -29,21 +31,21 @@ const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
   return appConfig
 }
 
-const mockGetEnabledServicesForOrg = jest.fn()
+const mockGetEnabledServicesForOrg = vi.fn()
 
 let command
 
 beforeEach(() => {
-  config.get = jest.fn((key) => {
+  config.get = vi.fn((key) => {
     if (key === 'project.org.id') {
       return 'some-id'
     }
   })
 
   command = new TheCommand([])
-  command.getAppExtConfigs = jest.fn()
+  command.getAppExtConfigs = vi.fn()
   command.getAppExtConfigs.mockResolvedValue(createAppConfig(command.appConfig))
-  command.getFullConfig = jest.fn()
+  command.getFullConfig = vi.fn()
   command.getFullConfig.mockResolvedValue({
     packagejson: {
       version: '1.0.0',
@@ -53,17 +55,17 @@ beforeEach(() => {
       }
     }
   })
-  command.getConfigFileForKey = jest.fn()
+  command.getConfigFileForKey = vi.fn()
   command.getConfigFileForKey.mockResolvedValue({})
-  command.getLibConsoleCLI = jest.fn()
+  command.getLibConsoleCLI = vi.fn()
   command.getLibConsoleCLI.mockResolvedValue({
     getEnabledServicesForOrg: mockGetEnabledServicesForOrg
   })
   command.config = global.createOclifMockConfig({ bin: 'aio' })
 
-  command.selectTemplates = jest.fn()
+  command.selectTemplates = vi.fn()
   command.selectTemplates.mockResolvedValue([])
-  command.installTemplates = jest.fn()
+  command.installTemplates = vi.fn()
 
   mockGetEnabledServicesForOrg.mockClear()
   inquirer.prompt.mockClear()
@@ -83,7 +85,7 @@ test('bad flags', async () => {
 })
 
 test('.aio config missing', async () => {
-  config.get = jest.fn() // return nothing from the config
+  config.get = vi.fn() // return nothing from the config
   command.argv = []
   await expect(command.run()).rejects.toThrow('Incomplete .aio configuration')
 })

@@ -14,4 +14,4 @@ governing permissions and limitations under the License.
 function main (args) {
   return 'hello'
 }
-exports.main = main
+export { main }

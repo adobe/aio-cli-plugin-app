@@ -9,10 +9,11 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TemplatesCommand = require('../../../TemplatesCommand')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:web-assets', { provider: 'debug' })
-const { Flags } = require('@oclif/core')
-const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
+import TemplatesCommand from '../../../TemplatesCommand.js'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:add:web-assets', { provider: 'debug' })
+import { Flags } from '@oclif/core'
+import TemplateRegistryAPI from '@adobe/aio-lib-templates'
 
 class AddWebAssetsCommand extends TemplatesCommand {
   async run () {
@@ -77,4 +78,4 @@ AddWebAssetsCommand.flags = {
 
 AddWebAssetsCommand.args = {}
 
-module.exports = AddWebAssetsCommand
+export default AddWebAssetsCommand

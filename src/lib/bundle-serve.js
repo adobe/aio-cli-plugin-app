@@ -10,7 +10,8 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:bundle-serve', { provider: 'debug' })
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:bundle-serve', { provider: 'debug' })
 
 /**
  * @typedef {object} BundleWebObject
@@ -26,7 +27,7 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
  * @param {Function} [log] the app logger
  * @returns {BundleWebObject} the BundleWebObject
  */
-module.exports = async (bundler, options, log = () => {}) => {
+export default async (bundler, options, log = () => {}) => {
   log('serving front-end using bundler serve...')
 
   const { unsubscribe } = await bundler.watch((err) => {

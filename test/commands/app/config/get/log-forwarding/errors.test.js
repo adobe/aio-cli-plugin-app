@@ -10,14 +10,16 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { stdout } = require('stdout-stderr')
-const TheCommand = require('../../../../../../src/commands/app/config/get/log-forwarding/errors.js')
-const rtLib = require('@adobe/aio-lib-runtime')
+import TheCommand from '../../../../../../src/commands/app/config/get/log-forwarding/errors.js'
+import rtLib from '@adobe/aio-lib-runtime'
+import ora from 'ora'
 
-jest.mock('@adobe/aio-lib-runtime', () => ({
-  init: jest.fn(),
-  utils: {
-    checkOpenWhiskCredentials: jest.fn()
+vi.mock('@adobe/aio-lib-runtime', () => ({
+  default: {
+    init: vi.fn(),
+    utils: {
+      checkOpenWhiskCredentials: vi.fn()
+    }
   }
 }))
 
@@ -37,7 +39,7 @@ beforeEach(async () => {
     }
   }
   logForwarding = {
-    getErrors: jest.fn()
+    getErrors: vi.fn()
   }
   rtLib.init.mockResolvedValue({ logForwarding })
 })
@@ -50,9 +52,10 @@ test('get log forwarding errors with errors', async () => {
   })
 
   await command.run()
-  expect(stdout.output).toContain('Log forwarding errors for the last configured destination \'test-destination\':')
-  expect(stdout.output).toContain('Error 1')
-  expect(stdout.output).toContain('Error 2')
+  const spinner = ora()
+  expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Log forwarding errors for the last configured destination \'test-destination\':'))
+  expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Error 1'))
+  expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Error 2'))
 })
 
 test('get log forwarding errors without errors', async () => {
@@ -62,7 +65,8 @@ test('get log forwarding errors without errors', async () => {
   })
 
   await command.run()
-  expect(stdout.output).toContain('No log forwarding errors for the last configured destination \'test-destination\'')
+  const spinner = ora()
+  expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('No log forwarding errors for the last configured destination \'test-destination\''))
 })
 
 test('get log forwarding errors without configured forwarder', async () => {
@@ -71,8 +75,9 @@ test('get log forwarding errors without configured forwarder', async () => {
   })
 
   await command.run()
-  expect(stdout.output).toContain('Log forwarding errors:')
-  expect(stdout.output).toContain('Error 1')
+  const spinner = ora()
+  expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Log forwarding errors:'))
+  expect(spinner.succeed).toHaveBeenCalledWith(expect.stringContaining('Error 1'))
 })
 
 test('failed to get log forwarding errors', async () => {

@@ -10,12 +10,12 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const deployActions = require('../../../src/lib/deploy-actions')
-const { deployActions: rtDeployActions } = require('@adobe/aio-lib-runtime')
-const utils = require('../../../src/lib/app-helper')
-const appHelperActual = jest.requireActual('../../../src/lib/app-helper')
+import deployActions from '../../../src/lib/deploy-actions.js'
+import { deployActions as rtDeployActions } from '@adobe/aio-lib-runtime'
+import * as utils from '../../../src/lib/app-helper.js'
+const appHelperActual = await vi.importActual('../../../src/lib/app-helper.js')
 
-jest.mock('../../../src/lib/app-helper')
+vi.mock('../../../src/lib/app-helper')
 
 const createWebExportAnnotation = (value) => ({
   annotations: { 'web-export': value }
@@ -94,7 +94,7 @@ test('no deploy-actions app hook available (use inbuilt)', async () => {
 })
 
 test('call inprocHook no filter', async () => {
-  const mockHook = jest.fn()
+  const mockHook = vi.fn()
   const config = { hooks: {} }
   const deployConfig = {
     isLocalDev: false,
@@ -113,7 +113,7 @@ test('call inprocHook no filter', async () => {
 })
 
 test('call inprocHook with filter : isLocalDev false', async () => {
-  const mockHook = jest.fn()
+  const mockHook = vi.fn()
   const config = { hooks: {} }
   const deployConfig = {
     isLocalDev: false,
@@ -134,7 +134,7 @@ test('call inprocHook with filter : isLocalDev false', async () => {
 })
 
 test('call inprocHook with filter : isLocalDev true', async () => {
-  const mockHook = jest.fn()
+  const mockHook = vi.fn()
   const config = { hooks: {} }
   const deployConfig = {
     isLocalDev: true,
@@ -155,11 +155,11 @@ test('call inprocHook with filter : isLocalDev true', async () => {
 })
 
 test('throws if hook returns failures', async () => {
-  const mockHook = jest.fn().mockResolvedValueOnce({
+  const mockHook = vi.fn().mockResolvedValueOnce({
     successes: [],
     failures: [{ plugin: { name: 'ifailedu' }, error: 'some error' }]
   })
-  const mockLog = jest.fn()
+  const mockLog = vi.fn()
   const config = { hooks: {} }
   const deployConfig = {
     isLocalDev: true,
@@ -203,7 +203,7 @@ test('should log actions url or name when actions are deployed (web-export: true
       { name: 'pkg/actionNoUrl', ...createWebExportAnnotation(true) }
     ]
   })
-  const log = jest.fn()
+  const log = vi.fn()
   const config = { hooks: {} }
   const deployConfig = {
     isLocalDev: false,
@@ -224,7 +224,7 @@ test('should log actions url or name when actions are deployed (web-export: fals
     ]
   })
   {
-    const log = jest.fn()
+    const log = vi.fn()
     const config = { hooks: {} }
     const deployConfig = {
       isLocalDev: false,
@@ -237,7 +237,7 @@ test('should log actions url or name when actions are deployed (web-export: fals
     expect(log).toHaveBeenCalledWith(expect.stringContaining('pkg/actionNoUrl'))
   }
   {
-    const log = jest.fn()
+    const log = vi.fn()
     const config = { hooks: {} }
     const deployConfig = {
       isLocalDev: false,

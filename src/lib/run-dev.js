@@ -9,22 +9,26 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:runDev', { provider: 'debug' })
-const rtLib = require('@adobe/aio-lib-runtime')
+import { fileURLToPath } from 'node:url'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:runDev', { provider: 'debug' })
+import rtLib from '@adobe/aio-lib-runtime'
 const rtLibUtils = rtLib.utils
-const { bundle } = require('@adobe/aio-lib-web')
-const bundleServe = require('./bundle-serve')
-const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('./defaults')
-const serve = require('./serve')
-const Cleanup = require('./cleanup')
+import { bundle } from '@adobe/aio-lib-web'
+import bundleServe from './bundle-serve.js'
+import { defaultHttpServerPort as SERVER_DEFAULT_PORT } from './defaults.js'
+import serve from './serve.js'
+import Cleanup from './cleanup.js'
 
-const buildActions = require('./build-actions')
-const deployActions = require('./deploy-actions')
-const actionsWatcher = require('./actions-watcher')
+import buildActions from './build-actions.js'
+import deployActions from './deploy-actions.js'
+import actionsWatcher from './actions-watcher.js'
 
-const utils = require('./app-helper')
-const { run: logPoller } = require('./log-poller')
-const getPort = require('get-port')
+import * as utils from './app-helper.js'
+import { run as logPoller } from './log-poller.js'
+import getPort from 'get-port'
+
+const __filename = fileURLToPath(import.meta.url)
 
 /** @private */
 async function runDev (config, dataDir, options = {}, log = () => {}, inprocHook) {
@@ -172,4 +176,4 @@ async function runDev (config, dataDir, options = {}, log = () => {}, inprocHook
   return frontEndUrl
 }
 
-module.exports = runDev
+export default runDev

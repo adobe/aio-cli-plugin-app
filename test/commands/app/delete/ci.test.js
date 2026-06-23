@@ -9,12 +9,12 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-const fs = require('fs-extra')
+import fs from 'fs-extra'
 
-const TheCommand = require('../../../../src/commands/app/delete/ci')
-const BaseCommand = require('../../../../src/BaseCommand')
+import TheCommand from '../../../../src/commands/app/delete/ci.js'
+import BaseCommand from '../../../../src/BaseCommand.js'
 
-jest.mock('fs-extra')
+vi.mock('fs-extra')
 
 let command
 
@@ -24,7 +24,7 @@ beforeEach(() => {
   fs.existsSync.mockClear()
   command = new TheCommand([])
   command.config = global.createOclifMockConfig()
-  command.prompt = jest.fn()
+  command.prompt = vi.fn()
 })
 
 test('exports', async () => {

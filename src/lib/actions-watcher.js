@@ -9,11 +9,12 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-const upath = require('upath')
-const chokidar = require('chokidar')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:actions-watcher', { provider: 'debug' })
-const buildActions = require('./build-actions')
-const deployActions = require('./deploy-actions')
+import upath from 'upath'
+import chokidar from 'chokidar'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:actions-watcher', { provider: 'debug' })
+import buildActions from './build-actions.js'
+import deployActions from './deploy-actions.js'
 
 /**
  * @typedef {object} WatchReturnObject
@@ -34,7 +35,7 @@ const deployActions = require('./deploy-actions')
  * @param {WatcherOptions} watcherOptions the options for the watcher
  * @returns {WatchReturnObject} the WatchReturnObject
  */
-module.exports = async (watcherOptions) => {
+export default async (watcherOptions) => {
   const { config, log } = watcherOptions
 
   log(`watching action files at ${config.actions.src} ...`)

@@ -9,20 +9,21 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:delete:service', { provider: 'debug' })
-const config = require('@adobe/aio-lib-core-config')
-const chalk = require('chalk')
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:delete:service', { provider: 'debug' })
+import config from '@adobe/aio-lib-core-config'
+import chalk from 'chalk'
 
-const {
+import {
   setOrgServicesConfig,
   setWorkspaceServicesConfig,
   warnIfOverwriteServicesInProductionWorkspace
-} = require('../../../lib/app-helper')
+} from '../../../lib/app-helper.js'
 
-const BaseCommand = require('../../../BaseCommand')
-const { Flags } = require('@oclif/core')
+import BaseCommand from '../../../BaseCommand.js'
+import { Flags } from '@oclif/core'
 
-const { getProjectCredentialType } = require('../../../lib/import-helper')
+import { getProjectCredentialType } from '../../../lib/import-helper.js'
 
 class DeleteServiceCommand extends BaseCommand {
   async run () {
@@ -117,4 +118,4 @@ DeleteServiceCommand.flags = {
 DeleteServiceCommand.aliases = ['app:delete:services']
 DeleteServiceCommand.args = {}
 
-module.exports = DeleteServiceCommand
+export default DeleteServiceCommand

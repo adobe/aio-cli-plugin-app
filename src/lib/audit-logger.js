@@ -181,7 +181,7 @@ async function sendAppAssetsUndeployedAuditLog ({ accessToken, cliCommandFlags, 
   return publishAuditLogs({ accessToken, logEvent, env })
 }
 
-module.exports = {
+export {
   OPERATIONS,
   AUDIT_SERVICE_ENDPOINT_ROUTE,
   AUDIT_SERVICE_ENDPOINTS,

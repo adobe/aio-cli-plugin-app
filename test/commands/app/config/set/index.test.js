@@ -10,13 +10,13 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../../../src/commands/app/config/set/index.js')
-const { Help } = require('@oclif/core')
+import TheCommand from '../../../../../src/commands/app/config/set/index.js'
+import { Help } from '@oclif/core'
 
 test('returns help file for app:config:set command', () => {
   const command = new TheCommand([])
   command.config = global.createOclifMockConfig()
-  const spy = jest.spyOn(Help.prototype, 'showHelp').mockReturnValue(true)
+  const spy = vi.spyOn(Help.prototype, 'showHelp').mockReturnValue(true)
   return command.run().then(() => {
     expect(spy).toHaveBeenCalledWith(['app:config:set', '--help'])
   })

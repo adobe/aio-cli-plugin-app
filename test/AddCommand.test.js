@@ -11,13 +11,13 @@ governing permissions and limitations under the License.
 */
 
 // mock install app helper
-const mockInstallPackages = jest.fn()
-jest.mock('../src/lib/app-helper.js', () => ({
+const mockInstallPackages = vi.hoisted(() => vi.fn())
+vi.mock('../src/lib/app-helper.js', () => ({
   installPackages: mockInstallPackages
 }))
 
-const TheCommand = require('../src/AddCommand')
-const BaseCommand = require('../src/BaseCommand')
+import TheCommand from '../src/AddCommand.js'
+import BaseCommand from '../src/BaseCommand.js'
 
 beforeEach(() => {
   mockInstallPackages.mockClear()
@@ -47,7 +47,7 @@ describe('installPackages', () => {
 
   test('--no-install', async () => {
     const command = new TheCommand()
-    command.log = jest.fn()
+    command.log = vi.fn()
     await command.runInstallPackages({ install: false }, () => {})
     expect(mockInstallPackages).not.toHaveBeenCalled()
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('skipped installation'))

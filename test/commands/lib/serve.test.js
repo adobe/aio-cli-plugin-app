@@ -10,37 +10,37 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const serve = require('../../../src/lib/serve')
-const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('../../../src/lib/defaults')
-const https = require('https')
-const httpTerminator = require('http-terminator')
-const fs = require('fs-extra')
+import serve from '../../../src/lib/serve.js'
+import { defaultHttpServerPort as SERVER_DEFAULT_PORT } from '../../../src/lib/defaults.js'
+import https from 'https'
+import httpTerminator from 'http-terminator'
+import fs from 'fs-extra'
 
 let SERVER_AVAILABLE_PORT
 
-jest.mock('fs-extra')
-jest.mock('serve-static')
-jest.mock('https')
-jest.mock('http-terminator')
-jest.mock('pure-http', () => () => mockUIServerInstance)
+const mockUIServerInstance = vi.hoisted(() => ({
+  use: vi.fn(),
+  listen: vi.fn(),
+  close: vi.fn()
+}))
 
-const mockUIServerInstance = {
-  use: jest.fn(),
-  listen: jest.fn(),
-  close: jest.fn()
-}
+vi.mock('fs-extra')
+vi.mock('serve-static')
+vi.mock('https')
+vi.mock('http-terminator')
+vi.mock('pure-http', () => ({ default: () => mockUIServerInstance }))
 
 const mockHttpsServerInstance = {
-  address: jest.fn(() => ({
+  address: vi.fn(() => ({
     port: SERVER_AVAILABLE_PORT
   }))
 }
-const mockHttpsCreateServer = jest.fn(() => mockHttpsServerInstance)
+const mockHttpsCreateServer = vi.fn(() => mockHttpsServerInstance)
 
 https.createServer = mockHttpsCreateServer
 
 const mockTerminatorInstance = {
-  terminate: jest.fn()
+  terminate: vi.fn()
 }
 
 const WEB_ROOT = 'web-src-dev'

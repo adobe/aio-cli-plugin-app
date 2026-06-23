@@ -10,33 +10,33 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../src/commands/app/run')
-const BaseCommand = require('../../../src/BaseCommand')
-const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('../../../src/lib/defaults')
-const dataMocks = require('../../data-mocks/config-loader')
-const cloneDeep = require('lodash.clonedeep')
-const open = require('open')
-const { ux } = require('@oclif/core')
+import TheCommand from '../../../src/commands/app/run.js'
+import BaseCommand from '../../../src/BaseCommand.js'
+import { defaultHttpServerPort as SERVER_DEFAULT_PORT } from '../../../src/lib/defaults.js'
+import dataMocks from '../../data-mocks/config-loader.js'
+import cloneDeep from 'lodash.clonedeep'
+import open from 'open'
+import { ux } from '@oclif/core'
 
-jest.mock('@oclif/core', () => {
+vi.mock('@oclif/core', async () => {
   return {
-    ...jest.requireActual('@oclif/core'),
+    ...await vi.importActual('@oclif/core'),
     ux: {
       action: {
-        start: jest.fn(),
-        stop: jest.fn()
+        start: vi.fn(),
+        stop: vi.fn()
       },
-      wait: jest.fn()
+      wait: vi.fn()
     }
   }
 })
 
-jest.mock('open', () => jest.fn())
-jest.mock('../../../src/lib/run-dev')
-const mockRunDev = require('../../../src/lib/run-dev')
+vi.mock('open', () => ({ default: vi.fn() }))
+vi.mock('../../../src/lib/run-dev')
+import mockRunDev from '../../../src/lib/run-dev.js'
 
-jest.mock('../../../src/lib/app-helper.js')
-const helpers = require('../../../src/lib/app-helper.js')
+vi.mock('../../../src/lib/app-helper.js')
+import * as helpers from '../../../src/lib/app-helper.js'
 
 const mockConfigData = {
   app: {
@@ -52,31 +52,31 @@ const PUB_CERT_PATH = DEV_KEYS_DIR + 'cert-pub.crt'
 const CONFIG_KEY = 'aio-dev.dev-keys'
 
 // mocks
-const mockFS = require('fs-extra')
-jest.mock('fs-extra')
+import mockFS from 'fs-extra'
+vi.mock('fs-extra')
 
-jest.mock('@adobe/aio-lib-core-config')
-const mockConfig = require('@adobe/aio-lib-core-config')
+vi.mock('@adobe/aio-lib-core-config')
+import mockConfig from '@adobe/aio-lib-core-config'
 
-jest.mock('https')
-const https = require('https')
+vi.mock('https')
+import https from 'https'
 
-jest.mock('node:os')
-const os = require('node:os')
+vi.mock('node:os')
+import os from 'node:os'
 
-jest.mock('get-port')
-const getPort = require('get-port')
+vi.mock('get-port')
+import getPort from 'get-port'
 
 let command
 
-const mockFindCommandRun = jest.fn()
-const mockFindCommandLoad = jest.fn().mockReturnValue({
+const mockFindCommandRun = vi.fn()
+const mockFindCommandLoad = vi.fn().mockReturnValue({
   run: mockFindCommandRun
 })
 
 const mockHttpsServerInstance = {
-  listen: jest.fn(),
-  close: jest.fn(),
+  listen: vi.fn(),
+  close: vi.fn(),
   args: null
 }
 
@@ -87,11 +87,11 @@ const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
 }
 
 beforeEach(() => {
-  jest.clearAllMocks()
+  vi.clearAllMocks()
   mockRunDev.mockReset()
   helpers.runInProcess.mockReset()
 
-  mockConfig.get = jest.fn().mockReturnValue({ globalConfig: 'seems-legit' })
+  mockConfig.get = vi.fn().mockReturnValue({ globalConfig: 'seems-legit' })
 
   mockFS.exists.mockReset()
   mockFS.existsSync.mockReset()
@@ -100,11 +100,11 @@ beforeEach(() => {
   mockFS.ensureDir.mockReset()
 
   ux.action = {
-    stop: jest.fn(),
-    start: jest.fn()
+    stop: vi.fn(),
+    start: vi.fn()
   }
   open.mockReset()
-  ux.wait = jest.fn() // .mockImplementation((ms = 1000) => { return new Promise(resolve => setTimeout(resolve, ms)) })
+  ux.wait = vi.fn() // .mockImplementation((ms = 1000) => { return new Promise(resolve => setTimeout(resolve, ms)) })
 
   os.cpus.mockImplementation(() => [{ model: 'Intel Pentium MMX' }])
 
@@ -112,17 +112,17 @@ beforeEach(() => {
   mockFindCommandRun.mockReset()
 
   command = new TheCommand()
-  command.error = jest.fn()
-  command.log = jest.fn()
+  command.error = vi.fn()
+  command.log = vi.fn()
   command.config = {
-    runHook: jest.fn().mockResolvedValue({ successes: [] }),
-    findCommand: jest.fn().mockReturnValue({
+    runHook: vi.fn().mockResolvedValue({ successes: [] }),
+    findCommand: vi.fn().mockReturnValue({
       load: mockFindCommandLoad
     }),
     dataDir: '/data/dir'
   }
   command.appConfig = cloneDeep(mockConfigData)
-  command.getAppExtConfigs = jest.fn()
+  command.getAppExtConfigs = vi.fn()
 
   https.createServer.mockImplementation((opts, func) => {
     mockHttpsServerInstance.args = { opts, func }
@@ -138,7 +138,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  jest.clearAllMocks()
+  vi.clearAllMocks()
 })
 
 describe('run command definition', () => {
@@ -504,7 +504,7 @@ describe('run', () => {
       return Buffer.from('fake content')
     })
     // emulate user request directly on listen
-    const mockWriteHead = jest.fn()
+    const mockWriteHead = vi.fn()
     mockHttpsServerInstance.listen.mockImplementation(() => {
       mockHttpsServerInstance.args.func({}, { writeHead: mockWriteHead, end: () => {} })
     })
@@ -617,7 +617,7 @@ describe('run', () => {
 
   test('app:run with UI and no certs, throws error when certificate:generate command not found', async () => {
     mockConfig.get.mockReturnValue(null)
-    const spy = jest.spyOn(command.config, 'findCommand').mockReturnValue(null)
+    const spy = vi.spyOn(command.config, 'findCommand').mockReturnValue(null)
     command.error.mockImplementation((e) => {
       throw new Error(e)
     })

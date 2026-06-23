@@ -10,8 +10,9 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const execa = require('execa')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:cleanup', { provider: 'debug' })
+import execa from 'execa'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:cleanup', { provider: 'debug' })
 
 /** @private */
 class Cleanup {
@@ -57,4 +58,4 @@ class Cleanup {
   }
 }
 
-module.exports = Cleanup
+export default Cleanup

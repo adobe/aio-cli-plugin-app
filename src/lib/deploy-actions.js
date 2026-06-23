@@ -10,9 +10,9 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { runInProcess } = require('./app-helper')
-const { deployActions } = require('@adobe/aio-lib-runtime')
-const logActions = require('./log-actions')
+import { runInProcess } from './app-helper.js'
+import { deployActions } from '@adobe/aio-lib-runtime'
+import logActions from './log-actions.js'
 
 /**
  * Deploys actions.
@@ -24,7 +24,7 @@ const logActions = require('./log-actions')
  * @param {Function} [options.log] a log function
  * @param {Function} [options.inprocHook] a hook function
  */
-module.exports = async ({
+export default async ({
   config,
   deployConfig = {},
   log = () => {},

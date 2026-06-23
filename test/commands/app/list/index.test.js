@@ -10,9 +10,9 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../../src/commands/app/list/index.js')
-const BaseCommand = require('../../../../src/BaseCommand.js')
-const { Help } = require('@oclif/core')
+import TheCommand from '../../../../src/commands/app/list/index.js'
+import BaseCommand from '../../../../src/BaseCommand.js'
+import { Help } from '@oclif/core'
 
 test('exports', async () => {
   expect(typeof TheCommand).toEqual('function')
@@ -46,7 +46,7 @@ describe('instance methods', () => {
 
     test('returns help file for app:list command', () => {
       command.config = global.createOclifMockConfig()
-      const spy = jest.spyOn(Help.prototype, 'showHelp').mockReturnValue(true)
+      const spy = vi.spyOn(Help.prototype, 'showHelp').mockReturnValue(true)
       return command.run().then(() => {
         expect(spy).toHaveBeenCalledWith(['app:list', '--help'])
       })

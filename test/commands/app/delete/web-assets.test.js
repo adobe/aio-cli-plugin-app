@@ -9,17 +9,17 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-const fs = require('fs-extra')
-const TheCommand = require('../../../../src/commands/app/delete/web-assets')
-const BaseCommand = require('../../../../src/BaseCommand')
-const cloneDeep = require('lodash.clonedeep')
+import fs from 'fs-extra'
+import TheCommand from '../../../../src/commands/app/delete/web-assets.js'
+import BaseCommand from '../../../../src/BaseCommand.js'
+import cloneDeep from 'lodash.clonedeep'
 
-jest.mock('fs-extra')
-jest.mock('inquirer', () => {
-  return {
+vi.mock('fs-extra')
+vi.mock('inquirer', () => ({
+  default: {
     Separator: class {}
   }
-})
+}))
 
 beforeEach(() => {
   fs.ensureDirSync.mockClear()
@@ -70,7 +70,7 @@ describe('bad user selections', () => {
   beforeEach(() => {
     command = new TheCommand([])
     command.config = global.createOclifMockConfig()
-    command.getAppExtConfigs = jest.fn()
+    command.getAppExtConfigs = vi.fn()
     command.appConfig = cloneDeep(mockConfigData)
     fs.removeSync.mockClear()
   })
@@ -78,7 +78,7 @@ describe('bad user selections', () => {
   test('aborts if no frontend', async () => {
     fs.removeSync.mockClear()
     command.appConfig.all.woody.app.hasFrontend = false
-    command.prompt = jest.fn(a => {
+    command.prompt = vi.fn(a => {
       return {
         delete: true,
         'web-assets': [{ src: 'fakeWebPath23' }]
@@ -89,7 +89,7 @@ describe('bad user selections', () => {
   })
 
   test('aborts if user says no', async () => {
-    command.prompt = jest.fn(a => {
+    command.prompt = vi.fn(a => {
       return {
         delete: false,
         'web-assets': [{ src: 'fakeWebPath4345' }]
@@ -100,7 +100,7 @@ describe('bad user selections', () => {
   })
 
   test('deletes user\'s selection', async () => {
-    command.prompt = jest.fn(a => {
+    command.prompt = vi.fn(a => {
       return {
         delete: true,
         'web-assets': [{ src: 'fakeWebPath' }]

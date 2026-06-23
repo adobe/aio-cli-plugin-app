@@ -9,14 +9,16 @@ the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTA
 OF ANY KIND, either express or implied. See the License for the specific language
 governing permissions and limitations under the License.
 */
-const TheCommand = require('../../../../src/commands/app/add/web-assets')
-const TemplatesCommand = require('../../../../src/TemplatesCommand')
-const dataMocks = require('../../../data-mocks/config-loader')
+import TheCommand from '../../../../src/commands/app/add/web-assets.js'
+import TemplatesCommand from '../../../../src/TemplatesCommand.js'
+import dataMocks from '../../../data-mocks/config-loader.js'
 
-jest.mock('@adobe/aio-lib-core-config')
-jest.mock('inquirer', () => ({
-  registerPrompt: jest.fn(),
-  prompt: jest.fn()
+vi.mock('@adobe/aio-lib-core-config')
+vi.mock('inquirer', () => ({
+  default: {
+    registerPrompt: vi.fn(),
+    prompt: vi.fn()
+  }
 }))
 
 const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
@@ -29,9 +31,9 @@ let command
 beforeEach(() => {
   command = new TheCommand([])
   command.config = global.createOclifMockConfig()
-  command.getAppExtConfigs = jest.fn()
+  command.getAppExtConfigs = vi.fn()
   command.getAppExtConfigs.mockResolvedValue(createAppConfig(command.appConfig))
-  command.getFullConfig = jest.fn()
+  command.getFullConfig = vi.fn()
   command.getFullConfig.mockResolvedValue({
     packagejson: {
       version: '1.0.0',
@@ -42,11 +44,11 @@ beforeEach(() => {
     }
   })
 
-  command.selectTemplates = jest.fn()
+  command.selectTemplates = vi.fn()
   command.selectTemplates.mockResolvedValue([])
-  command.getTemplates = jest.fn()
+  command.getTemplates = vi.fn()
   command.getTemplates.mockResolvedValue([])
-  command.installTemplates = jest.fn()
+  command.installTemplates = vi.fn()
 })
 
 describe('Command Prototype', () => {

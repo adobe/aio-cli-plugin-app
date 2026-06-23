@@ -10,8 +10,8 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { runInProcess } = require('./app-helper')
-const { buildActions } = require('@adobe/aio-lib-runtime')
+import { runInProcess } from './app-helper.js'
+import { buildActions } from '@adobe/aio-lib-runtime'
 
 /**
  * Builds actions.
@@ -20,7 +20,7 @@ const { buildActions } = require('@adobe/aio-lib-runtime')
  * @param {Array<string>} filterActions add filters to deploy only specified OpenWhisk actions
  * @param {boolean} [forceBuild=false] force a build (skip file changed hash check)
  */
-module.exports = async (config, filterActions, forceBuild = false) => {
+export default async (config, filterActions, forceBuild = false) => {
   await runInProcess(config.hooks['pre-app-build'], config)
   const script = await runInProcess(config.hooks['build-actions'], { config, options: { filterActions, forceBuild } })
   if (!script) {

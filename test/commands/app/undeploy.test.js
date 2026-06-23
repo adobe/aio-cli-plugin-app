@@ -10,23 +10,22 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../src/commands/app/undeploy')
-const BaseCommand = require('../../../src/BaseCommand')
-const dataMocks = require('../../data-mocks/config-loader')
-const cloneDeep = require('lodash.clonedeep')
-const authHelperActual = jest.requireActual('../../../src/lib/auth-helper.js')
+import TheCommand from '../../../src/commands/app/undeploy.js'
+import BaseCommand from '../../../src/BaseCommand.js'
+import dataMocks from '../../data-mocks/config-loader.js'
+import cloneDeep from 'lodash.clonedeep'
 
-jest.mock('../../../src/lib/app-helper.js')
-const helpers = require('../../../src/lib/app-helper.js')
+vi.mock('../../../src/lib/app-helper.js')
+import * as helpers from '../../../src/lib/app-helper.js'
 
-jest.mock('../../../src/lib/audit-logger.js')
-const auditLogger = require('../../../src/lib/audit-logger.js')
+vi.mock('../../../src/lib/audit-logger.js')
+import * as auditLogger from '../../../src/lib/audit-logger.js'
 
-jest.mock('../../../src/lib/auth-helper.js')
-const authHelper = require('../../../src/lib/auth-helper.js')
+vi.mock('../../../src/lib/auth-helper.js')
+import * as authHelper from '../../../src/lib/auth-helper.js'
 
-const mockFS = require('fs-extra')
-jest.mock('fs-extra')
+import mockFS from 'fs-extra'
+vi.mock('fs-extra')
 
 const mockConfigData = {
   app: {
@@ -39,9 +38,10 @@ const mockConfigData = {
 }
 
 // mocks
-const { stdout } = require('stdout-stderr')
-const mockWebLib = require('@adobe/aio-lib-web')
-const mockRuntimeLib = require('@adobe/aio-lib-runtime')
+import { stdout } from 'stdout-stderr'
+import ora from 'ora'
+import mockWebLib from '@adobe/aio-lib-web'
+import mockRuntimeLib from '@adobe/aio-lib-runtime'
 
 const createAppConfig = (aioConfig = {}, appFixtureName = 'legacy-app') => {
   const appConfig = dataMocks(appFixtureName, aioConfig).all
@@ -68,15 +68,15 @@ const mockExtRegExcShellPayload = () => {
 }
 
 const mockLibConsoleCLI = {
-  updateExtensionPoints: jest.fn(),
-  removeSelectedExtensionPoints: jest.fn()
+  updateExtensionPoints: vi.fn(),
+  removeSelectedExtensionPoints: vi.fn()
 }
 
 const getCommandConfig = () => {
   return {
-    findCommand: jest.fn().mockReturnValue({}),
-    runCommand: jest.fn(),
-    runHook: jest.fn().mockResolvedValue({ successes: [] })
+    findCommand: vi.fn().mockReturnValue({}),
+    runCommand: vi.fn(),
+    runHook: vi.fn().mockResolvedValue({ successes: [] })
   }
 }
 
@@ -95,7 +95,7 @@ beforeEach(() => {
     }
   })
   authHelper.setRuntimeApiHostAndAuthHandler.mockImplementation(aioConfig => aioConfig)
-  jest.clearAllMocks()
+  vi.clearAllMocks()
 })
 
 test('exports', async () => {
@@ -157,14 +157,14 @@ describe('run', () => {
   beforeEach(() => {
     mockFS.existsSync.mockReset()
     command = new TheCommand([])
-    command.error = jest.fn()
-    command.warn = jest.fn()
-    command.log = jest.fn()
+    command.error = vi.fn()
+    command.warn = vi.fn()
+    command.log = vi.fn()
     command.appConfig = cloneDeep(mockConfigData)
     command.appConfig.actions = { dist: 'actions' }
     command.appConfig.web.distProd = 'dist'
-    command.buildOneExt = jest.fn()
-    command.getFullConfig = jest.fn().mockResolvedValue({
+    command.buildOneExt = vi.fn()
+    command.getFullConfig = vi.fn().mockResolvedValue({
       aio: {
         project: {
           workspace: {
@@ -173,6 +173,9 @@ describe('run', () => {
           org: {
             id: '1111'
           }
+        },
+        runtime: {
+          namespace: 'test-ns'
         }
       },
       packagejson: {
@@ -180,13 +183,13 @@ describe('run', () => {
         version: '1.0.0'
       }
     })
-    command.getLibConsoleCLI = jest.fn(() => mockLibConsoleCLI)
-    command.getAppExtConfigs = jest.fn()
+    command.getLibConsoleCLI = vi.fn(() => mockLibConsoleCLI)
+    command.getAppExtConfigs = vi.fn()
     command.config = getCommandConfig()
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   test('undeploy an App with no flags no hooks', async () => {
@@ -268,7 +271,7 @@ describe('run', () => {
 
   test('should handle audit log error with verbose flag', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
-    command.warn = jest.fn()
+    command.warn = vi.fn()
     command.argv = ['-v']
 
     // Mock audit logger to throw an error
@@ -287,7 +290,7 @@ describe('run', () => {
 
   test('should handle audit log error without verbose flag', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
-    command.warn = jest.fn()
+    command.warn = vi.fn()
 
     // Mock audit logger to throw an error
     auditLogger.sendAppUndeployAuditLog.mockRejectedValueOnce(new Error('Audit log error'))
@@ -334,8 +337,8 @@ describe('run', () => {
 
     await expect(command.run()).resolves.toBeUndefined()
 
-    // multiple check lines because error wraps text
-    expect(stdout.output).toContain('Error when un-deploying actions for application: mock failure Actions')
+    const spinner = ora()
+    expect(spinner.warn).toHaveBeenCalledWith(expect.stringContaining('Error when un-deploying actions for application: mock failure Actions'))
 
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
@@ -350,7 +353,8 @@ describe('run', () => {
 
     await expect(command.run()).resolves.toBeUndefined()
 
-    expect(stdout.output).toContain('Error when un-deploying web assets for application: mock failure UI')
+    const spinner = ora()
+    expect(spinner.warn).toHaveBeenCalledWith(expect.stringContaining('Error when un-deploying web assets for application: mock failure UI'))
 
     expect(command.error).toHaveBeenCalledTimes(0)
     expect(mockRuntimeLib.undeployActions).toHaveBeenCalledTimes(1)
@@ -484,8 +488,12 @@ describe('run', () => {
   })
 
   test('undeploy does not require logged in user with --no-unpublish', async () => {
-    authHelper.getAccessToken.mockImplementation(authHelperActual.getAccessToken)
+    authHelper.getAccessToken.mockResolvedValue({ accessToken: null, env: 'prod' })
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
+    command.getFullConfig.mockResolvedValueOnce({
+      aio: null,
+      packagejson: { name: 'test-app', version: '1.0.0' }
+    })
 
     command.argv = ['--no-unpublish']
     await command.run()
@@ -561,7 +569,7 @@ describe('run', () => {
         version: '1.0.0'
       }
     }
-    command.getFullConfig = jest.fn().mockReturnValue(fullConfig)
+    command.getFullConfig = vi.fn().mockReturnValue(fullConfig)
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
@@ -604,7 +612,7 @@ describe('run', () => {
     const mockWorkspaceId = 'mockworkspaceid'
     const mockWorkspaceName = 'mockworkspacename'
 
-    command.getFullConfig = jest.fn().mockReturnValue({
+    command.getFullConfig = vi.fn().mockReturnValue({
       aio: {
         project: {
           id: mockProject,
@@ -638,7 +646,7 @@ describe('run', () => {
     const mockWorkspaceId = 'mockworkspaceid'
     const mockWorkspaceName = 'mockworkspacename'
 
-    command.getFullConfig = jest.fn().mockReturnValue({
+    command.getFullConfig = vi.fn().mockReturnValue({
       aio: {
         project: {
           id: mockProject,
@@ -676,7 +684,7 @@ describe('run', () => {
     const mockWorkspaceId = 'mockworkspaceid'
     const mockWorkspaceName = 'mockworkspacename'
 
-    command.getFullConfig = jest.fn().mockReturnValue({
+    command.getFullConfig = vi.fn().mockReturnValue({
       aio: {
         project: {
           id: mockProject,
@@ -714,7 +722,7 @@ describe('run', () => {
     const mockWorkspaceId = 'mockworkspaceid'
     const mockWorkspaceName = 'mockworkspacename'
 
-    command.getFullConfig = jest.fn().mockReturnValue({
+    command.getFullConfig = vi.fn().mockReturnValue({
       aio: {
         project: {
           id: mockProject,
@@ -749,7 +757,7 @@ describe('run', () => {
   test('does not run app:clean command if not found', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
     // Simulate findCommand returning undefined
-    command.config.findCommand = jest.fn().mockReturnValue(undefined)
+    command.config.findCommand = vi.fn().mockReturnValue(undefined)
     command.argv = []
     await command.run()
     // Should not log or run app:clean

@@ -9,10 +9,11 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TemplatesCommand = require('../../../TemplatesCommand')
-const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
-const { Flags } = require('@oclif/core')
-const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
+import TemplatesCommand from '../../../TemplatesCommand.js'
+import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
+const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:add:action', { provider: 'debug' })
+import { Flags } from '@oclif/core'
+import TemplateRegistryAPI from '@adobe/aio-lib-templates'
 
 class AddExtensionCommand extends TemplatesCommand {
   async run () {
@@ -78,4 +79,4 @@ AddExtensionCommand.flags = {
 AddExtensionCommand.aliases = ['app:add:ext', 'app:add:extensions']
 AddExtensionCommand.args = {}
 
-module.exports = AddExtensionCommand
+export default AddExtensionCommand

@@ -11,31 +11,38 @@ governing permissions and limitations under the License.
 */
 
 // unmock to test proper returned urls from getActionUrls
-jest.unmock('@adobe/aio-lib-runtime')
+vi.unmock('@adobe/aio-lib-runtime')
 
-const mockFetch = jest.fn()
+const mockFetch = vi.fn()
 
-jest.mock('@adobe/aio-lib-core-config')
-jest.mock('execa')
-jest.mock('node:path')
-jest.mock('fs-extra') // do not touch the real fs
-jest.mock('@adobe/aio-lib-env')
-jest.mock('@adobe/aio-lib-ims')
+const mockRunHook = vi.hoisted(() => vi.fn())
+vi.mock('/hook-virtual.js', () => ({ default: mockRunHook }), { virtual: true })
+vi.mock('/hook-virtual-no-default.js', () => ({ default: null }), { virtual: true })
 
-const mockLogger = require('@adobe/aio-lib-core-logging')
+vi.mock('@adobe/aio-lib-core-config')
+vi.mock('execa')
+vi.mock('node:path')
+// do not touch the real fs
+vi.mock('fs-extra')
+vi.mock('@adobe/aio-lib-env')
+vi.mock('@adobe/aio-lib-ims')
 
-const which = require('which')
-const path = require('node:path')
-const fs = require('fs-extra')
-const execa = require('execa')
-const appHelper = require('../../../src/lib/app-helper')
-const aioConfig = require('@adobe/aio-lib-core-config')
-const libEnv = require('@adobe/aio-lib-env')
-const libIms = require('@adobe/aio-lib-ims')
+import mockLogger from '@adobe/aio-lib-core-logging'
+
+import which from 'which'
+import path from 'node:path'
+import fs from 'fs-extra'
+import execa from 'execa'
+import * as appHelper from '../../../src/lib/app-helper.js'
+import aioConfig from '@adobe/aio-lib-core-config'
+import * as libEnv from '@adobe/aio-lib-env'
+import libIms from '@adobe/aio-lib-ims'
+import RuntimeLib from '@adobe/aio-lib-runtime'
+const actualNodePath = await vi.importActual('node:path')
 
 beforeEach(() => {
   // use actual implementation
-  path.extname.mockImplementation(jest.requireActual('node:path').extname)
+  path.extname.mockImplementation(actualNodePath.extname)
 
   Object.defineProperty(process, 'platform', { value: 'linux' })
   execa.mockReset()
@@ -48,7 +55,7 @@ beforeEach(() => {
   mockLogger.mockReset()
 })
 
-const getMockConfig = require('../../data-mocks/config-loader')
+import getMockConfig from '../../data-mocks/config-loader.js'
 
 test('isNpmInstalled', () => {
   expect(appHelper.isNpmInstalled).toBeDefined()
@@ -100,7 +107,7 @@ test('installPackages', async () => {
 
   // spinner option
   execa.mockReset()
-  const spinner = { start: jest.fn(), stop: jest.fn() }
+  const spinner = { start: vi.fn(), stop: vi.fn() }
   await appHelper.installPackages('somedir', { spinner, verbose: false })
   expect(execa).toHaveBeenCalledWith('npm', ['install'], { cwd: 'somedir' })
   expect(spinner.start).toHaveBeenCalled()
@@ -129,7 +136,7 @@ test('runPackageScript success', async () => {
     }
   }
 
-  const mockChildProcessOn = jest.fn((eventname, fn) => {
+  const mockChildProcessOn = vi.fn((eventname, fn) => {
     if (eventname === 'message') {
       // call it back right away, for coverage
       fn(ipcMessage)
@@ -147,8 +154,8 @@ test('runPackageScript success', async () => {
     }
   })
 
-  process.kill = jest.fn()
-  process.on = jest.fn((eventname, fn) => {
+  process.kill = vi.fn()
+  process.on = vi.fn((eventname, fn) => {
     if (eventname === 'exit') {
       // call it back right away, for coverage
       fn()
@@ -170,6 +177,35 @@ test('runPackageScript success', async () => {
     }))
 })
 
+test('runPackageScript success with process.kill error (pid not found)', async () => {
+  const scripts = { test: 'some-script' }
+  fs.readJSON.mockReturnValue({ scripts })
+
+  const ipcMessage = {
+    type: 'long-running-process',
+    data: {
+      pid: 999999,
+      logs: { stdout: 'stdout.log', stderr: 'stderr.log' }
+    }
+  }
+
+  const mockChildProcessOn = vi.fn((eventname, fn) => {
+    if (eventname === 'message') {
+      fn(ipcMessage)
+    }
+  })
+
+  process.kill = vi.fn(() => { throw new Error('ESRCH') })
+  process.on = vi.fn((eventname, fn) => {
+    if (eventname === 'exit') { fn() }
+  })
+
+  execa.command.mockReturnValueOnce({ on: mockChildProcessOn })
+
+  await appHelper.runPackageScript('test', '')
+  expect(process.kill).toHaveBeenCalledWith(ipcMessage.data.pid, 'SIGTERM')
+})
+
 test('runPackageScript success (os is Windows)', async () => {
   const scripts = {
     test: 'some-script some-arg-1 some-arg-2'
@@ -179,7 +215,7 @@ test('runPackageScript success (os is Windows)', async () => {
   Object.defineProperty(process, 'platform', { value: 'win32' })
 
   execa.command.mockReturnValueOnce({
-    on: jest.fn()
+    on: vi.fn()
   })
 
   await appHelper.runPackageScript('test', '')
@@ -196,7 +232,7 @@ test('runPackageScript success with additional command arg/flag', async () => {
   }
   fs.readJSON.mockReturnValue({ scripts })
 
-  const mockChildProcessOn = jest.fn()
+  const mockChildProcessOn = vi.fn()
   execa.command.mockReturnValueOnce({
     on: mockChildProcessOn
   })
@@ -225,18 +261,22 @@ test('runInProcess with script should call runScript', async () => {
   expect(execa.command).toHaveBeenCalledWith('echo new command who dis?', expect.any(Object))
 })
 
+test('runInProcess with require (module without default falls back to script)', async () => {
+  path.resolve.mockReturnValue('/hook-virtual-no-default.js')
+  execa.command.mockReturnValue({ on: () => { } })
+  await appHelper.runInProcess('does-not-exist', {})
+  expect(mockLogger.debug).toHaveBeenCalledWith('runInProcess: error running project hook in process, running as package script instead')
+  expect(execa.command).toHaveBeenCalled()
+})
+
 test('runInProcess with require', async () => {
-  const mockReq = jest.fn()
-  path.resolve.mockReturnValue('does-not-exist')
-  jest.mock('does-not-exist',
-    () => mockReq,
-    { virtual: true }
-  )
+  mockRunHook.mockReset()
+  path.resolve.mockReturnValue('/hook-virtual.js')
   expect(appHelper.runInProcess).toBeDefined()
   expect(appHelper.runInProcess).toBeInstanceOf(Function)
   execa.command.mockReturnValue({ on: () => { } })
   await appHelper.runInProcess('does-not-exist', {})
-  expect(mockReq).toHaveBeenCalled()
+  expect(mockRunHook).toHaveBeenCalled()
   expect(mockLogger.debug).toHaveBeenCalledWith('runInProcess: running project hook in process')
   expect(execa.command).not.toHaveBeenCalled()
 })
@@ -340,8 +380,7 @@ test('urlJoin', () => {
 })
 
 test('checkFile', () => {
-  jest.mock('fs-extra')
-  const fs = require('fs-extra')
+  vi.mock('fs-extra')
   // if file exists
   fs.lstatSync.mockReturnValue({ isFile: () => true })
   expect(() => appHelper.checkFile('somepath/a/b')).not.toThrow()
@@ -352,7 +391,7 @@ test('checkFile', () => {
 })
 
 describe('warnIfOverwriteServicesInProductionWorkspace', () => {
-  const logSpy = jest.spyOn(console, 'error')
+  const logSpy = vi.spyOn(console, 'error')
   beforeEach(() => {
     logSpy.mockClear()
   })
@@ -403,7 +442,7 @@ test('setOrgServicesConfig', () => {
 describe('buildExcShellViewExtensionMetadata', () => {
   test('with service properties from console', async () => {
     const mockConsoleCLIInstance = {
-      getServicePropertiesFromWorkspace: jest.fn()
+      getServicePropertiesFromWorkspace: vi.fn()
     }
     const mockAIOConfig = {
       project: {
@@ -437,7 +476,7 @@ describe('buildExcShellViewExtensionMetadata', () => {
 
   test('with service properties in config', async () => {
     const mockConsoleCLIInstance = {
-      getServicePropertiesFromWorkspace: jest.fn()
+      getServicePropertiesFromWorkspace: vi.fn()
     }
     const mockAIOConfig = {
       project: {
@@ -489,7 +528,7 @@ describe('buildExcShellViewExtensionMetadata', () => {
       }
     ])
     const mockConsoleCLIInstance = {
-      getServicePropertiesFromWorkspace: jest.fn()
+      getServicePropertiesFromWorkspace: vi.fn()
     }
     const mockAIOConfig = {
       project: {
@@ -849,14 +888,12 @@ describe('getFilesCountWithExtension', () => {
 })
 
 describe('rewriteActionUrlInEntities', () => {
-  const RuntimeLib = require('@adobe/aio-lib-runtime')
-
   beforeEach(() => {
-    RuntimeLib.utils.getActionUrls = jest.fn()
+    RuntimeLib.utils.getActionUrls = vi.fn()
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   test('should rewrite action URLs with URLs from manifest', async () => {

@@ -9,8 +9,8 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { Help } = require('@oclif/core')
-const BaseCommand = require('../../../../BaseCommand')
+import { Help } from '@oclif/core'
+import BaseCommand from '../../../../BaseCommand.js'
 
 class IndexCommand extends BaseCommand {
   async run () {
@@ -22,4 +22,4 @@ class IndexCommand extends BaseCommand {
 IndexCommand.description = 'Set app config'
 IndexCommand.aliases = ['app:config:set']
 
-module.exports = IndexCommand
+export default IndexCommand

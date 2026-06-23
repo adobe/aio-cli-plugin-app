@@ -10,19 +10,19 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const RuntimeLib = require('@adobe/aio-lib-runtime')
-const LogForwarding = require('../../../src/lib/log-forwarding')
-const { writeAio, writeEnv } = require('../../../src/lib/import-helper')
-const fs = require('fs-extra')
-const path = require('path')
+import RuntimeLib from '@adobe/aio-lib-runtime'
+import * as LogForwarding from '../../../src/lib/log-forwarding.js'
+import { writeAio, writeEnv } from '../../../src/lib/import-helper.js'
+import fs from 'fs-extra'
+import path from 'path'
 
-jest.mock('../../../src/lib/import-helper', () => {
+vi.mock('../../../src/lib/import-helper', () => {
   return {
-    writeAio: jest.fn(),
-    writeEnv: jest.fn()
+    writeAio: vi.fn(),
+    writeEnv: vi.fn()
   }
 })
-jest.mock('fs-extra')
+vi.mock('fs-extra')
 
 const rtConfig = {
   namespace: 'fake_ns',
@@ -38,8 +38,8 @@ let lf, rtLib
 
 beforeEach(async () => {
   rtLib = await RuntimeLib.init({ apihost: 'https://adobeioruntime.net', api_key: 'fakekey' })
-  RuntimeLib.utils.checkOpenWhiskCredentials = jest.fn()
-  rtLib.logForwarding.getDestinationSettings = jest.fn().mockReturnValue([
+  RuntimeLib.utils.checkOpenWhiskCredentials = vi.fn()
+  rtLib.logForwarding.getDestinationSettings = vi.fn().mockReturnValue([
     {
       name: 'field',
       message: 'Field'
@@ -103,7 +103,7 @@ describe('with local log forwarding config', () => {
 describe('with secrets in env vars', () => {
   const originalEnv = process.env
   beforeEach(async () => {
-    jest.resetModules()
+    vi.resetModules()
     const aioConfig = {
       project: {
         workspace: {
@@ -173,7 +173,7 @@ describe('absent local log forwarding config', () => {
   })
 
   test('getServerConfig', async () => {
-    rtLib.logForwarding.get = jest.fn().mockReturnValue({
+    rtLib.logForwarding.get = vi.fn().mockReturnValue({
       destination: {
         updated_at: '2021-08-27T14:40:06.000+00:00',
         some_key: 'some_value'
@@ -187,7 +187,7 @@ describe('absent local log forwarding config', () => {
   })
 
   test('getServerConfig (failed response)', async () => {
-    rtLib.logForwarding.get = jest.fn().mockRejectedValue(new Error('mocked error'))
+    rtLib.logForwarding.get = vi.fn().mockRejectedValue(new Error('mocked error'))
     await expect(lf.getServerConfig()).rejects.toThrow('mocked error')
   })
 
@@ -198,7 +198,7 @@ describe('absent local log forwarding config', () => {
       destination2: {}
     }]
   ])('getServerConfig (incorrectly defined multiple destinations)', async (expectedDestinations, settings) => {
-    rtLib.logForwarding.get = jest.fn().mockReturnValue(settings)
+    rtLib.logForwarding.get = vi.fn().mockReturnValue(settings)
     await expect(() => lf.getServerConfig())
       .rejects
       .toThrow(`Incorrect log forwarding configuration on server. Configuration has ${expectedDestinations} destinations. Exactly one must be defined.`)
@@ -206,7 +206,7 @@ describe('absent local log forwarding config', () => {
 
   test('getSupportedDestinations', async () => {
     const destinations = { value: 'val', name: 'name' }
-    rtLib.logForwarding.getSupportedDestinations = jest.fn().mockReturnValue(destinations)
+    rtLib.logForwarding.getSupportedDestinations = vi.fn().mockReturnValue(destinations)
     expect(lf.getSupportedDestinations()).toEqual({ value: 'val', name: 'name' })
   })
 
@@ -216,7 +216,7 @@ describe('absent local log forwarding config', () => {
       message: 'message',
       type: 'type'
     }]
-    rtLib.logForwarding.getDestinationSettings = jest.fn().mockReturnValue(config)
+    rtLib.logForwarding.getDestinationSettings = vi.fn().mockReturnValue(config)
     expect(lf.getSettingsConfig('destination')).toEqual(config)
   })
 
@@ -292,7 +292,7 @@ describe('with checksum file', () => {
       new_secret_field: 'new secret sanitized'
     }
 
-    rtLib.logForwarding.setDestination = jest.fn().mockResolvedValue({
+    rtLib.logForwarding.setDestination = vi.fn().mockResolvedValue({
       new_destination: sanitizedSettings
     })
 

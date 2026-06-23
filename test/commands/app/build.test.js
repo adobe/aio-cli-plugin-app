@@ -10,32 +10,33 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const TheCommand = require('../../../src/commands/app/build')
-const BaseCommand = require('../../../src/BaseCommand')
-const path = require('path')
-const cloneDeep = require('lodash.clonedeep')
-const dataMocks = require('../../data-mocks/config-loader')
+import TheCommand from '../../../src/commands/app/build.js'
+import BaseCommand from '../../../src/BaseCommand.js'
+import path from 'path'
+import cloneDeep from 'lodash.clonedeep'
+import dataMocks from '../../data-mocks/config-loader.js'
 
-const ora = require('ora')
-jest.mock('ora')
+import ora from 'ora'
+vi.mock('ora')
 
-const mockFS = require('fs-extra')
-jest.mock('fs-extra')
+import mockFS from 'fs-extra'
+vi.mock('fs-extra')
 
-jest.mock('../../../src/lib/app-helper.js')
-const helpers = require('../../../src/lib/app-helper.js')
+vi.mock('../../../src/lib/app-helper.js')
+import * as helpers from '../../../src/lib/app-helper.js'
 
-const mockWebLib = require('@adobe/aio-lib-web')
-const mockRuntimeLib = require('@adobe/aio-lib-runtime')
-const mockBundleFunc = jest.fn()
+import mockWebLib from '@adobe/aio-lib-web'
+import mockRuntimeLib from '@adobe/aio-lib-runtime'
+const mockBundleFunc = vi.fn()
 
-jest.mock('@adobe/aio-lib-core-config')
+vi.mock('@adobe/aio-lib-core-config')
 
-jest.mock('@oclif/core', () => {
+vi.mock('@oclif/core', async () => {
   return {
-    ...jest.requireActual('@oclif/core')
+    ...await vi.importActual('@oclif/core')
   }
 })
+
 const sampleAppConfig = {
   app: {
     hasFrontend: true,
@@ -147,7 +148,7 @@ beforeEach(() => {
   mockFS.existsSync.mockReset()
   helpers.writeConfig.mockReset()
   helpers.runInProcess.mockReset()
-  jest.clearAllMocks()
+  vi.clearAllMocks()
   helpers.wrapError.mockImplementation(msg => msg)
 })
 
@@ -203,9 +204,9 @@ describe('run', () => {
     spinner = ora()
     command = new TheCommand([])
     command.config = global.createOclifMockConfig()
-    command.error = jest.fn()
-    command.log = jest.fn()
-    command.getAppExtConfigs = jest.fn()
+    command.error = vi.fn()
+    command.log = vi.fn()
+    command.getAppExtConfigs = vi.fn()
     command.appConfig = cloneDeep(sampleAppConfig)
 
     mockRuntimeLib.buildActions.mockReset()
@@ -213,7 +214,7 @@ describe('run', () => {
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   test('build should write to config.json', async () => {
@@ -222,7 +223,7 @@ describe('run', () => {
 
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     const mockUtils = mockRuntimeLib.utils
-    mockRuntimeLib.utils = jest.requireActual('@adobe/aio-lib-runtime').utils
+    mockRuntimeLib.utils = (await vi.importActual('@adobe/aio-lib-runtime')).utils
     await command.run()
     mockRuntimeLib.utils = mockUtils
 

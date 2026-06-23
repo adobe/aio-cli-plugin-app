@@ -9,10 +9,10 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const BaseCommand = require('../../../../../BaseCommand')
-const rtLib = require('@adobe/aio-lib-runtime')
-const ora = require('ora')
-const { setRuntimeApiHostAndAuthHandler } = require('../../../../../lib/auth-helper')
+import BaseCommand from '../../../../../BaseCommand.js'
+import rtLib from '@adobe/aio-lib-runtime'
+import ora from 'ora'
+import { setRuntimeApiHostAndAuthHandler } from '../../../../../lib/auth-helper.js'
 
 class ErrorsCommand extends BaseCommand {
   async run () {
@@ -51,4 +51,4 @@ ErrorsCommand.flags = {
   ...BaseCommand.flags
 }
 
-module.exports = ErrorsCommand
+export default ErrorsCommand
