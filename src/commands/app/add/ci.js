@@ -10,7 +10,7 @@ governing permissions and limitations under the License.
 */
 
 import BaseCommand from '../../../BaseCommand.js'
-import { createYeomanEnvironment } from '../../../lib/create-yeoman-environment.js'
+import { createEnv } from 'yeoman-environment'
 import _aioLoggerFactory from '@adobe/aio-lib-core-logging'
 const aioLogger = _aioLoggerFactory('@adobe/aio-cli-plugin-app:add:ci', { provider: 'debug' })
 import generators from '@adobe/generator-aio-app'
@@ -21,7 +21,7 @@ class AddCICommand extends BaseCommand {
 
     aioLogger.debug(`adding component ${args.component} to the project, using flags: ${flags}`)
 
-    const env = await createYeomanEnvironment({ skipInstall: true })
+    const env = await createEnv({ skipInstall: true })
     // by default yeoman runs the install, we control installation from the app plugin
     const gen = await env.instantiate(
       generators['add-ci'], {

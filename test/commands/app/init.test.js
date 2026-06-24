@@ -16,8 +16,8 @@ import BaseCommand from '../../../src/BaseCommand.js'
 import * as importHelperLib from '../../../src/lib/import-helper.js'
 import inquirer from 'inquirer'
 const savedDataDir = process.env.XDG_DATA_HOME
-import { createYeomanEnvironment } from '../../../src/lib/create-yeoman-environment.js'
 import { Octokit } from '@octokit/rest'
+import { createEnv } from 'yeoman-environment'
 
 vi.mock('@adobe/aio-lib-core-config')
 vi.mock('fs-extra')
@@ -85,8 +85,8 @@ function resetMockConsoleCLI () {
   mockConsoleCLIInstance.prompt.promptConfirm.mockReset()
 }
 
-vi.mock('../../../src/lib/create-yeoman-environment')
-createYeomanEnvironment.mockResolvedValue({
+vi.mock('yeoman-environment')
+createEnv.mockResolvedValue({
   instantiate: vi.fn(),
   runGenerator: vi.fn()
 })

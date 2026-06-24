@@ -10,7 +10,7 @@ governing permissions and limitations under the License.
 */
 
 import TemplatesCommand from '../../TemplatesCommand.js'
-import { createYeomanEnvironment } from '../../lib/create-yeoman-environment.js'
+import { createEnv } from 'yeoman-environment'
 import path from 'path'
 import fs from 'fs-extra'
 import ora from 'ora'
@@ -431,7 +431,7 @@ class InitCommand extends TemplatesCommand {
   }
 
   async runCodeGenerators (generatorNames, skipPrompt, projectName, linter) {
-    const env = await createYeomanEnvironment({ skipInstall: true })
+    const env = await createEnv({ skipInstall: true })
 
     // first run app generator that will generate the root skeleton + ci
     for (const generatorKey of generatorNames) {

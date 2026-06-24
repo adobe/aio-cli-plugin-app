@@ -14,22 +14,22 @@ import fs from 'fs-extra'
 import TheCommand from '../../../../src/commands/app/add/ci.js'
 import BaseCommand from '../../../../src/BaseCommand.js'
 import generators from '@adobe/generator-aio-app'
+import { createEnv } from 'yeoman-environment'
 
 vi.mock('fs-extra')
-
-vi.mock('../../../../src/lib/create-yeoman-environment')
-import { createYeomanEnvironment } from '../../../../src/lib/create-yeoman-environment.js'
+vi.mock('yeoman-environment')
 
 const mockInstantiate = vi.fn()
 const mockRunGenerator = vi.fn()
-createYeomanEnvironment.mockResolvedValue({
+createEnv.mockResolvedValue({
   instantiate: mockInstantiate,
   runGenerator: mockRunGenerator
 })
+
 beforeEach(() => {
   mockInstantiate.mockReset()
   mockRunGenerator.mockReset()
-  createYeomanEnvironment.mockClear()
+  createEnv.mockClear()
   fs.ensureDirSync.mockClear()
 })
 
@@ -58,7 +58,7 @@ describe('no flags', () => {
   test('should pass', async () => {
     await TheCommand.run([])
 
-    expect(createYeomanEnvironment).toHaveBeenCalledWith({ skipInstall: true })
+    expect(createEnv).toHaveBeenCalledWith({ skipInstall: true })
     expect(mockInstantiate).toHaveBeenCalledWith(generators['add-ci'], { options: { } })
     expect(mockRunGenerator).toHaveBeenCalled()
   })
