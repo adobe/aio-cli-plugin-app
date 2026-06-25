@@ -14,6 +14,8 @@ import BaseCommand from '../../../src/BaseCommand.js'
 import * as importHelperLib from '../../../src/lib/import-helper.js'
 import inquirer from 'inquirer'
 import { EOL } from 'os'
+import { Config } from '@oclif/core'
+const pluginRoot = new URL('../../../', import.meta.url).pathname // plugin root path, need to set manually to deal with CJS/ESM crossover
 
 // mock inquirer
 const mockPrompt = vi.fn()
@@ -133,7 +135,7 @@ function mockInvalidConsoleImportConfig () {
 const savedDataDir = process.env.XDG_DATA_HOME
 process.env.XDG_DATA_HOME = 'data-dir'
 import path from 'path'
-const certDir = path.join('data-dir', '@oclif', 'core', 'entp-int-certs')
+const certDir = path.join('data-dir', '@adobe', 'aio-cli-plugin-app', 'entp-int-certs')
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -393,7 +395,7 @@ describe('run with global configuration', () => {
     mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(currentServices)
     mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(servicesInTargetWorkspace)
 
-    await TheCommand.run(['-g', '--no-input', '--confirm-service-sync'])
+    await TheCommand.run(['-g', '--no-input', '--confirm-service-sync'], await Config.load({ root: pluginRoot }))
     expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
       fakeGlobalConfig.org.id,
       fakeGlobalConfig.project.id,
@@ -425,7 +427,7 @@ describe('run with global configuration', () => {
     mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(currentServices)
     mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(servicesInTargetWorkspace)
 
-    await TheCommand.run(['-g', '--no-input', '--confirm-service-sync', '--use-jwt'])
+    await TheCommand.run(['-g', '--no-input', '--confirm-service-sync', '--use-jwt'], await Config.load({ root: pluginRoot }))
     expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
       fakeGlobalConfig.org.id,
       fakeGlobalConfig.project.id,
@@ -459,7 +461,7 @@ describe('run with global configuration', () => {
     mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(currentServices)
     mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(servicesInTargetWorkspace)
 
-    await TheCommand.run(['-g'])
+    await TheCommand.run(['-g'], await Config.load({ root: pluginRoot }))
     expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
       fakeGlobalConfig.org.id,
       fakeGlobalConfig.project.id,
@@ -642,7 +644,7 @@ describe('switch to a workspace in the same org', () => {
     mockConsoleCLIInstance.promptForSelectWorkspace.mockResolvedValueOnce(newWorkspace)
     mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(servicesInTargetWorkspace)
 
-    await TheCommand.run(['--workspace', newWorkspace.name])
+    await TheCommand.run(['--workspace', newWorkspace.name], await Config.load({ root: pluginRoot }))
     expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
       fakeCurrentConfig.org.id,
       fakeCurrentConfig.id,
@@ -739,7 +741,7 @@ describe('switch to a workspace in the same org', () => {
     mockConsoleCLIInstance.promptForSelectWorkspace.mockResolvedValueOnce(newWorkspace)
     mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(servicesInTargetWorkspace)
 
-    await TheCommand.run(['--workspace', 'Production'])
+    await TheCommand.run(['--workspace', 'Production'], await Config.load({ root: pluginRoot }))
     expect(mockConsoleCLIInstance.getWorkspaceConfig).toHaveBeenCalledWith(
       fakeCurrentConfig.org.id,
       fakeCurrentConfig.id,

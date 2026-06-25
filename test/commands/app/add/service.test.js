@@ -11,6 +11,9 @@ governing permissions and limitations under the License.
 */
 import consoleDataMocks from '@adobe/aio-cli-lib-console/test/data-mocks'
 
+import { Config } from '@oclif/core'
+const pluginRoot = new URL('../../../../', import.meta.url).pathname // plugin root path, need to set manually to deal with CJS/ESM crossover
+
 vi.mock('@adobe/aio-cli-lib-console')
 import LibConsoleCLI from '@adobe/aio-cli-lib-console'
 const mockConsoleCLIInstance = {
@@ -82,7 +85,7 @@ vi.mock('@adobe/aio-lib-env', () => {
 const savedDataDir = process.env.XDG_DATA_HOME
 process.env.XDG_DATA_HOME = 'data-dir'
 import path from 'path'
-const certDir = path.join('data-dir', '@oclif', 'core', 'entp-int-certs')
+const certDir = path.join('data-dir', '@adobe', 'aio-cli-plugin-app', 'entp-int-certs')
 
 const logSpy = vi.spyOn(console, 'error')
 
@@ -146,7 +149,7 @@ describe('Run', () => {
     mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValue(currentServiceProps)
     // mock selection
     mockConsoleCLIInstance.promptForSelectServiceProperties.mockResolvedValue(additionalServiceProps)
-    await TheCommand.run([])
+    await TheCommand.run([], await Config.load({ root: pluginRoot }))
     expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
       orgId: mockOrgId,
       project: mockProject,
@@ -171,7 +174,7 @@ describe('Run', () => {
     mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(currentServiceProps)
     // second call is to retrieve src wkspce services
     mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(otherServiceProps)
-    await TheCommand.run([])
+    await TheCommand.run([], await Config.load({ root: pluginRoot }))
     expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
       orgId: mockOrgId,
       project: mockProject,
@@ -195,7 +198,7 @@ describe('Run', () => {
     mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(currentServiceProps)
     // second call is to retrieve src wkspce services
     mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(otherServiceProps)
-    await TheCommand.run([])
+    await TheCommand.run([], await Config.load({ root: pluginRoot }))
     expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
       orgId: mockOrgId,
       project: mockProject,
@@ -221,7 +224,7 @@ describe('Run', () => {
     mockConsoleCLIInstance.getServicePropertiesFromWorkspaceWithCredentialType.mockResolvedValueOnce(otherServiceProps)
     mockConfigProject.workspace.name = 'Production'
     mockWorkspace.name = 'Production'
-    await TheCommand.run([])
+    await TheCommand.run([], await Config.load({ root: pluginRoot }))
     expect(mockConsoleCLIInstance.subscribeToServicesWithCredentialType).toHaveBeenCalledWith({
       orgId: mockOrgId,
       project: mockProject,
