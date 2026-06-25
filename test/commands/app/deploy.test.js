@@ -412,7 +412,16 @@ describe('run', () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'exc'))
     mockGetExtensionPointsRetractedApp() // not published
     command.getFullConfig.mockResolvedValue({
-      aio: null,
+      aio: {
+        project: {
+          workspace: {
+            name: 'Production'
+          },
+          org: {
+            id: '1111'
+          }
+        }
+      },
       packagejson: {
         name: 'test-app',
         version: '1.0.0'
