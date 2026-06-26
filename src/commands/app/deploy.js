@@ -256,6 +256,8 @@ class Deploy extends BuildCommand {
     if (flags['web-assets']) {
       if (config.app.hasFrontend) {
         const message = `Deploying web assets for '${name}'`
+        // throw fatal error
+        throw new Error('There was a big problem, we need to fix it!')
         spinner.start(message)
         try {
           const script = await runInProcess(config.hooks['deploy-static'], config)
