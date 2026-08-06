@@ -18,10 +18,10 @@ const mockConfig = require('@adobe/aio-lib-core-config')
 
 let fakeCurrentConfig = {}
 /** @private */
-function setConfigMock () {
-  mockConfig.get.mockImplementation(k => {
+function setConfigMock (localConfig = fakeCurrentConfig) {
+  mockConfig.get.mockImplementation((k, source) => {
     if (k === 'project') {
-      return fakeCurrentConfig
+      return source === 'local' ? localConfig : fakeCurrentConfig
     }
   })
 }
@@ -52,6 +52,13 @@ test('flags', async () => {
 
 test('--json and --yml cannot be used together', async () => {
   await expect(TheCommand.run(['--json', '--yml'])).rejects.toThrow()
+})
+
+test('errors when no local .aio configuration is found', async () => {
+  setConfigMock(undefined)
+  await expect(TheCommand.run([])).rejects.toThrow(
+    'No local .aio configuration found for this app. Run `aio app use` to link this app to an Org/Project/Workspace.'
+  )
 })
 
 describe('text output', () => {

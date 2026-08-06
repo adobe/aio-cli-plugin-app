@@ -54,8 +54,19 @@ function isCompleteConfig (config) {
     config.workspace && config.workspace.id && config.workspace.name
 }
 
+/**
+ * Checks whether a local `.aio` file (as written by `aio app use`) defines the
+ * project configuration, as opposed to it only being present in the global config.
+ *
+ * @returns {boolean} true if a local `.aio` file defines the project configuration
+ */
+function hasLocalConfiguration () {
+  return !!config.get('project', 'local')
+}
+
 module.exports = {
   loadCurrentConfiguration,
   configString,
-  isCompleteConfig
+  isCompleteConfig,
+  hasLocalConfiguration
 }

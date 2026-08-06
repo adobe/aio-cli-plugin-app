@@ -14,7 +14,7 @@ const { EOL } = require('os')
 jest.mock('@adobe/aio-lib-core-config')
 const mockConfig = require('@adobe/aio-lib-core-config')
 
-const { loadCurrentConfiguration, configString, isCompleteConfig } = require('../../src/lib/console-helper')
+const { loadCurrentConfiguration, configString, isCompleteConfig, hasLocalConfiguration } = require('../../src/lib/console-helper')
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -105,5 +105,25 @@ describe('isCompleteConfig', () => {
 
   test('null config', () => {
     expect(isCompleteConfig(null)).toBeFalsy()
+  })
+})
+
+describe('hasLocalConfiguration', () => {
+  test('local .aio defines the project config', () => {
+    mockConfig.get.mockImplementation((k, source) => {
+      if (k === 'project' && source === 'local') {
+        return { id: 'projectid', name: 'projectname' }
+      }
+    })
+    expect(hasLocalConfiguration()).toBe(true)
+  })
+
+  test('no local .aio file (only global config)', () => {
+    mockConfig.get.mockImplementation((k, source) => {
+      if (k === 'project' && source === 'local') {
+        return undefined
+      }
+    })
+    expect(hasLocalConfiguration()).toBe(false)
   })
 })

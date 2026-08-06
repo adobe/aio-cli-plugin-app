@@ -12,12 +12,17 @@ governing permissions and limitations under the License.
 const { Flags } = require('@oclif/core')
 const yaml = require('js-yaml')
 const BaseCommand = require('../../../BaseCommand')
-const { loadCurrentConfiguration, configString } = require('../../../lib/console-helper')
+const { loadCurrentConfiguration, configString, hasLocalConfiguration } = require('../../../lib/console-helper')
 const { EOL } = require('os')
 
 class WhereCommand extends BaseCommand {
   async run () {
     const { flags } = await this.parse(WhereCommand)
+
+    if (!hasLocalConfiguration()) {
+      this.error('No local .aio configuration found for this app. Run `aio app use` to link this app to an Org/Project/Workspace.')
+    }
+
     const currentConfig = loadCurrentConfiguration()
 
     if (flags.json) {

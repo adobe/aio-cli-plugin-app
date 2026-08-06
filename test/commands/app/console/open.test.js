@@ -20,10 +20,10 @@ const libEnv = require('@adobe/aio-lib-env')
 
 let fakeCurrentConfig = {}
 /** @private */
-function setConfigMock () {
-  mockConfig.get.mockImplementation(k => {
+function setConfigMock (localConfig = fakeCurrentConfig) {
+  mockConfig.get.mockImplementation((k, source) => {
     if (k === 'project') {
-      return fakeCurrentConfig
+      return source === 'local' ? localConfig : fakeCurrentConfig
     }
   })
 }
@@ -86,6 +86,14 @@ test('errors when project is missing', async () => {
   await expect(TheCommand.run([])).rejects.toThrow(
     'Incomplete .aio configuration, cannot open the Developer Console.' +
     ' Please import a valid Adobe Developer Console configuration file via `aio app use <config>.json`.'
+  )
+  expect(open).not.toHaveBeenCalled()
+})
+
+test('errors when no local .aio configuration is found', async () => {
+  setConfigMock(undefined)
+  await expect(TheCommand.run([])).rejects.toThrow(
+    'No local .aio configuration found for this app. Run `aio app use` to link this app to an Org/Project/Workspace.'
   )
   expect(open).not.toHaveBeenCalled()
 })

@@ -12,12 +12,17 @@ governing permissions and limitations under the License.
 const open = require('open')
 const { getCliEnv } = require('@adobe/aio-lib-env')
 const BaseCommand = require('../../../BaseCommand')
-const { loadCurrentConfiguration } = require('../../../lib/console-helper')
+const { loadCurrentConfiguration, hasLocalConfiguration } = require('../../../lib/console-helper')
 const { OPEN_URLS } = require('../../../lib/defaults')
 
 class OpenCommand extends BaseCommand {
   async run () {
     await this.parse(OpenCommand)
+
+    if (!hasLocalConfiguration()) {
+      this.error('No local .aio configuration found for this app. Run `aio app use` to link this app to an Org/Project/Workspace.')
+    }
+
     const { org, project, workspace } = loadCurrentConfiguration()
 
     if (!org.id || !project.id) {
