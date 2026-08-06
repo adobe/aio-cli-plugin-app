@@ -74,7 +74,7 @@ test('errors when org is missing locally', async () => {
   delete fakeCurrentConfig.org
   setConfigMock()
   await expect(TheCommand.run([])).rejects.toThrow(
-    'No local .aio configuration found for this app. Run `aio app use` to link this app to an Org/Project/Workspace.'
+    'This app is not set to use any Org/Project/Workspace yet. Run `aio app use` to configure it.'
   )
   expect(open).not.toHaveBeenCalled()
 })
@@ -83,7 +83,7 @@ test('errors when project is missing locally', async () => {
   fakeCurrentConfig = {}
   setConfigMock()
   await expect(TheCommand.run([])).rejects.toThrow(
-    'No local .aio configuration found for this app. Run `aio app use` to link this app to an Org/Project/Workspace.'
+    'This app is not set to use any Org/Project/Workspace yet. Run `aio app use` to configure it.'
   )
   expect(open).not.toHaveBeenCalled()
 })
@@ -91,7 +91,7 @@ test('errors when project is missing locally', async () => {
 test('errors when no local .aio configuration is found', async () => {
   setConfigMock(undefined)
   await expect(TheCommand.run([])).rejects.toThrow(
-    'No local .aio configuration found for this app. Run `aio app use` to link this app to an Org/Project/Workspace.'
+    'This app is not set to use any Org/Project/Workspace yet. Run `aio app use` to configure it.'
   )
   expect(open).not.toHaveBeenCalled()
 })
