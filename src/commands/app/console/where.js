@@ -23,7 +23,7 @@ class WhereCommand extends BaseCommand {
       this.error('No local .aio configuration found for this app. Run `aio app use` to link this app to an Org/Project/Workspace.')
     }
 
-    const currentConfig = loadCurrentConfiguration()
+    const currentConfig = loadCurrentConfiguration('local')
 
     if (flags.json) {
       this.log(JSON.stringify(currentConfig, null, 2))

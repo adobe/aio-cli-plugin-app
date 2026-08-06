@@ -72,14 +72,46 @@ describe('text output', () => {
     ].join(EOL))
   })
 
-  test('no config set', async () => {
+  test('errors when local .aio config is present but empty', async () => {
     fakeCurrentConfig = {}
+    setConfigMock()
+    await expect(TheCommand.run([])).rejects.toThrow(
+      'No local .aio configuration found for this app. Run `aio app use` to link this app to an Org/Project/Workspace.'
+    )
+  })
+
+  test('shows the no-workspace-selected placeholder when local .aio has no workspace', async () => {
+    delete fakeCurrentConfig.workspace
     setConfigMock()
     const logSpy = jest.spyOn(TheCommand.prototype, 'log').mockReturnValue()
     await TheCommand.run([])
     expect(logSpy).toHaveBeenCalledWith(`This app is set to use:${EOL}` + [
-      '1. Org: <no org selected>',
-      '2. Project: <no project selected>',
+      '1. Org: org name',
+      '2. Project: projectname',
+      '3. Workspace: <no workspace selected>'
+    ].join(EOL))
+  })
+
+  test('global config is never used, even if it defines a complete org/project/workspace', async () => {
+    delete fakeCurrentConfig.workspace
+    setConfigMock()
+    mockConfig.get.mockImplementation((k, source) => {
+      if (k === 'project') {
+        if (source === 'local') return fakeCurrentConfig
+        // global/merged fallback: a different, complete project - must never be used
+        return {
+          name: 'globalprojectname',
+          id: 'globalprojectid',
+          org: { name: 'global org name', id: 'global-org-id' },
+          workspace: { name: 'globalworkspacename', id: 'globalworkspaceid' }
+        }
+      }
+    })
+    const logSpy = jest.spyOn(TheCommand.prototype, 'log').mockReturnValue()
+    await TheCommand.run([])
+    expect(logSpy).toHaveBeenCalledWith(`This app is set to use:${EOL}` + [
+      '1. Org: org name',
+      '2. Project: projectname',
       '3. Workspace: <no workspace selected>'
     ].join(EOL))
   })

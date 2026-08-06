@@ -70,22 +70,20 @@ test('opens the project overview url when there is no workspace selected', async
   )
 })
 
-test('errors when org is missing', async () => {
+test('errors when org is missing locally', async () => {
   delete fakeCurrentConfig.org
   setConfigMock()
   await expect(TheCommand.run([])).rejects.toThrow(
-    'Incomplete .aio configuration, cannot open the Developer Console.' +
-    ' Please import a valid Adobe Developer Console configuration file via `aio app use <config>.json`.'
+    'No local .aio configuration found for this app. Run `aio app use` to link this app to an Org/Project/Workspace.'
   )
   expect(open).not.toHaveBeenCalled()
 })
 
-test('errors when project is missing', async () => {
+test('errors when project is missing locally', async () => {
   fakeCurrentConfig = {}
   setConfigMock()
   await expect(TheCommand.run([])).rejects.toThrow(
-    'Incomplete .aio configuration, cannot open the Developer Console.' +
-    ' Please import a valid Adobe Developer Console configuration file via `aio app use <config>.json`.'
+    'No local .aio configuration found for this app. Run `aio app use` to link this app to an Org/Project/Workspace.'
   )
   expect(open).not.toHaveBeenCalled()
 })
@@ -96,4 +94,26 @@ test('errors when no local .aio configuration is found', async () => {
     'No local .aio configuration found for this app. Run `aio app use` to link this app to an Org/Project/Workspace.'
   )
   expect(open).not.toHaveBeenCalled()
+})
+
+test('global config is never used, even if it defines a complete org/project/workspace', async () => {
+  // local config only has org+project, no workspace - global has a full (different) config
+  delete fakeCurrentConfig.workspace
+  setConfigMock()
+  mockConfig.get.mockImplementation((k, source) => {
+    if (k === 'project') {
+      if (source === 'local') return fakeCurrentConfig
+      // global/merged fallback: a different, complete project - must never be used
+      return {
+        name: 'globalprojectname',
+        id: 'globalprojectid',
+        org: { name: 'global org name', id: 'global-org-id' },
+        workspace: { name: 'globalworkspacename', id: 'globalworkspaceid' }
+      }
+    }
+  })
+  await TheCommand.run([])
+  expect(open).toHaveBeenCalledWith(
+    'https://developer.adobe.com/console/projects/org-id/projectid/overview'
+  )
 })

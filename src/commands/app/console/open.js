@@ -23,14 +23,7 @@ class OpenCommand extends BaseCommand {
       this.error('No local .aio configuration found for this app. Run `aio app use` to link this app to an Org/Project/Workspace.')
     }
 
-    const { org, project, workspace } = loadCurrentConfiguration()
-
-    if (!org.id || !project.id) {
-      this.error(
-        'Incomplete .aio configuration, cannot open the Developer Console.' +
-        ' Please import a valid Adobe Developer Console configuration file via `aio app use <config>.json`.'
-      )
-    }
+    const { org, project, workspace } = loadCurrentConfiguration('local')
 
     let url = `${OPEN_URLS[getCliEnv()]}/${org.id}/${project.id}/`
     url += workspace.id ? `workspaces/${workspace.id}/details` : 'overview'

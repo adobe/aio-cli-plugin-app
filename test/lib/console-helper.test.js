@@ -109,10 +109,15 @@ describe('isCompleteConfig', () => {
 })
 
 describe('hasLocalConfiguration', () => {
-  test('local .aio defines the project config', () => {
+  test('local .aio fully defines org, project, and workspace', () => {
     mockConfig.get.mockImplementation((k, source) => {
       if (k === 'project' && source === 'local') {
-        return { id: 'projectid', name: 'projectname' }
+        return {
+          id: 'projectid',
+          name: 'projectname',
+          org: { id: 'org-id', name: 'org name' },
+          workspace: { id: 'workspaceid', name: 'workspacename' }
+        }
       }
     })
     expect(hasLocalConfiguration()).toBe(true)
@@ -122,6 +127,28 @@ describe('hasLocalConfiguration', () => {
     mockConfig.get.mockImplementation((k, source) => {
       if (k === 'project' && source === 'local') {
         return undefined
+      }
+    })
+    expect(hasLocalConfiguration()).toBe(false)
+  })
+
+  test('local .aio defines org/project but is missing workspace (workspace is optional)', () => {
+    mockConfig.get.mockImplementation((k, source) => {
+      if (k === 'project' && source === 'local') {
+        return {
+          id: 'projectid',
+          name: 'projectname',
+          org: { id: 'org-id', name: 'org name' }
+        }
+      }
+    })
+    expect(hasLocalConfiguration()).toBe(true)
+  })
+
+  test('local .aio defines a project but is missing org', () => {
+    mockConfig.get.mockImplementation((k, source) => {
+      if (k === 'project' && source === 'local') {
+        return { id: 'projectid', name: 'projectname' }
       }
     })
     expect(hasLocalConfiguration()).toBe(false)

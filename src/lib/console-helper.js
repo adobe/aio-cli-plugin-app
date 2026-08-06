@@ -13,12 +13,14 @@ const config = require('@adobe/aio-lib-core-config')
 const { EOL } = require('os')
 
 /**
- * Loads the local (per-app) org/project/workspace configuration, as set by `aio app use`.
+ * Loads the per-app org/project/workspace configuration, as set by `aio app use`.
  *
+ * @param {string} [source] pass 'local' to only read from the local `.aio` file,
+ *   bypassing the merge with the global config
  * @returns {object} { org, project, workspace }
  */
-function loadCurrentConfiguration () {
-  const projectConfig = config.get('project') || {}
+function loadCurrentConfiguration (source) {
+  const projectConfig = config.get('project', source) || {}
   const org = (projectConfig.org && { id: projectConfig.org.id, name: projectConfig.org.name }) || {}
   const project = { name: projectConfig.name, id: projectConfig.id }
   const workspace = (projectConfig.workspace && { ...projectConfig.workspace }) || {}
@@ -55,13 +57,17 @@ function isCompleteConfig (config) {
 }
 
 /**
- * Checks whether a local `.aio` file (as written by `aio app use`) defines the
- * project configuration, as opposed to it only being present in the global config.
+ * Checks whether a local `.aio` file (as written by `aio app use`) identifies an
+ * Org and Project on its own. Workspace is intentionally not required here, as
+ * an Org/Project can be locally selected before a Workspace is (e.g. via `aio app use --global`
+ * flows or partial imports) - callers should treat a missing local Workspace as
+ * "no workspace selected", not as "no local configuration at all".
  *
- * @returns {boolean} true if a local `.aio` file defines the project configuration
+ * @returns {boolean} true if the local `.aio` file identifies an Org and Project
  */
 function hasLocalConfiguration () {
-  return !!config.get('project', 'local')
+  const { org, project } = loadCurrentConfiguration('local')
+  return !!(org.id && org.name && project.id && project.name)
 }
 
 module.exports = {
