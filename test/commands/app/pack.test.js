@@ -204,7 +204,97 @@ test('createDeployYamlFile (1 extension), no api-mesh, plugin throws error', asy
     }
   })
 
-  await expect(command.createDeployYamlFile(extConfig)).rejects.toEqual(TypeError('Cannot read properties of undefined (reading \'includes\')'))
+  // the thrown value carries the "no mesh" message on `stderr` and has no `message`,
+  // so it must be treated as "no mesh found" rather than crashing on `message.includes`
+  await command.createDeployYamlFile(extConfig)
+
+  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('dist', 'app-package', 'deploy.yaml'))
+  await expect(importHelper.writeFile.mock.calls[0][1]).toMatchFixture('pack/2.deploy.no-mesh.yaml')
+  await expect(importHelper.writeFile.mock.calls[0][2]).toMatchObject({ overwrite: true })
+})
+
+test('createDeployYamlFile (1 extension), api-mesh stderr has Node process warnings', async () => {
+  const extConfig = fixtureJson('pack/2.all.config.json')
+  const meshOutput = fixtureFile('pack/3.api-mesh.get.json')
+
+  const command = new TheCommand()
+  command.argv = []
+  command.config = {
+    findCommand: jest.fn().mockReturnValue({}),
+    runCommand: jest.fn(),
+    runHook: jest.fn().mockResolvedValue({ successes: [] })
+  }
+
+  execa.mockImplementationOnce((cmd, args, opts) => {
+    expect(cmd).toEqual('aio')
+    expect(args).toEqual(['api-mesh', 'get', '--json'])
+    // Node process warnings must be suppressed in the child
+    expect(opts.env).toMatchObject({ NODE_NO_WARNINGS: '1' })
+
+    return {
+      stdout: meshOutput,
+      stderr: [
+        '(node:12345) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.',
+        '(Use `node --trace-deprecation ...` to show where the warning was created)'
+      ].join('\n')
+    }
+  })
+
+  // warnings on stderr are not errors: the mesh config must still be picked up
+  await command.createDeployYamlFile(extConfig)
+
+  await expect(importHelper.writeFile.mock.calls[0][0]).toMatch(path.join('dist', 'app-package', 'deploy.yaml'))
+  await expect(importHelper.writeFile.mock.calls[0][1]).toMatchFixture('pack/2.deploy.yaml')
+  await expect(importHelper.writeFile.mock.calls[0][2]).toMatchObject({ overwrite: true })
+})
+
+test('createDeployYamlFile (1 extension), api-mesh real error mixed with Node process warnings', async () => {
+  const extConfig = fixtureJson('pack/2.all.config.json')
+
+  const command = new TheCommand()
+  command.argv = []
+  command.config = {
+    findCommand: jest.fn().mockReturnValue({}),
+    runCommand: jest.fn(),
+    runHook: jest.fn().mockResolvedValue({ successes: [] })
+  }
+
+  execa.mockImplementationOnce((cmd, args) => {
+    expect(cmd).toEqual('aio')
+    expect(args).toEqual(['api-mesh', 'get', '--json'])
+
+    return {
+      stderr: [
+        '(node:12345) [DEP0040] DeprecationWarning: The `punycode` module is deprecated.',
+        'Error: api-mesh service is unavailable'
+      ].join('\n')
+    }
+  })
+
+  // the warning is stripped, the real error is still surfaced
+  await expect(command.createDeployYamlFile(extConfig)).rejects.toEqual(Error('Error: api-mesh service is unavailable'))
+})
+
+test('createDeployYamlFile (1 extension), api-mesh throws a value with no message or stderr', async () => {
+  const extConfig = fixtureJson('pack/2.all.config.json')
+
+  const command = new TheCommand()
+  command.argv = []
+  command.config = {
+    findCommand: jest.fn().mockReturnValue({}),
+    runCommand: jest.fn(),
+    runHook: jest.fn().mockResolvedValue({ successes: [] })
+  }
+
+  execa.mockImplementationOnce((cmd, args) => {
+    expect(cmd).toEqual('aio')
+    expect(args).toEqual(['api-mesh', 'get', '--json'])
+    // eslint-disable-next-line no-throw-literal
+    throw { code: 'ENOENT' }
+  })
+
+  // must rethrow the original value, not crash while inspecting it
+  await expect(command.createDeployYamlFile(extConfig)).rejects.toEqual({ code: 'ENOENT' })
 })
 
 test('createDeployYamlFile (1 extension), api-mesh get call throws non 404 error', async () => {

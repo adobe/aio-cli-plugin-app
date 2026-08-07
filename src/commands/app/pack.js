@@ -31,6 +31,25 @@ const DEFAULTS = {
   DEPLOY_YAML_FILE_NAME: 'deploy.yaml'
 }
 
+// matches Node process warnings, e.g.
+//   (node:1234) [DEP0040] DeprecationWarning: The `punycode` module is deprecated.
+//   (Use `node --trace-deprecation ...` to show where the warning was created)
+const NODE_WARNING_LINE = /^\(node:\d+\)|^\(Use `node --trace-/
+
+/**
+ * Removes Node process warning lines from a child process' stderr.
+ *
+ * @param {string} stderr the raw stderr of a child process
+ * @returns {string} the stderr with any Node process warnings removed
+ */
+function stripNodeWarnings (stderr) {
+  return (stderr ?? '')
+    .split('\n')
+    .filter(line => !NODE_WARNING_LINE.test(line))
+    .join('\n')
+    .trim()
+}
+
 class Pack extends BaseCommand {
   async run () {
     const { args, flags } = await this.parse(Pack)
@@ -195,21 +214,34 @@ class Pack extends BaseCommand {
     if (command) {
       try {
         this.spinner.start('Getting api-mesh config...')
-        const { stdout, stderr } = await execa('aio', ['api-mesh', 'get', '--json'], { cwd: process.cwd() })
+        // the child's stderr is used below to detect the "no mesh" case, so Node process
+        // warnings (e.g. DEP0040 punycode) must not pollute it. NODE_NO_WARNINGS is used
+        // rather than NODE_OPTIONS so that a user-set NODE_OPTIONS is preserved (execa
+        // merges `env` with process.env by default).
+        const { stdout, stderr } = await execa('aio', ['api-mesh', 'get', '--json'], {
+          cwd: process.cwd(),
+          env: { NODE_NO_WARNINGS: '1' }
+        })
 
-        if (stderr) {
-          throw new Error(stderr)
+        // defensively strip any Node process-warning lines that still reach stderr
+        const meshStderr = stripNodeWarnings(stderr)
+
+        if (meshStderr) {
+          throw new Error(meshStderr)
         }
 
         meshConfig = JSON.parse(stdout).meshConfig
         aioLogger.debug(`api-mesh:get - ${JSON.stringify(meshConfig, null, 2)}`)
         this.spinner.succeed('Got api-mesh config')
       } catch (err) {
-        // Ignore error if no mesh found, otherwise throw
-        if (err?.message.includes('Error: Unable to get mesh config.')) {
+        // Ignore error if no mesh found, otherwise throw.
+        // Thrown execa errors carry the child's output on `stderr`, which is not always
+        // reflected in `message` (and `message` is absent entirely for non-Error throws).
+        const details = [err?.message, err?.stderr].filter(Boolean).join('\n')
+        if (details.includes('Unable to get mesh config.')) {
           aioLogger.debug('No api-mesh config found')
         } else {
-          console.error(err)
+          aioLogger.debug(`api-mesh:get failed - ${details || err}`)
           throw err
         }
       }
