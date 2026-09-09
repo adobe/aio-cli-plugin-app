@@ -54,6 +54,7 @@
     "@types/jest": "^29",
     "babel-runtime": "^6.26.0",
     "core-js": "^3",
+    "cross-env": "^7.0.3",
     "eol": "^0.9.1",
     "eslint": "^9",
     "eslint-plugin-jsdoc": "^48.11.0",
@@ -92,7 +93,7 @@
     "lint-fix": "npm run lint -- --fix",
     "prepack": "oclif manifest && oclif readme --no-aliases",
     "test": "npm run unit-tests && npm run lint",
-    "unit-tests": "jest -c jest.config.js",
+    "unit-tests": "cross-env NODE_OPTIONS=--experimental-vm-modules jest -c jest.config.js",
     "version": "oclif readme --no-aliases && git add README.md",
     "update-openwhisk-runtimes": "node bin/openwhisk-standalone-config/get-runtimes.js > bin/openwhisk-standalone-config/runtimes.json"
   },
