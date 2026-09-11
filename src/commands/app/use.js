@@ -12,6 +12,7 @@ governing permissions and limitations under the License.
 const BaseCommand = require('../../BaseCommand')
 const { CONSOLE_CONFIG_KEY, getProjectCredentialType } = require('../../lib/import-helper')
 const { importConsoleConfig, downloadConsoleConfigToBuffer } = require('../../lib/import')
+const { loadCurrentConfiguration, configString, isCompleteConfig } = require('../../lib/console-helper')
 const { Flags, Args } = require('@oclif/core')
 const inquirer = require('inquirer')
 const config = require('@adobe/aio-lib-core-config')
@@ -38,9 +39,9 @@ class Use extends BaseCommand {
     const prompt = inquirer.createPromptModule({ output: process.stderr })
 
     // load local config
-    const currentConfig = this.loadCurrentConfiguration()
-    const currentConfigString = this.configString(currentConfig)
-    const currentConfigIsComplete = this.isCompleteConfig(currentConfig)
+    const currentConfig = loadCurrentConfiguration()
+    const currentConfigString = configString(currentConfig)
+    const currentConfigIsComplete = isCompleteConfig(currentConfig)
     this.log(`You are currently in:${EOL}${currentConfigString}${EOL}`)
 
     if (args.config_file_path) {
@@ -55,7 +56,7 @@ class Use extends BaseCommand {
 
     // load global console config
     const globalConfig = this.loadGlobalConfiguration()
-    const globalConfigString = this.configString(globalConfig, 4)
+    const globalConfigString = configString(globalConfig, 4)
 
     // load from global configuration or select workspace ?
     const globalOperationFromFlag = flags.global ? 'global' : null
@@ -71,7 +72,7 @@ class Use extends BaseCommand {
     // load the new workspace, project, org config
     let newConfig
     if (useOperation === 'global') {
-      if (!this.isCompleteConfig(globalConfig)) {
+      if (!isCompleteConfig(globalConfig)) {
         const message = `Your global Console configuration is incomplete.${EOL}` +
         'Use the `aio console` commands to select your Organization, Project, and Workspace.'
         this.error(message)
@@ -129,29 +130,8 @@ class Use extends BaseCommand {
     }
   }
 
-  loadCurrentConfiguration () {
-    const projectConfig = config.get('project') || {}
-    const org = (projectConfig.org && { id: projectConfig.org.id, name: projectConfig.org.name }) || {}
-    const project = { name: projectConfig.name, id: projectConfig.id }
-    const workspace = (projectConfig.workspace && { ...projectConfig.workspace }) || {}
-    return { org, project, workspace }
-  }
-
   loadGlobalConfiguration () {
     return config.get(CONSOLE_CONFIG_KEY) || {}
-  }
-
-  configString (config, spaces = 0) {
-    const { org = {}, project = {}, workspace = {} } = config
-    const list = [
-      `1. Org: ${org.name || '<no org selected>'}`,
-      `2. Project: ${project.name || '<no project selected>'}`,
-      `3. Workspace: ${workspace.name || '<no workspace selected>'}`
-    ]
-
-    return list
-      .map(line => ' '.repeat(spaces) + line)
-      .join(EOL)
   }
 
   async promptForUseOperation (prompt, globalConfigString) {
@@ -167,13 +147,6 @@ class Use extends BaseCommand {
       }
     ])
     return op.res
-  }
-
-  isCompleteConfig (config) {
-    return config &&
-      config.org && config.org.id && config.org.name &&
-      config.project && config.project.id && config.project.name &&
-      config.workspace && config.workspace.id && config.workspace.name
   }
 
   /**
@@ -322,9 +295,9 @@ class Use extends BaseCommand {
 
   async finalLogMessage (consoleConfig) {
     const config = { org: consoleConfig.project.org, project: consoleConfig.project, workspace: consoleConfig.project.workspace }
-    const configString = this.configString(config)
+    const configStr = configString(config)
     this.log(chalk.green(chalk.bold(
-      `${EOL}✔ Successfully imported configuration for:${EOL}${configString}.`
+      `${EOL}✔ Successfully imported configuration for:${EOL}${configStr}.`
     )))
   }
 
