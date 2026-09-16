@@ -16,7 +16,6 @@ const fs = require('fs-extra')
 const ora = require('ora')
 const chalk = require('chalk')
 const { Flags, Args } = require('@oclif/core')
-const generators = require('@adobe/generator-aio-app')
 const TemplateRegistryAPI = require('@adobe/aio-lib-templates')
 const inquirer = require('inquirer')
 const hyperlinker = require('hyperlinker')
@@ -430,6 +429,8 @@ class InitCommand extends TemplatesCommand {
   }
 
   async runCodeGenerators (generatorNames, skipPrompt, projectName, linter) {
+    // @adobe/generator-aio-app is ESM-only, load it lazily via dynamic import from this CommonJS command
+    const generators = (await import('@adobe/generator-aio-app')).default
     const env = await createYeomanEnvironment({ skipInstall: true })
 
     // first run app generator that will generate the root skeleton + ci
