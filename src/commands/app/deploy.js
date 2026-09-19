@@ -232,6 +232,14 @@ class Deploy extends BuildCommand {
               this.error(hookResults.failures.map(f => `${f.plugin.name} : ${f.error.message}`).join('\nError: '), { exit: 1 })
             }
             aioConfigLoader.reload()
+            // Re-derive the app config so that env changes from hooks
+            // (e.g. new credentials written to .env) are reflected in all
+            // config values, not just process.env used by input resolution.
+            this.appConfig = null
+            const refreshedConfigs = await this.getAppExtConfigs(flags)
+            if (refreshedConfigs[name]) {
+              config = { ...setRuntimeApiHostAndAuthHandler(refreshedConfigs[name]) }
+            }
             deployedRuntimeEntities = await rtLib.deployActions(config, { filterEntities, useForce: flags['force-deploy'] }, onProgress)
           }
 
