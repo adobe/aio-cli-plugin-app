@@ -46,7 +46,7 @@
     "unzipper": "^0.12.5",
     "upath": "^2",
     "which": "^4.0.0",
-    "yeoman-environment": "^4.4.3"
+    "yeoman-environment": "^6.3.0"
   },
   "devDependencies": {
     "@adobe/aio-lib-test-proxy": "^2",
@@ -65,7 +65,7 @@
     "stdout-stderr": "^0.1.9"
   },
   "engines": {
-    "node": ">=20.5.0"
+    "node": ">=20.17.0"
   },
   "files": [
     "bin/run",
