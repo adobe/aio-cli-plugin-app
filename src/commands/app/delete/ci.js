@@ -15,8 +15,6 @@ const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-
 const { Flags } = require('@oclif/core')
 const fs = require('fs-extra')
 
-const { constants } = require('@adobe/generator-app-common-lib')
-const { ciDirName } = constants
 const DEPLOY_PROD_FILENAME = '/workflows/deploy_prod.yml'
 const DEPLOY_STAGE_FILENAME = '/workflows/deploy_stage.yml'
 const TEST_PR_FILENAME = '/workflows/pr_test.yml'
@@ -24,6 +22,10 @@ const TEST_PR_FILENAME = '/workflows/pr_test.yml'
 class DeleteCICommand extends BaseCommand {
   async run () {
     const { flags } = await this.parse(DeleteCICommand)
+
+    // @adobe/generator-app-common-lib is ESM-only, load it lazily via dynamic import from this CommonJS command
+    const { constants } = await import('@adobe/generator-app-common-lib')
+    const { ciDirName } = constants
 
     aioLogger.debug(`deleting CI files from the project, using flags: ${JSON.stringify(flags)}`)
 

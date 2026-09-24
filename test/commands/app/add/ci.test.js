@@ -13,7 +13,12 @@ const fs = require('fs-extra')
 
 const TheCommand = require('../../../../src/commands/app/add/ci')
 const BaseCommand = require('../../../../src/BaseCommand')
-const generators = require('@adobe/generator-aio-app')
+
+// @adobe/generator-aio-app is ESM-only, load it lazily via dynamic import (matches the command's runtime load)
+let generators
+beforeAll(async () => {
+  generators = (await import('@adobe/generator-aio-app')).default
+})
 
 jest.mock('fs-extra')
 
