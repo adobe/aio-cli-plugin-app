@@ -14,7 +14,6 @@ const { Flags, Args } = require('@oclif/core')
 const path = require('node:path')
 const fs = require('fs-extra')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:pack', { provider: 'debug' })
-const archiver = require('archiver')
 const yaml = require('js-yaml')
 const execa = require('execa')
 const { loadConfigFile, writeFile } = require('../../lib/import-helper')
@@ -260,10 +259,12 @@ class Pack extends BaseCommand {
    * @param {boolean} pathInZip internal path in zip
    * @returns {Promise} returns with a blank promise when done
    */
-  zipHelper (filePath, out, pathInZip = false) {
+  async zipHelper (filePath, out, pathInZip = false) {
     aioLogger.debug(`Creating zip of file/folder '${filePath}'`)
+    // archiver 8 is ESM-only and exposes a class API; load it lazily via dynamic import from this CommonJS command
+    const { ZipArchive } = await import('archiver')
     const stream = fs.createWriteStream(out)
-    const archive = archiver('zip', { zlib: { level: 9 } })
+    const archive = new ZipArchive({ zlib: { level: 9 } })
 
     return new Promise((resolve, reject) => {
       stream.on('close', () => resolve())

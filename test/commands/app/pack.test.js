@@ -17,7 +17,6 @@ const fs = require('fs-extra')
 const path = require('node:path')
 const importHelper = require('../../../src/lib/import-helper')
 const yaml = require('js-yaml')
-const archiver = require('archiver')
 
 const libConfig = require('@adobe/aio-cli-lib-app-config')
 
@@ -25,7 +24,11 @@ const libConfig = require('@adobe/aio-cli-lib-app-config')
 jest.mock('execa')
 jest.mock('fs-extra')
 jest.mock('../../../src/lib/import-helper')
-jest.mock('archiver')
+// archiver 8 is ESM-only with a class API; the current mock instance is set per-test.
+let currentArchiverMock
+jest.unstable_mockModule('archiver', () => ({
+  ZipArchive: jest.fn().mockImplementation(() => currentArchiverMock)
+}))
 
 const mockGetFullConfig = jest.fn()
 
@@ -63,8 +66,6 @@ beforeEach(() => {
   fs.copy.mockClear()
   fs.createWriteStream.mockClear()
   fs.lstatSync.mockClear()
-
-  archiver.mockClear()
 })
 
 test('exports', async () => {
@@ -293,21 +294,29 @@ test('zipHelper', async () => {
     finalize: jest.fn()
   }
 
-  archiver.mockImplementation(() => archiverMock)
+  currentArchiverMock = archiverMock
+
+  // zipHelper is async (loads ESM archiver via dynamic import); flush microtasks so the
+  // archive is set up before triggering the stream 'close'/'error' handlers.
+  const flush = () => new Promise(resolve => setImmediate(resolve))
 
   const command = new TheCommand()
   command.argv = []
 
   // not a directory, just a file (see lstatSync mock 1)
-  command.zipHelper('my-file', 'app.zip')
+  const p1 = command.zipHelper('my-file', 'app.zip')
+  await flush()
   endStream()
+  await p1
   expect(archiverMock.directory).not.toHaveBeenCalled()
   expect(archiverMock.file).toHaveBeenCalledWith('my-file', { name: 'my-file' })
   archiverMock.file.mockClear()
 
   // a directory (see lstatSync mock 2)
-  command.zipHelper('my-folder', 'app.zip')
+  const p2 = command.zipHelper('my-folder', 'app.zip')
+  await flush()
   endStream()
+  await p2
   expect(archiverMock.file).not.toHaveBeenCalled()
   expect(archiverMock.directory).toHaveBeenCalledWith('my-folder', false)
   archiverMock.directory.mockClear()
@@ -318,8 +327,10 @@ test('zipHelper', async () => {
   archiverMock.destroy.mockClear()
 
   // archiving error, for coverage (see lstatSync mock 4)
-  command.zipHelper('my-file', 'app.zip').catch(console.error)
-  onError()
+  const p4 = command.zipHelper('my-file', 'app.zip').catch(() => {})
+  await flush()
+  onError(new Error('archive error'))
+  await p4
 })
 
 describe('filesToPack', () => {

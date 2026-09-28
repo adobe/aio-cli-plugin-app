@@ -25,7 +25,7 @@
     "@parcel/reporter-cli": "^2.7.0",
     "ajv": "^8",
     "ajv-formats": "^2.1.1",
-    "archiver": "^7.0.1",
+    "archiver": "^8.0.0",
     "chalk": "^4",
     "chokidar": "^3.5.2",
     "execa": "^5.0.0",
