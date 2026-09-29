@@ -84,6 +84,7 @@ class Run extends BaseCommand {
     } catch (err) {
       this.log(err)
     }
+    coreConfig.reload()
 
     // check if there are certificates available, and generate them if not ...
     // only care about certificates if the application has a UI

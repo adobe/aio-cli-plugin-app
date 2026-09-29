@@ -19,6 +19,7 @@ const BaseCommand = require('../../BaseCommand')
 const webLib = require('@adobe/aio-lib-web')
 const { runInProcess, buildExtensionPointPayloadWoMetadata } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
+const coreConfig = require('@adobe/aio-lib-core-config')
 const { sendAppAssetsUndeployedAuditLog, sendAppUndeployAuditLog } = require('../../lib/audit-logger')
 const { setRuntimeApiHostAndAuthHandler, getAccessToken } = require('../../lib/auth-helper')
 
@@ -136,6 +137,7 @@ class Undeploy extends BaseCommand {
     } catch (err) {
       this.log(err)
     }
+    coreConfig.reload()
 
     if (flags.actions) {
       if (config.app.hasBackend) {

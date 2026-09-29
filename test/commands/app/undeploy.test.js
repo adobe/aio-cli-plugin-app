@@ -198,6 +198,16 @@ describe('run', () => {
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
   })
 
+  test('reloads config after pre-app-undeploy and before undeploying', async () => {
+    const mockConfig = require('@adobe/aio-lib-core-config')
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
+
+    await command.run()
+    expect(mockConfig.reload).toHaveBeenCalledTimes(1)
+    expect(helpers.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(mockConfig.reload.mock.invocationCallOrder[0])
+    expect(mockConfig.reload.mock.invocationCallOrder[0]).toBeLessThan(mockRuntimeLib.undeployActions.mock.invocationCallOrder[0])
+  })
+
   test('undeploy an App with no flags with hooks', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
     __setupMockHooks()

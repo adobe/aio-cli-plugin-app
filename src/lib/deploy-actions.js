@@ -13,6 +13,7 @@ governing permissions and limitations under the License.
 const { runInProcess } = require('./app-helper')
 const { deployActions } = require('@adobe/aio-lib-runtime')
 const logActions = require('./log-actions')
+const coreConfig = require('@adobe/aio-lib-core-config')
 
 /**
  * Deploys actions.
@@ -31,6 +32,7 @@ module.exports = async ({
   inprocHook
 }) => {
   await runInProcess(config.hooks['pre-app-deploy'], config)
+  coreConfig.reload()
 
   const hookFilterEntities = Array.isArray(deployConfig.filterEntities?.actions) ? deployConfig.filterEntities.actions : []
   const hookData = {
