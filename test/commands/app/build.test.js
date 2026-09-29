@@ -255,6 +255,38 @@ describe('run', () => {
     expect(mockBundleFunc).toHaveBeenCalledTimes(1)
   })
 
+  test('reloads config after pre-app-build and before building', async () => {
+    const mockConfig = require('@adobe/aio-lib-core-config')
+    mockConfig.reload.mockClear()
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+
+    await command.run()
+    expect(mockConfig.reload).toHaveBeenCalledTimes(1)
+    expect(helpers.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(mockConfig.reload.mock.invocationCallOrder[0])
+    expect(mockConfig.reload.mock.invocationCallOrder[0]).toBeLessThan(mockRuntimeLib.buildActions.mock.invocationCallOrder[0])
+  })
+
+  test.each([
+    [[], 'production', true],
+    [[], 'development', false],
+    [[], undefined, false],
+    [['--web-optimize'], undefined, true],
+    [['--no-web-optimize'], 'production', false]
+  ])('web-optimize %j with NODE_ENV=%s optimizes: %s', async (argv, nodeEnv, expected) => {
+    const originalNodeEnv = process.env.NODE_ENV
+    if (nodeEnv) process.env.NODE_ENV = nodeEnv
+    else delete process.env.NODE_ENV
+    try {
+      command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+      command.argv = argv
+      await command.run()
+      expect(mockWebLib.bundle).toHaveBeenCalledWith(expect.any(String), expect.any(String),
+        expect.objectContaining({ shouldOptimize: expected }), expect.any(Function))
+    } finally {
+      process.env.NODE_ENV = originalNodeEnv
+    }
+  })
+
   test('build & deploy an App with --no-content-hash', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 

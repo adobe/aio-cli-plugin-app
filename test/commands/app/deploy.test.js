@@ -880,9 +880,12 @@ describe('run', () => {
     command.argv = ['--no-web-assets']
     await command.run()
 
-    expect(mockConfig.reload).toHaveBeenCalledTimes(1)
+    const reloadOrder = mockConfig.reload.mock.invocationCallOrder
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
-    expect(mockConfig.reload.mock.invocationCallOrder[0]).toBeLessThan(
+    // reloaded after pre-app-deploy and again just before deploying actions
+    expect(reloadOrder.length).toBeGreaterThanOrEqual(2)
+    expect(helpers.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(reloadOrder[0])
+    expect(reloadOrder[reloadOrder.length - 1]).toBeLessThan(
       mockRuntimeLib.deployActions.mock.invocationCallOrder[0]
     )
   })
@@ -1368,8 +1371,7 @@ describe('run', () => {
         'log-forwarding-update': true,
         open: false,
         publish: false,
-        'web-assets': true,
-        'web-optimize': false
+        'web-assets': true
       },
       env: mockEnv,
       opItems: [
@@ -1492,8 +1494,7 @@ describe('run', () => {
         'log-forwarding-update': true,
         open: false,
         publish: false,
-        'web-assets': true,
-        'web-optimize': false
+        'web-assets': true
       },
       env: mockEnv,
       opItems: [

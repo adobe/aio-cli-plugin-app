@@ -28,6 +28,16 @@ beforeEach(() => {
   utils.runInProcess.mockReset()
 })
 
+test('reloads config after pre-app-build', async () => {
+  const coreConfig = require('@adobe/aio-lib-core-config')
+  coreConfig.reload.mockClear()
+  utils.runInProcess.mockImplementation(script => script === 'build-actions' ? {} : undefined)
+  await buildActions(extensionConfig)
+  expect(coreConfig.reload).toHaveBeenCalledTimes(1)
+  expect(utils.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(coreConfig.reload.mock.invocationCallOrder[0])
+  expect(coreConfig.reload.mock.invocationCallOrder[0]).toBeLessThan(utils.runInProcess.mock.invocationCallOrder[1])
+})
+
 test('exports', () => {
   expect(typeof buildActions).toEqual('function')
 })

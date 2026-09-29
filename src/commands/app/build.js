@@ -18,6 +18,7 @@ const { Flags } = require('@oclif/core')
 const { runInProcess, writeConfig } = require('../../lib/app-helper')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
 const { bundle } = require('@adobe/aio-lib-web')
+const coreConfig = require('@adobe/aio-lib-core-config')
 const fs = require('fs-extra')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:build', { provider: 'debug' })
 
@@ -68,6 +69,7 @@ class Build extends BaseCommand {
     } catch (err) {
       this.log(err)
     }
+    coreConfig.reload()
 
     if (flags.actions) {
       // removed flags['force-build'] || as it is always forced at this point, we need to check to decide what to build
@@ -117,7 +119,7 @@ class Build extends BaseCommand {
             const bundleOptions = {
               shouldDisableCache: true,
               shouldContentHash: flags['content-hash'],
-              shouldOptimize: flags['web-optimize'],
+              shouldOptimize: flags['web-optimize'] ?? process.env.NODE_ENV === 'production',
               logLevel: flags.verbose ? 'verbose' : 'warn'
             }
             // empty the dist folder to prevent an S3 explosion
@@ -179,8 +181,8 @@ Build.flags = {
     allowNo: true
   }),
   'web-optimize': Flags.boolean({
-    description: '[default: false] Enable optimization (minification) of js/css/html',
-    default: false
+    description: '[default: true if NODE_ENV=production, false otherwise] Enable optimization (minification) of js/css/html',
+    allowNo: true
   }),
   extension: Flags.string({
     description: 'Build only a specific extension point, the flags can be specified multiple times',
