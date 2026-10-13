@@ -10,9 +10,8 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { runInProcess } = require('./app-helper')
+const { runInProcess, reloadEnvOnHooks } = require('./app-helper')
 const { buildActions } = require('@adobe/aio-lib-runtime')
-const coreConfig = require('@adobe/aio-lib-core-config')
 
 /**
  * Builds actions.
@@ -23,7 +22,7 @@ const coreConfig = require('@adobe/aio-lib-core-config')
  */
 module.exports = async (config, filterActions, forceBuild = false) => {
   await runInProcess(config.hooks['pre-app-build'], config)
-  coreConfig.reload()
+  reloadEnvOnHooks()
   const script = await runInProcess(config.hooks['build-actions'], { config, options: { filterActions, forceBuild } })
   if (!script) {
     await buildActions(config, filterActions, forceBuild)

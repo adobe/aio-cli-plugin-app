@@ -255,15 +255,14 @@ describe('run', () => {
     expect(mockBundleFunc).toHaveBeenCalledTimes(1)
   })
 
-  test('reloads config after pre-app-build and before building', async () => {
-    const mockConfig = require('@adobe/aio-lib-core-config')
-    mockConfig.reload.mockClear()
+  test('reloads env after pre-app-build and before building', async () => {
+    helpers.reloadEnvOnHooks.mockClear()
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
-    expect(mockConfig.reload).toHaveBeenCalledTimes(1)
-    expect(helpers.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(mockConfig.reload.mock.invocationCallOrder[0])
-    expect(mockConfig.reload.mock.invocationCallOrder[0]).toBeLessThan(mockRuntimeLib.buildActions.mock.invocationCallOrder[0])
+    expect(helpers.reloadEnvOnHooks).toHaveBeenCalledTimes(1)
+    expect(helpers.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(helpers.reloadEnvOnHooks.mock.invocationCallOrder[0])
+    expect(helpers.reloadEnvOnHooks.mock.invocationCallOrder[0]).toBeLessThan(mockRuntimeLib.buildActions.mock.invocationCallOrder[0])
   })
 
   test.each([

@@ -15,10 +15,9 @@ const chalk = require('chalk')
 
 const BaseCommand = require('../../BaseCommand')
 const { Flags } = require('@oclif/core')
-const { runInProcess, writeConfig } = require('../../lib/app-helper')
+const { runInProcess, writeConfig, reloadEnvOnHooks } = require('../../lib/app-helper')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
 const { bundle } = require('@adobe/aio-lib-web')
-const coreConfig = require('@adobe/aio-lib-core-config')
 const fs = require('fs-extra')
 const aioLogger = require('@adobe/aio-lib-core-logging')('@adobe/aio-cli-plugin-app:build', { provider: 'debug' })
 
@@ -69,7 +68,7 @@ class Build extends BaseCommand {
     } catch (err) {
       this.log(err)
     }
-    coreConfig.reload()
+    reloadEnvOnHooks()
 
     if (flags.actions) {
       // removed flags['force-build'] || as it is always forced at this point, we need to check to decide what to build

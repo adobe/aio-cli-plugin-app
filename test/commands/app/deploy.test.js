@@ -869,8 +869,9 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
   })
 
-  test('deploy reloads config before deploying actions', async () => {
+  test('deploy reloads env after pre-app-deploy and reloads config before deploying actions', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+    helpers.reloadEnvOnHooks.mockClear()
     const noScriptFound = undefined
     helpers.runInProcess
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
@@ -880,12 +881,14 @@ describe('run', () => {
     command.argv = ['--no-web-assets']
     await command.run()
 
-    const reloadOrder = mockConfig.reload.mock.invocationCallOrder
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
-    // reloaded after pre-app-deploy and again just before deploying actions
-    expect(reloadOrder.length).toBeGreaterThanOrEqual(2)
-    expect(helpers.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(reloadOrder[0])
-    expect(reloadOrder[reloadOrder.length - 1]).toBeLessThan(
+    // env reload is gated, the config reload just before deploying actions is not
+    expect(helpers.reloadEnvOnHooks).toHaveBeenCalledTimes(1)
+    expect(helpers.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(
+      helpers.reloadEnvOnHooks.mock.invocationCallOrder[0]
+    )
+    expect(mockConfig.reload).toHaveBeenCalledTimes(1)
+    expect(mockConfig.reload.mock.invocationCallOrder[0]).toBeLessThan(
       mockRuntimeLib.deployActions.mock.invocationCallOrder[0]
     )
   })

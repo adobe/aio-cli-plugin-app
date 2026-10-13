@@ -35,13 +35,12 @@ test('exports', () => {
   expect(typeof deployActions).toEqual('function')
 })
 
-test('reloads config after pre-app-deploy', async () => {
-  const coreConfig = require('@adobe/aio-lib-core-config')
-  coreConfig.reload.mockClear()
+test('reloads env after pre-app-deploy', async () => {
+  utils.reloadEnvOnHooks.mockClear()
   await deployActions({ config: { hooks: {} } })
-  expect(coreConfig.reload).toHaveBeenCalledTimes(1)
-  expect(utils.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(coreConfig.reload.mock.invocationCallOrder[0])
-  expect(coreConfig.reload.mock.invocationCallOrder[0]).toBeLessThan(rtDeployActions.mock.invocationCallOrder[0])
+  expect(utils.reloadEnvOnHooks).toHaveBeenCalledTimes(1)
+  expect(utils.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(utils.reloadEnvOnHooks.mock.invocationCallOrder[0])
+  expect(utils.reloadEnvOnHooks.mock.invocationCallOrder[0]).toBeLessThan(rtDeployActions.mock.invocationCallOrder[0])
 })
 
 test('deploy-actions app hook available', async () => {
