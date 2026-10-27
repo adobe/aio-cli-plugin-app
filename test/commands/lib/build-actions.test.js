@@ -29,12 +29,12 @@ beforeEach(() => {
 })
 
 test('reloads env after pre-app-build', async () => {
-  utils.reloadEnvOnHooks.mockClear()
+  utils.reloadEnvOnPreHooks.mockClear()
   utils.runInProcess.mockImplementation(script => script === 'build-actions' ? {} : undefined)
   await buildActions(extensionConfig)
-  expect(utils.reloadEnvOnHooks).toHaveBeenCalledTimes(1)
-  expect(utils.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(utils.reloadEnvOnHooks.mock.invocationCallOrder[0])
-  expect(utils.reloadEnvOnHooks.mock.invocationCallOrder[0]).toBeLessThan(utils.runInProcess.mock.invocationCallOrder[1])
+  expect(utils.reloadEnvOnPreHooks).toHaveBeenCalledTimes(1)
+  expect(utils.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(utils.reloadEnvOnPreHooks.mock.invocationCallOrder[0])
+  expect(utils.reloadEnvOnPreHooks.mock.invocationCallOrder[0]).toBeLessThan(utils.runInProcess.mock.invocationCallOrder[1])
 })
 
 test('exports', () => {

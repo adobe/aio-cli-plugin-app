@@ -704,18 +704,18 @@ describe('run', () => {
 
   test('reloads env after pre-app-run and before starting the dev environment', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
-    helpers.reloadEnvOnHooks.mockClear()
+    helpers.reloadEnvOnPreHooks.mockClear()
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     command.argv = []
     await command.run()
 
-    expect(helpers.reloadEnvOnHooks).toHaveBeenCalledTimes(1)
+    expect(helpers.reloadEnvOnPreHooks).toHaveBeenCalledTimes(1)
     expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(helpers.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(
-      helpers.reloadEnvOnHooks.mock.invocationCallOrder[0]
+      helpers.reloadEnvOnPreHooks.mock.invocationCallOrder[0]
     )
-    expect(helpers.reloadEnvOnHooks.mock.invocationCallOrder[0]).toBeLessThan(
+    expect(helpers.reloadEnvOnPreHooks.mock.invocationCallOrder[0]).toBeLessThan(
       mockRunDev.mock.invocationCallOrder[0]
     )
   })

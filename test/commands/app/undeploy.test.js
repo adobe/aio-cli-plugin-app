@@ -199,13 +199,13 @@ describe('run', () => {
   })
 
   test('reloads env after pre-app-undeploy and before undeploying', async () => {
-    helpers.reloadEnvOnHooks.mockClear()
+    helpers.reloadEnvOnPreHooks.mockClear()
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())
 
     await command.run()
-    expect(helpers.reloadEnvOnHooks).toHaveBeenCalledTimes(1)
-    expect(helpers.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(helpers.reloadEnvOnHooks.mock.invocationCallOrder[0])
-    expect(helpers.reloadEnvOnHooks.mock.invocationCallOrder[0]).toBeLessThan(mockRuntimeLib.undeployActions.mock.invocationCallOrder[0])
+    expect(helpers.reloadEnvOnPreHooks).toHaveBeenCalledTimes(1)
+    expect(helpers.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(helpers.reloadEnvOnPreHooks.mock.invocationCallOrder[0])
+    expect(helpers.reloadEnvOnPreHooks.mock.invocationCallOrder[0]).toBeLessThan(mockRuntimeLib.undeployActions.mock.invocationCallOrder[0])
   })
 
   test('undeploy an App with no flags with hooks', async () => {

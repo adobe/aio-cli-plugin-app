@@ -256,13 +256,13 @@ describe('run', () => {
   })
 
   test('reloads env after pre-app-build and before building', async () => {
-    helpers.reloadEnvOnHooks.mockClear()
+    helpers.reloadEnvOnPreHooks.mockClear()
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 
     await command.run()
-    expect(helpers.reloadEnvOnHooks).toHaveBeenCalledTimes(1)
-    expect(helpers.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(helpers.reloadEnvOnHooks.mock.invocationCallOrder[0])
-    expect(helpers.reloadEnvOnHooks.mock.invocationCallOrder[0]).toBeLessThan(mockRuntimeLib.buildActions.mock.invocationCallOrder[0])
+    expect(helpers.reloadEnvOnPreHooks).toHaveBeenCalledTimes(1)
+    expect(helpers.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(helpers.reloadEnvOnPreHooks.mock.invocationCallOrder[0])
+    expect(helpers.reloadEnvOnPreHooks.mock.invocationCallOrder[0]).toBeLessThan(mockRuntimeLib.buildActions.mock.invocationCallOrder[0])
   })
 
   test.each([
