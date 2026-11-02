@@ -82,6 +82,23 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
 }
 
 /**
+ * Reloads the aio config so that changes made by a hook to .env or .aio are picked up.
+ * Opt-in: it only reloads when the AIO_RELOAD_ENV_ON_PRE_HOOKS env var is set to a truthy value.
+ *
+ * @returns {boolean} true if the config was reloaded
+ */
+function reloadEnvOnPreHooks () {
+  const value = (process.env.AIO_RELOAD_ENV_ON_PRE_HOOKS || '').trim().toLowerCase()
+  if (value === '' || value === '0' || value === 'false') {
+    aioLogger.debug('reloadEnvOnPreHooks: AIO_RELOAD_ENV_ON_PRE_HOOKS is not set, skipping config reload')
+    return false
+  }
+  aioLogger.debug('reloadEnvOnPreHooks: AIO_RELOAD_ENV_ON_PRE_HOOKS is set, reloading config')
+  aioConfig.reload()
+  return true
+}
+
+/**
  * @param {string} hookPath to be require()'d and run. Should export an async function that takes a config object as its only argument
  * @param {object} config which will be passed to the hook
  * @returns {Promise<*>} whatever the hook returns
@@ -557,6 +574,7 @@ module.exports = {
   installPackages,
   runScript,
   runInProcess,
+  reloadEnvOnPreHooks,
   runPackageScript,
   wrapError,
   removeProtocolFromURL,

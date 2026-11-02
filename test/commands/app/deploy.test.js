@@ -869,8 +869,9 @@ describe('run', () => {
     expect(command.error).toHaveBeenCalledTimes(0)
   })
 
-  test('deploy reloads config before deploying actions', async () => {
+  test('deploy reloads env after pre-app-deploy and reloads config before deploying actions', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+    helpers.reloadEnvOnPreHooks.mockClear()
     const noScriptFound = undefined
     helpers.runInProcess
       .mockResolvedValueOnce(noScriptFound) // pre-app-deploy
@@ -880,8 +881,13 @@ describe('run', () => {
     command.argv = ['--no-web-assets']
     await command.run()
 
-    expect(mockConfig.reload).toHaveBeenCalledTimes(1)
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    // env reload is gated, the config reload just before deploying actions is not
+    expect(helpers.reloadEnvOnPreHooks).toHaveBeenCalledTimes(1)
+    expect(helpers.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(
+      helpers.reloadEnvOnPreHooks.mock.invocationCallOrder[0]
+    )
+    expect(mockConfig.reload).toHaveBeenCalledTimes(1)
     expect(mockConfig.reload.mock.invocationCallOrder[0]).toBeLessThan(
       mockRuntimeLib.deployActions.mock.invocationCallOrder[0]
     )
@@ -1368,8 +1374,7 @@ describe('run', () => {
         'log-forwarding-update': true,
         open: false,
         publish: false,
-        'web-assets': true,
-        'web-optimize': false
+        'web-assets': true
       },
       env: mockEnv,
       opItems: [
@@ -1492,8 +1497,7 @@ describe('run', () => {
         'log-forwarding-update': true,
         open: false,
         publish: false,
-        'web-assets': true,
-        'web-optimize': false
+        'web-assets': true
       },
       env: mockEnv,
       opItems: [

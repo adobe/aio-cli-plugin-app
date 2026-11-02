@@ -701,4 +701,22 @@ describe('run', () => {
     expect(scriptSequence[0]).toEqual('pre-app-run')
     expect(scriptSequence[1]).toEqual('post-app-run')
   })
+
+  test('reloads env after pre-app-run and before starting the dev environment', async () => {
+    mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
+    helpers.reloadEnvOnPreHooks.mockClear()
+    command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
+
+    command.argv = []
+    await command.run()
+
+    expect(helpers.reloadEnvOnPreHooks).toHaveBeenCalledTimes(1)
+    expect(mockRunDev).toHaveBeenCalledTimes(1)
+    expect(helpers.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(
+      helpers.reloadEnvOnPreHooks.mock.invocationCallOrder[0]
+    )
+    expect(helpers.reloadEnvOnPreHooks.mock.invocationCallOrder[0]).toBeLessThan(
+      mockRunDev.mock.invocationCallOrder[0]
+    )
+  })
 })

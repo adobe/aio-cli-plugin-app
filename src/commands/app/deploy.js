@@ -19,7 +19,7 @@ const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { Flags } = require('@oclif/core')
 const {
-  rewriteActionUrlInEntities, runInProcess,
+  rewriteActionUrlInEntities, runInProcess, reloadEnvOnPreHooks,
   buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata,
   getFilesCountWithExtension
 } = require('../../lib/app-helper')
@@ -206,6 +206,7 @@ class Deploy extends BuildCommand {
     } catch (err) {
       this.error(err)
     }
+    reloadEnvOnPreHooks()
 
     // provision database if configured
     if (config.manifest?.full?.database?.['auto-provision'] === true) {
@@ -487,8 +488,8 @@ Deploy.flags = {
     exclusive: ['action', 'publish'] // no-publish is excluded
   }),
   'web-optimize': Flags.boolean({
-    description: '[default: false] Enable optimization (minification) of web js/css/html',
-    default: false
+    description: '[default: true if NODE_ENV=production, false otherwise] Enable optimization (minification) of web js/css/html',
+    allowNo: true
   }),
   'log-forwarding-update': Flags.boolean({
     description: '[default: true] Update log forwarding configuration on server',

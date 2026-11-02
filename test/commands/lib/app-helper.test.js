@@ -42,6 +42,7 @@ beforeEach(() => {
   execa.command.mockReset()
   aioConfig.get.mockReset()
   aioConfig.set.mockReset()
+  aioConfig.reload.mockReset()
   libEnv.getCliEnv.mockReset()
   libIms.getToken.mockReset()
   mockFetch.mockReset()
@@ -246,6 +247,36 @@ test('runInProcess fails with no hook-path', async () => {
   await appHelper.runInProcess(undefined, {})
   expect(execa.command).not.toHaveBeenCalled()
   expect(mockLogger.debug).toHaveBeenCalledWith('runInProcess: undefined hookPath')
+})
+
+describe('reloadEnvOnPreHooks', () => {
+  const OLD_VALUE = process.env.AIO_RELOAD_ENV_ON_PRE_HOOKS
+
+  afterEach(() => {
+    if (OLD_VALUE === undefined) {
+      delete process.env.AIO_RELOAD_ENV_ON_PRE_HOOKS
+    } else {
+      process.env.AIO_RELOAD_ENV_ON_PRE_HOOKS = OLD_VALUE
+    }
+  })
+
+  test('does not reload when AIO_RELOAD_ENV_ON_PRE_HOOKS is not set', () => {
+    delete process.env.AIO_RELOAD_ENV_ON_PRE_HOOKS
+    expect(appHelper.reloadEnvOnPreHooks()).toBe(false)
+    expect(aioConfig.reload).not.toHaveBeenCalled()
+  })
+
+  test.each(['', '  ', '0', 'false', 'FALSE'])('does not reload when AIO_RELOAD_ENV_ON_PRE_HOOKS is %p', (value) => {
+    process.env.AIO_RELOAD_ENV_ON_PRE_HOOKS = value
+    expect(appHelper.reloadEnvOnPreHooks()).toBe(false)
+    expect(aioConfig.reload).not.toHaveBeenCalled()
+  })
+
+  test.each(['1', 'true', 'TRUE', 'yes'])('reloads when AIO_RELOAD_ENV_ON_PRE_HOOKS is %p', (value) => {
+    process.env.AIO_RELOAD_ENV_ON_PRE_HOOKS = value
+    expect(appHelper.reloadEnvOnPreHooks()).toBe(true)
+    expect(aioConfig.reload).toHaveBeenCalledTimes(1)
+  })
 })
 
 test('runScript with empty command', async () => {

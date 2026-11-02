@@ -17,7 +17,7 @@ const { Flags } = require('@oclif/core')
 
 const BaseCommand = require('../../BaseCommand')
 const webLib = require('@adobe/aio-lib-web')
-const { runInProcess, buildExtensionPointPayloadWoMetadata } = require('../../lib/app-helper')
+const { runInProcess, buildExtensionPointPayloadWoMetadata, reloadEnvOnPreHooks } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const { sendAppAssetsUndeployedAuditLog, sendAppUndeployAuditLog } = require('../../lib/audit-logger')
 const { setRuntimeApiHostAndAuthHandler, getAccessToken } = require('../../lib/auth-helper')
@@ -136,6 +136,7 @@ class Undeploy extends BaseCommand {
     } catch (err) {
       this.log(err)
     }
+    reloadEnvOnPreHooks()
 
     if (flags.actions) {
       if (config.app.hasBackend) {
