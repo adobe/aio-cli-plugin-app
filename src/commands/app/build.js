@@ -121,7 +121,7 @@ class Build extends BaseCommand {
               shouldOptimize: flags['web-optimize'] ?? process.env.NODE_ENV === 'production',
               logLevel: flags.verbose ? 'verbose' : 'warn'
             }
-            // empty the dist folder to prevent an S3 explosion
+            // empty the dist folder to prevent stale files from being deployed
             fs.emptyDirSync(config.web.distProd)
             const bundler = await bundle(entries, config.web.distProd, bundleOptions, onProgress)
             await bundler.run()
