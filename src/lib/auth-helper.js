@@ -68,13 +68,13 @@ const bearerAuthHandler = {
   }
 }
 
-const setRuntimeApiHostAndAuthHandler = (_config) => {
+const getDeployServiceUrl = () => {
   const env = getCliEnv()
-  let apiEndpoint = DEPLOY_SERVICE_ENDPOINTS[env] ?? DEPLOY_SERVICE_ENDPOINTS.prod
-  if (process.env.AIO_DEPLOY_SERVICE_URL) {
-    apiEndpoint = process.env.AIO_DEPLOY_SERVICE_URL
-  }
+  return process.env.AIO_DEPLOY_SERVICE_URL || (DEPLOY_SERVICE_ENDPOINTS[env] ?? DEPLOY_SERVICE_ENDPOINTS.prod)
+}
 
+const setRuntimeApiHostAndAuthHandler = (_config) => {
+  const apiEndpoint = getDeployServiceUrl()
   const config = structuredClone(_config)
   const aioConfig = (config && 'runtime' in config) ? config : null
   if (aioConfig) {
@@ -92,6 +92,7 @@ const setRuntimeApiHostAndAuthHandler = (_config) => {
 
 module.exports = {
   getAccessToken,
+  getDeployServiceUrl,
   bearerAuthHandler,
   setRuntimeApiHostAndAuthHandler
 }
