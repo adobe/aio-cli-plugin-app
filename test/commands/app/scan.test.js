@@ -16,10 +16,15 @@ const fs = require('fs-extra')
 const os = require('node:os')
 const path = require('node:path')
 const http = require('node:http')
+const { setTimeout: delay } = require('node:timers/promises')
 
 jest.mock('../../../src/lib/auth-helper')
 jest.mock('../../../src/lib/pack-helper')
 jest.mock('@adobe/aio-cli-lib-console', () => ({}))
+jest.mock('node:timers/promises', () => ({
+  ...jest.requireActual('node:timers/promises'),
+  setTimeout: jest.fn()
+}))
 
 const originalFetch = global.fetch
 const reportUrl = '/v1/scans/scan-id/report'
@@ -30,6 +35,7 @@ let command, workDir, zipPath, outputPath, pack
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status })
 
 beforeEach(async () => {
+  delay.mockReset().mockImplementation(jest.requireActual('node:timers/promises').setTimeout)
   workDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aio-scan-test-'))
   outputPath = path.join(workDir, 'report.pdf')
   zipPath = undefined
@@ -148,7 +154,8 @@ test.each([
   [429, '1'],
   [429, null]
 ])('honors HTTP %s Retry-After %s without parsing the response body', async (status, retryAfter) => {
-  jest.useFakeTimers({ now: new Date('2026-11-05T08:00:00Z') })
+  jest.spyOn(Date, 'now').mockReturnValue(new Date('2026-11-05T08:00:00Z').getTime())
+  delay.mockResolvedValue(undefined)
   global.fetch.mockReset()
     .mockResolvedValueOnce(new Response(null, {
       status,
@@ -156,15 +163,10 @@ test.each([
     }))
     .mockResolvedValueOnce(json({ status: 'PASSED' }))
   const signal = new AbortController().signal
-  const pending = command.pollScan(`${scansUrl}/scan-id`, { signal })
-  await jest.advanceTimersByTimeAsync(0)
   const wait = retryAfter === '0' ? 0 : ['7', 'Thu, 05 Nov 2026 08:00:07 GMT'].includes(retryAfter) ? 7000 : 1000
-  if (wait > 0) {
-    await jest.advanceTimersByTimeAsync(wait - 1)
-    expect(global.fetch).toHaveBeenCalledTimes(1)
-    await jest.advanceTimersByTimeAsync(1)
-  }
-  await expect(pending).resolves.toEqual({ status: 'PASSED' })
+  await expect(command.pollScan(`${scansUrl}/scan-id`, { signal })).resolves.toEqual({ status: 'PASSED' })
+  expect(delay).toHaveBeenCalledTimes(1)
+  expect(delay).toHaveBeenCalledWith(wait, undefined, { signal })
   expect(global.fetch).toHaveBeenCalledTimes(2)
 })
 
