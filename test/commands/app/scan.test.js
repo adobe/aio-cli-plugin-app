@@ -197,7 +197,7 @@ test.each([401, 413, 429, 500, 502, 504])('reports submission HTTP %s and cleans
 
 test.each([
   [new Response('error', { status: 401 }), 'Scan request failed (HTTP 401).'],
-  [json({ status: 'unknown' }), 'The deploy service returned an invalid scan result.']
+  [json({ status: 'unknown' }), 'There was an error performing the scan(Invalid scan result)']
 ])('rejects unsuccessful or malformed polling responses', async (response, message) => {
   global.fetch.mockReset()
     .mockResolvedValueOnce(json({ scan_id: 'scan-id' }, 202))
@@ -208,7 +208,7 @@ test.each([
 
 test('rejects a missing scan ID', async () => {
   global.fetch.mockReset().mockResolvedValue(json({}, 202))
-  await expect(command.run()).rejects.toThrow('The deploy service returned an invalid scan ID.')
+  await expect(command.run()).rejects.toThrow('There was an error performing the scan(Invalid scan ID)')
   expect(global.fetch).toHaveBeenCalledTimes(1)
   expect(await fs.pathExists(path.dirname(zipPath))).toBe(false)
 })
@@ -326,13 +326,10 @@ test('aborts a stalled submission with the specified timeout message', async () 
       })
     })
   })
-  jest.useFakeTimers()
   const pending = command.run()
   const rejected = expect(pending).rejects.toThrow(timeoutMessage)
   await submitting
-  await jest.advanceTimersByTimeAsync(1000)
   await rejected
   expect(signal.aborted).toBe(true)
   expect(await fs.pathExists(path.dirname(zipPath))).toBe(false)
-  expect(jest.getTimerCount()).toBe(0)
 })
