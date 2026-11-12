@@ -21,6 +21,12 @@ jest.mock('@adobe/aio-cli-lib-console', () => ({}))
 
 let command, pack
 
+const enableScanning = async () => {
+  const parsed = await command.parse(Pack)
+  parsed.flags['no-scan'] = false
+  jest.spyOn(command, 'parse').mockResolvedValue(parsed)
+}
+
 beforeEach(() => {
   pack = jest.fn()
   PackHelper.mockClear()
@@ -40,11 +46,12 @@ test('passes packaging defaults to the shared helper', async () => {
     includeLockFile: true,
     verbose: undefined
   })
-  expect(command.config.runCommand).toHaveBeenCalledWith('app:scan', ['.'])
+  expect(command.config.runCommand).not.toHaveBeenCalled()
 })
 
 test('passes packaging options and forwards scan options', async () => {
   command.argv = ['new_folder', '--output', 'app-2.zip', '--no-lock-file', '--verbose', '--no-config-validation']
+  await enableScanning()
   await command.run()
   expect(command.config.runCommand).toHaveBeenCalledWith('app:scan', ['new_folder', '--verbose'])
   expect(pack).toHaveBeenCalledWith({
@@ -63,12 +70,14 @@ test('skips scanning when --no-scan is passed', async () => {
 })
 
 test.each(['PASSED_WITH_WARNING', 'SKIPPED'])('packs after scan status %s', async status => {
+  await enableScanning()
   command.config.runCommand.mockResolvedValueOnce({ status })
   await command.run()
   expect(pack).toHaveBeenCalled()
 })
 
 test.each(['FAILED', 'ERROR', undefined])('does not pack after scan status %s', async status => {
+  await enableScanning()
   command.config.runCommand.mockResolvedValueOnce({ status })
   await expect(command.run()).rejects.toThrow('Scan did not pass.')
   expect(PackHelper).not.toHaveBeenCalled()
@@ -78,6 +87,7 @@ test.each([
   'Scan request failed (HTTP 401).',
   "Scan couldn't be completed at this time. Please try again later or increase the timeout using --timeout <seconds>."
 ])('does not pack when scanning fails: %s', async message => {
+  await enableScanning()
   command.config.runCommand.mockRejectedValueOnce(new Error(message))
   await expect(command.run()).rejects.toThrow(`${message}\nIf you still want to proceed with packing, use aio app pack --no-scan.`)
   expect(PackHelper).not.toHaveBeenCalled()
@@ -86,6 +96,7 @@ test.each([
 test.each([false, true])('restores the working directory after scanning (failure: %s)', async failure => {
   const cwd = process.cwd()
   command.argv = ['relative-app', '--output', 'relative.zip']
+  await enableScanning()
   command.config.runCommand.mockImplementationOnce(async () => {
     process.chdir(path.dirname(cwd))
     if (failure) throw new Error('Scan failed')

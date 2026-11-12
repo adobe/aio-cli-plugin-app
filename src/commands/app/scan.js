@@ -151,6 +151,7 @@ class Scan extends BaseCommand {
   }
 }
 
+Scan.hidden = true
 Scan.description = 'Scan an app package for malware and download its PDF report when available'
 Scan.flags = {
   ...BaseCommand.flags,

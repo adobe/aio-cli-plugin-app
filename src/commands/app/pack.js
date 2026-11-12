@@ -55,7 +55,7 @@ Pack.flags = {
   ...BaseCommand.flags,
   'no-scan': Flags.boolean({
     description: 'Skip malware scanning before packaging the app',
-    default: false
+    default: true
   }),
   'lock-file': Flags.boolean({
     description: 'Include the package-lock.json file in the packaged app. When disabled, compatibility validation is skipped since the provisioner will use npm install instead of npm ci.',
