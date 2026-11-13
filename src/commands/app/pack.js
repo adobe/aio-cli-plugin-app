@@ -21,7 +21,7 @@ class Pack extends BaseCommand {
     aioLogger.debug(`flags: ${JSON.stringify(flags, null, 2)}`)
     aioLogger.debug(`args: ${JSON.stringify(args, null, 2)}`)
 
-    if (!flags['no-scan']) {
+    if (flags.scan) {
       const cwd = process.cwd()
       let result
       try {
@@ -53,9 +53,10 @@ Pack.description = `This command will support packaging apps for redistribution.
 
 Pack.flags = {
   ...BaseCommand.flags,
-  'no-scan': Flags.boolean({
-    description: 'Skip malware scanning before packaging the app',
-    default: true
+  scan: Flags.boolean({
+    description: 'Scan for malware before packaging the app',
+    default: false,
+    allowNo: true
   }),
   'lock-file': Flags.boolean({
     description: 'Include the package-lock.json file in the packaged app. When disabled, compatibility validation is skipped since the provisioner will use npm install instead of npm ci.',
