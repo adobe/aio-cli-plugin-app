@@ -136,7 +136,7 @@ class Undeploy extends BaseCommand {
     } catch (err) {
       this.log(err)
     }
-    reloadEnvOnPreHooks()
+    reloadEnvOnPreHooks('pre-app-undeploy')
 
     if (flags.actions) {
       if (config.app.hasBackend) {

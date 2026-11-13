@@ -22,7 +22,7 @@ const { buildActions } = require('@adobe/aio-lib-runtime')
  */
 module.exports = async (config, filterActions, forceBuild = false) => {
   await runInProcess(config.hooks['pre-app-build'], config)
-  reloadEnvOnPreHooks()
+  reloadEnvOnPreHooks('pre-app-build')
   const script = await runInProcess(config.hooks['build-actions'], { config, options: { filterActions, forceBuild } })
   if (!script) {
     await buildActions(config, filterActions, forceBuild)

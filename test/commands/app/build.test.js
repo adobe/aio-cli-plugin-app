@@ -261,6 +261,7 @@ describe('run', () => {
 
     await command.run()
     expect(helpers.reloadEnvOnPreHooks).toHaveBeenCalledTimes(1)
+    expect(helpers.reloadEnvOnPreHooks).toHaveBeenCalledWith('pre-app-build')
     expect(helpers.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(helpers.reloadEnvOnPreHooks.mock.invocationCallOrder[0])
     expect(helpers.reloadEnvOnPreHooks.mock.invocationCallOrder[0]).toBeLessThan(mockRuntimeLib.buildActions.mock.invocationCallOrder[0])
   })

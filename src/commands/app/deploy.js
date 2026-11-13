@@ -206,7 +206,7 @@ class Deploy extends BuildCommand {
     } catch (err) {
       this.error(err)
     }
-    reloadEnvOnPreHooks()
+    reloadEnvOnPreHooks('pre-app-deploy')
 
     // provision database if configured
     if (config.manifest?.full?.database?.['auto-provision'] === true) {

@@ -81,19 +81,48 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
   }
 }
 
+const HOOK_NAMES = [
+  'pre-app-build', 'post-app-build', 'build-actions', 'build-static',
+  'pre-app-run', 'post-app-run', 'serve-static',
+  'pre-app-deploy', 'post-app-deploy', 'deploy-actions', 'deploy-static',
+  'pre-app-undeploy', 'post-app-undeploy', 'undeploy-actions', 'undeploy-static'
+]
+
 /**
- * Reloads the aio config so that changes made by a hook to .env or .aio are picked up.
- * Opt-in: it only reloads when the AIO_RELOAD_ENV_ON_PRE_HOOKS env var is set to a truthy value.
+ * Whether an opt-in env var is enabled for a hook.
+ * '', '0' and 'false' (case-insensitive) are off. A comma-separated list with at least one known hook name,
+ * e.g. 'pre-app-build,pre-app-deploy', enables only the listed hooks. Any other value enables all hooks.
  *
- * @returns {boolean} true if the config was reloaded
+ * @param {string} envName the env var name
+ * @param {string} [hookName] the hook to check. If omitted, tells whether the env var is on for any hook.
+ * @returns {boolean} true if the env var is enabled for the hook
  */
-function reloadEnvOnPreHooks () {
-  const value = (process.env.AIO_RELOAD_ENV_ON_PRE_HOOKS || '').trim().toLowerCase()
+function isEnvEnabledForHook (envName, hookName) {
+  const value = (process.env[envName] || '').trim().toLowerCase()
   if (value === '' || value === '0' || value === 'false') {
-    aioLogger.debug('reloadEnvOnPreHooks: AIO_RELOAD_ENV_ON_PRE_HOOKS is not set, skipping config reload')
     return false
   }
-  aioLogger.debug('reloadEnvOnPreHooks: AIO_RELOAD_ENV_ON_PRE_HOOKS is set, reloading config')
+  const tokens = value.split(',').map(t => t.trim())
+  if (!hookName || !tokens.some(t => HOOK_NAMES.includes(t))) {
+    return true
+  }
+  return tokens.includes(hookName)
+}
+
+/**
+ * Reloads the aio config so that changes made by a hook to .env or .aio are picked up.
+ * Opt-in: it only reloads when AIO_RELOAD_ENV_ON_PRE_HOOKS is set to a truthy value, or to a list of hook names
+ * that includes the given hook.
+ *
+ * @param {string} [hookName] the hook that just ran, e.g. 'pre-app-build'
+ * @returns {boolean} true if the config was reloaded
+ */
+function reloadEnvOnPreHooks (hookName) {
+  if (!isEnvEnabledForHook('AIO_RELOAD_ENV_ON_PRE_HOOKS', hookName)) {
+    aioLogger.debug(`reloadEnvOnPreHooks: AIO_RELOAD_ENV_ON_PRE_HOOKS is not enabled for '${hookName}', skipping config reload`)
+    return false
+  }
+  aioLogger.debug(`reloadEnvOnPreHooks: AIO_RELOAD_ENV_ON_PRE_HOOKS is enabled for '${hookName}', reloading config`)
   aioConfig.reload()
   return true
 }
@@ -575,6 +604,7 @@ module.exports = {
   runScript,
   runInProcess,
   reloadEnvOnPreHooks,
+  isEnvEnabledForHook,
   runPackageScript,
   wrapError,
   removeProtocolFromURL,

@@ -711,6 +711,7 @@ describe('run', () => {
     await command.run()
 
     expect(helpers.reloadEnvOnPreHooks).toHaveBeenCalledTimes(1)
+    expect(helpers.reloadEnvOnPreHooks).toHaveBeenCalledWith('pre-app-run')
     expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(helpers.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(
       helpers.reloadEnvOnPreHooks.mock.invocationCallOrder[0]

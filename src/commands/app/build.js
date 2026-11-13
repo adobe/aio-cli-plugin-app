@@ -68,7 +68,7 @@ class Build extends BaseCommand {
     } catch (err) {
       this.log(err)
     }
-    reloadEnvOnPreHooks()
+    reloadEnvOnPreHooks('pre-app-build')
 
     if (flags.actions) {
       // removed flags['force-build'] || as it is always forced at this point, we need to check to decide what to build

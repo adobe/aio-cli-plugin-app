@@ -31,7 +31,7 @@ module.exports = async ({
   inprocHook
 }) => {
   await runInProcess(config.hooks['pre-app-deploy'], config)
-  reloadEnvOnPreHooks()
+  reloadEnvOnPreHooks('pre-app-deploy')
 
   const hookFilterEntities = Array.isArray(deployConfig.filterEntities?.actions) ? deployConfig.filterEntities.actions : []
   const hookData = {

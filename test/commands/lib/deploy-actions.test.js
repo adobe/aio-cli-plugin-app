@@ -39,6 +39,7 @@ test('reloads env after pre-app-deploy', async () => {
   utils.reloadEnvOnPreHooks.mockClear()
   await deployActions({ config: { hooks: {} } })
   expect(utils.reloadEnvOnPreHooks).toHaveBeenCalledTimes(1)
+  expect(utils.reloadEnvOnPreHooks).toHaveBeenCalledWith('pre-app-deploy')
   expect(utils.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(utils.reloadEnvOnPreHooks.mock.invocationCallOrder[0])
   expect(utils.reloadEnvOnPreHooks.mock.invocationCallOrder[0]).toBeLessThan(rtDeployActions.mock.invocationCallOrder[0])
 })
