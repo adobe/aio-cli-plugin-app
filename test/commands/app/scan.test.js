@@ -90,6 +90,70 @@ test('packages, streams the ZIP, polls and saves the PDF without changing the ap
   expect(await fs.pathExists(path.dirname(zipPath))).toBe(false)
 })
 
+test.each([1794540000000, 1794540001000])('defaults the report path to the current timestamp %s', timestamp => {
+  jest.spyOn(Date, 'now').mockReturnValue(timestamp)
+  expect(command.getReportPath(undefined, null, process.cwd())).toBe(path.resolve(`scan-report-${timestamp}.pdf`))
+})
+
+test.each([
+  '',
+  '.',
+  'report\u0000.pdf',
+  'report\n.pdf',
+  'report\t.pdf',
+  'report\u007f.pdf'
+])('falls back for an unusable report filename %j', filename => {
+  jest.spyOn(Date, 'now').mockReturnValue(1794540000000)
+  expect(command.getReportPath(undefined, `attachment; filename="${filename}"`, workDir))
+    .toBe(path.join(workDir, 'scan-report-1794540000000.pdf'))
+})
+
+test.each([
+  'scan report.pdf',
+  'rapport-\u00e9.pdf'
+])('preserves a valid report filename %j', filename => {
+  expect(command.getReportPath(undefined, `attachment; filename="${filename}"`, workDir))
+    .toBe(path.join(workDir, filename))
+})
+
+test.each([
+  [[], 'attachment; filename="server-report.pdf"', 'server-report.pdf'],
+  [[], 'attachment; filename=server-report.pdf', 'server-report.pdf'],
+  [[], '', 'scan-report-1794540000000.pdf'],
+  [[], null, 'scan-report-1794540000000.pdf'],
+  [[], 'attachment; filename="../../server-report.pdf"', 'server-report.pdf'],
+  [[], 'attachment; filename=".."', 'scan-report-1794540000000.pdf'],
+  [['--output', 'custom.pdf'], 'attachment; filename="server-report.pdf"', 'custom.pdf'],
+  [['-o', 'custom.pdf'], 'attachment; filename="server-report.pdf"', 'custom.pdf'],
+  [['--output=custom.pdf'], 'attachment; filename="server-report.pdf"', 'custom.pdf']
+])('selects report output for flags %j and header %j', async (argv, disposition, filename) => {
+  const initialCwd = process.cwd()
+  const appPath = path.join(workDir, 'app')
+  await fs.ensureDir(appPath)
+  jest.spyOn(Date, 'now').mockReturnValue(1794540000000)
+  command.argv = [appPath, ...argv]
+  pack.mockImplementation(async ({ output }) => {
+    process.chdir(appPath)
+    zipPath = output
+    await fs.writeFile(zipPath, 'package contents')
+  })
+  global.fetch.mockReset()
+    .mockResolvedValueOnce(json({ scan_id: 'scan-id' }, 202))
+    .mockResolvedValueOnce(json({ status: 'FAILED', reportUrl }))
+    .mockResolvedValueOnce(new Response('%PDF-report', {
+      headers: disposition === null ? {} : { 'Content-Disposition': disposition }
+    }))
+  try {
+    process.chdir(workDir)
+    const savedPath = path.join(process.cwd(), filename)
+    await command.run()
+    expect(await fs.readFile(savedPath, 'utf8')).toBe('%PDF-report')
+    expect(command.log).toHaveBeenCalledWith(`For more information, please view the detailed report at ${savedPath}`)
+  } finally {
+    process.chdir(initialCwd)
+  }
+})
+
 test('scans the supplied app path and resolves report output before changing directories', async () => {
   const initialCwd = process.cwd()
   const appPath = path.join(workDir, 'app')
@@ -247,7 +311,7 @@ test('preserves the existing report when the download fails', async () => {
   expect(await fs.pathExists(path.dirname(zipPath))).toBe(false)
 })
 
-test.each([403, 404, 429])('surfaces report HTTP %s errors without retrying', async status => {
+test.each([403, 404])('surfaces report HTTP %s errors without retrying', async status => {
   global.fetch.mockReset()
     .mockResolvedValueOnce(json({ scan_id: 'scan-id' }, 202))
     .mockResolvedValueOnce(json({ status: 'FAILED', reportUrl }))
@@ -257,13 +321,19 @@ test.each([403, 404, 429])('surfaces report HTTP %s errors without retrying', as
   expect(await fs.pathExists(outputPath)).toBe(false)
 })
 
-test.each([200, 502])('retries repeated HTTP 503 report responses, ending with HTTP %s', async status => {
+test.each([
+  [503, 503, 200],
+  [503, 503, 502],
+  [429, 429, 200],
+  [429, 503, 200],
+  [503, 429, 200]
+])('retries HTTP %s then HTTP %s report responses, ending with HTTP %s', async (firstStatus, secondStatus, status) => {
   const unavailable = new Response('Rendering at capacity', {
-    status: 503,
+    status: firstStatus,
     headers: { 'Retry-After': '0' }
   })
   const stillUnavailable = new Response('Still rendering at capacity', {
-    status: 503,
+    status: secondStatus,
     headers: { 'Retry-After': '0' }
   })
   global.fetch.mockReset()
@@ -291,13 +361,13 @@ test.each([200, 502])('retries repeated HTTP 503 report responses, ending with H
   expect(await fs.pathExists(path.dirname(zipPath))).toBe(false)
 })
 
-test('times out while waiting to retry a report download', async () => {
+test.each([429, 503])('times out while waiting to retry an HTTP %s report download', async status => {
   command.argv.push('--timeout', '1')
   global.fetch.mockReset()
     .mockResolvedValueOnce(json({ scan_id: 'scan-id' }, 202))
     .mockResolvedValueOnce(json({ status: 'FAILED', reportUrl }))
-    .mockResolvedValueOnce(new Response(null, { status: 503, headers: { 'Retry-After': '0' } }))
-    .mockResolvedValueOnce(new Response(null, { status: 503, headers: { 'Retry-After': '60' } }))
+    .mockResolvedValueOnce(new Response(null, { status, headers: { 'Retry-After': '0' } }))
+    .mockResolvedValueOnce(new Response(null, { status, headers: { 'Retry-After': '60' } }))
   await expect(command.run()).rejects.toThrow(timeoutMessage)
   expect(global.fetch).toHaveBeenCalledTimes(4)
   expect(await fs.pathExists(outputPath)).toBe(false)

@@ -30,7 +30,8 @@ class Scan extends BaseCommand {
     aioLogger.debug(`args: ${JSON.stringify(args, null, 2)}`)
     aioLogger.debug(`flags: ${JSON.stringify(flags, null, 2)}`)
 
-    const reportPath = path.resolve(flags.output)
+    // capture the current working directory since packing the app changes it
+    const reportDirectory = process.cwd()
     const { accessToken } = await getAccessToken()
 
     aioLogger.debug(`Access token obtained: ${Boolean(accessToken)}`)
@@ -67,7 +68,7 @@ class Scan extends BaseCommand {
         return result
       }
 
-      await this.downloadAndSaveReport(result.reportUrl, deployServiceUrl, tempDir, reportPath, options)
+      await this.downloadAndSaveReport(result.reportUrl, deployServiceUrl, tempDir, flags.output, options, reportDirectory)
       return result
     } catch (error) {
       if (controller.signal.aborted) {
@@ -80,15 +81,30 @@ class Scan extends BaseCommand {
     }
   }
 
-  async downloadAndSaveReport (reportUrl, deployServiceUrl, tempDir, reportPath, options) {
+  getReportPath (outputPath, disposition, directory) {
+    if (outputPath !== undefined) return path.resolve(directory, outputPath)
+
+    const match = /(?:^|;)\s*filename\s*=\s*(?:"([^"]*)"|([^;\s]+))/i.exec(disposition || '')
+    const filename = (match?.[1] ?? match?.[2] ?? '').split(/[\\/]/).pop()
+    if (filename && filename !== '.' && filename !== '..' &&
+      !Array.from(filename).some(char => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127)) {
+      return path.join(directory, filename)
+    }
+    return path.join(directory, `scan-report-${Date.now()}.pdf`)
+  }
+
+  async downloadAndSaveReport (reportUrl, deployServiceUrl, tempDir, outputPath, options, reportDirectory) {
     const url = new URL(reportUrl, `${deployServiceUrl}/`).href
     aioLogger.debug(`Downloading scan report from ${url}`)
-    let report = await this.request(url, options, [200, 503])
-    while (report.status === 503) {
+
+    let report = await this.request(url, options, [200, 429, 503])
+    while ([429, 503].includes(report.status)) {
       await this.waitForRetry(report, options.signal)
-      aioLogger.debug(`Retrying report download after HTTP 503: ${url}`)
-      report = await this.request(url, options, [200, 503])
+      aioLogger.debug(`Retrying report download after HTTP ${report.status}: ${url}`)
+      report = await this.request(url, options, [200, 429, 503])
     }
+
+    const reportPath = this.getReportPath(outputPath, report.headers.get('content-disposition'), reportDirectory)
     const tempReport = path.join(tempDir, 'report.pdf')
     await pipeline(report.body, fs.createWriteStream(tempReport, { mode: 0o600 }), { signal: options.signal })
     await fs.copyFile(tempReport, reportPath)
@@ -157,8 +173,7 @@ Scan.flags = {
   ...BaseCommand.flags,
   output: Flags.string({
     description: 'PDF report output path (overwrites an existing file)',
-    char: 'o',
-    default: 'report.pdf'
+    char: 'o'
   }),
   timeout: Flags.integer({
     description: 'Timeout in seconds for submission, polling and report download',
