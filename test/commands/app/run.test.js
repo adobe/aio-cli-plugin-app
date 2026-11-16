@@ -720,4 +720,49 @@ describe('run', () => {
       mockRunDev.mock.invocationCallOrder[0]
     )
   })
+
+  describe('reload config on pre-app-run', () => {
+    const withHook = (extra = {}) => ({
+      application: { ...createAppConfig(command.appConfig).application, hooks: { 'pre-app-run': 'hook' }, ...extra }
+    })
+
+    beforeEach(() => {
+      mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
+      helpers.isEnvEnabledForHook.mockReset()
+      helpers.isEnvEnabledForHook.mockImplementation((env, hook) => env === 'AIO_RELOAD_CONFIG_ON_PRE_HOOKS' && hook === 'pre-app-run')
+    })
+
+    test('runs with the config reloaded after the hook', async () => {
+      command.getAppExtConfigs
+        .mockResolvedValueOnce(withHook())
+        .mockResolvedValueOnce(withHook({ marker: 'new' }))
+
+      command.argv = []
+      await command.run()
+      expect(command.getAppExtConfigs).toHaveBeenLastCalledWith(expect.anything(), { fresh: true })
+      expect(mockRunDev).toHaveBeenCalledTimes(1)
+      expect(mockRunDev.mock.calls[0][0].marker).toBe('new')
+    })
+
+    test('warns and does not run if the hook removed the extension', async () => {
+      command.getAppExtConfigs
+        .mockResolvedValueOnce(withHook())
+        .mockResolvedValueOnce({})
+
+      command.argv = []
+      await command.run()
+      expect(mockRunDev).not.toHaveBeenCalled()
+      expect(command.log).toHaveBeenCalledWith(expect.stringContaining("extension 'application' was removed by the pre-app-run hook"))
+    })
+
+    test('does not reload when the variable is off', async () => {
+      helpers.isEnvEnabledForHook.mockReturnValue(false)
+      command.getAppExtConfigs.mockResolvedValueOnce(withHook())
+
+      command.argv = []
+      await command.run()
+      expect(command.getAppExtConfigs).toHaveBeenCalledTimes(1)
+      expect(mockRunDev).toHaveBeenCalledTimes(1)
+    })
+  })
 })

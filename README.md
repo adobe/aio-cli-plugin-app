@@ -32,7 +32,13 @@ $ aio app --help
 - A comma-separated list of hook names reloads only after those hooks, for example `AIO_RELOAD_ENV_ON_PRE_HOOKS=pre-app-build,pre-app-deploy`. Names are case-insensitive. The hooks that reload are `pre-app-build`, `pre-app-run`, `pre-app-deploy` and `pre-app-undeploy`.
 - Any other value, such as `1` or `true`, reloads after all of them.
 
-`AIO_RELOAD_CONFIG_ON_PRE_HOOKS` makes `aio app build` reload `app.config.yaml` and its included files after the `pre-app-build` hook, so extensions added or removed by the hook are built, or skipped, in the same run. It is off by default and takes the same values as above, but only `pre-app-build` has an effect and other hook names are ignored. `aio app deploy` and `aio app run` do not reload the app config.
+`AIO_RELOAD_CONFIG_ON_PRE_HOOKS` makes the plugin reload `app.config.yaml` and its included files after a pre hook. It is off by default and takes the same values as above. The hooks that reload are:
+
+- `pre-app-build`, in `aio app build` and `aio app deploy`. The list of extensions is recomputed, so extensions added or removed by the hook are built (and deployed) or skipped in the same run.
+- `pre-app-deploy`, in `aio app deploy`. The config of the extension being deployed is refreshed. The list of extensions is not recomputed.
+- `pre-app-run`, in `aio app run`. The config of the extension being run is refreshed.
+
+An extension removed by the hook is skipped with a warning. With `-e`, a reload that leaves no matching extension also warns. An invalid config after the reload fails the command. Other hook names have no effect. `aio app undeploy` does not reload the app config.
 
 # Commands
 
@@ -279,9 +285,8 @@ DESCRIPTION
   Build the actions and web assets for an Adobe I/O App. Build is optimized to only build what is necessary.
   Use the --force-build flag to force a build even if one already exists.
 
-  Set AIO_RELOAD_CONFIG_ON_PRE_HOOKS=true to reload app.config.yaml (and its included files) after each pre-app-build
-  hook, so extensions added or removed by the hook are built, or skipped, in the same run. Not supported by deploy and
-  run.
+  Set AIO_RELOAD_CONFIG_ON_PRE_HOOKS=pre-app-build (or true) to reload app.config.yaml (and its included files) after
+  the pre-app-build hook, so extensions added or removed by the hook are built, or skipped, in the same run.
 ```
 
 _See code: [src/commands/app/build.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.8.1/src/commands/app/build.js)_
@@ -516,6 +521,11 @@ DESCRIPTION
   Deploy is optimized to only deploy what is necessary. Be aware that deploying actions will overwrite any previous
   deployments.
   Use the --force-deploy flag to force deploy changes, regardless of production Workspace being published in Exchange.
+
+  Set AIO_RELOAD_CONFIG_ON_PRE_HOOKS to reload app.config.yaml (and its included files) after a pre hook. The
+  pre-app-build hook reloads the list of extensions, so added or removed extensions are built and deployed, or skipped,
+  in the same run. The pre-app-deploy hook refreshes the config of the extension being deployed. Use true for both, or
+  a list of hook names.
 ```
 
 _See code: [src/commands/app/deploy.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.8.1/src/commands/app/deploy.js)_
@@ -750,6 +760,9 @@ FLAGS
 
 DESCRIPTION
   Run an Adobe I/O App
+
+  Set AIO_RELOAD_CONFIG_ON_PRE_HOOKS=pre-app-run (or true) to reload app.config.yaml (and its included files) after the
+  pre-app-run hook and run the refreshed config of the extension.
 ```
 
 _See code: [src/commands/app/run.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.8.1/src/commands/app/run.js)_

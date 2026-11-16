@@ -23,7 +23,7 @@ const coreConfig = require('@adobe/aio-lib-core-config')
 const BaseCommand = require('../../BaseCommand')
 const runDev = require('../../lib/run-dev')
 const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('../../lib/defaults')
-const { runInProcess, reloadEnvOnPreHooks, HOOKS } = require('../../lib/app-helper')
+const { runInProcess, reloadEnvOnPreHooks, isEnvEnabledForHook, HOOKS } = require('../../lib/app-helper')
 
 const DEV_KEYS_DIR = 'dist/dev-keys/'
 const PRIVATE_KEY_PATH = DEV_KEYS_DIR + 'private.key'
@@ -56,9 +56,8 @@ class Run extends BaseCommand {
   }
 
   async runOneExtensionPoint (name, config, flags, spinner) {
-    const hasBackend = config.app.hasBackend
-    const hasFrontend = config.app.hasFrontend
-    const headlessApp = hasBackend && !hasFrontend
+    let hasBackend = config.app.hasBackend
+    let hasFrontend = config.app.hasFrontend
 
     if (!hasBackend && !hasFrontend) {
       this.error(new Error('nothing to run.. there is no frontend and no manifest.yml, are you in a valid app?'))
@@ -85,6 +84,18 @@ class Run extends BaseCommand {
       this.log(err)
     }
     reloadEnvOnPreHooks(HOOKS.PRE_APP_RUN)
+
+    if (isEnvEnabledForHook('AIO_RELOAD_CONFIG_ON_PRE_HOOKS', HOOKS.PRE_APP_RUN) && config.hooks[HOOKS.PRE_APP_RUN]) {
+      const reloaded = await this.reloadExtConfigs(flags, HOOKS.PRE_APP_RUN)
+      if (!reloaded[name]) {
+        this.log(chalk.yellow(`Warning: extension '${name}' was removed by the pre-app-run hook, nothing to run`))
+        return
+      }
+      config = reloaded[name]
+      hasBackend = config.app.hasBackend
+      hasFrontend = config.app.hasFrontend
+    }
+    const headlessApp = hasBackend && !hasFrontend
 
     // check if there are certificates available, and generate them if not ...
     // only care about certificates if the application has a UI
@@ -200,7 +211,11 @@ class Run extends BaseCommand {
   }
 }
 
-Run.description = 'Run an Adobe I/O App'
+Run.description = `Run an Adobe I/O App
+
+Set AIO_RELOAD_CONFIG_ON_PRE_HOOKS=pre-app-run (or true) to reload app.config.yaml (and its included files) after the
+pre-app-run hook and run the refreshed config of the extension.
+`
 
 Run.args = {}
 

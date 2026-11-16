@@ -310,6 +310,96 @@ test('flags', async () => {
   expect(TheCommand.flags.actions.exclusive).toEqual(['action'])
 })
 
+describe('reload config on pre hooks', () => {
+  const ext = (hooks = {}, extra = {}) => ({ ...createAppConfig(command.appConfig).application, hooks, ...extra })
+  const enableFor = (...hooksEnabled) => {
+    helpers.isEnvEnabledForHook.mockImplementation((env, hook) => env === 'AIO_RELOAD_CONFIG_ON_PRE_HOOKS' && hooksEnabled.includes(hook))
+  }
+
+  beforeEach(() => {
+    helpers.isEnvEnabledForHook.mockReset()
+    command.publishExtensionPoints = jest.fn().mockResolvedValue({ endpoints: {} })
+  })
+
+  test('builds and deploys an extension added by the pre-app-build hook', async () => {
+    enableFor('pre-app-build')
+    command.getAppExtConfigs.mockResolvedValueOnce({ a: ext({ 'pre-app-build': 'hook' }), c: ext() })
+    command.buildOneExt.mockResolvedValueOnce({ a: ext({ 'pre-app-build': 'hook' }), b: ext(), c: ext() })
+
+    await command.run()
+    expect(command.buildOneExt.mock.calls.map(c => c[0])).toEqual(['a', 'b', 'c'])
+    expect(command.buildOneExt).toHaveBeenCalledWith('a', expect.anything(), expect.anything(), expect.anything(), true)
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(3)
+    expect(command.log).toHaveBeenCalledWith('Config reloaded, extensions added: b')
+    expect(Object.keys(command.publishExtensionPoints.mock.calls[0][0])).toEqual(['a', 'b', 'c'])
+  })
+
+  test('skips an extension removed by the pre-app-build hook', async () => {
+    enableFor('pre-app-build')
+    command.getAppExtConfigs.mockResolvedValueOnce({ a: ext({ 'pre-app-build': 'hook' }), b: ext() })
+    command.buildOneExt.mockResolvedValueOnce({ b: ext() })
+
+    await command.run()
+    expect(command.buildOneExt.mock.calls.map(c => c[0])).toEqual(['a', 'b'])
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(command.log).toHaveBeenCalledWith('Config reloaded, extensions removed: a')
+    expect(Object.keys(command.publishExtensionPoints.mock.calls[0][0])).toEqual(['b'])
+  })
+
+  test('uses the reloaded config of the current extension after the pre-app-build hook', async () => {
+    enableFor('pre-app-build')
+    command.getAppExtConfigs.mockResolvedValueOnce({ a: ext({ 'pre-app-build': 'hook' }) })
+    command.buildOneExt.mockResolvedValueOnce({ a: ext({}, { marker: 'new' }) })
+
+    await command.run()
+    expect(mockRuntimeLib.deployActions.mock.calls[0][0].marker).toBe('new')
+  })
+
+  test('does not pass the reload option to buildOneExt with --no-build', async () => {
+    enableFor('pre-app-build')
+    command.getAppExtConfigs.mockResolvedValueOnce({ a: ext({ 'pre-app-build': 'hook' }) })
+    command.argv = ['--no-build']
+
+    await command.run()
+    expect(command.buildOneExt).not.toHaveBeenCalled()
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+  })
+
+  test('refreshes the config of the extension after the pre-app-deploy hook', async () => {
+    enableFor('pre-app-deploy')
+    command.getAppExtConfigs
+      .mockResolvedValueOnce({ a: ext({ 'pre-app-deploy': 'hook' }) })
+      .mockResolvedValueOnce({ a: ext({ 'pre-app-deploy': 'hook' }, { marker: 'new' }) })
+
+    await command.run()
+    expect(command.getAppExtConfigs).toHaveBeenLastCalledWith(expect.anything(), { fresh: true })
+    expect(command.buildOneExt).toHaveBeenCalledWith('a', expect.anything(), expect.anything(), expect.anything())
+    expect(mockRuntimeLib.deployActions.mock.calls[0][0].marker).toBe('new')
+    expect(command.publishExtensionPoints.mock.calls[0][0].a.marker).toBe('new')
+  })
+
+  test('skips the extension removed by the pre-app-deploy hook', async () => {
+    enableFor('pre-app-deploy')
+    command.getAppExtConfigs
+      .mockResolvedValueOnce({ a: ext({ 'pre-app-deploy': 'hook' }), b: ext() })
+      .mockResolvedValueOnce({ b: ext() })
+
+    await command.run()
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+    expect(command.log).toHaveBeenCalledWith(expect.stringContaining("extension 'a' was removed by the pre-app-deploy hook"))
+    expect(Object.keys(command.publishExtensionPoints.mock.calls[0][0])).toEqual(['b'])
+  })
+
+  test('does not reload when the variable is off', async () => {
+    command.getAppExtConfigs.mockResolvedValueOnce({ a: ext({ 'pre-app-build': 'hook', 'pre-app-deploy': 'hook' }) })
+
+    await command.run()
+    expect(command.getAppExtConfigs).toHaveBeenCalledTimes(1)
+    expect(command.buildOneExt).toHaveBeenCalledWith('a', expect.anything(), expect.anything(), expect.anything())
+    expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('run', () => {
   test('build & deploy an App with no flags', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'app-exc-nui'))
