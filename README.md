@@ -12,6 +12,7 @@ Create, Build and Deploy Adobe I/O Apps
 <!-- toc -->
 * [aio-cli-plugin-app](#aio-cli-plugin-app)
 * [Usage](#usage)
+* [Environment variables](#environment-variables)
 * [Commands](#commands)
 <!-- tocstop -->
 
@@ -31,6 +32,14 @@ $ aio app --help
 - Unset, empty, `0` or `false` turns it off.
 - A comma-separated list of hook names reloads only after those hooks, for example `AIO_RELOAD_ENV_ON_PRE_HOOKS=pre-app-build,pre-app-deploy`. Names are case-insensitive. The hooks that reload are `pre-app-build`, `pre-app-run`, `pre-app-deploy` and `pre-app-undeploy`.
 - Any other value, such as `1` or `true`, reloads after all of them.
+
+`AIO_FAIL_ON_HOOK_ERROR` makes a failing project hook fail the command. By default the error of a `pre-app-build`, `post-app-build`, `pre-app-run` or `post-app-run` hook is logged and the command continues. It is off by default. The error message names the hook and includes the original message.
+
+- Unset, empty, `0` or `false` turns it off.
+- A comma-separated list of hook names fails only on those hooks, for example `AIO_FAIL_ON_HOOK_ERROR=pre-app-build,post-app-run`. Names are case-insensitive. Errors from the other hooks are only logged.
+- Any other value, such as `1` or `true`, fails on all four hooks.
+
+Errors from the deploy and undeploy hooks and from the `build-actions`, `build-static`, `deploy-actions` and `deploy-static` hooks already fail the command.
 
 # Commands
 

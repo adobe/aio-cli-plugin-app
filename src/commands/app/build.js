@@ -16,6 +16,7 @@ const chalk = require('chalk')
 const BaseCommand = require('../../BaseCommand')
 const { Flags } = require('@oclif/core')
 const { runInProcess, writeConfig, reloadEnvOnPreHooks, HOOKS } = require('../../lib/app-helper')
+const { runHookOrLog } = require('../../lib/hook-runner')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
 const { bundle } = require('@adobe/aio-lib-web')
 const fs = require('fs-extra')
@@ -63,11 +64,7 @@ class Build extends BaseCommand {
       }
 
     const filterActions = flags.action
-    try {
-      await runInProcess(config.hooks['pre-app-build'], config)
-    } catch (err) {
-      this.log(err)
-    }
+    await runHookOrLog(HOOKS.PRE_APP_BUILD, config.hooks[HOOKS.PRE_APP_BUILD], config, this.log.bind(this))
     reloadEnvOnPreHooks(HOOKS.PRE_APP_BUILD)
 
     if (flags.actions) {
@@ -136,11 +133,7 @@ class Build extends BaseCommand {
         spinner.info(chalk.green(`No frontend or a build already exists, skipping frontend build for '${name}'`))
       }
     }
-    try {
-      await runInProcess(config.hooks['post-app-build'], config)
-    } catch (err) {
-      this.log(err)
-    }
+    await runHookOrLog(HOOKS.POST_APP_BUILD, config.hooks[HOOKS.POST_APP_BUILD], config, this.log.bind(this))
   }
 }
 
