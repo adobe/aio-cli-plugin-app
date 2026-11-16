@@ -32,6 +32,8 @@ $ aio app --help
 - A comma-separated list of hook names reloads only after those hooks, for example `AIO_RELOAD_ENV_ON_PRE_HOOKS=pre-app-build,pre-app-deploy`. Names are case-insensitive. The hooks that reload are `pre-app-build`, `pre-app-run`, `pre-app-deploy` and `pre-app-undeploy`.
 - Any other value, such as `1` or `true`, reloads after all of them.
 
+`AIO_RELOAD_CONFIG_ON_PRE_HOOKS` makes `aio app build` reload `app.config.yaml` and its included files after the `pre-app-build` hook, so extensions added or removed by the hook are built, or skipped, in the same run. It is off by default and takes the same values as above, but only `pre-app-build` has an effect and other hook names are ignored. `aio app deploy` and `aio app run` do not reload the app config.
+
 # Commands
 
 <!-- commands -->
@@ -276,6 +278,10 @@ DESCRIPTION
 
   Build the actions and web assets for an Adobe I/O App. Build is optimized to only build what is necessary.
   Use the --force-build flag to force a build even if one already exists.
+
+  Set AIO_RELOAD_CONFIG_ON_PRE_HOOKS=true to reload app.config.yaml (and its included files) after each pre-app-build
+  hook, so extensions added or removed by the hook are built, or skipped, in the same run. Not supported by deploy and
+  run.
 ```
 
 _See code: [src/commands/app/build.js](https://github.com/adobe/aio-cli-plugin-app/blob/14.8.1/src/commands/app/build.js)_

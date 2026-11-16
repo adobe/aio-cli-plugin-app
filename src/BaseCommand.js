@@ -169,8 +169,10 @@ class BaseCommand extends Command {
     const validateAppConfig = flags['config-validation'] !== false
     aioLogger.debug(`validateAppConfig=${validateAppConfig}`)
 
-    if (!this.appConfig) {
-      this.appConfig = await appConfig.load({ ...options, validateAppConfig })
+    // options.fresh bypasses the cache and reloads the config from disk
+    const { fresh, ...loadOptions } = options
+    if (!this.appConfig || fresh) {
+      this.appConfig = await appConfig.load({ ...loadOptions, validateAppConfig })
     }
     return this.appConfig
   }

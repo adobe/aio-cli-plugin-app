@@ -457,6 +457,71 @@ describe('run', () => {
     expect(scriptSequence[3]).toEqual('post-app-build')
   })
 
+  describe('reload config on pre hooks', () => {
+    const extConfig = (hooks = {}) => ({ ...createAppConfig(command.appConfig).application, hooks })
+
+    beforeEach(() => {
+      helpers.isEnvEnabledForHook.mockReturnValue(true)
+      command.getAppExtConfigs.mockReset()
+    })
+
+    afterEach(() => {
+      helpers.isEnvEnabledForHook.mockReset()
+    })
+
+    test('builds an extension added by the pre-app-build hook', async () => {
+      command.getAppExtConfigs
+        .mockResolvedValueOnce({ a: extConfig({ 'pre-app-build': 'hook' }) })
+        .mockResolvedValueOnce({ a: extConfig(), b: extConfig() })
+
+      await command.run()
+      expect(command.getAppExtConfigs).toHaveBeenCalledTimes(2)
+      expect(command.getAppExtConfigs).toHaveBeenLastCalledWith(expect.anything(), { fresh: true })
+      expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(2)
+      expect(command.log).toHaveBeenCalledWith('Config reloaded, extensions added: b')
+    })
+
+    test('skips and warns when the hook removes the current extension', async () => {
+      command.getAppExtConfigs
+        .mockResolvedValueOnce({ a: extConfig({ 'pre-app-build': 'hook' }), b: extConfig() })
+        .mockResolvedValueOnce({ b: extConfig() })
+
+      await command.run()
+      expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
+      expect(command.log).toHaveBeenCalledWith('Config reloaded, extensions removed: a')
+      expect(command.log).toHaveBeenCalledWith(expect.stringContaining("extension 'a' was removed"))
+    })
+
+    test('does not reload when disabled', async () => {
+      helpers.isEnvEnabledForHook.mockReturnValue(false)
+      command.getAppExtConfigs.mockResolvedValueOnce({ a: extConfig({ 'pre-app-build': 'hook' }) })
+
+      await command.run()
+      expect(command.getAppExtConfigs).toHaveBeenCalledTimes(1)
+      expect(mockRuntimeLib.buildActions).toHaveBeenCalledTimes(1)
+    })
+
+    test('warns instead of failing when -e matches nothing after the reload', async () => {
+      command.argv = ['-e', 'a']
+      command.getAppExtConfigs
+        .mockResolvedValueOnce({ a: extConfig({ 'pre-app-build': 'hook' }) })
+        .mockRejectedValueOnce(new Error("No matching extension implementation found for flag '-e a'"))
+
+      await command.run()
+      expect(mockRuntimeLib.buildActions).not.toHaveBeenCalled()
+      expect(command.log).toHaveBeenCalledWith(expect.stringContaining('no extension matches the -e flag'))
+      expect(command.log).toHaveBeenCalledWith(expect.stringContaining("extension 'a' was removed"))
+    })
+
+    test('fails with a reload error if the reloaded config is invalid', async () => {
+      command.getAppExtConfigs
+        .mockResolvedValueOnce({ a: extConfig({ 'pre-app-build': 'hook' }) })
+        .mockRejectedValueOnce(new Error('bad yaml'))
+
+      await expect(command.run()).rejects.toThrow('Failed to reload the app config after the pre-app-build hook: bad yaml')
+    })
+  })
+
   test('build (--no-actions and --no-web-assets)', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
 

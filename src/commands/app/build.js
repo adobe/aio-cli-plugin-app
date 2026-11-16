@@ -15,7 +15,7 @@ const chalk = require('chalk')
 
 const BaseCommand = require('../../BaseCommand')
 const { Flags } = require('@oclif/core')
-const { runInProcess, writeConfig, reloadEnvOnPreHooks, HOOKS } = require('../../lib/app-helper')
+const { runInProcess, writeConfig, reloadEnvOnPreHooks, isEnvEnabledForHook, HOOKS } = require('../../lib/app-helper')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
 const { bundle } = require('@adobe/aio-lib-web')
 const fs = require('fs-extra')
@@ -28,11 +28,7 @@ class Build extends BaseCommand {
     // flags
     flags['web-assets'] = flags['web-assets'] && !flags.action
 
-    const buildConfigs = await this.getAppExtConfigs(flags)
-
-    // 1. build actions and web assets for each extension
-    const keys = Object.keys(buildConfigs)
-    const values = Object.values(buildConfigs)
+    let buildConfigs = await this.getAppExtConfigs(flags)
 
     if (!flags['web-assets'] && !flags.actions) {
       this.error('Nothing to be done 🚫')
@@ -40,10 +36,27 @@ class Build extends BaseCommand {
 
     const spinner = ora()
     try {
-      for (let i = 0; i < keys.length; ++i) {
-        const k = keys[i]
-        const v = values[i]
-        await this.buildOneExt(k, v, flags, spinner)
+      // 1. build actions and web assets for each extension
+      // the list can change when the config is reloaded, so we track what was already built
+      const reloadConfig = isEnvEnabledForHook('AIO_RELOAD_CONFIG_ON_PRE_HOOKS', HOOKS.PRE_APP_BUILD)
+      const built = new Set()
+      let name
+      while ((name = Object.keys(buildConfigs).find(k => !built.has(k)))) {
+        built.add(name)
+        const reloaded = await this.buildOneExt(name, buildConfigs[name], flags, spinner, reloadConfig)
+        if (reloaded) {
+          const before = Object.keys(buildConfigs)
+          const after = Object.keys(reloaded)
+          const added = after.filter(k => !before.includes(k))
+          const removed = before.filter(k => !after.includes(k))
+          if (added.length > 0) {
+            this.log(`Config reloaded, extensions added: ${added.join(', ')}`)
+          }
+          if (removed.length > 0) {
+            this.log(`Config reloaded, extensions removed: ${removed.join(', ')}`)
+          }
+          buildConfigs = reloaded
+        }
       }
     } catch (error) {
       spinner.stop()
@@ -52,7 +65,17 @@ class Build extends BaseCommand {
     }
   }
 
-  async buildOneExt (name, config, flags, spinner) {
+  /**
+   * Builds one extension.
+   *
+   * @param {string} name the extension name
+   * @param {object} config the extension config
+   * @param {object} flags the command flags
+   * @param {object} spinner the ora spinner
+   * @param {boolean} [reloadConfig=false] reload the app config after the pre-app-build hook, if the extension has one
+   * @returns {Promise<object|undefined>} the reloaded extension configs, if the config was reloaded
+   */
+  async buildOneExt (name, config, flags, spinner, reloadConfig = false) {
     const onProgress = !flags.verbose
       ? info => {
         spinner.text = info
@@ -69,6 +92,16 @@ class Build extends BaseCommand {
       this.log(err)
     }
     reloadEnvOnPreHooks(HOOKS.PRE_APP_BUILD)
+
+    let reloaded
+    if (reloadConfig && config.hooks[HOOKS.PRE_APP_BUILD]) {
+      reloaded = await this.reloadExtConfigs(flags)
+      if (!reloaded[name]) {
+        this.log(chalk.yellow(`Warning: extension '${name}' was removed by the pre-app-build hook, skipping its build`))
+        return reloaded
+      }
+      config = reloaded[name]
+    }
 
     if (flags.actions) {
       // removed flags['force-build'] || as it is always forced at this point, we need to check to decide what to build
@@ -141,6 +174,19 @@ class Build extends BaseCommand {
     } catch (err) {
       this.log(err)
     }
+    return reloaded
+  }
+
+  async reloadExtConfigs (flags) {
+    try {
+      return await this.getAppExtConfigs(flags, { fresh: true })
+    } catch (err) {
+      if (err.message.startsWith('No matching extension implementation')) {
+        this.log(chalk.yellow(`Warning: no extension matches the -e flag after reloading the config: ${err.message}`))
+        return {}
+      }
+      throw new Error(`Failed to reload the app config after the pre-app-build hook: ${err.message}`)
+    }
   }
 }
 
@@ -148,6 +194,9 @@ Build.description = `Build an Adobe I/O App
 
 Build the actions and web assets for an Adobe I/O App. Build is optimized to only build what is necessary.
 Use the --force-build flag to force a build even if one already exists.
+
+Set AIO_RELOAD_CONFIG_ON_PRE_HOOKS=true to reload app.config.yaml (and its included files) after each pre-app-build hook,
+so extensions added or removed by the hook are built, or skipped, in the same run. Not supported by deploy and run.
 `
 
 Build.flags = {
