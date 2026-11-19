@@ -17,7 +17,7 @@ const { Flags } = require('@oclif/core')
 
 const BaseCommand = require('../../BaseCommand')
 const webLib = require('@adobe/aio-lib-web')
-const { runInProcess, buildExtensionPointPayloadWoMetadata, reloadEnvOnPreHooks } = require('../../lib/app-helper')
+const { runInProcess, buildExtensionPointPayloadWoMetadata, reloadEnvOnPreHooks, getOtherWebPaths } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const { sendAppAssetsUndeployedAuditLog, sendAppUndeployAuditLog } = require('../../lib/audit-logger')
 const { setRuntimeApiHostAndAuthHandler, getAccessToken } = require('../../lib/auth-helper')
@@ -51,7 +51,7 @@ class Undeploy extends BaseCommand {
 
     const spinner = ora()
 
-    const { aio: aioConfig, packagejson: packageJson } = await this.getFullConfig({}, flags)
+    const { aio: aioConfig, packagejson: packageJson, all: allConfigs } = await this.getFullConfig({}, flags)
     const cliDetails = await getAccessToken({ useCachedToken: !flags.unpublish })
     const appInfo = {
       name: packageJson.name,
@@ -82,7 +82,7 @@ class Undeploy extends BaseCommand {
       // TODO: remove this check once the deploy service is enabled by default
       const v = setRuntimeApiHostAndAuthHandler(values[i])
 
-      await this.undeployOneExt(k, v, flags, spinner)
+      await this.undeployOneExt(k, v, flags, spinner, getOtherWebPaths(allConfigs, k))
       if (cliDetails?.accessToken) {
         // send logs for case of web-assets undeployment
         try {
@@ -116,7 +116,7 @@ class Undeploy extends BaseCommand {
     this.log(chalk.green(chalk.bold('Undeploy done!')))
   }
 
-  async undeployOneExt (extName, config, flags, spinner) {
+  async undeployOneExt (extName, config, flags, spinner, keepWebPaths) {
     const onProgress = !flags.verbose
       ? info => {
         spinner.text = info
@@ -158,7 +158,7 @@ class Undeploy extends BaseCommand {
         try {
           const script = await runInProcess(config.hooks['undeploy-static'], config)
           if (!script) {
-            await webLib.undeployWeb(config, onProgress)
+            await webLib.undeployWeb(config, onProgress, { keepPaths: keepWebPaths })
           }
 
           spinner.succeed(chalk.green(`Un-Deploying web assets for ${extName}`))

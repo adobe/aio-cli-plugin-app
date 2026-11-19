@@ -581,6 +581,17 @@ describe('buildExtensionPointPayloadWoMetadata', () => {
       })
   })
 
+  test('exc config with a web path', () => {
+    const mockConfig = getMockConfig('exc', { runtime: { namespace: 'hola' } })
+    mockConfig.all['dx/excshell/1'].web.path = 'configuration'
+    expect(appHelper.buildExtensionPointPayloadWoMetadata(mockConfig.all))
+      .toEqual({
+        endpoints: {
+          'dx/excshell/1': { view: [{ href: 'https://hola.adobeio-static.net/configuration/index.html' }] }
+        }
+      })
+  })
+
   test('fake headless extension with multi package actions', () => {
     const fakeConfig = {
       all: {
@@ -652,6 +663,19 @@ describe('buildExtensionPointPayloadWoMetadata', () => {
     }
     expect(() => appHelper.buildExtensionPointPayloadWoMetadata(fakeConfig.all))
       .toThrow('unexpected op.type encountered => \'notsupported\'')
+  })
+})
+
+describe('getOtherWebPaths', () => {
+  test('returns the web paths of the other frontends', () => {
+    const allConfigs = {
+      root: { app: { hasFrontend: true }, web: {} },
+      self: { app: { hasFrontend: true }, web: { path: 'self' } },
+      configuration: { app: { hasFrontend: true }, web: { path: 'configuration' } },
+      'no-frontend': { app: { hasFrontend: false }, web: { path: 'no-frontend' } }
+    }
+    expect(appHelper.getOtherWebPaths(allConfigs, 'self')).toEqual(['configuration'])
+    expect(appHelper.getOtherWebPaths(allConfigs, 'root')).toEqual(['self', 'configuration'])
   })
 })
 

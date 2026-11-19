@@ -198,6 +198,17 @@ describe('run', () => {
     expect(mockWebLib.undeployWeb).toHaveBeenCalledTimes(1)
   })
 
+  test('undeploy keeps the web paths of the other frontends', async () => {
+    const appConfig = createAppConfig()
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
+    command.getFullConfig.mockResolvedValue({ ...(await command.getFullConfig()), all: appConfig })
+    helpers.getOtherWebPaths.mockReturnValue(['configuration'])
+
+    await command.run()
+    expect(helpers.getOtherWebPaths).toHaveBeenCalledWith(appConfig, 'application')
+    expect(mockWebLib.undeployWeb).toHaveBeenCalledWith(appConfig.application, expect.any(Function), { keepPaths: ['configuration'] })
+  })
+
   test('reloads env after pre-app-undeploy and before undeploying', async () => {
     helpers.reloadEnvOnPreHooks.mockClear()
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig())

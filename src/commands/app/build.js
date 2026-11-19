@@ -121,6 +121,9 @@ class Build extends BaseCommand {
               shouldOptimize: flags['web-optimize'] ?? process.env.NODE_ENV === 'production',
               logLevel: flags.verbose ? 'verbose' : 'warn'
             }
+            if (config.web.path) {
+              bundleOptions.defaultTargetOptions = { publicUrl: `/${config.web.path}/` }
+            }
             // empty the dist folder to prevent an S3 explosion
             fs.emptyDirSync(config.web.distProd)
             const bundler = await bundle(entries, config.web.distProd, bundleOptions, onProgress)
