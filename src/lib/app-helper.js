@@ -339,6 +339,19 @@ async function buildExcShellViewExtensionMetadata (libConsoleCLI, aioConfig) {
 }
 
 /**
+ * Returns the web paths of the other frontends in the app, so that deploying or undeploying one frontend keeps their files.
+ *
+ * @param {object} allConfigs all app and extension configurations, keyed by name
+ * @param {string} name the name of the configuration being deployed or undeployed
+ * @returns {Array<string>} the web paths of the other configurations with a frontend
+ */
+function getOtherWebPaths (allConfigs, name) {
+  return Object.entries(allConfigs)
+    .filter(([otherName, config]) => otherName !== name && config.app.hasFrontend && config.web.path)
+    .map(([, config]) => config.web.path)
+}
+
+/**
  * Build extension points payload from configuration all extension configurations
  *
  * @param {Array} extConfigs array resulting from BaseCommand.getAppExtConfigs
@@ -363,7 +376,7 @@ function buildExtensionPointPayloadWoMetadata (extConfigs) {
   //   dx/excshell/1:
   //    operations:
   //      view:
-  //        href: https://namespace.adobeio-static.net/index.html # todo support for multi UI with a extname-opcode-subfolder
+  //        href: https://namespace.adobeio-static.net/index.html # or /<web.path>/index.html when web.path is set
   //   dx/asset-compute/worker/1:
   //    operations:
   //      workerProcess:
@@ -394,9 +407,9 @@ function buildExtensionPointPayloadWoMetadata (extConfigs) {
               const href = actionUrls[actionName] || actionUrls[actionAndPkgName]
               return { href, ...op.params }
             } else if (op.type === 'web') {
-              // todo support for multi UI with a extname-opcode-subfolder
+              const webPath = extPointConfig.web?.path ? `${extPointConfig.web.path}/${op.impl}` : op.impl
               return {
-                href: `https://${extPointConfig.ow.namespace}.${extPointConfig.app.hostname}/${op.impl}`,
+                href: `https://${extPointConfig.ow.namespace}.${extPointConfig.app.hostname}/${webPath}`,
                 ...op.params
               }
             } else {
@@ -587,6 +600,7 @@ module.exports = {
   setWorkspaceServicesConfig,
   buildExtensionPointPayloadWoMetadata,
   buildExcShellViewExtensionMetadata,
+  getOtherWebPaths,
   atLeastOne,
   deleteUserConfig,
   getFilesCountWithExtension

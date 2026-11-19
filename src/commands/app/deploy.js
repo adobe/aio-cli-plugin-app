@@ -21,7 +21,7 @@ const { Flags } = require('@oclif/core')
 const {
   rewriteActionUrlInEntities, runInProcess, reloadEnvOnPreHooks,
   buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata,
-  getFilesCountWithExtension
+  getFilesCountWithExtension, getOtherWebPaths
 } = require('../../lib/app-helper')
 const rtLib = require('@adobe/aio-lib-runtime')
 const dbLib = require('@adobe/aio-lib-db')
@@ -60,7 +60,7 @@ class Deploy extends BuildCommand {
     const spinner = ora()
 
     try {
-      const { aio: aioConfig, packagejson: packageJson } = await this.getFullConfig({}, flags)
+      const { aio: aioConfig, packagejson: packageJson, all: allConfigs } = await this.getFullConfig({}, flags)
       const cliDetails = await getAccessToken({ useCachedToken: !flags.publish })
       const appInfo = {
         name: packageJson.name,
@@ -136,7 +136,7 @@ class Deploy extends BuildCommand {
         const v = {
           ...setRuntimeApiHostAndAuthHandler(values[i])
         }
-        await this.deploySingleConfig({ name: k, config: v, originalConfig: values[i], flags, spinner, accessToken: cliDetails?.accessToken })
+        await this.deploySingleConfig({ name: k, config: v, originalConfig: values[i], flags, spinner, accessToken: cliDetails?.accessToken, keepWebPaths: getOtherWebPaths(allConfigs, k) })
         if (cliDetails?.accessToken && v.app.hasFrontend && flags['web-assets']) {
           const opItems = getFilesCountWithExtension(v.web.distProd)
           try {
@@ -175,7 +175,7 @@ class Deploy extends BuildCommand {
     this.log(chalk.green(chalk.bold('Successful deployment 🏄')))
   }
 
-  async deploySingleConfig ({ name, config, originalConfig, flags, spinner, accessToken }) {
+  async deploySingleConfig ({ name, config, originalConfig, flags, spinner, accessToken, keepWebPaths }) {
     const onProgress = !flags.verbose
       ? info => {
         spinner.text = info
@@ -263,7 +263,7 @@ class Deploy extends BuildCommand {
           if (script) {
             spinner.fail(chalk.green(`deploy-static skipped by hook '${name}'`))
           } else {
-            deployedFrontendUrl = await webLib.deployWeb(config, onProgress)
+            deployedFrontendUrl = await webLib.deployWeb(config, onProgress, { keepPaths: keepWebPaths })
             spinner.succeed(chalk.green(message))
             const filesLogCount = getFilesCountWithExtension(config.web.distProd)
             const filesDeployedMessage = `All static assets for the App Builder application in workspace: ${name} were successfully deployed to the CDN. Files deployed :`

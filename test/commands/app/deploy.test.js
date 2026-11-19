@@ -641,6 +641,18 @@ describe('run', () => {
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('https://example.com'))
   })
 
+  test('deploy keeps the web paths of the other frontends', async () => {
+    const appConfig = createAppConfig(command.appConfig)
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
+    command.getFullConfig.mockResolvedValue({ ...(await command.getFullConfig()), all: appConfig })
+    helpers.getOtherWebPaths.mockReturnValue(['configuration'])
+
+    command.argv = []
+    await command.run()
+    expect(helpers.getOtherWebPaths).toHaveBeenCalledWith(appConfig, 'application')
+    expect(mockWebLib.deployWeb).toHaveBeenCalledWith(appConfig.application, expect.any(Function), { keepPaths: ['configuration'] })
+  })
+
   test('deploy should open ui url with --open', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     open.mockReset()

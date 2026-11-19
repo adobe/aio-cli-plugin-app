@@ -255,6 +255,18 @@ describe('run', () => {
     expect(mockBundleFunc).toHaveBeenCalledTimes(1)
   })
 
+  test('build an App with a web path', async () => {
+    const appConfig = createAppConfig(command.appConfig)
+    appConfig.application.web.path = 'configuration'
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
+
+    await command.run()
+    expect(mockWebLib.bundle).toHaveBeenCalledWith('/web-src/**/*.html', '/dist/web-src-prod',
+      expect.objectContaining({ defaultTargetOptions: { publicUrl: '/configuration/' } }),
+      expect.any(Function)
+    )
+  })
+
   test('reloads env after pre-app-build and before building', async () => {
     helpers.reloadEnvOnPreHooks.mockClear()
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
