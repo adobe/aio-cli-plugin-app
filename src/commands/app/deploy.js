@@ -19,7 +19,7 @@ const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { Flags } = require('@oclif/core')
 const {
-  rewriteActionUrlInEntities, runInProcess, reloadEnvOnPreHooks,
+  rewriteActionUrlInEntities, runInProcess, reloadEnvOnPreHooks, isEnvEnabledForHook, HOOKS,
   buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata,
   getFilesCountWithExtension
 } = require('../../lib/app-helper')
@@ -45,10 +45,8 @@ class Deploy extends BuildCommand {
     // Deploy only a specific action, the flags can be specified multiple times, this will set --no-publish
     flags.publish = flags.publish && !flags.action
 
-    const deployConfigs = await this.getAppExtConfigs(flags)
-    const keys = Object.keys(deployConfigs)
-    const values = Object.values(deployConfigs)
-    const isStandaloneApp = (keys.length === 1 && keys[0] === 'application')
+    let deployConfigs = await this.getAppExtConfigs(flags)
+    const isStandaloneApp = (Object.keys(deployConfigs).length === 1 && 'application' in deployConfigs)
 
     // if there are no extensions, then set publish to false
     flags.publish = flags.publish && !isStandaloneApp
@@ -131,12 +129,32 @@ class Deploy extends BuildCommand {
       // Possible improvements:
       // - parallelize
       // - break into smaller pieces deploy, allowing to first deploy all actions then all web assets
-      for (let i = 0; i < keys.length; ++i) {
-        const k = keys[i]
-        const v = {
-          ...setRuntimeApiHostAndAuthHandler(values[i])
+      // the list can change when the config is reloaded after a pre-app-build hook, so we track what was already deployed
+      const reloadBuild = flags.build && isEnvEnabledForHook('AIO_RELOAD_CONFIG_ON_PRE_HOOKS', HOOKS.PRE_APP_BUILD)
+      const done = new Set()
+      let name
+      while ((name = Object.keys(deployConfigs).find(k => !done.has(k)))) {
+        done.add(name)
+        const { configs, config: v, originalConfig } = await this.deploySingleConfig({
+          name,
+          config: { ...setRuntimeApiHostAndAuthHandler(deployConfigs[name]) },
+          originalConfig: deployConfigs[name],
+          flags,
+          spinner,
+          accessToken: cliDetails?.accessToken,
+          reloadBuild
+        })
+        if (configs) {
+          this.logReloadedExts(deployConfigs, configs)
+          deployConfigs = configs
         }
-        await this.deploySingleConfig({ name: k, config: v, originalConfig: values[i], flags, spinner, accessToken: cliDetails?.accessToken })
+        if (!v) {
+          // removed by a hook
+          delete deployConfigs[name]
+          continue
+        }
+        // the extension config may have been refreshed by a pre hook, publishExtensionPoints needs it
+        deployConfigs[name] = originalConfig
         if (cliDetails?.accessToken && v.app.hasFrontend && flags['web-assets']) {
           const opItems = getFilesCountWithExtension(v.web.distProd)
           try {
@@ -175,7 +193,9 @@ class Deploy extends BuildCommand {
     this.log(chalk.green(chalk.bold('Successful deployment 🏄')))
   }
 
-  async deploySingleConfig ({ name, config, originalConfig, flags, spinner, accessToken }) {
+  // Builds and deploys one extension. Returns { config, originalConfig, configs }: the configs used (config is
+  // undefined if a hook removed the extension) and the reloaded extension configs if the pre-app-build hook reloaded them.
+  async deploySingleConfig ({ name, config, originalConfig, flags, spinner, accessToken, reloadBuild = false }) {
     const onProgress = !flags.verbose
       ? info => {
         spinner.text = info
@@ -186,8 +206,17 @@ class Deploy extends BuildCommand {
       }
 
     // build phase
+    let configs
     if (flags.build) {
-      await this.buildOneExt(name, config, flags, spinner)
+      configs = await this.buildOneExt(name, config, flags, spinner, ...(reloadBuild ? [true] : []))
+      if (configs) {
+        if (!configs[name]) {
+          // removed by the pre-app-build hook, buildOneExt already warned
+          return { configs }
+        }
+        originalConfig = configs[name]
+        config = { ...setRuntimeApiHostAndAuthHandler(originalConfig) }
+      }
     }
 
     // deploy phase
@@ -206,7 +235,17 @@ class Deploy extends BuildCommand {
     } catch (err) {
       this.error(err)
     }
-    reloadEnvOnPreHooks()
+    reloadEnvOnPreHooks(HOOKS.PRE_APP_DEPLOY)
+
+    if (isEnvEnabledForHook('AIO_RELOAD_CONFIG_ON_PRE_HOOKS', HOOKS.PRE_APP_DEPLOY) && config.hooks[HOOKS.PRE_APP_DEPLOY]) {
+      const reloaded = await this.reloadExtConfigs(flags, HOOKS.PRE_APP_DEPLOY)
+      if (!reloaded[name]) {
+        this.log(chalk.yellow(`Warning: extension '${name}' was removed by the pre-app-deploy hook, skipping its deployment`))
+        return { configs }
+      }
+      originalConfig = reloaded[name]
+      config = { ...setRuntimeApiHostAndAuthHandler(originalConfig) }
+    }
 
     // provision database if configured
     if (config.manifest?.full?.database?.['auto-provision'] === true) {
@@ -308,6 +347,7 @@ class Deploy extends BuildCommand {
     } catch (err) {
       this.error(err)
     }
+    return { configs, config, originalConfig }
   }
 
   async provisionDatabase (config, spinner, flags, accessToken) {
@@ -419,6 +459,10 @@ This will also build any changed actions or web assets before deploying.
 Use the --force-build flag to force a build even if one already exists.
 Deploy is optimized to only deploy what is necessary. Be aware that deploying actions will overwrite any previous deployments.
 Use the --force-deploy flag to force deploy changes, regardless of production Workspace being published in Exchange.
+
+Set AIO_RELOAD_CONFIG_ON_PRE_HOOKS to reload app.config.yaml (and its included files) after a pre hook. The pre-app-build hook
+reloads the list of extensions, so added or removed extensions are built and deployed, or skipped, in the same run.
+The pre-app-deploy hook refreshes the config of the extension being deployed. Use true for both, or a list of hook names.
 `
 
 Deploy.flags = {

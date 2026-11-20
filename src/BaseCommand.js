@@ -118,6 +118,29 @@ class BaseCommand extends Command {
     return ret
   }
 
+  async reloadExtConfigs (flags, hookName) {
+    try {
+      return await this.getAppExtConfigs(flags, { fresh: true })
+    } catch (err) {
+      if (err.message.startsWith('No matching extension implementation')) {
+        this.log(chalk.yellow(`Warning: no extension matches the -e flag after reloading the config: ${err.message}`))
+        return {}
+      }
+      throw new Error(`Failed to reload the app config after the ${hookName} hook: ${err.message}`)
+    }
+  }
+
+  logReloadedExts (before, after) {
+    const added = Object.keys(after).filter(k => !(k in before))
+    const removed = Object.keys(before).filter(k => !(k in after))
+    if (added.length > 0) {
+      this.log(`Config reloaded, extensions added: ${added.join(', ')}`)
+    }
+    if (removed.length > 0) {
+      this.log(`Config reloaded, extensions removed: ${removed.join(', ')}`)
+    }
+  }
+
   async getRuntimeManifestConfigFile (implName, flags) {
     let configKey
     if (implName === APPLICATION_CONFIG_KEY) {
@@ -169,8 +192,10 @@ class BaseCommand extends Command {
     const validateAppConfig = flags['config-validation'] !== false
     aioLogger.debug(`validateAppConfig=${validateAppConfig}`)
 
-    if (!this.appConfig) {
-      this.appConfig = await appConfig.load({ ...options, validateAppConfig })
+    // options.fresh bypasses the cache and reloads the config from disk
+    const { fresh, ...loadOptions } = options
+    if (!this.appConfig || fresh) {
+      this.appConfig = await appConfig.load({ ...loadOptions, validateAppConfig })
     }
     return this.appConfig
   }

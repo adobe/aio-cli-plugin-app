@@ -118,6 +118,16 @@ describe('getFullConfig', () => {
     expect(config).toEqual(config2)
     expect(mockConfigLoader.load).toHaveBeenCalledTimes(1)
   })
+  test('fresh bypasses and refreshes the cache', async () => {
+    const cmd = new TheCommand()
+    mockConfigLoader.load.mockReset()
+    mockConfigLoader.load.mockResolvedValueOnce({ a: 'hello' }).mockResolvedValueOnce({ a: 'bye' })
+    expect(await cmd.getFullConfig()).toEqual({ a: 'hello' })
+    expect(await cmd.getFullConfig({ fresh: true })).toEqual({ a: 'bye' })
+    expect(await cmd.getFullConfig()).toEqual({ a: 'bye' })
+    expect(mockConfigLoader.load).toHaveBeenCalledTimes(2)
+    expect(mockConfigLoader.load).toHaveBeenLastCalledWith({ validateAppConfig: true })
+  })
   test('with options', async () => {
     const cmd = new TheCommand()
     mockConfigLoader.load.mockResolvedValue({ a: 'hello' })
