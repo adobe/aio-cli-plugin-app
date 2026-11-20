@@ -81,12 +81,25 @@ async function runPackageScript (scriptName, dir, cmdArgs = []) {
   }
 }
 
-const HOOK_NAMES = [
-  'pre-app-build', 'post-app-build', 'build-actions', 'build-static',
-  'pre-app-run', 'post-app-run', 'serve-static',
-  'pre-app-deploy', 'post-app-deploy', 'deploy-actions', 'deploy-static',
-  'pre-app-undeploy', 'post-app-undeploy', 'undeploy-actions', 'undeploy-static'
-]
+const HOOKS = {
+  PRE_APP_BUILD: 'pre-app-build',
+  POST_APP_BUILD: 'post-app-build',
+  BUILD_ACTIONS: 'build-actions',
+  BUILD_STATIC: 'build-static',
+  PRE_APP_RUN: 'pre-app-run',
+  POST_APP_RUN: 'post-app-run',
+  SERVE_STATIC: 'serve-static',
+  PRE_APP_DEPLOY: 'pre-app-deploy',
+  POST_APP_DEPLOY: 'post-app-deploy',
+  DEPLOY_ACTIONS: 'deploy-actions',
+  DEPLOY_STATIC: 'deploy-static',
+  PRE_APP_UNDEPLOY: 'pre-app-undeploy',
+  POST_APP_UNDEPLOY: 'post-app-undeploy',
+  UNDEPLOY_ACTIONS: 'undeploy-actions',
+  UNDEPLOY_STATIC: 'undeploy-static'
+}
+
+const HOOK_NAMES = Object.values(HOOKS)
 
 /**
  * Whether an opt-in env var is enabled for a hook.
@@ -605,6 +618,7 @@ module.exports = {
   runInProcess,
   reloadEnvOnPreHooks,
   isEnvEnabledForHook,
+  HOOKS,
   runPackageScript,
   wrapError,
   removeProtocolFromURL,

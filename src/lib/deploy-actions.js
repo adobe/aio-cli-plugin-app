@@ -10,7 +10,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-const { runInProcess, reloadEnvOnPreHooks } = require('./app-helper')
+const { runInProcess, reloadEnvOnPreHooks, HOOKS } = require('./app-helper')
 const { deployActions } = require('@adobe/aio-lib-runtime')
 const logActions = require('./log-actions')
 
@@ -31,7 +31,7 @@ module.exports = async ({
   inprocHook
 }) => {
   await runInProcess(config.hooks['pre-app-deploy'], config)
-  reloadEnvOnPreHooks('pre-app-deploy')
+  reloadEnvOnPreHooks(HOOKS.PRE_APP_DEPLOY)
 
   const hookFilterEntities = Array.isArray(deployConfig.filterEntities?.actions) ? deployConfig.filterEntities.actions : []
   const hookData = {
