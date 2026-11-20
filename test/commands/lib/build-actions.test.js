@@ -33,6 +33,7 @@ test('reloads env after pre-app-build', async () => {
   utils.runInProcess.mockImplementation(script => script === 'build-actions' ? {} : undefined)
   await buildActions(extensionConfig)
   expect(utils.reloadEnvOnPreHooks).toHaveBeenCalledTimes(1)
+  expect(utils.reloadEnvOnPreHooks).toHaveBeenCalledWith('pre-app-build')
   expect(utils.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(utils.reloadEnvOnPreHooks.mock.invocationCallOrder[0])
   expect(utils.reloadEnvOnPreHooks.mock.invocationCallOrder[0]).toBeLessThan(utils.runInProcess.mock.invocationCallOrder[1])
 })

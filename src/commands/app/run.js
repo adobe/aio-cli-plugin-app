@@ -23,7 +23,7 @@ const coreConfig = require('@adobe/aio-lib-core-config')
 const BaseCommand = require('../../BaseCommand')
 const runDev = require('../../lib/run-dev')
 const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('../../lib/defaults')
-const { runInProcess, reloadEnvOnPreHooks } = require('../../lib/app-helper')
+const { runInProcess, reloadEnvOnPreHooks, HOOKS } = require('../../lib/app-helper')
 
 const DEV_KEYS_DIR = 'dist/dev-keys/'
 const PRIVATE_KEY_PATH = DEV_KEYS_DIR + 'private.key'
@@ -84,7 +84,7 @@ class Run extends BaseCommand {
     } catch (err) {
       this.log(err)
     }
-    reloadEnvOnPreHooks()
+    reloadEnvOnPreHooks(HOOKS.PRE_APP_RUN)
 
     // check if there are certificates available, and generate them if not ...
     // only care about certificates if the application has a UI

@@ -15,7 +15,7 @@ const chalk = require('chalk')
 
 const BaseCommand = require('../../BaseCommand')
 const { Flags } = require('@oclif/core')
-const { runInProcess, writeConfig, reloadEnvOnPreHooks } = require('../../lib/app-helper')
+const { runInProcess, writeConfig, reloadEnvOnPreHooks, HOOKS } = require('../../lib/app-helper')
 const RuntimeLib = require('@adobe/aio-lib-runtime')
 const { bundle } = require('@adobe/aio-lib-web')
 const fs = require('fs-extra')
@@ -68,7 +68,7 @@ class Build extends BaseCommand {
     } catch (err) {
       this.log(err)
     }
-    reloadEnvOnPreHooks()
+    reloadEnvOnPreHooks(HOOKS.PRE_APP_BUILD)
 
     if (flags.actions) {
       // removed flags['force-build'] || as it is always forced at this point, we need to check to decide what to build

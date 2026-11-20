@@ -884,6 +884,7 @@ describe('run', () => {
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     // env reload is gated, the config reload just before deploying actions is not
     expect(helpers.reloadEnvOnPreHooks).toHaveBeenCalledTimes(1)
+    expect(helpers.reloadEnvOnPreHooks).toHaveBeenCalledWith('pre-app-deploy')
     expect(helpers.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(
       helpers.reloadEnvOnPreHooks.mock.invocationCallOrder[0]
     )

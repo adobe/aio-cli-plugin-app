@@ -24,6 +24,14 @@ $ aio discover -i
 $ aio app --help
 ```
 
+# Environment variables
+
+`AIO_RELOAD_ENV_ON_PRE_HOOKS` makes the plugin reload the aio config (`.env` and `.aio`) after a pre hook, so changes the hook made to them are picked up. It is off by default.
+
+- Unset, empty, `0` or `false` turns it off.
+- A comma-separated list of hook names reloads only after those hooks, for example `AIO_RELOAD_ENV_ON_PRE_HOOKS=pre-app-build,pre-app-deploy`. Names are case-insensitive. The hooks that reload are `pre-app-build`, `pre-app-run`, `pre-app-deploy` and `pre-app-undeploy`.
+- Any other value, such as `1` or `true`, reloads after all of them.
+
 # Commands
 
 <!-- commands -->
