@@ -23,7 +23,8 @@ const coreConfig = require('@adobe/aio-lib-core-config')
 const BaseCommand = require('../../BaseCommand')
 const runDev = require('../../lib/run-dev')
 const { defaultHttpServerPort: SERVER_DEFAULT_PORT } = require('../../lib/defaults')
-const { runInProcess, reloadEnvOnPreHooks } = require('../../lib/app-helper')
+const { reloadEnvOnPreHooks, HOOKS } = require('../../lib/app-helper')
+const { runHookOrLog } = require('../../lib/hook-runner')
 
 const DEV_KEYS_DIR = 'dist/dev-keys/'
 const PRIVATE_KEY_PATH = DEV_KEYS_DIR + 'private.key'
@@ -79,12 +80,8 @@ class Run extends BaseCommand {
       verbose: flags.verbose
     }
 
-    try {
-      await runInProcess(config.hooks['pre-app-run'], { config, options: runOptions })
-    } catch (err) {
-      this.log(err)
-    }
-    reloadEnvOnPreHooks()
+    await runHookOrLog(HOOKS.PRE_APP_RUN, config.hooks[HOOKS.PRE_APP_RUN], { config, options: runOptions }, this.log.bind(this))
+    reloadEnvOnPreHooks(HOOKS.PRE_APP_RUN)
 
     // check if there are certificates available, and generate them if not ...
     // only care about certificates if the application has a UI
@@ -110,11 +107,7 @@ class Run extends BaseCommand {
       }
     const inprocHook = this.config.runHook.bind(this.config)
     const frontendUrl = await runDev(config, this.config.dataDir, runOptions, onProgress, inprocHook)
-    try {
-      await runInProcess(config.hooks['post-app-run'], config)
-    } catch (err) {
-      this.log(err)
-    }
+    await runHookOrLog(HOOKS.POST_APP_RUN, config.hooks[HOOKS.POST_APP_RUN], config, this.log.bind(this))
     if (frontendUrl) {
       this.log()
       this.log(chalk.blue(chalk.bold(`To view your local application:\n  -> ${frontendUrl}`)))

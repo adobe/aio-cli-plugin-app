@@ -713,6 +713,16 @@ describe('run', () => {
     expect(command.log).toHaveBeenCalledWith(expect.stringContaining('pkg/actionNoUrl'))
   })
 
+  test.each(['pre-app-deploy', 'post-app-deploy'])('%s error fails the command', async (hook) => {
+    const appConfig = createAppConfig(command.appConfig)
+    appConfig.application.hooks = { [hook]: hook }
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
+    const error = new Error(`${hook} failed`)
+    helpers.runInProcess.mockImplementation(script => script === hook ? Promise.reject(error) : undefined)
+    await command.run()
+    expect(command.error).toHaveBeenCalledWith(error)
+  })
+
   test('should fail if scripts.deployActions fails', async () => {
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig))
     const error = new Error('mocklfailure')
@@ -884,6 +894,7 @@ describe('run', () => {
     expect(mockRuntimeLib.deployActions).toHaveBeenCalledTimes(1)
     // env reload is gated, the config reload just before deploying actions is not
     expect(helpers.reloadEnvOnPreHooks).toHaveBeenCalledTimes(1)
+    expect(helpers.reloadEnvOnPreHooks).toHaveBeenCalledWith('pre-app-deploy')
     expect(helpers.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(
       helpers.reloadEnvOnPreHooks.mock.invocationCallOrder[0]
     )

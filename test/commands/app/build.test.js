@@ -261,6 +261,7 @@ describe('run', () => {
 
     await command.run()
     expect(helpers.reloadEnvOnPreHooks).toHaveBeenCalledTimes(1)
+    expect(helpers.reloadEnvOnPreHooks).toHaveBeenCalledWith('pre-app-build')
     expect(helpers.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(helpers.reloadEnvOnPreHooks.mock.invocationCallOrder[0])
     expect(helpers.reloadEnvOnPreHooks.mock.invocationCallOrder[0]).toBeLessThan(mockRuntimeLib.buildActions.mock.invocationCallOrder[0])
   })
@@ -454,6 +455,26 @@ describe('run', () => {
     expect(scriptSequence[1]).toEqual('build-actions')
     expect(scriptSequence[2]).toEqual('build-static')
     expect(scriptSequence[3]).toEqual('post-app-build')
+  })
+
+  describe('AIO_FAIL_ON_HOOK_ERROR', () => {
+    test.each(['pre-app-build', 'post-app-build'])('%s error is only logged by default', async (hook) => {
+      const appConfig = createAppConfig(command.appConfig)
+      appConfig.application.hooks = { [hook]: hook }
+      command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
+      helpers.runInProcess.mockImplementation(script => script === hook ? Promise.reject(new Error(`${hook} failed`)) : undefined)
+      await command.run()
+      expect(command.log).toHaveBeenCalledWith(expect.objectContaining({ message: `${hook} failed` }))
+    })
+
+    test.each(['pre-app-build', 'post-app-build'])('%s error fails the command when set', async (hook) => {
+      helpers.isEnvEnabledForHook.mockReturnValueOnce(true) // AIO_FAIL_ON_HOOK_ERROR
+      const appConfig = createAppConfig(command.appConfig)
+      appConfig.application.hooks = { [hook]: hook }
+      command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
+      helpers.runInProcess.mockImplementation(script => script === hook ? Promise.reject(new Error(`${hook} failed`)) : undefined)
+      await expect(command.run()).rejects.toThrow(`Hook '${hook}' failed: ${hook} failed`)
+    })
   })
 
   test('build (--no-actions and --no-web-assets)', async () => {

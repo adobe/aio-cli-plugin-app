@@ -646,6 +646,17 @@ describe('run', () => {
     expect(command.log).toHaveBeenCalledWith('error-2')
   })
 
+  test.each(['pre-app-run', 'post-app-run'])('app:run %s error fails the command if AIO_FAIL_ON_HOOK_ERROR is enabled', async (hook) => {
+    helpers.isEnvEnabledForHook.mockReturnValueOnce(true) // AIO_FAIL_ON_HOOK_ERROR
+    mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
+    const appConfig = createAppConfig()
+    appConfig.application.hooks = { [hook]: hook }
+    command.getAppExtConfigs.mockResolvedValueOnce(appConfig)
+    helpers.runInProcess.mockImplementation(script => script === hook ? Promise.reject(new Error('boom')) : undefined)
+    command.argv = []
+    await expect(command.run()).rejects.toThrow(`Hook '${hook}' failed: boom`)
+  })
+
   test('cannot run multiple extensions', async () => {
     mockFSExists([PRIVATE_KEY_PATH, PUB_CERT_PATH])
     command.getAppExtConfigs.mockResolvedValueOnce(createAppConfig(command.appConfig, 'app-exc-nui'))
@@ -711,6 +722,7 @@ describe('run', () => {
     await command.run()
 
     expect(helpers.reloadEnvOnPreHooks).toHaveBeenCalledTimes(1)
+    expect(helpers.reloadEnvOnPreHooks).toHaveBeenCalledWith('pre-app-run')
     expect(mockRunDev).toHaveBeenCalledTimes(1)
     expect(helpers.runInProcess.mock.invocationCallOrder[0]).toBeLessThan(
       helpers.reloadEnvOnPreHooks.mock.invocationCallOrder[0]

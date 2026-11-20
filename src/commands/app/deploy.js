@@ -19,7 +19,7 @@ const BuildCommand = require('./build')
 const webLib = require('@adobe/aio-lib-web')
 const { Flags } = require('@oclif/core')
 const {
-  rewriteActionUrlInEntities, runInProcess, reloadEnvOnPreHooks,
+  rewriteActionUrlInEntities, runInProcess, reloadEnvOnPreHooks, HOOKS,
   buildExtensionPointPayloadWoMetadata, buildExcShellViewExtensionMetadata,
   getFilesCountWithExtension
 } = require('../../lib/app-helper')
@@ -206,7 +206,7 @@ class Deploy extends BuildCommand {
     } catch (err) {
       this.error(err)
     }
-    reloadEnvOnPreHooks()
+    reloadEnvOnPreHooks(HOOKS.PRE_APP_DEPLOY)
 
     // provision database if configured
     if (config.manifest?.full?.database?.['auto-provision'] === true) {

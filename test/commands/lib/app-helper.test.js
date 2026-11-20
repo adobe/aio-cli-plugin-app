@@ -277,6 +277,56 @@ describe('reloadEnvOnPreHooks', () => {
     expect(appHelper.reloadEnvOnPreHooks()).toBe(true)
     expect(aioConfig.reload).toHaveBeenCalledTimes(1)
   })
+
+  test('with a hook list, only reloads after the listed hooks', () => {
+    process.env.AIO_RELOAD_ENV_ON_PRE_HOOKS = 'pre-app-build, PRE-APP-DEPLOY'
+    expect(appHelper.reloadEnvOnPreHooks('pre-app-run')).toBe(false)
+    expect(aioConfig.reload).not.toHaveBeenCalled()
+    expect(appHelper.reloadEnvOnPreHooks('pre-app-build')).toBe(true)
+    expect(appHelper.reloadEnvOnPreHooks('pre-app-deploy')).toBe(true)
+    expect(aioConfig.reload).toHaveBeenCalledTimes(2)
+  })
+
+  test('with the default value, reloads after any hook', () => {
+    process.env.AIO_RELOAD_ENV_ON_PRE_HOOKS = 'true'
+    expect(appHelper.reloadEnvOnPreHooks('pre-app-undeploy')).toBe(true)
+  })
+})
+
+describe('isEnvEnabledForHook', () => {
+  const NAME = 'AIO_TEST_HOOK_FLAG'
+  const check = (value, hook) => {
+    if (value === undefined) {
+      delete process.env[NAME]
+    } else {
+      process.env[NAME] = value
+    }
+    return appHelper.isEnvEnabledForHook(NAME, hook)
+  }
+  afterEach(() => {
+    delete process.env[NAME]
+  })
+
+  test.each([undefined, '', '  ', '0', 'false', ' FALSE '])('value %p is off for every hook', (value) => {
+    expect(check(value, 'pre-app-build')).toBe(false)
+    expect(check(value)).toBe(false)
+  })
+  test.each(['1', 'true', 'yes', 'whatever', 'foo,bar'])('value %p enables all hooks', (value) => {
+    expect(check(value, 'pre-app-build')).toBe(true)
+    expect(check(value, 'post-app-deploy')).toBe(true)
+    expect(check(value)).toBe(true)
+  })
+  test('a list of known hooks enables only those, ignoring case and spaces', () => {
+    const value = ' Pre-App-Build , build-actions '
+    expect(check(value, 'pre-app-build')).toBe(true)
+    expect(check(value, 'build-actions')).toBe(true)
+    expect(check(value, 'post-app-build')).toBe(false)
+    expect(check(value)).toBe(true)
+  })
+  test('a mixed list with at least one known hook is a list', () => {
+    expect(check('true,pre-app-run', 'pre-app-run')).toBe(true)
+    expect(check('true,pre-app-run', 'pre-app-build')).toBe(false)
+  })
 })
 
 test('runScript with empty command', async () => {
