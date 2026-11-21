@@ -271,6 +271,49 @@ function splitEnvLine (line) {
 }
 
 /**
+ * Split .env data into entries. The lines of a quoted value that spans several lines
+ * are kept together in one entry.
+ *
+ * @param {string} env env data
+ * @returns {Array} the entries, each a line or a multiline key=value pair
+ */
+function splitEnvEntries (env) {
+  const NEWLINES = /\r\n|\r|\n/
+  const isClosedBy = (text, quote) => new RegExp(`(^|[^\\\\])${quote}`).test(text)
+
+  const entries = []
+  let pending = null // lines of a quoted value that is not closed yet
+  let quote
+
+  env.split(NEWLINES).forEach(line => {
+    if (pending) {
+      pending.push(line)
+      if (isClosedBy(line, quote)) {
+        entries.push(pending.join(EOL))
+        pending = null
+      }
+      return
+    }
+
+    const tuple = splitEnvLine(line)
+    const value = tuple && tuple[1]
+    if (value && /^["'`]/.test(value) && !isClosedBy(value.substring(1), value[0])) {
+      quote = value[0]
+      pending = [line]
+    } else {
+      entries.push(line)
+    }
+  })
+
+  if (pending) {
+    // the quote is never closed, keep the lines as they are
+    entries.push(...pending)
+  }
+
+  return entries
+}
+
+/**
  * Merge .env data
  * (we don't want to go through the .env to json conversion)
  * Note that comments will not be preserved.
@@ -284,7 +327,6 @@ function mergeEnv (oldEnv, newEnv) {
   aioLogger.debug(`mergeEnv - newEnv:${newEnv}`)
 
   const result = {}
-  const NEWLINES = /\n|\r|\r\n/
 
   aioLogger.debug(`mergeEnv - oldEnv:${oldEnv}`)
   aioLogger.debug(`mergeEnv - newEnv:${newEnv}`)
@@ -296,8 +338,8 @@ function mergeEnv (oldEnv, newEnv) {
     }
   }
 
-  oldEnv.split(NEWLINES).forEach(splitHelper)
-  newEnv.split(NEWLINES).forEach(splitHelper)
+  splitEnvEntries(oldEnv).forEach(splitHelper)
+  splitEnvEntries(newEnv).forEach(splitHelper)
 
   const mergedEnv = Object
     .keys(result)
