@@ -12,6 +12,7 @@ governing permissions and limitations under the License.
 
 const fs = require('fs-extra')
 const path = require('path')
+const { EOL } = require('os')
 const inquirer = require('inquirer')
 
 // mock prompt before import
@@ -159,6 +160,21 @@ test('mergeEnv', async () => {
   oldEnv = fixtureFile('merge.2.old.env')
   newEnv = fixtureFile('merge.2.new.env')
   expect(mergeEnv(oldEnv, newEnv)).toMatchFixture('merge.2.final.env')
+
+  // quoted values that span several lines are kept
+  oldEnv = fixtureFile('merge.3.old.env')
+  newEnv = fixtureFile('merge.3.new.env')
+  expect(mergeEnv(oldEnv, newEnv)).toMatchFixture('merge.3.final.env')
+})
+
+test('mergeEnv multiline values with CRLF line endings', () => {
+  const oldEnv = 'KEY="first\r\nsecond"\r\nOTHER=value\r\n'
+  expect(mergeEnv(oldEnv, 'AIO_foo=bar')).toEqual(['KEY="first', 'second"', 'OTHER=value', 'AIO_foo=bar', ''].join(EOL))
+})
+
+test('mergeEnv quoted value that is never closed', () => {
+  const oldEnv = 'KEY="no closing quote\nOTHER=value\n'
+  expect(mergeEnv(oldEnv, 'AIO_foo=bar')).toEqual(['KEY="no closing quote', 'OTHER=value', 'AIO_foo=bar', ''].join(EOL))
 })
 
 test('writeEnv', async () => {
