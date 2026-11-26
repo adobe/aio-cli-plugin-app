@@ -14,3 +14,6 @@ coverage
 oclif.manifest.json
 package-lock.json
 
+.claude/
+.cursor/
+.scout/
